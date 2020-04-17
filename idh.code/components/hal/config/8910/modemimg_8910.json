@@ -1,0 +1,74 @@
+{
+    "modemnv_dir": "nvm",
+    "lzma_block_size": "0x10000",
+    "fbdev_name": "FMOD",
+    "sffs_name": "FMOD",
+    "modemnv": [
+        {
+            "nvid": "0x259",
+            "file": "static_nv.bin"
+        },
+        {
+            "nvid": "0x25a",
+            "file": "phy_nv.bin"
+        },
+        {
+            "nvid": "0x25b",
+            "file": "dynamic_nv.bin"
+        },
+        {
+            "nvid": "0x25c",
+            "file": "static_nv_2.bin"
+        },
+        {
+            "nvid": "0x25d",
+            "file": "phy_nv_2.bin"
+        },
+        {
+            "nvid": "0x25e",
+            "file": "dynamic_nv_2.bin"
+        },
+        {
+            "nvid": "0x26c",
+            "file": "rf_nv.bin"
+        },
+        {
+            "nvid": "0x277",
+            "file": "cfw_nv.bin"
+        },
+        {
+            "nvid": "0x278",
+            "file": "audio_calib.bin"
+        },
+        {
+            "nvid": "0x27a",
+            "file": "audio_codec_nv.bin"
+        }
+    ],
+    "modembin": [
+        {
+            "file": "mem_index_list",
+            "local_file": "memory_index_list.bin"
+        },
+        {
+            "file": "cp.bin",
+            "lzma3": true
+        },
+        {
+            "file": "riscV.bin",
+            "lzma3": true
+        },
+        {
+            "file": "zsp.bin",
+            "lzma3": true
+        },
+        {
+            "file": "bcpu_gsm.bin",
+            "lzma3": true
+        },
+        {
+            "file": "bcpu_nbiot.bin",
+            "lzma3": true
+        }
+    ]
+}

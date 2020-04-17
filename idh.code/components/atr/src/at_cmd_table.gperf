@@ -1,0 +1,568 @@
+/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+ * All rights reserved.
+ *
+ * This software is supplied "AS IS" without any warranties.
+ * RDA assumes no responsibility or liability for the use of the software,
+ * conveys no license or title under any patent, copyright, or mask work
+ * right to the product. RDA reserves the right to make changes in the
+ * software without notification.  RDA also make no representation or
+ * warranty that such application will be suitable for the specified use
+ * without further testing or modification.
+ */
+
+%{
+// NOTE:
+// * Don't change the options
+// * Don't add space around keywords
+// * Each command should be located in a single line
+#include "cfw_config.h"
+#include "atr_config.h"
+#include "ats_config.h"
+%}
+struct atCmdDesc
+%language=ANSI-C
+%ignore-case
+%struct-type
+%omit-struct-type
+%readonly-tables
+%global-table
+%omit-cmp-function
+%omit-lookup-function
+%hash-index
+%switch=1
+%define hash-function-name atCmdNameHash
+%define word-array-name gAtCmdTable
+%define hash-index-name gAtCmdNameHashIndex
+%%
+// V.250
+Z,              atCmdHandleZ, 0             // (6.1.1) Reset to default configuration
+&F,             atCmdHandleAndF, 0          // (6.1.2) Set to factory defined configuration
+I,              atCmdHandleI, 0             // (6.1.3) Request identification information
++GMI,           atCmdHandleGMI, 0           // (6.1.4) Request manufacturer identification
++GMM,           atCmdHandleGMM, 0           // (6.1.5) Request model identification
++GMR,           atCmdHandleGMR, 0           // (6.1.6) Request revision identification
+S3,             atCmdHandleS3, 0            // (6.2.1) Command line termination character
+S4,             atCmdHandleS4, 0            // (6.2.2) Response formatting character
+S5,             atCmdHandleS5, 0            // (6.2.3) Command line editing character
+E,              atCmdHandleE, 0             // (6.2.4) Command echo
+Q,              atCmdHandleQ, 0             // (6.2.5) Result code suppression
+V,              atCmdHandleV, 0             // (6.2.6) DCE response format
+X,              atCmdHandleX, 0             // (6.2.7) Result code selection and call progress monitoring control
+&D,             atCmdHandleAndD, 0          // (6.2.9) Circuit 108/2 (DTR) behavior
++IPR,           atCmdHandleIPR, 0           // (6.2.10) Fixed DTE rate
++ICF,           atCmdHandleICF, 0           // (6.2.11) DTE-DCE character framing
++IFC,           atCmdHandleIFC, 0           // (6.2.12) DTE-DCE local flow control
+D,              atCmdHandleD, 0             // (6.3.1) Dial
+A,              atCmdHandleA, 0             // (6.3.5) Answer
+H,              atCmdHandleH, 0             // (6.3.6) Hook control
+O,              atCmdHandleO, 0             // (6.3.7) Return to online data state
+S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
+&W,             atCmdHandleAndW, 0          // Store current profile
+&Y,             atCmdHandleAndY, 0          // Set default reset profile
++GSN,           atCmdHandleGSN, 0           // Request serial number
++CLAC,          atCmdHandleCLAC, 0          // List all command
+#ifdef CONFIG_AT_CAMERA_SUPPORT
++CAM,           atCmdHandleCAM, 0           //Camera Function
+#endif
+#ifdef CONFIG_SOC_8910
++TUEINFO,       atCmdHandleTUEINFO, 0       // Show Tue status info
+#endif
+#ifdef CONFIG_AT_SSIM_SUPPORT
++SCANRSSI,      atCmdHandleSCANRSSI, 0      // Scan RSSI according to band
+#endif
+//
+// 3GPP TS 27.005 (R14)
+//
++CSMS,          atCmdHandleCSMS, 0          // 3.2.1 Select Message Service
++CPMS,          atCmdHandleCPMS, 0          // 3.2.2 Preferred Message Storage
++CMGF,          atCmdHandleCMGF, 0          // 3.2.3 Message Format
++CSCA,          atCmdHandleCSCA, 0          // 3.3.1 Service Centre Address
++CSMP,          atCmdHandleCSMP, 0          // 3.3.2 Set Text Mode Parameters
++CSDH,          atCmdHandleCSDH, 0          // 3.3.3 Show Text Mode Parameters
++CSCB,          atCmdHandleCSCB, 0          // 3.3.4 Select Cell Broadcast Message Types
++CSAS,          atCmdHandleCSAS, 0          // 3.3.5 Save Settings
++CRES,          atCmdHandleCRES, 0          // 3.3.6 Restore Settings
++CNMI,          atCmdHandleCNMI, 0          // 3.4.1 New Message Indications to TE
++CMGL,          atCmdHandleCMGL, 0          // 3.4.2/4.1 List Messages
++CMGR,          atCmdHandleCMGR, 0          // 3.4.3/4.2 Read Message
++CNMA,          atCmdHandleCNMA, 0          // 3.4.4 New Message Acknowledgement to ME/TA
++CMGS,          atCmdHandleCMGS, 0          // 3.5.1/4.3 Send Message
++CMSS,          atCmdHandleCMSS, 0          // 3.5.2/4.7 Send Message from Storage
++CMGW,          atCmdHandleCMGW, 0          // 3.5.3/4.4 Write Message to Memory
++CMGD,          atCmdHandleCMGD, 0          // 3.5.4 Delete Message
++CMGC,          atCmdHandleCMGC, 0          // 3.5.5/4.5 Send Command
++CMMS,          atCmdHandleCMMS, 0          // 3.5.6 More Messages to Send
++CGSEND,        atCmdHandleCGSEND, 0
+
+//
+// 3GPP TS 27.007 (R14)
+//
++CGMI,          atCmdHandleCGMI, 0          // 5.1 Request manufacturer identification
++CGMM,          atCmdHandleCGMM, 0          // 5.2 Request model identification
++CGMR,          atCmdHandleCGMR, 0          // 5.3 Request revision identification
++CGSN,          atCmdHandleCGSN, 0          // 5.4 Request product serial number identification
++CSCS,          atCmdHandleCSCS, 0          // 5.5 Select TE character set
++CIMI,          atCmdHandleCIMI, 0          // 5.6 Request international mobile subscriber identity
+#ifdef CONFIG_ATR_CMUX_SUPPORT
++CMUX,          atCmdHandleCMUX, 0          // 5.7 Multiplexing mode
+#endif
++CGBV,          atCmdHandleCGBV, 0
+
++CMOD,          atCmdHandleCMOD, 0          // 6.4 Call mode
++CHUP,          atCmdHandleCHUP, 0          // 6.5 Hangup call
++CR,            atCmdHandleCR, 0            // 6.9 Service reporting control
++CRC,           atCmdHandleCRC, 0           // 6.11 Cellular result codes
++CHLD,          atCmdHandleCHLD, 0          // 7.13 Call related supplementary services
+#if defined (LTE_NBIOT_SUPPORT) || defined (LTE_SUPPORT)
++CDU,           atCmdHandleCDU, 0           // 13.2.3 Hangup of current calls
++CHCCS,         atCmdHandleCHCCS, 0         // 13.2.3 Hangup of current calls
+#if defined (CONFIG_SOC_8910)
++CPSMS,         atCmdHandleCPSMS, 0         // 7.38 Power saving mode setting
++CEDRXS,        atCmdHandleCEDRXS, 0        // 7.40 eDRX setting
++CEDRXRDP,      atCmdHandleCEDRXRDP, 0      // 7.41 eDRX read dynamic parameters
++CFGEDRX,       atCmdHandleCFGEDRX, 0
+#endif
+#endif
+#ifdef CFW_VOLTE_SUPPORT
++CCFCU,         atCmdHandleCCFCU, 0         // 7.35 Communication forwarding number and conditions with URI support
++CISRVCC,       atCmdHandleCISRVCC, 0       // 8.63 IMS single radio voice call continuity
++CEUS,          atCmdHandleCEUS, 0          // 10.1.34 UE's usage setting for EPS
++CEVDP,         atCmdHandleCEVDP, 0         // 10.1.35 UE's voice domain preference E-UTRAN
+#endif
+
++VTS,           atCmdHandleVTS, 0           // C.2.11 DTMF and tone generation
++VTD,           atCmdHandleVTD, 0           // C.2.12 Tone duration
+
+//
+// SIM && PBK related commands
+//
++CPIN2,         atCmdHandleCPIN2, 0         // Authentication(for Sim)
+^CPINC,         atCmdHandleCPINC, 0         // Total times of Access the Sim Card
++CRSML,         atCmdHandleCRSML, 0         // Read records of EF file on (U)SIM
+^SIMOPERTIMES,  atCmdHandleSIMOperationTimes,   0       //Get the total number of SIM card operations.
+
+
+// Network service related commands
+//
++CNUM,          atCmdHandleCNUM, 0          // 7.1 Subscriber number
++CREG,          atCmdHandleCREG, 0          // 7.2 Network registration
++COPS,          atCmdHandleCOPS, 0          // 7.3 PLMN selection
++COPN,          atCmdHandleCOPN, 0          // 7.21 Read operator names
++CLIP,          atCmdHandleCLIP, 0          // 7.6 Calling line identification presentation
++CLIR,          atCmdHandleCLIR, 0          // 7.7 Calling line identification restriction
++CCWA,          atCmdHandleCCWA, 0          // 7.12 Call waiting
++CLCC,          atCmdHandleCLCC, 0          // 7.18 List current calls
++CPOL,          atCmdHandleCPOL, 0          // 7.19 Preferred PLMN list
++CPLS,          atCmdHandleCPLS, 0          // 7.20 Selection of preferred PLMN list
++CPWD,          atCmdHandleCPWD, 0          // 7.5 Change password
+// +COLP,       atCmdHandleCOLP, 0          // 7.8 Connected line identification presentation
++CCFC,          atCmdHandleCCFC, 0          // 7.11 Call forwarding number and conditions
++CCED,          atCmdHandleCCED, 0
++MJDC,          atCmdHandleMJDC, 0          //Detect the jamming.
+
+
++CTEC,          atCmdHandleCTEC, 0          // Change RAT
+^BLACKLIST,     atCmdHandleBLACKLIST, 0
+
+#if defined (LTE_NBIOT_SUPPORT) || defined (LTE_SUPPORT)
++CEREG,         atCmdHandleCEREG, 0         // 10.1.22 EPS network registration status
++CSCON,         atCmdHandleCSCON, 0         // 10.1.30 Signalling connection status +CSCON
+#endif
++CSDF,          atCmdHandleCSDF, 0          // 6.22 Settings date format +CSDF
++CPAS,          atCmdHandleCPAS, 0          // 8.1 Phone activity status
++CPIN,          atCmdHandleCPIN, 0          // 8.3 Enter PIN
++CLCK,          atCmdHandleCLCK, 0          // 7.4 Facility lock
++CDIS,          atCmdHandleCDIS, 0          // 8.8 Display control
++CMER,          atCmdHandleCMER, 0          // 8.10 Mobile termination event reporting
++CPBS,          atCmdHandleCPBS, 0          // 8.11 Select phonebook memory storage +CPBS
++CPBR,          atCmdHandleCPBR, 0          // 8.12 Read phonebook entries +CPBR
++CPBF,          atCmdHandleCPBF, 0          // 8.13 Find phonebook entries +CPBF
++CPBW,          atCmdHandleCPBW, 0          // 8.14 Write phonebook entry +CPBW
++CCLK,          atCmdHandleCCLK, 0          // 8.15 Clock +CCLK
++CRSM,          atCmdHandleCRSM, 0          // 8.18 Restricted SIM access
++CACM,          atCmdHandleCACM, 0          // 8.25 Accumulated call meter
++CTZU,          atCmdHandleCTZU, 0          // 8.40 Automatic time zone update +CTZU
++CTZR,          atCmdHandleCTZR, 0          // 8.41 Time zone reporting +CTZR
++CPINR,         atCmdHandleCPINR, 0         // 8.65 Remaining PIN retries +CPINR
++TPIN,          atCmdHandleCPINR, 0         // same as +CPINR
++CCID,          atCmdHandleCCID, 0          // Get Iccid
++SIM,           atCmdHandleSIM, 0
+^SIMIF,         atCmdHandleSIMIF, 0
++SIMCROSS,      atCmdHandleSIMCROSS, 0      //Switch sim id
++QSPN,          atCmdHandleQSPN, 0
++QGID,          atCmdHandleQGID, 0
+
+^STA,           atCmdHandleSTA, 0           //
+^STGI,          atCmdHandleSTGI, 0           //
+^STR,           atCmdHandleSTR, 0           //
+^STSF,          atCmdHandleSTSF,0
+
+#ifdef CONFIG_ATS_ALARM_SUPPORT
++CALA,          atCmdHandleCALA, 0          // 8.16 Alarm +CALA
++CALD,          atCmdHandleCALD, 0          // 8.38 Delete alarm +CALD
+#endif
+
++CIPMUX,        AT_TCPIP_CmdFunc_CIPMUX, 0
++CIPSGTXT,      AT_TCPIP_CmdFunc_CIPSGTXT, 0
++CIPSTART,      AT_TCPIP_CmdFunc_CIPSTART, 0
++CIFSR,         AT_TCPIP_CmdFunc_CIFSR, 0
++CIPSTATUS,     AT_TCPIP_CmdFunc_CIPSTATUS, 0
++CIPSCONT,      AT_TCPIP_CmdFunc_CIPSCONT, 0
++CIPCLOSE,      AT_TCPIP_CmdFunc_CIPCLOSE, 0
++CIPSHUT,       AT_TCPIP_CmdFunc_CIPSHUT, 0
++CIICR,         AT_TCPIP_CmdFunc_CIICR, 0
++CIPSEND,       AT_TCPIP_CmdFunc_CIPSEND, 0
++CIPQSEND,      AT_TCPIP_CmdFunc_CIPQSEND, 0
++CIPRXGET,      AT_TCPIP_CmdFunc_CIPRXGET, 0
++CSTT,          AT_TCPIP_CmdFunc_CSTT, 0
++CIPATS,        AT_TCPIP_CmdFunc_CIPATS, 0
++CDNSGIP,       AT_TCPIP_CmdFunc_CDNSGIP, 0
++CDNSCFG,       AT_TCPIP_CmdFunc_CDNSCFG, 0
++CIPSPRT,       AT_TCPIP_CmdFunc_CIPSPRT, 0
++CIPHEAD,       AT_TCPIP_CmdFunc_CIPHEAD, 0
++CIPCSGP,       AT_TCPIP_CmdFunc_CIPCSGP, 0
++CIPSRIP,       AT_TCPIP_CmdFunc_CIPSRIP, 0
++CIPDPDP,       AT_TCPIP_CmdFunc_CIPDPDP, 0
++CIPMODE,       AT_TCPIP_CmdFunc_CIPMODE, 0
++CIPCCFG,       AT_TCPIP_CmdFunc_CIPCCFG, 0
++CIPSHOWTP,     AT_TCPIP_CmdFunc_CIPSHOWTP, 0
++CIPUDPMODE,    AT_TCPIP_CmdFunc_CIPUDPMODE, 0
++CIPACK,        AT_TCPIP_CmdFunc_CIPACK, 0
++CLPORT,        AT_TCPIP_CmdFunc_CLPORT, 0
++CIPSERVER,     AT_TCPIP_CmdFunc_CIPSERVER, 0
++CIPTKA,        AT_TCPIP_CmdFunc_CIPTKA, 0
++CIPRDTIMER,    AT_TCPIP_CmdFunc_CIPRDTIMER, 0
++PING,          AT_TCPIP_CmdFunc_PING, 0
++PINGSTOP,      AT_TCPIP_CmdFunc_PINGSTOP, 0
+#if 0
++TSOCR,         AT_TCPIP_CmdFunc_TSOCR, 0
++TSOST,         AT_TCPIP_CmdFunc_TSOST, 0
++TSOSTF,        AT_TCPIP_CmdFunc_TSOSTF, 0
++TSORF,         AT_TCPIP_CmdFunc_TSORF, 0
++TSOCL,         AT_TCPIP_CmdFunc_TSOCL, 0
++TPING,         AT_TCPIP_CmdFunc_TPING, 0
+#endif
+^NETIF,         AT_NET_CmdFunc_NetInfo, 0
+
+//
+// Mobile Termination control and status commands
+//
++CFUN,          atCmdHandleCFUN, 0          // 8.2 Set phone functionality
++CBC,           atCmdHandleCBC, 0           // 8.4 Battery charge
++CSQ,           atCmdHandleCSQ, 0           // 8.5 Signal quality
++CIND,          atCmdHandleCIND, 0          // 8.9 Indicator control
++CESQ,          atCmdHandleCESQ, 0          // 8.69 Extended signal quality
++CALIBINFO,     atCmdHandleCALIBINFO, 0     // Check the calibration mark bit
++CMEE,          atCmdHandleCMEE, 0          // 9.1 Report mobile termination error
++CEER,          atCmdHandleCEER, 0          // 6.10 Extended error report
++CPOF,          atCmdHandleCPOF, 0
++TRB,           atCmdHandleTRB, 0
++EGMR,          atCmdHandleEGMR, 0
++CSCLK,         atCmdHandleCSCLK, 0
++CGREG,         atCmdHandleCGREG, 0         // 10.1.20 GPRS network registration status
++CGQMIN,        atCmdHandleCGQMIN, 0        // 10.1.5 Quality of service profile (minimum acceptable)
++CGATT,         atCmdHandleCGATT, 0         // 10.1.9 PS attach or detach
++CGDEL,         atCmdHandleCGDEL, 0         // 10.1.29 Delete non-active PDP contexts
++CGPADDR,       atCmdHandleCGPADDR, 0       // 10.1.14 Show PDP address(es)
++CGDCONT,       atCmdHandleCGDCONT, 0       // 10.1.1 Define PDP context
+//+CFGIMSPDN,     atCmdHandleCFGIMSPDN, 0
++CGAUTH,        atCmdHandleCGAUTH, 0        // 10.1.31 Define PDP context authentication parameters
+#ifdef LTE_NBIOT_SUPPORT
++CGDSCONT,      atCmdHandleCGDSCONT, 0      // 10.1.2 Define secondary PDP context
+#endif
+#if defined(LTE_NBIOT_SUPPORT) || defined(LTE_SUPPORT)
++CGTFT,         atCmdHandleCGTFT, 0         // 10.1.3 Traffic flow template
++CGTFTRDP,      atCmdHandleCGTFTRDP, 0      // 10.1.25 Traffic flow template read dynamic parameters
++CGEQREQ,       atCmdHandleCGEQREQ, 0       // 10.1.6 3G quality of service profile (requested)
++CGEQMIN,       atCmdHandleCGEQMIN, 0       // 10.1.7 3G quality of service profile (minimum acceptable)
+#endif
++CGACT,         atCmdHandleCGACT, 0         // 10.1.10 PDP context activate or deactivate
+#if defined(LTE_NBIOT_SUPPORT) || defined(LTE_SUPPORT)
++CGCMOD,        atCmdHandleCGCMOD, 0        // 10.1.11 PDP context modify
+#endif
++CGEREP,        atCmdHandleCGEREP, 0        // 10.1.19 Packet domain event reporting
++CGSMS,         atCmdHandleCGSMS, 0         // 10.1.21 Select service for MO SMS messages
++CGCONTRDP,      atCmdHandleCGCONTRDP, 0    // 10.1.23 PDP context read dynamic parameters +CGCONTRDP
++CGSCONTRDP,    atCmdHandleCGSCONTRDP, 0    // 10.1.24 Secondary PDP context read dynamic parameters
+#if defined(LTE_NBIOT_SUPPORT) || defined(LTE_SUPPORT)
++CGEQOS,        atCmdHandleCGEQOS, 0        // 10.1.26 Define EPS quality of service
+#endif
++CEMODE,        atCmdHandleCEMODE, 0        // 10.1.28 UE modes of operation for EPS
+#if defined(LTE_NBIOT_SUPPORT) || defined(LTE_SUPPORT)
++CGEQOSRDP,     atCmdHandleCGEQOSRDP, 0     // 10.1.27 EPS quality of service read dynamic parameters
+#endif
+#if defined(LTE_NBIOT_SUPPORT) || defined(LTE_SUPPORT)
++CSODCP,        atCmdHandleCSODCP, 0        // 10.1.43 Sending of originating data via the control plane +CSODCP
+#endif
++CGDATA,        atCmdHandleCGDATA, 0        // 10.1.12 Enter data state
++CGAUTO,        atCmdHandleCGAUTO, 0        // 10.1.15 Automatic response to a network request for PDP context activation
++CGQREQ,        atCmdHandleCGQREQ, 0        // 10.1.4 Quality of service profile (requested)
++CGANS,         atCmdHandleCGANS, 0         // 10.1.16 Manual response to a network request for PDP context activation
++CGCLASS,       atCmdHandleCGCLASS, 0       // 10.1.17 GPRS mobile station class
++CGPDNSADDR,    atCmdHandleCGPDNSADDR, 0
+#if defined(LTE_NBIOT_SUPPORT)
++CRTDCP,        atCmdHandleCRTDCP, 0        // 10.1.44 Reporting of terminating data via the control plane +CRTDCP
+#if defined(LTE_SUPPORT)
++QSCANF,        atCmdHandleQSCANF, 0        // use to freq scan
+#endif
+#ifdef CONFIG_SOC_6760
++SETCARRIERNUM, atCmdHandleCarrierNum, 0
++CFGDFTPDN,     atCmdHandleCFGDFTPDN, 0
++LOGRANK,       atCmdHandleLOGRANK, 0
++NVCFGARFCN,    atCmdHandleCfgArfcn, 0
++NVSETLOCKFREQ, atCmdHandleLockFreq, 0
+#endif
+#endif
+
+#ifdef LTE_SUPPORT
++SETLOCK,       atCmdHandleSETLOCK, 0
+#endif
+
+#ifdef CONFIG_CFW_DEBUG_IPFILTER
++IPFLT,         atCmdHandleIPFLT, 0         // Filter IP packets inside CFW. DEBUG ONLY!!
+#endif
+
++QGPCLASS,      atCmdHandleQGPCLASS, 0
+
+#ifdef CFW_VOLTE_SUPPORT
+//+XCAPIP,        atCmdHandleXCAPIP, 0
++SETVOLTE,      atCmdHandleSETVOLTE, 0
+#endif
+
++DLST,          atCmdHandleDLST, 0
++ECSQ,          atCmdHandleECSQ, 0          // Enhanced signal quality report
+
++DPSD,          atCmdHandleDiscardPSData, 0
+
+
+// filesystem
+#ifdef CONFIG_ATS_FS_SUPPORT
++FSDWNFILE,     atCmdHandleFSDWNFILE, 0     // Download file
++FSRDFILE,      atCmdHandleFSRDFILE, 0      // Read file
++FSRDBLOCK,     atCmdHandleFSRDBLOCK, 0     // Read file block
++FSDELFILE,     atCmdHandleFSDELFILE, 0     // Delete file
++FSMKDIR,       atCmdHandleFSMKDIR, 0       // Create directory
++FSRMDIR,       atCmdHandleFSRMDIR, 0       // Remove directory
++FSLSTFILE,     atCmdHandleFSLSTFILE, 0     // List file or directory
++FSLSTPART,     atCmdHandleFSLSTPART, 0     // List partition free space
++FSREMOUNT,     atCmdHandleFSREMOUNT, 0     // Remount as read-only or read-write
+#endif
+
++HTTPINIT,      AT_CmdFunc_HTTPINIT, 0
++HTTPTERM,      AT_CmdFunc_HTTPTERM, 0
++HTTPPARA,      AT_CmdFunc_HTTPPARA, 0
++HTTPREAD,      AT_CmdFunc_HTTPREAD, 0
++HTTPDATA,      AT_CmdFunc_HTTPDATA, 0
++HTTPACTION,    AT_CmdFunc_HTTPACTION, 0
++HTTPSTATUS,    AT_CmdFunc_HTTPSTATUS, 0
++HTTPSSETCRT,   AT_CmdFunc_HTTPSSETCRT, 0
+
++SNTP,          AT_CmdFunc_SNTP, 0
+
+^FTPOPEN,       AT_FTP_CmdFunc_OPEN, 0
+^FTPCLOSE,      AT_FTP_CmdFunc_CLOSE, 0
+^FTPSIZE,       AT_FTP_CmdFunc_SIZE, 0
+^FTPGET,        AT_FTP_CmdFunc_GET, 0
+^FTPGETSET,     AT_FTP_CmdFunc_GETSET, 0
+^FTPPUT,        AT_FTP_CmdFunc_PUT, 0
+^FTPPUTSET,     AT_FTP_CmdFunc_PUTSET, 0
+
+^COAPGET,       AT_COAP_CmdFunc_GET, 0
+^COAPPUT,       AT_COAP_CmdFunc_PUT, 0
+^COAPPOST,      AT_COAP_CmdFunc_POST, 0
+^COAPDELETE,    AT_COAP_CmdFunc_DELETE, 0
+^COAPDATA,      AT_COAP_CmdFunc_DATA, 0
+^COAPREG,       AT_COAP_CmdFunc_DATAREG, 0
+
++MQTTCONN,      AT_GPRS_CmdFunc_MQTTCONN, 0
++MQTTDISCONN,   AT_GPRS_CmdFunc_MQTTDISCONN, 0
++MQTTSUBUNSUB,  AT_GPRS_CmdFunc_MQTT_SUB_UNSUB, 0
++MQTTPUB,       AT_GPRS_CmdFunc_MQTTPUB, 0
+
+#ifdef CONFIG_SOC_6760
++SIGMOD,        atCmdHandleSIGMOD, 0        // signal mode
++DLPARAM,       atCmdHandleDLPARAM, 0       // downlink param
++DLRCV,         atCmdHandleDLRCV, 0         // downlink recieve enable
++ULPARAM,       atCmdHandleULPARAM, 0       // uplink param
++ULRCV,         atCmdHandleULRCV, 0         // uplink recieve enable
++APC,           atCmdHandleAPC, 0           // APC
++AGC,           atCmdHandleAGC, 0           // AGC
++SETLIMIT,      atCmdHandleSETLIMIT, 0      // set temperature upper limit
++NWSTATUS,      atCmdHandleNWSTATUS, 0      // set network status ind
+#endif
+
+// debug
+^SWJTAG,        atCmdHandleSWJTAG, 0        // Switch JTAG pin mux
+^PMSTART,       atCmdHandlePMSTART, 0       // Start PM core
+^PMSTOP,        atCmdHandlePMSTOP, 0        // Stop PM core
+^FORCEDNLD,     atCmdHandleFORCEDNLD, 0     // Reset to force download mode
+#ifndef CONFIG_SOC_6760
+^TRACECTRL,     atCmdHandleTrace, 0         // Enable/disable trace
++SYSNV,         atCmdHandleSYSNV, 0         // read/write sysnv
+#endif
+^SSIT,          atCmdHandleSSIT, 0
+#ifndef CONFIG_SOC_6760
+^HEAPINFO,      atCmdHandleHEAPINFO, 0      // Show heap info
+#endif
+^TIMEOUTABORT,  atCmdHandleTIMEOUTABORT, 0  // Trivial command to test timeout and abort
+^UPTIME,        atCmdHandleUpTime, 0        // Get up time
++UPTIME,        atCmdHandleUpTimePlus, 0    // Get up time
++SPENGMD,       atCmdHandleSPENGMD, 0       // Only support assert system
+#ifdef CONFIG_SOC_8910
++SET7SRESET,    atCmdHandleSet7sReset, 0    // set powerkey 7s reset(1:true 0:false)
++USBSWITCH,     atCmdHandleUSBSWITCH, 0     // enable/disable usb function
++USBRMTWK,      atCmdHandleUSBRMTWK, 0      // usb remote wakeup
+#endif
+#ifdef CONFIG_TWOLINE_WAKEUP_ENABLE
++SLEEPDELAY,    atCmdHandleMcuNotifySleep, 0,    //mcu notify module should into deepsleep
+#endif
+#ifdef CONFIG_AT_EMMCDDRSIZE_SUPPORT
++EMMCDDRSIZE,     atCmdHandleEmmcDDRSize, 0    // read flash size and exram size
+#endif
++CMUXEND,       atCmdHandleCMUXEND, AT_CON_NOT_CLAC     // exit cmux mode forcedly
+
+#ifdef CONFIG_AT_AUDIO_SUPPORT
++CRSL,          atCmdHandleCRSL, 0          // 8.21 Ringer sound level
++CLVL,          atCmdHandleCLVL, 0          // 8.23 Loudspeaker volume level
++CMUT,          atCmdHandleCMUT, 0          // 8.24 Mute control
++AUDCH,         atCmdHandleAUDCH, 0         // Set receiver, headset and loudspeaker channel
++CACCP,         atCmdHandleCACCP, 0         // Audio Codec Calibration Param
++CAVQE,         atCmdHandleCAVQE, 0         // Audio ZSP VQE Calibration Param
++CAPRE,         atCmdHandleCAPRE, 0         // Audio ZSP Pre -Processing Calibration Param
++CAPOST,        atCmdHandleCAPOST, 0        // Audio ZSP Post -Processing Calibration Param
++CAWTF,         atCmdHandleCAWTF, 0         // Write calibration param to flash
++CAIET,         atCmdHandleCAIET, 0         // Export calibration param from flash or import calibration param to flash
++CADTF,         atCmdHandleCADTF, 0         // dump PCM data to Tflash card
++CAVCT,         atCmdHandleCAVCT, 0         // version
++CANXP,         atCmdHandleCANXP, 0         //
++CAUDPLAY,      atCmdHandleCAUDPLAY, 0      // Play/stop/pause/resume audio file
++CAUDREC,       atCmdHandleCAUDREC, 0       // Voice call recording
++CDTMF,         atCmdHandleCDTMF, 0         // Local DTMF tone
++LBTEST,        atCmdHandleLBTEST, 0        // Loopback test
+#ifdef CONFIG_SOC_8910
++MAI2SY,        atCmdHandleMAI2SY, 0        // Config external codec mode
++PCMMODE,       atCmdHandlePCMMODE, 0       // Set PCM frame synchronization singal mode
++CLAM,          atCmdHandleCLAM, 0          // Control playtone of call and sms
+#endif
+#endif
+
+#ifdef CONFIG_TTS_SUPPORT
++CTTS,          atCmdHandleCTTS, 0          // TTS
+#endif
+
+#ifdef CONFIG_SOC_8910
++TSTSETCS,      atCmdHandleTSTSETCS, 0      // Just use to test close CS domain
+#endif
+
+//command for lwm2m
+#ifdef CONFIG_AT_CISSDK_MIPL_SUPPORT
++MIPLCREATE,        AT_CmdFunc_MIPLCREATE, 0
++MIPLDELETE,        AT_CmdFunc_MIPLDELETE, 0
++MIPLOPEN,          AT_CmdFunc_MIPLOPEN, 0
++MIPLCLOSE,         AT_CmdFunc_MIPLCLOSE, 0
++MIPLADDOBJ,        AT_CmdFunc_MIPLADDOBJ, 0
++MIPLDELOBJ,        AT_CmdFunc_MIPLDELOBJ, 0
++MIPLNOTIFY,        AT_CmdFunc_MIPLNOTIFY, 0
++MIPLREADRSP,       AT_CmdFunc_MIPLREADRSP, 0
++MIPLWRITERSP,      AT_CmdFunc_MIPLWRITERSP, 0
++MIPLEXECUTERSP,    AT_CmdFunc_MIPLEXECUTERSP, 0
++MIPLOBSERVERSP,    AT_CmdFunc_MIPLOBSERVERSP, 0
++MIPLDISCOVERRSP,   AT_CmdFunc_MIPLDISCOVERRSP, 0
++MIPLPARAMETERRSP,  AT_CmdFunc_MIPLPARAMETERRSP, 0
++MIPLUPDATE,        AT_CmdFunc_MIPLUPDATE, 0
++MIPLVER,           AT_CmdFunc_MIPLVER, 0
++MIPLCLEARSTATE,    AT_CmdFunc_MIPLCLEARSTATE, 0
+#endif
+
+#ifdef CONFIG_ATS_UPDATE_SUPPORT
++UPDATE,            atCmdHandleUPDATE, 0            // Firmware update, data from AT
+#endif
+
+#if defined(CONFIG_SOC_8909) || defined(CONFIG_SOC_8910)
++CFGCIOT,           atCmdHandleCFGCIOT, 0           // NB static NVM
+#endif
+
+#ifdef CONFIG_SOC_8910
++SPCLEANINFO,       atCmdHandleSPCLEANINFO, AT_CON_NOT_CALIB_MODE       // This command is used to clean history ba into for all rat.
++L1PARAM,           atCmdHandleL1PARAM, AT_CON_NOT_CALIB_MODE           // This command is used to set L1 dual-mode parameters of GSM.
++GRRLTEFREQ,        atCmdHandleGRRLTEFREQ, AT_CON_NOT_CALIB_MODE        // Set dummy FDD/TDD LTE freq configuration for GSM.
++SPLTEDUMMYPARA,    atCmdHandleSPLTEDUMMYPARA, AT_CON_NOT_CALIB_MODE    // This command is used to dual-mode LTE parameters for LTE.
++RRTMPARAM,         atCmdHandleRRTMPARAM, AT_CON_NOT_CALIB_MODE         // This command is used to dual-mode LTE parameters for GRR.
++VERCTRL,           atCmdHandleVERCTRL, 0
++CFGDFTPDN,           atCmdHandleCFGDFTPDN, 0
+#endif
+
+#ifdef CONFIG_AT_SSIM_SUPPORT
++SSIMAUTH,          atCmdHandleSSIMAUTH, 0          // begin soft sim authentication
++SSIMAUTHEXIT,      atCmdHandleSSIMAUTHEXIT, 0      // exit soft sim authentication
++SSIMCHANGEPW,      atCmdHandleSSIMCHANGEPW, 0      // change authentication password
++SSIMINFO,          atCmdHandleSSIMINFO, 0          // set and query soft sim info
++SSIMPLMN,          atCmdHandleSSIMPLMN, 0          // set and query sim plmn
++SSIMFILEHASH,      atCmdHandleSSIMFILEHASH, 0      // get soft sim file hash value
++SSIMMSIN,          atCmdHandleSSIMMSIN, 0          // set and get the high 3 bit of the MSIN
++SSIMDELFILE,       atCmdHandleSSIMDELFILE, 0       // delete file
+#endif
+
+#ifdef CONFIG_AT_DM_LWM2M_SUPPORT
++SELFREGISTER,      atCmdHandleSELFREGISTER, 0      // self-register flag
++SETDMADPPLATFORM,  atCmdHandleSETDMADPPLATFORM, 0      // set platform address
+#endif
+
+#if defined(CONFIG_SOC_6760) || (defined(CONFIG_ATS_SGCC_CATM_SUPPORT) && defined(CONFIG_SOC_8910))
+$MYFTPOPEN,     AT_GPRS_CmdFunc_MYFTPOPEN, 0
+$MYFTPCLOSE,    AT_GPRS_CmdFunc_MYFTPCLOSE, 0
+$MYFTPSIZE,     AT_GPRS_CmdFunc_MYFTPSIZE, 0
+$MYFTPGET,      AT_GPRS_CmdFunc_MYFTPGET, 0
+$MYFTPPUT,      AT_GPRS_CmdFunc_MYFTPPUT, 0
+
+$MYNETSRV,      AT_TCPIP_CmdFunc_MYNETSRV, 0
+$MYNETOPEN,     AT_TCPIP_CmdFunc_MYNETOPEN, 0
+$MYNETREAD,     AT_TCPIP_CmdFunc_MYNETREAD, 0
+$MYNETWRITE,    AT_TCPIP_CmdFunc_MYNETSEND, 0
+$MYNETCLOSE,    AT_TCPIP_CmdFunc_MYNETCLOSE, 0
+$MYNETACK,      AT_TCPIP_CmdFunc_MYNETACK, 0
+$MYNETACCEPT,   AT_TCPIP_CmdFunc_MYNETACCEPT, 0
+$MYNETCREATE,   AT_TCPIP_CmdFunc_MYNETCREATE, 0
+$MYNETCON,      AT_TCPIP_CmdFunc_MYNETCON, 0
+$MYNETACT,      AT_GPRS_CmdFunc_MYNETACT, 0
+$MYIPFILTER,    AT_TCPIP_CmdFunc_MYIPFILTER, 0
+$MYGETKEY,      AT_TCPIP_CmdFunc_MYGETKEY, 0
+$MYSETINFO,     AT_TCPIP_CmdFunc_MYSETINFO, 0
+$MYNETURC,      AT_TCPIP_CmdFunc_MYNETURC, 0
+$MYSOCKETLED,   AT_TCPIP_CmdFunc_MYSOCKETLED, 0
+$MYTYPE,        AT_TCPIP_CmdFunc_MYTYPE, 0
+$MYPOWEROFF,    AT_TCPIP_CmdFunc_MYPOWEROFF, 0
+$MYCCID,        atCmdHandleCCID, 0
+$MYCALIB,       AT_TCPIP_CmdFunc_MYCALIB, 0
+$MYBCCH,        atCmdHandleMYBCCH, 0
+$MYBAND,        atCmdHandleMYBAND, 0
+$MYSYSINFO,     atCmdHandleMYSYSINFO, 0
+$MYSYSMODE,     atCmdHandleMYSYSMODE, 0
+#endif
+
+// NV
++NVPC,          atCmdHandleNVPC, 0
++NVGV,          atCmdHandleNVGV, 0
++RFCALIB,       atCmdHandleRFCALIB, 0
+
+#ifdef CONFIG_SOC_8910
++LOCKBCCH,        atCmdHandleMYBCCH, 0
++SETBAND,        atCmdHandleMYBAND, 0
++SETDTPORT,       atCmdHandleSETDTPORT, 0
++RFTEMPERATURE,   atCmdHandleRFTEMPERATURE, 0
+#endif
+
+#ifdef CONFIG_AT_SPBTTEST_SUPPORT
++SPBTTEST,      AT_SPBT_CmdFunc_TEST, 0
++SPBQBTEST,     AT_SPBQB_CmdFunc_TEST, 0
+#endif
+#ifdef CONFIG_AT_SPBLETEST_SUPPORT
++SPBLETEST,     AT_SPBLE_CmdFunc_TEST, 0
+#endif
+
++SIMHOTSWAP,    atCmdHandleSIMHOTSWAP, 0      //set sim hot-plug function
++GTSET,         atCmdHandleGTSET,      0      //set sim hot-plut trigger mode
++NETMSG,        atCmdHandleNETMSG,     0      //Get netinfo
++GTCCINFO,      atCmdHandleGTCCINFO,   0      //inqury GSM/LTE service cell and neighbor cell
+
+%%

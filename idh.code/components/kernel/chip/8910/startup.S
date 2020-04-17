@@ -1,0 +1,169 @@
+/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+ * All rights reserved.
+ *
+ * This software is supplied "AS IS" without any warranties.
+ * RDA assumes no responsibility or liability for the use of the software,
+ * conveys no license or title under any patent, copyright, or mask work
+ * right to the product. RDA reserves the right to make changes in the
+ * software without notification.  RDA also make no representation or
+ * warranty that such application will be suitable for the specified use
+ * without further testing or modification.
+ */
+
+    .text
+    .arm
+
+    .extern __fiq_stack_top
+    .extern __irq_stack_top
+    .extern __svc_stack_top
+    .extern __abt_stack_top
+    .extern __und_stack_top
+    .extern __sys_stack_top
+    .extern osiBootStart
+    .extern osiWakePm1
+    .extern osiWakePm2
+    .extern Vectors
+
+    .align 5
+    .section RESET, #alloc, #execinstr
+
+    .global Reset_Handler
+    .type   Reset_Handler, %function
+    .func
+Reset_Handler:
+    CPSID   if
+
+    MRC     p15, 0, R0, c1, c0, 1   // Read CP15 Auxiliary Control register
+    ORR     R0, R0, #(0x1 << 18)    // Set BTDIS bit 18 to disable indrect BTAC
+    MCR     p15, 0, R0, C1, c0, 1   // Wriet value back to CP15 Auxiliary Control register
+    ISB
+
+    // Reset SCTLR Settings
+    MRC     p15, 0, R0, c1, c0, 0   // Read CP15 System Control register
+    BIC     R0, R0, #(0x1 << 12)    // Clear I bit 12 to disable I Cache
+    BIC     R0, R0, #(0x1 <<  2)    // Clear C bit  2 to disable D Cache
+    BIC     R0, R0, #0x1            // Clear M bit  0 to disable MMU
+    BIC     R0, R0, #(0x1 << 11)    // Clear Z bit 11 to disable branch prediction
+    BIC     R0, R0, #(0x1 << 13)    // Clear V bit 13 to disable hivecs
+    MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register
+    ISB
+
+    ORR     R0, R0, #(0x1 << 12)    // Set I bit 12 to enable I Cache
+    MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register
+    ISB
+
+    // Set Vector Base Address Register (VBAR) to point to this application's vector table
+    LDR     R0, =Vectors
+    MCR     p15, 0, R0, c12, c0, 0
+
+    // Setup Stack for each exceptional mode
+    CPS     #0x11
+    LDR     SP, =__fiq_stack_top
+    CPS     #0x12
+    LDR     SP, =__irq_stack_top
+    CPS     #0x13
+    LDR     SP, =__svc_stack_top
+    CPS     #0x17
+    LDR     SP, =__abt_stack_top
+    CPS     #0x1B
+    LDR     SP, =__und_stack_top
+    CPS     #0x1F
+    LDR     SP, =__sys_stack_top
+
+    MOV     R0, #0
+    BLX     osiBootStart
+    .endfunc
+
+    .global WakeupPm1_Handler
+    .type   WakeupPm1_Handler, %function
+    .func
+WakeupPm1_Handler:
+    MRC     p15, 0, R0, c1, c0, 1   // Read CP15 Auxiliary Control register
+    ORR     R0, R0, #(0x1 << 18)    // Set BTDIS bit 18 to disable indrect BTAC
+    MCR     p15, 0, R0, C1, c0, 1   // Wriet value back to CP15 Auxiliary Control register
+    ISB
+
+    MRC     p15, 0, R0, c1, c0, 0   // Read CP15 System Control register
+    ORR     R0, R0, #(0x1 << 12)    // Set I bit 12 to enable I Cache
+    MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register
+    ISB
+
+    // Set Vector Base Address Register (VBAR) to point to this application's vector table
+    LDR     R0, =Vectors
+    MCR     p15, 0, R0, c12, c0, 0
+
+    // Setup Stack for each exceptional mode
+    CPS     #0x11
+    LDR     SP, =__fiq_stack_top
+    CPS     #0x12
+    LDR     SP, =__irq_stack_top
+    CPS     #0x13
+    LDR     SP, =__svc_stack_top
+    CPS     #0x17
+    LDR     SP, =__abt_stack_top
+    CPS     #0x1B
+    LDR     SP, =__und_stack_top
+    CPS     #0x1F
+    LDR     SP, =__sys_stack_top
+
+    BLX     osiWakePm1
+    .endfunc
+
+    .global WakeupPm2_Handler
+    .type   WakeupPm2_Handler, %function
+    .func
+WakeupPm2_Handler:
+    MRC     p15, 0, R0, c1, c0, 1   // Read CP15 Auxiliary Control register
+    ORR     R0, R0, #(0x1 << 18)    // Set BTDIS bit 18 to disable indrect BTAC
+    MCR     p15, 0, R0, C1, c0, 1   // Wriet value back to CP15 Auxiliary Control register
+    ISB
+
+    MRC     p15, 0, R0, c1, c0, 0   // Read CP15 System Control register
+    ORR     R0, R0, #(0x1 << 12)    // Set I bit 12 to enable I Cache
+    MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register
+    ISB
+
+    // Set Vector Base Address Register (VBAR) to point to this application's vector table
+    LDR     R0, =Vectors
+    MCR     p15, 0, R0, c12, c0, 0
+
+    // Setup Stack for each exceptional mode
+    CPS     #0x11
+    LDR     SP, =__fiq_stack_top
+    CPS     #0x12
+    LDR     SP, =__irq_stack_top
+    CPS     #0x13
+    LDR     SP, =__svc_stack_top
+    CPS     #0x17
+    LDR     SP, =__abt_stack_top
+    CPS     #0x1B
+    LDR     SP, =__und_stack_top
+    CPS     #0x1F
+    LDR     SP, =__sys_stack_top
+
+    BLX     osiWakePm2
+    .endfunc
+
+    .global SaveContext
+    .type   SaveContext, %function
+    .func
+SaveContext:
+    STMIA   R0, {R4-R14}
+    MOV     R2, SP
+    LDR     SP, =__svc_stack_top
+    PUSH    {R2, LR}
+    BLX     R1
+    POP     {R2, LR}
+    MOV     SP, R2
+    MOV     R0, #1
+    BX      LR
+    .endfunc
+
+    .global RestoreContext
+    .type   RestoreContext, %function
+    .func
+RestoreContext:
+    LDMIA   R0, {R4-R14}
+    MOV     R0, #0
+    BX      LR
+    .endfunc

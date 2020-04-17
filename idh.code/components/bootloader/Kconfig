@@ -1,0 +1,136 @@
+# Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+# All rights reserved.
+#
+# This software is supplied "AS IS" without any warranties.
+# RDA assumes no responsibility or liability for the use of the software,
+# conveys no license or title under any patent, copyright, or mask work
+# right to the product. RDA reserves the right to make changes in the
+# software without notification.  RDA also make no representation or
+# warranty that such application will be suitable for the specified use
+# without further testing or modification.
+
+menu "bootloader"
+
+if SOC_8910
+    config FDL1_IMAGE_START
+        hex "FDL1 uimage SRAM start"
+        default 0x810000 if SOC_8910
+        help
+            FDL1 uimage SRAM start (not the code start address).
+
+    config FDL1_IMAGE_SIZE
+        hex "FDL1 uimage SRAM size"
+        default 0x8000 if SOC_8910
+        help
+            FDL1 uimage size (including uimage header).
+
+    config FDL2_IMAGE_START
+        hex "FDL2 uimage SRAM start"
+        default 0x818000 if SOC_8910
+        help
+            FDL2 uimage SRAM start (not the code start address).
+
+    config FDL2_IMAGE_SIZE
+        hex "FDL2 uimage SRAM size"
+        default 0x10000 if SOC_8910
+        help
+            FDL2 uimage size (including uimage header).
+
+    config BOOT_TTB_START
+        hex "boot TTB start"
+        default 0x828000
+        help
+            Location of TTB memory. It will be used when MMU is enabled.
+            To make life easier, it is reserved even MMU is not enabled.
+
+            Don't change it unless you know what you are doing.
+
+    config BOOT_TTB_SIZE
+        hex "boot TTB size"
+        default 0x4400
+        help
+            Don't change it unless you know what you are doing.
+
+    config BOOT_EXCEPTION_STACK_START
+        hex "boot exception stack start"
+        default 0x82c400
+        help
+            Location of stack for all exception modes.
+
+            Don't change it unless you know what you are doing.
+
+    config BOOT_SVC_STACK_SIZE
+        hex "boot SVC stack size"
+        default 0xa00
+        help
+            Stack size of supervisor mode.
+
+            Don't change it unless you know what you are doing.
+
+    config BOOT_IRQ_STACK_SIZE
+        hex "boot IRQ stack size"
+        default 0x200
+        help
+            Stack size of IRQ mode.
+
+            Don't change it unless you know what you are doing.
+
+    config BOOT_SRAM_HEAP_START
+        hex "boot SRAM heap start"
+        default 0x82d000
+
+    config BOOT_SRAM_HEAP_SIZE
+        hex "boot SRAM_heap size"
+        default 0x13000
+endif
+
+config BOOT_TIMER_IRQ_ENABLE
+    bool "enable timer IRQ"
+    default n
+    help
+        When enabled, interrupt will be enabled in bootloader, and timer
+        IRQ will be enabled. It is only used to feed external watchdog.
+
+if BOOT_TIMER_IRQ_ENABLE
+    config BOOT_TIMER_PERIOD
+    int "boot timer period (ms)"
+    default 500
+    help
+        Bootloader timer period, in milliseconds.
+endif
+
+config NVBIN_FIXED_SIZE
+    hex "NV bin fixed size"
+    default 0x20000 if SOC_8910
+    help
+        At nv backup, fixed size is needed for nv bin read and write.
+        This size should be large enough to hold all fixed nv bin.
+
+config FDL_UART_BAUD
+    int "Baud rate of default FDL UART"
+    default 921600 if SOC_8910
+    default 921600 if SOC_8811
+    default 115200 if SOC_6760
+
+choice
+    prompt "FDL default UART"
+    default FDL_DEFAULT_UART2
+
+    config FDL_DEFAULT_UART1
+        bool "UART1"
+
+    config FDL_DEFAULT_UART2
+        bool "UART2"
+
+    config FDL_DEFAULT_UART3
+        bool "UART3"
+endchoice
+
+config FDL_DEFAULT_UART
+    string
+    default "DRV_NAME_UART1" if FDL_DEFAULT_UART1
+    default "DRV_NAME_UART2" if FDL_DEFAULT_UART2
+    default "DRV_NAME_UART3" if FDL_DEFAULT_UART3
+    default ""
+
+endmenu

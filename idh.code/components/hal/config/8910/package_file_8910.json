@@ -1,0 +1,10 @@
+{
+    "format": "OldBinaryLE",
+    "base_path": "@SOURCE_TOP_DIR@",
+    "files": [
+        {
+            "origin": "@TODO@",
+            "to": "@TODO@"
+        }
+    ]
+}

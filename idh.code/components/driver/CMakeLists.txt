@@ -1,0 +1,111 @@
+# Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+# All rights reserved.
+#
+# This software is supplied "AS IS" without any warranties.
+# RDA assumes no responsibility or liability for the use of the software,
+# conveys no license or title under any patent, copyright, or mask work
+# right to the product. RDA reserves the right to make changes in the
+# software without notification.  RDA also make no representation or
+# warranty that such application will be suitable for the specified use
+# without further testing or modification.
+
+configure_file(include/drv_config.h.in ${BINARY_TOP_DIR}/include/drv_config.h)
+
+set(target driver)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dummy.c "/* dummy */")
+add_library(${target} STATIC ${CMAKE_CURRENT_BINARY_DIR}/dummy.c)
+set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
+target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_DRIVER)
+target_include_directories(${target} PUBLIC include)
+target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} src)
+target_link_libraries(${target} PRIVATE hal kernel fs fsmount nanopb diag)
+target_include_targets(${target} PRIVATE nvm net calclib apploader)
+
+nanopbgen(src/rtc/drv_rtc.proto)
+
+if(CONFIG_SOC_8910)
+    target_sources(${target} PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/drv_rtc.pb.c
+        src/spi_flash/drv_spi_flash.c
+        src/uart/drv_dma_uart.c
+        src/rtc/drv_rtc.c
+        src/rtc/drv_rtc_2720.c
+        src/debughost/drv_debughost.c
+        src/debughost/drv_host_cmd.c
+        src/debughost/drv_hostcmd_readwrite.c
+        src/debughost/drv_hostcmd_sys.c
+        src/drv_ifc.c
+        src/drv_wdt.c
+        src/drv_md_nvm.c
+        src/drv_ipc_at.c
+        src/drv_axidma.c
+        src/drv_pmic_intr.c
+        src/drv_charger.c
+        src/drv_gpio_8910.c
+        src/drv_gpo_8910.c
+        src/drv_serial.c
+        src/drv_camera.c
+        src/image_sensor/camera_gc032a.c
+        src/image_sensor/image_sensor.c
+        src/drv_keypad.c
+        src/drv_adc.c
+        src/drv_i2c.c
+        src/drv_wcn.c
+        src/drv_wcn_wifi.c
+        src/drv_efuse.c
+        src/drv_efuse_pmic.c
+        src/drv_aes.c
+        src/drv_secure.c
+        src/drv_sdmmc.c
+        src/drv_usb.cpp
+        src/usb/usb_composite_device.c
+        src/usb/usb_serial.c
+        src/usb/usb_ether.c
+        src/usb/f_serial.c
+        src/usb/f_rndis.c
+        src/usb/f_ecm.c
+        src/usb/rndis_data.c
+        src/usb/rndis.c
+        src/usb/ecm_data.c
+        src/usb/udc.c
+        src/usb/udc_dwc.c
+        src/usb/udc_platform_8910.c
+    )
+endif()
+
+if(CONFIG_LCD_SUPPORT)
+    target_sources(${target} PRIVATE
+        src/drv_lcd_cfg.c
+        src/drv_lcd.c
+        src/lcd/drv_lcd_gc9305.c
+        src/lcd/drv_lcd_st7735s.c
+        src/lcd_v2/drv_lcd_v2.c
+        src/lcd_v2/drv_panel_gc9305.c
+    )
+endif()
+
+if((CONFIG_SOC_8955) OR (CONFIG_SOC_8909))
+    target_sources(${target} PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/drv_rtc.pb.c
+        src/spi_flash/drv_spi_flash.c
+        src/uart/drv_ifc_uart.c
+        src/rtc/drv_rtc.c
+        src/rtc/drv_rtc_calendar.c
+        src/debughost/drv_debughost.c
+        src/debughost/drv_host_cmd.c
+        src/debughost/drv_hostcmd_readwrite.c
+        src/debughost/drv_hostcmd_sys.c
+        src/drv_ifc.c
+        src/drv_i2c.c
+        src/drv_charger_8909.c
+    )
+endif()
+
+if(CONFIG_SOC_6760)
+target_sources(${target} PRIVATE src/drv_charger_8909.c)
+endif()
+
+include(core.cmake)
+
+relative_glob(srcs include/*.h src/*.c src/*.h src/*.cpp src/usb/*.h src/usb/*.c src/image_sensor/*.c core/*.h core/*.c)
+beautify_c_code(${target} ${srcs})

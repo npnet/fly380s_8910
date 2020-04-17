@@ -1,0 +1,35 @@
+
+SOURCE_FILES := \
+./r20180323_r2.1.1/src/ciscore/cis_data.c \
+./r20180323_r2.1.1/src/ciscore/cis_objects.c \
+./r20180323_r2.1.1/src/ciscore/er-coap-13/er-coap-13.c \
+./r20180323_r2.1.1/src/ciscore/cis_config.c \
+./r20180323_r2.1.1/src/ciscore/cis_observe.c \
+./r20180323_r2.1.1/src/ciscore/cis_bootstrap.c \
+./r20180323_r2.1.1/src/ciscore/cis_utils.c \
+./r20180323_r2.1.1/src/ciscore/cis_management.c \
+./r20180323_r2.1.1/src/ciscore/cis_transaction.c \
+./r20180323_r2.1.1/src/ciscore/cis_uri.c \
+./r20180323_r2.1.1/src/ciscore/std_object/std_object_security.c \
+./r20180323_r2.1.1/src/ciscore/std_object/std_object.c \
+./r20180323_r2.1.1/src/ciscore/cis_registration.c \
+./r20180323_r2.1.1/src/ciscore/cis_tlv.c \
+./r20180323_r2.1.1/src/ciscore/cis_core.c \
+./r20180323_r2.1.1/src/ciscore/cis_block1.c \
+./r20180323_r2.1.1/src/ciscore/cis_log.c \
+./r20180323_r2.1.1/src/ciscore/cis_memtrace.c \
+./r20180323_r2.1.1/src/ciscore/cis_json.c \
+./r20180323_r2.1.1/src/ciscore/cis_discover.c \
+./r20180323_r2.1.1/src/ciscore/cis_packet.c \
+./r20180323_r2.1.1/src/ciscore/cis_list.c \
+./r20180323_r2.1.1/src/adapter/win/cis_if_net.c \
+./r20180323_r2.1.1/src/adapter/win/cis_if_sys.c \
+
+#./r20180323_r2.1.1/src/adapter/win/win_sock.c \
+./r20180323_r2.1.1/src/adapter/win/win_timers.c \
+./r20180323_r2.1.1/src/sample/win/cis_sample_main.c \
+./r20180323_r2.1.1/src/sample/win/cis_sample_entry.c \
+
+SOURCE_INCLUDE := \
+	${LOCAL_NAME}/src/r20180323_r2.1.1/src/ciscore
+

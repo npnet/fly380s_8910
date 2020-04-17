@@ -1,0 +1,11 @@
+xcpu_sp_context
+g_bootResetCause
+g_bootBootMode
+g_bootRomVersionNumber
+
+boot_InvalidCache
+boot_InvalidICache
+boot_InvalidDCache
+boot_FlushDCache
+boot_DcacheFlushAddrRange
+osiDebugEvent

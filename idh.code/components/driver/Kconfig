@@ -1,0 +1,156 @@
+# Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+# All rights reserved.
+#
+# This software is supplied "AS IS" without any warranties.
+# RDA assumes no responsibility or liability for the use of the software,
+# conveys no license or title under any patent, copyright, or mask work
+# right to the product. RDA reserves the right to make changes in the
+# software without notification.  RDA also make no representation or
+# warranty that such application will be suitable for the specified use
+# without further testing or modification.
+
+menu "Driver configuration"
+
+config DEBUGHOST_RX_USE_IFC
+    bool "Debughost rx use IFC"
+    default n
+    help
+        When debughost RX uses IFC, one additional IFC channel will be
+        occupied. Though it is possible there is data lose without IFC,
+        it is recommended not to use IFC.
+
+if DEBUGHOST_RX_USE_IFC
+config DEBUGHOST_RX_DMA_SIZE
+    hex "Debughost rx DMA size"
+    default 0x200
+    help
+        Debughost RX DMA size. The size mus be multiple of D-cache
+        line size.
+endif
+
+config DEBUGHOST_RX_BUF_SIZE
+    hex "Debughost rx buffer size"
+    default 0x200
+    help
+        Debughost RX buffer size.
+
+config HOST_CMD_ENGINE_MAX_PACKET_SIZE
+    hex "Host command engine packet size"
+    default 0x2020
+    help
+        The maximum packet size of host command engine.
+
+config UART_BLUESCREEN_ENABLE
+    bool "Enable UART daemon on blue screen"
+    default y
+    help
+        At panic, start the daemon on UART. Usually, the UART will be the same
+        as AT UART, due to AT can't work at blue screen. Also, the UART will
+        work at fixed higher baud rate.
+
+if UART_BLUESCREEN_ENABLE
+choice
+    prompt "UART used in blue screen"
+    default UART_BLUESCREEN_UART2 if SOC_8955 || SOC_8909
+    default UART_BLUESCREEN_UART1
+    help
+        UART to be used in blue screen mode. It is suggested to reuse AT UART,
+        though it is not necessary.
+
+    config UART_BLUESCREEN_UART1
+        bool "UART1"
+
+    config UART_BLUESCREEN_UART2
+        bool "UART2"
+
+    config UART_BLUESCREEN_UART3
+        bool "UART3"
+endchoice
+
+config UART_BLUESCREEN
+    string
+    default "DRV_NAME_UART1" if UART_BLUESCREEN_UART1
+    default "DRV_NAME_UART2" if UART_BLUESCREEN_UART2
+    default "DRV_NAME_UART3" if UART_BLUESCREEN_UART3
+    default ""
+
+config UART_BLUESCREEN_BAUD
+    int "Baud rate of bluescreen UART"
+    default 921600
+    help
+        It is suggested to set a higher baud rate in blue screen mode.
+
+        To reduce complexity in blue screen mode, only limited baud rates are
+        supported.
+endif
+
+config UART_AUTOMODE_DEFAULT_BAUD
+    int "Default baud rate of adaptive mode"
+    default 115200 if SOC_8910
+    default 921600 if SOC_6760
+    default 115200 if SOC_8955
+    default 57600 if SOC_8909
+    default 115200 if SOC_8811
+    help
+        It is suggested to set a baud rate when UART in adaptive baud rate mode.
+        UART Tx can send data througt the baud rate.
+
+
+config SUPPORT_BATTERY_CHARGER
+    bool "support battery charge"
+    default y
+    help
+        enable charger.
+
+config SUPPORT_EXT_FLASH
+    bool "support extra flash"
+    default n
+    help
+        When enable, it will config clock about FLASH1 to support extra flash.
+
+config USB_SUPPORT
+    bool "support usb"
+    default y if SOC_8910
+    default n
+
+if USB_SUPPORT
+config USB_CONNECT_TIMEOUT
+    int "usb connect timeout"
+    default 10000
+    help
+        After charger on interrupt triggered, we should enable the usb controller,
+        if there is not a usb host but a pure charger, we should close the controller
+        to save power.
+        The software judge there is a pure charger or usb host by set address command,
+        if more than this <USB_CONNECT_TIMEOUT> milliseconds did not receive set address,
+        the software close the usb controller.
+
+config USB_DETECT_DEBOUNCE_TIME
+    int "usb debounce time in milliseconds before eumerating"
+    default 800
+    help
+        Debuouce a little milliseconds before start enumerating.
+endif
+
+config LCD_SUPPORT
+    bool "support lcd"
+    default y if SOC_8910
+    default n
+    help
+        Whether LCD is supported.
+
+if LCD_SUPPORT
+config SUPPORT_LCD_GC9305
+    bool "support GC9305 panel"
+    default y
+    help
+        Support GC9305 LCD panel
+
+config SUPPORT_LCD_ST7735S
+    bool "support ST7735S panel"
+    default y
+    help
+        Support ST7735S LCD panel
+
+endif
+endmenu
