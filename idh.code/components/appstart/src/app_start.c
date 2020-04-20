@@ -60,6 +60,7 @@
 #include "srv_power_manage.h"
 #include "srv_keypad.h"
 #include "srv_usb.h"
+#include "poc.h"
 
 #ifdef CONFIG_HEADSET_DETECT_SUPPORT
 #include "drv_headset.h"
@@ -415,4 +416,8 @@ void osiAppStart(void)
     // wait a while for PM source created
     osiThreadSleep(10);
     osiPmStart();
+
+#ifdef CONFIG_POC_SUPPORT
+	osiThreadCreate("pocStart", pocStart, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+#endif
 }
