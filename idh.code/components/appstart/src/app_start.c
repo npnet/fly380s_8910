@@ -56,6 +56,7 @@
 #include "audio_device.h"
 #include <stdlib.h>
 #include "tts_player.h"
+#include "poc.h"
 
 #define CHECK_RUN_MODE_TIMEOUT (500) // ms
 
@@ -302,4 +303,8 @@ void osiAppStart(void)
     // the followings should be removed.
     osiThreadSleep(1000);
     drvDhostRestoreConfig();
+
+#ifdef CONFIG_POC_SUPPORT
+	osiThreadCreate("pocStart", pocStart, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+#endif
 }

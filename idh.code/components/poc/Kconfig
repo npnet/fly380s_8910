@@ -1,0 +1,46 @@
+# Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+# All rights reserved.
+#
+# This software is supplied "AS IS" without any warranties.
+# RDA assumes no responsibility or liability for the use of the software,
+# conveys no license or title under any patent, copyright, or mask work
+# right to the product. RDA reserves the right to make changes in the
+# software without notification.  RDA also make no representation or
+# warranty that such application will be suitable for the specified use
+# without further testing or modification.
+
+menu "POC"
+
+config POC_SUPPORT
+    bool "POC supported"
+    default y
+    help
+        When enabled, at least one TTS engine should be supported.
+
+if POC_SUPPORT
+config POC_AUDIO_RECORDER_SUPPORT
+    bool "TTS thread stack size"
+    default y
+    help
+        TTS engine will run in separated thread. The stack size in bytes
+        shall be determined by the used TTS engine.
+
+config POC_AUDIO_PLAYER_SUPPORT
+    bool "TTS synthesis PCM sample rate"
+    default y
+    help
+        TTS engine output PCM sample rate. And the format is fixed to
+        signed 16bits, mono.
+
+config POC_KEYPAD_SUPPORT
+    bool "Enable dummy TTS engine"
+    default y
+    help
+        Dummy TTS engine is not a real TTS engine. It will synthesis text
+        into some tones. It is just to demonstrate how to integrate TTS
+        engine.
+
+        When real TTS engine is used, it must be disabled.
+endif
+
+endmenu

@@ -27,7 +27,7 @@ if(CONFIG_SOC_8910)
     target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_APPSTART)
     target_link_group(${target} PRIVATE
         atr ats diag nvm kernel osi_lib driver ml bdev fs fsmount net hal mal cfw http fupdate
-        service apploader audio tts lvgl
+        service apploader audio tts lvgl poc
         ${libc_file_name} ${libgcc_file_name}
     )
 endif()

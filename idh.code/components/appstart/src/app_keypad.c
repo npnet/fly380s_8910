@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "diag_auto_test.h"
+#include "poc.h"
 
 #define POWER_KEY_PRESSED_TIMEOUT (3000) // ms
 
@@ -66,6 +67,9 @@ static void _appKeyCB(keyMap_t id, keyState_t evt, void *p)
         }
     }
     else
+#ifdef CONFIG_POC_KEYPAD_SUPPORT
+    if(!pocKeypadHandle(id, evt, p))
+#endif
     {
         OSI_LOGI(0, "key id %d,status %d", id, status);
     }
