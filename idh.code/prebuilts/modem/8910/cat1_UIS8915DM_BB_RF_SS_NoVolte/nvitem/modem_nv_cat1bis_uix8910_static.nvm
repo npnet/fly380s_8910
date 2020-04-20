@@ -5452,7 +5452,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9
+    ITEM_CONTENT = 0xB
     ITEM_INDEX   = 543
     ITEM_PARENT  = 542
     ITEM_DESC    =  
@@ -5652,7 +5652,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C22
     ITEM_INDEX   = 563
     ITEM_PARENT  = 562
     ITEM_DESC    =  
@@ -5672,7 +5672,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C14
     ITEM_INDEX   = 565
     ITEM_PARENT  = 564
     ITEM_DESC    =  
