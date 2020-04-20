@@ -40,7 +40,7 @@ OSI_SYSNV_VAR(bool gSysnvDeepSleepEnabled, true);
 OSI_SYSNV_VAR(bool gSysnvPsmSleepEnabled, false);
 OSI_SYSNV_VAR(int gSysnvUsbWorkMode, 2);
 OSI_SYSNV_VAR(int gSysnvTraceDevice, 1); // osi_trace.h
-OSI_SYSNV_VAR(int gSysnvDiagDevice, 1);  // diag.h
+OSI_SYSNV_VAR(int gSysnvDiagDevice, 2);  // diag.h
 OSI_SYSNV_VAR(bool gSysnvSimHotPlug, true);
 OSI_SYSNV_VAR(bool gSysnvSimVoltTrigMode, true);
 OSI_SYSNV_VAR(int gSysnvUsbDetMode, 0); // drv_usb.h
