@@ -18,28 +18,25 @@
 #define LOG_TAG_POC OSI_MAKE_LOG_TAG('P', 'O', 'C', ' ')
 
 /**
- * Whether TTS player is supported
+ * Whether POC is supported
  */
 #cmakedefine CONFIG_POC_SUPPORT
 
 /**
- * Wheth the dummy TTS engine is enabled.
+ * Wheth the POC audio recorder is enabled.
  *
- * When a real TTS engine is used, it must be disabled.
  */
 #cmakedefine CONFIG_POC_AUDIO_RECORDER_SUPPORT
 
 /**
- * Wheth the dummy TTS engine is enabled.
+ * Wheth the POC audio player is enabled.
  *
- * When a real TTS engine is used, it must be disabled.
  */
 #cmakedefine CONFIG_POC_AUDIO_PLAYER_SUPPORT
 
 /**
- * Wheth the dummy TTS engine is enabled.
+ * Wheth the POC keypad is enabled.
  *
- * When a real TTS engine is used, it must be disabled.
  */
 #cmakedefine CONFIG_POC_KEYPAD_SUPPORT
 

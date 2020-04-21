@@ -26,18 +26,56 @@ OSI_EXTERN_C_BEGIN
  */
 void pocAudioRecorderInit(void);
 
+/**
+ * \brief create poc audio recorder
+ *
+ * param max_size     length of storage data
+ *       data_length  length of swap data which should be send others by callback
+ *       duration     duration of timer execute callback
+ *       callback     the timer execute the callback
+ *
+ * return ID of POC audio recorder, zero is failed
+ */
 POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
-													const uint32_t data_length,
-													const uint32_t duration,
-													pocAudioRecorderCallback_t callback);
+											   const uint32_t data_length,
+											   const uint32_t duration,
+											   pocAudioRecorderCallback_t callback);
 
-int pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id);
+/**
+ * \brief start poc audio recorder
+ *
+ * param recorder_id   ID of POC audio recorder
+ *
+ * return false is failed, true is success to record
+ */
+bool pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id);
 
+/**
+ * \brief reset poc audio recorder
+ *
+ * param recorder_id   ID of POC audio recorder
+ *
+ * return none
+ */
 int pocAudioRecorderReset(POCAUDIORECORDER_HANDLE recorder_id);
 
+/**
+ * \brief stop poc audio recorder
+ *
+ * param recorder_id   ID of POC audio recorder
+ *
+ * return false is fail to stop record, true is success
+ */
 bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id);
 
-bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE       recorder_id);
+/**
+ * \brief delete poc audio recorder
+ *
+ * param recorder_id   ID of POC audio recorder
+ *
+ * return return false is fail to delete record, true is success
+ */
+bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE recorder_id);
 
 OSI_EXTERN_C_END
 
