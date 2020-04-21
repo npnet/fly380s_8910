@@ -44,7 +44,7 @@ struct auPocMemWriter
     unsigned max_size;
     unsigned size;
     unsigned pos;
-    void    *user;
+    void    *user;                      //specified data
     char    *buf;
 };
 
@@ -59,29 +59,35 @@ struct auPocMemReader
     const void *buf;
     unsigned size;
     unsigned pos;
-    void    *user;
+    void    *user;                      //specified data
     osiSemaphore_t *sema;
 };
 
 typedef struct auPocMemReader auPocMemReader_t;
 
+/**
+ * poc audio player struct
+ */
 typedef struct 
 {
-	auPocMemWriter_t *writer;
-	auPocMemReader_t *reader;
-	auPlayer_t       *player;
+	auPocMemWriter_t *writer;           //storage data that through write API to play
+	auPocMemReader_t *reader;           //get data from writer to play
+	auPlayer_t       *player;           //real player
 } pocAudioPlayer_t;
 
+/**
+ * poc audio recorder struct
+ */
 typedef struct
 {
-	auPocMemWriter_t *writer;
-	auPocMemReader_t *reader;
-	auRecorder_t     *recorder;
-	uint8_t          *prvSwapData;
-	uint32_t          prvSwapDataLength;
-	uint32_t          prvTimerDuration;
-	osiTimer_t       *prvTimerID;
-	pocAudioRecorderCallback_t callback;
+	auPocMemWriter_t *writer;           //storage data that through write API to record
+	auPocMemReader_t *reader;           //get data from writer to send others
+	auRecorder_t     *recorder;         //real recorder
+	uint8_t          *prvSwapData;      //storage temp data
+	uint32_t          prvSwapDataLength;//length of temp data
+	uint32_t          prvTimerDuration; //duration of send data to others
+	osiTimer_t       *prvTimerID;       //timer which can execute callback in specified duration
+	pocAudioRecorderCallback_t callback;//user specify func
 } pocAudioRecorder_t;
 
 OSI_EXTERN_C_END

@@ -248,6 +248,16 @@ void pocAudioRecorderInit(void)
 	
 }
 
+/**
+ * \brief create poc audio recorder
+ *
+ * param max_size     length of storage data
+ *       data_length  length of swap data which should be send others by callback
+ *       duration     duration of timer execute callback
+ *       callback     the timer execute the callback
+ *
+ * return ID of POC audio recorder, zero is failed
+ */
 POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 													const uint32_t data_length,
 													const uint32_t duration,
@@ -317,7 +327,14 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 	return (POCAUDIORECORDER_HANDLE)recorder;
 }
 
-int pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
+/**
+ * \brief start poc audio recorder
+ *
+ * param recorder_id   ID of POC audio recorder
+ *
+ * return false is failed, true is success to record
+ */
+bool pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
 {
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
 	bool ret = auRecorderStartWriter(recorder->recorder, AUDEV_RECORD_TYPE_MIC, AUSTREAM_FORMAT_PCM, NULL, (auWriter_t *)recorder->writer);
@@ -329,6 +346,13 @@ int pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
 	return ret;
 }
 
+/**
+ * \brief reset poc audio recorder
+ *
+ * param recorder_id   ID of POC audio recorder
+ *
+ * return none
+ */
 int pocAudioRecorderReset(POCAUDIORECORDER_HANDLE recorder_id)
 {
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
@@ -340,6 +364,13 @@ int pocAudioRecorderReset(POCAUDIORECORDER_HANDLE recorder_id)
 	return 0;
 }
 
+/**
+ * \brief stop poc audio recorder
+ *
+ * param recorder_id   ID of POC audio recorder
+ *
+ * return false is fail to stop record, true is success
+ */
 bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id)
 {
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
@@ -349,6 +380,13 @@ bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id)
 	return auRecorderStop((auRecorder_t *)recorder->recorder);
 }
 
+/**
+ * \brief delete poc audio recorder
+ *
+ * param recorder_id   ID of POC audio recorder
+ *
+ * return return false is fail to delete record, true is success
+ */
 bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE       recorder_id)
 {
 	if(recorder_id == 0)
