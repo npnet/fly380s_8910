@@ -100,6 +100,7 @@ target_sources_if(CONFIG_LCD_SUPPORT THEN ${target} PRIVATE
     src/lcd/drv_lcd_st7735s.c
     src/lcd_v2/drv_lcd_v2.c
     src/lcd_v2/drv_panel_gc9305.c
+	src/lcd_v2/drv_panel_st7735s.c
 )
 
 include(core.cmake)
