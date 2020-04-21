@@ -24,6 +24,10 @@ static const drvLcdPanelDesc_t *gLcdDescs[] = {
 #ifdef CONFIG_SUPPORT_LCD_GC9305
     &gLcdGc9305Desc,
 #endif
+#ifdef CONFIG_SUPPORT_LCD_ST7735S
+	&gLcdSt7735sDesc,
+#endif
+
 };
 
 #endif

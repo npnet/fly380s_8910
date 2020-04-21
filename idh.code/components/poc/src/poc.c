@@ -22,50 +22,33 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "lvgl.h"
+#include "lv_gui_main.h"
+#include "drv_lcd_v2.h"
+#include "drv_names.h"
 
-static POCAUDIOPLAYER_HANDLE player_id     = 0;
-static POCAUDIORECORDER_HANDLE recorder_id = 0;
-
-void prvPocAudioDeviceCallback(uint8_t * data, uint32_t length)
+static void pocLvglStart(void)
 {
-	if(player_id == 0)
-	{
-		return;
-	}
-	pocAudioPlayerWriteData(player_id, data, length);
+	lv_obj_t * bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_size(bg, 160, 128);
+	lv_obj_t * label = lv_label_create(bg, NULL);
+	lv_label_set_text(label, "Flyscale");
+	lv_obj_align(label, bg, LV_ALIGN_CENTER, 0, 0);
 }
 
 void pocStart(void *ctx)
-{
-	int cout = 300;
-	while(0)
-	{
-		player_id     = pocAudioPlayerCreate(16000 * 20);
-		recorder_id   = pocAudioRecorderCreate(16000 * 20, 320, 20, prvPocAudioDeviceCallback);
-		
-		if(recorder_id != 0)
-		{
-			pocAudioRecorderStart(recorder_id);
-			osiThreadSleep(10000);
-			pocAudioRecorderStop(recorder_id);
-		}
+{	
+    OSI_LOGI(0, "lvgl poc start");
 
-		osiThreadSleep(500);
-		
-		if(player_id != 0)
-		{
-			pocAudioPlayerStart(player_id);
-			osiThreadSleep(10000);
-			pocAudioPlayerStop(player_id);
-		}
+    drvLcdInitV2();
 
-		pocAudioPlayerDelete(player_id);
-		pocAudioRecorderDelete(recorder_id);
-
-		player_id = 0;
-		recorder_id = 0;
-		cout--;
-	}
+    drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+    drvLcdOpenV2(lcd);
+    drvLcdFill(lcd, 0, NULL, true);
+    drvLcdSetBackLightEnable(lcd, true);
+    
+	lvGuiInit(pocLvglStart);
+	
 	osiThreadExit();
 }
 
