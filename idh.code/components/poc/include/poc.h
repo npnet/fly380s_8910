@@ -19,6 +19,7 @@
 #include "poc_audio_recorder.h"
 #include "poc_audio_player.h"
 #include "poc_keypad.h"
+#include "lv_include/lv_poc_type.h"
 
 OSI_EXTERN_C_BEGIN
 
