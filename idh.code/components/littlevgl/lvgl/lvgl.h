@@ -73,6 +73,8 @@ extern "C" {
 #include "src/lv_objx/lv_spinbox.h"
 
 #include "src/lv_draw/lv_img_cache.h"
+#include "../lv_lib_lodepng/lodepng.h"
+#include "../lv_lib_lodepng/lv_lodepng.h"
 
 /*********************
  *      DEFINES
