@@ -105,6 +105,8 @@ target_sources(${target} PRIVATE
     lvgl/src/lv_themes/lv_theme_material.c
     lvgl/src/lv_themes/lv_theme_nemo.c
     lvgl/src/lv_themes/lv_theme_mono.c
+	lv_lib_lodepng/lodepng.c
+	lv_lib_lodepng/lv_lodepng.c
 )
 
 if(CONFIG_SOC_8910)
