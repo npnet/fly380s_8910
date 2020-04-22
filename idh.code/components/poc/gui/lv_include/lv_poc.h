@@ -1,0 +1,33 @@
+#ifndef __LV_POC_H_
+#define __LV_POC_H_
+
+#include <stdio.h>
+#include "lvgl.h"
+#include "poc_config.h"
+#include "osi_log.h"
+#include "osi_api.h"
+#include "lv_include/lv_poc_type.h"
+#include "lv_include/lv_poc_activity.h"
+#include "lv_include/lv_poc_lib.h"
+#include "lv_objx/lv_poc_obj/lv_poc_obj.h"
+#include "lv_objx/lv_poc_list/lv_poc_list.h"
+#include "lv_objx/lv_poc_rb/lv_poc_rb.h"
+#include "lv_objx/lv_poc_win/lv_poc_win.h"
+#include "lv_objx/lv_poc_obj/lv_poc_img_resource.h"
+#include "lv_objx/lv_poc_obj/lv_poc_font_resource.h"
+#include "lv_apps/lv_poc_idle/lv_poc_idle.h"
+#include "lv_apps/lv_poc_setting/lv_poc_volum/lv_poc_volum.h"
+#include "lv_apps/lv_poc_setting/lv_poc_display/lv_poc_display.h"
+#include "lv_apps/lv_poc_setting/lv_poc_net/lv_poc_net.h"
+#include "lv_apps/lv_poc_setting/lv_poc_sim/lv_poc_sim.h"
+#include "lv_apps/lv_poc_setting/lv_poc_setting.h"
+#include "lv_apps/lv_poc_idle/lv_poc_idle.h"
+#include "lv_apps/lv_poc_main_menu/lv_poc_main_menu.h"
+#include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
+#include "lv_apps/lv_poc_group_list/lv_poc_group_list.h"
+#include "lv_apps/lv_poc_build_group/lv_poc_build_group.h"
+#include "lv_apps/lv_poc_single_call/lv_poc_single_call.h"
+#include "lv_apps/lv_poc_edeg_key/lv_poc_edeg_key.h"
+#include "lv_apps/lv_poc_about/lv_poc_about.h"
+
+#endif //__LV_POC_H_

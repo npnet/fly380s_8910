@@ -16,6 +16,7 @@
 #include "drv_lcd_v2.h"
 #include "drv_names.h"
 #include "drv_keypad.h"
+#include "lv_include/lv_poc_type.h"
 #include "lvgl.h"
 #include "osi_api.h"
 #include "osi_log.h"
@@ -46,6 +47,7 @@ typedef struct
     uint8_t lv_key;
 } lvGuiKeypadMap_t;
 
+#ifndef CONFIG_POC_KEYPAD_SUPPORT
 static const lvGuiKeypadMap_t gLvKeyMap[] = {
     {KEY_MAP_POWER, 0xf0},
     {KEY_MAP_SIM1, 0xf1},
@@ -70,6 +72,32 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {
     {KEY_MAP_SOFT_L, LV_KEY_PREV},
     {KEY_MAP_SOFT_R, LV_KEY_NEXT},
 };
+#else
+static const lvGuiKeypadMap_t gLvKeyMap[] = {
+    {KEY_MAP_POWER, 0xf0},
+    {KEY_MAP_SIM1, 0xf1},
+    {KEY_MAP_SIM2, 0xf2},
+    {KEY_MAP_0, ' '},
+    {KEY_MAP_1, LV_GROUP_KEY_VOL_DOWN},
+    {KEY_MAP_2, LV_GROUP_KEY_ESC},
+    {KEY_MAP_3, LV_GROUP_KEY_MB},
+    {KEY_MAP_4, LV_GROUP_KEY_POC},
+    {KEY_MAP_5, LV_GROUP_KEY_UP},
+    {KEY_MAP_6, LV_GROUP_KEY_DOWN},
+    {KEY_MAP_7, LV_GROUP_KEY_VOL_UP},
+    {KEY_MAP_8, LV_GROUP_KEY_ENTER},
+    {KEY_MAP_9, LV_GROUP_KEY_GP},
+    {KEY_MAP_STAR, ' '},
+    {KEY_MAP_WELL, ' '},
+    {KEY_MAP_OK, ' '},
+    {KEY_MAP_LEFT, ' '},
+    {KEY_MAP_RIGHT, ' '},
+    {KEY_MAP_UP, ' '},
+    {KEY_MAP_DOWN, ' '},
+    {KEY_MAP_SOFT_L, ' '},
+    {KEY_MAP_SOFT_R, ' '},
+};
+#endif
 
 static lvGuiContext_t gLvGuiCtx;
 

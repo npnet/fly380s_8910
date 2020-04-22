@@ -40,4 +40,10 @@
  */
 #cmakedefine CONFIG_POC_KEYPAD_SUPPORT
 
+/**
+ * Wheth the POC gui is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_SUPPORT
+
 #endif
