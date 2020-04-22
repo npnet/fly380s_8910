@@ -17,7 +17,7 @@ set(target lvgl)
 add_library(${target} STATIC ${dummy_c_file})
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_LVGL)
-target_include_directories(${target} PUBLIC ${CMAKE_CURRENT_SRC_DIR} lvgl include)
+target_include_directories(${target} PUBLIC ${CMAKE_CURRENT_SRC_DIR} lvgl include lv_lib_lodepng)
 target_include_targets(${target} PRIVATE kernel driver)
 
 target_sources(${target} PRIVATE
