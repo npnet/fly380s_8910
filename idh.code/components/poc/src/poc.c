@@ -26,7 +26,27 @@
 #include "lv_gui_main.h"
 #include "drv_lcd_v2.h"
 #include "drv_names.h"
+#include "lv_include/lv_poc.h"
 
+static void pocStartAnimation(void)\
+{
+	lv_obj_t * bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_size(bg, 160, 128);
+	lv_obj_t * label = lv_label_create(bg, NULL);
+	lv_label_set_text(label, "Flyscale");
+	lv_obj_align(label, bg, LV_ALIGN_CENTER, 0, 0);
+	osiThreadSleep(3000);
+	lv_obj_del(bg);
+}
+
+#ifdef CONFIG_POC_GUI_SUPPORT
+static void pocLvglStart(void)
+{
+	pocStartAnimation();
+	
+	lv_poc_create_idle();
+}
+#else
 static void pocLvglStart(void)
 {
 	lv_obj_t * bg = lv_obj_create(lv_scr_act(), NULL);
@@ -35,6 +55,7 @@ static void pocLvglStart(void)
 	lv_label_set_text(label, "Flyscale");
 	lv_obj_align(label, bg, LV_ALIGN_CENTER, 0, 0);
 }
+#endif
 
 void pocStart(void *ctx)
 {	

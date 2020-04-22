@@ -35,6 +35,12 @@ config POC_KEYPAD_SUPPORT
     default y
     help
         poc keypad should be supported.
+
+config POC_GUI_SUPPORT
+    bool "POC gui supported"
+    default y
+    help
+        poc gui should be supported.
 endif
 
 endmenu
