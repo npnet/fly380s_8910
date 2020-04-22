@@ -282,6 +282,7 @@ static void prvLvThreadEntry(void *param)
     d->task_timer = osiTimerCreate(d->thread, (osiCallback_t)prvLvTaskHandler, NULL);
 
     lv_init();
+    lv_lodepng_init();
     prvLvInitLcd();
     prvLvInitKeypad();
 
