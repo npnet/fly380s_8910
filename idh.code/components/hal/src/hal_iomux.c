@@ -705,7 +705,8 @@ void halIomuxInit(void)
     halIomuxSetInitConfig();
 
 #if defined(CONFIG_SOC_8910) && defined(CONFIG_TST_H_GROUND)
-    halIomuxSetPadPull(HAL_IOMUX_PAD_KEYIN_2, HAL_IOMUX_FORCE_PULL_UP_1);
+	//后续持续跟踪看修改是否合适
+    //halIomuxSetPadPull(HAL_IOMUX_PAD_KEYIN_2, HAL_IOMUX_FORCE_PULL_UP_1);
 #endif
 
     (void)osiPmSourceCreate(DRV_NAME_IOMUX, &gIomuxPmOps, NULL);
