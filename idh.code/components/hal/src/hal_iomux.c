@@ -123,10 +123,10 @@ void halIomuxInit(void)
     hwp_iomux->pad_sim_2_dio_cfg_reg = 0x10000;
 
 #ifdef CONFIG_TST_H_GROUND
-    REG_IOMUX_PAD_KEYIN_2_CFG_REG_T keyin2 = {};
-    keyin2.b.pad_keyin_2_pull_up = 1;
-    keyin2.b.pad_keyin_2_pull_frc = 1;
-    hwp_iomux->pad_keyin_2_cfg_reg = keyin2.v;
+    //REG_IOMUX_PAD_KEYIN_2_CFG_REG_T keyin2 = {};
+    //keyin2.b.pad_keyin_2_pull_up = 1;
+    //keyin2.b.pad_keyin_2_pull_frc = 1;
+    //hwp_iomux->pad_keyin_2_cfg_reg = keyin2.v;
 #endif
 
 #if defined(CONFIG_BOARD_SUPPORT_SIM1_DETECT) && (CONFIG_BOARD_SIM1_DETECT_GPIO == 4)
