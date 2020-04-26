@@ -16,6 +16,7 @@
 #include "drv_lcd_v2.h"
 #include "drv_names.h"
 #include "drv_keypad.h"
+#include "poc_config.h"
 #include "lv_include/lv_poc_type.h"
 #include "lvgl.h"
 #include "osi_api.h"
@@ -43,8 +44,8 @@ typedef struct
 
 typedef struct
 {
-    uint8_t keypad;
-    uint8_t lv_key;
+    uint32_t keypad;
+    uint32_t lv_key;
 } lvGuiKeypadMap_t;
 
 #ifndef CONFIG_POC_KEYPAD_SUPPORT
@@ -74,28 +75,28 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {
 };
 #else
 static const lvGuiKeypadMap_t gLvKeyMap[] = {
-    {KEY_MAP_POWER, 0xf0},
-    {KEY_MAP_SIM1, 0xf1},
-    {KEY_MAP_SIM2, 0xf2},
-    {KEY_MAP_0, ' '},
-    {KEY_MAP_1, LV_GROUP_KEY_VOL_DOWN},
-    {KEY_MAP_2, LV_GROUP_KEY_ESC},
-    {KEY_MAP_3, LV_GROUP_KEY_MB},
-    {KEY_MAP_4, LV_GROUP_KEY_POC},
-    {KEY_MAP_5, LV_GROUP_KEY_UP},
-    {KEY_MAP_6, LV_GROUP_KEY_DOWN},
-    {KEY_MAP_7, LV_GROUP_KEY_VOL_UP},
-    {KEY_MAP_8, LV_GROUP_KEY_ENTER},
-    {KEY_MAP_9, LV_GROUP_KEY_GP},
-    {KEY_MAP_STAR, ' '},
-    {KEY_MAP_WELL, ' '},
-    {KEY_MAP_OK, ' '},
-    {KEY_MAP_LEFT, ' '},
-    {KEY_MAP_RIGHT, ' '},
-    {KEY_MAP_UP, ' '},
-    {KEY_MAP_DOWN, ' '},
-    {KEY_MAP_SOFT_L, ' '},
-    {KEY_MAP_SOFT_R, ' '},
+    {KEY_MAP_POWER,  0xf0},
+    {KEY_MAP_SIM1,   0xf1},
+    {KEY_MAP_SIM2,   0xf2},
+    {KEY_MAP_0,      LV_GROUP_KEY_END},
+    {KEY_MAP_1,      LV_GROUP_KEY_VOL_DOWN},
+    {KEY_MAP_2,      LV_GROUP_KEY_ESC},
+    {KEY_MAP_3,      LV_GROUP_KEY_MB},
+    {KEY_MAP_4,      LV_GROUP_KEY_POC},
+    {KEY_MAP_5,      LV_GROUP_KEY_UP},
+    {KEY_MAP_6,      LV_GROUP_KEY_DOWN},
+    {KEY_MAP_7,      LV_GROUP_KEY_VOL_UP},
+    {KEY_MAP_8,      LV_GROUP_KEY_ENTER},
+    {KEY_MAP_9,      LV_GROUP_KEY_GP},
+    {KEY_MAP_STAR,   LV_GROUP_KEY_END},
+    {KEY_MAP_WELL,   LV_GROUP_KEY_END},
+    {KEY_MAP_OK,     LV_GROUP_KEY_END},
+    {KEY_MAP_LEFT,   LV_GROUP_KEY_END},
+    {KEY_MAP_RIGHT,  LV_GROUP_KEY_END},
+    {KEY_MAP_UP,     LV_GROUP_KEY_END},
+    {KEY_MAP_DOWN,   LV_GROUP_KEY_END},
+    {KEY_MAP_SOFT_L, LV_GROUP_KEY_END},
+    {KEY_MAP_SOFT_R, LV_GROUP_KEY_END},
 };
 #endif
 
@@ -211,7 +212,6 @@ static bool prvLvInitLcd(void)
 static void prvKeypadCallback(keyMap_t key, keyState_t evt, void *p)
 {
     lvGuiContext_t *d = &gLvGuiCtx;
-
     d->last_key = key;
     d->last_key_state = evt;
     d->keypad_pending = true;
@@ -310,7 +310,6 @@ static void prvLvThreadEntry(void *param)
     d->task_timer = osiTimerCreate(d->thread, (osiCallback_t)prvLvTaskHandler, NULL);
 
     lv_init();
-    lv_lodepng_init();
     prvLvInitLcd();
     prvLvInitKeypad();
 

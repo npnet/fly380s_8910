@@ -80,8 +80,8 @@ enum {
     LV_EVENT_LONG_PRESSED_REPEAT, /**< Called after `LV_INDEV_LONG_PRESS_TIME` in every
                                        `LV_INDEV_LONG_PRESS_REP_TIME` ms.  Not called if dragged.*/
     LV_EVENT_CLICKED,             /**< Called on release if not dragged (regardless to long press)*/
-    LV_EVENT_RELEASED,            /**< Called in every cases when the object has been released*/                                    
-    LV_EVENT_DRAG_BEGIN,		  
+    LV_EVENT_RELEASED,            /**< Called in every cases when the object has been released*/
+    LV_EVENT_DRAG_BEGIN,
     LV_EVENT_DRAG_END,
     LV_EVENT_DRAG_THROW_BEGIN,
     LV_EVENT_KEY,
@@ -108,7 +108,7 @@ typedef void (*lv_event_cb_t)(struct _lv_obj_t * obj, lv_event_t event);
   * on the object. */
 enum {
     /*General signals*/
-    LV_SIGNAL_CLEANUP, /**< Object is being deleted */
+    LV_SIGNAL_CLEANUP = 0, /**< Object is being deleted */
     LV_SIGNAL_CHILD_CHG, /**< Child was removed/added */
     LV_SIGNAL_CORD_CHG, /**< Object coordinates/size have changed */
     LV_SIGNAL_PARENT_SIZE_CHG, /**< Parent's size has changed */
@@ -124,7 +124,7 @@ enum {
     LV_SIGNAL_RELEASED,          /**< User pressed object for a short period of time, then released it. Not called if dragged. */
     LV_SIGNAL_LONG_PRESS,        /**< Object has been pressed for at least `LV_INDEV_LONG_PRESS_TIME`.  Not called if dragged.*/
     LV_SIGNAL_LONG_PRESS_REP,    /**< Called after `LV_INDEV_LONG_PRESS_TIME` in every `LV_INDEV_LONG_PRESS_REP_TIME` ms.  Not called if dragged.*/
-    LV_SIGNAL_DRAG_BEGIN,	
+    LV_SIGNAL_DRAG_BEGIN,
     LV_SIGNAL_DRAG_END,
 
     /*Group related*/
@@ -133,7 +133,7 @@ enum {
     LV_SIGNAL_CONTROL,
     LV_SIGNAL_GET_EDITABLE,
 };
-typedef uint8_t lv_signal_t;
+typedef int32_t lv_signal_t;
 
 typedef lv_res_t (*lv_signal_cb_t)(struct _lv_obj_t * obj, lv_signal_t sign, void * param);
 

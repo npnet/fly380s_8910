@@ -129,7 +129,7 @@ typedef struct{
     UINT32 charge_cur_mA;    // current
     INT32 battery_temp;     // temperature
     int8_t battery_value;     // surplus electric quantity
-    int8_t charging;         // is charging 
+    int8_t charging;         // is charging
 }battery_values_t;
 
 typedef enum
@@ -173,24 +173,24 @@ typedef enum
 
 typedef enum
 {
-	LV_GROUP_KEY_UP    	    = LV_KEY_UP,  /*0x11*/
-	LV_GROUP_KEY_DOWN  	    = LV_KEY_DOWN,  /*0x12*/
-	LV_GROUP_KEY_RIGHT 	    = LV_KEY_RIGHT,  /*0x13*/
-	LV_GROUP_KEY_LEFT  	    = LV_KEY_LEFT,  /*0x14*/
-	LV_GROUP_KEY_ESC   	    = LV_KEY_ESC,  /*0x1B*/
-	LV_GROUP_KEY_DEL   	    = LV_KEY_DEL, /*0x7F*/
-	LV_GROUP_KEY_BACKSPACE  = LV_KEY_BACKSPACE,   /*0x08*/
-	LV_GROUP_KEY_ENTER 	    = LV_KEY_ENTER,  /*0x0A, '\n'*/
-	LV_GROUP_KEY_NEXT  	    = LV_KEY_NEXT,   /*0x09, '\t'*/
-	LV_GROUP_KEY_PREV 	    = LV_KEY_PREV,  /*0x0B, '*/
-	LV_GROUP_KEY_HOME  	    = LV_KEY_HOME,   /*0x02, STX*/
-	LV_GROUP_KEY_END  	    = LV_KEY_END,   /*0x03, ETX*/
-	LV_GROUP_KEY_GP         = 43,
-	LV_GROUP_KEY_MB         = 44,
-	LV_GROUP_KEY_VOL_DOWN   = 45,
-	LV_GROUP_KEY_VOL_UP     = 46,
-	LV_GROUP_KEY_POC        = 47,
-	LV_GROUP_KEY_SET        = 48
+	LV_GROUP_KEY_UP             = LV_KEY_UP,  /*0x11*/
+	LV_GROUP_KEY_DOWN           = LV_KEY_DOWN,  /*0x12*/
+	LV_GROUP_KEY_RIGHT          = LV_KEY_RIGHT,  /*0x13*/
+	LV_GROUP_KEY_LEFT           = LV_KEY_LEFT,  /*0x14*/
+	LV_GROUP_KEY_ESC            = LV_KEY_ESC,  /*0x1B*/
+	LV_GROUP_KEY_DEL            = LV_KEY_DEL, /*0x7F*/
+	LV_GROUP_KEY_BACKSPACE      = LV_KEY_BACKSPACE,   /*0x08*/
+	LV_GROUP_KEY_ENTER          = LV_KEY_ENTER,  /*0x0A, '\n'*/
+	LV_GROUP_KEY_NEXT           = LV_KEY_NEXT,   /*0x09, '\t'*/
+	LV_GROUP_KEY_PREV           = LV_KEY_PREV,  /*0x0B, '*/
+	LV_GROUP_KEY_HOME           = LV_KEY_HOME,   /*0x02, STX*/
+	LV_GROUP_KEY_END            = LV_KEY_END,   /*0x03, ETX*/
+	LV_GROUP_KEY_GP             = 43,
+	LV_GROUP_KEY_MB             = 44,
+	LV_GROUP_KEY_VOL_DOWN       = 45,
+	LV_GROUP_KEY_VOL_UP         = 46,
+	LV_GROUP_KEY_POC            = 47,
+	LV_GROUP_KEY_SET            = 48
 } LV_GROUP_KEY_E;
 
 typedef enum {
