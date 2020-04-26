@@ -31,9 +31,7 @@ lv_poc_display_t         *lv_poc_base_activity_nostabar_nocontrol_obj  = NULL;
 
 lv_group_t                      *poc_indev_group;
 
-#if PC_SIMULATOR_DEBUG != 1
 lv_indev_t               *poc_keypad_dev = NULL;
-#endif
 
 
 lv_poc_activity_t       * current_activity;
@@ -116,7 +114,7 @@ static struct _lv_poc_stack_t
 /*******************
 *     NAME:    lv_poc_theme_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯¶Ô½²»úÖ÷Ìâ
+* DESCRIPT:    åˆå§‹åŒ–å¯¹è®²æœºä¸»é¢˜
 *     DATE:    2019-10-24
 ********************/
 static bool lv_poc_theme_init(void);
@@ -124,7 +122,7 @@ static bool lv_poc_theme_init(void);
 /*******************
 *     NAME:    lv_poc_status_bar_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯¶Ô½²»ú×´Ì¬À¸
+* DESCRIPT:    åˆå§‹åŒ–å¯¹è®²æœºçŠ¶æ€æ 
 *     DATE:    2019-10-24
 ********************/
 static bool lv_poc_status_bar_init(void);
@@ -132,7 +130,7 @@ static bool lv_poc_status_bar_init(void);
 /*******************
 *     NAME:    lv_poc_init_stabar_time_label
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬À¸Ê±¼älabel
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€æ æ—¶é—´label
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_time_label(void);
@@ -140,7 +138,7 @@ static bool lv_poc_init_stabar_time_label(void);
 /*******************
 *     NAME:    lv_poc_init_stabar_battery_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬À¸µç³ØÍ¼±ê
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€æ ç”µæ± å›¾æ ‡
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_battery_img(void);
@@ -148,7 +146,7 @@ static bool lv_poc_init_stabar_battery_img(void);
 /*******************
 *     NAME:    lv_poc_stabar_sim_clean
 *   AUTHOR:    lugj
-* DESCRIPT:    Çå¿Õ×´Ì¬simÍ¼±ê
+* DESCRIPT:    æ¸…ç©ºçŠ¶æ€simå›¾æ ‡
 *     DATE:    2020-1-20
 ********************/
 static void lv_poc_stabar_sim_clean(lv_poc_status_bar_sim_obj_t * sim_obj);
@@ -156,7 +154,7 @@ static void lv_poc_stabar_sim_clean(lv_poc_status_bar_sim_obj_t * sim_obj);
 /*******************
 *     NAME:    lv_poc_init_stabar_sim1_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬sim1Í¼±ê
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€sim1å›¾æ ‡
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_sim1_img(void);
@@ -164,7 +162,7 @@ static bool lv_poc_init_stabar_sim1_img(void);
 /*******************
 *     NAME:    lv_poc_init_stabar_sim2_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬sim2Í¼±ê
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€sim2å›¾æ ‡
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_sim2_img(void);
@@ -172,7 +170,7 @@ static bool lv_poc_init_stabar_sim2_img(void);
 /*******************
 *     NAME:    lv_poc_init_stabar_signal_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬signalÍ¼±ê
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€signalå›¾æ ‡
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_signal_img(void);
@@ -181,7 +179,7 @@ static bool lv_poc_init_stabar_signal_img(void);
 /*******************
 *     NAME:    lv_poc_display_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯ÏÔÊ¾ÇøÓò
+* DESCRIPT:    åˆå§‹åŒ–æ˜¾ç¤ºåŒºåŸŸ
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_display_init(void);
@@ -190,7 +188,7 @@ static bool lv_poc_display_init(void);
 /*******************
 *     NAME:    lv_poc_control_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯¿ØÖÆÇøÓò
+* DESCRIPT:    åˆå§‹åŒ–æ§åˆ¶åŒºåŸŸ
 *     DATE:    2019-10-25
 ********************/
 static void lv_poc_control_init(lv_poc_activity_t *activity,
@@ -201,7 +199,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
 /*******************
 *     NAME:    lv_poc_activity_list_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯activity²éÑ¯±í
+* DESCRIPT:    åˆå§‹åŒ–activityæŸ¥è¯¢è¡¨
 *     DATE:    2019-10-25
 ********************/
 static void	lv_poc_activity_list_init(void);
@@ -210,7 +208,7 @@ static void	lv_poc_activity_list_init(void);
 /*******************
 *     NAME:    lv_poc_activity_list_insert
 *   AUTHOR:    lugj
-* DESCRIPT:    ½«new_activity²åÈëactivity²éÑ¯±í
+* DESCRIPT:    å°†new_activityæ’å…¥activityæŸ¥è¯¢è¡¨
 *     DATE:    2019-10-30
 ********************/
 static bool	lv_poc_activity_list_insert(lv_poc_activity_t * new_activity);
@@ -220,7 +218,7 @@ static bool	lv_poc_activity_list_insert(lv_poc_activity_t * new_activity);
 /*******************
 *     NAME:    lv_poc_activity_list_delete
 *   AUTHOR:    lugj
-* DESCRIPT:    ½«old_activity´Óactivity²éÑ¯±íÖĞÉ¾³ı
+* DESCRIPT:    å°†old_activityä»activityæŸ¥è¯¢è¡¨ä¸­åˆ é™¤
 *     DATE:    2019-10-30
 ********************/
 static void	lv_poc_activity_list_delete(lv_poc_activity_t * old_activity);
@@ -228,7 +226,7 @@ static void	lv_poc_activity_list_delete(lv_poc_activity_t * old_activity);
 /*******************
 *     NAME:    lv_poc_is_keypad_msg
 *   AUTHOR:    lugj
-* DESCRIPT:    <C5>§Ø<CF><CA>?<F1><CA>?<B4><BC><FC><CF><FB>?
+* DESCRIPT:    <C5>Ğ¶<CF><CA>?<F1><CA>?<B4><BC><FC><CF><FB>?
 *     DATE:    2019-1-20
 ********************/
 static bool    lv_poc_is_keypad_msg(lv_signal_t sign, void * param);
@@ -236,7 +234,7 @@ static bool    lv_poc_is_keypad_msg(lv_signal_t sign, void * param);
 /*******************
 *     NAME:    lv_poc_signal_func
 *   AUTHOR:    lugj
-* DESCRIPT:    ¶Ô½²»ú½çÃæsignalº¯Êı
+* DESCRIPT:    å¯¹è®²æœºç•Œé¢signalå‡½æ•°
 *     DATE:    2019-10-31
 ********************/
 static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param);
@@ -244,7 +242,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 /*******************
 *     NAME:    lv_poc_design_func
 *   AUTHOR:    lugj
-* DESCRIPT:    ¶Ô½²»ú½çÃædesignº¯Êı
+* DESCRIPT:    å¯¹è®²æœºç•Œé¢designå‡½æ•°
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_design_cb(lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
@@ -252,7 +250,7 @@ static bool lv_poc_design_cb(lv_obj_t * obj, const lv_area_t * mask_p, lv_design
 /*******************
 *     NAME:    lv_poc_event_cb
 *   AUTHOR:    lugj
-* DESCRIPT:    ¶Ô½²»ú½çÃæeventº¯Êı
+* DESCRIPT:    å¯¹è®²æœºç•Œé¢eventå‡½æ•°
 *     DATE:    2020-03-30
 ********************/
 static void lv_poc_event_cb(lv_obj_t * obj, lv_event_t event);
@@ -260,7 +258,7 @@ static void lv_poc_event_cb(lv_obj_t * obj, lv_event_t event);
 /*******************
 *     NAME:    lv_poc_stack_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯½çÃæ¹ÜÀíÕ»
+* DESCRIPT:    åˆå§‹åŒ–ç•Œé¢ç®¡ç†æ ˆ
 *     DATE:    2019-10-25
 ********************/
 static void lv_poc_stack_init(void);
@@ -268,7 +266,7 @@ static void lv_poc_stack_init(void);
 /*******************
 *     NAME:    lv_poc_stack_push
 *   AUTHOR:    lugj
-* DESCRIPT:    Ñ¹Èë½çÃæ¹ÜÀíÕ»
+* DESCRIPT:    å‹å…¥ç•Œé¢ç®¡ç†æ ˆ
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_stack_push(lv_poc_activity_t *activity);
@@ -276,7 +274,7 @@ static bool lv_poc_stack_push(lv_poc_activity_t *activity);
 /*******************
 *     NAME:    lv_poc_stack_pop
 *   AUTHOR:    lugj
-* DESCRIPT:    µ¯³ö½çÃæ¹ÜÀíÕ»²¢É¾³ı
+* DESCRIPT:    å¼¹å‡ºç•Œé¢ç®¡ç†æ ˆå¹¶åˆ é™¤
 *     DATE:    2019-10-25
 ********************/
 static lv_poc_activity_t * lv_poc_stack_pop(void);
@@ -284,7 +282,7 @@ static lv_poc_activity_t * lv_poc_stack_pop(void);
 /*******************
 *     NAME:    lv_poc_stack_top
 *   AUTHOR:    lugj
-* DESCRIPT:    ²é¿´½çÃæ¹ÜÀíÕ»¶¥ÔªËØ
+* DESCRIPT:    æŸ¥çœ‹ç•Œé¢ç®¡ç†æ ˆé¡¶å…ƒç´ 
 *     DATE:    2019-10-25
 ********************/
 static lv_poc_activity_t * lv_poc_stack_top(void);
@@ -293,7 +291,7 @@ static lv_poc_activity_t * lv_poc_stack_top(void);
 /*******************
 *     NAME:    lv_poc_stabar_battery_task
 *   AUTHOR:    lugj
-* DESCRIPT:    ×´Ì¬À¸µç³ØÍ¼±ê¶¯Ì¬¸üĞÂÈÎÎñ
+* DESCRIPT:    çŠ¶æ€æ ç”µæ± å›¾æ ‡åŠ¨æ€æ›´æ–°ä»»åŠ¡
 *     DATE:    2020-1-22
 ********************/
 static void lv_poc_stabar_battery_task(void);
@@ -301,7 +299,7 @@ static void lv_poc_stabar_battery_task(void);
 /*******************
 *     NAME:    lv_poc_stabar_signal_task
 *   AUTHOR:    lugj
-* DESCRIPT:    ×´Ì¬À¸SIMÍ¼±ê¶¯Ì¬¸üĞÂÈÎÎñ
+* DESCRIPT:    çŠ¶æ€æ SIMå›¾æ ‡åŠ¨æ€æ›´æ–°ä»»åŠ¡
 *     DATE:    2020-1-22
 ********************/
 static void lv_poc_stabar_signal_task(void);
@@ -309,7 +307,7 @@ static void lv_poc_stabar_signal_task(void);
 /*******************
 *     NAME:    lv_exec_task
 *   AUTHOR:    lugj
-* DESCRIPT:    ÏòÌØ¶¨Ä¿±ê·¢ËÍsign
+* DESCRIPT:    å‘ç‰¹å®šç›®æ ‡å‘é€sign
 *     DATE:    2020-1-22
 ********************/
 static void lv_exec_task(lv_task_t * task);
@@ -334,12 +332,12 @@ static void lv_exec_task(lv_task_t * task);
 /*******************
 *     NAME:    lv_poc_theme_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯¶Ô½²»úÖ÷Ìâ
+* DESCRIPT:    åˆå§‹åŒ–å¯¹è®²æœºä¸»é¢˜
 *     DATE:    2019-10-24
 ********************/
 static bool lv_poc_theme_init(void)
 {
-// ³õÊ¼»¯°×É«Ö÷Ìâ
+// åˆå§‹åŒ–ç™½è‰²ä¸»é¢˜
     lv_style_copy(&theme_white_style_base,&lv_style_transp);
     theme_white_style_base.body.main_color = LV_COLOR_MAKE(0x00,0x00,0x00);
     theme_white_style_base.body.grad_color = LV_COLOR_MAKE(0x00,0x00,0x00);
@@ -470,7 +468,7 @@ static bool lv_poc_theme_init(void)
     theme_white_style_control.text.color = LV_COLOR_WHITE;
     theme_white_style_control.text.font = (lv_font_t *)poc_setting_conf->font.activity_control_font;
 
-// ³õÊ¼»¯ºÚÉ«Ö÷Ìâ
+// åˆå§‹åŒ–é»‘è‰²ä¸»é¢˜
     lv_style_copy(&theme_black_style_base,&lv_style_transp);
     theme_black_style_base.body.main_color = LV_COLOR_MAKE(0x00,0x00,0x00);
     theme_black_style_base.body.grad_color = LV_COLOR_MAKE(0x00,0x00,0x00);
@@ -616,7 +614,7 @@ static bool lv_poc_theme_init(void)
 /*******************
 *     NAME:    lv_poc_status_bar_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯¶Ô½²»ú×´Ì¬À¸
+* DESCRIPT:    åˆå§‹åŒ–å¯¹è®²æœºçŠ¶æ€æ 
 *     DATE:    2019-10-24
 ********************/
 static bool lv_poc_status_bar_init(void)
@@ -656,7 +654,7 @@ static bool lv_poc_status_bar_init(void)
 /*******************
 *     NAME:    lv_poc_init_stabar_time_label
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬À¸Ê±¼älabel
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€æ æ—¶é—´label
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_time_label(void)
@@ -731,7 +729,7 @@ static bool lv_poc_init_stabar_time_label(void)
 /*******************
 *     NAME:    lv_poc_init_stabar_battery_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬À¸µç³ØÍ¼±ê
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€æ ç”µæ± å›¾æ ‡
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_battery_img(void)
@@ -750,7 +748,7 @@ static bool lv_poc_init_stabar_battery_img(void)
 /*******************
 *     NAME:    lv_poc_stabar_sim_clean
 *   AUTHOR:    lugj
-* DESCRIPT:    Çå¿Õ×´Ì¬simÍ¼±ê
+* DESCRIPT:    æ¸…ç©ºçŠ¶æ€simå›¾æ ‡
 *     DATE:    2020-1-20
 ********************/
 static void lv_poc_stabar_sim_clean(lv_poc_status_bar_sim_obj_t * sim_obj)
@@ -785,7 +783,7 @@ static void lv_poc_stabar_sim_clean(lv_poc_status_bar_sim_obj_t * sim_obj)
 /*******************
 *     NAME:    lv_poc_init_stabar_sim1_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬sim1Í¼±ê
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€sim1å›¾æ ‡
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_sim1_img(void)
@@ -803,7 +801,7 @@ static bool lv_poc_init_stabar_sim1_img(void)
 /*******************
 *     NAME:    lv_poc_init_stabar_sim2_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬sim1Í¼±ê
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€sim1å›¾æ ‡
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_sim2_img(void)
@@ -821,7 +819,7 @@ static bool lv_poc_init_stabar_sim2_img(void)
 /*******************
 *     NAME:    lv_poc_init_stabar_sim2_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯×´Ì¬signalÍ¼±ê
+* DESCRIPT:    åˆå§‹åŒ–çŠ¶æ€signalå›¾æ ‡
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_signal_img(void)
@@ -833,7 +831,7 @@ static bool lv_poc_init_stabar_signal_img(void)
 /*******************
 *     NAME:    lv_poc_control_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯¿ØÖÆÇøÓò
+* DESCRIPT:    åˆå§‹åŒ–æ§åˆ¶åŒºåŸŸ
 *     DATE:    2019-10-25
 ********************/
 static void lv_poc_control_init(lv_poc_activity_t *activity,
@@ -896,7 +894,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
     lv_label_set_text(control->right_button, right_text);
     lv_label_set_align(control->right_button, LV_LABEL_ALIGN_CENTER);
     lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, 0, 0);
-    
+
     lv_refr_now(NULL);
 
 }
@@ -905,7 +903,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
 /*******************
 *     NAME:    lv_poc_activity_list_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯activity²éÑ¯±í
+* DESCRIPT:    åˆå§‹åŒ–activityæŸ¥è¯¢è¡¨
 *     DATE:    2019-10-25
 ********************/
 static void	lv_poc_activity_list_init(void)
@@ -923,7 +921,7 @@ static void	lv_poc_activity_list_init(void)
 /*******************
 *     NAME:    lv_poc_activity_list_insert
 *   AUTHOR:    lugj
-* DESCRIPT:    ½«new_activity²åÈëactivity²éÑ¯±í
+* DESCRIPT:    å°†new_activityæ’å…¥activityæŸ¥è¯¢è¡¨
 *     DATE:    2019-10-30
 ********************/
 static bool	lv_poc_activity_list_insert(lv_poc_activity_t * new_activity)
@@ -963,7 +961,7 @@ static bool	lv_poc_activity_list_insert(lv_poc_activity_t * new_activity)
 /*******************
 *     NAME:    lv_poc_activity_list_delete
 *   AUTHOR:    lugj
-* DESCRIPT:    ½«old_activity´Óactivity²éÑ¯±íÖĞÉ¾³ı
+* DESCRIPT:    å°†old_activityä»activityæŸ¥è¯¢è¡¨ä¸­åˆ é™¤
 *     DATE:    2019-10-30
 ********************/
 static void	lv_poc_activity_list_delete(lv_poc_activity_t * old_activity)
@@ -988,145 +986,124 @@ static void	lv_poc_activity_list_delete(lv_poc_activity_t * old_activity)
 /*******************
 *     NAME:    lv_poc_is_keypad_msg
 *   AUTHOR:    lugj
-* DESCRIPT:    <C5>§Ø<CF><CA>?<F1><CA>?<B4><BC><FC><CF><FB>?
+* DESCRIPT:    <C5>Ğ¶<CF><CA>?<F1><CA>?<B4><BC><FC><CF><FB>?
 *     DATE:    2019-1-20
 ********************/
 static bool lv_poc_is_keypad_msg(lv_signal_t sign, void * param)
 {
-    switch(sign)
-    {
-    case LV_SIGNAL_PRESSED:
-    case LV_SIGNAL_PRESSING:
-    case LV_SIGNAL_RELEASED:
-    case LV_SIGNAL_LONG_PRESS:
-    case LV_SIGNAL_LONG_PRESS_REP:
-    {
-        return true;
-    }
+	if(LV_SIGNAL_CONTROL == sign && NULL != param)
+	{
+		switch(*((uint32_t *)param))
+		{
+			case LV_GROUP_KEY_VOL_DOWN:
+			case LV_GROUP_KEY_VOL_UP:
+			case LV_GROUP_KEY_POC:
+			case LV_GROUP_KEY_ENTER:
+			case LV_GROUP_KEY_UP:
+			case LV_GROUP_KEY_ESC:
+			case LV_GROUP_KEY_GP:
+			case LV_GROUP_KEY_DOWN:
+			case LV_GROUP_KEY_MB:
+			{
+				return true;
+			}
 
-    case LV_SIGNAL_CONTROL:
-    {
-        switch(*(unsigned int *)param)
-        {
-        case LV_GROUP_KEY_GP:
-        case LV_GROUP_KEY_MB:
-        case LV_KEY_UP:
-        case LV_KEY_DOWN:
-        case LV_KEY_ENTER:
-        case LV_KEY_ESC:
-        case LV_GROUP_KEY_VOL_UP:
-        case LV_GROUP_KEY_VOL_DOWN:
-        case LV_GROUP_KEY_POC:
-        {
-            return true;
-        }
-
-        default:
-        {
-            break;
-        }
-        }
-        break;
-    }
-
-    default:
-    {
-        break;
-    }
-    }
+			default:
+			{
+				break;
+			}
+		}
+	}
     return false;
 }
 
 /*******************
 *     NAME:    lv_poc_signal_cb
 *   AUTHOR:    lugj
-* DESCRIPT:    ¶Ô½²»ú½çÃæsignalº¯Êı
+* DESCRIPT:    å¯¹è®²æœºç•Œé¢signalå‡½æ•°
 *     DATE:    2019-10-31
 ********************/
 static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 {
     lv_res_t ret = LV_RES_OK;
+    OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] obj <- 0x%p \n", obj);
+    OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] sign <- %d \n", sign);
+    OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] param <- 0x%p \n", param);
+
     bool is_keypad_msg = lv_poc_is_keypad_msg(sign, param);
     bool lcd_is_wakeup = poc_get_lcd_status();
     poc_setting_conf = lv_poc_setting_conf_read();
-    static unsigned int cur_key = 0;
+    uint32_t cur_key = 0;
 
-    if((false == is_keypad_msg && false == lcd_is_wakeup) || true == lcd_is_wakeup)
+    if(false == is_keypad_msg)
     {
         ret = (*ancient_signal_func)(obj,sign,param);
-    }
-    
-    if(true == is_keypad_msg && false == lcd_is_wakeup)
-    {
-        return ret;
-    }
 
-    unsigned char vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_MSG);
-
-    if(sign >= LV_SIGNAL_PRESSED && sign <= LV_SIGNAL_DRAG_END)
-    {
-        lv_poc_activity_t * activity = lv_poc_activity_list_lookup(obj);
-        if(sign == LV_SIGNAL_PRESSED)
+        if(ret != LV_RES_OK)
         {
-            unsigned int c = *(unsigned int *)param;
-            if(c == LV_GROUP_KEY_VOL_DOWN || c == LV_GROUP_KEY_VOL_UP)
+	        return ret;
+        }
+    }
+
+    if(!(sign == LV_SIGNAL_STYLE_CHG
+      || sign == LV_SIGNAL_PRESSED
+      || sign == LV_SIGNAL_PRESSING
+      || sign == LV_SIGNAL_PRESS_LOST
+      || sign == LV_SIGNAL_RELEASED
+      || sign == LV_SIGNAL_LONG_PRESS
+      || sign == LV_SIGNAL_LONG_PRESS_REP
+      || sign == LV_SIGNAL_DRAG_BEGIN
+      || sign == LV_SIGNAL_DRAG_END
+      || sign == LV_SIGNAL_FOCUS
+      || sign == LV_SIGNAL_DEFOCUS
+      || sign == LV_SIGNAL_CONTROL))
+	{
+		return ret;
+	}
+
+    lv_poc_activity_t * activity = lv_poc_activity_list_lookup(obj);
+    if(NULL == activity)
+    {
+	    return ret;
+    }
+
+    if(activity != current_activity)
+    {
+        OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] current activity is empty or is not current_activity\n");
+        //return ret;
+    }
+
+    uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_MSG);
+    if(is_keypad_msg)
+    {
+		cur_key = *((uint32_t *)param);
+		OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] cur_key <- %d \n", cur_key);
+		if(cur_key == LV_GROUP_KEY_VOL_DOWN)
+        {
+            if(vol_cur > 0)
             {
-                if(c == LV_GROUP_KEY_VOL_DOWN)
-                {
-                    if(vol_cur > 0)
-                    {
-                        vol_cur = vol_cur - 1;
-                        lv_poc_setting_set_current_volume(POC_MMI_VOICE_MSG , vol_cur, poc_setting_conf->btn_voice_switch);
-                    }
-                }
-                else if(c == LV_GROUP_KEY_VOL_UP)
-                {
-                    if(vol_cur < 11)
-                    {
-                        vol_cur = vol_cur + 1;
-                        lv_poc_setting_set_current_volume(POC_MMI_VOICE_MSG , vol_cur, poc_setting_conf->btn_voice_switch);
-                    }
-                }
-                return ret;
+                vol_cur = vol_cur - 1;
+                lv_poc_setting_set_current_volume(POC_MMI_VOICE_MSG , vol_cur, poc_setting_conf->btn_voice_switch);
             }
         }
-
-        if(activity == NULL)
-            return ret;
-
-        if(activity != current_activity)
+        else if(cur_key == LV_GROUP_KEY_VOL_UP)
         {
-            OSI_LOGI(0, "FUNC:%s, current activity is empty or is not current_activity\n", __func__);
-            //return ret;
-        }
-        
-        if(NULL != activity->signal_func)
-        {
-            if(sign == LV_SIGNAL_PRESSED && poc_setting_conf->btn_voice_switch == 1)
+            if(vol_cur < 11)
             {
-                switch(cur_key)
-                {
-	                case LV_GROUP_KEY_GP:
-	                case LV_GROUP_KEY_MB:
-	                case LV_GROUP_KEY_UP:
-	                case LV_GROUP_KEY_DOWN:
-	                case LV_GROUP_KEY_ENTER:
-	                case LV_GROUP_KEY_ESC:
-	                {
-	                    poc_play_btn_voice_one_time(vol_cur, 0);
-	                    break;
-	                }
-	                
-	                default:
-	                {
-	                    break;
-	                }
-                }
+                vol_cur = vol_cur + 1;
+                lv_poc_setting_set_current_volume(POC_MMI_VOICE_MSG , vol_cur, poc_setting_conf->btn_voice_switch);
             }
-
-            OSI_LOGI(0, "func:%s  obj=%d , sign=%d , key=%d\n", __func__, (int)obj, sign, *(unsigned int *)param);
-            activity->signal_func(obj,sign,param);
         }
+        else if(cur_key != LV_GROUP_KEY_POC)
+        {
+		    poc_play_btn_voice_one_time(vol_cur, poc_setting_conf->btn_voice_switch);
+        }
+    }
+
+    if(NULL != activity->signal_func)
+    {
+        OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] call current signal_cb of activity\n");
+        ret = activity->signal_func(obj, sign, param);
     }
     return ret;
 }
@@ -1134,7 +1111,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 /*******************
 *     NAME:    lv_poc_design_cb
 *   AUTHOR:    lugj
-* DESCRIPT:    ¶Ô½²»ú½çÃædesignº¯Êı
+* DESCRIPT:    å¯¹è®²æœºç•Œé¢designå‡½æ•°
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_design_cb(lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode)
@@ -1156,7 +1133,7 @@ static bool lv_poc_design_cb(lv_obj_t * obj, const lv_area_t * mask_p, lv_design
 /*******************
 *     NAME:    lv_poc_event_cb
 *   AUTHOR:    lugj
-* DESCRIPT:    ¶Ô½²»ú½çÃæeventº¯Êı
+* DESCRIPT:    å¯¹è®²æœºç•Œé¢eventå‡½æ•°
 *     DATE:    2020-03-30
 ********************/
 static void lv_poc_event_cb(lv_obj_t * obj, lv_event_t event)
@@ -1182,7 +1159,7 @@ static void lv_poc_event_cb(lv_obj_t * obj, lv_event_t event)
 /*******************
 *     NAME:    lv_poc_stack_init
 *   AUTHOR:    lugj
-* DESCRIPT:    ³õÊ¼»¯½çÃæ¹ÜÀíÕ»
+* DESCRIPT:    åˆå§‹åŒ–ç•Œé¢ç®¡ç†æ ˆ
 *     DATE:    2019-10-25
 ********************/
 static void lv_poc_stack_init(void)
@@ -1194,7 +1171,7 @@ static void lv_poc_stack_init(void)
 /*******************
 *     NAME:    lv_poc_stack_push
 *   AUTHOR:    lugj
-* DESCRIPT:    Ñ¹Èë½çÃæ¹ÜÀíÕ»
+* DESCRIPT:    å‹å…¥ç•Œé¢ç®¡ç†æ ˆ
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_stack_push(lv_poc_activity_t *activity)
@@ -1224,7 +1201,7 @@ static bool lv_poc_stack_push(lv_poc_activity_t *activity)
 /*******************
 *     NAME:    lv_poc_stack_pop
 *   AUTHOR:    lugj
-* DESCRIPT:    µ¯³ö½çÃæ¹ÜÀíÕ»²¢É¾³ı
+* DESCRIPT:    å¼¹å‡ºç•Œé¢ç®¡ç†æ ˆå¹¶åˆ é™¤
 *     DATE:    2019-10-25
 ********************/
 static lv_poc_activity_t * lv_poc_stack_pop(void)
@@ -1239,13 +1216,14 @@ static lv_poc_activity_t * lv_poc_stack_pop(void)
         OSI_LOGI(0, "lv_poc_statck have one item only, only return idle activity and dont decrease size\n");
         return lv_poc_statck.activity[lv_poc_statck.size - 1];
     }
-    return (lv_poc_activity_t *)lv_poc_statck.activity[--lv_poc_statck.size];
+    lv_poc_statck.size = lv_poc_statck.size - 1;
+    return (lv_poc_activity_t *)lv_poc_statck.activity[lv_poc_statck.size];
 }
 
 /*******************
 *     NAME:    lv_poc_stack_top
 *   AUTHOR:    lugj
-* DESCRIPT:    ²é¿´½çÃæ¹ÜÀíÕ»¶¥ÔªËØ
+* DESCRIPT:    æŸ¥çœ‹ç•Œé¢ç®¡ç†æ ˆé¡¶å…ƒç´ 
 *     DATE:    2019-10-25
 ********************/
 static lv_poc_activity_t * lv_poc_stack_top(void)
@@ -1300,7 +1278,7 @@ static void lv_exec_task(lv_task_t * task)
 /*******************
 *	  NAME: 	lv_poc_stabar_task
 *	AUTHOR:    lugj
-* DESCRIPT:    ×´Ì¬À¸ÈÎÎñ
+* DESCRIPT:    çŠ¶æ€æ ä»»åŠ¡
 *	  DATE:    2019-10-25
 ********************/
 void lv_poc_stabar_task(lv_task_t * task)
@@ -1367,50 +1345,38 @@ void lv_poc_stabar_task(lv_task_t * task)
 /*******************
 *     NAME:    lv_poc_get_battery_state
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡µç³Ø×´Ì¬£¬
+* DESCRIPT:    è·å–ç”µæ± çŠ¶æ€ï¼Œ
 *     DATE:    2019-10-25
 ********************/
 UINT8 lv_poc_get_battery_state(void)
 {
-#if PC_SIMULATOR_DEBUG != 0
-    return true;
-#else
     battery_values_t * battery_value = lv_mem_alloc(sizeof(battery_values_t));
     poc_battery_get_values(battery_value);
     lv_poc_status_bar_fptr->has_battery = battery_value->battery_status == 1? true:false;
     lv_mem_free(battery_value);
     return battery_value->battery_status;
-#endif
 }
 
 /*******************
 *     NAME:    lv_poc_get_sim1_state
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡SIM1ÊÇ·ñ´æÔÚ
+* DESCRIPT:    è·å–SIM1æ˜¯å¦å­˜åœ¨
 *     DATE:    2019-10-25
 ********************/
 bool lv_poc_get_sim1_state(void)
 {
-#if PC_SIMULATOR_DEBUG != 0
-    return true;
-#else
     return poc_check_sim_prsent(POC_SIM_1);
-#endif
 }
 
 /*******************
 *     NAME:    lv_poc_get_sim2_state
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡SIM2ÊÇ·ñ´æÔÚ
+* DESCRIPT:    è·å–SIM2æ˜¯å¦å­˜åœ¨
 *     DATE:    2019-10-25
 ********************/
 bool lv_poc_get_sim2_state(void)
 {
-#if PC_SIMULATOR_DEBUG != 0
-    return true;
-#else
     return poc_check_sim_prsent(POC_SIM_2);
-#endif
 }
 
 /*******************
@@ -1590,13 +1556,13 @@ void lv_poc_update_stabar_sim_img(void)
             {
                 *(has_sim[k]) = true;
 #if 0
-                //ÔÚ´Ë´¦Ìí¼ÓÊı¾İÉÏ´«ÏÂÔØµÄÍ¼±ê
+                //åœ¨æ­¤å¤„æ·»åŠ æ•°æ®ä¸Šä¼ ä¸‹è½½çš„å›¾æ ‡
 
 
 #endif
 
                 obj2 = lv_img_create(lv_poc_status_bar, NULL);
-                switch((sim_state_code[k] & 0x1e) >> 1)    //ÅĞ¶ÏĞÅºÅÇ¿¶ÈÊÇ¶àÉÙ
+                switch((sim_state_code[k] & 0x1e) >> 1)    //åˆ¤æ–­ä¿¡å·å¼ºåº¦æ˜¯å¤šå°‘
                 {
                 case MMI_MODEM_SIGNAL_BAR_0:
                 {
@@ -1647,7 +1613,7 @@ void lv_poc_update_stabar_sim_img(void)
                 sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_signal_strength_img);
 
                 obj3 = lv_img_create(lv_poc_status_bar, NULL);
-                switch((sim_state_code[k] & 0xe0) >> 5)   //ÅĞ¶ÏÊÇÊ²Ã´ÀàĞÍµÄĞÅºÅ
+                switch((sim_state_code[k] & 0xe0) >> 5)   //åˆ¤æ–­æ˜¯ä»€ä¹ˆç±»å‹çš„ä¿¡å·
                 {
                 case 1:
                 case 2:
@@ -1704,7 +1670,7 @@ void lv_poc_update_stabar_sim_img(void)
 /*******************
 *     NAME:    lv_poc_get_refresh_ui
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡ÊÇ·ñË¢ĞÂUI
+* DESCRIPT:    è·å–æ˜¯å¦åˆ·æ–°UI
 *     DATE:    2019-10-31
 ********************/
 int lv_poc_get_refresh_ui(void)
@@ -1717,7 +1683,7 @@ int lv_poc_get_refresh_ui(void)
 /*******************
 *     NAME:    lv_poc_refresh_ui_next
 *   AUTHOR:    lugj
-* DESCRIPT:    Ë¢ĞÂÏÂÒ»¸öUI
+* DESCRIPT:    åˆ·æ–°ä¸‹ä¸€ä¸ªUI
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_refresh_ui_next(void)
@@ -1728,7 +1694,7 @@ void lv_poc_refresh_ui_next(void)
 /*******************
 *     NAME:    lv_poc_create_activity
 *   AUTHOR:    lugj
-* DESCRIPT:    ´´½¨Ò»¸öÓĞĞ§µÄactivity
+* DESCRIPT:    åˆ›å»ºä¸€ä¸ªæœ‰æ•ˆçš„activity
 *     DATE:    2019-10-25
 ********************/
 lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
@@ -1739,7 +1705,7 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     static bool is_lv_poc_atctivity_init = false;
     lv_style_t * poc_display_style;
     poc_setting_conf = lv_poc_setting_conf_read();
-    
+
     if(false == is_lv_poc_atctivity_init)
     {
         is_lv_poc_atctivity_init = true;
@@ -1749,7 +1715,7 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
         lv_poc_activity_list_init();
         lv_poc_stack_init();
     }
-    
+
     poc_display_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_base);
     lv_poc_activity_t *activity = (lv_poc_activity_t *)lv_mem_alloc(sizeof(lv_poc_activity_t));
     //lv_mem_assert(activity);
@@ -1771,12 +1737,10 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     activity->activity_ext.prepare_destory = activity_ext->prepare_destory;
 
     activity->base = lv_obj_create(lv_scr_act(), NULL);
-    activity->base->ext_attr = activity;
-    lv_obj_set_size(activity->base, LV_HOR_RES, LV_VER_RES);
-
+    //activity->base->ext_attr = activity;
     lv_obj_set_size(activity->base,LV_POC_SCREEN_SCALE_HOR_RES,LV_POC_SCREEN_SCALE_VER_RES);
     lv_obj_set_pos(activity->base,LV_POC_SCREEN_X,LV_POC_SCREEN_Y);
-    
+
     lv_obj_set_style(activity->base, poc_display_style);
     activity->display = lv_img_create(activity->base,NULL);
     lv_img_set_auto_size(activity->display, false);
@@ -1800,7 +1764,7 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
         }
         //lv_obj_set_parent(lv_poc_status_bar, _idle_activity);
     }
-    //lv_refr_now();    //»áµ¼ÖÂË¢ÆÁÖĞÍ¾ÏÔÊ¾±³¾°Í¼
+    //lv_refr_now();    //ä¼šå¯¼è‡´åˆ·å±ä¸­é€”æ˜¾ç¤ºèƒŒæ™¯å›¾
     if(has_control)
     {
         if(control_text != NULL)
@@ -1868,7 +1832,7 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
 /*******************
 *     NAME:    lv_poc_get_user_obj
 *   AUTHOR:    lugj
-* DESCRIPT:    ´ÓactivityÖĞ»ñÈ¡¿ÉÒÔÏÔÊ¾ÇøÓò
+* DESCRIPT:    ä»activityä¸­è·å–å¯ä»¥æ˜¾ç¤ºåŒºåŸŸ
 *     DATE:    2019-10-25
 ********************/
 lv_poc_display_t *lv_poc_get_display(lv_poc_activity_t *activity)
@@ -1887,54 +1851,56 @@ lv_poc_display_t *lv_poc_get_display(lv_poc_activity_t *activity)
 /*******************
 *     NAME:    lv_poc_del_activity
 *   AUTHOR:    lugj
-* DESCRIPT:    É¾³ıactivity
+* DESCRIPT:    åˆ é™¤activity
 *     DATE:    2019-10-25
 ********************/
 bool lv_poc_del_activity(lv_poc_activity_t *activity)
 {
     bool ret_val = true;
+
     lv_poc_activity_t * pre_activity;
     lv_poc_control_t *ctl = NULL;
     lv_poc_activity_ext_t * ext = &(activity->activity_ext);
-
-    if(ext->prepare_destory != NULL)
-    {
-        ext->prepare_destory(activity->display);
-    }
     lv_poc_stack_pop();
     pre_activity = lv_poc_stack_top();
     lv_obj_set_parent(lv_poc_status_bar, pre_activity->base);
-    lv_obj_invalidate(pre_activity->base);
+
     current_activity = pre_activity;
+
     if(activity->has_control)
     {
         ctl = activity->control;
-        lv_obj_del(ctl->left_button);
-        lv_obj_del(ctl->middle_button);
-        lv_obj_del(ctl->right_button);
+        //lv_obj_del(ctl->left_button);
+        //lv_obj_del(ctl->middle_button);
+        //lv_obj_del(ctl->right_button);
 
         lv_obj_del(ctl->background);
     }
 
     lv_poc_activity_list_delete(activity);
-#if PC_SIMULATOR_DEBUG != 1
     lv_group_focus_freeze(poc_indev_group,false);
     lv_group_focus_prev(poc_indev_group);
     lv_group_focus_freeze(poc_indev_group, true);
+    lv_indev_reset(poc_keypad_dev);
     lv_group_remove_obj(activity->display);
-    //lv_group_add_obj(poc_indev_group, pre_activity->base);
-#endif
-    lv_obj_del(activity->display);
     lv_obj_del(activity->base);
+    lv_obj_invalidate(pre_activity->base);
+    //lv_obj_invalidate(pre_activity->display);
+
+    if(ext->prepare_destory != NULL)
+    {
+        ext->prepare_destory(activity->display);
+    }
 
     lv_mem_free(activity);
+    lv_group_focus_obj(pre_activity->display);
     return ret_val;
 }
 
 /*******************
 *     NAME:    lv_poc_group_remove_obj
 *   AUTHOR:    lugj
-* DESCRIPT:    ½«objÌí¼Óµ½keypadÊäÈëÉè±¸×éÖĞ
+* DESCRIPT:    å°†objæ·»åŠ åˆ°keypadè¾“å…¥è®¾å¤‡ç»„ä¸­
 *     DATE:    2019-10-25
 ********************/
 void lv_poc_group_remove_obj(lv_obj_t *obj)
@@ -1948,7 +1914,7 @@ void lv_poc_group_remove_obj(lv_obj_t *obj)
 /*******************
 *     NAME:    lv_poc_group_add_obj
 *   AUTHOR:    lugj
-* DESCRIPT:    ½«obj´ÓkeypadÊäÈëÉè±¸×éÖĞÒÆ³ı
+* DESCRIPT:    å°†objä»keypadè¾“å…¥è®¾å¤‡ç»„ä¸­ç§»é™¤
 *     DATE:    2019-10-25
 ********************/
 void lv_poc_group_add_obj(lv_obj_t *obj)
@@ -1962,9 +1928,9 @@ void lv_poc_group_add_obj(lv_obj_t *obj)
 /*******************
 *     NAME:    lv_poc_activity_set_signal_cb
 *   AUTHOR:    lugj
-* DESCRIPT:    ÉèÖÃactivityµÄsignalº¯Êı
-*     NOTE:    signalº¯ÊıÔËĞĞ»úÖÆ:
-					lv_xxx_create(parent,copy) ==> µ÷ÓÃparent->signal_funcº¯Êı
+* DESCRIPT:    è®¾ç½®activityçš„signalå‡½æ•°
+*     NOTE:    signalå‡½æ•°è¿è¡Œæœºåˆ¶:
+					lv_xxx_create(parent,copy) ==> è°ƒç”¨parent->signal_funcå‡½æ•°
 *     DATE:    2019-10-30
 ********************/
 void lv_poc_activity_set_signal_cb(lv_poc_activity_t *activity,
@@ -1980,7 +1946,7 @@ void lv_poc_activity_set_signal_cb(lv_poc_activity_t *activity,
 /*******************
 *     NAME:    lv_poc_activity_set_design_cb
 *   AUTHOR:    lugj
-* DESCRIPT:    ÉèÖÃactivityµÄsignalº¯Êı
+* DESCRIPT:    è®¾ç½®activityçš„signalå‡½æ•°
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_activity_set_design_cb(lv_poc_activity_t *activity,
@@ -1995,7 +1961,7 @@ void lv_poc_activity_set_design_cb(lv_poc_activity_t *activity,
 /*******************
 *     NAME:    lv_poc_activity_set_background
 *   AUTHOR:    lugj
-* DESCRIPT:    ÉèÖÃ±³¾°Í¼Ïñ
+* DESCRIPT:    è®¾ç½®èƒŒæ™¯å›¾åƒ
 *     DATE:    2019-10-30
 ********************/
 void lv_poc_activity_set_background(lv_poc_activity_t *activity,
@@ -2010,7 +1976,7 @@ void lv_poc_activity_set_background(lv_poc_activity_t *activity,
 /*******************
 *     NAME:    lv_poc_activity_list_lookup
 *   AUTHOR:    lugj
-* DESCRIPT:    ´Óactivity²éÑ¯±íÖĞ²éÑ¯displayµÄactivity
+* DESCRIPT:    ä»activityæŸ¥è¯¢è¡¨ä¸­æŸ¥è¯¢displayçš„activity
 *     DATE:    2019-10-30
 ********************/
 lv_poc_activity_t *	lv_poc_activity_list_lookup(lv_poc_display_t * display)
@@ -2038,7 +2004,7 @@ lv_poc_activity_t *	lv_poc_activity_list_lookup(lv_poc_display_t * display)
 /*******************
 *     NAME:    lv_poc_activity_send_sign
 *   AUTHOR:    lugj
-* DESCRIPT:    ´Óactivity²éÑ¯±íÖĞ²éÑ¯activity,²¢¸øÆä·¢ËÍÒ»¸öÏûÏ¢
+* DESCRIPT:    ä»activityæŸ¥è¯¢è¡¨ä¸­æŸ¥è¯¢activity,å¹¶ç»™å…¶å‘é€ä¸€ä¸ªæ¶ˆæ¯
 *     DATE:    2019-10-30
 ********************/
 lv_poc_activity_t *	lv_poc_activity_send_sign(lv_poc_Activity_Id_t ID, int sign, void * param)
@@ -2075,7 +2041,7 @@ lv_poc_activity_t *	lv_poc_activity_send_sign(lv_poc_Activity_Id_t ID, int sign,
 /*******************
 *     NAME:    lv_poc_get_display_width
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡ÏÔÊ¾ÇøÓò¿í
+* DESCRIPT:    è·å–æ˜¾ç¤ºåŒºåŸŸå®½
 *     DATE:    2019-10-31
 ********************/
 lv_coord_t lv_poc_get_display_width(const lv_poc_display_t * display)
@@ -2086,7 +2052,7 @@ lv_coord_t lv_poc_get_display_width(const lv_poc_display_t * display)
 /*******************
 *     NAME:    lv_poc_get_display_height
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡ÏÔÊ¾ÇøÓò¸ß
+* DESCRIPT:    è·å–æ˜¾ç¤ºåŒºåŸŸé«˜
 *     DATE:    2019-10-31
 ********************/
 lv_coord_t lv_poc_get_display_height(lv_poc_display_t * display)
@@ -2106,7 +2072,7 @@ lv_coord_t lv_poc_get_display_height(lv_poc_display_t * display)
 /*******************
 *     NAME:    lv_poc_get_display_area
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡ÏÔÊ¾ÇøÓò·¶Î§
+* DESCRIPT:    è·å–æ˜¾ç¤ºåŒºåŸŸèŒƒå›´
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_get_display_area(lv_poc_display_t * display, lv_area_t * area)
@@ -2120,7 +2086,7 @@ void lv_poc_get_display_area(lv_poc_display_t * display, lv_area_t * area)
 /*******************
 *     NAME:    lv_poc_status_bar_task_ext_add
 *   AUTHOR:    lugj
-* DESCRIPT:    Ìí¼Ó×´Ì¬À¸¶îÍâÈÎÎñ
+* DESCRIPT:    æ·»åŠ çŠ¶æ€æ é¢å¤–ä»»åŠ¡
 *     DATE:    2019-10-31
 ********************/
 bool lv_poc_status_bar_task_ext_add(status_bar_task_t task)
@@ -2140,7 +2106,7 @@ bool lv_poc_status_bar_task_ext_add(status_bar_task_t task)
 /*******************
 *     NAME:    lv_poc_activity_hidden
 *   AUTHOR:    lugj
-* DESCRIPT:   Òş²Øactivity
+* DESCRIPT:   éšè—activity
 *     DATE:    2019-10-31
 ********************/
 bool lv_poc_activity_hidden(lv_poc_activity_t * activity, bool isHidden)
@@ -2187,7 +2153,7 @@ bool lv_poc_activity_hidden(lv_poc_activity_t * activity, bool isHidden)
 /*******************
 *     NAME:    lv_poc_activity_set_idle
 *   AUTHOR:    lugj
-* DESCRIPT:   ÉèÖÃidle activity
+* DESCRIPT:   è®¾ç½®idle activity
 *     DATE:    2019-10-31
 ********************/
 bool lv_poc_activity_set_idle(lv_poc_activity_t * idle_activity)
@@ -2215,7 +2181,7 @@ bool lv_poc_activity_set_idle(lv_poc_activity_t * idle_activity)
 /*******************
 *     NAME:    lv_poc_activity_enter_idle
 *   AUTHOR:    lugj
-* DESCRIPT:  »Øµ½Ö÷½çÃæ
+* DESCRIPT:  å›åˆ°ä¸»ç•Œé¢
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_activity_enter_idle(void)
@@ -2251,7 +2217,7 @@ void lv_poc_activity_enter_idle(void)
 /*******************
 *     NAME:    lv_poc_activity_pre
 *   AUTHOR:    lugj
-* DESCRIPT:   ½øÈëÉÏÒ»¸öactivity
+* DESCRIPT:   è¿›å…¥ä¸Šä¸€ä¸ªactivity
 *     DATE:    2019-10-31
 ********************/
 lv_poc_activity_t * lv_poc_activity_pre(bool forcs)
@@ -2388,4 +2354,3 @@ void FT_Trace(const char * formate, ...)
 #ifdef __cplusplus
 }
 #endif
-

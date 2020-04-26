@@ -42,8 +42,8 @@ static void pocStartAnimation(void)\
 #ifdef CONFIG_POC_GUI_SUPPORT
 static void pocLvglStart(void)
 {
-	pocStartAnimation();
-	
+	//pocStartAnimation();
+
 	lv_poc_create_idle();
 }
 #else
@@ -58,7 +58,7 @@ static void pocLvglStart(void)
 #endif
 
 void pocStart(void *ctx)
-{	
+{
     OSI_LOGI(0, "lvgl poc start");
 
     drvLcdInitV2();
@@ -67,9 +67,9 @@ void pocStart(void *ctx)
     drvLcdOpenV2(lcd);
     drvLcdFill(lcd, 0, NULL, true);
     drvLcdSetBackLightEnable(lcd, true);
-    
+
 	lvGuiInit(pocLvglStart);
-	
+
 	osiThreadExit();
 }
 
