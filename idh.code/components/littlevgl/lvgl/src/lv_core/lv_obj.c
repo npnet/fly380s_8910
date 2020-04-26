@@ -23,6 +23,7 @@
 #include <string.h>
 #include "../lv_misc/lv_gc.h"
 #include "../lv_misc/lv_math.h"
+#include "lv_lodepng.h"
 
 #if defined(LV_GC_INCLUDE)
 #include LV_GC_INCLUDE
@@ -116,6 +117,7 @@ void lv_init(void)
 
     lv_img_decoder_init();
     lv_img_cache_set_size(LV_IMG_CACHE_DEF_SIZE);
+    lv_lodepng_init();
 
     lv_initialized = true;
     LV_LOG_INFO("lv_init ready");

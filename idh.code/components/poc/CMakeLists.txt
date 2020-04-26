@@ -133,9 +133,6 @@ add_library(${target} STATIC
 	gui/resource/font/lv_poc_font_noto_sans_cjk_28.c
 	gui/resource/font/lv_poc_font_noto_sans_cjk_29.c
 	gui/resource/font/lv_poc_font_noto_sans_cjk_30.c
-	gui/resource/font/lv_poc_font_noto_sans_cjk_40.c
-	gui/resource/font/lv_poc_font_noto_sans_cjk_50.c
-	gui/resource/font/lv_poc_font_noto_sans_cjk_60.c
 	)
 	
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})

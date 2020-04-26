@@ -7,19 +7,19 @@ extern "C" {
 
 #define MAIN_MENU_TITLE ("主菜单")
 
-static lv_obj_t * main_menu_create(lv_poc_display_t *display);
+static lv_obj_t * lv_poc_main_menu_activity_ext_create_cb(lv_poc_display_t *display);
 
-static void main_menu_destory(lv_obj_t *obj);
+static void lv_poc_main_menu_activity_ext_destory_cb(lv_obj_t *obj);
 
-static void * main_menu_list_create(lv_obj_t * parent, lv_area_t display_area);
+static void * lv_poc_main_menu_list_create(lv_obj_t * parent, lv_area_t display_area);
 
 static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event);
 
 static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area);
 
-static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param);
+static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t sign, void * param);
 
-static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
+static bool lv_poc_main_menu_design_cb(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
 static lv_obj_t * main_menu_list;
 static lv_poc_win_t * main_menu_win;
@@ -43,19 +43,18 @@ static const int8_t lv_poc_main_menu_item_text_setting[] = "设置";
 static const int8_t lv_poc_main_menu_item_text_about[] = "关于本机";
 
 
-static lv_obj_t * main_menu_create(lv_poc_display_t *display)
+static lv_obj_t * lv_poc_main_menu_activity_ext_create_cb(lv_poc_display_t *display)
 {
-    main_menu_win = lv_poc_win_create(display, MAIN_MENU_TITLE, main_menu_list_create);
+    main_menu_win = lv_poc_win_create(display, MAIN_MENU_TITLE, lv_poc_main_menu_list_create);
     return (lv_obj_t *)main_menu_win;
 }
 
-static void main_menu_destory(lv_obj_t *obj)
+static void lv_poc_main_menu_activity_ext_destory_cb(lv_obj_t *obj)
 {
-    lv_obj_del(main_menu_list);
-    lv_obj_del(main_menu_win->title);
-    lv_obj_del(main_menu_win->header);
+    //lv_obj_del(main_menu_list);
+    //lv_obj_del(main_menu_win->title);
+    //lv_obj_del(main_menu_win->header);
     //lv_obj_del(main_menu_win->display_obj);
-    main_menu_activity = NULL;
     main_menu_selecte_item_index = 0;
     main_menu_activity = NULL;
     lv_mem_free(main_menu_win);
@@ -63,6 +62,7 @@ static void main_menu_destory(lv_obj_t *obj)
 
 static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
 {
+#if 0
 	const char * text =  lv_list_get_btn_text(obj);
 	if(text == NULL)
 	{
@@ -91,9 +91,10 @@ static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
 			lv_poc_about_open();
 		}
 	}
+#endif
 }
 
-static void * main_menu_list_create(lv_obj_t * parent, lv_area_t display_area)
+static void * lv_poc_main_menu_list_create(lv_obj_t * parent, lv_area_t display_area)
 {
     main_menu_list = lv_poc_list_create(parent, NULL, display_area, lv_poc_list_config);
     return (void *)main_menu_list;
@@ -156,158 +157,68 @@ static void poc_main_menu_update_UI_task(lv_task_t * task)
 	lv_obj_del(main_menu_win->header);
 	lv_obj_del(main_menu_list);
 	lv_mem_free(main_menu_win);
-	main_menu_win = lv_poc_win_create(main_menu_activity->display, MAIN_MENU_TITLE, main_menu_list_create);
+	main_menu_win = lv_poc_win_create(main_menu_activity->display, MAIN_MENU_TITLE, lv_poc_main_menu_list_create);
 	main_menu_activity->ext_data = (void *)main_menu_win;
 	is_poc_main_menu_update_UI_task_running = 0;
 }
 
-static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
+static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
 {
+	OSI_LOGI(0, "[poc][signal][main_menu][trace] line <- %d\n", __LINE__);
 	switch(sign)
 	{
-		case LV_SIGNAL_PRESSED:
+		case LV_SIGNAL_CONTROL:
 		{
-			unsigned int c = *(unsigned int *)param;
-			switch(c)
+			if(NULL == param) return LV_RES_OK;
+			switch((*(uint32_t *)param))
 			{
 				case LV_GROUP_KEY_ENTER:
-				
+				{
+					char * btn_name = (char *)lv_list_get_btn_text(lv_list_get_btn_selected(main_menu_list));
+					if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_member_list))
+					{
+						lv_poc_member_list_open(NULL, NULL, false);
+					}
+					else if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_group_list))
+					{
+						lv_poc_group_list_open();
+					}
+					else if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_setting))
+					{
+						lv_poc_setting_open();
+					}
+					else if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_new_group))
+					{
+						lv_poc_build_group_open();
+					}
+					else if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_about))
+					{
+						lv_poc_about_open();
+					}
+					break;
+				}
+
 				case LV_GROUP_KEY_DOWN:
-				
+
 				case LV_GROUP_KEY_UP:
 				{
 					main_menu_list->signal_cb(main_menu_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
-					
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
-					
 					break;
 				}
-				
-				case LV_GROUP_KEY_VOL_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_POC:
-				{
-					break;
-				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					lv_poc_del_activity(main_menu_activity);
-					break;
-				}
-			}
-			break;
-		}
-			
-		case LV_SIGNAL_LONG_PRESS:
-		{
-			unsigned int c = *(unsigned int *)param;
-			switch(c)
-			{
-				case LV_GROUP_KEY_ENTER:
-				
-				case LV_GROUP_KEY_DOWN:
-				
-				case LV_GROUP_KEY_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_GP:
-				{
-					
-					break;
-				}
-				
-				case LV_GROUP_KEY_MB:
-				{
-					
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_POC:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_ESC:
-				{
-					break;
-				}
-			}
-			break;
-		}
-		
-		case LV_SIGNAL_CONTROL:
-		{
-			unsigned int c = *(unsigned int *)param;
-			switch(c)
-			{
-				case LV_GROUP_KEY_ENTER:
-				
-				case LV_GROUP_KEY_DOWN:
-				
-				case LV_GROUP_KEY_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_GP:
-				{
-					
-					break;
-				}
-				
-				case LV_GROUP_KEY_MB:
-				{
-					
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_POC:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_ESC:
-				{
 					break;
 				}
 			}
@@ -323,7 +234,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			}
 			break;
 		}
-			
+
 		default:
 		{
 			break;
@@ -332,7 +243,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 	return LV_RES_OK;
 }
 
-static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode)
+static bool lv_poc_main_menu_design_cb(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode)
 {
 	return true;
 }
@@ -340,16 +251,16 @@ static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_des
 void lv_poc_main_menu_open(void)
 {
     static lv_poc_activity_ext_t  activity_main_menu_ext = {ACT_ID_POC_MAIN_MENU,
-															main_menu_create,
-															main_menu_destory};
+															lv_poc_main_menu_activity_ext_create_cb,
+															lv_poc_main_menu_activity_ext_destory_cb};
 	main_menu_selecte_item_index = 0;
 	if(main_menu_activity != NULL)
 	{
 		return;
 	}
     main_menu_activity = lv_poc_create_activity(&activity_main_menu_ext, true, false, NULL);
-   	lv_poc_activity_set_signal_cb(main_menu_activity, signal_func);
-   	lv_poc_activity_set_design_cb(main_menu_activity, design_func);
+   	lv_poc_activity_set_signal_cb(main_menu_activity, lv_poc_main_menu_signal_cb);
+   	lv_poc_activity_set_design_cb(main_menu_activity, lv_poc_main_menu_design_cb);
 }
 
 #ifdef __cplusplus

@@ -83,7 +83,7 @@ static char idle_total_page = IDLE_PAGE_NUMBER;
 
 static char get_self_info_success = 0;
 
-static idle_display_func_t idle_display_funcs[] = 
+static idle_display_func_t idle_display_funcs[] =
 {
     {lv_poc_idle_page_1_show, lv_poc_idle_page_1_hide},
     {lv_poc_idle_page_2_show, lv_poc_idle_page_2_hide},
@@ -130,11 +130,13 @@ static void lv_poc_idle_prepare_destory(lv_obj_t *obj)
 
 static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
 {
-	OSI_LOGI(0, "%s [%d]\n", __func__, sign);
+	OSI_LOGI(0, "[poc][signal][idle] sign <- %d\n", sign);
+	OSI_LOGI(0, "[poc][signal][idle] param <- 0x%p\n", param);
 	switch(sign)
 	{
-		case LV_SIGNAL_PRESSED:
+		case LV_SIGNAL_CONTROL:
 		{
+			if(NULL == param) return LV_RES_OK;
 			unsigned int c = *(unsigned int *)param;
 			switch(c)
 			{
@@ -143,151 +145,45 @@ static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 					lv_poc_main_menu_open();
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					lv_poc_idle_next_page();
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
 					lv_poc_group_list_open();
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
 					lv_poc_member_list_open(NULL, NULL, false);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
-				case LV_GROUP_KEY_POC:
-				{
-					break;
-				}
-			}
-			break;
-		}
-			
-		case LV_SIGNAL_LONG_PRESS:
-		{
-			unsigned int c = *(unsigned int *)param;
-			switch(c)
-			{
-				case LV_GROUP_KEY_ENTER:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_ESC:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_GP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_MB:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_POC:
-				{
-					break;
-				}
-			}
-			break;
-		}
-			
-		case LV_SIGNAL_CONTROL:
-		{
-			unsigned int c = *(unsigned int *)param;
-			switch(c)
-			{
-				case LV_GROUP_KEY_ENTER:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_ESC:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_GP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_MB:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_UP:
-				{
-					break;
-				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
@@ -298,13 +194,12 @@ static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 
 		case LV_SIGNAL_FOCUS:
 		{
-			
 		    if(idle_page2_normal_info_timer_task != 0)
 		    {
 		    	lv_task_del(idle_page2_normal_info_timer_task);
 		    	idle_page2_normal_info_timer_task = 0;
 		    }
-		    
+
 			if(get_self_info_success == 1
 					&& page2_display_state != lv_poc_idle_page2_normal_info
 					&& page2_display_state != lv_poc_idle_page2_warnning_info)
@@ -312,7 +207,7 @@ static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 				idle_page2_normal_info_timer_task = lv_task_create(lv_poc_idle_page_2_normal_display_task,
 																		2000, LV_TASK_PRIO_LOWEST, NULL);
 			}
-			
+
 			if(current_activity == activity_idle)
 			{
 		        for(int k = 0; k < idle_total_page; k++)
@@ -334,13 +229,13 @@ static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 		{
 			break;
 		}
-			
+
 		default:
 		{
 			break;
 		}
 	}
-	return LV_RES_OK;
+	return LV_RES_INV;
 }
 
 static bool lv_poc_idle_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode)
@@ -388,8 +283,8 @@ static void lv_poc_idle_time_task(void)
     static char old_str[IDLE_DATE_LABEL_STR_LEN] = {0};
     static bool isFirst = true;
 	static bool isInit = false;
-    static lv_style_t * idle_clock_style;   
-	static lv_style_t * style; 
+    static lv_style_t * idle_clock_style;
+	static lv_style_t * style;
 	//static lv_coord_t screen_w = 0;
 	static lv_coord_t screen_h = 0;
 	static bool isCreatedPocTask = false;
@@ -403,13 +298,13 @@ static void lv_poc_idle_time_task(void)
 	    screen_h = lv_poc_get_display_height(activity_idle->display);
 	    idle_clock_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_idle_big_clock);
         idle_big_clock = lv_label_create(activity_idle->display, NULL);
-        lv_obj_set_style(idle_big_clock, idle_clock_style);        
+        lv_obj_set_style(idle_big_clock, idle_clock_style);
     	idle_date_label = lv_label_create(activity_idle->display,NULL);
     	style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_idle_date_label);
     	lv_label_set_align(idle_date_label, LV_LABEL_ALIGN_CENTER);
     	lv_label_set_style(idle_date_label, LV_LABEL_STYLE_MAIN, style);
 	}
-    
+
     if(current_activity->has_stabar == false)
     {
         lv_obj_set_hidden(lv_poc_status_bar, true);
@@ -418,7 +313,7 @@ static void lv_poc_idle_time_task(void)
     {
         lv_obj_set_hidden(lv_poc_status_bar, false);
     }
-	
+
 	if(isCreatedPocTask == false)
 	{
 		poc_get_operator_req(poc_setting_conf->main_SIM, net_type_name, &network_type);
@@ -427,7 +322,7 @@ static void lv_poc_idle_time_task(void)
 			isCreatedPocTask = true;
 		}
 	}
-	
+
     if( current_activity != activity_idle)
     {
         //lv_obj_set_hidden(idle_big_clock, true);
@@ -618,7 +513,7 @@ static void lv_poc_idle_page_2_init(void)
         isInit_page_2 = true;
         page2_display_state = lv_poc_idle_page2_login_info;
         style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_idle_msg_label);
-        
+
         idle_title_label = lv_label_create(activity_idle->display, NULL);
         lv_label_set_style(idle_title_label, LV_LABEL_STYLE_MAIN, style);
         idle_user_label = lv_label_create(activity_idle->display, NULL);
@@ -638,13 +533,13 @@ static void lv_poc_idle_page_2_init(void)
         lv_label_set_long_mode(idle_group_name_label, LV_LABEL_LONG_SROLL);
         if(activity_idle->has_control == true)
         {
-            lv_obj_align(idle_title_label, activity_idle->display, LV_ALIGN_IN_TOP_LEFT, 
+            lv_obj_align(idle_title_label, activity_idle->display, LV_ALIGN_IN_TOP_LEFT,
                 lv_poc_get_display_width(activity_idle->display)/20,
                 lv_poc_get_display_height(activity_idle->display)/15);
         }
         else
         {
-            lv_obj_align(idle_title_label, activity_idle->display, LV_ALIGN_IN_TOP_LEFT, 
+            lv_obj_align(idle_title_label, activity_idle->display, LV_ALIGN_IN_TOP_LEFT,
                 lv_poc_get_display_width(activity_idle->display)/20,
                 lv_poc_get_display_height(activity_idle->display)/5);
         }
@@ -654,7 +549,7 @@ static void lv_poc_idle_page_2_init(void)
             0,lv_obj_get_height(idle_user_label)/10);
         lv_obj_align(idle_user_name_label, idle_user_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
         lv_obj_align(idle_group_name_label, idle_group_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-        
+
     }
 }
 
@@ -678,7 +573,7 @@ static void lv_poc_idle_page_task(void)
         }
         return;
     }
-    
+
     if(idle_old_page != idle_current_page || true == isFirst)
     {
         idle_old_page = idle_current_page;
@@ -695,7 +590,7 @@ static void lv_poc_idle_page_task(void)
             }
         }
     }
-    
+
 }
 
 static void lv_poc_idle_page_2_normal_display_task(lv_task_t * task)
@@ -757,22 +652,6 @@ char * lv_poc_idle_get_group_name(void)
     return lv_label_get_text(idle_group_name_label);
 }
 
-static void  lv_poc_idle_control_left_label_event_cb(lv_obj_t * obj, lv_event_t event)
-{
-	if(LV_EVENT_CLICKED == event)
-	{
-		//lv_poc_main_menu_open();
-	}
-}
-
-static void  lv_poc_idle_control_right_label_event_cb(lv_obj_t * obj, lv_event_t event)
-{
-	if(LV_EVENT_CLICKED == event)
-	{
-		//lv_poc_idle_next_page();
-	}
-}
-
 lv_poc_activity_t * lv_poc_create_idle(void)
 {
 	static lv_poc_activity_ext_t	activity_idle_ext = {ACT_ID_POC_IDLE,
@@ -787,10 +666,10 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	activity_idle = lv_poc_create_activity(&activity_idle_ext,true,true,&control);
 	lv_poc_activity_set_signal_cb(activity_idle, lv_poc_idle_signal_func);
 	lv_poc_activity_set_design_cb(activity_idle, lv_poc_idle_design_func);
-	lv_obj_set_click(activity_idle->control->left_button, true);
-	lv_obj_set_event_cb(activity_idle->control->left_button, lv_poc_idle_control_left_label_event_cb);
-	lv_obj_set_click(activity_idle->control->right_button, true);
-	lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
+	//lv_obj_set_click(activity_idle->control->left_button, true);
+	//lv_obj_set_event_cb(activity_idle->control->left_button, lv_poc_idle_control_left_label_event_cb);
+	//lv_obj_set_click(activity_idle->control->right_button, true);
+	//lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
 
 	return activity_idle;
 }

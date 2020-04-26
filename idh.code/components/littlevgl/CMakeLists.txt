@@ -116,3 +116,30 @@ if(CONFIG_SOC_8910)
         lv_port/lv_gui_example2.c
     )
 endif()
+
+
+relative_glob(srcs include/*.h 
+					lv_lib_lodepng/*.h 
+					lvgl/*.h 
+					*/*.c 
+					*.h
+					*.c
+					lvgl/porting/*.h
+					lvgl/porting/*.c
+					lvgl/src/*.h
+					lvgl/src/*.c
+					lvgl/src/lv_core/*.h
+					lvgl/src/lv_core/*.c
+					lvgl/src/lv_draw/*.h
+					lvgl/src/lv_draw/*.c
+					lvgl/src/lv_font/*.h
+					lvgl/src/lv_font/*.c
+					lvgl/src/lv_hal/*.h
+					lvgl/src/lv_hal/*.c
+					lvgl/src/lv_misc/*.h
+					lvgl/src/lv_misc/*.c
+					lvgl/src/lv_themes*.h
+					lvgl/src/lv_themes/*.c
+					lvgl/src/lv_objx/*.h
+					lvgl/src/lv_objx/*.c)
+beautify_c_code(${target} ${srcs})
