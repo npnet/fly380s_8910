@@ -37,7 +37,6 @@ static void prvSt7735sSetDir(drvLcd_t *d, drvLcdDirection_t dir)
 static void prvSt7735sInit(drvLcd_t *d)
 {
     const drvLcdPanelDesc_t *desc = drvLcdGetDesc(d);
-    prvSt7735sSetDir(d, desc->dir);
     drvLcdWriteCmd(d, 0x11); //Sleep out
     osiThreadSleep(100); //Delay 120ms
     //------------------------------------ST7735S Frame Rate-----------------------------------------//
@@ -77,8 +76,9 @@ static void prvSt7735sInit(drvLcd_t *d)
     //---------------------------------End ST7735S Power Sequence-------------------------------------//
     drvLcdWriteCmd(d, 0xC5); //VCOM
     drvLcdWriteData(d, 0x1A);
-    drvLcdWriteCmd(d, 0x36); //MX, MY, RGB mode
-    drvLcdWriteData(d, 0xC0);
+    //drvLcdWriteCmd(d, 0x36); //MX, MY, RGB mode
+    //drvLcdWriteData(d, 0xC0);
+    prvSt7735sSetDir(d, desc->dir);
     //------------------------------------ST7735S Gamma Sequence-----------------------------------------//
     drvLcdWriteCmd(d, 0xE0);
     drvLcdWriteData(d, 0x04);
