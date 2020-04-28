@@ -37,6 +37,26 @@ extern "C" {
 /*********************
  *      DEFINES
  *********************/
+#if 1
+#define LV_COLOR_WHITE LV_COLOR_MAKE(0xFF, 0xFF, 0xFF)
+#define LV_COLOR_SILVER LV_COLOR_MAKE(0xC0, 0xC0, 0xC0)
+#define LV_COLOR_GRAY LV_COLOR_MAKE(0x80, 0x80, 0x80)
+#define LV_COLOR_BLACK LV_COLOR_MAKE(0x00, 0x00, 0x00)
+#define LV_COLOR_RED LV_COLOR_MAKE(0xFF, 0x00, 0x00)
+#define LV_COLOR_MAROON LV_COLOR_MAKE(0x00, 0x00, 0x80)
+#define LV_COLOR_YELLOW LV_COLOR_MAKE(0x00, 0xFF, 0xFF)
+#define LV_COLOR_OLIVE LV_COLOR_MAKE(0x00, 0x80, 0x80)
+#define LV_COLOR_LIME LV_COLOR_MAKE(0x00, 0xFF, 0x00)
+#define LV_COLOR_GREEN LV_COLOR_MAKE(0x00, 0x80, 0x00)
+#define LV_COLOR_CYAN LV_COLOR_MAKE(0xFF, 0xFF, 0x00)
+#define LV_COLOR_AQUA LV_COLOR_CYAN
+#define LV_COLOR_TEAL LV_COLOR_MAKE(0x80, 0x80, 0x00)
+#define LV_COLOR_BLUE LV_COLOR_MAKE(0xFF, 0x00, 0x00)
+#define LV_COLOR_NAVY LV_COLOR_MAKE(0x80, 0x00, 0x00)
+#define LV_COLOR_MAGENTA LV_COLOR_MAKE(0xFF, 0x00, 0xFF)
+#define LV_COLOR_PURPLE LV_COLOR_MAKE(0x80, 0x00, 0x80)
+#define LV_COLOR_ORANGE LV_COLOR_MAKE(0x00, 0xA5, 0xFF)
+#elif 0
 #define LV_COLOR_WHITE LV_COLOR_MAKE(0xFF, 0xFF, 0xFF)
 #define LV_COLOR_SILVER LV_COLOR_MAKE(0xC0, 0xC0, 0xC0)
 #define LV_COLOR_GRAY LV_COLOR_MAKE(0x80, 0x80, 0x80)
@@ -55,6 +75,7 @@ extern "C" {
 #define LV_COLOR_MAGENTA LV_COLOR_MAKE(0xFF, 0x00, 0xFF)
 #define LV_COLOR_PURPLE LV_COLOR_MAKE(0x80, 0x00, 0x80)
 #define LV_COLOR_ORANGE LV_COLOR_MAKE(0xFF, 0xA5, 0x00)
+#endif
 
 /**
  * Opacity percentages.
@@ -372,7 +393,7 @@ static inline uint16_t lv_color_to16(lv_color_t color)
 #endif
     LV_COLOR_SET_B16(ret, LV_COLOR_GET_B(color) >> 3);  /* 8 - 5  = 3*/
     return ret.full;
-#endif                         
+#endif
 }
 
 static inline uint32_t lv_color_to32(lv_color_t color)
@@ -396,9 +417,9 @@ static inline uint32_t lv_color_to32(lv_color_t color)
      * The faster integer math for conversion is:
      *  valueto = ( valuefrom * multiplier + adder ) >> divisor
      *   multiplier = FLOOR( ( (2^bitsto - 1) << divisor ) / (float)(2^bitsfrom - 1) )
-     * 
+     *
      * Find the first divisor where ( adder >> divisor ) <= 0
-     * 
+     *
      * 5-bit to 8-bit: ( 31 * multiplier + adder ) >> divisor = 255
      * divisor  multiplier  adder  min (0)  max (31)
      *       0           8      7        7       255
@@ -407,7 +428,7 @@ static inline uint32_t lv_color_to32(lv_color_t color)
      *       3          65     25        3       255
      *       4         131     19        1       255
      *       5         263      7        0       255
-     * 
+     *
      * 6-bit to 8-bit: 255 = ( 63 * multiplier + adder ) >> divisor
      * divisor  multiplier  adder  min (0)  max (63)
      *       0           4      3        3       255
