@@ -18,12 +18,12 @@
 static void prvPocAudioRecorderMemWriterDelete(auWriter_t *d)
 {
     auPocMemWriter_t *p = (auPocMemWriter_t *)d;
-    
+
     if (p == NULL)
     {
         return;
 	}
-	
+
     OSI_LOGI(0, "audio memory writer deleted");
     free(p->buf);
     free(p);
@@ -37,7 +37,7 @@ static int prvPocAudioRecorderMemWriterWrite(auWriter_t *d, const void *buf, uns
     {
         return 0;
 	}
-	
+
     if (buf == NULL)
     {
         return -1;
@@ -58,7 +58,7 @@ static int prvPocAudioRecorderMemWriterWrite(auWriter_t *d, const void *buf, uns
 		p->pos = size - ( p->max_size - p->pos );
 	}
 	p->size = p->pos;
-    
+
     return size;
 }
 
@@ -80,7 +80,7 @@ static int prvPocAudioRecorderMemWriterSeek(auWriter_t *d, int offset, int whenc
     default:
         return -1;
     }
-    
+
     return p->pos;
 }
 
@@ -91,7 +91,7 @@ static void prvPocAudioRecorderMemReaderDelete(auReader_t *d)
     {
         return;
 	}
-	
+
     OSI_LOGI(0, " poc audio meory reader delete");
     free(p);
 }
@@ -104,12 +104,12 @@ static int prvPocAudioRecorderMemReaderRead(auReader_t *d, void *buf, unsigned s
     {
         return 0;
 	}
-	
+
     if (buf == NULL)
     {
         return -1;
 	}
-	
+
 	if(p->pos + size <= p->size)
 	{
 		memcpy(buf, (const char *)p->buf + p->pos, size);
@@ -124,7 +124,7 @@ static int prvPocAudioRecorderMemReaderRead(auReader_t *d, void *buf, unsigned s
 		memcpy((char *)buf + (p->size - p->pos), (const char *)p->buf, size - (p->size - p->pos));
 		p->pos = size - ( p->size - p->pos );
 	}
-    
+
     return size;
 }
 
@@ -146,7 +146,7 @@ static int prvPocAudioRecorderMemReaderSeek(auReader_t *d, int offset, int whenc
     default:
         return -1;
     }
-    
+
     return p->pos;
 }
 
@@ -163,7 +163,7 @@ static auPocMemReader_t *prvPocAudioRecorderMemReaderCreate(const void *buf, uns
     {
         return NULL;
 	}
-	
+
     auPocMemReader_t *p = (auPocMemReader_t *)calloc(1, sizeof(auPocMemReader_t));
     if (p == NULL)
     {
@@ -188,7 +188,7 @@ static auPocMemWriter_t * prvPocAudioRecorderMemWriterCreate(uint32_t max_size)
     {
         return NULL;
 	}
-	
+
     auPocMemWriter_t *p = (auPocMemWriter_t *)calloc(1, sizeof(auPocMemWriter_t));
     if (p == NULL)
     {
@@ -201,7 +201,7 @@ static auPocMemWriter_t * prvPocAudioRecorderMemWriterCreate(uint32_t max_size)
 		free(p);
 		return NULL;
 	}
-	
+
     p->ops.destroy = prvPocAudioRecorderMemWriterDelete;
     p->ops.write = prvPocAudioRecorderMemWriterWrite;
     p->ops.seek = prvPocAudioRecorderMemWriterSeek;
@@ -217,9 +217,9 @@ void prvPocAudioRecorderTimerCallback(void *ctx)
 	{
 		return;
 	}
-	
+
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)ctx;
-	
+
 	if(recorder->callback == NULL || recorder->prvSwapData == NULL || recorder->prvSwapDataLength < 1 || recorder->writer == NULL || recorder->reader == NULL)
 	{
 		return;
@@ -234,7 +234,7 @@ void prvPocAudioRecorderTimerCallback(void *ctx)
 	{
 		return;
 	}
-	
+
 	recorder->callback(recorder->prvSwapData, recorder->prvSwapDataLength);
 }
 
@@ -245,7 +245,7 @@ void prvPocAudioRecorderTimerCallback(void *ctx)
  */
 void pocAudioRecorderInit(void)
 {
-	
+
 }
 
 /**
@@ -267,12 +267,13 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 	{
 		return 0;
 	}
-	
+
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)malloc(sizeof(pocAudioRecorder_t));
 	if(NULL == recorder)
 	{
 		return 0;
 	}
+	recorder->status = false;
 
 	recorder->recorder = auRecorderCreate();
 	if(recorder->recorder == NULL)
@@ -340,9 +341,16 @@ bool pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
 	bool ret = auRecorderStartWriter(recorder->recorder, AUDEV_RECORD_TYPE_MIC, AUSTREAM_FORMAT_PCM, NULL, (auWriter_t *)recorder->writer);
 	if(ret == false)
 	{
+		recorder->status = false;
 		return false;
 	}
 	ret = osiTimerStartPeriodic(recorder->prvTimerID, recorder->prvTimerDuration);
+	if(ret == false)
+	{
+		recorder->status = false;
+		return false;
+	}
+	recorder->status = true;
 	return ret;
 }
 
@@ -360,7 +368,7 @@ int pocAudioRecorderReset(POCAUDIORECORDER_HANDLE recorder_id)
 	recorder->writer->pos  = 0;
 	recorder->writer->size = 0;
 	recorder->reader->pos  = 0;
-	
+
 	return 0;
 }
 
@@ -376,8 +384,14 @@ bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id)
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
 
 	osiTimerStop(recorder->prvTimerID);
-	
-	return auRecorderStop((auRecorder_t *)recorder->recorder);
+
+	if(auRecorderStop((auRecorder_t *)recorder->recorder))
+	{
+		recorder->status = false;
+		return true;
+	}
+
+	return false;
 }
 
 /**
@@ -406,8 +420,26 @@ bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE       recorder_id)
 	osiTimerDelete(recorder->prvTimerID);
 	free(recorder->prvSwapData);
 	free(recorder);
-	
+
 	return true;
+}
+
+/**
+ * \brief get status of poc audio recorder
+ *
+ * param player_id  ID of POC audio player
+ *
+ * return true is recording
+ */
+bool pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id)
+{
+	if(recorder_id == 0)
+	{
+		return false;
+	}
+	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
+
+	return recorder->status;
 }
 
 #endif

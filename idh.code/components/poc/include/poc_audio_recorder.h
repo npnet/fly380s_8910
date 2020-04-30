@@ -76,6 +76,14 @@ bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id);
  * return return false is fail to delete record, true is success
  */
 bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE recorder_id);
+/**
+ * \brief get status of poc audio recorder
+ *
+ * param player_id  ID of POC audio player
+ *
+ * return true is recording
+ */
+bool pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id);
 
 OSI_EXTERN_C_END
 
