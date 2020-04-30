@@ -68,11 +68,12 @@ typedef struct auPocMemReader auPocMemReader_t;
 /**
  * poc audio player struct
  */
-typedef struct 
+typedef struct
 {
 	auPocMemWriter_t *writer;           //storage data that through write API to play
 	auPocMemReader_t *reader;           //get data from writer to play
 	auPlayer_t       *player;           //real player
+	bool              status;           //true is playying
 } pocAudioPlayer_t;
 
 /**
@@ -88,6 +89,7 @@ typedef struct
 	uint32_t          prvTimerDuration; //duration of send data to others
 	osiTimer_t       *prvTimerID;       //timer which can execute callback in specified duration
 	pocAudioRecorderCallback_t callback;//user specify func
+	bool              status;           //status of recorder
 } pocAudioRecorder_t;
 
 OSI_EXTERN_C_END
