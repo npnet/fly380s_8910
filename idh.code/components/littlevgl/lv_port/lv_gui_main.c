@@ -101,6 +101,7 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {
 #endif
 
 static lvGuiContext_t gLvGuiCtx;
+static bool gLvScreenStatusFirstKey = true;
 
 /**
  * flush display forcedly
@@ -239,7 +240,12 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
         {
             if (gLvKeyMap[n].keypad == last_key)
             {
+	            if(!(d->screen_on))
+	            {
+		            gLvScreenStatusFirstKey = true;
+	            }
                 data->key = gLvKeyMap[n].lv_key;
+
                 break;
             }
         }
@@ -474,4 +480,20 @@ void lvGuiSetAnimationInactive(bool inactive)
 {
     lvGuiContext_t *d = &gLvGuiCtx;
     d->anim_inactive = inactive;
+}
+
+/**
+ * \brief get screen status
+ *
+ *
+ * \param
+ */
+bool lvGuiGetScreenStatus(void)
+{
+	if(gLvScreenStatusFirstKey)
+	{
+		gLvScreenStatusFirstKey = false;
+		return false;
+	}
+	return gLvGuiCtx.screen_on;
 }
