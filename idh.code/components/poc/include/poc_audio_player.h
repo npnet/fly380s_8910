@@ -82,6 +82,15 @@ bool pocAudioPlayerDelete(POCAUDIOPLAYER_HANDLE       player_id);
  */
 int pocAudioPlayerWriteData(POCAUDIOPLAYER_HANDLE player_id, const uint8_t *data, uint32_t length);
 
+/**
+ * \brief get status of poc audio player
+ *
+ * param player_id  ID of POC audio player
+ *
+ * return true is playying
+ */
+bool pocAudioPlayerGetStatus(POCAUDIOPLAYER_HANDLE player_id);
+
 OSI_EXTERN_C_END
 
 #endif
