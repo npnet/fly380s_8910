@@ -216,6 +216,20 @@ typedef enum
     POWER_LEVEL_UNUSED
 } powerLevel_t;
 
+typedef enum
+{
+    RG_RGB_BACKLIGHT_LEVEL_0 = 0,
+    RG_RGB_BACKLIGHT_LEVEL_1,
+    RG_RGB_BACKLIGHT_LEVEL_2,
+    RG_RGB_BACKLIGHT_LEVEL_3,
+    RG_RGB_BACKLIGHT_LEVEL_4,
+    RG_RGB_BACKLIGHT_LEVEL_5,
+    RG_RGB_BACKLIGHT_LEVEL_6,
+    RG_RGB_BACKLIGHT_LEVEL_7,
+    RG_RGB_BACKLIGHT_LEVEL_8,
+    RG_RGB_BACKLIGHT_LEVEL_END,
+} lcdBacklight_t;
+
 /**
  * \brief read chip id
  *

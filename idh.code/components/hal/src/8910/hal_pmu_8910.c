@@ -695,6 +695,8 @@ bool halPmuSetPowerLevel(uint32_t id, uint32_t mv)
     REG_RDA2720M_GLOBAL_LDO_SPIMEM_REG1_T ldo_spimem_reg1;
     REG_RDA2720M_GLOBAL_VIBR_CTRL1_T vibr_ctrl1;
     REG_RDA2720M_GLOBAL_KPLED_CTRL1_T kpled_ctrl1;
+    REG_RDA2720M_BLTC_RG_RGB_V0_T rg_rgb_v0;
+    REG_RDA2720M_BLTC_RG_RGB_V1_T rg_rgb_v1;	
 
     int32_t level = prvVoltageSettingValue(id, mv);
 
@@ -747,6 +749,61 @@ bool halPmuSetPowerLevel(uint32_t id, uint32_t mv)
         break;
     }
 
+    if (id == HAL_POWER_BACK_LIGHT)
+    {
+	    switch (mv)
+        {
+        case RG_RGB_BACKLIGHT_LEVEL_0:
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x00);
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x00);
+            break;
+
+        case RG_RGB_BACKLIGHT_LEVEL_1:
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x08);
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x08);
+            break;
+
+        case RG_RGB_BACKLIGHT_LEVEL_2:
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x10);
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x10);
+            break;
+
+        case RG_RGB_BACKLIGHT_LEVEL_3:
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x18);
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x18);
+            break;
+
+        case RG_RGB_BACKLIGHT_LEVEL_4:
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
+            break;
+
+        case RG_RGB_BACKLIGHT_LEVEL_5:
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x28);
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x28);
+            break;
+
+        case RG_RGB_BACKLIGHT_LEVEL_6:
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x30);
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x30);
+            break;
+
+        case RG_RGB_BACKLIGHT_LEVEL_7:
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x38);
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x38);
+            break;
+
+        case RG_RGB_BACKLIGHT_LEVEL_8:
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x3f);
+	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x3f);
+            break;
+
+        default:
+            // ignore silently
+            break;
+        }
+    }
+	
     return true;
 }
 
