@@ -769,7 +769,7 @@ failed:
 static void prvSetDefaultSetting(audevSetting_t *p)
 {
     p->indev = AUDEV_INPUT_MAINMIC;
-    p->outdev = AUDEV_OUTPUT_SPEAKER;
+    p->outdev = AUDEV_OUTPUT_RECEIVER;
     p->voice_vol = 60;
     p->play_vol = 60;
     p->out_mute = false;
@@ -1416,6 +1416,13 @@ bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
     if (!prvWaitStatus(CODEC_STREAM_START_DONE))
         goto failed_disable_clk;
 
+    if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+    {
+	    extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(true);
+		OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d\n", __LINE__);
+    }
+
     osiWorkEnqueue(d->ipc_work, d->wq);
     osiMutexUnlock(d->lock);
     return true;
@@ -1442,6 +1449,13 @@ bool audevStopPlay(void)
         goto success;
 
     osiTimerStop(d->finish_timer);
+
+    if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+    {
+	    extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(false);
+		OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d\n", __LINE__);
+    }
 
     if (DM_AudStreamStop(prvOutputToSndItf(d->cfg.outdev)) != 0)
         goto failed;
