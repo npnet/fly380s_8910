@@ -63,6 +63,8 @@ void drvChargeDisable(void);
 
 uint16_t drvChargerGetBatteryVoltage();
 
+bool drvChargerGetStatus(int8_t status[]);  // length of array don't less than four
+
 #ifdef __cplusplus
 }
 #endif
