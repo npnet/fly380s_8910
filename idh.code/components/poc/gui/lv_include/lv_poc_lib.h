@@ -14,6 +14,14 @@ OUT lv_indev_t *
 lv_poc_get_keypad_dev(void);
 
 /*
+      name : lv_poc_setting_conf_init
+    return : bool
+      date : 2020-03-30
+*/
+OUT bool
+lv_poc_setting_conf_init(void);
+
+/*
       name : lv_poc_setting_conf_read
     return : point a buff
       date : 2020-03-30
@@ -26,7 +34,7 @@ lv_poc_setting_conf_read(void);
     return : length of buff
       date : 2020-03-30
 */
-OUT uint32_t
+OUT int32_t
 lv_poc_setting_conf_write(void);
 
 /*
@@ -35,18 +43,18 @@ lv_poc_setting_conf_write(void);
     return : current volum
       date : 2020-03-30
 */
-OUT uint8_t 
+OUT uint8_t
 lv_poc_setting_get_current_volume(IN POC_MMI_VOICE_TYPE_E type);
 
 /*
       name : lv_poc_setting_set_current_volume
-     param : 
+     param :
      			[type]  POC_MMI_VOICE_TYPE_E
      			[volum] config volum
      			[play]  need paly msg audio
       date : 2020-03-30
 */
-void 
+void
 lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volume, IN bool play);
 
 /*
@@ -56,6 +64,15 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
 */
 void
 lv_poc_get_time(OUT lv_poc_time_t * time);
+
+/*
+      name : poc_set_lcd_bright_time
+     param : config lcd bright time
+             [0]5秒 [1]15秒 [2]30秒 [3]1分钟 [4]2分钟 [5]5分钟 [6]10分钟 [7]30分钟     [default 2]
+      date : 2020-03-30
+*/
+void
+poc_set_lcd_bright_time(IN uint8_t timeout);
 
 /*
       name : watch_set_lcd_status
@@ -70,20 +87,12 @@ poc_set_lcd_status(IN int8_t wakeup);
     return : get lcd state
       date : 2020-03-30
 */
-OUT int8_t
+OUT bool
 poc_get_lcd_status(void);
 
 /*
       name : poc_set_lcd_blacklight
-     param : get lcd state
-      date : 2020-03-30
-*/
-void
-poc_set_lcd_blacklight(IN int8_t blacklight);
-
-/*
-      name : poc_set_lcd_blacklight
-     param : get lcd state
+     param : set lcd state
       date : 2020-03-30
 */
 void
@@ -100,20 +109,12 @@ void
 poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet);
 
 /*
-      name : poc_battery_get_values
+      name : poc_battery_get_status
      param : point a battery buff
       date : 2020-03-30
 */
 void
-poc_battery_get_values(OUT battery_values_t *values);
-
-/*
-      name : poc_battery_charge_status
-    return : POC_CHG_STATUS
-      date : 2020-03-30
-*/
-OUT POC_CHG_STATUS
-poc_battery_charge_status(void);
+poc_battery_get_status(OUT battery_values_t *values);
 
 /*
       name : poc_check_sim_prsent
@@ -155,6 +156,14 @@ void
 poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting);
 
 /*
+      name : poc_mmi_poc_setting_config_restart
+     param : [poc_setting] IN param
+      date : 2020-03-30
+*/
+void
+poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting);
+
+/*
       name : poc_sys_delay
      param : time in Ms
       date : 2020-03-30
@@ -177,6 +186,94 @@ poc_get_device_imei_rep(OUT int8_t * imei);
 */
 void
 poc_get_device_iccid_rep(int8_t * iccid);
+
+/*
+      name : poc_get_device_account_rep
+     param : get device account
+      date : 2020-04-29
+*/
+char *
+poc_get_device_account_rep(POC_SIM_ID nSim);
+
+/*
+      name : poc_broadcast_play_rep
+     param : play text in some method
+      date : 2020-04-29
+*/
+bool
+poc_broadcast_play_rep(uint8_t * text, uint32_t length, uint8_t broadcast_switch, bool force);
+
+/*
+      name : poc_set_torch_status
+     param : open  true is open torch
+      date : 2020-04-30
+*/
+bool
+poc_set_torch_status(bool open);
+
+/*
+      name : poc_set_torch_status
+     param : none
+      date : 2020-04-30
+*/
+bool
+poc_get_torch_status(void);
+
+/*
+      name : poc_torch_init
+     param : none
+      date : 2020-04-30
+*/
+void
+poc_torch_init(void);
+
+/*
+      name : poc_set_keypad_led_status
+     param : open  true is open keypad led
+      date : 2020-04-30
+*/
+bool
+poc_set_keypad_led_status(bool open);
+
+/*
+      name : poc_get_keypad_led_status
+     param : none
+      date : 2020-04-30
+*/
+bool
+poc_get_keypad_led_status(void);
+
+/*
+      name : poc_keypad_led_init
+     param : none
+      date : 2020-04-30
+*/
+void
+poc_keypad_led_init(void);
+
+/*
+      name : poc_set_PA_status
+     param : open  true is open external PA
+      date : 2020-04-30
+*/
+bool
+poc_set_ext_pa_status(bool open);
+
+/*
+      name : poc_get_ext_pa_status
+     param : none
+      date : 2020-04-30
+*/
+bool
+poc_get_ext_pa_status(void);
+
+/*
+      name : poc_ext_pa_init
+     param : none
+      date : 2020-04-30
+*/
+void
+poc_ext_pa_init(void);
 
 
 #endif //__LV_POC_LIB_H_

@@ -111,6 +111,15 @@ static struct _lv_poc_stack_t
 *                  STATIC DEFINE
 *
 *************************************************/
+
+/*******************
+*     NAME:    lv_poc_setting_init
+*   AUTHOR:    lugj
+* DESCRIPT:    初始化对讲机设置
+*     DATE:    2019-10-24
+********************/
+static bool lv_poc_setting_init(void);
+
 /*******************
 *     NAME:    lv_poc_theme_init
 *   AUTHOR:    lugj
@@ -329,6 +338,25 @@ static void lv_exec_task(lv_task_t * task);
 
 
 
+
+/*******************
+*     NAME:    lv_poc_setting_init
+*   AUTHOR:    lugj
+* DESCRIPT:    初始化对讲机设置
+*     DATE:    2019-10-24
+********************/
+static bool lv_poc_setting_init(void)
+{
+    lv_poc_setting_conf_init();
+    poc_setting_conf = lv_poc_setting_conf_read();
+	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
+	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
+	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
+	poc_keypad_led_init();
+	poc_ext_pa_init();
+    return true;
+}
+
 /*******************
 *     NAME:    lv_poc_theme_init
 *   AUTHOR:    lugj
@@ -337,12 +365,15 @@ static void lv_exec_task(lv_task_t * task);
 ********************/
 static bool lv_poc_theme_init(void)
 {
+	#define LV_POC_SWITCH_ON_OFF_INDIC_COLOR LV_COLOR_MAKE(0x77, 0x77, 0x77);
 // 初始化白色主题
     lv_style_copy(&theme_white_style_base,&lv_style_transp);
     theme_white_style_base.body.main_color = LV_COLOR_MAKE(0x00,0x00,0x00);
     theme_white_style_base.body.grad_color = LV_COLOR_MAKE(0x00,0x00,0x00);
     theme_white_style_base.body.radius = 0;
     theme_white_style_base.body.opa = 255;
+    theme_white_style_base.image.color = LV_COLOR_BLUE;
+    theme_white_style_base.image.intense = 0x33;
 
     lv_style_copy(&theme_white_style_list_scroll, &lv_style_scr);
     lv_style_copy(&theme_white_style_list_page, &theme_white_style_list_scroll);
@@ -376,6 +407,7 @@ static bool lv_poc_theme_init(void)
     lv_style_copy(&theme_white_style_list_btn_pr, &theme_white_style_list_btn_rel);
     theme_white_style_list_btn_pr.body.main_color = LV_COLOR_BLUE;
     theme_white_style_list_btn_pr.body.grad_color = LV_COLOR_BLUE;
+    theme_white_style_list_btn_pr.body.opa = 0xaa;
     theme_white_style_list_btn_pr.text.font = (lv_font_t *)poc_setting_conf->font.list_btn_current_font;
 
     lv_style_copy(&theme_white_style_list_btn_ina, &theme_white_style_list_btn_rel);
@@ -385,8 +417,8 @@ static bool lv_poc_theme_init(void)
 
 
     lv_style_copy(&theme_white_style_win_header, &lv_style_scr);
-    theme_white_style_win_header.body.main_color = LV_COLOR_MAKE(0x00,0xb7,0xee);
-    theme_white_style_win_header.body.grad_color = LV_COLOR_MAKE(0x00,0xb7,0xee);
+    theme_white_style_win_header.body.main_color = LV_COLOR_MAKE(0xee,0xb7,0x00);
+    theme_white_style_win_header.body.grad_color = LV_COLOR_MAKE(0xee,0xb7,0x00);
     theme_white_style_win_header.body.opa = 255;
     theme_white_style_win_header.text.font = (lv_font_t *)poc_setting_conf->font.win_title_font;
     theme_white_style_win_header.text.color = LV_COLOR_MAKE(0xee,0xee,0xee);
@@ -405,8 +437,8 @@ static bool lv_poc_theme_init(void)
 
     lv_style_copy(&theme_white_style_switch_bg, &lv_style_pretty);
     theme_white_style_switch_bg.body.radius = LV_RADIUS_CIRCLE;
-    theme_white_style_switch_bg.body.main_color = lv_color_hex(0x0f383f);
-    theme_white_style_switch_bg.body.grad_color = lv_color_hex(0x0f383f);
+    theme_white_style_switch_bg.body.main_color = LV_COLOR_MAKE(0x3f, 0x38, 0x3f);
+    theme_white_style_switch_bg.body.grad_color = LV_COLOR_MAKE(0x3f, 0x38, 0x3f);
     theme_white_style_switch_bg.body.padding.top = 2;
     theme_white_style_switch_bg.body.padding.bottom = 2;
     theme_white_style_switch_bg.body.padding.left = 2;
@@ -415,8 +447,8 @@ static bool lv_poc_theme_init(void)
 
     lv_style_copy(&theme_white_style_switch_indic, &lv_style_pretty_color);
     theme_white_style_switch_indic.body.radius = LV_RADIUS_CIRCLE;
-    theme_white_style_switch_indic.body.main_color = lv_color_hex(0x9fc8ef);
-    theme_white_style_switch_indic.body.grad_color = lv_color_hex(0x9fc8ef);
+    theme_white_style_switch_indic.body.main_color = LV_COLOR_MAKE(0xef, 0xc8, 0x9f);
+    theme_white_style_switch_indic.body.grad_color = LV_COLOR_MAKE(0xef, 0xc8, 0x9f);
     theme_white_style_switch_indic.body.padding.top = 0;
     theme_white_style_switch_indic.body.padding.bottom = 0;
     theme_white_style_switch_indic.body.padding.left = 0;
@@ -429,12 +461,16 @@ static bool lv_poc_theme_init(void)
     theme_white_style_switch_knob_off.body.shadow.width = 0;
     theme_white_style_switch_knob_off.body.shadow.type = LV_SHADOW_BOTTOM;
     theme_white_style_switch_knob_off.body.border.width = 0;
+    theme_white_style_switch_knob_off.body.main_color = LV_POC_SWITCH_ON_OFF_INDIC_COLOR;
+    theme_white_style_switch_knob_off.body.grad_color = LV_POC_SWITCH_ON_OFF_INDIC_COLOR;
 
-    lv_style_copy(&theme_white_style_switch_knob_on, &lv_style_pretty_color);
+    lv_style_copy(&theme_white_style_switch_knob_on, &lv_style_pretty);
     theme_white_style_switch_knob_on.body.radius = LV_RADIUS_CIRCLE;
     theme_white_style_switch_knob_on.body.shadow.width = 0;
     theme_white_style_switch_knob_on.body.shadow.type = LV_SHADOW_BOTTOM;
     theme_white_style_switch_knob_on.body.border.width = 0;
+    theme_white_style_switch_knob_on.body.main_color = LV_POC_SWITCH_ON_OFF_INDIC_COLOR;
+    theme_white_style_switch_knob_on.body.grad_color = LV_POC_SWITCH_ON_OFF_INDIC_COLOR;
 
     lv_style_copy(&theme_white_style_rb, &lv_style_pretty_color);
     theme_white_style_rb.body.radius = LV_RADIUS_CIRCLE;
@@ -463,8 +499,8 @@ static bool lv_poc_theme_init(void)
     theme_white_style_status_bar_time.text.font = (lv_font_t *)poc_setting_conf->font.status_bar_time_font;
 
     lv_style_copy(&theme_white_style_control,&lv_style_plain);
-    theme_white_style_control.body.main_color = LV_COLOR_MAKE(0x00,0x33,0x88);
-    theme_white_style_control.body.grad_color = LV_COLOR_MAKE(0x00,0x63,0x88);
+    theme_white_style_control.body.main_color = LV_COLOR_MAKE(0x88,0x33,0x00);
+    theme_white_style_control.body.grad_color = LV_COLOR_MAKE(0x88,0x63,0x00);
     theme_white_style_control.text.color = LV_COLOR_WHITE;
     theme_white_style_control.text.font = (lv_font_t *)poc_setting_conf->font.activity_control_font;
 
@@ -474,6 +510,8 @@ static bool lv_poc_theme_init(void)
     theme_black_style_base.body.grad_color = LV_COLOR_MAKE(0x00,0x00,0x00);
     theme_black_style_base.body.radius = 0;
     theme_black_style_base.body.opa = 255;
+    theme_black_style_base.image.color = LV_COLOR_BLUE;
+    theme_black_style_base.image.intense = 0x33;
 
     lv_style_copy(&theme_black_style_list_scroll, &lv_style_scr);
     lv_style_copy(&theme_black_style_list_page, &theme_black_style_list_scroll);
@@ -503,17 +541,18 @@ static bool lv_poc_theme_init(void)
     theme_black_style_list_btn_rel.body.padding.left = 2;
     theme_black_style_list_btn_rel.body.padding.right = 3;
     theme_black_style_list_btn_rel.image.color = LV_COLOR_GRAY;
-    theme_black_style_list_btn_rel.image.intense = 255;
+    theme_black_style_list_btn_rel.image.intense = 230;
     theme_black_style_list_btn_rel.image.opa = 255;
     //theme_black_style_list_btn_rel.body.opa = 0;
 
     lv_style_copy(&theme_black_style_list_btn_pr, &theme_black_style_list_btn_rel);
-    theme_black_style_list_btn_pr.body.main_color = LV_COLOR_MAKE(0x00,0x00,0xbb);
-    theme_black_style_list_btn_pr.body.grad_color = LV_COLOR_MAKE(0x00,0x00,0xbb);
+    theme_black_style_list_btn_pr.body.main_color = LV_COLOR_MAKE(0xbb,0x00,0x00);
+    theme_black_style_list_btn_pr.body.grad_color = LV_COLOR_MAKE(0xbb,0x00,0x00);
     theme_black_style_list_btn_pr.text.font = (lv_font_t *)poc_setting_conf->font.list_btn_current_font;
     theme_black_style_list_btn_pr.image.color = LV_COLOR_GRAY;
-    theme_black_style_list_btn_pr.image.intense = 255;
+    theme_black_style_list_btn_pr.image.intense = 230;
     theme_black_style_list_btn_pr.image.opa = 255;
+    theme_black_style_list_btn_pr.body.opa = 0xaa;
 
     lv_style_copy(&theme_black_style_list_btn_ina, &theme_black_style_list_btn_rel);
     theme_black_style_list_btn_ina.body.main_color = LV_COLOR_MAKE(0x7f,0x7f,0x7f);
@@ -545,8 +584,8 @@ static bool lv_poc_theme_init(void)
 
     lv_style_copy(&theme_black_style_switch_bg, &lv_style_pretty);
     theme_black_style_switch_bg.body.radius = LV_RADIUS_CIRCLE;
-    theme_black_style_switch_bg.body.main_color = lv_color_hex(0xf0c7c0);
-    theme_black_style_switch_bg.body.grad_color = lv_color_hex(0xf0c7c0);
+    theme_black_style_switch_bg.body.main_color = LV_COLOR_MAKE(0xf0, 0xc7, 0xc0);
+    theme_black_style_switch_bg.body.grad_color = LV_COLOR_MAKE(0xf0, 0xc7, 0xc0);
     theme_black_style_switch_bg.body.padding.top = 2;
     theme_black_style_switch_bg.body.padding.bottom = 2;
     theme_black_style_switch_bg.body.padding.left = 2;
@@ -555,8 +594,8 @@ static bool lv_poc_theme_init(void)
 
     lv_style_copy(&theme_black_style_switch_indic, &lv_style_pretty_color);
     theme_black_style_switch_indic.body.radius = LV_RADIUS_CIRCLE;
-    theme_black_style_switch_indic.body.main_color = lv_color_hex(0x603710);
-    theme_black_style_switch_indic.body.grad_color = lv_color_hex(0x603710);
+    theme_black_style_switch_indic.body.main_color = LV_COLOR_MAKE(0x60, 0x37, 0x10);
+    theme_black_style_switch_indic.body.grad_color = LV_COLOR_MAKE(0x60, 0x37, 0x10);
     theme_black_style_switch_indic.body.padding.top = 0;
     theme_black_style_switch_indic.body.padding.bottom = 0;
     theme_black_style_switch_indic.body.padding.left = 0;
@@ -569,12 +608,16 @@ static bool lv_poc_theme_init(void)
     theme_black_style_switch_knob_off.body.shadow.width = 0;
     theme_black_style_switch_knob_off.body.shadow.type = LV_SHADOW_BOTTOM;
     theme_black_style_switch_knob_off.body.border.width = 0;
+    theme_black_style_switch_knob_off.body.main_color = LV_POC_SWITCH_ON_OFF_INDIC_COLOR;
+    theme_black_style_switch_knob_off.body.grad_color = LV_POC_SWITCH_ON_OFF_INDIC_COLOR;
 
     lv_style_copy(&theme_black_style_switch_knob_on, &lv_style_pretty_color);
     theme_black_style_switch_knob_on.body.radius = LV_RADIUS_CIRCLE;
     theme_black_style_switch_knob_on.body.shadow.width = 0;
     theme_black_style_switch_knob_on.body.shadow.type = LV_SHADOW_BOTTOM;
     theme_black_style_switch_knob_on.body.border.width = 0;
+    theme_black_style_switch_knob_on.body.main_color = LV_POC_SWITCH_ON_OFF_INDIC_COLOR;
+    theme_black_style_switch_knob_on.body.grad_color = LV_POC_SWITCH_ON_OFF_INDIC_COLOR;
 
     lv_style_copy(&theme_black_style_rb, &lv_style_pretty_color);
     theme_black_style_rb.body.radius = LV_RADIUS_CIRCLE;
@@ -603,8 +646,8 @@ static bool lv_poc_theme_init(void)
     theme_black_style_status_bar_time.text.font = (lv_font_t *)poc_setting_conf->font.status_bar_time_font;
 
     lv_style_copy(&theme_black_style_control,&lv_style_plain);
-    theme_black_style_control.body.main_color = LV_COLOR_MAKE(0x00,0x33,0x88);
-    theme_black_style_control.body.grad_color = LV_COLOR_MAKE(0x00,0x63,0x88);
+    theme_black_style_control.body.main_color = LV_COLOR_MAKE(0x88,0x33,0x00);
+    theme_black_style_control.body.grad_color = LV_COLOR_MAKE(0x88,0x33,0x00);
     theme_black_style_control.text.color = LV_COLOR_WHITE;
     theme_black_style_control.text.font = (lv_font_t *)poc_setting_conf->font.activity_control_font;
     return true;
@@ -1032,6 +1075,12 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 
     bool is_keypad_msg = lv_poc_is_keypad_msg(sign, param);
     bool lcd_is_wakeup = poc_get_lcd_status();
+
+	if(is_keypad_msg && !lcd_is_wakeup)
+	{
+		return LV_RES_INV;
+	}
+
     poc_setting_conf = lv_poc_setting_conf_read();
     uint32_t cur_key = 0;
 
@@ -1083,7 +1132,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
             if(vol_cur > 0)
             {
                 vol_cur = vol_cur - 1;
-                lv_poc_setting_set_current_volume(POC_MMI_VOICE_MSG , vol_cur, poc_setting_conf->btn_voice_switch);
+                lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
             }
         }
         else if(cur_key == LV_GROUP_KEY_VOL_UP)
@@ -1091,12 +1140,12 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
             if(vol_cur < 11)
             {
                 vol_cur = vol_cur + 1;
-                lv_poc_setting_set_current_volume(POC_MMI_VOICE_MSG , vol_cur, poc_setting_conf->btn_voice_switch);
+                lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
             }
         }
         else if(cur_key != LV_GROUP_KEY_POC)
         {
-		    poc_play_btn_voice_one_time(vol_cur, poc_setting_conf->btn_voice_switch);
+		    poc_play_btn_voice_one_time(vol_cur, poc_setting_conf->voice_broadcast_switch || !(poc_setting_conf->btn_voice_switch));
         }
     }
 
@@ -1351,7 +1400,7 @@ void lv_poc_stabar_task(lv_task_t * task)
 UINT8 lv_poc_get_battery_state(void)
 {
     battery_values_t * battery_value = lv_mem_alloc(sizeof(battery_values_t));
-    poc_battery_get_values(battery_value);
+    poc_battery_get_status(battery_value);
     lv_poc_status_bar_fptr->has_battery = battery_value->battery_status == 1? true:false;
     lv_mem_free(battery_value);
     return battery_value->battery_status;
@@ -1388,17 +1437,16 @@ bool lv_poc_get_sim2_state(void)
 lv_img_dsc_t * lv_poc_get_battery_img(void)
 {
 	battery_values_t battery_t;
-	poc_battery_get_values(&battery_t);
-    POC_CHG_STATUS charge_state = poc_battery_charge_status();
+	poc_battery_get_status(&battery_t);
     const lv_img_dsc_t * battery_img = NULL;
 
-    if(poc_battery_charge_status())
+    if(!battery_t.battery_status)
     {
         battery_img = &stat_sys_no_battery;
         return (lv_img_dsc_t *)battery_img;
     }
 
-    if(POC_CHG_DISCONNECTED == charge_state)
+    if(POC_CHG_DISCONNECTED == battery_t.charging)
     {
         if(battery_t.battery_value >= 100)
         {
@@ -1510,17 +1558,27 @@ static unsigned short lv_poc_get_sim_state_code(POC_SIM_ID sim_id)
 
 void lv_poc_update_stabar_sim_img(void)
 {
-#define MAX_SIM_COUNT 2
+#define MAX_SIM_COUNT 1
 #define MAX_SIM_SIGNAL_STRENGTH 4
     unsigned short sim_state_code[MAX_SIM_COUNT] = { 0 };
-    lv_poc_status_bar_sim_obj_t * sim_cont[MAX_SIM_COUNT] = {lv_poc_status_bar_fptr->sim1, lv_poc_status_bar_fptr->sim2};
+    lv_poc_status_bar_sim_obj_t * sim_cont[MAX_SIM_COUNT] = {lv_poc_status_bar_fptr->sim1,
+#if MAX_SIM_COUNT > 1
+														    lv_poc_status_bar_fptr->sim2,
+#endif
+														    };
     const lv_img_dsc_t * sim_signal_img[MAX_SIM_COUNT * MAX_SIM_SIGNAL_STRENGTH + 1] = {&ic_signal_no_signal,
                                                                                   &ic_signal_1_1, &ic_signal_1_2,
                                                                                   &ic_signal_1_3, &ic_signal_1_4,
+#if MAX_SIM_COUNT > 1
                                                                                   &ic_signal_2_1, &ic_signal_2_2,
                                                                                   &ic_signal_2_3, &ic_signal_2_4
+#endif
                                                                                  };
-    bool * has_sim[MAX_SIM_COUNT] = {&(lv_poc_status_bar_fptr->has_sim1), &(lv_poc_status_bar_fptr->has_sim2)};
+    bool * has_sim[MAX_SIM_COUNT] = {&(lv_poc_status_bar_fptr->has_sim1),
+#if MAX_SIM_COUNT > 1
+								    &(lv_poc_status_bar_fptr->has_sim2),
+#endif
+								    };
     static unsigned short old_sim_state_code[MAX_SIM_COUNT] = { 0 };
     static bool is_continue = true;
     int k;
@@ -1532,7 +1590,9 @@ void lv_poc_update_stabar_sim_img(void)
     //static char poc_pro_state = 0;
 
     sim_state_code[0] = lv_poc_get_sim_state_code(POC_SIM_1);
+#if MAX_SIM_COUNT > 1
     sim_state_code[1] = lv_poc_get_sim_state_code(POC_SIM_2);
+#endif
 
     for(k = 0; k < MAX_SIM_COUNT; k++)
     {
@@ -1703,19 +1763,19 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
         lv_poc_control_text_t *control_text)
 {
     static bool is_lv_poc_atctivity_init = false;
-    lv_style_t * poc_display_style;
-    poc_setting_conf = lv_poc_setting_conf_read();
+    lv_style_t * poc_display_style = NULL;
 
-    if(false == is_lv_poc_atctivity_init)
+    if(!is_lv_poc_atctivity_init)
     {
         is_lv_poc_atctivity_init = true;
-        poc_mmi_poc_setting_config(poc_setting_conf);
+        lv_poc_setting_init();
         lv_poc_theme_init();
         lv_poc_status_bar_init();
         lv_poc_activity_list_init();
         lv_poc_stack_init();
     }
 
+    poc_setting_conf = lv_poc_setting_conf_read();
     poc_display_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_base);
     lv_poc_activity_t *activity = (lv_poc_activity_t *)lv_mem_alloc(sizeof(lv_poc_activity_t));
     //lv_mem_assert(activity);
