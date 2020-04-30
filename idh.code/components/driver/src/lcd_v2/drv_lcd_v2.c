@@ -353,6 +353,26 @@ void drvLcdSetBackLightEnable(drvLcd_t *d, bool enabled)
     halPmuSwitchPower(LCD_BACK_LIGHT_POWER, enabled, false);
 }
 
+/**
+ * \brief turn back light of LCD
+ *
+ * \param d         LCD instance
+ * \param level   level of back ligh of lcd
+ */
+void drvLcdSetBackLightNess(drvLcd_t *d, uint32_t level)
+{
+	uint32_t backlightness = level;
+	if(backlightness >= RG_RGB_BACKLIGHT_LEVEL_END)
+	{
+		backlightness = RG_RGB_BACKLIGHT_LEVEL_8;
+	}
+	else if(backlightness < RG_RGB_BACKLIGHT_LEVEL_0)
+	{
+		backlightness = RG_RGB_BACKLIGHT_LEVEL_0;
+	}
+	halPmuSetPowerLevel(LCD_BACK_LIGHT_POWER, backlightness);
+}
+
 void drvLcdWaitTransferDone(void)
 {
     prvWaitGouda();

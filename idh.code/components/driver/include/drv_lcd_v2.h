@@ -383,6 +383,14 @@ bool drvLcdWakeup(drvLcd_t *d);
 void drvLcdSetBackLightEnable(drvLcd_t *d, bool enabled);
 
 /**
+ * \brief turn back light of LCD
+ *
+ * \param d         LCD instance
+ * \param level   level of back ligh of lcd
+ */
+void drvLcdSetBackLightNess(drvLcd_t *d, uint32_t level);
+
+/**
  * \brief get panel information
  *
  * When the panel is invalid, it will return false.
