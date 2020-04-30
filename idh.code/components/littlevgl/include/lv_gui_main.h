@@ -143,5 +143,13 @@ void lvGuiSetInactiveTimeout(unsigned timeout);
  */
 void lvGuiSetAnimationInactive(bool inactive);
 
+/**
+ * \brief get screen status
+ *
+ *
+ * \param
+ */
+bool lvGuiGetScreenStatus(void);
+
 OSI_EXTERN_C_END
 #endif
