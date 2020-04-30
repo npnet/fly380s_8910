@@ -986,7 +986,7 @@ failed:
 static void prvSetDefaultSetting(audevSetting_t *p)
 {
     p->indev = AUDEV_INPUT_MAINMIC;
-    p->outdev = AUDEV_OUTPUT_SPEAKER;
+    p->outdev = AUDEV_OUTPUT_RECEIVER;
     p->voice_vol = 60;
     p->play_vol = 60;
     p->out_mute = false;
@@ -2893,6 +2893,13 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         memcpy(&(d->play.stream), &stream, sizeof(HAL_AIF_STREAM_T));
         memcpy(&(d->play.level), &level, sizeof(AUD_LEVEL_T));
 
+		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+	    {
+		    extern bool poc_set_ext_pa_status(bool open);
+			poc_set_ext_pa_status(true);
+			OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d\n", __LINE__);
+	    }
+
         osiWorkEnqueue(d->ipc_work, d->wq);
         osiMutexUnlock(d->lock);
         return true;
@@ -3001,6 +3008,14 @@ bool audevStopPlayV2(void)
     OSI_LOGI(0, "audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
 
     osiMutexLock(d->lock);
+
+	if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+    {
+	    extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(false);
+		OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d\n", __LINE__);
+    }
+
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
     {
         if ((d->clk_users & AUDEV_CLK_USER_PLAY) == 0)
