@@ -1887,3 +1887,24 @@ void drvChargeDisable(void)
     charge_stop = true;
     _drvChargerTurnOff();
 }
+
+bool drvChargerGetStatus(int8_t status[]) // length of array don't less than 16
+{
+	status[0] = _drvChargerCheckVbatPresent();
+	chgStateInfo_t * module_status = _drvChargerGetModuleState();
+
+    uint8_t nBcs = 0;
+    uint8_t nBcl = 0;
+
+    drvChargerGetInfo(&nBcs, &nBcl);
+	status[1] = nBcs;
+	status[2] = nBcl;
+	status[3] = drvChargerGetType();
+	uint32_t * temp = (uint32_t *)(&(status[4]));
+	*temp = _drvChargerGetChgCurrent();
+	temp = (uint32_t *)(&(status[8]));
+	*temp = module_status->bat_cur_vol;
+	temp = (uint32_t *)(&(status[12]));
+	*temp = module_status->charging_temperature;
+}
+
