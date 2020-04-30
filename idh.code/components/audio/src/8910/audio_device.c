@@ -904,7 +904,7 @@ failed:
 static void prvSetDefaultSetting(audevSetting_t *p)
 {
     p->indev = AUDEV_INPUT_MAINMIC;
-    p->outdev = AUDEV_OUTPUT_SPEAKER;
+    p->outdev = AUDEV_OUTPUT_RECEIVER;
     p->voice_vol = 60;
     p->play_vol = 60;
     p->out_mute = false;
@@ -2691,6 +2691,13 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         return true;
     }
 
+    if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+    {
+	    extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(true);
+		OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d\n", __LINE__);
+    }
+	
 failed_disable_clk:
 #ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
     if (d->cfg.ext_i2s_en)
@@ -2721,6 +2728,14 @@ bool audevStopPlayV2(void)
     OSI_LOGI(0, "audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
 
     osiMutexLock(d->lock);
+	
+    if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+    {
+	    extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(false);
+		OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d\n", __LINE__);
+    }
+	
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
     {
         if ((d->clk_users & AUDEV_CLK_USER_PLAY) == 0)
@@ -2772,7 +2787,7 @@ bool audevStopPlayV2(void)
 
         prvDisableAudioClk(AUDEV_CLK_USER_PLAY);
     }
-
+	
 success:
     osiMutexUnlock(d->lock);
     return true;
