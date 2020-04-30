@@ -53,7 +53,7 @@ static void volum_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
     poc_setting_conf = lv_poc_setting_conf_read();
-    
+
     btn = lv_list_add_btn(list, NULL, "媒体音量");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_volum_press_btn_action);
@@ -98,42 +98,42 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			switch(c)
 			{
 				case LV_GROUP_KEY_ENTER:
-				
+
 				case LV_GROUP_KEY_DOWN:
-				
+
 				case LV_GROUP_KEY_UP:
 				{
 					activity_list->signal_cb(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					lv_poc_del_activity(poc_volum_activity);
@@ -142,7 +142,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			}
 			break;
 		}
-			
+
 		case LV_SIGNAL_LONG_PRESS:
 		{
 			unsigned int c = *(unsigned int *)param;
@@ -152,42 +152,42 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
@@ -205,7 +205,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			break;
 		}
-			
+
 		default:
 		{
 			break;
@@ -234,6 +234,90 @@ void lv_poc_volum_open(void)
     lv_poc_activity_set_design_cb(poc_volum_activity, design_func);
 }
 
+typedef struct
+{
+	uint8_t volum;
+	uint8_t count;
+	lv_obj_t * slider;
+	char * title;
+} lv_poc_volum_display_slider_t;
+
+static void prv_lv_poc_volum_display_slider_task(lv_task_t * task)
+{
+	lv_poc_volum_display_slider_t * info = (lv_poc_volum_display_slider_t *)task->user_data;
+	if(info == NULL || info->title == NULL)
+	{
+		return;
+	}
+
+	if(info->slider == NULL)
+	{
+		info->slider = lv_slider_create(lv_scr_act(), NULL);
+		if(info->slider == NULL)
+		{
+			return;
+		}
+		lv_disp_t * disp = lv_disp_get_default();
+		lv_obj_set_size(info->slider, lv_disp_get_hor_res(disp) / 10 * 7, lv_disp_get_ver_res(disp) / 6);
+		lv_obj_align(info->slider, lv_scr_act(), LV_ALIGN_CENTER, 0, -(lv_disp_get_ver_res(disp) / 6));
+		lv_slider_set_range(info->slider, 0, 10);
+	}
+
+	if(info->count == 0)
+	{
+		lv_obj_set_hidden(info->slider, true);
+		return;
+	}
+	info->count = info->count - 1;
+	lv_obj_set_parent(info->slider, lv_scr_act());
+	lv_obj_set_hidden(info->slider, false);
+	lv_slider_set_value(info->slider, info->volum, LV_ANIM_OFF);
+	//info->title
+}
+
+static bool prv_lv_poc_volum_display(POC_MMI_VOICE_TYPE_E type, uint8_t volume)
+{
+	static char * volum_title[] = {"消息", "提示音", "按键音", "媒体", "通话"};
+	static char * title = NULL;
+	static uint8_t old_volum = 0;
+	static POC_MMI_VOICE_TYPE_E old_type = POC_MMI_VOICE_MSG;
+	static lv_poc_volum_display_slider_t info = {0, 0, NULL, NULL};
+	static lv_task_t * volum_slider_task = NULL;
+	if(old_volum == volume) return false;
+	if(old_type != type)
+	{
+		old_type = type;
+		title = volum_title[old_type];
+	}
+
+	info.title = title;
+	info.volum = volume;
+	info.count = 20;
+
+	if(volum_slider_task == NULL)
+	{
+		volum_slider_task = lv_task_create(prv_lv_poc_volum_display_slider_task, 100, LV_TASK_PRIO_LOWEST, &info);
+		if(volum_slider_task == NULL)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+bool lv_poc_set_volum(POC_MMI_VOICE_TYPE_E type, uint8_t volume, bool play, bool display)
+{
+	static uint8_t old_volum = 0;
+	if(old_volum == volume) return false;
+
+	old_volum = volume;
+	lv_poc_setting_set_current_volume(type, old_volum, play);
+	if(display)
+	{
+		return prv_lv_poc_volum_display(type , old_volum);
+	}
+	return true;
+}
 
 
 #ifdef __cplusplus
