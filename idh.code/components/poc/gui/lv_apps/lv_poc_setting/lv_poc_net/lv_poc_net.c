@@ -76,7 +76,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(net_switch_rb, cb);
     btn_array[0] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "仅3G/2G");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_choice_net_press_btn_action);
@@ -92,7 +92,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(net_switch_rb, cb);
     btn_array[1] = btn;
-    
+
     lv_list_set_btn_selected(list, btn_array[poc_setting_conf->net_type]);
     lv_poc_rb_press(net_switch_rb, btn_array[poc_setting_conf->net_type]->user_data);
     OSI_LOGI(0, "[net_choice] choice current net type\n");
@@ -100,9 +100,9 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
 
 static void lv_poc_choice_net_press_btn_action(lv_obj_t * obj, lv_event_t event)
 {
-    int index = lv_list_get_btn_index(activity_list, obj);
-    if(LV_EVENT_CLICKED == event)
+    if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
+	    int index = lv_list_get_btn_index(activity_list, obj);
         if(poc_setting_conf->net_type != index)
         {
     	    poc_setting_conf->net_type = index;
@@ -110,6 +110,7 @@ static void lv_poc_choice_net_press_btn_action(lv_obj_t * obj, lv_event_t event)
     	    lv_poc_refresh_ui_next();
     	    lv_poc_rb_press(net_switch_rb, obj->user_data);
         }
+        lv_poc_refresh_ui_next();
     }
 }
 
@@ -117,104 +118,55 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 {
 	switch(sign)
 	{
-		case LV_SIGNAL_PRESSED:
+		case LV_SIGNAL_CONTROL:
 		{
+			if(param == NULL) return LV_RES_OK;
 			unsigned int c = *(unsigned int *)param;
 			switch(c)
 			{
 				case LV_GROUP_KEY_ENTER:
-				
+				{
+					lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
+				}
+
 				case LV_GROUP_KEY_DOWN:
-				
+
 				case LV_GROUP_KEY_UP:
 				{
-					activity_list->signal_cb(activity_list, LV_SIGNAL_CONTROL, param);
+					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					lv_poc_del_activity(poc_net_switch_activity);
-					break;
-				}
-			}
-			break;
-		}
-			
-		case LV_SIGNAL_LONG_PRESS:
-		{
-			unsigned int c = *(unsigned int *)param;
-			switch(c)
-			{
-				case LV_GROUP_KEY_ENTER:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_ESC:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_GP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_MB:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_POC:
-				{
 					break;
 				}
 			}
@@ -230,7 +182,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			break;
 		}
-			
+
 		default:
 		{
 			break;

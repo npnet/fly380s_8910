@@ -76,7 +76,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(main_sim_choice_rb, cb);
     btn_array[0] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "卡2");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_choice_sim_press_btn_action);
@@ -92,21 +92,22 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(main_sim_choice_rb, cb);
     btn_array[1] = btn;
-    
+
     lv_list_set_btn_selected(list, btn_array[poc_setting_conf->main_SIM]);
     lv_poc_rb_press(main_sim_choice_rb, btn_array[poc_setting_conf->main_SIM]->user_data);
 }
 
 static void lv_poc_choice_sim_press_btn_action(lv_obj_t * obj, lv_event_t event)
 {
-    int index = lv_list_get_btn_index(activity_list, obj);
-    if(LV_EVENT_CLICKED == event)
+    if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
+	    int index = lv_list_get_btn_index(activity_list, obj);
 		if(poc_setting_conf->main_SIM != index)
 		{
 			poc_setting_conf->main_SIM = index;
 			lv_poc_setting_conf_write();
 			lv_poc_rb_press(main_sim_choice_rb, obj->user_data);
+			lv_poc_refresh_ui_next();
 		}
     }
 }
@@ -115,104 +116,55 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 {
 	switch(sign)
 	{
-		case LV_SIGNAL_PRESSED:
+		case LV_SIGNAL_CONTROL:
 		{
-			unsigned int c = *(unsigned int *)param;
-			switch(c)
-			{
-				case LV_KEY_ENTER:
-				
-				case LV_KEY_DOWN:
-				
-				case LV_KEY_UP:
-				{
-					activity_list->signal_cb(activity_list, LV_SIGNAL_CONTROL, param);
-					break;
-				}
-				
-				case LV_GROUP_KEY_GP:
-				{
-					
-					break;
-				}
-				
-				case LV_GROUP_KEY_MB:
-				{
-					
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_POC:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_ESC:
-				{
-					lv_poc_del_activity(poc_main_sim_choice_activity);
-					break;
-				}
-			}
-			break;
-		}
-			
-		case LV_SIGNAL_LONG_PRESS:
-		{
+			if(param == NULL) return LV_RES_OK;
 			unsigned int c = *(unsigned int *)param;
 			switch(c)
 			{
 				case LV_GROUP_KEY_ENTER:
 				{
-					break;
+					lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
 				}
-				
-				case LV_GROUP_KEY_ESC:
-				{
-					break;
-				}
-				
+
 				case LV_GROUP_KEY_DOWN:
-				{
-					break;
-				}
-				
+
 				case LV_GROUP_KEY_UP:
 				{
+					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
+					break;
+				}
+
+				case LV_GROUP_KEY_ESC:
+				{
+					lv_poc_del_activity(poc_main_sim_choice_activity);
 					break;
 				}
 			}
@@ -228,7 +180,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			break;
 		}
-			
+
 		default:
 		{
 			break;
