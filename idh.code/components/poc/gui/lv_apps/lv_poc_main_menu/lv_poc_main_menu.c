@@ -62,13 +62,13 @@ static void lv_poc_main_menu_activity_ext_destory_cb(lv_obj_t *obj)
 
 static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
 {
-#if 0
 	const char * text =  lv_list_get_btn_text(obj);
 	if(text == NULL)
 	{
 		return;
 	}
-	if(LV_EVENT_CLICKED == event)
+	poc_broadcast_play_rep((uint8_t *)text, strlen(text), poc_setting_conf->voice_broadcast_switch, false);
+	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
 		if(0 == strcmp(text, (const char *)lv_poc_main_menu_item_text_member_list))
 		{
@@ -91,7 +91,6 @@ static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
 			lv_poc_about_open();
 		}
 	}
-#endif
 }
 
 static void * lv_poc_main_menu_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -174,27 +173,7 @@ static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t s
 			{
 				case LV_GROUP_KEY_ENTER:
 				{
-					char * btn_name = (char *)lv_list_get_btn_text(lv_list_get_btn_selected(main_menu_list));
-					if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_member_list))
-					{
-						lv_poc_member_list_open(NULL, NULL, false);
-					}
-					else if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_group_list))
-					{
-						lv_poc_group_list_open();
-					}
-					else if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_setting))
-					{
-						lv_poc_setting_open();
-					}
-					else if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_new_group))
-					{
-						lv_poc_build_group_open();
-					}
-					else if(0 == strcmp(btn_name, (const char *)lv_poc_main_menu_item_text_about))
-					{
-						lv_poc_about_open();
-					}
+					lv_signal_send(main_menu_list, LV_SIGNAL_PRESSED, NULL);
 					break;
 				}
 
@@ -202,7 +181,7 @@ static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t s
 
 				case LV_GROUP_KEY_UP:
 				{
-					main_menu_list->signal_cb(main_menu_list, LV_SIGNAL_CONTROL, param);
+					lv_signal_send(main_menu_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
 
@@ -229,8 +208,9 @@ static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t s
 		{
 			if(lv_poc_get_refresh_ui())
 			{
-				lv_task_t * task = lv_task_create(poc_main_menu_update_UI_task, 100, LV_TASK_PRIO_LOWEST, NULL);
-				lv_task_once(task);
+				//lv_task_t * task = lv_task_create(poc_main_menu_update_UI_task, 10, LV_TASK_PRIO_LOWEST, NULL);
+				//lv_task_once(task);
+				poc_main_menu_update_UI_task(NULL);
 			}
 			break;
 		}
