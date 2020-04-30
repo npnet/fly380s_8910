@@ -29,7 +29,7 @@ lv_poc_activity_t * poc_theme_switch_activity;
 static lv_poc_rb_t * theme_switch_rb;
 
 static char is_poc_theme_update_UI_task_running = 0;
- 
+
 
 
 
@@ -79,7 +79,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(theme_switch_rb, cb);
     btn_array[0] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "黑色");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_theme_press_btn_action);
@@ -95,7 +95,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(theme_switch_rb, cb);
     btn_array[1] = btn;
-    
+
     lv_list_set_btn_selected(list, btn_array[poc_setting_conf->theme.type]);
     lv_poc_rb_press(theme_switch_rb, btn_array[poc_setting_conf->theme.type]->user_data);
 #if 0
@@ -119,9 +119,9 @@ static void poc_theme_update_UI_task(lv_task_t * task)
 
 static void lv_poc_theme_press_btn_action(lv_obj_t * obj, lv_event_t event)
 {
-    int index = lv_list_get_btn_index(activity_list, obj);
-    if(LV_EVENT_CLICKED == event)
+    if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
+	    int index = lv_list_get_btn_index(activity_list, obj);
 		if(poc_setting_conf->theme.type != index)
 		{
 			if(index == 0)
@@ -136,9 +136,9 @@ static void lv_poc_theme_press_btn_action(lv_obj_t * obj, lv_event_t event)
 			}
 			lv_poc_rb_press(theme_switch_rb, obj);
 			lv_poc_setting_conf_write();
-			lv_poc_refresh_ui_next();
-			lv_task_t * task = lv_task_create(poc_theme_update_UI_task, 100, LV_TASK_PRIO_LOWEST, NULL);
+			lv_task_t * task = lv_task_create(poc_theme_update_UI_task, 10, LV_TASK_PRIO_LOWEST, NULL);
 			lv_task_once(task);
+			lv_poc_refresh_ui_next();
 		}
     }
 }
@@ -147,104 +147,55 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 {
 	switch(sign)
 	{
-		case LV_SIGNAL_PRESSED:
+		case LV_SIGNAL_CONTROL:
 		{
+			if(param == NULL) return LV_RES_OK;
 			unsigned int c = *(unsigned int *)param;
 			switch(c)
 			{
 				case LV_GROUP_KEY_ENTER:
-				
+				{
+					lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
+				}
+
 				case LV_GROUP_KEY_DOWN:
-				
+
 				case LV_GROUP_KEY_UP:
 				{
-					activity_list->signal_cb(activity_list, LV_SIGNAL_CONTROL, param);
+					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					lv_poc_del_activity(poc_theme_switch_activity);
-					break;
-				}
-			}
-			break;
-		}
-			
-		case LV_SIGNAL_LONG_PRESS:
-		{
-			unsigned int c = *(unsigned int *)param;
-			switch(c)
-			{
-				case LV_GROUP_KEY_ENTER:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_ESC:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_GP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_MB:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_POC:
-				{
 					break;
 				}
 			}
@@ -260,7 +211,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			break;
 		}
-			
+
 		default:
 		{
 			break;

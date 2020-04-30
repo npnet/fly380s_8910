@@ -142,13 +142,15 @@ static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 			{
 				case LV_GROUP_KEY_ENTER:
 				{
-					lv_poc_main_menu_open();
+					//lv_poc_main_menu_open();
+					lv_event_send(activity_idle->control->left_button, LV_EVENT_CLICKED, NULL);
 					break;
 				}
 
 				case LV_GROUP_KEY_ESC:
 				{
-					lv_poc_idle_next_page();
+					//lv_poc_idle_next_page();
+					lv_event_send(activity_idle->control->right_button, LV_EVENT_CLICKED, NULL);
 					break;
 				}
 
@@ -652,6 +654,26 @@ char * lv_poc_idle_get_group_name(void)
     return lv_label_get_text(idle_group_name_label);
 }
 
+static void  lv_poc_idle_control_left_label_event_cb(lv_obj_t * obj, lv_event_t event)
+{
+	if(LV_EVENT_CLICKED == event)
+	{
+		lv_poc_main_menu_open();
+	}
+}
+
+static void  lv_poc_idle_control_right_label_event_cb(lv_obj_t * obj, lv_event_t event)
+{
+	static bool pa_enable = false;
+	if(LV_EVENT_CLICKED == event)
+	{
+		lv_poc_idle_next_page();
+		OSI_LOGI(0, "[poc][audio][PA][idle] audio_device line <- %d - %d\n", __LINE__, pa_enable);
+		poc_set_ext_pa_status(pa_enable);
+		pa_enable = !pa_enable;
+	}
+}
+
 lv_poc_activity_t * lv_poc_create_idle(void)
 {
 	static lv_poc_activity_ext_t	activity_idle_ext = {ACT_ID_POC_IDLE,
@@ -666,10 +688,10 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	activity_idle = lv_poc_create_activity(&activity_idle_ext,true,true,&control);
 	lv_poc_activity_set_signal_cb(activity_idle, lv_poc_idle_signal_func);
 	lv_poc_activity_set_design_cb(activity_idle, lv_poc_idle_design_func);
-	//lv_obj_set_click(activity_idle->control->left_button, true);
-	//lv_obj_set_event_cb(activity_idle->control->left_button, lv_poc_idle_control_left_label_event_cb);
-	//lv_obj_set_click(activity_idle->control->right_button, true);
-	//lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
+	lv_obj_set_click(activity_idle->control->left_button, true);
+	lv_obj_set_event_cb(activity_idle->control->left_button, lv_poc_idle_control_left_label_event_cb);
+	lv_obj_set_click(activity_idle->control->right_button, true);
+	lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
 
 	return activity_idle;
 }

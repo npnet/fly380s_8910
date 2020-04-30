@@ -77,7 +77,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_poc_rb_add(bright_time_rb, cb);
     //lv_cb_set_action(btn, press_btn_action);
     btn_array[0] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "15秒");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_bright_press_btn_action);
@@ -95,7 +95,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_poc_rb_add(bright_time_rb, cb);
     //lv_cb_set_action(btn, press_btn_action);
     btn_array[1] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "30秒");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_bright_press_btn_action);
@@ -112,7 +112,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_poc_rb_add(bright_time_rb, cb);
     //lv_cb_set_action(btn, press_btn_action);
     btn_array[2] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "1分钟");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_bright_press_btn_action);
@@ -129,7 +129,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_poc_rb_add(bright_time_rb, cb);
     //lv_cb_set_action(btn, press_btn_action);
     btn_array[3] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "2分钟");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_bright_press_btn_action);
@@ -146,7 +146,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_poc_rb_add(bright_time_rb, cb);
     //lv_cb_set_action(btn, press_btn_action);
     btn_array[4] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "5分钟");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_bright_press_btn_action);
@@ -163,7 +163,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_poc_rb_add(bright_time_rb, cb);
     //lv_cb_set_action(btn, press_btn_action);
     btn_array[5] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "10分钟");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_bright_press_btn_action);
@@ -180,7 +180,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_poc_rb_add(bright_time_rb, cb);
     //lv_cb_set_action(btn, press_btn_action);
     btn_array[6] = btn;
-    
+
     btn = lv_list_add_btn(list, NULL, "30分钟");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_bright_press_btn_action);
@@ -197,22 +197,24 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_poc_rb_add(bright_time_rb, cb);
     //lv_cb_set_action(btn, press_btn_action);
     btn_array[7] = btn;
-    
+
     lv_list_set_btn_selected(list, btn_array[poc_setting_conf->screen_bright_time]);
     lv_poc_rb_press(bright_time_rb, btn_array[poc_setting_conf->screen_bright_time]->user_data);
 }
 
 static void lv_poc_bright_press_btn_action(lv_obj_t * obj, lv_event_t event)
 {
-    int index = lv_list_get_btn_index(activity_list, obj);
-    if(LV_EVENT_CLICKED == event)
+    if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
+	    int index = lv_list_get_btn_index(activity_list, obj);
 		if(poc_setting_conf->screen_bright_time != index)
 		{
 			poc_setting_conf->screen_bright_time = index;
+			poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 			lv_poc_setting_conf_write();
 			lv_poc_refresh_ui_next();
 			lv_poc_rb_press(bright_time_rb, obj->user_data);
+			lv_poc_refresh_ui_next();
 		}
     }
 }
@@ -221,104 +223,55 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 {
 	switch(sign)
 	{
-		case LV_SIGNAL_PRESSED:
+		case LV_SIGNAL_CONTROL:
 		{
+			if(param == NULL) return LV_RES_OK;
 			unsigned int c = *(unsigned int *)param;
 			switch(c)
 			{
 				case LV_GROUP_KEY_ENTER:
-				
+				{
+					lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
+				}
+
 				case LV_GROUP_KEY_DOWN:
-				
+
 				case LV_GROUP_KEY_UP:
 				{
-					activity_list->signal_cb(activity_list, LV_SIGNAL_CONTROL, param);
+					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					lv_poc_del_activity(bright_time_activity);
-					break;
-				}
-			}
-			break;
-		}
-			
-		case LV_SIGNAL_LONG_PRESS:
-		{
-			unsigned int c = *(unsigned int *)param;
-			switch(c)
-			{
-				case LV_GROUP_KEY_ENTER:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_ESC:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_GP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_MB:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_DOWN:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_VOL_UP:
-				{
-					break;
-				}
-				
-				case LV_GROUP_KEY_POC:
-				{
 					break;
 				}
 			}
@@ -334,7 +287,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			break;
 		}
-			
+
 		default:
 		{
 			break;
