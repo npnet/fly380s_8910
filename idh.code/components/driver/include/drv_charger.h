@@ -57,6 +57,8 @@ drvChargerType_t drvChargerGetType(void);
 
 void drvChargerGetInfo(uint8_t *nBcs, uint8_t *nBcl);
 
+bool drvChargerGetStatus(int8_t status[]);  // length of array don't less than four
+
 #ifdef __cplusplus
 }
 #endif
