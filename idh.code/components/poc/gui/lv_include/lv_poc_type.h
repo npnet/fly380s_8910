@@ -31,7 +31,7 @@ typedef unsigned short int   uint16_t;
 
 #define LV_POC_NAME_LEN LIST_ELEMENT_NAME_MAX_LENGTH
 
-#define POC_MAX_BRIGHT 6
+#define POC_MAX_BRIGHT 9
 
 /*******************
 *     NAME:   lv_poc_time_t
@@ -109,28 +109,19 @@ typedef struct
 	uint8_t read_and_write_check;
 	uint8_t btn_voice_switch;         //[0]close   [1]open   [default 0]
 	uint8_t voice_broadcast_switch;   //[0]close   [1]open   [default 0]
-	nv_poc_font_size_msg_t font;
-	nv_poc_theme_msg_t theme;
 	uint8_t keypad_led_switch;        //[0]close   [1]open   [default 0]
 	uint8_t GPS_switch;               //[0]close   [1]open   [default 0]
 	uint8_t electric_torch_switch;    //[0]close   [1]open   [default 0]
-	uint8_t screen_brightness;        //[0 - 5]    [default 3]
+	uint8_t screen_brightness;        //[0 - 9]    [default 4]
 	uint8_t screen_bright_time;       //[0]5秒 [1]15秒 [2]30秒 [3]1分钟 [4]2分钟 [5]5分钟 [6]10分钟 [7]30分钟     [default 2]
 	//uint8_t current_theme;          //[0] white theme   [1]black theme    [default 0]
 	uint8_t main_SIM;                 //[0]SIM 1   [1]SIM 2     [default 0]
 	uint8_t net_type;                 //[0]4G/3G/2G  [1]only 3G/2G    [default 0]
-	uint8_t volume;                   //[0-11]    [default 5]
+	uint8_t volume;                   //[0-10]    [default 5]
 	uint8_t language;                 //[0]简体中文       [default 0]
+	nv_poc_font_size_msg_t font;
+	nv_poc_theme_msg_t theme;
 } nv_poc_setting_msg_t;
-
-typedef struct{
-    UINT32 battery_status;   // 0 - no battery; 1 - has battery
-    UINT32 battery_val_mV;   // voltage
-    UINT32 charge_cur_mA;    // current
-    INT32 battery_temp;     // temperature
-    int8_t battery_value;     // surplus electric quantity
-    int8_t charging;         // is charging
-}battery_values_t;
 
 typedef enum
 {
@@ -143,6 +134,15 @@ typedef enum
     POC_CHG_CONNECTED,                                                          // charger connected
     POC_CHG_DISCONNECTED                                                        // charger disconnected
 } POC_CHG_STATUS;
+
+typedef struct{
+    UINT32 battery_status;   // 0 - no battery; 1 - has battery
+    UINT32 battery_val_mV;   // voltage
+    UINT32 charge_cur_mA;    // current
+    INT32 battery_temp;     // temperature
+    int8_t battery_value;     // surplus electric quantity
+    POC_CHG_STATUS charging;         // is charging
+} battery_values_t;
 
 typedef enum
 {
@@ -224,5 +224,11 @@ typedef struct _list_element_t{
     void * information;
     struct _list_element_t * next;
 } list_element_t;
+
+typedef struct _lv_poc_audio_dsc_t
+{
+	uint32_t data_size;
+    uint8_t * data;
+} lv_poc_audio_dsc_t;
 
 #endif // __LV_POC_TYPR_H_
