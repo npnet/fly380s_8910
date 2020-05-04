@@ -870,8 +870,36 @@ poc_keypad_led_init(void)
 bool
 poc_set_ext_pa_status(bool open)
 {
+	#define POC_EXT_PA_DELAY_US 2
 	poc_ext_pa_init();
-	drvGpioWrite(poc_ext_pa_gpio, open);
+	if(poc_ext_pa_gpio == NULL) return false;
+	if(open)
+	{
+		//one
+		drvGpioWrite(poc_ext_pa_gpio, true);
+		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+		drvGpioWrite(poc_ext_pa_gpio, false);
+		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+
+		//two
+		drvGpioWrite(poc_ext_pa_gpio, true);
+		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+		drvGpioWrite(poc_ext_pa_gpio, false);
+		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+
+		//three
+		drvGpioWrite(poc_ext_pa_gpio, true);
+		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+		drvGpioWrite(poc_ext_pa_gpio, false);
+		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+
+		//four
+		drvGpioWrite(poc_ext_pa_gpio, true);
+	}
+	else
+	{
+		drvGpioWrite(poc_ext_pa_gpio, false);
+	}
 	OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d - %d\n", __LINE__, open);
 	return open;
 }
@@ -885,6 +913,7 @@ bool
 poc_get_ext_pa_status(void)
 {
 	poc_ext_pa_init();
+	if(poc_ext_pa_gpio == NULL) return false;
 	return drvGpioRead(poc_keypad_led_gpio);
 }
 
