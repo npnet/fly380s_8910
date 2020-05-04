@@ -135,11 +135,13 @@ add_library(${target} STATIC
 	gui/resource/font/lv_poc_font_noto_sans_cjk_30.c
 	
 	gui/resource/audiofile/lv_poc_audio_msg.c
+	
+	idt/src/app_test.cpp
 	)
 	
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_POC)
-target_include_directories(${target} PUBLIC include gui)
+target_include_directories(${target} PUBLIC include gui idt/include idt/src)
 target_include_targets(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts)
 
 relative_glob(srcs */*.h */*.c)

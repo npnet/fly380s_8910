@@ -27,6 +27,7 @@
 #include "drv_lcd_v2.h"
 #include "drv_names.h"
 #include "lv_include/lv_poc.h"
+#include "app_test.h"
 
 static void pocStartAnimation(void)\
 {
@@ -69,6 +70,8 @@ void pocStart(void *ctx)
     drvLcdSetBackLightEnable(lcd, true);
 
 	lvGuiInit(pocLvglStart);
+
+	appTestStart();
 
 	osiThreadExit();
 }
