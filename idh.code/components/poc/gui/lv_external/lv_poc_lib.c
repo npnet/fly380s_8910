@@ -545,12 +545,13 @@ LV_POC_GET_SIGNAL_BAR_ENDLE:
   return  void
 */
 void
-poc_get_operator_req(IN POC_SIM_ID sim, OUT int8_t * operator, OUT POC_MMI_MODEM_PLMN_RAT * rat)
+poc_get_operator_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT POC_MMI_MODEM_PLMN_RAT * rat)
 {
 	uint32_t ret = 0;
 	uint8_t _rat = 0;
 	uint8_t nSim = POC_SIM_1;
 	static POC_MMI_MODEM_PLMN_RAT _signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;
+	if(operat == NULL || rat == NULL) return;
 
 	CFW_COMM_MODE nFM = CFW_DISABLE_COMM;
 	ret = CFW_GetComm(&nFM, nSim);
@@ -558,19 +559,19 @@ poc_get_operator_req(IN POC_SIM_ID sim, OUT int8_t * operator, OUT POC_MMI_MODEM
 	{
 		if (ret != 0)
 		{
-			strcpy((char *)operator, "UN");
+			strcpy((char *)operat, "UN");
 			_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;
 			goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
 		}
 		_rat = CFW_NWGetStackRat(nSim);
 		if (_rat == 4)
 		{
-			strcpy((char *)operator, "LTE");
+			strcpy((char *)operat, "LTE");
 			_signal_type = MMI_MODEM_PLMN_RAT_LTE;
 		}
 		else
 		{
-			strcpy((char *)operator, "GSM");
+			strcpy((char *)operat, "GSM");
 			_signal_type = MMI_MODEM_PLMN_RAT_GSM;
 		}
 	}
