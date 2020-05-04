@@ -5,6 +5,12 @@
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_activity.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /*
       name : lv_poc_get_keypad_dev
     return : get keypad indev
@@ -145,7 +151,7 @@ poc_get_signal_bar_strenth(POC_SIM_ID sim);
       date : 2020-03-30
 */
 void
-poc_get_operator_req(IN POC_SIM_ID sim, OUT int8_t * operator, OUT POC_MMI_MODEM_PLMN_RAT * rat);
+poc_get_operator_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT POC_MMI_MODEM_PLMN_RAT * rat);
 
 /*
       name : poc_mmi_poc_setting_config
@@ -274,6 +280,10 @@ poc_get_ext_pa_status(void);
 */
 void
 poc_ext_pa_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif //__LV_POC_LIB_H_
