@@ -137,11 +137,14 @@ add_library(${target} STATIC
 	gui/resource/audiofile/lv_poc_audio_msg.c
 	
 	idt/src/app_test.cpp
+	idt/core/idt-freertos.o
+	
+	guiIdtCom/src/guiIdtCom.cpp
 	)
 	
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_POC)
-target_include_directories(${target} PUBLIC include gui idt/include idt/src)
+target_include_directories(${target} PUBLIC include gui idt/include idt/src guiIdtCom/include guiIdtCom/src)
 target_include_targets(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts)
 
 relative_glob(srcs */*.h */*.c)

@@ -9,4 +9,4 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-target_sources(${target} PRIVATE core/${CONFIG_SOC}/osi_core.o core/${CONFIG_SOC}/idt-freertos.o)
+target_sources(${target} PRIVATE core/${CONFIG_SOC}/osi_core.o )
