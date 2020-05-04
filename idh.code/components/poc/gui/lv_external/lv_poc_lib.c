@@ -208,6 +208,68 @@ lv_poc_get_time(OUT lv_poc_time_t * time)
     struct tm system_time;
     time_t lt = osiEpochSecond();
     gmtime_r(&lt, &system_time);
+    system_time.tm_hour = system_time.tm_hour + 8;
+	if(system_time.tm_hour > 23)
+	{
+		system_time.tm_hour = system_time.tm_hour % 24;
+		system_time.tm_mday = system_time.tm_mday + 1;
+		switch(system_time.tm_mon)
+		{
+			case 1:
+			case 3:
+			case 5:
+			case 7:
+			case 8:
+			case 10:
+				if(system_time.tm_mday > 31)
+				{
+					system_time.tm_mday = system_time.tm_mday % 32 + 1;
+					system_time.tm_mon = system_time.tm_mon + 1;
+				}
+				break;
+
+			case 4:
+			case 6:
+			case 9:
+			case 11:
+				if(system_time.tm_mday > 30)
+				{
+					system_time.tm_mday = system_time.tm_mday % 31 + 1;
+					system_time.tm_mon = system_time.tm_mon + 1;
+				}
+				break;
+
+			case 2:
+				if(system_time.tm_year % 400 == 0 || (system_time.tm_year % 100 != 0 && system_time.tm_year % 4 == 0))
+				{
+					if(system_time.tm_mday > 29)
+					{
+						system_time.tm_mday = system_time.tm_mday % 30 + 1;
+						system_time.tm_mon = system_time.tm_mon + 1;
+					}
+				}
+				else
+				{
+					if(system_time.tm_mday > 28)
+					{
+						system_time.tm_mday = system_time.tm_mday % 29 + 1;
+						system_time.tm_mon = system_time.tm_mon + 1;
+					}
+				}
+
+				break;
+			case 12:
+				if(system_time.tm_mday > 31)
+				{
+					system_time.tm_mday = system_time.tm_mday % 32 + 1;
+					system_time.tm_mon = system_time.tm_mon % 13 + 1;
+					system_time.tm_year = system_time.tm_year + 1;
+				}
+				break;
+			default:
+				break;
+		}
+	}
 
 	time->tm_year = system_time.tm_year;
 	time->tm_mon = system_time.tm_mon;
@@ -216,7 +278,6 @@ lv_poc_get_time(OUT lv_poc_time_t * time)
 	time->tm_min = system_time.tm_min;
 	time->tm_sec = system_time.tm_sec;
 	time->tm_wday = system_time.tm_wday;
-
 }
 
 /*
