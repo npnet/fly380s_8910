@@ -4,6 +4,16 @@
 #include "lvgl.h"
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_activity.h"
+#include "hwregs.h"
+#include "drv_gpio.h"
+#include "hal_iomux.h"
+
+enum {
+	poc_torch_led   = 2,//IO touch
+	poc_red_led     = 10,//IO redled
+	poc_green_led   = 13,//IO greenled
+	poc_horn_sound  = 9,//IO horn
+};
 
 
 #ifdef __cplusplus
@@ -229,14 +239,6 @@ poc_broadcast_play_rep(uint8_t * text, uint32_t length, uint8_t broadcast_switch
 
 /*
       name : poc_set_torch_status
-     param : open  true is open torch
-      date : 2020-04-30
-*/
-bool
-poc_set_torch_status(bool open);
-
-/*
-      name : poc_set_torch_status
      param : none
       date : 2020-04-30
 */
@@ -298,6 +300,47 @@ poc_get_ext_pa_status(void);
 */
 void
 poc_ext_pa_init(void);
+
+/*
+      name : poc_port_init
+      param : port is the IO that needs to be set
+      date : 2020-05-08
+*/
+drvGpioConfig_t *
+poc_port_init(void);
+
+/*
+      name : poc_set_port_status
+      param : open true is open port
+      date : 2020-05-08
+*/
+bool
+poc_set_port_status(uint32_t port, drvGpioConfig_t *config,bool open);
+
+/*
+      name : poc_set_torch_status
+     param : open  true is open torch
+      date : 2020-04-30
+*/
+bool
+poc_set_torch_status(bool open);
+
+/*
+	  name : poc_set_red_status
+	  param : if the status is true,open green led,but...
+	  date : 2020-05-09
+*/
+bool
+poc_set_red_status(bool ledstatus);
+
+/*
+	  name : poc_set_green_status
+	  param : if the status is true,open green led,but...
+	  date : 2020-05-09
+*/
+bool
+poc_set_green_status(bool ledstatus);
+
 
 #ifdef __cplusplus
 }
