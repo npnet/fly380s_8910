@@ -20,7 +20,7 @@ extern  "C"
 #endif
 #endif
 
-//IDT°æ±¾1.0
+//IDTç‰ˆæœ¬1.0
 #define IDT_VerMajor        1
 #define TDT_VerMinor        0
 
@@ -28,319 +28,319 @@ extern  "C"
 #include "pubsrv_def.h"
 #include "pubmed_def.h"
 
-//ÓÃ»§Êý¾Ý
+//ç”¨æˆ·æ•°æ®
 typedef struct _UData_s
 {
-    UCHAR       ucNum[32];          //ºÅÂë
-    UCHAR       ucName[64];         //Ãû×Ö
-    UCHAR       ucPwd[64];          //ÃÜÂë
-    UCHAR       ucType;             //ÀàÐÍ
-    UCHAR       ucAttr;             //ÊôÐÔ
-    UCHAR       ucStatus;           //×´Ì¬
-    UCHAR       ucPriority;         //ÓÅÏÈ¼¶
-    int         iConCurrent;        //²¢·¢ÓÃ»§Êý
-    UCHAR       ucIP[32];           //IPµØÖ·,×Ö·û´®ÐÎÊ½
-    int         iPort;              //¶Ë¿ÚºÅ
-    UCHAR       ucAddr[128];        //ÓÃ»§µØÖ·
-    UCHAR       ucContact[128];     //ÁªÏµ·½Ê½
-    UCHAR       ucDesc[128];        //ÃèÊö
-    time_t      CTime;              //´´½¨Ê±¼ä
-    time_t      VTime;              //ÓÐÐ§Ê±¼ä
-    
-    UCHAR       ucCamType;          //ÀàÐÍ                  UT_TYPE_HK
-    UC_32       gwCamNum;           //ÉãÏñÍ·Íø¹ØºÅÂë
-    UC_64       ucCamIp;            //ÉãÏñÍ·µØÖ·,¿ÉÄÜÊÇIPµØÖ·,»òÕßÓòÃû
-    USHORT      usCamPort;          //¶Ë¿ÚºÅ
-    UC_64       CamName;            //ÓÃ»§Ãû
-    UC_64       CamPwd;             //ÃÜÂë
-    UCHAR       ucChanNum;          //ÉãÏñÍ·Í¨µÀ¸öÊý
+    UCHAR       ucNum[32];          //å·ç 
+    UCHAR       ucName[64];         //åå­—
+    UCHAR       ucPwd[64];          //å¯†ç 
+    UCHAR       ucType;             //ç±»åž‹
+    UCHAR       ucAttr;             //å±žæ€§
+    UCHAR       ucStatus;           //çŠ¶æ€
+    UCHAR       ucPriority;         //ä¼˜å…ˆçº§
+    int         iConCurrent;        //å¹¶å‘ç”¨æˆ·æ•°
+    UCHAR       ucIP[32];           //IPåœ°å€,å­—ç¬¦ä¸²å½¢å¼
+    int         iPort;              //ç«¯å£å·
+    UCHAR       ucAddr[128];        //ç”¨æˆ·åœ°å€
+    UCHAR       ucContact[128];     //è”ç³»æ–¹å¼
+    UCHAR       ucDesc[128];        //æè¿°
+    time_t      CTime;              //åˆ›å»ºæ—¶é—´
+    time_t      VTime;              //æœ‰æ•ˆæ—¶é—´
+
+    UCHAR       ucCamType;          //ç±»åž‹                  UT_TYPE_HK
+    UC_32       gwCamNum;           //æ‘„åƒå¤´ç½‘å…³å·ç 
+    UC_64       ucCamIp;            //æ‘„åƒå¤´åœ°å€,å¯èƒ½æ˜¯IPåœ°å€,æˆ–è€…åŸŸå
+    USHORT      usCamPort;          //ç«¯å£å·
+    UC_64       CamName;            //ç”¨æˆ·å
+    UC_64       CamPwd;             //å¯†ç 
+    UCHAR       ucChanNum;          //æ‘„åƒå¤´é€šé“ä¸ªæ•°
     UCHAR       ucCamCliType;       //CLITYPE
     UC_32       CamGUID_V;          //GUID
     UC_256      ucWorkInfo;         //WorkInfo
-    USERGINFO_s stFGInfo;           //¸¸×éÐÅÏ¢
-    UC_256      ucUserProxy;        //ÓÃ»§´úÀíÐÅÏ¢      ¸ñÊ½:0,ÎÞÐ§
-                                    //                  ¹¦ÄÜ¿éºÅ,´úÀíºÅÂë,ÃÜÂë,·þÎñÆ÷IPµØÖ·:¶Ë¿ÚºÅ,ÊÇ·ñ´úÀí×¢²á
-                                    //                  ÀýÈç:
-                                    //                  SIP*8000*8000*222.42.245.76:5080*1          ´úÀíSIP×¢²áµ½222.42.245.76:5080
-                                    //                  TAP*8000*8000*124.160.11.21:10000*1         ´úÀíTAP×¢²áµ½222.42.245.76:5080
-                                    //                  USER*8000*8000*8001*0                       ¶Ô·½ÊÇÓÃ»§½ÓÈëµ½×Ô¼º,´úÀíºÅÂëÊÇ8000,ºô³öÊ±,×Ô¼ººÅÂëÊÇ8001
-                                    //                  ×Ô¼º×÷Îª28181ÉÏ¼¶Ê±,USER*¶Ô·½½ÓÈëºÅÂë*ÃÜÂë*×Ô¼ººÅÂë*±àÂë¸ñÊ½(0:UTF8,1:GBK)
-                                    
-    int         iDataRole;          //Êý¾ÝÈ¨ÏÞ
-    int         iMenuRole;          //²Ëµ¥È¨ÏÞ
-    
-    UC_128      ucDeptNum;          //²¿ÃÅºÅÂë
-    UC_128      ucID;               //Éí·ÝÖ¤
-    UC_128      ucWorkID;           //¹¤×÷Ö¤
-    UC_128      ucWorkUnit;         //¹¤×÷µ¥Î»
-    UC_128      ucTitle;            //Ö°Îñ
-    UC_128      ucCarID;            //³µÅÆ
-    UC_128      ucTel;              //µç»°ºÅÂë
-    UC_256      ucOther;            //ÆäËû
-    
+    USERGINFO_s stFGInfo;           //çˆ¶ç»„ä¿¡æ¯
+    UC_256      ucUserProxy;        //ç”¨æˆ·ä»£ç†ä¿¡æ¯      æ ¼å¼:0,æ— æ•ˆ
+                                    //                  åŠŸèƒ½å—å·,ä»£ç†å·ç ,å¯†ç ,æœåŠ¡å™¨IPåœ°å€:ç«¯å£å·,æ˜¯å¦ä»£ç†æ³¨å†Œ
+                                    //                  ä¾‹å¦‚:
+                                    //                  SIP*8000*8000*222.42.245.76:5080*1          ä»£ç†SIPæ³¨å†Œåˆ°222.42.245.76:5080
+                                    //                  TAP*8000*8000*124.160.11.21:10000*1         ä»£ç†TAPæ³¨å†Œåˆ°222.42.245.76:5080
+                                    //                  USER*8000*8000*8001*0                       å¯¹æ–¹æ˜¯ç”¨æˆ·æŽ¥å…¥åˆ°è‡ªå·±,ä»£ç†å·ç æ˜¯8000,å‘¼å‡ºæ—¶,è‡ªå·±å·ç æ˜¯8001
+                                    //                  è‡ªå·±ä½œä¸º28181ä¸Šçº§æ—¶,USER*å¯¹æ–¹æŽ¥å…¥å·ç *å¯†ç *è‡ªå·±å·ç *ç¼–ç æ ¼å¼(0:UTF8,1:GBK)
+
+    int         iDataRole;          //æ•°æ®æƒé™
+    int         iMenuRole;          //èœå•æƒé™
+
+    UC_128      ucDeptNum;          //éƒ¨é—¨å·ç 
+    UC_128      ucID;               //èº«ä»½è¯
+    UC_128      ucWorkID;           //å·¥ä½œè¯
+    UC_128      ucWorkUnit;         //å·¥ä½œå•ä½
+    UC_128      ucTitle;            //èŒåŠ¡
+    UC_128      ucCarID;            //è½¦ç‰Œ
+    UC_128      ucTel;              //ç”µè¯å·ç 
+    UC_256      ucOther;            //å…¶ä»–
+
 }UData_s;
 
-//×éÊý¾Ý
+//ç»„æ•°æ®
 typedef struct _GData_s
 {
-    UCHAR           ucNum[32];                  //×éºÅÂë
-    UCHAR           ucName[64];                 //×éÃû×Ö
-    UCHAR           ucAGNum[32];                //¹ØÁª×é,ÉãÏñÍ·×é
-    UCHAR           ucPriority;                 //ÓÅÏÈ¼¶
-    DWORD           dwNum;                      //ÓÃ»§¸öÊý
-    GROUP_MEMBER_s  member[GROUP_MAX_MEMBER];   //×é³ÉÔ±
-    QUERY_EXT_s     query;                      //²éÑ¯Ìõ¼þ
+    UCHAR           ucNum[32];                  //ç»„å·ç 
+    UCHAR           ucName[64];                 //ç»„åå­—
+    UCHAR           ucAGNum[32];                //å…³è”ç»„,æ‘„åƒå¤´ç»„
+    UCHAR           ucPriority;                 //ä¼˜å…ˆçº§
+    DWORD           dwNum;                      //ç”¨æˆ·ä¸ªæ•°
+    GROUP_MEMBER_s  member[GROUP_MAX_MEMBER];   //ç»„æˆå‘˜
+    QUERY_EXT_s     query;                      //æŸ¥è¯¢æ¡ä»¶
 }GData_s;
 
 //--------------------------------------------------------------------------------
-//      ÓÃ»§×´Ì¬Ö¸Ê¾
-//  ÊäÈë:
-//      status:         µ±Ç°ÓÃ»§×´Ì¬
-//      usCause:        Ô­ÒòÖµ
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§×´Ì¬·¢Éú±ä»¯
+//      ç”¨æˆ·çŠ¶æ€æŒ‡ç¤º
+//  è¾“å…¥:
+//      status:         å½“å‰ç”¨æˆ·çŠ¶æ€
+//      usCause:        åŽŸå› å€¼
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·çŠ¶æ€å‘ç”Ÿå˜åŒ–
 //--------------------------------------------------------------------------------
 typedef void (*IDT_StatusInd)(int status, unsigned short usCause);
 //--------------------------------------------------------------------------------
-//      ×éÐÅÏ¢Ö¸Ê¾
-//  ÊäÈë:
-//      pGInfo:         ×éÐÅÏ¢
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§×´Ì¬·¢Éú±ä»¯
+//      ç»„ä¿¡æ¯æŒ‡ç¤º
+//  è¾“å…¥:
+//      pGInfo:         ç»„ä¿¡æ¯
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·çŠ¶æ€å‘ç”Ÿå˜åŒ–
 //--------------------------------------------------------------------------------
 typedef void (*IDT_GInfoInd)(USERGINFO_s *pGInfo);
 //--------------------------------------------------------------------------------
-//      Æô¶¯ºô³ö
-//  ÊäÈë:
-//      cPeerNum:       ¶Ô·½ºÅÂë
-//      SrvType:        ÒµÎñÀàÐÍ
-//      pAttr:          Ã½ÌåÊôÐÔ
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      pcPwd:          ÃÜÂë,´´½¨»ò½øÈë»á³¡µÄÃÜÂë
-//      ucCallOut:      ·þÎñÆ÷ÊÇ·ñÖ±½Óºô³ö,0²»ºô³ö,1Ö±½Óºô³ö
-//      ucDelG:         »áÒé½áÊøºó,ÊÇ·ñÉ¾³ý×é,0²»É¾³ý,1É¾³ý
-//      ucAutoMic:      ÊÇ·ñ×Ô¶¯»°È¨,0²»ÊÇ,1ÊÇ×Ô¶¯»°È¨
-//      pcUserMark:     ÓÃ»§±êÖ¾,×Ö·û´®¸ñÊ½,×î´ó256×Ö½Ú
-//  ·µ»Ø:
-//      -1:             Ê§°Ü
-//      else:           ºô½Ð±êÊ¶
-//  ×¢Òâ:
-//      Èç¹ûÊÇ×éºô(SRV_TYPE_CONF, ÓïÒô·¢ËÍÎª1,ÓïÒô½ÓÊÕÎª0, ÊÓÆµÎ´¶¨Òå,»òÕßÓëÓïÒôÏàÍ¬)
-//      1.pcPeerNumÎª×éºÅÂë
-//      2.pAttrÖÐ,ucAudioSendÎª1,ÆäÓàÎª0
-//      Èç¹ûÊÇ»áÒé:
-//      1.·¢Æð»áÒé(SRV_TYPE_CONF, ÓïÒô·¢ËÍÎª1,ÓïÒô½ÓÊÕÎª1)
-//          a)±»½ÐºÅÂë¿ÉÒÔÎª¿Õ,»òÕßÓÃ»§ºÅÂë/×éºÅÂë
-//          b)pcPwdÎª»áÒéÃÜÂë
-//          c)ÔÚCallPeerAnswerÊ±,´ø»Ø»áÒéµÄÄÚ²¿ºÅÂë,Îª½»»»»ú²úÉúµÄºô½Ð±êÊ¶
-//      2.¼ÓÈë»áÒé(SRV_TYPE_CONF_JOIN,ucAudioRecv=1,ucVideoRecv=1)
-//          a)pcPeerNumÎª1ÖÐµÄc
-//          b)pcPwdÎª1ÖÐµÄb
+//      å¯åŠ¨å‘¼å‡º
+//  è¾“å…¥:
+//      cPeerNum:       å¯¹æ–¹å·ç 
+//      SrvType:        ä¸šåŠ¡ç±»åž‹
+//      pAttr:          åª’ä½“å±žæ€§
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      pcPwd:          å¯†ç ,åˆ›å»ºæˆ–è¿›å…¥ä¼šåœºçš„å¯†ç 
+//      ucCallOut:      æœåŠ¡å™¨æ˜¯å¦ç›´æŽ¥å‘¼å‡º,0ä¸å‘¼å‡º,1ç›´æŽ¥å‘¼å‡º
+//      ucDelG:         ä¼šè®®ç»“æŸåŽ,æ˜¯å¦åˆ é™¤ç»„,0ä¸åˆ é™¤,1åˆ é™¤
+//      ucAutoMic:      æ˜¯å¦è‡ªåŠ¨è¯æƒ,0ä¸æ˜¯,1æ˜¯è‡ªåŠ¨è¯æƒ
+//      pcUserMark:     ç”¨æˆ·æ ‡å¿—,å­—ç¬¦ä¸²æ ¼å¼,æœ€å¤§256å­—èŠ‚
+//  è¿”å›ž:
+//      -1:             å¤±è´¥
+//      else:           å‘¼å«æ ‡è¯†
+//  æ³¨æ„:
+//      å¦‚æžœæ˜¯ç»„å‘¼(SRV_TYPE_CONF, è¯­éŸ³å‘é€ä¸º1,è¯­éŸ³æŽ¥æ”¶ä¸º0, è§†é¢‘æœªå®šä¹‰,æˆ–è€…ä¸Žè¯­éŸ³ç›¸åŒ)
+//      1.pcPeerNumä¸ºç»„å·ç 
+//      2.pAtträ¸­,ucAudioSendä¸º1,å…¶ä½™ä¸º0
+//      å¦‚æžœæ˜¯ä¼šè®®:
+//      1.å‘èµ·ä¼šè®®(SRV_TYPE_CONF, è¯­éŸ³å‘é€ä¸º1,è¯­éŸ³æŽ¥æ”¶ä¸º1)
+//          a)è¢«å«å·ç å¯ä»¥ä¸ºç©º,æˆ–è€…ç”¨æˆ·å·ç /ç»„å·ç 
+//          b)pcPwdä¸ºä¼šè®®å¯†ç 
+//          c)åœ¨CallPeerAnsweræ—¶,å¸¦å›žä¼šè®®çš„å†…éƒ¨å·ç ,ä¸ºäº¤æ¢æœºäº§ç”Ÿçš„å‘¼å«æ ‡è¯†
+//      2.åŠ å…¥ä¼šè®®(SRV_TYPE_CONF_JOIN,ucAudioRecv=1,ucVideoRecv=1)
+//          a)pcPeerNumä¸º1ä¸­çš„c
+//          b)pcPwdä¸º1ä¸­çš„b
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallMakeOut(char* pcPeerNum, SRV_TYPE_e SrvType, MEDIAATTR_s *pAttr, void *pUsrCtx,
     char *pcPwd = NULL, UCHAR ucCallOut = 1, UCHAR ucDelG = 0, UCHAR ucAutoMic = 0, char *pcUserMark = NULL);
 //IDT_API int IDT_CallMakeOut(char* pcPeerNum, SRV_TYPE_e SrvType, MEDIAATTR_s *pAttr, void *pUsrCtx,
 //    UCHAR ucCallOut = 1, UCHAR ucDelG = 0);
 //--------------------------------------------------------------------------------
-//      ºô³öÓ¦´ð
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      pcPeerNum:      ¶Ô·½Ó¦´ðµÄºÅÂë,ÓÐ¿ÉÄÜÓë±»½ÐºÅÂë²»Í¬
-//      pcPeerName:     ¶Ô·½Ó¦´ðµÄÓÃ»§Ãû
-//      SrvType:        ÒµÎñÀàÐÍ,Êµ¼ÊµÄÒµÎñÀàÐÍ,¿ÉÄÜÓëMakeOut²»Í¬
-//      pcUserMark:     ÓÃ»§±êÊ¶
-//      pcUserCallRef:  ÓÃ»§Ê¹ÓÃµÄºô½Ð²Î¿¼ºÅ,Ö÷½ÐÊÇ×Ô¼º,±»½ÐÊÇÖ÷½Ð,²é¿´ÊÇ¶Ô¶Ë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§¶Ô·½Ó¦´ð
+//      å‘¼å‡ºåº”ç­”
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      pcPeerNum:      å¯¹æ–¹åº”ç­”çš„å·ç ,æœ‰å¯èƒ½ä¸Žè¢«å«å·ç ä¸åŒ
+//      pcPeerName:     å¯¹æ–¹åº”ç­”çš„ç”¨æˆ·å
+//      SrvType:        ä¸šåŠ¡ç±»åž‹,å®žé™…çš„ä¸šåŠ¡ç±»åž‹,å¯èƒ½ä¸ŽMakeOutä¸åŒ
+//      pcUserMark:     ç”¨æˆ·æ ‡è¯†
+//      pcUserCallRef:  ç”¨æˆ·ä½¿ç”¨çš„å‘¼å«å‚è€ƒå·,ä¸»å«æ˜¯è‡ªå·±,è¢«å«æ˜¯ä¸»å«,æŸ¥çœ‹æ˜¯å¯¹ç«¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·å¯¹æ–¹åº”ç­”
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallPeerAnswer)(void *pUsrCtx, char *pcPeerNum, char *pcPeerName, SRV_TYPE_e SrvType, char *pcUserMark, char *pcUserCallRef);
 //--------------------------------------------------------------------------------
-//      ÊÕµ½ºôÈë
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      pcMyNum:        ×Ô¼ººÅÂë
-//      pcPeerNum:      ¶Ô·½ºÅÂë
-//      pcPeerName:     ¶Ô·½Ãû×Ö
-//      SrvType:        ÒµÎñÀàÐÍ
-//      pAttr:          Ã½ÌåÊôÐÔ
-//      pExtInfo:       ¸½¼ÓÐÅÏ¢
-//      pcUserMark:     ÓÃ»§±êÊ¶
-//      pcUserCallRef:  ÓÃ»§Ê¹ÓÃµÄºô½Ð²Î¿¼ºÅ,Ö÷½ÐÊÇ×Ô¼º,±»½ÐÊÇÖ÷½Ð,²é¿´ÊÇ¶Ô¶Ë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§ÓÐºô½Ð½øÈë
+//      æ”¶åˆ°å‘¼å…¥
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      pcMyNum:        è‡ªå·±å·ç 
+//      pcPeerNum:      å¯¹æ–¹å·ç 
+//      pcPeerName:     å¯¹æ–¹åå­—
+//      SrvType:        ä¸šåŠ¡ç±»åž‹
+//      pAttr:          åª’ä½“å±žæ€§
+//      pExtInfo:       é™„åŠ ä¿¡æ¯
+//      pcUserMark:     ç”¨æˆ·æ ‡è¯†
+//      pcUserCallRef:  ç”¨æˆ·ä½¿ç”¨çš„å‘¼å«å‚è€ƒå·,ä¸»å«æ˜¯è‡ªå·±,è¢«å«æ˜¯ä¸»å«,æŸ¥çœ‹æ˜¯å¯¹ç«¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æœ‰å‘¼å«è¿›å…¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallIn)(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName, SRV_TYPE_e SrvType, MEDIAATTR_s *pAttr, void *pExtInfo, char *pcUserMark, char *pcUserCallRef);
 //--------------------------------------------------------------------------------
-//      ºôÈëÓ¦´ð
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      pAttr:          Ã½ÌåÊôÐÔ
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      pSdp:           SDP,Èç¹ûÓÐSDP,Ò»¶¨ÊÇÈ«¾Ö±äÁ¿,²»ÄÜÐÞ¸Ä!!!!!!!!IDTÃ»ÓÐ¿½±´ÄÚÈÝ,Ö±½Ó´«Ö¸Õëµ½CCµÄ´¦Àí
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å‘¼å…¥åº”ç­”
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      pAttr:          åª’ä½“å±žæ€§
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      pSdp:           SDP,å¦‚æžœæœ‰SDP,ä¸€å®šæ˜¯å…¨å±€å˜é‡,ä¸èƒ½ä¿®æ”¹!!!!!!!!IDTæ²¡æœ‰æ‹·è´å†…å®¹,ç›´æŽ¥ä¼ æŒ‡é’ˆåˆ°CCçš„å¤„ç†
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallAnswer(int ID, MEDIAATTR_s *pAttr, void *pUsrCtx, void *pSdp = NULL);
 //--------------------------------------------------------------------------------
-//      ºô½ÐÊÍ·Å
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ,Í¨³£²»ÓÃÕâ¸ö,µ«Æô¶¯Ö÷½Ðºó,Ã»ÓÐÊÕµ½Ö÷½ÐÓ¦´ð
-//      uiCause:        ÊÍ·ÅÔ­ÒòÖµ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å‘¼å«é‡Šæ”¾
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡,é€šå¸¸ä¸ç”¨è¿™ä¸ª,ä½†å¯åŠ¨ä¸»å«åŽ,æ²¡æœ‰æ”¶åˆ°ä¸»å«åº”ç­”
+//      uiCause:        é‡Šæ”¾åŽŸå› å€¼
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallRel(int ID, void *pUsrCtx, UINT uiCause);
 //--------------------------------------------------------------------------------
-//      ¶Ô·½»òIDTÄÚ²¿ÊÍ·Åºô½Ð
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID,Í¨³£²»Ê¹ÓÃÕâ¸ö,µ«¿ÉÄÜÆô¶¯±»½Ðºó,ÓÃ»§»¹Ã»ÓÐÓ¦´ð,¾ÍÊÍ·ÅÁË
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      uiCause:        ÊÍ·ÅÔ­ÒòÖµ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å¯¹æ–¹æˆ–IDTå†…éƒ¨é‡Šæ”¾å‘¼å«
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID,é€šå¸¸ä¸ä½¿ç”¨è¿™ä¸ª,ä½†å¯èƒ½å¯åŠ¨è¢«å«åŽ,ç”¨æˆ·è¿˜æ²¡æœ‰åº”ç­”,å°±é‡Šæ”¾äº†
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      uiCause:        é‡Šæ”¾åŽŸå› å€¼
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallRelInd)(int ID, void *pUsrCtx, UINT uiCause);
 //--------------------------------------------------------------------------------
-//      Í¨»°×´Ì¬ÏÂ·¢ËÍºÅÂë
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      cNum:           ·¢ËÍµÄºÅÂë,ASC×Ö·û´®ÐÎÊ½,ÓÐÐ§ÖµÎª'0'~'9','*','#','A'~'D',16(FLASH)
-//      dwStreamId:     Á÷ºÅ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      é€šè¯çŠ¶æ€ä¸‹å‘é€å·ç 
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      cNum:           å‘é€çš„å·ç ,ASCå­—ç¬¦ä¸²å½¢å¼,æœ‰æ•ˆå€¼ä¸º'0'~'9','*','#','A'~'D',16(FLASH)
+//      dwStreamId:     æµå·
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallSendNum(int ID, char* cNum, DWORD dwStreamId = 0);
 //--------------------------------------------------------------------------------
-//      Í¨»°×´Ì¬ÏÂÊÕµ½¶Ô·½·¢ËÍµÄºÅÂë
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      dwStreamId:     Á÷ºÅ
-//      cNum:           ÊÕµ½µÄºÅÂë,ASC×Ö·ûÐÎÊ½,ÓÐÐ§ÖµÎª'0'~'9','*','#','A'~'D',16(FLASH)
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      é€šè¯çŠ¶æ€ä¸‹æ”¶åˆ°å¯¹æ–¹å‘é€çš„å·ç 
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      dwStreamId:     æµå·
+//      cNum:           æ”¶åˆ°çš„å·ç ,ASCå­—ç¬¦å½¢å¼,æœ‰æ•ˆå€¼ä¸º'0'~'9','*','#','A'~'D',16(FLASH)
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallRecvNum)(void *pUsrCtx, DWORD dwStreamId, char cNum);
 
 //--------------------------------------------------------------------------------
-//      »°È¨¿ØÖÆ
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      bWant:          ÊÇ·ñÆÚÍû»°È¨
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è¯æƒæŽ§åˆ¶
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      bWant:          æ˜¯å¦æœŸæœ›è¯æƒ
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallMicCtrl(int ID, bool bWant);
-//»°È¨ÇëÇó
+//è¯æƒè¯·æ±‚
 #define IDT_CallMicWant(_ID) IDT_CallMicCtrl(_ID, true)
-//»°È¨ÊÍ·Å
+//è¯æƒé‡Šæ”¾
 #define IDT_CallMicRel(_ID) IDT_CallMicCtrl(_ID, false)
 
 //--------------------------------------------------------------------------------
-//      »°È¨Ö¸Ê¾
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      uiInd:          Ö¸Ê¾Öµ:0»°È¨±»ÊÍ·Å,1»ñµÃ»°È¨,ÓëÃ½ÌåÊôÐÔÏàÍ¬
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è¯æƒæŒ‡ç¤º
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      uiInd:          æŒ‡ç¤ºå€¼:0è¯æƒè¢«é‡Šæ”¾,1èŽ·å¾—è¯æƒ,ä¸Žåª’ä½“å±žæ€§ç›¸åŒ
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallMicInd)(void *pUsrCtx, UINT uiInd);
 
 //--------------------------------------------------------------------------------
-//      ½²»°·½ÌáÊ¾
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      pcNum:          ½²»°·½ºÅÂë
-//      pcName:         ½²»°·½Ãû×Ö
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è®²è¯æ–¹æç¤º
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      pcNum:          è®²è¯æ–¹å·ç 
+//      pcName:         è®²è¯æ–¹åå­—
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallTalkingIDInd)(void *pUsrCtx, char *pcNum, char *pcName);
 
 //--------------------------------------------------------------------------------
-//      Ã½ÌåÐÞ¸Ä
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      pAttr:          Ã½ÌåÊôÐÔ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      åª’ä½“ä¿®æ”¹
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      pAttr:          åª’ä½“å±žæ€§
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallModify(int ID, MEDIAATTR_s *pAttr);
 //--------------------------------------------------------------------------------
-//      ºô½ÐÖÐÌí¼Ó/É¾³ýÓÃ»§
-//  ÊäÈë:
-//      pcCallRef:      ºô½Ð²Î¿¼ºÅ
-//      pcNum:          ÓÃ»§ºÅÂë
-//      ucOp:           0É¾³ý,1Ìí¼Ó
-//      pAttr:          Ã½ÌåÊôÐÔ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å‘¼å«ä¸­æ·»åŠ /åˆ é™¤ç”¨æˆ·
+//  è¾“å…¥:
+//      pcCallRef:      å‘¼å«å‚è€ƒå·
+//      pcNum:          ç”¨æˆ·å·ç 
+//      ucOp:           0åˆ é™¤,1æ·»åŠ 
+//      pAttr:          åª’ä½“å±žæ€§
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallUserCtrl(char *pcCallRef, char *pcNum, UCHAR ucOp, MEDIAATTR_s *pAttr);
 //--------------------------------------------------------------------------------
-//      Ã½ÌåÁ÷¿ØÖÆ
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      pcNum:          ¶Ô¶ËºÅÂë
-//      ucType:         1ÓïÒô,2ÊÓÆµ,Í¬SDP_MEDIA_AUDIO¶¨Òå
-//      ucOp:           0¹Ø±Õ,1´ò¿ª
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      åª’ä½“æµæŽ§åˆ¶
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      pcNum:          å¯¹ç«¯å·ç 
+//      ucType:         1è¯­éŸ³,2è§†é¢‘,åŒSDP_MEDIA_AUDIOå®šä¹‰
+//      ucOp:           0å…³é—­,1æ‰“å¼€
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallStreamCtrl(int ID, char *pcNum, UCHAR ucType, UCHAR ucOp);
 //--------------------------------------------------------------------------------
-//      ²éÑ¯»á³¡×´Ì¬
-//  ÊäÈë:
-//      pcCallRef:      ºô½Ð²Î¿¼ºÅ
-//      dwSn:           ²Ù×÷ÐòºÅ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æŸ¥è¯¢ä¼šåœºçŠ¶æ€
+//  è¾“å…¥:
+//      pcCallRef:      å‘¼å«å‚è€ƒå·
+//      dwSn:           æ“ä½œåºå·
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallConfStatusReq(char *pcCallRef, DWORD dwSn);
 //--------------------------------------------------------------------------------
-//      ²éÑ¯»á³¡×´Ì¬ÏìÓ¦
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      ucAutoMic:      ×ÔÓÉ·¢ÑÔ×´Ì¬,0²»×ÔÓÉ·¢ÑÔ,1×ÔÓÉ·¢ÑÔ
-//      pData:          »á³¡ÖÐÓÃ»§
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æŸ¥è¯¢ä¼šåœºçŠ¶æ€å“åº”
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      ucAutoMic:      è‡ªç”±å‘è¨€çŠ¶æ€,0ä¸è‡ªç”±å‘è¨€,1è‡ªç”±å‘è¨€
+//      pData:          ä¼šåœºä¸­ç”¨æˆ·
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallConfStatusRsp)(DWORD dwSn, UCHAR ucAutoMic, GData_s *pData);
 
 //--------------------------------------------------------------------------------
-//      ÉèÖÃÒôÆµ±àÂëÆ÷
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      dwStreamId:     Á÷ºÅ
-//      pcNum:          ºÅÂë
-//      pAInfo:         ÒôÆµÐÅÏ¢
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è®¾ç½®éŸ³é¢‘ç¼–ç å™¨
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      dwStreamId:     æµå·
+//      pcNum:          å·ç 
+//      pAInfo:         éŸ³é¢‘ä¿¡æ¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 #ifdef ANDROID
 typedef int (*IDT_CallSetAudioCodec)(void *pUsrCtx, int ID, DWORD dwStreamId, char *pcNum, SDP_AINFO_s* pAInfo);
@@ -348,46 +348,46 @@ typedef int (*IDT_CallSetAudioCodec)(void *pUsrCtx, int ID, DWORD dwStreamId, ch
 typedef int (*IDT_CallSetAudioCodec)(void *pUsrCtx, DWORD dwStreamId, char *pcNum, SDP_AINFO_s* pAInfo);
 #endif
 //--------------------------------------------------------------------------------
-//      ·¢ËÍÓïÒôÊý¾Ý
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      dwStreamId:     Á÷ºÅ
+//      å‘é€è¯­éŸ³æ•°æ®
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      dwStreamId:     æµå·
 //      ucCodec:        CODEC
-//      pucBuf:         Êý¾Ý
-//      iLen:           Êý¾Ý³¤¶È
-//      dwTsOfs:        Ê±´Á¿Õ¶´³¤¶È
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      pucBuf:         æ•°æ®
+//      iLen:           æ•°æ®é•¿åº¦
+//      dwTsOfs:        æ—¶æˆ³ç©ºæ´žé•¿åº¦
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallSendAuidoData(int ID, DWORD dwStreamId, UCHAR ucCodec, UCHAR *pucBuf, int iLen, DWORD dwTsOfs = 0);
 //--------------------------------------------------------------------------------
-//      ÊÕµ½ÓïÒôÊý¾Ý
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
+//      æ”¶åˆ°è¯­éŸ³æ•°æ®
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
 //      dwStreamId:     StreamId
 //      ucCodec:        CODEC
-//      pucBuf:         Êý¾Ý
-//      iLen:           Êý¾Ý³¤¶È
-//      dwTsOfs:        Ê±´Á¿Õ¶´
-//      dwTsLen:        Êý¾Ý¿éÊ±´Á³¤¶È
-//      dwTs:           ÆðÊ¼Ê±´Á
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      pucBuf:         æ•°æ®
+//      iLen:           æ•°æ®é•¿åº¦
+//      dwTsOfs:        æ—¶æˆ³ç©ºæ´ž
+//      dwTsLen:        æ•°æ®å—æ—¶æˆ³é•¿åº¦
+//      dwTs:           èµ·å§‹æ—¶æˆ³
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallRecvAudioData)(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCodec, UCHAR *pucBuf, int iLen, DWORD dwTsOfs, DWORD dwTsLen, DWORD dwTs);
 
 //--------------------------------------------------------------------------------
-//      ÉèÖÃÊÓÆµ±àÂëÆ÷
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      dwStreamId:     Á÷ºÅ
-//      pcNum:          ºÅÂë
-//      pVInfo:         ÊÓÆµÐÅÏ¢
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è®¾ç½®è§†é¢‘ç¼–ç å™¨
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      dwStreamId:     æµå·
+//      pcNum:          å·ç 
+//      pVInfo:         è§†é¢‘ä¿¡æ¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 #ifdef ANDROID
 typedef int (*IDT_CallSetVideoCodec)(void *pUsrCtx, int ID, DWORD dwStreamId, char *pcNum, SDP_VINFO_s *pVInfo);
@@ -395,36 +395,36 @@ typedef int (*IDT_CallSetVideoCodec)(void *pUsrCtx, int ID, DWORD dwStreamId, ch
 typedef int (*IDT_CallSetVideoCodec)(void *pUsrCtx, DWORD dwStreamId, char *pcNum, SDP_VINFO_s *pVInfo);
 #endif
 //--------------------------------------------------------------------------------
-//      ·¢ËÍÊÓÆµÊý¾Ý
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      dwStreamId:     Á÷ºÅ
-//      ucCodec:        CODEC,SDP_PT_MY_YUV,»òÕßSDP_PT_MY_H264
-//      pucBuf:         Êý¾Ý
-//      iLen:           Êý¾Ý³¤¶È
-//      IFrame:         IÖ¡±êÊ¶
-//      iRotate:        Ðý×ª½Ç¶È,Ë³Ê±Õë·½Ïò,0:²»Ðý×ª,90,180,270
-//      dwTsOfs:        Ê±´Á¿Õ¶´³¤¶È
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å‘é€è§†é¢‘æ•°æ®
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      dwStreamId:     æµå·
+//      ucCodec:        CODEC,SDP_PT_MY_YUV,æˆ–è€…SDP_PT_MY_H264
+//      pucBuf:         æ•°æ®
+//      iLen:           æ•°æ®é•¿åº¦
+//      IFrame:         Iå¸§æ ‡è¯†
+//      iRotate:        æ—‹è½¬è§’åº¦,é¡ºæ—¶é’ˆæ–¹å‘,0:ä¸æ—‹è½¬,90,180,270
+//      dwTsOfs:        æ—¶æˆ³ç©ºæ´žé•¿åº¦
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallSendVideoData(int ID, DWORD dwStreamId, UCHAR ucCodec, UCHAR *pucBuf, int iLen, int iWidth, int iHeight, UCHAR IFrame, int iRotate = 0, DWORD dwTsOfs = 0);
 //--------------------------------------------------------------------------------
-//      ÊÕµ½ÊÓÆµÊý¾Ý
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
+//      æ”¶åˆ°è§†é¢‘æ•°æ®
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
 //      dwStreamId:     StreamId
 //      ucCodec:        CODEC
-//      pucBuf:         Êý¾Ý
-//      iLen:           Êý¾Ý³¤¶È
-//      dwTsOfs:        Ê±´Á¿Õ¶´
-//      IFrame:         IÖ¡±êÊ¶
-//      ucCom:          ÊÇ·ñÍêÕû
-//      dwTs:           ÆðÊ¼Ê±´Á
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      pucBuf:         æ•°æ®
+//      iLen:           æ•°æ®é•¿åº¦
+//      dwTsOfs:        æ—¶æˆ³ç©ºæ´ž
+//      IFrame:         Iå¸§æ ‡è¯†
+//      ucCom:          æ˜¯å¦å®Œæ•´
+//      dwTs:           èµ·å§‹æ—¶æˆ³
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 #ifdef WINDOWS
 typedef int (*IDT_CallRecvVideoData)(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCodec, UCHAR *pucBuf, int iLen, DWORD dwTsOfs, UCHAR IFrame, UCHAR ucCom, DWORD dwTs);
@@ -438,666 +438,666 @@ typedef int (*IDT_CallRecvVideoData)(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCo
 
 
 //--------------------------------------------------------------------------------
-//      Ã½ÌåÁ÷Í³¼ÆÊý¾Ý
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      ucType:         ÓïÒô»¹ÊÇÊÓÆµ,1ÓïÒô,2ÊÓÆµ,SDP_MEDIA_AUDIO
-//      uiRxBytes:      µ±Ç°Í³¼Æ¶Î½ÓÊÕµÄËùÓÐ×Ö½ÚÊý
-//      uiRxUsrBytes:   µ±Ç°Í³¼Æ¶ÎÓÃ»§½ÓÊÕµÄ×Ö½ÚÊý
-//      uiRxCount:      µ±Ç°Í³¼Æ¶ÎÊÕµ½µÄ±¨ÎÄ¸öÊý
-//      uiRxUserCount:  µ±Ç°Í³¼Æ¶ÎÓÃ»§ÊÕµ½µÄ±¨ÎÄ¸öÊý
-//      uiRxBytes:      µ±Ç°Í³¼Æ¶Î·¢ËÍµÄËùÓÐ×Ö½ÚÊý
-//      uiRxUsrBytes:   µ±Ç°Í³¼Æ¶ÎÓÃ»§·¢ËÍµÄ×Ö½ÚÊý
-//      uiRxCount:      µ±Ç°Í³¼Æ¶Î·¢ËÍµÄ±¨ÎÄ¸öÊý
-//      uiTxUserCount:  µ±Ç°Í³¼Æ¶ÎÓÃ»§·¢ËÍµÄ±¨ÎÄ¸öÊý
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      åª’ä½“æµç»Ÿè®¡æ•°æ®
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      ucType:         è¯­éŸ³è¿˜æ˜¯è§†é¢‘,1è¯­éŸ³,2è§†é¢‘,SDP_MEDIA_AUDIO
+//      uiRxBytes:      å½“å‰ç»Ÿè®¡æ®µæŽ¥æ”¶çš„æ‰€æœ‰å­—èŠ‚æ•°
+//      uiRxUsrBytes:   å½“å‰ç»Ÿè®¡æ®µç”¨æˆ·æŽ¥æ”¶çš„å­—èŠ‚æ•°
+//      uiRxCount:      å½“å‰ç»Ÿè®¡æ®µæ”¶åˆ°çš„æŠ¥æ–‡ä¸ªæ•°
+//      uiRxUserCount:  å½“å‰ç»Ÿè®¡æ®µç”¨æˆ·æ”¶åˆ°çš„æŠ¥æ–‡ä¸ªæ•°
+//      uiRxBytes:      å½“å‰ç»Ÿè®¡æ®µå‘é€çš„æ‰€æœ‰å­—èŠ‚æ•°
+//      uiRxUsrBytes:   å½“å‰ç»Ÿè®¡æ®µç”¨æˆ·å‘é€çš„å­—èŠ‚æ•°
+//      uiRxCount:      å½“å‰ç»Ÿè®¡æ®µå‘é€çš„æŠ¥æ–‡ä¸ªæ•°
+//      uiTxUserCount:  å½“å‰ç»Ÿè®¡æ®µç”¨æˆ·å‘é€çš„æŠ¥æ–‡ä¸ªæ•°
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef void (*IDT_CallMediaStats)(void *pUsrCtx, UCHAR ucType,
     UINT uiRxBytes, UINT uiRxUsrBytes, UINT uiRxCount, UINT uiRxUserCount,
     UINT uiTxBytes, UINT uiTxUsrBytes, UINT uiTxCount, UINT uiTxUserCount);
 
 //--------------------------------------------------------------------------------
-//      »áÒé¿ØÖÆ
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      pcNum:          ºÅÂë
-//      ucCtrl:         ¿ØÖÆÐÅÏ¢,SRV_INFO_MICGIVE/SRV_INFO_MICTAKE
-//      ucQueue:        ¶ÓÁÐºÅ,0Ì¨ÉÏ¶ÓÁÐ,1Ì¨ÏÂ¶ÓÁÐ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      ä¼šè®®æŽ§åˆ¶
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      pcNum:          å·ç 
+//      ucCtrl:         æŽ§åˆ¶ä¿¡æ¯,SRV_INFO_MICGIVE/SRV_INFO_MICTAKE
+//      ucQueue:        é˜Ÿåˆ—å·,0å°ä¸Šé˜Ÿåˆ—,1å°ä¸‹é˜Ÿåˆ—
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallConfCtrlReq(int ID, char *pcNum, UCHAR ucCtrl, UCHAR ucQueue);
 //--------------------------------------------------------------------------------
-//      »áÒé¿ØÖÆÖ¸Ê¾
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      pcNum:          ºÅÂë
-//      ucCtrl:         ¿ØÖÆÐÅÏ¢,SRV_INFO_MICREQ/SRV_INFO_MICREL
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      ä¼šè®®æŽ§åˆ¶æŒ‡ç¤º
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      pcNum:          å·ç 
+//      ucCtrl:         æŽ§åˆ¶ä¿¡æ¯,SRV_INFO_MICREQ/SRV_INFO_MICREL
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallConfCtrlInd)(void *pUsrCtx, char *pcNum, UCHAR ucCtrl);
 //--------------------------------------------------------------------------------
-//      ºô½ÐÍ¸´«ÐÅÏ¢
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      dwInfo:         ÐÅÏ¢Âë
-//      pucInfo:        ÐÅÏ¢ÄÚÈÝ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å‘¼å«é€ä¼ ä¿¡æ¯
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      dwInfo:         ä¿¡æ¯ç 
+//      pucInfo:        ä¿¡æ¯å†…å®¹
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_CallSendInfo(int ID, DWORD dwInfo, UCHAR *pucInfo);
 //--------------------------------------------------------------------------------
-//      ºô½ÐÍ¸´«ÐÅÏ¢Ö¸Ê¾
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      dwInfo:         ÐÅÏ¢Âë
-//      pucInfo:        ÐÅÏ¢ÄÚÈÝ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å‘¼å«é€ä¼ ä¿¡æ¯æŒ‡ç¤º
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      dwInfo:         ä¿¡æ¯ç 
+//      pucInfo:        ä¿¡æ¯å†…å®¹
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_CallRecvInfo)(void *pUsrCtx, DWORD dwInfo, UCHAR *pucInfo);
 
 //--------------------------------------------------------------------------------
-//      ·¢ËÍÍ¸´«ÏûÏ¢
-//  ÊäÈë:
-//      dwSn:           ÏûÏ¢ÊÂÎñºÅ
-//      dwType:         ¼°Ê±ÏûÏ¢ÀàÐÍ
-//      pcFrom:         Ô´ºÅÂë
-//      pcTo:           ¶Ô¶ËºÅÂë,¿ÉÄÜÎª¿Õ
-//      pucBuf:         Í¸´«ÏûÏ¢ÄÚÈÝ
-//      iLen:           Í¸´«ÏûÏ¢³¤¶È
-//      pcIp:           ÏûÏ¢Ä¿µÄIPµØÖ·,NULL/0±íÊ¾ºÍÆô¶¯Ê±Ò»ÑùµØÖ·
-//      iPort:          ÏûÏ¢Ä¿µÄ¶Ë¿Ú
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å‘é€é€ä¼ æ¶ˆæ¯
+//  è¾“å…¥:
+//      dwSn:           æ¶ˆæ¯äº‹åŠ¡å·
+//      dwType:         åŠæ—¶æ¶ˆæ¯ç±»åž‹
+//      pcFrom:         æºå·ç 
+//      pcTo:           å¯¹ç«¯å·ç ,å¯èƒ½ä¸ºç©º
+//      pucBuf:         é€ä¼ æ¶ˆæ¯å†…å®¹
+//      iLen:           é€ä¼ æ¶ˆæ¯é•¿åº¦
+//      pcIp:           æ¶ˆæ¯ç›®çš„IPåœ°å€,NULL/0è¡¨ç¤ºå’Œå¯åŠ¨æ—¶ä¸€æ ·åœ°å€
+//      iPort:          æ¶ˆæ¯ç›®çš„ç«¯å£
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_SendPassThrouth(DWORD dwSn, DWORD dwType, char *pcTo, UCHAR *pucBuf, int iLen, char *pcIp = NULL, int iPort = 0);
 //--------------------------------------------------------------------------------
-//      ÊÕµ½Í¸´«ÏûÏ¢
-//  ÊäÈë:
-//      pcIp:           ÏûÏ¢Ô´IPµØÖ·
-//      iPort:          ÏûÏ¢Ô´¶Ë¿Ú
-//      pucSn:          ÏûÏ¢ÊÂÎñºÅ
-//      dwType:         ¼°Ê±ÏûÏ¢ÀàÐÍ
-//      pcFrom:         Ô´ºÅÂë
-//      pcTo:           Ä¿µÄºÅÂë
-//      pucBuf:         Í¸´«ÏûÏ¢ÄÚÈÝ
-//      iLen:           Í¸´«ÏûÏ¢³¤¶È
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æ”¶åˆ°é€ä¼ æ¶ˆæ¯
+//  è¾“å…¥:
+//      pcIp:           æ¶ˆæ¯æºIPåœ°å€
+//      iPort:          æ¶ˆæ¯æºç«¯å£
+//      pucSn:          æ¶ˆæ¯äº‹åŠ¡å·
+//      dwType:         åŠæ—¶æ¶ˆæ¯ç±»åž‹
+//      pcFrom:         æºå·ç 
+//      pcTo:           ç›®çš„å·ç 
+//      pucBuf:         é€ä¼ æ¶ˆæ¯å†…å®¹
+//      iLen:           é€ä¼ æ¶ˆæ¯é•¿åº¦
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_RecvPassTrouth)(char *pcIp, int iPort, UCHAR *pucSn, DWORD dwType, char* pcFrom, char* pcTo, UCHAR* pucBuf, int iLen);
 //--------------------------------------------------------------------------------
-//      »ñÈ¡IMÎÄ¼þÃû
-//  ÊäÈë:
-//      dwSn:           ÏûÏ¢ÊÂÎñºÅ
-//      pcTo:           Ä¿µÄºÅÂë
-//      dwType:         ¼°Ê±ÏûÏ¢ÀàÐÍ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      èŽ·å–IMæ–‡ä»¶å
+//  è¾“å…¥:
+//      dwSn:           æ¶ˆæ¯äº‹åŠ¡å·
+//      pcTo:           ç›®çš„å·ç 
+//      dwType:         åŠæ—¶æ¶ˆæ¯ç±»åž‹
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_IMGetFileName(DWORD dwSn, char *pcTo, DWORD dwType);
 //--------------------------------------------------------------------------------
-//      »ñÈ¡IMÎÄ¼þÃûÏìÓ¦
-//  ÊäÈë:
-//      dwSn:           ÏûÏ¢ÊÂÎñºÅ
-//      pcFileName:     ÎÄ¼þÃû
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      èŽ·å–IMæ–‡ä»¶åå“åº”
+//  è¾“å…¥:
+//      dwSn:           æ¶ˆæ¯äº‹åŠ¡å·
+//      pcFileName:     æ–‡ä»¶å
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_IMGetFileNameRsp)(DWORD dwSn, char *pcFileName);
 //--------------------------------------------------------------------------------
-//      ·¢ËÍIMÏûÏ¢
-//  ÊäÈë:
-//      dwSn:           ÏûÏ¢ÊÂÎñºÅ
-//      dwType:         ¼°Ê±ÏûÏ¢ÀàÐÍ
-//      pcTo:           Ä¿µÄºÅÂë
-//      pcTxt:          ÎÄ±¾ÄÚÈÝ
-//      pcFileName:     ÎÄ¼þÃû
-//      pcSourceFileName:Ô´ÎÄ¼þÃû
-//      pcIp:           ÏûÏ¢Ä¿µÄIPµØÖ·,NULL/0±íÊ¾ºÍÆô¶¯Ê±Ò»ÑùµØÖ·
-//      iPort:          ÏûÏ¢Ä¿µÄ¶Ë¿Ú
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å‘é€IMæ¶ˆæ¯
+//  è¾“å…¥:
+//      dwSn:           æ¶ˆæ¯äº‹åŠ¡å·
+//      dwType:         åŠæ—¶æ¶ˆæ¯ç±»åž‹
+//      pcTo:           ç›®çš„å·ç 
+//      pcTxt:          æ–‡æœ¬å†…å®¹
+//      pcFileName:     æ–‡ä»¶å
+//      pcSourceFileName:æºæ–‡ä»¶å
+//      pcIp:           æ¶ˆæ¯ç›®çš„IPåœ°å€,NULL/0è¡¨ç¤ºå’Œå¯åŠ¨æ—¶ä¸€æ ·åœ°å€
+//      iPort:          æ¶ˆæ¯ç›®çš„ç«¯å£
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_IMSend(DWORD dwSn, DWORD dwType, char *pcTo, char *pcTxt, char *pcFileName, char *pcSourceFileName, char *pcIp = NULL, int iPort = 0);
 //--------------------------------------------------------------------------------
-//      ÊÕµ½IMÏûÏ¢
-//  ÊäÈë:
-//      dwSn:           ÏûÏ¢ÊÂÎñºÅ
-//      dwType:         ¼°Ê±ÏûÏ¢ÀàÐÍ
-//      pcFrom:         Ô´ºÅÂë
-//      pcTo:           Ä¿µÄºÅÂë,#+ºÅÂë:±íÊ¾ÊÇ×éºÅÂë
-//      pcOriTo:        Ô­Ê¼Ä¿µÄºÅÂë
-//      pcTxt:          ÎÄ±¾ÄÚÈÝ
-//      pcFileName:     ÎÄ¼þÃû
-//      pcSourceFileName:Ô´ÎÄ¼þÃû
-//      pcTime:         ·¢ËÍµÄÊ±¼ä
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æ”¶åˆ°IMæ¶ˆæ¯
+//  è¾“å…¥:
+//      dwSn:           æ¶ˆæ¯äº‹åŠ¡å·
+//      dwType:         åŠæ—¶æ¶ˆæ¯ç±»åž‹
+//      pcFrom:         æºå·ç 
+//      pcTo:           ç›®çš„å·ç ,#+å·ç :è¡¨ç¤ºæ˜¯ç»„å·ç 
+//      pcOriTo:        åŽŸå§‹ç›®çš„å·ç 
+//      pcTxt:          æ–‡æœ¬å†…å®¹
+//      pcFileName:     æ–‡ä»¶å
+//      pcSourceFileName:æºæ–‡ä»¶å
+//      pcTime:         å‘é€çš„æ—¶é—´
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_IMRecv)(UCHAR *pucSn, DWORD dwType, char* pcFrom, char* pcTo, char* pcOriTo, char *pcTxt, char *pcFileName, char *pcSourceFileName, char *pcTime);
 //--------------------------------------------------------------------------------
-//      IM×´Ì¬Ö¸Ê¾
-//  ÊäÈë:
-//      dwSn:           ÏûÏ¢ÊÂÎñºÅ
-//      pucSn:          ÏµÍ³µÄÊÂÎñºÅ
-//      dwType:         ¼°Ê±ÏûÏ¢ÀàÐÍ
-//      ucStatus:       ×´Ì¬
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      IMçŠ¶æ€æŒ‡ç¤º
+//  è¾“å…¥:
+//      dwSn:           æ¶ˆæ¯äº‹åŠ¡å·
+//      pucSn:          ç³»ç»Ÿçš„äº‹åŠ¡å·
+//      dwType:         åŠæ—¶æ¶ˆæ¯ç±»åž‹
+//      ucStatus:       çŠ¶æ€
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_IMStatusInd)(DWORD dwSn, UCHAR *pucSn, DWORD dwType, UCHAR ucStatus);
 //--------------------------------------------------------------------------------
-//      ÔÄ¶ÁIMÏûÏ¢
-//  ÊäÈë:
-//      dwSn:           ÏûÏ¢ÊÂÎñºÅ
-//      pucSn:          ÏµÍ³µÄÊÂÎñºÅ
-//      dwType:         ¼°Ê±ÏûÏ¢ÀàÐÍ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      é˜…è¯»IMæ¶ˆæ¯
+//  è¾“å…¥:
+//      dwSn:           æ¶ˆæ¯äº‹åŠ¡å·
+//      pucSn:          ç³»ç»Ÿçš„äº‹åŠ¡å·
+//      dwType:         åŠæ—¶æ¶ˆæ¯ç±»åž‹
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_IMRead(DWORD dwSn, UCHAR *pucSn, DWORD dwType, char *pcTo);
 //--------------------------------------------------------------------------------
-//      ¶©ÔÄ×´Ì¬
-//  ÊäÈë:
-//      pucNum:         ÓÃ»§ºÅÂë»ò×éºÅÂë,"##0"±íÊ¾È¡ÏûÖ®Ç°ËùÓÐ¶©ÔÄ,"0"±íÊ¾ËùÓÐÓÃ»§,"###"±íÊ¾×Ô¼ºËùÊôµÄËùÓÐ×é
-//      ucLevel:        ¶©ÔÄ¼¶±ð,GU_STATUSSUBS_e
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è®¢é˜…çŠ¶æ€
+//  è¾“å…¥:
+//      pucNum:         ç”¨æˆ·å·ç æˆ–ç»„å·ç ,"##0"è¡¨ç¤ºå–æ¶ˆä¹‹å‰æ‰€æœ‰è®¢é˜…,"0"è¡¨ç¤ºæ‰€æœ‰ç”¨æˆ·,"###"è¡¨ç¤ºè‡ªå·±æ‰€å±žçš„æ‰€æœ‰ç»„
+//      ucLevel:        è®¢é˜…çº§åˆ«,GU_STATUSSUBS_e
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_StatusSubs(char *pcNum, UCHAR ucLevel);
 //--------------------------------------------------------------------------------
-//      ×é/ÓÃ»§×´Ì¬Ö¸Ê¾
-//  ÊäÈë:
-//      pStatus:        ×´Ì¬
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§×´Ì¬·¢Éú±ä»¯
+//      ç»„/ç”¨æˆ·çŠ¶æ€æŒ‡ç¤º
+//  è¾“å…¥:
+//      pStatus:        çŠ¶æ€
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·çŠ¶æ€å‘ç”Ÿå˜åŒ–
 //--------------------------------------------------------------------------------
 typedef void (*IDT_GUStatusInd)(GU_STATUSGINFO_s *pStatus);
 //--------------------------------------------------------------------------------
-//      ÉÏ±¨×Ô¼ºµÄGPSÐÅÏ¢
-//  ÊäÈë:
-//      pGps:           GPSÐÅÏ¢
-//      pucNum:         Ï£ÍûÉÏ±¨µÄºÅÂë,NULL±íÊ¾ÓëµÇÂ¼µÄºÅÂëÏàÍ¬
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      ä¸ŠæŠ¥è‡ªå·±çš„GPSä¿¡æ¯
+//  è¾“å…¥:
+//      pGps:           GPSä¿¡æ¯
+//      pucNum:         å¸Œæœ›ä¸ŠæŠ¥çš„å·ç ,NULLè¡¨ç¤ºä¸Žç™»å½•çš„å·ç ç›¸åŒ
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GpsReport(GPS_DATA_s *pGps, UCHAR *pucNum);
 //--------------------------------------------------------------------------------
-//      GPSÊý¾ÝÖ¸Ê¾,»ñµÃÆäËûÓÃ»§µÄGPS¼ÇÂ¼
-//  ÊäÈë:
-//      pGpsRec:        GPS¼ÇÂ¼ÐÅÏ¢
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§GPS·¢Éú±ä»¯
+//      GPSæ•°æ®æŒ‡ç¤º,èŽ·å¾—å…¶ä»–ç”¨æˆ·çš„GPSè®°å½•
+//  è¾“å…¥:
+//      pGpsRec:        GPSè®°å½•ä¿¡æ¯
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·GPSå‘ç”Ÿå˜åŒ–
 //--------------------------------------------------------------------------------
 typedef void (*IDT_GpsRecInd)(GPS_REC_s *pGpsRec);
 //--------------------------------------------------------------------------------
-//      ¶©ÔÄGPS
-//  ÊäÈë:
-//      pucNum:         ÓÃ»§ºÅÂë,"##0"±íÊ¾È¡ÏûÖ®Ç°ËùÓÐ¶©ÔÄ
-//      ucSubs:         ÊÇ·ñ¶©ÔÄ,0È¡Ïû¶©ÔÄ,1¶©ÔÄ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è®¢é˜…GPS
+//  è¾“å…¥:
+//      pucNum:         ç”¨æˆ·å·ç ,"##0"è¡¨ç¤ºå–æ¶ˆä¹‹å‰æ‰€æœ‰è®¢é˜…
+//      ucSubs:         æ˜¯å¦è®¢é˜…,0å–æ¶ˆè®¢é˜…,1è®¢é˜…
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GpsSubs(char *pcNum, UCHAR ucSubs);
 
 
 //--------------------------------------------------------------------------------
-//      Ç¿²ð
-//  ÊäÈë:
-//      pcPeerNum:      Ç¿²ðµÄºÅÂë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å¼ºæ‹†
+//  è¾“å…¥:
+//      pcPeerNum:      å¼ºæ‹†çš„å·ç 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_ForceRel(char *pcPeerNum);
 //--------------------------------------------------------------------------------
-//      ²éÑ¯GPSÀúÊ·Êý¾Ý
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ÓÃ»§ºÅÂë
-//      pcStartTime:    ÆðÊ¼Ê±¼ä,¸ñÊ½Îª"%04d-%02d-%02d %02d:%02d:%02d"
-//      pcEndTime:      ½áÊøÊ±¼ä,¸ñÊ½Îª"%04d-%02d-%02d %02d:%02d:%02d"
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æŸ¥è¯¢GPSåŽ†å²æ•°æ®
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç”¨æˆ·å·ç 
+//      pcStartTime:    èµ·å§‹æ—¶é—´,æ ¼å¼ä¸º"%04d-%02d-%02d %02d:%02d:%02d"
+//      pcEndTime:      ç»“æŸæ—¶é—´,æ ¼å¼ä¸º"%04d-%02d-%02d %02d:%02d:%02d"
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GpsHisQuery(DWORD dwSn, char *pcNum, char *pcStartTime, char *pcEndTime);
 //--------------------------------------------------------------------------------
-//      GPSÀúÊ·Êý¾ÝÖ¸Ê¾
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pGpsRec:        GPS¼ÇÂ¼ÐÅÏ¢,ucStatusÎÞÐ§
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§²éÑ¯µ½µÄGPSÀúÊ·Êý¾Ý
+//      GPSåŽ†å²æ•°æ®æŒ‡ç¤º
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pGpsRec:        GPSè®°å½•ä¿¡æ¯,ucStatusæ— æ•ˆ
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æŸ¥è¯¢åˆ°çš„GPSåŽ†å²æ•°æ®
 //--------------------------------------------------------------------------------
 typedef void (*IDT_GpsHisQueryInd)(DWORD dwSn, GPS_REC_s *pGpsRec);
 //--------------------------------------------------------------------------------
-//      ²éÑ¯´æ´¢Êý¾Ý
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pQuery:         ²éÑ¯Ìõ¼þ
-//      pucNum:         ´æ´¢·þÎñÆ÷ºÅÂë
-//      pcNsIp:         ´æ´¢·þÎñÆ÷IPµØÖ·
-//      iNsPort:        ´æ´¢·þÎñÆ÷¶Ë¿Ú
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æŸ¥è¯¢å­˜å‚¨æ•°æ®
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pQuery:         æŸ¥è¯¢æ¡ä»¶
+//      pucNum:         å­˜å‚¨æœåŠ¡å™¨å·ç 
+//      pcNsIp:         å­˜å‚¨æœåŠ¡å™¨IPåœ°å€
+//      iNsPort:        å­˜å‚¨æœåŠ¡å™¨ç«¯å£
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_NsQueryReq(DWORD dwSn, NS_QUERY_s *pQuery, char *pcNsNum, char* pcNsIp, int iNsPort);
 //--------------------------------------------------------------------------------
-//      ´æ´¢Êý¾Ý²éÑ¯ÏìÓ¦
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pGpsRec:        GPS¼ÇÂ¼ÐÅÏ¢,ucStatusÎÞÐ§
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§²éÑ¯µ½µÄGPSÀúÊ·Êý¾Ý
+//      å­˜å‚¨æ•°æ®æŸ¥è¯¢å“åº”
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pGpsRec:        GPSè®°å½•ä¿¡æ¯,ucStatusæ— æ•ˆ
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æŸ¥è¯¢åˆ°çš„GPSåŽ†å²æ•°æ®
 //--------------------------------------------------------------------------------
 typedef void (*IDT_NsQueryInd)(DWORD dwSn, NS_QUERYRSP_s *pQueryRsp);
 
 //--------------------------------------------------------------------------------
-//      Ìí¼ÓÓÃ»§
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pUser:          ÓÃ»§ÐÅÏ¢
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æ·»åŠ ç”¨æˆ·
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pUser:          ç”¨æˆ·ä¿¡æ¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_UAdd(DWORD dwSn, UData_s* pUser);
 //--------------------------------------------------------------------------------
-//      É¾³ýÓÃ»§
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ÓÃ»§ºÅÂë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      åˆ é™¤ç”¨æˆ·
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç”¨æˆ·å·ç 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_UDel(DWORD dwSn, UCHAR *pucNum);
 //--------------------------------------------------------------------------------
-//      ÐÞ¸ÄÓÃ»§
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pUser:          ÓÃ»§ÐÅÏ¢
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      ä¿®æ”¹ç”¨æˆ·
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pUser:          ç”¨æˆ·ä¿¡æ¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_UModify(DWORD dwSn, UData_s* pUser);
 //--------------------------------------------------------------------------------
-//      ²éÑ¯ÓÃ»§
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ÓÃ»§ºÅÂë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æŸ¥è¯¢ç”¨æˆ·
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç”¨æˆ·å·ç 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_UQuery(DWORD dwSn, UCHAR *pucNum);
 //--------------------------------------------------------------------------------
-//      ÓÃ»§²Ù×÷ÏìÓ¦
-//  ÊäÈë:
-//      dwOptCode:      ²Ù×÷Âë      OPT_USER_ADD
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      wRes:           ½á¹û        CAUSE_ZERO
-//      pUser:          ÓÃ»§ÐÅÏ¢
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§²Ù×÷½á¹û
+//      ç”¨æˆ·æ“ä½œå“åº”
+//  è¾“å…¥:
+//      dwOptCode:      æ“ä½œç       OPT_USER_ADD
+//      dwSn:           æ“ä½œåºå·
+//      wRes:           ç»“æžœ        CAUSE_ZERO
+//      pUser:          ç”¨æˆ·ä¿¡æ¯
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æ“ä½œç»“æžœ
 //--------------------------------------------------------------------------------
 typedef void (*IDT_UOptRsp)(DWORD dwOptCode, DWORD dwSn, WORD wRes, UData_s* pUser);
 
 
 //--------------------------------------------------------------------------------
-//      Ìí¼Ó×é
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pGroup:         ×éÐÅÏ¢
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æ·»åŠ ç»„
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pGroup:         ç»„ä¿¡æ¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GAdd(DWORD dwSn, GData_s* pGroup);
 //--------------------------------------------------------------------------------
-//      É¾³ý×é
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ÓÃ»§ºÅÂë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      åˆ é™¤ç»„
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç”¨æˆ·å·ç 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GDel(DWORD dwSn, UCHAR *pucNum);
 //--------------------------------------------------------------------------------
-//      ÐÞ¸Ä×é
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pGroup:         ×éÐÅÏ¢
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      ä¿®æ”¹ç»„
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pGroup:         ç»„ä¿¡æ¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GModify(DWORD dwSn, GData_s* pGroup);
 //--------------------------------------------------------------------------------
-//      ²éÑ¯×é
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ×éºÅÂë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æŸ¥è¯¢ç»„
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç»„å·ç 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GQuery(DWORD dwSn, UCHAR *pucNum);
 //--------------------------------------------------------------------------------
-//      ²éÑ¯×éÄÚÓÃ»§ÐÅÏ¢
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ×éºÅÂë
-//      pExt:           ²éÑ¯²ÎÊý
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      pucNum="0"²¢ÇÒpExt->dwCount!=0,±íÊ¾²éÑ¯ËùÓÐÓÃ»§,´ËÊ±pExt->dwPageÓÐÐ§
+//      æŸ¥è¯¢ç»„å†…ç”¨æˆ·ä¿¡æ¯
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç»„å·ç 
+//      pExt:           æŸ¥è¯¢å‚æ•°
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      pucNum="0"å¹¶ä¸”pExt->dwCount!=0,è¡¨ç¤ºæŸ¥è¯¢æ‰€æœ‰ç”¨æˆ·,æ­¤æ—¶pExt->dwPageæœ‰æ•ˆ
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GQueryU(DWORD dwSn, UCHAR *pucNum, QUERY_EXT_s *pExt);
 //--------------------------------------------------------------------------------
-//      ²éÑ¯ÓÃ»§ËùÔÚ×éÐÅÏ¢
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ÓÃ»§ºÅÂë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æŸ¥è¯¢ç”¨æˆ·æ‰€åœ¨ç»„ä¿¡æ¯
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç”¨æˆ·å·ç 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_UQueryG(DWORD dwSn, UCHAR *pucNum);
 //--------------------------------------------------------------------------------
-//      ×éÌí¼ÓÓÃ»§
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ×éºÅÂë
-//      pMember:        ÓÃ»§Êý¾Ý
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      ç»„æ·»åŠ ç”¨æˆ·
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç»„å·ç 
+//      pMember:        ç”¨æˆ·æ•°æ®
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GAddU(DWORD dwSn, UCHAR *pucNum, GROUP_MEMBER_s *pMember);
 //--------------------------------------------------------------------------------
-//      ×éÉ¾³ýÓÃ»§
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ×éºÅÂë
-//      pucUNum:        ÓÃ»§ºÅÂë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      ç»„åˆ é™¤ç”¨æˆ·
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç»„å·ç 
+//      pucUNum:        ç”¨æˆ·å·ç 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GDelU(DWORD dwSn, UCHAR *pucNum, UCHAR *pucUNum);
 //--------------------------------------------------------------------------------
-//      ÐÞ¸ÄÓÃ»§
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ×éºÅÂë
-//      pMember:        ÓÃ»§Êý¾Ý
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      ä¿®æ”¹ç”¨æˆ·
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç»„å·ç 
+//      pMember:        ç”¨æˆ·æ•°æ®
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GModifyU(DWORD dwSn, UCHAR *pucNum, GROUP_MEMBER_s *pMember);
 //--------------------------------------------------------------------------------
-//      ×é²Ù×÷ÏìÓ¦
-//  ÊäÈë:
-//      dwOptCode:      ²Ù×÷Âë
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      wRes:           ½á¹û
-//      pGroup:         ×éÐÅÏ¢
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§²Ù×÷½á¹û
+//      ç»„æ“ä½œå“åº”
+//  è¾“å…¥:
+//      dwOptCode:      æ“ä½œç 
+//      dwSn:           æ“ä½œåºå·
+//      wRes:           ç»“æžœ
+//      pGroup:         ç»„ä¿¡æ¯
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æ“ä½œç»“æžœ
 //--------------------------------------------------------------------------------
 typedef void (*IDT_GOptRsp)(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGroup);
 
 
 //--------------------------------------------------------------------------------
-//      Ìí¼Ó×éÖ¯
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pOrg:           ×éÖ¯ÐÅÏ¢
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æ·»åŠ ç»„ç»‡
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pOrg:           ç»„ç»‡ä¿¡æ¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_OAdd(DWORD dwSn, ORG_s* pOrg);
 //--------------------------------------------------------------------------------
-//      É¾³ý×éÖ¯
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ×éÖ¯ºÅÂë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      åˆ é™¤ç»„ç»‡
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç»„ç»‡å·ç 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_ODel(DWORD dwSn, UCHAR *pucNum);
 //--------------------------------------------------------------------------------
-//      ÐÞ¸Ä×éÖ¯
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pOrg:           ×éÖ¯ÐÅÏ¢
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      ä¿®æ”¹ç»„ç»‡
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pOrg:           ç»„ç»‡ä¿¡æ¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_OModify(DWORD dwSn, ORG_s* pOrg);
 //--------------------------------------------------------------------------------
-//      ²éÑ¯×éÖ¯
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucNum:         ×éÖ¯ºÅÂë.
-//                      Èç¹ûÊÇadmin,²éÑ¯"all",·µ»ØÏµÍ³ÖÐËùÓÐ×éÖ¯ÁÐ±í
-//                      Èç¹ûÊÇadmin,²éÑ¯È·¶¨ºÅÂëµÄ×éÖ¯,µ¥¸ö×éÖ¯
-//                      Èç¹û²»ÊÇadmin,²éÑ¯"all",·µ»Ø×Ô¼ºËùÔÚµÄ×éÖ¯ÐÅÏ¢
-//                      Èç¹û²»ÊÇadmin,²éÑ¯È·¶¨ºÅÂëµÄ×éÖ¯,Èç¹û×Ô¼ºÔÚÕâ¸ö×éÖ¯ÄÚ,µ¥¸ö×éÖ¯;Èç¹û²»ÔÚÕâ¸ö×éÖ¯ÄÚ,wRes·µ»Ø×éÖ¯Ô½È¨²Ù×÷
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      æŸ¥è¯¢ç»„ç»‡
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucNum:         ç»„ç»‡å·ç .
+//                      å¦‚æžœæ˜¯admin,æŸ¥è¯¢"all",è¿”å›žç³»ç»Ÿä¸­æ‰€æœ‰ç»„ç»‡åˆ—è¡¨
+//                      å¦‚æžœæ˜¯admin,æŸ¥è¯¢ç¡®å®šå·ç çš„ç»„ç»‡,å•ä¸ªç»„ç»‡
+//                      å¦‚æžœä¸æ˜¯admin,æŸ¥è¯¢"all",è¿”å›žè‡ªå·±æ‰€åœ¨çš„ç»„ç»‡ä¿¡æ¯
+//                      å¦‚æžœä¸æ˜¯admin,æŸ¥è¯¢ç¡®å®šå·ç çš„ç»„ç»‡,å¦‚æžœè‡ªå·±åœ¨è¿™ä¸ªç»„ç»‡å†…,å•ä¸ªç»„ç»‡;å¦‚æžœä¸åœ¨è¿™ä¸ªç»„ç»‡å†…,wResè¿”å›žç»„ç»‡è¶Šæƒæ“ä½œ
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_OQuery(DWORD dwSn, UCHAR *pucNum);
 //--------------------------------------------------------------------------------
-//      ÉèÖÃ×é³ÉÔ±¸½¼ÓÐÅÏ¢
-//  ÊäÈë:
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      pucUNum:        ÓÃ»§ºÅÂë
-//      pucGNum:        ×éºÅÂë
-//      pucInfo:        ¸½¼ÓÐÅÏ¢,×î³¤512×Ö½Ú
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è®¾ç½®ç»„æˆå‘˜é™„åŠ ä¿¡æ¯
+//  è¾“å…¥:
+//      dwSn:           æ“ä½œåºå·
+//      pucUNum:        ç”¨æˆ·å·ç 
+//      pucGNum:        ç»„å·ç 
+//      pucInfo:        é™„åŠ ä¿¡æ¯,æœ€é•¿512å­—èŠ‚
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_SetGMemberExtInfo(DWORD dwSn, UCHAR *pucUNum, UCHAR *pucGNum, UCHAR *pucInfo);
 //--------------------------------------------------------------------------------
-//      ×éÖ¯²Ù×÷ÏìÓ¦
-//  ÊäÈë:
-//      dwOptCode:      ²Ù×÷Âë      OPT_ORG_ADD
-//      dwSn:           ²Ù×÷ÐòºÅ
-//      wRes:           ½á¹û        CAUSE_ZERO
-//      pOrgList:       ×éÖ¯ÐÅÏ¢
-//      pucCauseStr:    Ô­ÒòÖµ×Ö·û´®
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§²Ù×÷½á¹û
+//      ç»„ç»‡æ“ä½œå“åº”
+//  è¾“å…¥:
+//      dwOptCode:      æ“ä½œç       OPT_ORG_ADD
+//      dwSn:           æ“ä½œåºå·
+//      wRes:           ç»“æžœ        CAUSE_ZERO
+//      pOrgList:       ç»„ç»‡ä¿¡æ¯
+//      pucCauseStr:    åŽŸå› å€¼å­—ç¬¦ä¸²
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æ“ä½œç»“æžœ
 //--------------------------------------------------------------------------------
 typedef void (*IDT_OOptRsp)(DWORD dwOptCode, DWORD dwSn, WORD wRes, ORG_LIST_s* pOrgList, UCHAR *pucCauseStr);
 //--------------------------------------------------------------------------------
-//      OAM²Ù×÷ÌáÊ¾
-//  ÊäÈë:
-//      dwOptCode:      ²Ù×÷Âë
-//                      OPT_USER_ADD        pucUNum,pucUName,ucUAttrÓÐÐ§
-//                      OPT_USER_DEL        pucUNumÓÐÐ§
-//                      OPT_USER_MODIFY     pucUNum,pucUName,ucUAttrÓÐÐ§
-//                      OPT_G_ADD           pucGNum,pucGNameÓÐÐ§
-//                      OPT_G_DEL           pucGNumÓÐÐ§
-//                      OPT_G_MODIFY        pucGNum,pucGNameÓÐÐ§
-//                      OPT_G_ADDUSER       pucGNum,pucUNum,pucUName,ucUAttrÓÐÐ§
-//                      OPT_G_DELUSER       pucGNum,pucUNumÓÐÐ§
-//                      OPT_G_MODIFYUSER    pucGNum,pucUNum,pucUName,ucUAttrÓÐÐ§
-//      pucGNum:        ×éºÅÂë
-//      pucGName:       ×éÃû×Ö
-//      pucUNum:        ÓÃ»§ºÅÂë
-//      pucUName:       ÓÃ»§Ãû×Ö
-//      ucUAttr:        ÓÃ»§ÊôÐÔ
-//  ·µ»Ø:
-//      ÎÞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§×éÉ¾³ý/Ìí¼ÓÓÃ»§µÈ²Ù×÷
+//      OAMæ“ä½œæç¤º
+//  è¾“å…¥:
+//      dwOptCode:      æ“ä½œç 
+//                      OPT_USER_ADD        pucUNum,pucUName,ucUAttræœ‰æ•ˆ
+//                      OPT_USER_DEL        pucUNumæœ‰æ•ˆ
+//                      OPT_USER_MODIFY     pucUNum,pucUName,ucUAttræœ‰æ•ˆ
+//                      OPT_G_ADD           pucGNum,pucGNameæœ‰æ•ˆ
+//                      OPT_G_DEL           pucGNumæœ‰æ•ˆ
+//                      OPT_G_MODIFY        pucGNum,pucGNameæœ‰æ•ˆ
+//                      OPT_G_ADDUSER       pucGNum,pucUNum,pucUName,ucUAttræœ‰æ•ˆ
+//                      OPT_G_DELUSER       pucGNum,pucUNumæœ‰æ•ˆ
+//                      OPT_G_MODIFYUSER    pucGNum,pucUNum,pucUName,ucUAttræœ‰æ•ˆ
+//      pucGNum:        ç»„å·ç 
+//      pucGName:       ç»„åå­—
+//      pucUNum:        ç”¨æˆ·å·ç 
+//      pucUName:       ç”¨æˆ·åå­—
+//      ucUAttr:        ç”¨æˆ·å±žæ€§
+//  è¿”å›ž:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·ç»„åˆ é™¤/æ·»åŠ ç”¨æˆ·ç­‰æ“ä½œ
 //--------------------------------------------------------------------------------
 typedef void (*IDT_OamNotify)(DWORD dwOptCode, UCHAR *pucGNum, UCHAR *pucGName, UCHAR *pucUNum, UCHAR *pucUName, UCHAR ucUAttr);
 //--------------------------------------------------------------------------------
-//      ×é³ÉÔ±À©Õ¹ÐÅÏ¢Ö¸Ê¾
-//  ÊäÈë:
-//      pucGNum:        ×éºÅÂë,Èç¹ûÎª¿Õ,±íÊ¾ÊÇ¶©ÔÄËùÓÐÓÃ»§·µ»ØµÄ
-//      pInfo:          À©Õ¹ÐÅÏ¢
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§À©Õ¹ÐÅÏ¢Ö¸Ê¾
+//      ç»„æˆå‘˜æ‰©å±•ä¿¡æ¯æŒ‡ç¤º
+//  è¾“å…¥:
+//      pucGNum:        ç»„å·ç ,å¦‚æžœä¸ºç©º,è¡¨ç¤ºæ˜¯è®¢é˜…æ‰€æœ‰ç”¨æˆ·è¿”å›žçš„
+//      pInfo:          æ‰©å±•ä¿¡æ¯
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æ‰©å±•ä¿¡æ¯æŒ‡ç¤º
 //--------------------------------------------------------------------------------
 typedef int (*IDT_GMemberExtInfoInd)(UCHAR *pucGNum, GMEMBER_EXTINFO_s *pInfo);
 //--------------------------------------------------------------------------------
-//      ´úÀí×¢²á
-//  ÊäÈë:
-//      cIp:            ·þÎñÆ÷IPµØÖ·
-//      iPort:          ·þÎñÆ÷¶Ë¿ÚºÅ
-//      pcNum:          ºÅÂë
-//      cPwd:           ÃÜÂë
-//      RType:          ×¢²áÀàÐÍ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      IDT·¢ËÍ´úÀí×¢²áÏûÏ¢,´øÉÏpcNum,pcPwd£¬µ½pcIp:iPortµØÖ·È¥
+//      ä»£ç†æ³¨å†Œ
+//  è¾“å…¥:
+//      cIp:            æœåŠ¡å™¨IPåœ°å€
+//      iPort:          æœåŠ¡å™¨ç«¯å£å·
+//      pcNum:          å·ç 
+//      cPwd:           å¯†ç 
+//      RType:          æ³¨å†Œç±»åž‹
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      IDTå‘é€ä»£ç†æ³¨å†Œæ¶ˆæ¯,å¸¦ä¸ŠpcNum,pcPwdï¼Œåˆ°pcIp:iPortåœ°å€åŽ»
 //--------------------------------------------------------------------------------
 IDT_API int IDT_ProxyReg(char *pcIp, int iPort, char* pcNum, char* pcPwd, REG_TYPE_e RType);
 //--------------------------------------------------------------------------------
-//      ¼ÇÂ¼ÈÕÖ¾
-//  ÊäÈë:
-//      pcFileName:     ÎÄ¼þÃû
-//      pcLog:          ÈÕÖ¾ÄÚÈÝ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è®°å½•æ—¥å¿—
+//  è¾“å…¥:
+//      pcFileName:     æ–‡ä»¶å
+//      pcLog:          æ—¥å¿—å†…å®¹
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_Log(char *pcFileName, char *pcLog);
 
 //--------------------------------------------------------------------------------
-//      ¶ÁÈ¡ÅäÖÃÎÄ¼þ
-//  ÊäÈë:
-//      pcFileName:     ÎÄ¼þÃû
-//      pcSection:      ¶Î
-//      pcKey:          ¹Ø¼ü×Ö
-//      pcVal:          Öµ,256×Ö½Ú.·µ»Ø
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è¯»å–é…ç½®æ–‡ä»¶
+//  è¾“å…¥:
+//      pcFileName:     æ–‡ä»¶å
+//      pcSection:      æ®µ
+//      pcKey:          å…³é”®å­—
+//      pcVal:          å€¼,256å­—èŠ‚.è¿”å›ž
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_ReadIni(char *pcFileName, char *pcSection, char *pcKey, char *pcVal);
 //--------------------------------------------------------------------------------
-//      Ð´ÈëÅäÖÃÎÄ¼þ
-//  ÊäÈë:
-//      pcFileName:     ÎÄ¼þÃû
-//      pcSection:      ¶Î
-//      pcKey:          ¹Ø¼ü×Ö
-//      pcVal:          Öµ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å†™å…¥é…ç½®æ–‡ä»¶
+//  è¾“å…¥:
+//      pcFileName:     æ–‡ä»¶å
+//      pcSection:      æ®µ
+//      pcKey:          å…³é”®å­—
+//      pcVal:          å€¼
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_WriteIni(char *pcFileName, char *pcSection, char *pcKey, char *pcVal);
 //--------------------------------------------------------------------------------
-//      ¶ÁÈ¡JsonÊý¾Ý
-//  ÊäÈë:
-//      pcJson:         Json×Ö·û´®
-//      pcKey:          ¹Ø¼ü×Ö
-//      iType:          ÀàÐÍ,1×Ö·û´®,2²¼¶û
-//      iStrSize:       ×Ö·û´®´óÐ¡
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//          pcStr:      ×Ö·û´®
-//          bVal:       ²¼¶ûÖµ
-//      -1:             Ê§°Ü
+//      è¯»å–Jsonæ•°æ®
+//  è¾“å…¥:
+//      pcJson:         Jsonå­—ç¬¦ä¸²
+//      pcKey:          å…³é”®å­—
+//      iType:          ç±»åž‹,1å­—ç¬¦ä¸²,2å¸ƒå°”
+//      iStrSize:       å­—ç¬¦ä¸²å¤§å°
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//          pcStr:      å­—ç¬¦ä¸²
+//          bVal:       å¸ƒå°”å€¼
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_ReadJson(char *pcJson, char *pcKey, int iType, char *pcStr, int iStrSize, bool &bVal);
 //--------------------------------------------------------------------------------
-//      Ð´ÈëJsonÊý¾Ý
-//  ÊäÈë:
-//      pcJson:         Json×Ö·û´®
-//      iSize:          Json×Ö·û´®»º³åÇø´óÐ¡
-//      pcKey:          ¹Ø¼ü×Ö
-//      iType:          ÀàÐÍ,1×Ö·û´®,2²¼¶û
-//      pcStr:          ×Ö·û´®
-//      bVal:           ²¼¶ûÖµ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//          pcJson:     Json×Ö·û´®
-//      -1:             Ê§°Ü
+//      å†™å…¥Jsonæ•°æ®
+//  è¾“å…¥:
+//      pcJson:         Jsonå­—ç¬¦ä¸²
+//      iSize:          Jsonå­—ç¬¦ä¸²ç¼“å†²åŒºå¤§å°
+//      pcKey:          å…³é”®å­—
+//      iType:          ç±»åž‹,1å­—ç¬¦ä¸²,2å¸ƒå°”
+//      pcStr:          å­—ç¬¦ä¸²
+//      bVal:           å¸ƒå°”å€¼
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//          pcJson:     Jsonå­—ç¬¦ä¸²
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_WriteJson(char *pcJson, int iSize, char *pcKey, int iType, char *pcStr, bool bVal);
 
 //--------------------------------------------------------------------------------
-//      »ñÈ¡IDT×´Ì¬
-//  ÊäÈë:
-//      ÎÞ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//          pcJson:     Json×Ö·û´®
-//      -1:             Ê§°Ü
+//      èŽ·å–IDTçŠ¶æ€
+//  è¾“å…¥:
+//      æ— 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//          pcJson:     Jsonå­—ç¬¦ä¸²
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_GetStatus(char *pcJson, int iSize);
 
 //--------------------------------------------------------------------------------
-//      ÓÃ»§µ÷ÊÔº¯Êý
-//  ÊäÈë:
-//      pcTxt:          µ÷ÊÔ×Ö·û´®
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      FREERTOSµ÷ÊÔ±È½ÏÂé·³,¼ÓÈëÕâ¸ö,±ãÓÚÔ¶³Ìµ÷ÊÔ
+//      ç”¨æˆ·è°ƒè¯•å‡½æ•°
+//  è¾“å…¥:
+//      pcTxt:          è°ƒè¯•å­—ç¬¦ä¸²
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      FREERTOSè°ƒè¯•æ¯”è¾ƒéº»çƒ¦,åŠ å…¥è¿™ä¸ª,ä¾¿äºŽè¿œç¨‹è°ƒè¯•
 //--------------------------------------------------------------------------------
 typedef int (*IDT_Dbg)(char *pcTxt);
 
-//»Øµ÷º¯Êý
+//å›žè°ƒå‡½æ•°
 typedef struct _IDT_CALLBACK_s
 {
     IDT_StatusInd               pfStatusInd;
@@ -1133,25 +1133,25 @@ typedef struct _IDT_CALLBACK_s
 }IDT_CALLBACK_s;
 
 //--------------------------------------------------------------------------------
-//      Æô¶¯
-//  ÊäÈë:
-//      pcIniFile:      INIÎÄ¼þÃû
-//      iMaxCallNum:    ×î´ó²¢·¢ºô½ÐÊý
-//      cIp:            ·þÎñÆ÷IPµØÖ·
-//      iPort:          ·þÎñÆ÷¶Ë¿ÚºÅ
-//      cGpsIp:         GPS·þÎñÆ÷IPµØÖ·
-//      iGpsPort:       GPS·þÎñÆ÷¶Ë¿ÚºÅ
-//      cNumber:        ºÅÂë
-//      cPwd:           ÃÜÂë
-//      iRegFlag:       ÊÇ·ñÒª×¢²á,0²»ÐèÒª,1ÐèÒª×¢²á
-//      CallBack:       »Øµ÷º¯Êý
-//      iSigPort:       ÐÅÁî¶Ë¿Ú
-//      iMedRtpPort:    RTPÃ½Ìå¶Ë¿Ú
-//      iMedTcpPort:    TCPÃ½Ìå¼àÌý¶Ë¿Ú
-//      iMediaCtrl:     Ã½Ìå¿ØÖÆ,0²»ÐèÒªIDT¿ØÖÆÃ½Ìå,1ÐèÒªIDT¿ØÖÆÃ½Ìå
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å¯åŠ¨
+//  è¾“å…¥:
+//      pcIniFile:      INIæ–‡ä»¶å
+//      iMaxCallNum:    æœ€å¤§å¹¶å‘å‘¼å«æ•°
+//      cIp:            æœåŠ¡å™¨IPåœ°å€
+//      iPort:          æœåŠ¡å™¨ç«¯å£å·
+//      cGpsIp:         GPSæœåŠ¡å™¨IPåœ°å€
+//      iGpsPort:       GPSæœåŠ¡å™¨ç«¯å£å·
+//      cNumber:        å·ç 
+//      cPwd:           å¯†ç 
+//      iRegFlag:       æ˜¯å¦è¦æ³¨å†Œ,0ä¸éœ€è¦,1éœ€è¦æ³¨å†Œ
+//      CallBack:       å›žè°ƒå‡½æ•°
+//      iSigPort:       ä¿¡ä»¤ç«¯å£
+//      iMedRtpPort:    RTPåª’ä½“ç«¯å£
+//      iMedTcpPort:    TCPåª’ä½“ç›‘å¬ç«¯å£
+//      iMediaCtrl:     åª’ä½“æŽ§åˆ¶,0ä¸éœ€è¦IDTæŽ§åˆ¶åª’ä½“,1éœ€è¦IDTæŽ§åˆ¶åª’ä½“
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 #ifdef WINDOWS
 IDT_API int IDT_Start(char* pcIniFile, int iMaxCallNum, char* pcIp, int iPort, char* pcGpsIp, int iGpsPort, char* pcNum, char* pcPwd,
@@ -1161,50 +1161,50 @@ IDT_API int IDT_Start(char* pcIniFile, int iMaxCallNum, char* pcIp, int iPort, c
     int iRegFlag, IDT_CALLBACK_s *CallBack, int iSigPort = 10100, int iMedRtpPort = 11000, int iMedTcpPort = 0);
 #endif
 //--------------------------------------------------------------------------------
-//      ÍË³ö
-//  ÊäÈë:
-//      ÎÞ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      é€€å‡º
+//  è¾“å…¥:
+//      æ— 
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_Exit();
 
 
 #ifdef WINDOWS
 //--------------------------------------------------------------------------------
-//      Æô¶¯VideoIn
-//  ÊäÈë:
-//      ID:             ºô½ÐID
-//      hUser:          ÓÃ»§¾ä±ú
-//      iDeviceID:      µÚ¼¸¸öÉãÏñÍ·
-//      hWnd:           ±¾µØÔ¤ÀÀ´°¿Ú
-//      ucCodec:        ±àÂëÆ÷
-//      iWidth:         ¿í
-//      iHeight:        ¸ß
-//      iFrameRate:     Ö¡ÂÊ
-//      iBitRate:       ÂëÂÊ
-//      iGop:           IÖ¡¼ä¸ô
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å¯åŠ¨VideoIn
+//  è¾“å…¥:
+//      ID:             å‘¼å«ID
+//      hUser:          ç”¨æˆ·å¥æŸ„
+//      iDeviceID:      ç¬¬å‡ ä¸ªæ‘„åƒå¤´
+//      hWnd:           æœ¬åœ°é¢„è§ˆçª—å£
+//      ucCodec:        ç¼–ç å™¨
+//      iWidth:         å®½
+//      iHeight:        é«˜
+//      iFrameRate:     å¸§çŽ‡
+//      iBitRate:       ç çŽ‡
+//      iGop:           Iå¸§é—´éš”
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_VideoInStart(int ID, HANDLE hUser, int iDeviceID, HWND hWnd, UCHAR ucCodec, int iWidth, int iHeight, int iFrameRate, int iBitRate, int iGop);
 //--------------------------------------------------------------------------------
-//      Æô¶¯VideoOut
-//  ÊäÈë:
-//      ID:             ºô½ÐID
-//      hUser:          ÓÃ»§¾ä±ú
-//      hWnd:           ÊÓÆµÏÔÊ¾´°¿Ú
-//      ucCodec:        ±àÂëÆ÷
-//      iWidth:         ¿í
-//      iHeight:        ¸ß
-//      iFrameRate:     Ö¡ÂÊ
-//      iBitRate:       ÂëÂÊ
-//      iGop:           IÖ¡¼ä¸ô
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å¯åŠ¨VideoOut
+//  è¾“å…¥:
+//      ID:             å‘¼å«ID
+//      hUser:          ç”¨æˆ·å¥æŸ„
+//      hWnd:           è§†é¢‘æ˜¾ç¤ºçª—å£
+//      ucCodec:        ç¼–ç å™¨
+//      iWidth:         å®½
+//      iHeight:        é«˜
+//      iFrameRate:     å¸§çŽ‡
+//      iBitRate:       ç çŽ‡
+//      iGop:           Iå¸§é—´éš”
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_VideoOutStart(int ID, HANDLE hUser, HWND hWnd, UCHAR ucCodec, int iWidth, int iHeight, int iFrameRate, int iBitRate, int iGop);
 #endif
@@ -1212,42 +1212,42 @@ IDT_API int IDT_VideoOutStart(int ID, HANDLE hUser, HWND hWnd, UCHAR ucCodec, in
 
 
 //--------------------------------------------------------------------------------
-//      PTTºô³ö
-//  ÊäÈë:
-//      cPeerNum:       ¶Ô·½ºÅÂë
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//  ·µ»Ø:
-//      -1:             Ê§°Ü
-//      else:           ºô½Ð±êÊ¶
+//      PTTå‘¼å‡º
+//  è¾“å…¥:
+//      cPeerNum:       å¯¹æ–¹å·ç 
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//  è¿”å›ž:
+//      -1:             å¤±è´¥
+//      else:           å‘¼å«æ ‡è¯†
 //--------------------------------------------------------------------------------
 IDT_API int IDT_PTTCallMakeOut(char* pcPeerNum, void *pUsrCtx);
 
 //--------------------------------------------------------------------------------
-//      PTTºôÈë
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      pcPeerNum:      ¶Ô·½ºÅÂë,×éºÅÂë
-//      pcPeerName:     ¶Ô·½Ãû×Ö,×éÃû×Ö
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§ÓÐºô½Ð½øÈë
+//      PTTå‘¼å…¥
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      pcPeerNum:      å¯¹æ–¹å·ç ,ç»„å·ç 
+//      pcPeerName:     å¯¹æ–¹åå­—,ç»„åå­—
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æœ‰å‘¼å«è¿›å…¥
 //--------------------------------------------------------------------------------
 typedef int (*IDT_PTTCallIn)(int ID, char *pcPeerNum, char *pcPeerName);
 
 //--------------------------------------------------------------------------------
-//      PTTºôÈëÓ¦´ð
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ÐID
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      PTTå‘¼å…¥åº”ç­”
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 IDT_API int IDT_PTTCallAnswer(int ID, void *pUsrCtx);
 
-//»Øµ÷º¯Êý
+//å›žè°ƒå‡½æ•°
 typedef struct _IDT_PTTCALLBACK_s
 {
     IDT_StatusInd               pfStatusInd;
@@ -1263,21 +1263,21 @@ typedef struct _IDT_PTTCALLBACK_s
 }IDT_PTTCALLBACK_s;
 
 //--------------------------------------------------------------------------------
-//      PTTÆô¶¯
-//  ÊäÈë:
-//      pcIniFile:      INIÎÄ¼þÃû
-//      pcSrvIp:        ·þÎñÆ÷IPµØÖ·,192.168.0.225:10000ÕâÑùµÄ¸ñÊ½
-//      pcGpsIp:        GPS·þÎñÆ÷IPµØÖ·,192.168.0.225:10001ÕâÑùµÄ¸ñÊ½
-//      pcNumber:       ºÅÂë
-//      pcPwd:          ÃÜÂë
-//      CallBack:       »Øµ÷º¯Êý
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      PTTÄ£Ê½Æô¶¯,Ö»Ö§³ÖPTTºô½Ð.Ö»Ö§³ÖÒ»Â·.
-//      Ä¬ÈÏ±¾µØÐÅÁî¶Ë¿Ú,UDP10100
-//      Ä¬ÈÏ±¾µØÃ½Ìå¶Ë¿Ú,UDP11000~11003
+//      PTTå¯åŠ¨
+//  è¾“å…¥:
+//      pcIniFile:      INIæ–‡ä»¶å
+//      pcSrvIp:        æœåŠ¡å™¨IPåœ°å€,192.168.0.225:10000è¿™æ ·çš„æ ¼å¼
+//      pcGpsIp:        GPSæœåŠ¡å™¨IPåœ°å€,192.168.0.225:10001è¿™æ ·çš„æ ¼å¼
+//      pcNumber:       å·ç 
+//      pcPwd:          å¯†ç 
+//      CallBack:       å›žè°ƒå‡½æ•°
+//  è¿”å›ž:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      PTTæ¨¡å¼å¯åŠ¨,åªæ”¯æŒPTTå‘¼å«.åªæ”¯æŒä¸€è·¯.
+//      é»˜è®¤æœ¬åœ°ä¿¡ä»¤ç«¯å£,UDP10100
+//      é»˜è®¤æœ¬åœ°åª’ä½“ç«¯å£,UDP11000~11003
 //--------------------------------------------------------------------------------
 IDT_API int IDT_PTTStart(char* pcIniFile, char* pcSrvIp, char* pcGpsIp, char* pcNum, char* pcPwd, IDT_PTTCALLBACK_s *CallBack);
 
@@ -1289,6 +1289,7 @@ IDT_API int IDT_PTTStart(char* pcIniFile, char* pcSrvIp, char* pcGpsIp, char* pc
 
 
 #endif
+
 
 
 

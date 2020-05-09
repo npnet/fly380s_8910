@@ -28,8 +28,22 @@
 #include "drv_names.h"
 #include "lv_include/lv_poc.h"
 #include "app_test.h"
+#include "guiIdtCom_api.h"
 
-static void pocStartAnimation(void)\
+static void pocIdtStartHandleTask(void * ctx)
+{
+	while(!poc_get_network_register_status(POC_SIM_1))
+	{
+		OSI_LOGI(0, "[poc][idt] checking network\n");
+		osiThreadSleep(1000);
+	}
+	//appTestStart();
+	lvPocGuiIdtCom_log();
+
+	osiThreadExit();
+}
+
+static void pocStartAnimation(void)
 {
 	lv_obj_t * bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_size(bg, 160, 128);
@@ -46,6 +60,8 @@ static void pocLvglStart(void)
 	//pocStartAnimation();
 
 	lv_poc_create_idle();
+
+	osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 }
 #else
 static void pocLvglStart(void)
@@ -61,17 +77,13 @@ static void pocLvglStart(void)
 void pocStart(void *ctx)
 {
     OSI_LOGI(0, "lvgl poc start");
-
     drvLcdInitV2();
 
     drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
     drvLcdOpenV2(lcd);
     drvLcdFill(lcd, 0, NULL, true);
     drvLcdSetBackLightEnable(lcd, true);
-
 	lvGuiInit(pocLvglStart);
-
-	appTestStart();
 
 	osiThreadExit();
 }

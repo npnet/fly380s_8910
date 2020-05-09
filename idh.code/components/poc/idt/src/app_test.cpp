@@ -9,7 +9,7 @@
  * warranty that such application will be suitable for the specified use
  * without further testing or modification.
  */
-
+#if 0
 #include "osi_log.h"
 #include "osi_api.h"
 #include <stdlib.h>
@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "poc_config.h"
+#include "guiIdtCom_api.h"
 
 #define FREERTOS
 #define T_TINY_MODE
@@ -37,15 +38,15 @@ char *GetSrvTypeStr(SRV_TYPE_e SrvType);
 
 
 //--------------------------------------------------------------------------------
-//      TRACEĞ¡º¯Êı
-//  ÊäÈë:
-//      pcFormat:       ¸ñÊ½´®
-//      ...:            ²ÎÊı
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      ´òÓ¡ÄÚÈİ²»ÄÜ³¬¹ı256×Ö½Ú
+//      TRACEå°å‡½æ•°
+//  è¾“å…¥:
+//      pcFormat:       æ ¼å¼ä¸²
+//      ...:            å‚æ•°
+//  è¿”å›:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      æ‰“å°å†…å®¹ä¸èƒ½è¶…è¿‡256å­—èŠ‚
 //--------------------------------------------------------------------------------
 int IDT_TRACE(const char* pcFormat, ...)
 {
@@ -66,7 +67,7 @@ int IDT_TRACE(const char* pcFormat, ...)
     return 0;
 }
 
-//×éĞÅÏ¢
+//ç»„ä¿¡æ¯
 class CGroup
 {
 public:
@@ -85,11 +86,11 @@ public:
     }
 
 public:
-    UCHAR   m_ucGNum[32];     //×éºÅÂë
-    UCHAR   m_ucGName[64];    //×éÃû×Ö
+    UCHAR   m_ucGNum[32];     //ç»„å·ç 
+    UCHAR   m_ucGName[64];    //ç»„åå­—
 };
 
-//È«²¿µÄ×é
+//å…¨éƒ¨çš„ç»„
 class CAllGroup
 {
 public:
@@ -112,10 +113,10 @@ public:
     }
 
 public:
-    CGroup  m_Group[USER_MAX_GROUP];//Ò»¸öÓÃ»§,×î¶à´¦ÓÚ32¸ö×éÖĞ
+    CGroup  m_Group[USER_MAX_GROUP];//ä¸€ä¸ªç”¨æˆ·,æœ€å¤šå¤„äº32ä¸ªç»„ä¸­
 };
 
-//IDTÊ¹ÓÃÕß
+//IDTä½¿ç”¨è€…
 class CIdtUser
 {
 public:
@@ -138,8 +139,8 @@ public:
     }
 
 public:
-    int m_iCallId;//È«ÏµÍ³Ö»ÓĞÒ»Â·ºô½Ğ,¿ÉÒÔÕâÑù¼òµ¥Ò»Ğ©
-    int m_iRxCount, m_iTxCount;//Í³¼ÆÊÕ·¢ÓïÒô°üÊıÁ¿
+    int m_iCallId;//å…¨ç³»ç»Ÿåªæœ‰ä¸€è·¯å‘¼å«,å¯ä»¥è¿™æ ·ç®€å•ä¸€äº›
+    int m_iRxCount, m_iTxCount;//ç»Ÿè®¡æ”¶å‘è¯­éŸ³åŒ…æ•°é‡
     CAllGroup m_Group;
 };
 CIdtUser m_IdtUser;
@@ -149,25 +150,25 @@ int Func_GQueryU(DWORD dwSn, UCHAR *pucGNum)
 {
     QUERY_EXT_s ext;
     memset(&ext, 0, sizeof(ext));
-    ext.ucGroup = 0;    //×éÏÂ×é²»³ÊÏÖ
-    ext.ucUser  = 1;    //²éÑ¯ÓÃ»§
-    ext.dwPage  = 0;    //´ÓµÚ0Ò³¿ªÊ¼
-    ext.dwCount = GROUP_MAX_MEMBER;//Ã¿Ò³ÓĞ1024ÓÃ»§
-    ext.ucOrder =0;     //ÅÅĞò·½Ê½,0°´ºÅÂëÅÅĞò,1°´Ãû×ÖÅÅĞò
+    ext.ucGroup = 0;    //ç»„ä¸‹ç»„ä¸å‘ˆç°
+    ext.ucUser  = 1;    //æŸ¥è¯¢ç”¨æˆ·
+    ext.dwPage  = 0;    //ä»ç¬¬0é¡µå¼€å§‹
+    ext.dwCount = GROUP_MAX_MEMBER;//æ¯é¡µæœ‰1024ç”¨æˆ·
+    ext.ucOrder =0;     //æ’åºæ–¹å¼,0æŒ‰å·ç æ’åº,1æŒ‰åå­—æ’åº
     IDT_GQueryU(dwSn, pucGNum, &ext);
     return 0;
 }
 
 
 //--------------------------------------------------------------------------------
-//      ÓÃ»§×´Ì¬Ö¸Ê¾
-//  ÊäÈë:
-//      status:         µ±Ç°ÓÃ»§×´Ì¬
-//      usCause:        Ô­ÒòÖµ
-//  ·µ»Ø:
-//      ÎŞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§×´Ì¬·¢Éú±ä»¯
+//      ç”¨æˆ·çŠ¶æ€æŒ‡ç¤º
+//  è¾“å…¥:
+//      status:         å½“å‰ç”¨æˆ·çŠ¶æ€
+//      usCause:        åŸå› å€¼
+//  è¿”å›:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·çŠ¶æ€å‘ç”Ÿå˜åŒ–
 //--------------------------------------------------------------------------------
 void callback_IDT_StatusInd(int status, unsigned short usCause)
 {
@@ -180,13 +181,13 @@ void callback_IDT_StatusInd(int status, unsigned short usCause)
 }
 
 //--------------------------------------------------------------------------------
-//      ×éĞÅÏ¢Ö¸Ê¾
-//  ÊäÈë:
-//      pGInfo:         ×éĞÅÏ¢
-//  ·µ»Ø:
-//      ÎŞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§×´Ì¬·¢Éú±ä»¯
+//      ç»„ä¿¡æ¯æŒ‡ç¤º
+//  è¾“å…¥:
+//      pGInfo:         ç»„ä¿¡æ¯
+//  è¿”å›:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·çŠ¶æ€å‘ç”Ÿå˜åŒ–
 //--------------------------------------------------------------------------------
 void callback_IDT_GInfoInd(USERGINFO_s *pGInfo)
 {
@@ -203,18 +204,18 @@ void callback_IDT_GInfoInd(USERGINFO_s *pGInfo)
         strcpy((char*)m_IdtUser.m_Group.m_Group[i].m_ucGName, (char*)pGInfo->stGInfo[i].ucName);
     }
 
-    // Æô¶¯²éÑ¯ËùÓĞ×é³ÉÔ±
+    // å¯åŠ¨æŸ¥è¯¢æ‰€æœ‰ç»„æˆå‘˜
     Func_GQueryU(0, pGInfo->stGInfo[0].ucNum);
 }
 
 //--------------------------------------------------------------------------------
-//      ×é/ÓÃ»§×´Ì¬Ö¸Ê¾
-//  ÊäÈë:
-//      pStatus:        ×´Ì¬
-//  ·µ»Ø:
-//      ÎŞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§×´Ì¬·¢Éú±ä»¯
+//      ç»„/ç”¨æˆ·çŠ¶æ€æŒ‡ç¤º
+//  è¾“å…¥:
+//      pStatus:        çŠ¶æ€
+//  è¿”å›:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·çŠ¶æ€å‘ç”Ÿå˜åŒ–
 //--------------------------------------------------------------------------------
 void callback_IDT_GUStatusInd(GU_STATUSGINFO_s *pStatus)
 {
@@ -229,45 +230,45 @@ void callback_IDT_GUStatusInd(GU_STATUSGINFO_s *pStatus)
 }
 
 //--------------------------------------------------------------------------------
-//      ºô³öÓ¦´ğ
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      pcPeerNum:      ¶Ô·½Ó¦´ğµÄºÅÂë,ÓĞ¿ÉÄÜÓë±»½ĞºÅÂë²»Í¬
-//      pcPeerName:     ¶Ô·½Ó¦´ğµÄÓÃ»§Ãû
-//      SrvType:        ÒµÎñÀàĞÍ,Êµ¼ÊµÄÒµÎñÀàĞÍ,¿ÉÄÜÓëMakeOut²»Í¬
-//      pcUserMark:     ÓÃ»§±êÊ¶
-//      pcUserCallRef:  ÓÃ»§Ê¹ÓÃµÄºô½Ğ²Î¿¼ºÅ,Ö÷½ĞÊÇ×Ô¼º,±»½ĞÊÇÖ÷½Ğ,²é¿´ÊÇ¶Ô¶Ë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§¶Ô·½Ó¦´ğ
+//      å‘¼å‡ºåº”ç­”
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      pcPeerNum:      å¯¹æ–¹åº”ç­”çš„å·ç ,æœ‰å¯èƒ½ä¸è¢«å«å·ç ä¸åŒ
+//      pcPeerName:     å¯¹æ–¹åº”ç­”çš„ç”¨æˆ·å
+//      SrvType:        ä¸šåŠ¡ç±»å‹,å®é™…çš„ä¸šåŠ¡ç±»å‹,å¯èƒ½ä¸MakeOutä¸åŒ
+//      pcUserMark:     ç”¨æˆ·æ ‡è¯†
+//      pcUserCallRef:  ç”¨æˆ·ä½¿ç”¨çš„å‘¼å«å‚è€ƒå·,ä¸»å«æ˜¯è‡ªå·±,è¢«å«æ˜¯ä¸»å«,æŸ¥çœ‹æ˜¯å¯¹ç«¯
+//  è¿”å›:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·å¯¹æ–¹åº”ç­”
 //--------------------------------------------------------------------------------
 int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName, SRV_TYPE_e SrvType, char *pcUserMark, char *pcUserCallRef)
 {
     IDT_TRACE("callback_IDT_CallPeerAnswer: pUsrCtx=0x%x, pcPeerNum=%s, pcPeerName=%s, SrvType=%s(%d), pcUserMark=%s, pcUserCallRef=%s",
         pUsrCtx, pcPeerNum, pcPeerName, GetSrvTypeStr(SrvType), SrvType, pcUserMark, pcUserCallRef);
-    //½øÈëÍ¨»°½çÃæ
+    //è¿›å…¥é€šè¯ç•Œé¢
     return 0;
 }
 
 //--------------------------------------------------------------------------------
-//      ÊÕµ½ºôÈë
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ĞID
-//      pcMyNum:        ×Ô¼ººÅÂë
-//      pcPeerNum:      ¶Ô·½ºÅÂë
-//      pcPeerName:     ¶Ô·½Ãû×Ö
-//      SrvType:        ÒµÎñÀàĞÍ
-//      pAttr:          Ã½ÌåÊôĞÔ
-//      pExtInfo:       ¸½¼ÓĞÅÏ¢
-//      pcUserMark:     ÓÃ»§±êÊ¶
-//      pcUserCallRef:  ÓÃ»§Ê¹ÓÃµÄºô½Ğ²Î¿¼ºÅ,Ö÷½ĞÊÇ×Ô¼º,±»½ĞÊÇÖ÷½Ğ,²é¿´ÊÇ¶Ô¶Ë
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§ÓĞºô½Ğ½øÈë
+//      æ”¶åˆ°å‘¼å…¥
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID
+//      pcMyNum:        è‡ªå·±å·ç 
+//      pcPeerNum:      å¯¹æ–¹å·ç 
+//      pcPeerName:     å¯¹æ–¹åå­—
+//      SrvType:        ä¸šåŠ¡ç±»å‹
+//      pAttr:          åª’ä½“å±æ€§
+//      pExtInfo:       é™„åŠ ä¿¡æ¯
+//      pcUserMark:     ç”¨æˆ·æ ‡è¯†
+//      pcUserCallRef:  ç”¨æˆ·ä½¿ç”¨çš„å‘¼å«å‚è€ƒå·,ä¸»å«æ˜¯è‡ªå·±,è¢«å«æ˜¯ä¸»å«,æŸ¥çœ‹æ˜¯å¯¹ç«¯
+//  è¿”å›:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æœ‰å‘¼å«è¿›å…¥
 //--------------------------------------------------------------------------------
 int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName, SRV_TYPE_e SrvType, MEDIAATTR_s *pAttr, void *pExtInfo, char *pcUserMark, char *pcUserCallRef)
 {
@@ -279,12 +280,12 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 
     switch (SrvType)
     {
-    case SRV_TYPE_BASIC_CALL://µ¥ºô
-        //ÕñÁå
+    case SRV_TYPE_BASIC_CALL://å•å‘¼
+        //æŒ¯é“ƒ
         break;
 
-    case SRV_TYPE_CONF://×éºô
-        //Ö±½Ó½ÓÍ¨
+    case SRV_TYPE_CONF://ç»„å‘¼
+        //ç›´æ¥æ¥é€š
         {
             MEDIAATTR_s attr;
             memset(&attr, 0, sizeof(attr));
@@ -304,14 +305,14 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
     return 0;
 }
 //--------------------------------------------------------------------------------
-//      ¶Ô·½»òIDTÄÚ²¿ÊÍ·Åºô½Ğ
-//  ÊäÈë:
-//      ID:             IDTµÄºô½ĞID,Í¨³£²»Ê¹ÓÃÕâ¸ö,µ«¿ÉÄÜÆô¶¯±»½Ğºó,ÓÃ»§»¹Ã»ÓĞÓ¦´ğ,¾ÍÊÍ·ÅÁË
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      uiCause:        ÊÍ·ÅÔ­ÒòÖµ
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      å¯¹æ–¹æˆ–IDTå†…éƒ¨é‡Šæ”¾å‘¼å«
+//  è¾“å…¥:
+//      ID:             IDTçš„å‘¼å«ID,é€šå¸¸ä¸ä½¿ç”¨è¿™ä¸ª,ä½†å¯èƒ½å¯åŠ¨è¢«å«å,ç”¨æˆ·è¿˜æ²¡æœ‰åº”ç­”,å°±é‡Šæ”¾äº†
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      uiCause:        é‡Šæ”¾åŸå› å€¼
+//  è¿”å›:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 {
@@ -322,35 +323,35 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
     return 0;
 }
 //--------------------------------------------------------------------------------
-//      »°È¨Ö¸Ê¾
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      uiInd:          Ö¸Ê¾Öµ:0»°È¨±»ÊÍ·Å,1»ñµÃ»°È¨,ÓëÃ½ÌåÊôĞÔÏàÍ¬
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è¯æƒæŒ‡ç¤º
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      uiInd:          æŒ‡ç¤ºå€¼:0è¯æƒè¢«é‡Šæ”¾,1è·å¾—è¯æƒ,ä¸åª’ä½“å±æ€§ç›¸åŒ
+//  è¿”å›:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 int callback_IDT_CallMicInd(void *pUsrCtx, UINT uiInd)
 {
     IDT_TRACE("callback_IDT_CallMicInd: pUsrCtx=0x%x, uiInd=%d", pUsrCtx, uiInd);
-    // 0±¾¶Ë²»½²»°
-    // 1±¾¶Ë½²»°
+    // 0æœ¬ç«¯ä¸è®²è¯
+    // 1æœ¬ç«¯è®²è¯
     return 0;
 }
 //--------------------------------------------------------------------------------
-//      ÊÕµ½ÓïÒôÊı¾İ
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
+//      æ”¶åˆ°è¯­éŸ³æ•°æ®
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
 //      dwStreamId:     StreamId
 //      ucCodec:        CODEC
-//      pucBuf:         Êı¾İ
-//      iLen:           Êı¾İ³¤¶È
-//      dwTsOfs:        Ê±´Á¿Õ¶´
-//      dwTsLen:        Êı¾İ¿éÊ±´Á³¤¶È
-//      dwTs:           ÆğÊ¼Ê±´Á
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      pucBuf:         æ•°æ®
+//      iLen:           æ•°æ®é•¿åº¦
+//      dwTsOfs:        æ—¶æˆ³ç©ºæ´
+//      dwTsLen:        æ•°æ®å—æ—¶æˆ³é•¿åº¦
+//      dwTs:           èµ·å§‹æ—¶æˆ³
+//  è¿”å›:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCodec, UCHAR *pucBuf, int iLen, DWORD dwTsOfs, DWORD dwTsLen, DWORD dwTs)
 {
@@ -361,33 +362,33 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 }
 
 //--------------------------------------------------------------------------------
-//      ½²»°·½ÌáÊ¾
-//  ÊäÈë:
-//      pUsrCtx:        ÓÃ»§ÉÏÏÂÎÄ
-//      pcNum:          ½²»°·½ºÅÂë
-//      pcName:         ½²»°·½Ãû×Ö
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
+//      è®²è¯æ–¹æç¤º
+//  è¾“å…¥:
+//      pUsrCtx:        ç”¨æˆ·ä¸Šä¸‹æ–‡
+//      pcNum:          è®²è¯æ–¹å·ç 
+//      pcName:         è®²è¯æ–¹åå­—
+//  è¿”å›:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
 //--------------------------------------------------------------------------------
 int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 {
     IDT_TRACE("callback_IDT_CallTalkingIDInd: pUsrCtx=0x%x, pcNum=%s, pcName=%s", pUsrCtx, pcNum, pcName);
-    //ÏÔÊ¾½²»°ÈËºÅÂë/Ãû×Ö,UTF-8±àÂë
+    //æ˜¾ç¤ºè®²è¯äººå·ç /åå­—,UTF-8ç¼–ç 
     return 0;
 }
 
 //--------------------------------------------------------------------------------
-//      ÓÃ»§²Ù×÷ÏìÓ¦
-//  ÊäÈë:
-//      dwOptCode:      ²Ù×÷Âë      OPT_USER_ADD
-//      dwSn:           ²Ù×÷ĞòºÅ
-//      wRes:           ½á¹û        CAUSE_ZERO
-//      pUser:          ÓÃ»§ĞÅÏ¢
-//  ·µ»Ø:
-//      ÎŞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§²Ù×÷½á¹û
+//      ç”¨æˆ·æ“ä½œå“åº”
+//  è¾“å…¥:
+//      dwOptCode:      æ“ä½œç       OPT_USER_ADD
+//      dwSn:           æ“ä½œåºå·
+//      wRes:           ç»“æœ        CAUSE_ZERO
+//      pUser:          ç”¨æˆ·ä¿¡æ¯
+//  è¿”å›:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æ“ä½œç»“æœ
 //--------------------------------------------------------------------------------
 void callback_IDT_UOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes, UData_s* pUser)
 {
@@ -404,16 +405,16 @@ void callback_IDT_UOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes, UData_s* pUser
 }
 
 //--------------------------------------------------------------------------------
-//      ×é²Ù×÷ÏìÓ¦
-//  ÊäÈë:
-//      dwOptCode:      ²Ù×÷Âë
-//      dwSn:           ²Ù×÷ĞòºÅ
-//      wRes:           ½á¹û
-//      pGroup:         ×éĞÅÏ¢
-//  ·µ»Ø:
-//      ÎŞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§²Ù×÷½á¹û
+//      ç»„æ“ä½œå“åº”
+//  è¾“å…¥:
+//      dwOptCode:      æ“ä½œç 
+//      dwSn:           æ“ä½œåºå·
+//      wRes:           ç»“æœ
+//      pGroup:         ç»„ä¿¡æ¯
+//  è¿”å›:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·æ“ä½œç»“æœ
 //--------------------------------------------------------------------------------
 void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGroup)
 {
@@ -443,33 +444,33 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
 
         if (0 == m_IdtUser.m_Group.m_Group[dwSn].m_ucGNum[0])
             return;
-        // ³ÖĞø²éÑ¯Ê£ÏÂµÄ×é³ÉÔ±
+        // æŒç»­æŸ¥è¯¢å‰©ä¸‹çš„ç»„æˆå‘˜
         Func_GQueryU(dwSn, m_IdtUser.m_Group.m_Group[dwSn].m_ucGNum);
     }
 }
 
 //--------------------------------------------------------------------------------
-//      OAM²Ù×÷ÌáÊ¾
-//  ÊäÈë:
-//      dwOptCode:      ²Ù×÷Âë
-//                      OPT_USER_ADD        pucUNum,pucUName,ucUAttrÓĞĞ§
-//                      OPT_USER_DEL        pucUNumÓĞĞ§
-//                      OPT_USER_MODIFY     pucUNum,pucUName,ucUAttrÓĞĞ§
-//                      OPT_G_ADD           pucGNum,pucGNameÓĞĞ§
-//                      OPT_G_DEL           pucGNumÓĞĞ§
-//                      OPT_G_MODIFY        pucGNum,pucGNameÓĞĞ§
-//                      OPT_G_ADDUSER       pucGNum,pucUNum,pucUName,ucUAttrÓĞĞ§
-//                      OPT_G_DELUSER       pucGNum,pucUNumÓĞĞ§
-//                      OPT_G_MODIFYUSER    pucGNum,pucUNum,pucUName,ucUAttrÓĞĞ§
-//      pucGNum:        ×éºÅÂë
-//      pucGName:       ×éÃû×Ö
-//      pucUNum:        ÓÃ»§ºÅÂë
-//      pucUName:       ÓÃ»§Ãû×Ö
-//      ucUAttr:        ÓÃ»§ÊôĞÔ
-//  ·µ»Ø:
-//      ÎŞ
-//  ×¢Òâ:
-//      ÓÉIDT.dllµ÷ÓÃ,¸æËßÓÃ»§×éÉ¾³ı/Ìí¼ÓÓÃ»§µÈ²Ù×÷
+//      OAMæ“ä½œæç¤º
+//  è¾“å…¥:
+//      dwOptCode:      æ“ä½œç 
+//                      OPT_USER_ADD        pucUNum,pucUName,ucUAttræœ‰æ•ˆ
+//                      OPT_USER_DEL        pucUNumæœ‰æ•ˆ
+//                      OPT_USER_MODIFY     pucUNum,pucUName,ucUAttræœ‰æ•ˆ
+//                      OPT_G_ADD           pucGNum,pucGNameæœ‰æ•ˆ
+//                      OPT_G_DEL           pucGNumæœ‰æ•ˆ
+//                      OPT_G_MODIFY        pucGNum,pucGNameæœ‰æ•ˆ
+//                      OPT_G_ADDUSER       pucGNum,pucUNum,pucUName,ucUAttræœ‰æ•ˆ
+//                      OPT_G_DELUSER       pucGNum,pucUNumæœ‰æ•ˆ
+//                      OPT_G_MODIFYUSER    pucGNum,pucUNum,pucUName,ucUAttræœ‰æ•ˆ
+//      pucGNum:        ç»„å·ç 
+//      pucGName:       ç»„åå­—
+//      pucUNum:        ç”¨æˆ·å·ç 
+//      pucUName:       ç”¨æˆ·åå­—
+//      ucUAttr:        ç”¨æˆ·å±æ€§
+//  è¿”å›:
+//      æ— 
+//  æ³¨æ„:
+//      ç”±IDT.dllè°ƒç”¨,å‘Šè¯‰ç”¨æˆ·ç»„åˆ é™¤/æ·»åŠ ç”¨æˆ·ç­‰æ“ä½œ
 //--------------------------------------------------------------------------------
 void callback_IDT_OamNotify(DWORD dwOptCode, UCHAR *pucGNum, UCHAR *pucGName, UCHAR *pucUNum, UCHAR *pucUName, UCHAR ucUAttr)
 {
@@ -491,14 +492,14 @@ void callback_IDT_OamNotify(DWORD dwOptCode, UCHAR *pucGNum, UCHAR *pucGName, UC
 }
 
 //--------------------------------------------------------------------------------
-//      ÓÃ»§µ÷ÊÔº¯Êı
-//  ÊäÈë:
-//      pcTxt:          µ÷ÊÔ×Ö·û´®
-//  ·µ»Ø:
-//      0:              ³É¹¦
-//      -1:             Ê§°Ü
-//  ×¢Òâ:
-//      FREERTOSµ÷ÊÔ±È½ÏÂé·³,¼ÓÈëÕâ¸ö,±ãÓÚÔ¶³Ìµ÷ÊÔ
+//      ç”¨æˆ·è°ƒè¯•å‡½æ•°
+//  è¾“å…¥:
+//      pcTxt:          è°ƒè¯•å­—ç¬¦ä¸²
+//  è¿”å›:
+//      0:              æˆåŠŸ
+//      -1:             å¤±è´¥
+//  æ³¨æ„:
+//      FREERTOSè°ƒè¯•æ¯”è¾ƒéº»çƒ¦,åŠ å…¥è¿™ä¸ª,ä¾¿äºè¿œç¨‹è°ƒè¯•
 //--------------------------------------------------------------------------------
 extern int _stricmp(const char *string1, const char *string2);
 int callback_IDT_Dbg(char *pcTxt)
@@ -510,7 +511,7 @@ int callback_IDT_Dbg(char *pcTxt)
     MEDIAATTR_s attr;
     if (0 == _stricmp("query", pcTxt))
     {
-        //²éÑ¯ĞÅÏ¢
+        //æŸ¥è¯¢ä¿¡æ¯
         char cBuf[256];
         IDT_GetStatus(cBuf, sizeof(cBuf));
         IDT_TRACE("IDT_GetStatus: %s", cBuf);
@@ -524,11 +525,11 @@ int callback_IDT_Dbg(char *pcTxt)
             m_IdtUser.m_iCallId = -1;
         }
 
-        //µ¥ºôºô³ö
+        //å•å‘¼å‘¼å‡º
         memset(&attr, 0, sizeof(attr));
         attr.ucAudioRecv = 1;
         attr.ucAudioSend = 1;
-        //¶Ô¶ËºÅÂë2013,»ù±¾ºô½Ğ,ÓïÒôÊÕ·¢,ÊÓÆµÃ»ÓĞ
+        //å¯¹ç«¯å·ç 2013,åŸºæœ¬å‘¼å«,è¯­éŸ³æ”¶å‘,è§†é¢‘æ²¡æœ‰
         m_IdtUser.m_iCallId = IDT_CallMakeOut((char*)"2013", SRV_TYPE_BASIC_CALL, &attr, NULL, NULL, 1, 0, 1, NULL);
         m_IdtUser.m_iRxCount = 0;
         m_IdtUser.m_iTxCount = 0;
@@ -542,17 +543,17 @@ int callback_IDT_Dbg(char *pcTxt)
             m_IdtUser.m_iCallId = -1;
         }
 
-        //×éºôºô³ö
+        //ç»„å‘¼å‘¼å‡º
         memset(&attr, 0, sizeof(attr));
         attr.ucAudioSend = 1;
-        //¶Ô¶Ë×éºÅÂë2090,×éºô,ÓïÒôÖ»·¢²»ÊÕ,ÊÓÆµÃ»ÓĞ
+        //å¯¹ç«¯ç»„å·ç 2090,ç»„å‘¼,è¯­éŸ³åªå‘ä¸æ”¶,è§†é¢‘æ²¡æœ‰
         m_IdtUser.m_iCallId = IDT_CallMakeOut((char*)"2090", SRV_TYPE_CONF, &attr, NULL, NULL, 1, 0, 1, NULL);
         m_IdtUser.m_iRxCount = 0;
         m_IdtUser.m_iTxCount = 0;
     }
     else if (0 == _stricmp("answer", pcTxt))
     {
-        //µ¥ºôÓ¦´ğ
+        //å•å‘¼åº”ç­”
         memset(&attr, 0, sizeof(attr));
         attr.ucAudioRecv = 1;
         attr.ucAudioSend = 1;
@@ -560,24 +561,34 @@ int callback_IDT_Dbg(char *pcTxt)
     }
     else if (0 == _stricmp("rel", pcTxt))
     {
-        //ÊÍ·Åºô½Ğ
+        //é‡Šæ”¾å‘¼å«
         IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO);
         m_IdtUser.m_iCallId = -1;
     }
     else if (0 == _stricmp("ptton", pcTxt))
     {
-        //ÇëÇó»°È¨
+        //è¯·æ±‚è¯æƒ
         IDT_CallMicCtrl(m_IdtUser.m_iCallId, true);
     }
     else if (0 == _stricmp("pttoff", pcTxt))
     {
-        //ÊÍ·Å»°È¨
+        //é‡Šæ”¾è¯æƒ
         IDT_CallMicCtrl(m_IdtUser.m_iCallId, false);
+    }
+    else if (0 == _stricmp("TxA", pcTxt))
+    {
+        UCHAR ucBuf[320];
+        memset(ucBuf, 0, sizeof(ucBuf));
+        IDT_TRACE("callback_IDT_Dbg: %s", pcTxt);
+        IDT_CallSendAuidoData(m_IdtUser.m_iCallId, 0, 0, ucBuf, 320, 0);
+        IDT_CallSendAuidoData(m_IdtUser.m_iCallId, 0, 0, ucBuf, 320, 0);
+        IDT_CallSendAuidoData(m_IdtUser.m_iCallId, 0, 0, ucBuf, 320, 0);
     }
     else if (0 == _stricmp("gquery", pcTxt))
     {
         Func_GQueryU(0, m_IdtUser.m_Group.m_Group[0].m_ucGNum);
     }
+
 
     return 0;
 }
@@ -588,7 +599,7 @@ void IDT_Entry(void*)
 {
     m_IdtUser.Reset();
 
-    // 0¹Ø±ÕÈÕÖ¾,1´ò¿ªÈÕÖ¾
+    // 0å…³é—­æ—¥å¿—,1æ‰“å¼€æ—¥å¿—
     //g_iLog = 0;
     g_iLog = 1;
 
@@ -621,8 +632,8 @@ static void appTestTaskEntry(void *argument)
 
     for(i = 0; ; i++)
     {
-        //²»ÖªµÀÎªÊ²Ã´,³õÊ¼»¯Ê±,²»µÈ´ıÒ»ÃëÒÔÉÏ,»áÊ§°Ü
-        if (i == iDelay)//µÈ10Ãë,²¦ºÅ³É¹¦
+        //ä¸çŸ¥é“ä¸ºä»€ä¹ˆ,åˆå§‹åŒ–æ—¶,ä¸ç­‰å¾…ä¸€ç§’ä»¥ä¸Š,ä¼šå¤±è´¥
+        if (i == iDelay)//ç­‰10ç§’,æ‹¨å·æˆåŠŸ
         {
             IDT_Entry(NULL);
         }
@@ -653,6 +664,22 @@ extern "C" void appTestStart(void)
 #endif
 }
 
+extern "C" void lvPocGuiIdtCom_Init(void)
+{
+	appTestStart();
+}
+
+extern "C" bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
+{
+	return false;
+}
+
+extern "C" void lvPocGuiIdtCom_log(void)
+{
+	lvPocGuiIdtCom_Init();
+}
+
+#endif
 
 
 

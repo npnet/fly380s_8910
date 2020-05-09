@@ -154,6 +154,24 @@ void
 poc_get_operator_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT POC_MMI_MODEM_PLMN_RAT * rat);
 
 /*
+      name : get status of ps attach
+     param :
+     			[sim] POC_SIM_ID
+      date : 2020-05-06
+*/
+bool
+poc_get_network_ps_attach_status(IN POC_SIM_ID sim);
+
+/*
+      name : get status of register network
+     param :
+     			[sim] POC_SIM_ID
+      date : 2020-05-06
+*/
+bool
+poc_get_network_register_status(IN POC_SIM_ID sim);
+
+/*
       name : poc_mmi_poc_setting_config
      param : [poc_setting] IN param
       date : 2020-03-30
