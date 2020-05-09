@@ -15,9 +15,6 @@
 #include "tts_player.h"
 #include "ml.h"
 #include <stdlib.h>
-#include "hal_iomux.h"
-#include "drv_gpio.h"
-
 
 
 static nv_poc_setting_msg_t poc_setting_conf_local = {0};
@@ -31,6 +28,9 @@ static bool nv_poc_setting_config_is_writed = false;
 static drvGpio_t * poc_torch_gpio = NULL;
 static drvGpio_t * poc_keypad_led_gpio = NULL;
 static drvGpio_t * poc_ext_pa_gpio = NULL;
+static drvGpio_t * poc_port_Gpio = NULL;
+drvGpioConfig_t* configport = NULL;
+
 
 /*
       name : lv_poc_get_keypad_dev
@@ -1049,3 +1049,94 @@ poc_ext_pa_init(void)
 	}
 	poc_ext_pa_gpio = drvGpioOpen(9, config, NULL, NULL);
 }
+
+/*
+      name : poc_port_init
+      param : port is the IO that needs to be set
+      date : 2020-05-08
+*/
+drvGpioConfig_t *
+poc_port_init(void)
+{
+	if(poc_port_Gpio != NULL) return false;
+	static drvGpioConfig_t * config = NULL;
+	if(config == NULL)
+	{
+		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
+		if(config == NULL)
+		{
+			return false;
+		}
+		memset(config, 0, sizeof(drvGpioConfig_t));
+		config->mode = DRV_GPIO_OUTPUT;
+		config->debounce = true;
+		config->out_level = false;
+	}
+
+	return config;
+}
+
+/*
+      name : poc_set_port_status
+      param : open true is open port
+      date : 2020-05-08
+*/
+bool
+poc_set_port_status(uint32_t port, drvGpioConfig_t *config,bool open)
+{
+	poc_port_Gpio = drvGpioOpen(port, config, NULL, NULL);
+	drvGpioWrite(poc_port_Gpio , open);
+	return open;
+}
+
+/*
+      name : poc_set_red_status
+      param : if the status is true,open green led,but...
+      date : 2020-05-09
+*/
+bool
+poc_set_red_status(bool ledstatus)
+{
+#if 1
+    if(configport==NULL)
+    {
+		configport=poc_port_init();
+    }
+	poc_set_port_status(poc_red_led,configport,ledstatus);
+#endif 
+	return ledstatus;
+}
+
+/*
+      name : poc_set_green_status
+      param : if the status is true,open green led,but...
+      date : 2020-05-09
+*/
+bool
+poc_set_green_status(bool ledstatus)
+{
+#if 1
+	//reg 
+	hwp_gpio1->gpio_oen_val&=~(1<<poc_green_led);//set gpio direction
+	hwp_gpio1->gpio_oen_set_out|=(1<<poc_green_led);//set gpio output
+    if(ledstatus)	
+	hwp_gpio1->gpio_set_reg|=(1<<poc_green_led);//open status
+	else
+	hwp_gpio1->gpio_clr_reg|=(1<<poc_green_led);//close status
+#endif 
+
+#if 0
+	REG_IOMUX_PAD_GPIO_13_CFG_REG_T  *gpio_13_t = NULL;
+	//config
+	gpio_13_t->b.pad_gpio_13_sel=0;//gpio13	
+	gpio_13_t->b.pad_gpio_13_pull_dn=1;//pull down
+	gpio_13_t->b.pad_gpio_13_oen_reg=0;//set output mode
+	gpio_13_t->b.pad_gpio_13_out_reg=ledstatus;//open or close
+
+#endif
+
+	return ledstatus;
+}
+
+
+
