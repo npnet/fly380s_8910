@@ -580,6 +580,52 @@ LV_POC_GET_SIGNAL_TYPR_ENDLE:
 	*rat = _signal_type;
 }
 
+/*
+      name : get status of ps attach
+     param :
+     			[sim] POC_SIM_ID
+      date : 2020-05-06
+*/
+bool
+poc_get_network_ps_attach_status(IN POC_SIM_ID sim)
+{
+    uint32_t ret;
+    uint8_t uState = 0;
+    uint8_t nSim = POC_SIM_1;
+    ret = CFW_GetGprsAttState(&uState, nSim);
+    if (ret != 0)
+        return false;
+    return uState? true:false;
+}
+
+/*
+      name : get status of register network
+     param :
+     			[sim] POC_SIM_ID
+      date : 2020-05-06
+*/
+bool
+poc_get_network_register_status(IN POC_SIM_ID sim)
+{
+	CFW_NW_STATUS_INFO nStatusInfo;
+    uint8_t nSim = POC_SIM_1;
+	uint8_t status;
+
+	if (CFW_CfgGetNwStatus(&status, nSim) != 0 ||
+		CFW_NwGetStatus(&nStatusInfo, nSim) != 0)
+	{
+		return false;
+	}
+
+	if(nStatusInfo.nStatus == 0 || nStatusInfo.nStatus == 2 || nStatusInfo.nStatus == 4)
+	{
+		return false;
+	}
+	return true;
+}
+
+
+
 static void
 prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 {

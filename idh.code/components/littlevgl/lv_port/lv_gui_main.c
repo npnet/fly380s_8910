@@ -23,6 +23,7 @@
 #include "osi_log.h"
 #include <string.h>
 #include <stdlib.h>
+#include "guiIdtCom_api.h"
 
 typedef struct
 {
@@ -213,6 +214,10 @@ static bool prvLvInitLcd(void)
 static void prvKeypadCallback(keyMap_t key, keyState_t evt, void *p)
 {
     lvGuiContext_t *d = &gLvGuiCtx;
+    if(!pocKeypadHandle(key, evt, p))
+    {
+	    return;
+    }
     d->last_key = key;
     d->last_key_state = evt;
     d->keypad_pending = true;
