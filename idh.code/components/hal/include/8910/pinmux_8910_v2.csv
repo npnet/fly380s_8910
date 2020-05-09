@@ -46,8 +46,8 @@ hwp_iomux->pad_gpio_5_cfg_reg,gpio_5,spi_flash1_sio_3,pwt_out,x--lcd_fmark,x--wc
 NULL,gpio_6,,,,,,,
 hwp_iomux->pad_gpio_7_cfg_reg,gpio_7,sdmmc2_clk,x--spi_1_clk,pwl_out_1,x--wcn_uart_cts,wcn_uart_rxd,,
 hwp_iomux->pad_ap_jtag_tck_cfg_reg,ap_jtag_tck,sdmmc2_cmd,x--spi_1_cs_0,zsp_jtag_tck,rfdig_jtag_tck,x--gpio_8,,
-hwp_iomux->pad_ap_jtag_trst_cfg_reg,ap_jtag_trst,sdmmc2_data_0,x--spi_1_dio_0,zsp_jtag_trst,rfdig_jtag_trst,x--gpio_9,,
-hwp_iomux->pad_ap_jtag_tms_cfg_reg,ap_jtag_tms,sdmmc2_data_1,x--spi_1_di_1,zsp_jtag_tms,rfdig_jtag_tms,x--gpio_10,,
+hwp_iomux->pad_ap_jtag_trst_cfg_reg,ap_jtag_trst,sdmmc2_data_0,x--spi_1_dio_0,zsp_jtag_trst,rfdig_jtag_trst,gpio_9,,
+hwp_iomux->pad_ap_jtag_tms_cfg_reg,ap_jtag_tms,sdmmc2_data_1,x--spi_1_di_1,zsp_jtag_tms,rfdig_jtag_tms,gpio_10,,
 hwp_iomux->pad_ap_jtag_tdi_cfg_reg,ap_jtag_tdi,sdmmc2_data_2,x--spi_1_cs_1,zsp_jtag_tdi,rfdig_jtag_tdi,x--gpio_11,,
 hwp_iomux->pad_ap_jtag_tdo_cfg_reg,ap_jtag_tdo,sdmmc2_data_3,,zsp_jtag_tdo,rfdig_jtag_tdo,x--gpio_12,,
 hwp_iomux->pad_gpio_14_cfg_reg,gpio_14,i2c_m2_scl,,,,,,
@@ -61,8 +61,8 @@ hwp_iomux->pad_gpio_21_cfg_reg,gpio_21,uart_2_txd,x--uart_3_txd,x--zsp_uart_txd,
 hwp_iomux->pad_gpio_22_cfg_reg,gpio_22,x--uart_2_cts,x--uart_3_cts,x--zsp_uart_cts,x--uart_3_rxd,zsp_uart_txd,x--zsp_uart_cts,x--debug_bus_14
 hwp_iomux->pad_gpio_23_cfg_reg,gpio_23,x--uart_2_rts,x--uart_3_rts,x--zsp_uart_rts,x--uart_3_txd,x--zsp_uart_rxd,x--uart_3_cts,x--debug_bus_15
 hwp_iomux->pad_gpio_8_cfg_reg,gpio_8,spi_1_cs_1,rfdig_gpio_8,lte_gpo_6,,digrf_strobe_m_i,gpo_0,digrf_strobe_s_o
-hwp_iomux->pad_gpio_9_cfg_reg,gpio_9,spi_1_clk,rfdig_gpio_9,lte_gpo_9,lte_spi_sdo,,gpo_1,
-hwp_iomux->pad_gpio_10_cfg_reg,gpio_10,spi_1_cs_0,lte_spi_cs,,,,gpo_2,
+hwp_iomux->pad_gpio_9_cfg_reg,x--gpio_9,spi_1_clk,rfdig_gpio_9,lte_gpo_9,lte_spi_sdo,,gpo_1,
+hwp_iomux->pad_gpio_10_cfg_reg,x--gpio_10,spi_1_cs_0,lte_spi_cs,,,,gpo_2,
 hwp_iomux->pad_gpio_11_cfg_reg,gpio_11,spi_1_dio_0,lte_spi_sclk,,,,gpo_3,
 hwp_iomux->pad_gpio_12_cfg_reg,gpio_12,spi_1_di_1,lte_spi_sdio,,,,gpo_4,
 hwp_iomux->pad_keyin_0_cfg_reg,keyin_0,,,,,,,x--debug_bus_8
