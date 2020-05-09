@@ -4,8 +4,8 @@ enum
     CCTM_HB_CSA_P               = 1,
     CCTM_HB_CSA_MG              = 2,
     CCTM_HB_BCSM                = 3,
-    
-    //CSAÏûÏ¢
+
+    //CSAæ¶ˆæ¯
     CCTM_WAIT_MGBINGRSP         = 4,
     CCTM_WAIT_MGIVRRSP          = 5,
     CCTM_WAIT_MGCONNRSP         = 6,
@@ -17,27 +17,27 @@ enum
     CCTM_WAIT_MY_PMODRSP        = 12,
     CCTM_WAIT_MY_MGMODPEERRSP   = 13,
     CCTM_WAIT_P_MGMODRSP        = 14,
-    
-    //BCSMÏûÏ¢
-    //ÏûÏ¢¶¨Ê±Æ÷
+
+    //BCSMæ¶ˆæ¯
+    //æ¶ˆæ¯å®šæ—¶å™¨
     CCTM_WAIT_SETUPACK          = 15,
     CCTM_WAIT_CONNACK           = 16,
-    //ÊÕºÅ¶¨Ê±Æ÷
+    //æ”¶å·å®šæ—¶å™¨
     CCTM_RECVNUM_START          = 17,
     CCTM_RECVNUM_INTER          = 18,
     CCTM_RECVNUM_TOTAL          = 19,
-    //O¶Ë
-    CCTM_O_PIC_AuthorizeOriginationAttempt = 20,        //µÈ´ıMMµÄ½ÓÈëÏìÓ¦,CSA
+    //Oç«¯
+    CCTM_O_PIC_AuthorizeOriginationAttempt = 20,        //ç­‰å¾…MMçš„æ¥å…¥å“åº”,CSA
     CCTM_O_PIC_CollectInfomation= 21,
     CCTM_O_PIC_AnalyzeInfomation= 22,
-    CCTM_O_PIC_SelectRoute      = 23,                   //µÈ´ıMMµÄÂ·ÓÉÏìÓ¦ BCSM
+    CCTM_O_PIC_SelectRoute      = 23,                   //ç­‰å¾…MMçš„è·¯ç”±å“åº” BCSM
     CCTM_O_PIC_AuthorizeCallSetup= 24,
     CCTM_O_PIC_SendCall         = 25,
     CCTM_O_PIC_Alerting         = 26,
     CCTM_O_PIC_Active           = 27,
     CCTM_O_PIC_Suspended        = 28,
     CCTM_O_PIC_Exception        = 29,
-    //T¶Ë
+    //Tç«¯
     CCTM_T_PIC_AuthorizeTerminationAttempt = 30,
     CCTM_T_PIC_SelectFacility   = 31,
     CCTM_T_PIC_PresentCall      = 32,
@@ -53,11 +53,11 @@ enum
     CCTM_RECV_NUM               = 40,
     CCTM_RECV_NUM_TOTAL         = 41,
 
-    CCTM_SCAN_DEV               = 42,                   //É¨ÃèÉè±¸
-    CCTM_SCAN_TER               = 43,                   //É¨ÃèÖÕ¶Ë
+    CCTM_SCAN_DEV               = 42,                   //æ‰«æè®¾å¤‡
+    CCTM_SCAN_TER               = 43,                   //æ‰«æç»ˆç«¯
 
     CCTM_WAIT_SETUP             = 44,
-    
+
 
     MSG_TM_MAX,
 };
@@ -65,7 +65,7 @@ enum
 char* GetMcTmStr(WORD wTm)
 {
     static char cBuf[32];
-    
+
     switch (wTm)
     {
     case CCTM_HB_CSA_P:
@@ -74,8 +74,8 @@ char* GetMcTmStr(WORD wTm)
         return (char*)"CCTM_HB_CSA_MG";
     case CCTM_HB_BCSM:
         return (char*)"CCTM_HB_BCSM";
-    
-    //CSAÏûÏ¢
+
+    //CSAæ¶ˆæ¯
     case CCTM_WAIT_MGBINGRSP:
         return (char*)"CCTM_WAIT_MGBINGRSP";
     case CCTM_WAIT_MGIVRRSP:
@@ -98,21 +98,21 @@ char* GetMcTmStr(WORD wTm)
         return (char*)"CCTM_WAIT_MY_MGMODPEERRSP";
     case CCTM_WAIT_P_MGMODRSP:
         return (char*)"CCTM_WAIT_P_MGMODRSP";
-    
-    //BCSMÏûÏ¢
-    //ÏûÏ¢¶¨Ê±Æ÷
+
+    //BCSMæ¶ˆæ¯
+    //æ¶ˆæ¯å®šæ—¶å™¨
     case CCTM_WAIT_SETUPACK:
         return (char*)"CCTM_WAIT_SETUPACK";
     case CCTM_WAIT_CONNACK:
         return (char*)"CCTM_WAIT_CONNACK";
-    //ÊÕºÅ¶¨Ê±Æ÷
+    //æ”¶å·å®šæ—¶å™¨
     case CCTM_RECVNUM_START:
         return (char*)"CCTM_RECVNUM_START";
     case CCTM_RECVNUM_INTER:
         return (char*)"CCTM_RECVNUM_INTER";
     case CCTM_RECVNUM_TOTAL:
         return (char*)"CCTM_RECVNUM_TOTAL";
-    //O¶Ë
+    //Oç«¯
     case CCTM_O_PIC_AuthorizeOriginationAttempt:
         return (char*)"CCTM_O_PIC_AuthorizeOriginationAttempt";
     case CCTM_O_PIC_CollectInfomation:
@@ -133,7 +133,7 @@ char* GetMcTmStr(WORD wTm)
         return (char*)"CCTM_O_PIC_Suspended";
     case CCTM_O_PIC_Exception:
         return (char*)"CCTM_O_PIC_Exception";
-    //T¶Ë
+    //Tç«¯
     case CCTM_T_PIC_AuthorizeTerminationAttempt:
         return (char*)"CCTM_T_PIC_AuthorizeTerminationAttempt";
     case CCTM_T_PIC_SelectFacility:
@@ -171,28 +171,28 @@ char* GetMcTmStr(WORD wTm)
 
     default:
         snprintf(cBuf, sizeof(cBuf), "Tm=%d", wTm);
-        return cBuf;        
+        return cBuf;
     }
 }
 
 #ifndef IDT_CC_TM_DEFINE
-#define     CPTM_MM_REG         0x10        // ×¢²áÇëÇó
-#define     CPTM_MM_OFFLINE     0x11        // ÀëÏßÉ¨Ãè
-#define     CPTM_MM_PERIOD      0x12        // ÖÜÆÚ×¢²á
-#define     CPTM_MM_MODIFY      0x13        // ĞŞ¸ÄÓÃ»§ÊôĞÔ
+#define     CPTM_MM_REG         0x10        // æ³¨å†Œè¯·æ±‚
+#define     CPTM_MM_OFFLINE     0x11        // ç¦»çº¿æ‰«æ
+#define     CPTM_MM_PERIOD      0x12        // å‘¨æœŸæ³¨å†Œ
+#define     CPTM_MM_MODIFY      0x13        // ä¿®æ”¹ç”¨æˆ·å±æ€§
 #define     CPTM_MM_NAT         0x14        // NAT
 
-#define     CPTM_CC_SETUPACK    0x20        // ·¢ËÍSETUP,µÈ´ıSETUP_ACK
-#define     CPTM_CC_CONN        0x21        // ·¢ËÍSETUP,µÈ´ıCONN
-#define     CPTM_CC_ANSWER      0x22        // ·¢ËÍCallIn¸øÓÃ»§,µÈÓÃ»§Ó¦´ğ
-#define     CPTM_CC_CONNACK     0x23        // ·¢ËÍCONN¸ø¶Ô¶Ë,µÈ´ıCONNACK
-#define     CPTM_CC_HB          0x24        // Í¨»°ºóµÄĞÄÌø¶¨Ê±Æ÷
-#define     CPTM_CC_PRESS       0x25        // °´¼ü¶¨Ê±Æ÷
+#define     CPTM_CC_SETUPACK    0x20        // å‘é€SETUP,ç­‰å¾…SETUP_ACK
+#define     CPTM_CC_CONN        0x21        // å‘é€SETUP,ç­‰å¾…CONN
+#define     CPTM_CC_ANSWER      0x22        // å‘é€CallInç»™ç”¨æˆ·,ç­‰ç”¨æˆ·åº”ç­”
+#define     CPTM_CC_CONNACK     0x23        // å‘é€CONNç»™å¯¹ç«¯,ç­‰å¾…CONNACK
+#define     CPTM_CC_HB          0x24        // é€šè¯åçš„å¿ƒè·³å®šæ—¶å™¨
+#define     CPTM_CC_PRESS       0x25        // æŒ‰é”®å®šæ—¶å™¨
 #endif
 char* GetIdtTmStr(WORD wTm)
 {
     static char cBuf[32];
-    
+
     switch (wTm)
     {
     case CPTM_MM_REG:
@@ -219,20 +219,20 @@ char* GetIdtTmStr(WORD wTm)
         return (char*)"CPTM_CC_PRESS";
     default:
         snprintf(cBuf, sizeof(cBuf), "Tm=%d", wTm);
-        return cBuf;        
+        return cBuf;
     }
 }
 
 #ifndef MG_CC_TM_DEFINE
-#define     CPTM_SCAN        0x01   //TCPÉ¨Ãè¶¨Ê±Æ÷
-#define     CPTM_HB          0x02   //×´Ì¬»úÓëÖ÷¿Ø×´Ì¬»úµÄĞÄÌø¶¨Ê±Æ÷
-#define     CPTM_NUM         0x03   //·¢ËÍºÅÂë¶¨Ê±Æ÷
+#define     CPTM_SCAN        0x01   //TCPæ‰«æå®šæ—¶å™¨
+#define     CPTM_HB          0x02   //çŠ¶æ€æœºä¸ä¸»æ§çŠ¶æ€æœºçš„å¿ƒè·³å®šæ—¶å™¨
+#define     CPTM_NUM         0x03   //å‘é€å·ç å®šæ—¶å™¨
 #endif
 
 char* GetMgTmStr(WORD wTm)
 {
     static char cBuf[32];
-    
+
     switch (wTm)
     {
     case CPTM_SCAN:
@@ -243,7 +243,7 @@ char* GetMgTmStr(WORD wTm)
         return (char*)"CPTM_NUM";
     default:
         snprintf(cBuf, sizeof(cBuf), "Tm=%d", wTm);
-        return cBuf;        
+        return cBuf;
     }
 }
 
@@ -256,283 +256,283 @@ char *GetCauseStr(USHORT usCause)
         UCHAR ucH = (usCause & 0x3f00) >> 8;
         switch (ucSrc)
         {
-        case CAUSE_EXPIRE_IDT://IDT¶¨Ê±Æ÷³¬Ê±
-            snprintf(cBuf, sizeof(cBuf), "¶¨Ê±Æ÷³¬Ê±:IDT-%s", GetIdtTmStr(ucH));
+        case CAUSE_EXPIRE_IDT://IDTå®šæ—¶å™¨è¶…æ—¶
+            snprintf(cBuf, sizeof(cBuf), "å®šæ—¶å™¨è¶…æ—¶:IDT-%s", GetIdtTmStr(ucH));
             break;
-        case CAUSE_EXPIRE_MC://MC¶¨Ê±Æ÷³¬Ê±
-            snprintf(cBuf, sizeof(cBuf), "¶¨Ê±Æ÷³¬Ê±:MC-%s", GetMcTmStr(ucH));
+        case CAUSE_EXPIRE_MC://MCå®šæ—¶å™¨è¶…æ—¶
+            snprintf(cBuf, sizeof(cBuf), "å®šæ—¶å™¨è¶…æ—¶:MC-%s", GetMcTmStr(ucH));
             break;
-        case CAUSE_EXPIRE_MG://MG¶¨Ê±Æ÷³¬Ê±
-            snprintf(cBuf, sizeof(cBuf), "¶¨Ê±Æ÷³¬Ê±:MG-%s", GetMgTmStr(ucH));
+        case CAUSE_EXPIRE_MG://MGå®šæ—¶å™¨è¶…æ—¶
+            snprintf(cBuf, sizeof(cBuf), "å®šæ—¶å™¨è¶…æ—¶:MG-%s", GetMgTmStr(ucH));
             break;
         default:
-            snprintf(cBuf, sizeof(cBuf), "¶¨Ê±Æ÷³¬Ê±:%d-%d", ucSrc, ucH);
+            snprintf(cBuf, sizeof(cBuf), "å®šæ—¶å™¨è¶…æ—¶:%d-%d", ucSrc, ucH);
             break;
         }
         return cBuf;
     }
-    
+
     switch (usCause)
     {
     case CAUSE_ZERO:
-        return (char*)"´íÎó0";
+        return (char*)"é”™è¯¯0";
     case CAUSE_UNASSIGNED_NUMBER:
-        return (char*)"Î´·ÖÅäºÅÂë";
+        return (char*)"æœªåˆ†é…å·ç ";
     case CAUSE_NO_ROUTE_TO_DEST:
-        return (char*)"ÎŞÄ¿µÄÂ·ÓÉ";
+        return (char*)"æ— ç›®çš„è·¯ç”±";
     case CAUSE_USER_BUSY:
-        return (char*)"ÓÃ»§Ã¦";
+        return (char*)"ç”¨æˆ·å¿™";
     case CAUSE_ALERT_NO_ANSWER:
-        return (char*)"ÓÃ»§ÎŞÓ¦´ğ(ÈË²»Ó¦´ğ)";
+        return (char*)"ç”¨æˆ·æ— åº”ç­”(äººä¸åº”ç­”)";
     case CAUSE_CALL_REJECTED:
-        return (char*)"ºô½Ğ±»¾Ü¾ø";
+        return (char*)"å‘¼å«è¢«æ‹’ç»";
     case CAUSE_ROUTING_ERROR:
-        return (char*)"Â·ÓÉ´íÎó";
+        return (char*)"è·¯ç”±é”™è¯¯";
     case CAUSE_FACILITY_REJECTED:
-        return (char*)"Éè±¸¾Ü¾ø";
+        return (char*)"è®¾å¤‡æ‹’ç»";
     case CAUSE_NORMAL_UNSPECIFIED:
-        return (char*)"Í¨³£,Î´Ö¸¶¨";
+        return (char*)"é€šå¸¸,æœªæŒ‡å®š";
     case CAUSE_TEMPORARY_FAILURE:
-        return (char*)"ÁÙÊ±´íÎó";
+        return (char*)"ä¸´æ—¶é”™è¯¯";
     case CAUSE_RESOURCE_UNAVAIL:
-        return (char*)"×ÊÔ´²»¿ÉÓÃ";
+        return (char*)"èµ„æºä¸å¯ç”¨";
     case CAUSE_INVALID_CALL_REF:
-        return (char*)"²»ÕıÈ·µÄºô½Ğ²Î¿¼ºÅ";
+        return (char*)"ä¸æ­£ç¡®çš„å‘¼å«å‚è€ƒå·";
     case CAUSE_MANDATORY_IE_MISSING:
-        return (char*)"±ØÑ¡ĞÅÏ¢µ¥Ôª¶ªÊ§";
+        return (char*)"å¿…é€‰ä¿¡æ¯å•å…ƒä¸¢å¤±";
     case CAUSE_TIMER_EXPIRY:
-        return (char*)"¶¨Ê±Æ÷³¬Ê±";
+        return (char*)"å®šæ—¶å™¨è¶…æ—¶";
     case CAUSE_CALL_REJ_BY_USER:
-        return (char*)"±»ÓÃ»§¾Ü¾ø";
+        return (char*)"è¢«ç”¨æˆ·æ‹’ç»";
     case CAUSE_CALLEE_STOP:
-        return (char*)"±»½ĞÍ£Ö¹";
+        return (char*)"è¢«å«åœæ­¢";
     case CAUSE_USER_NO_EXIST:
-        return (char*)"ÓÃ»§²»´æÔÚ";
+        return (char*)"ç”¨æˆ·ä¸å­˜åœ¨";
     case CAUSE_MS_UNACCESSAVLE:
-        return (char*)"²»¿É½ÓÈë";
+        return (char*)"ä¸å¯æ¥å…¥";
     case CAUSE_MS_POWEROFF:
-        return (char*)"ÓÃ»§¹Ø»ú";
+        return (char*)"ç”¨æˆ·å…³æœº";
     case CAUSE_FORCE_RELEASE:
-        return (char*)"Ç¿ÖÆ²ğÏß";
+        return (char*)"å¼ºåˆ¶æ‹†çº¿";
     case CAUSE_HO_RELEASE:
-        return (char*)"ÇĞ»»²ğÏß";
+        return (char*)"åˆ‡æ¢æ‹†çº¿";
     case CAUSE_CALL_CONFLICT:
-        return (char*)"ºô½Ğ³åÍ»";
+        return (char*)"å‘¼å«å†²çª";
     case CAUSE_TEMP_UNAVAIL:
-        return (char*)"ÔİÊ±ÎŞ·¨½ÓÍ¨";
+        return (char*)"æš‚æ—¶æ— æ³•æ¥é€š";
     case CAUSE_AUTH_ERROR:
-        return (char*)"¼øÈ¨´íÎó";
+        return (char*)"é‰´æƒé”™è¯¯";
     case CAUSE_NEED_AUTH:
-        return (char*)"ĞèÒª¼øÈ¨";
+        return (char*)"éœ€è¦é‰´æƒ";
     case CAUSE_SDP_SEL:
-        return (char*)"SDPÑ¡Ôñ´íÎó";
+        return (char*)"SDPé€‰æ‹©é”™è¯¯";
     case CAUSE_MS_ERROR:
-        return (char*)"Ã½Ìå×ÊÔ´´íÎó";
+        return (char*)"åª’ä½“èµ„æºé”™è¯¯";
     case CAUSE_INNER_ERROR:
-        return (char*)"ÄÚ²¿´íÎó";
+        return (char*)"å†…éƒ¨é”™è¯¯";
     case CAUSE_PRIO_ERROR:
-        return (char*)"ÓÅÏÈ¼¶²»¹»";
+        return (char*)"ä¼˜å…ˆçº§ä¸å¤Ÿ";
     case CAUSE_SRV_CONFLICT:
-        return (char*)"ÒµÎñ³åÍ»";
+        return (char*)"ä¸šåŠ¡å†²çª";
     case CAUSE_NOTREL_RECALL:
-        return (char*)"ÓÉÓÚÒµÎñÒªÇó,²»ÊÍ·Å,Æô¶¯ÖØºô¶¨Ê±Æ÷";
+        return (char*)"ç”±äºä¸šåŠ¡è¦æ±‚,ä¸é‡Šæ”¾,å¯åŠ¨é‡å‘¼å®šæ—¶å™¨";
     case CAUSE_NO_CALL:
-        return (char*)"ºô½Ğ²»´æÔÚ";
+        return (char*)"å‘¼å«ä¸å­˜åœ¨";
     case CAUSE_ERROR_IPADDR:
-        return (char*)"´íÎóIPµØÖ·¹ıÀ´µÄÒµÎñÇëÇó";
+        return (char*)"é”™è¯¯IPåœ°å€è¿‡æ¥çš„ä¸šåŠ¡è¯·æ±‚";
     case CAUSE_DUP_REG:
-        return (char*)"ÖØ¸´×¢²á";
+        return (char*)"é‡å¤æ³¨å†Œ";
     case CAUSE_MG_OFFLINE:
-        return (char*)"MGÀëÏß";
+        return (char*)"MGç¦»çº¿";
     case CAUSE_DS_REQ_QUITCALL:
-        return (char*)"µ÷¶ÈÔ±ÒªÇóÍË³öºô½Ğ";
+        return (char*)"è°ƒåº¦å‘˜è¦æ±‚é€€å‡ºå‘¼å«";
     case CAUSE_DB_ERROR:
-        return (char*)"Êı¾İ¿â²Ù×÷´íÎó";
+        return (char*)"æ•°æ®åº“æ“ä½œé”™è¯¯";
     case CAUSE_TOOMANY_USER:
-        return (char*)"ÓÃ»§ÊıÌ«¶à";
+        return (char*)"ç”¨æˆ·æ•°å¤ªå¤š";
     case CAUSE_SAME_USERNUM:
-        return (char*)"ÏàÍ¬µÄÓÃ»§ºÅÂë";
+        return (char*)"ç›¸åŒçš„ç”¨æˆ·å·ç ";
     case CAUSE_SAME_USERIPADDR:
-        return (char*)"ÏàÍ¬µÄ¹Ì¶¨IPµØÖ·";
+        return (char*)"ç›¸åŒçš„å›ºå®šIPåœ°å€";
     case CAUSE_PARAM_ERROR:
-        return (char*)"²ÎÊı´íÎó";
+        return (char*)"å‚æ•°é”™è¯¯";
     case CAUSE_SAME_GNUM:
-        return (char*)"ÏàÍ¬µÄ×éºÅÂë";
+        return (char*)"ç›¸åŒçš„ç»„å·ç ";
     case CAUSE_TOOMANY_GROUP:
-        return (char*)"Ì«¶àµÄ×é";
+        return (char*)"å¤ªå¤šçš„ç»„";
     case CAUSE_NO_GROUP:
-        return (char*)"Ã»ÓĞÕâ¸ö×é";
+        return (char*)"æ²¡æœ‰è¿™ä¸ªç»„";
     case CAUSE_SAME_USERNAME:
-        return (char*)"ÏàÍ¬µÄÓÃ»§Ãû×Ö";
+        return (char*)"ç›¸åŒçš„ç”¨æˆ·åå­—";
     case CAUSE_OAM_OPT_ERROR:
-        return (char*)"OAM²Ù×÷´íÎó";
+        return (char*)"OAMæ“ä½œé”™è¯¯";
     case CAUSE_INVALID_NUM_FORMAT:
-        return (char*)"²»ÕıÈ·µÄµØÖ·¸ñÊ½";
+        return (char*)"ä¸æ­£ç¡®çš„åœ°å€æ ¼å¼";
     case CAUSE_INVALID_DNSIP:
-        return (char*)"DNS»òIPµØÖ·´íÎó";
+        return (char*)"DNSæˆ–IPåœ°å€é”™è¯¯";
     case CAUSE_SRV_NOTSUPPORT:
-        return (char*)"²»Ö§³ÖµÄÒµÎñ";
+        return (char*)"ä¸æ”¯æŒçš„ä¸šåŠ¡";
     case CAUSE_MEDIA_NOTDATA:
-        return (char*)"Ã»ÓĞÃ½ÌåÊı¾İ";
+        return (char*)"æ²¡æœ‰åª’ä½“æ•°æ®";
     case CAUSE_RECALL:
-        return (char*)"ÖØĞÂºô½Ğ";
+        return (char*)"é‡æ–°å‘¼å«";
     case CAUSE_LINK_DISC:
-        return (char*)"¶ÏÁ´";
+        return (char*)"æ–­é“¾";
     case CAUSE_ORG_RIGHT:
-        return (char*)"×éÖ¯Ô½È¨";
+        return (char*)"ç»„ç»‡è¶Šæƒ";
     case CAUSE_SAME_ORGNUM:
-        return (char*)"ÏàÍ¬µÄ×éÖ¯ºÅÂë";
+        return (char*)"ç›¸åŒçš„ç»„ç»‡å·ç ";
     case CAUSE_SAME_ORGNAME:
-        return (char*)"ÏàÍ¬µÄ×éÖ¯Ãû×Ö";
+        return (char*)"ç›¸åŒçš„ç»„ç»‡åå­—";
     case CAUSE_UNASSIGNED_ORG:
-        return (char*)"Î´·ÖÅäµÄ×éÖ¯ºÅÂë";
+        return (char*)"æœªåˆ†é…çš„ç»„ç»‡å·ç ";
     case CAUSE_INOTHER_ORG:
-        return (char*)"ÔÚÆäËû×éÖ¯ÖĞ";
+        return (char*)"åœ¨å…¶ä»–ç»„ç»‡ä¸­";
     case CAUSE_HAVE_GCALL:
-        return (char*)"ÒÑ¾­ÓĞ×éºô´æÔÚ";
+        return (char*)"å·²ç»æœ‰ç»„å‘¼å­˜åœ¨";
     case CAUSE_HAVE_CONF:
-        return (char*)"ÒÑ¾­ÓĞ»áÒé´æÔÚ";
+        return (char*)"å·²ç»æœ‰ä¼šè®®å­˜åœ¨";
     case CAUSE_SEG_FORMAT:
-        return (char*)"´íÎóµÄºÅ¶Î¸ñÊ½";
+        return (char*)"é”™è¯¯çš„å·æ®µæ ¼å¼";
     case CAUSE_USEG_CONFLICT:
-        return (char*)"ÓÃ»§ºÅÂë¶Î³åÍ»";
+        return (char*)"ç”¨æˆ·å·ç æ®µå†²çª";
     case CAUSE_GSEG_CONFLICT:
-        return (char*)"×éºÅÂë¶Î³åÍ»";
+        return (char*)"ç»„å·ç æ®µå†²çª";
     case CAUSE_NOTIN_SEG:
-        return (char*)"²»ÔÚºÅ¶ÎÄÚ";
+        return (char*)"ä¸åœ¨å·æ®µå†…";
     case CAUSE_USER_IN_TOOMANY_GROUP:
-        return (char*)"ÓÃ»§ËùÔÚ×éÌ«¶à";
+        return (char*)"ç”¨æˆ·æ‰€åœ¨ç»„å¤ªå¤š";
     case CAUSE_DSSEG_CONFLICT:
-        return (char*)"µ÷¶ÈÌ¨ºÅ¶Î³åÍ»";
+        return (char*)"è°ƒåº¦å°å·æ®µå†²çª";
     case CAUSE_OUTNETWORK_NUM:
-        return (char*)"ÍâÍøÓÃ»§";
+        return (char*)"å¤–ç½‘ç”¨æˆ·";
     case CAUSE_CFU:
-        return (char*)"ÎŞÌõ¼şºô½ĞÇ°×ª";
+        return (char*)"æ— æ¡ä»¶å‘¼å«å‰è½¬";
     case CAUSE_CFB:
-        return (char*)"ÓöÃ¦ºô½ĞÇ°×ª";
+        return (char*)"é‡å¿™å‘¼å«å‰è½¬";
     case CAUSE_CFNRc:
-        return (char*)"²»¿É¼°ºô½ĞÇ°×ª";
+        return (char*)"ä¸å¯åŠå‘¼å«å‰è½¬";
     case CAUSE_CFNRy:
-        return (char*)"ÎŞÓ¦´ğºô½ĞÇ°×ª";
+        return (char*)"æ— åº”ç­”å‘¼å«å‰è½¬";
     case CAUSE_MAX_FWDTIME:
-        return (char*)"×î´óÇ°×ª´ÎÊı";
+        return (char*)"æœ€å¤§å‰è½¬æ¬¡æ•°";
     case CAUSE_OAM_RIGHT:
-        return (char*)"OAM²Ù×÷ÎŞÈ¨ÏŞ";
+        return (char*)"OAMæ“ä½œæ— æƒé™";
     case CAUSE_DGT_ERROR:
-        return (char*)"ºÅÂë´íÎó";
+        return (char*)"å·ç é”™è¯¯";
     case CAUSE_RESOURCE_NOTENOUGH:
-        return (char*)"×ÊÔ´²»×ã";
+        return (char*)"èµ„æºä¸è¶³";
     case CAUSE_ORG_EXPIRE:
-        return (char*)"×éÖ¯µ½ÆÚ";
+        return (char*)"ç»„ç»‡åˆ°æœŸ";
     case CAUSE_USER_EXPIRE:
-        return (char*)"ÓÃ»§µ½ÆÚ";
+        return (char*)"ç”¨æˆ·åˆ°æœŸ";
     case CAUSE_SAME_ROUTENAME:
-        return (char*)"ÏàÍ¬µÄÂ·ÓÉÃû×Ö";
+        return (char*)"ç›¸åŒçš„è·¯ç”±åå­—";
     case CAUSE_UNASSIGNED_ROUTE:
-        return (char*)"Î´·ÖÅäµÄÂ·ÓÉ";
+        return (char*)"æœªåˆ†é…çš„è·¯ç”±";
     case CAUSE_OAM_FWD:
-        return (char*)"OAMÏûÏ¢Ç°×ª";
+        return (char*)"OAMæ¶ˆæ¯å‰è½¬";
     case CAUSE_UNCFG_MAINNUM:
-        return (char*)"Î´ÅäÖÃÖ÷ºÅÂë";
+        return (char*)"æœªé…ç½®ä¸»å·ç ";
     case CAUSE_G_NOUSER:
-        return (char*)"×éÖĞÃ»ÓĞÓÃ»§";
+        return (char*)"ç»„ä¸­æ²¡æœ‰ç”¨æˆ·";
     case CAUSE_U_LOCK_G:
-        return (char*)"ÓÃ»§Ëø¶¨ÔÚÆäËû×é";
+        return (char*)"ç”¨æˆ·é”å®šåœ¨å…¶ä»–ç»„";
     case CAUSE_U_OFFLINE_G:
-        return (char*)"×éÖĞÃ»ÓĞÔÚÏßÓÃ»§";
+        return (char*)"ç»„ä¸­æ²¡æœ‰åœ¨çº¿ç”¨æˆ·";
     default:
         snprintf(cBuf, sizeof(cBuf), "CAUSE=%d", usCause);
         return cBuf;
     }
 }
 
-//ÏûÏ¢Âë¶¨Òå
+//æ¶ˆæ¯ç å®šä¹‰
 #ifndef MSG_DEFINE
 enum
 {
-    MSG_TRANS = 1,                  //Í¸´«ÏûÏ¢
+    MSG_TRANS = 1,                  //é€ä¼ æ¶ˆæ¯
 
-    // ĞÄÌøÏûÏ¢
-    MSG_HB,                         //ĞÄÌøÏûÏ¢
+    // å¿ƒè·³æ¶ˆæ¯
+    MSG_HB,                         //å¿ƒè·³æ¶ˆæ¯
 
-    // ÒÆ¶¯ĞÔ¹ÜÀí
-    MSG_MM_REGREQ           = 0x10, //µÇ¼ÇÇëÇó
-    MSG_MM_REGRSP,                  //µÇ¼ÇÏìÓ¦
-    MSG_MM_ACCREQ,                  //½ÓÈëÇëÇó
-    MSG_MM_ACCRSP,                  //½ÓÈëÏìÓ¦
-    MSG_MM_ROUTEREQ,                //Â·ÓÉÇëÇó
-    MSG_MM_ROUTERSP,                //Â·ÓÉÏìÓ¦
-    MSG_MM_PROFREQ,                 //»ñÈ¡ÒµÎñĞÅÏ¢
-    MSG_MM_PROFRSP,                 //»ñÈ¡ÒµÎñĞÅÏ¢ÏìÓ¦
-    MSG_MM_QUIT,                    //ÒµÎñÍË³ö
-    MSG_MM_MODREQ,                  //ĞŞ¸ÄÓÃ»§ĞÅÏ¢
-    MSG_MM_MODRSP,                  //ĞŞ¸ÄÓÃ»§ĞÅÏ¢ÏìÓ¦
-    MSG_MM_PASSTHROUGH,             //Í¸´«Í¨µÀ
-    MSG_MM_PROXYREGREQ,             //´úÀí×¢²á
-    MSG_MM_PROXYREGRSP,             //´úÀí×¢²áÏìÓ¦
+    // ç§»åŠ¨æ€§ç®¡ç†
+    MSG_MM_REGREQ           = 0x10, //ç™»è®°è¯·æ±‚
+    MSG_MM_REGRSP,                  //ç™»è®°å“åº”
+    MSG_MM_ACCREQ,                  //æ¥å…¥è¯·æ±‚
+    MSG_MM_ACCRSP,                  //æ¥å…¥å“åº”
+    MSG_MM_ROUTEREQ,                //è·¯ç”±è¯·æ±‚
+    MSG_MM_ROUTERSP,                //è·¯ç”±å“åº”
+    MSG_MM_PROFREQ,                 //è·å–ä¸šåŠ¡ä¿¡æ¯
+    MSG_MM_PROFRSP,                 //è·å–ä¸šåŠ¡ä¿¡æ¯å“åº”
+    MSG_MM_QUIT,                    //ä¸šåŠ¡é€€å‡º
+    MSG_MM_MODREQ,                  //ä¿®æ”¹ç”¨æˆ·ä¿¡æ¯
+    MSG_MM_MODRSP,                  //ä¿®æ”¹ç”¨æˆ·ä¿¡æ¯å“åº”
+    MSG_MM_PASSTHROUGH,             //é€ä¼ é€šé“
+    MSG_MM_PROXYREGREQ,             //ä»£ç†æ³¨å†Œ
+    MSG_MM_PROXYREGRSP,             //ä»£ç†æ³¨å†Œå“åº”
     MSG_MM_NAT,                     //NAT
 
-    //MGÏûÏ¢
-    MSG_MG_BINDREQ          = 0x30, //°ó¶¨ÇëÇó
-    MSG_MG_BINDRSP,                 //°ó¶¨ÏìÓ¦
-    MSG_MG_IVRREQ,                  //IVRÇëÇó
-    MSG_MG_IVRRSP,                  //IVRÏìÓ¦
-    MSG_MG_CONNREQ,                 //Á¬½ÓÇëÇó
-    MSG_MG_CONNRSP,                 //Á¬½ÓÏìÓ¦
-    MSG_MG_MODIFYREQ,               //ĞŞ¸ÄÇëÇó
-    MSG_MG_MODIFYRSP,               //ĞŞ¸ÄÏìÓ¦
-    MSG_MG_DISCREQ,                 //¶Ï¿ªÇëÇó
-    MSG_MG_DISCRSP,                 //¶Ï¿ªÏìÓ¦
-    MSG_MG_BINDCLR,                 //°ó¶¨Çå³ı
-    MSG_MG_EVENT,                   //ÊÂ¼ş,Ö÷ÒªÊÇÊÕºÅ
-    MSG_MG_STATEIND,                //×´Ì¬Ö¸Ê¾
+    //MGæ¶ˆæ¯
+    MSG_MG_BINDREQ          = 0x30, //ç»‘å®šè¯·æ±‚
+    MSG_MG_BINDRSP,                 //ç»‘å®šå“åº”
+    MSG_MG_IVRREQ,                  //IVRè¯·æ±‚
+    MSG_MG_IVRRSP,                  //IVRå“åº”
+    MSG_MG_CONNREQ,                 //è¿æ¥è¯·æ±‚
+    MSG_MG_CONNRSP,                 //è¿æ¥å“åº”
+    MSG_MG_MODIFYREQ,               //ä¿®æ”¹è¯·æ±‚
+    MSG_MG_MODIFYRSP,               //ä¿®æ”¹å“åº”
+    MSG_MG_DISCREQ,                 //æ–­å¼€è¯·æ±‚
+    MSG_MG_DISCRSP,                 //æ–­å¼€å“åº”
+    MSG_MG_BINDCLR,                 //ç»‘å®šæ¸…é™¤
+    MSG_MG_EVENT,                   //äº‹ä»¶,ä¸»è¦æ˜¯æ”¶å·
+    MSG_MG_STATEIND,                //çŠ¶æ€æŒ‡ç¤º
     MSG_MG_INFO,                    //INFO
     MSG_MG_DTMF,                    //DTMF
 
-    //ºô½ĞÏûÏ¢
-    MSG_CC_SETUP            = 0x50, //½¨Á¢
-    MSG_CC_SETUPACK,                //½¨Á¢Ó¦´ğ
-    MSG_CC_ALERT,                   //ÕñÁå
-    MSG_CC_CONN,                    //Á¬½Ó
-    MSG_CC_CONNACK,                 //Á¬½ÓÓ¦´ğ
-    MSG_CC_INFO,                    //ĞÅÏ¢
-    MSG_CC_INFOACK,                 //ĞÅÏ¢Ó¦´ğ
-    MSG_CC_MODIFY,                  //Ã½ÌåĞŞ¸Ä
-    MSG_CC_MODIFYACK,               //Ã½ÌåĞŞ¸ÄÓ¦´ğ
-    MSG_CC_REL,                     //ÊÍ·Å
-    MSG_CC_RLC,                     //ÊÍ·ÅÍê³É
-    MSG_CC_USERCTRL,                //ÓÃ»§¿ØÖÆ,¼ÓÈëºô½Ğ/Ìß³öºô½Ğ
-    MSG_CC_STREAMCTRL,              //Á÷¿ØÖÆ
-    MSG_CC_CONFSTATUSREQ,           //»á³¡×´Ì¬ÇëÇó
-    MSG_CC_CONFSTATUSRSP,           //»á³¡×´Ì¬ÏìÓ¦
+    //å‘¼å«æ¶ˆæ¯
+    MSG_CC_SETUP            = 0x50, //å»ºç«‹
+    MSG_CC_SETUPACK,                //å»ºç«‹åº”ç­”
+    MSG_CC_ALERT,                   //æŒ¯é“ƒ
+    MSG_CC_CONN,                    //è¿æ¥
+    MSG_CC_CONNACK,                 //è¿æ¥åº”ç­”
+    MSG_CC_INFO,                    //ä¿¡æ¯
+    MSG_CC_INFOACK,                 //ä¿¡æ¯åº”ç­”
+    MSG_CC_MODIFY,                  //åª’ä½“ä¿®æ”¹
+    MSG_CC_MODIFYACK,               //åª’ä½“ä¿®æ”¹åº”ç­”
+    MSG_CC_REL,                     //é‡Šæ”¾
+    MSG_CC_RLC,                     //é‡Šæ”¾å®Œæˆ
+    MSG_CC_USERCTRL,                //ç”¨æˆ·æ§åˆ¶,åŠ å…¥å‘¼å«/è¸¢å‡ºå‘¼å«
+    MSG_CC_STREAMCTRL,              //æµæ§åˆ¶
+    MSG_CC_CONFSTATUSREQ,           //ä¼šåœºçŠ¶æ€è¯·æ±‚
+    MSG_CC_CONFSTATUSRSP,           //ä¼šåœºçŠ¶æ€å“åº”
 
-    //²Ù×÷Î¬»¤
-    MSG_OAM_REQ             = 0x70, //²Ù×÷ÇëÇó
-    MSG_OAM_RSP,                    //²Ù×÷ÏìÓ¦
-    MSG_OAM_NOTIFY,                 //OAM²Ù×÷ÌáÊ¾
-    MSG_OAM_SETID,                  //ÉèÖÃOAM IDºÅ
-    MSG_OAM_CTRL,                   //¸øOAMÄ£¿éµÄ¿ØÖÆÃüÁî
-    MSG_OAM_CROSS_G2U,              //¿ç½Úµã×éµ½ÓÃ»§ÏûÏ¢
-    MSG_OAM_CROSS_U2G,              //¿ç½ÚµãÓÃ»§µ½×éÏûÏ¢
-    MSG_OAM_MC2MCC,                 //·Ö¿Ø·şÎñÆ÷µ½×Ü¿Ø·şÎñÆ÷
-    MSG_OAM_MCC2MC,                 //×Ü¿Ø·şÎñÆ÷µ½·Ö¿Ø·şÎñÆ÷
+    //æ“ä½œç»´æŠ¤
+    MSG_OAM_REQ             = 0x70, //æ“ä½œè¯·æ±‚
+    MSG_OAM_RSP,                    //æ“ä½œå“åº”
+    MSG_OAM_NOTIFY,                 //OAMæ“ä½œæç¤º
+    MSG_OAM_SETID,                  //è®¾ç½®OAM IDå·
+    MSG_OAM_CTRL,                   //ç»™OAMæ¨¡å—çš„æ§åˆ¶å‘½ä»¤
+    MSG_OAM_CROSS_G2U,              //è·¨èŠ‚ç‚¹ç»„åˆ°ç”¨æˆ·æ¶ˆæ¯
+    MSG_OAM_CROSS_U2G,              //è·¨èŠ‚ç‚¹ç”¨æˆ·åˆ°ç»„æ¶ˆæ¯
+    MSG_OAM_MC2MCC,                 //åˆ†æ§æœåŠ¡å™¨åˆ°æ€»æ§æœåŠ¡å™¨
+    MSG_OAM_MCC2MC,                 //æ€»æ§æœåŠ¡å™¨åˆ°åˆ†æ§æœåŠ¡å™¨
 
-    //ÒÆ¶¯ĞÔ¹ÜÀíÔÓÏî
-    MSG_MM_STATUSSUBS       = 0x90, //¶©ÔÄ×´Ì¬/GPS¶©ÔÄ
-    MSG_MM_STATUSNOTIFY,            //×´Ì¬ÌáÊ¾
-    MSG_MM_GPSREPORT,               //GPSÉÏ±¨
-    MSG_MM_GPSRECIND,               //GPSÊı¾İÖ¸Ê¾
-    MSG_MM_GPSHISQUERYREQ,          //GPSÀúÊ·Êı¾İ²éÑ¯ÇëÇó
-    MSG_MM_GPSHISQUERYRSP,          //GPSÀúÊ·Êı¾İ²éÑ¯ÏìÓ¦
-    MSG_MM_GMEMBEREXTINFO,          //×éÓÃ»§À©Õ¹ĞÅÏ¢
-    MSG_MM_NSQUERYREQ,              //´æ´¢Êı¾İ²éÑ¯ÇëÇó
-    MSG_MM_NSQUERYRSP,              //´æ´¢Êı¾İ²éÑ¯ÏìÓ¦
+    //ç§»åŠ¨æ€§ç®¡ç†æ‚é¡¹
+    MSG_MM_STATUSSUBS       = 0x90, //è®¢é˜…çŠ¶æ€/GPSè®¢é˜…
+    MSG_MM_STATUSNOTIFY,            //çŠ¶æ€æç¤º
+    MSG_MM_GPSREPORT,               //GPSä¸ŠæŠ¥
+    MSG_MM_GPSRECIND,               //GPSæ•°æ®æŒ‡ç¤º
+    MSG_MM_GPSHISQUERYREQ,          //GPSå†å²æ•°æ®æŸ¥è¯¢è¯·æ±‚
+    MSG_MM_GPSHISQUERYRSP,          //GPSå†å²æ•°æ®æŸ¥è¯¢å“åº”
+    MSG_MM_GMEMBEREXTINFO,          //ç»„ç”¨æˆ·æ‰©å±•ä¿¡æ¯
+    MSG_MM_NSQUERYREQ,              //å­˜å‚¨æ•°æ®æŸ¥è¯¢è¯·æ±‚
+    MSG_MM_NSQUERYRSP,              //å­˜å‚¨æ•°æ®æŸ¥è¯¢å“åº”
 
-    //Ã½ÌåÖúÊÖµÈÔÓÏî
-    MSG_MA_OPENREQ          = 0xb0, //´ò¿ªÇëÇó
-    MSG_MA_OPENRSP,                 //´ò¿ªÏìÓ¦
-    MSG_MA_REL,                     //ÊÍ·Å
-    
+    //åª’ä½“åŠ©æ‰‹ç­‰æ‚é¡¹
+    MSG_MA_OPENREQ          = 0xb0, //æ‰“å¼€è¯·æ±‚
+    MSG_MA_OPENRSP,                 //æ‰“å¼€å“åº”
+    MSG_MA_REL,                     //é‡Šæ”¾
+
     MSG_MAX
 };
 #endif
@@ -547,11 +547,11 @@ char *GetSrvMsgStr(WORD wMsgId)
     case MSG_TRANS:
         return (char*)"TRANS";
 
-    // ĞÄÌøÏûÏ¢
+    // å¿ƒè·³æ¶ˆæ¯
     case MSG_HB:
         return (char*)"HB";
 
-    // ÒÆ¶¯ĞÔ¹ÜÀí
+    // ç§»åŠ¨æ€§ç®¡ç†
     case MSG_MM_REGREQ:
         return (char*)"MM_REGREQ";
     case MSG_MM_REGRSP:
@@ -581,7 +581,7 @@ char *GetSrvMsgStr(WORD wMsgId)
     case MSG_MM_PROXYREGRSP:
         return (char*)"MM_PROXYREGRSP";
 
-    //MGÏûÏ¢
+    //MGæ¶ˆæ¯
     case MSG_MG_BINDREQ:
         return (char*)"MG_BINDREQ";
     case MSG_MG_BINDRSP:
@@ -613,7 +613,7 @@ char *GetSrvMsgStr(WORD wMsgId)
     case MSG_MG_DTMF:
         return (char*)"MSG_MG_DTMF";
 
-    //ºô½ĞÏûÏ¢
+    //å‘¼å«æ¶ˆæ¯
     case MSG_CC_SETUP:
         return (char*)"CC_SETUP";
     case MSG_CC_SETUPACK:
@@ -645,7 +645,7 @@ char *GetSrvMsgStr(WORD wMsgId)
     case MSG_CC_CONFSTATUSRSP:
         return (char*)"CC_CONFSTATUSRSP";
 
-    //²Ù×÷Î¬»¤
+    //æ“ä½œç»´æŠ¤
     case MSG_OAM_REQ:
         return (char*)"OAM_REQ";
     case MSG_OAM_RSP:
@@ -700,7 +700,7 @@ WORD GetSrvMsgCode(std::string &msg)
     {
         return MSG_HB;
     }
-    // ÒÆ¶¯ĞÔ¹ÜÀí
+    // ç§»åŠ¨æ€§ç®¡ç†
     else if (0 == msg.compare("MM_REGREQ"))
     {
         return MSG_MM_REGREQ;
@@ -758,7 +758,7 @@ WORD GetSrvMsgCode(std::string &msg)
         return MSG_MM_PROXYREGRSP;
     }
 
-    //MGÏûÏ¢
+    //MGæ¶ˆæ¯
     else if (0 == msg.compare("MG_BINDREQ"))
     {
         return MSG_MG_BINDREQ;
@@ -812,7 +812,7 @@ WORD GetSrvMsgCode(std::string &msg)
         return MSG_MG_STATEIND;
     }
 
-    //ºô½ĞÏûÏ¢
+    //å‘¼å«æ¶ˆæ¯
     else if (0 == msg.compare("CC_SETUP"))
     {
         return MSG_CC_SETUP;
@@ -874,7 +874,7 @@ WORD GetSrvMsgCode(std::string &msg)
         return MSG_CC_CONFSTATUSRSP;
     }
 
-    //²Ù×÷Î¬»¤
+    //æ“ä½œç»´æŠ¤
     else if (0 == msg.compare("OAM_REQ"))
     {
         return MSG_OAM_REQ;
@@ -895,7 +895,7 @@ WORD GetSrvMsgCode(std::string &msg)
     {
         return MSG_OAM_CTRL;
     }
-    
+
     else if (0 == msg.compare("MM_STATUSSUBS"))
     {
         return MSG_MM_STATUSSUBS;
@@ -931,7 +931,7 @@ WORD GetSrvMsgCode(std::string &msg)
     else if (0 == msg.compare("MSG_MM_NSQUERYRSP"))
     {
         return MSG_MM_NSQUERYRSP;
-    }    
+    }
     else if (0 == msg.compare("MSG_MA_OPENREQ"))
     {
         return MSG_MA_OPENREQ;
@@ -949,164 +949,164 @@ WORD GetSrvMsgCode(std::string &msg)
 }
 #endif
 
-//ĞÅÏ¢µ¥ÔªÂë¶¨Òå
+//ä¿¡æ¯å•å…ƒç å®šä¹‰
 #ifndef MSG_IE_DEFINE
 enum
 {
     // 01
-    MSG_IE_SYSTIME = 1,             //ÏµÍ³Ê±¼ä
-    MSG_IE_CAUSE,                   //Ô­ÒòÖµ
-    MSG_IE_PLAYINFO,                //²¥·ÅĞÅÏ¢
-    MSG_IE_APTYPE,                  //½ÓÈëĞ­ÒéÀàĞÍ
-    MSG_IE_APPOS,                   //½ÓÈëĞ­ÒéµØÖ·
-    MSG_IE_APVER,                   //½ÓÈëĞ­Òé°æ±¾ºÅ
-    MSG_IE_AUTHALG,                 //¼øÈ¨Ëã·¨
-    MSG_IE_AUTHNAME,                //¼øÈ¨Ê¹ÓÃµÄÓÃ»§Ãû
-    MSG_IE_AUTHNONCE,               //¼øÈ¨Ê¹ÓÃµÄËæ»úÊı
-    MSG_IE_AUTHREALM,               //¼øÈ¨Ê¹ÓÃµÄÓòÃû
+    MSG_IE_SYSTIME = 1,             //ç³»ç»Ÿæ—¶é—´
+    MSG_IE_CAUSE,                   //åŸå› å€¼
+    MSG_IE_PLAYINFO,                //æ’­æ”¾ä¿¡æ¯
+    MSG_IE_APTYPE,                  //æ¥å…¥åè®®ç±»å‹
+    MSG_IE_APPOS,                   //æ¥å…¥åè®®åœ°å€
+    MSG_IE_APVER,                   //æ¥å…¥åè®®ç‰ˆæœ¬å·
+    MSG_IE_AUTHALG,                 //é‰´æƒç®—æ³•
+    MSG_IE_AUTHNAME,                //é‰´æƒä½¿ç”¨çš„ç”¨æˆ·å
+    MSG_IE_AUTHNONCE,               //é‰´æƒä½¿ç”¨çš„éšæœºæ•°
+    MSG_IE_AUTHREALM,               //é‰´æƒä½¿ç”¨çš„åŸŸå
 
     // 11
-    MSG_IE_AUTHRSP,                 //¼øÈ¨½á¹û
-    MSG_IE_AUTHURI,                 //¼øÈ¨Ê¹ÓÃµÄURI
-    MSG_IE_MYNUM,                   //±¾¶ËºÅÂë
-    MSG_IE_PEERNUM,                 //¶Ô¶ËºÅÂë
-    MSG_IE_CONF,                    //»áÒé×ÊÔ´
-    MSG_IE_DNSADDR,                 //DNSµØÖ·,contactµÄDNSµØÖ·
-    MSG_IE_DSTLEGID,                //Ä¿µÄLeg ID
-    MSG_IE_EXPIRED,                 //Éú´æÊ±¼ä
-    MSG_IE_FROMADDR,                //Ô´µØÖ·,contactµÄIPV4µØÖ·
-    MSG_IE_IDLIST,                  //IDÁĞ±í
+    MSG_IE_AUTHRSP,                 //é‰´æƒç»“æœ
+    MSG_IE_AUTHURI,                 //é‰´æƒä½¿ç”¨çš„URI
+    MSG_IE_MYNUM,                   //æœ¬ç«¯å·ç 
+    MSG_IE_PEERNUM,                 //å¯¹ç«¯å·ç 
+    MSG_IE_CONF,                    //ä¼šè®®èµ„æº
+    MSG_IE_DNSADDR,                 //DNSåœ°å€,contactçš„DNSåœ°å€
+    MSG_IE_DSTLEGID,                //ç›®çš„Leg ID
+    MSG_IE_EXPIRED,                 //ç”Ÿå­˜æ—¶é—´
+    MSG_IE_FROMADDR,                //æºåœ°å€,contactçš„IPV4åœ°å€
+    MSG_IE_IDLIST,                  //IDåˆ—è¡¨
 
     // 21
-    MSG_IE_INFO,                    //ĞÅÏ¢
+    MSG_IE_INFO,                    //ä¿¡æ¯
     MSG_IE_LEGID,                   //Leg ID
-    MSG_IE_MGFSMID,                 //MG×´Ì¬»úID
-    MSG_IE_MSGCODE,                 //ÏûÏ¢Âë
-    MSG_IE_MYSDP,                   //±¾¶ËSDP
-    MSG_IE_PEERSDP,                 //¶Ô¶ËSDP
-    MSG_IE_OPCODE,                  //²Ù×÷Âë
-    MSG_IE_RECVNUMTYPE,             //ÊÕºÅ·½Ê½
-    MSG_IE_REGTYPE,                 //×¢²áÀàĞÍ
-    MSG_IE_RESULT,                  //½á¹û
+    MSG_IE_MGFSMID,                 //MGçŠ¶æ€æœºID
+    MSG_IE_MSGCODE,                 //æ¶ˆæ¯ç 
+    MSG_IE_MYSDP,                   //æœ¬ç«¯SDP
+    MSG_IE_PEERSDP,                 //å¯¹ç«¯SDP
+    MSG_IE_OPCODE,                  //æ“ä½œç 
+    MSG_IE_RECVNUMTYPE,             //æ”¶å·æ–¹å¼
+    MSG_IE_REGTYPE,                 //æ³¨å†Œç±»å‹
+    MSG_IE_RESULT,                  //ç»“æœ
 
     // 31
-    MSG_IE_RSPCODE,                 //SIPĞ­ÒéÏìÓ¦Âë
-    MSG_IE_RSPTYPE,                 //ÏìÓ¦ÀàĞÍ
-    MSG_IE_SN,                      //ĞòÁĞºÅ
-    MSG_IE_SRCLEGID,                //Ô´Leg ID
-    MSG_IE_SRVTYPE,                 //ÒµÎñÀàĞÍ
-    MSG_IE_TOADDR,                  //ÖÕ·¢µØÖ·
-    MSG_IE_TRANSMSGID,              //Í¸´«ÏûÏ¢ID
-    MSG_IE_TRANSMSG,                //Í¸´«ÏûÏ¢ÄÚÈİ
-    MSG_IE_USRNUM,                  //ÓÃ»§µç»°ºÅÂë
-    MSG_IE_USRNAME,                 //ÓÃ»§Ãû
+    MSG_IE_RSPCODE,                 //SIPåè®®å“åº”ç 
+    MSG_IE_RSPTYPE,                 //å“åº”ç±»å‹
+    MSG_IE_SN,                      //åºåˆ—å·
+    MSG_IE_SRCLEGID,                //æºLeg ID
+    MSG_IE_SRVTYPE,                 //ä¸šåŠ¡ç±»å‹
+    MSG_IE_TOADDR,                  //ç»ˆå‘åœ°å€
+    MSG_IE_TRANSMSGID,              //é€ä¼ æ¶ˆæ¯ID
+    MSG_IE_TRANSMSG,                //é€ä¼ æ¶ˆæ¯å†…å®¹
+    MSG_IE_USRNUM,                  //ç”¨æˆ·ç”µè¯å·ç 
+    MSG_IE_USRNAME,                 //ç”¨æˆ·å
 
     // 41
-    MSG_IE_USRPOS,                  //ÓÃ»§Î»ÖÃĞÅÏ¢
-    MSG_IE_PWD,                     //ÃÜÂë
-    MSG_IE_FWDTIME,                 //Ç°´«´ÎÊı
-    MSG_IE_FWDTYPE,                 //Ç°´«ÀàĞÍ
-    MSG_IE_USRGINFO,                //ÓÃ»§ËùÔÚ×éĞÅÏ¢
-    MSG_IE_CAMINFO,                 //ÉãÏñÍ·ĞÅÏ¢
-    MSG_IE_ORIGSRVCS,               //Ê¼·¢µÄCSºÅÂë
-    MSG_IE_PRIO,                    //ÓÅÏÈ¼¶
-    MSG_IE_IDS,                     //ÊÇ·ñÊÇIDS
-    MSG_IE_NOTMODSDP,               //ÊÇ·ñ²»ÒªĞŞ¸ÄĞŞ¸ÄSDP
+    MSG_IE_USRPOS,                  //ç”¨æˆ·ä½ç½®ä¿¡æ¯
+    MSG_IE_PWD,                     //å¯†ç 
+    MSG_IE_FWDTIME,                 //å‰ä¼ æ¬¡æ•°
+    MSG_IE_FWDTYPE,                 //å‰ä¼ ç±»å‹
+    MSG_IE_USRGINFO,                //ç”¨æˆ·æ‰€åœ¨ç»„ä¿¡æ¯
+    MSG_IE_CAMINFO,                 //æ‘„åƒå¤´ä¿¡æ¯
+    MSG_IE_ORIGSRVCS,               //å§‹å‘çš„CSå·ç 
+    MSG_IE_PRIO,                    //ä¼˜å…ˆçº§
+    MSG_IE_IDS,                     //æ˜¯å¦æ˜¯IDS
+    MSG_IE_NOTMODSDP,               //æ˜¯å¦ä¸è¦ä¿®æ”¹ä¿®æ”¹SDP
 
     // 51
-    MSG_IE_WATCHLEG,                //¼à¿ØÍÈ
-    MSG_IE_CONFNUM,                 //»á³¡ºÅÂë
-    MSG_IE_OPSN,                    //²Ù×÷ĞòºÅ
-    MSG_IE_USERTYPE,                //ÓÃ»§ÀàĞÍ
-    MSG_IE_USERATTR,                //ÓÃ»§ÊôĞÔ
-    MSG_IE_USERSTATUS,              //ÓÃ»§×´Ì¬
-    MSG_IE_CONCURRENT,              //²¢·¢Êı
-    MSG_IE_USERIPADDR,              //ÓÃ»§IPµØÖ·
-    MSG_IE_USERADDR,                //ÓÃ»§µØÖ·
-    MSG_IE_USERCONTACT,             //ÓÃ»§ÁªÏµ·½Ê½
+    MSG_IE_WATCHLEG,                //ç›‘æ§è…¿
+    MSG_IE_CONFNUM,                 //ä¼šåœºå·ç 
+    MSG_IE_OPSN,                    //æ“ä½œåºå·
+    MSG_IE_USERTYPE,                //ç”¨æˆ·ç±»å‹
+    MSG_IE_USERATTR,                //ç”¨æˆ·å±æ€§
+    MSG_IE_USERSTATUS,              //ç”¨æˆ·çŠ¶æ€
+    MSG_IE_CONCURRENT,              //å¹¶å‘æ•°
+    MSG_IE_USERIPADDR,              //ç”¨æˆ·IPåœ°å€
+    MSG_IE_USERADDR,                //ç”¨æˆ·åœ°å€
+    MSG_IE_USERCONTACT,             //ç”¨æˆ·è”ç³»æ–¹å¼
 
     // 61
-    MSG_IE_USERDESC,                //ÓÃ»§ÃèÊö
-    MSG_IE_CTIME,                   //´´½¨Ê±¼ä
-    MSG_IE_VTIME,                   //µ½ÆÚÊ±¼ä
-    MSG_IE_GNUM,                    //×éºÅÂë
-    MSG_IE_GNAME,                   //×éÃû×Ö
-    MSG_IE_GNUMU,                   //×éÄÚÓÃ»§¸öÊı
-    MSG_IE_GMEMBER,                 //×éÄÚ³ÉÔ±
+    MSG_IE_USERDESC,                //ç”¨æˆ·æè¿°
+    MSG_IE_CTIME,                   //åˆ›å»ºæ—¶é—´
+    MSG_IE_VTIME,                   //åˆ°æœŸæ—¶é—´
+    MSG_IE_GNUM,                    //ç»„å·ç 
+    MSG_IE_GNAME,                   //ç»„åå­—
+    MSG_IE_GNUMU,                   //ç»„å†…ç”¨æˆ·ä¸ªæ•°
+    MSG_IE_GMEMBER,                 //ç»„å†…æˆå‘˜
     MSG_IE_TRANSID,                 //TRANS ID
-    MSG_IE_TRUENUM,                 //ÕæÊµºÅÂë,Ô­Ê¼Ö÷½ĞºÅÂë
-    MSG_IE_TRUENAME,                //ÕæÊµÃû×Ö,Ô­Ê¼Ö÷½ĞÃû×Ö
+    MSG_IE_TRUENUM,                 //çœŸå®å·ç ,åŸå§‹ä¸»å«å·ç 
+    MSG_IE_TRUENAME,                //çœŸå®åå­—,åŸå§‹ä¸»å«åå­—
 
     // 71
-    MSG_IE_ORIGCALLEDNUM,           //Ô­Ê¼±»½ĞºÅÂë
-    MSG_IE_ORIGCALLEDNAME,          //Ô­Ê¼±»½ĞÃû×Ö
+    MSG_IE_ORIGCALLEDNUM,           //åŸå§‹è¢«å«å·ç 
+    MSG_IE_ORIGCALLEDNAME,          //åŸå§‹è¢«å«åå­—
 	MSG_IE_IMINFO,
-    MSG_IE_QUERYEXT,                //²éÑ¯Ê¹ÓÃµÄ¸½¼Ó²ÎÊı
-    MSG_IE_STATUSSUBS,              //×´Ì¬¶©ÔÄ
-    MSG_IE_STATUSNOTIFY,            //×´Ì¬Ö¸Ê¾
-    MSG_IE_GMEMBERSTATUS,           //×é/ÓÃ»§×´Ì¬
-    MSG_IE_GPSREC,                  //GPS¼ÇÂ¼
-    MSG_IE_GPSQUERYEXT,             //GPSÀúÊ·Êı¾İ²éÑ¯Ìõ¼ş
-    MSG_IE_CALLEXT,                 //ºô½Ğ¸½¼ÓĞÅÏ¢
+    MSG_IE_QUERYEXT,                //æŸ¥è¯¢ä½¿ç”¨çš„é™„åŠ å‚æ•°
+    MSG_IE_STATUSSUBS,              //çŠ¶æ€è®¢é˜…
+    MSG_IE_STATUSNOTIFY,            //çŠ¶æ€æŒ‡ç¤º
+    MSG_IE_GMEMBERSTATUS,           //ç»„/ç”¨æˆ·çŠ¶æ€
+    MSG_IE_GPSREC,                  //GPSè®°å½•
+    MSG_IE_GPSQUERYEXT,             //GPSå†å²æ•°æ®æŸ¥è¯¢æ¡ä»¶
+    MSG_IE_CALLEXT,                 //å‘¼å«é™„åŠ ä¿¡æ¯
 
     // 81
-    MSG_IE_BCSMID,                  //BCSM×´Ì¬»úID
-    MSG_IE_BCSMSTATE,               //BCSM×´Ì¬
-    MSG_IE_CALLCONF,                //ºô½Ğ»áÒéĞÅÏ¢
-    MSG_IE_CALLUSERCTRL,            //ºô½ĞÓÃ»§¿ØÖÆ
-    MSG_IE_CALLSTREAMCTRL,          //ºô½ĞÁ÷¿ØÖÆ
-    MSG_IE_PEERNUM_EX,              //À©Õ¹µÄ±»½ĞºÅÂë                Èç¹ûÊÇÊÓÆµÍø¹Ø,ÕâÀïÊÇ4001-1-hkcam-192.168.2.38-8000-admin-admin123ÕâÑùµÄĞÅÏ¢
-    MSG_IE_REFSDP,                  //²Î¿¼SDP
-    MSG_IE_AGNUM,                   //¸½¼ÓµÄ×éºÅÂë,ÉãÏñÍ·×é
-    MSG_IE_FTPSERVERINFO,           //FTP·şÎñÆ÷ĞÅÏ¢
-    MSG_IE_GPSSERVERINFO,           //GPS·şÎñÆ÷ĞÅÏ¢
+    MSG_IE_BCSMID,                  //BCSMçŠ¶æ€æœºID
+    MSG_IE_BCSMSTATE,               //BCSMçŠ¶æ€
+    MSG_IE_CALLCONF,                //å‘¼å«ä¼šè®®ä¿¡æ¯
+    MSG_IE_CALLUSERCTRL,            //å‘¼å«ç”¨æˆ·æ§åˆ¶
+    MSG_IE_CALLSTREAMCTRL,          //å‘¼å«æµæ§åˆ¶
+    MSG_IE_PEERNUM_EX,              //æ‰©å±•çš„è¢«å«å·ç                 å¦‚æœæ˜¯è§†é¢‘ç½‘å…³,è¿™é‡Œæ˜¯4001-1-hkcam-192.168.2.38-8000-admin-admin123è¿™æ ·çš„ä¿¡æ¯
+    MSG_IE_REFSDP,                  //å‚è€ƒSDP
+    MSG_IE_AGNUM,                   //é™„åŠ çš„ç»„å·ç ,æ‘„åƒå¤´ç»„
+    MSG_IE_FTPSERVERINFO,           //FTPæœåŠ¡å™¨ä¿¡æ¯
+    MSG_IE_GPSSERVERINFO,           //GPSæœåŠ¡å™¨ä¿¡æ¯
 
     // 91
-    MSG_IE_WORKINFO,                //WORKINFO×Ö·û´®
-    MSG_IE_ORGLIST,                 //×éÖ¯ÁĞ±í
-    MSG_IE_INVOKENUM,               //·¢ÆğÇëÇóµÄºÅÂë
-    MSG_IE_TASKSERVERINFO,          //ÈÎÎñ·şÎñÆ÷ĞÅÏ¢
-    MSG_IE_USERPROXY,               //ÓÃ»§´úÀíĞÅÏ¢
-    MSG_IE_CAUSESTR,                //Ô­Òò×Ö·û´®
-    MSG_IE_ORGLIST_MGR,             //×éÖ¯ÁĞ±í,¹ÜÀíÊ±ÓÃµÄ
-    MSG_IE_DATAROLE,                //Êı¾İÈ¨ÏŞ
-    MSG_IE_MENUROLE,                //²Ëµ¥È¨ÏŞ
-    MSG_IE_DEPTNUM,                 //²¿ÃÅºÅÂë
+    MSG_IE_WORKINFO,                //WORKINFOå­—ç¬¦ä¸²
+    MSG_IE_ORGLIST,                 //ç»„ç»‡åˆ—è¡¨
+    MSG_IE_INVOKENUM,               //å‘èµ·è¯·æ±‚çš„å·ç 
+    MSG_IE_TASKSERVERINFO,          //ä»»åŠ¡æœåŠ¡å™¨ä¿¡æ¯
+    MSG_IE_USERPROXY,               //ç”¨æˆ·ä»£ç†ä¿¡æ¯
+    MSG_IE_CAUSESTR,                //åŸå› å­—ç¬¦ä¸²
+    MSG_IE_ORGLIST_MGR,             //ç»„ç»‡åˆ—è¡¨,ç®¡ç†æ—¶ç”¨çš„
+    MSG_IE_DATAROLE,                //æ•°æ®æƒé™
+    MSG_IE_MENUROLE,                //èœå•æƒé™
+    MSG_IE_DEPTNUM,                 //éƒ¨é—¨å·ç 
 
     // 101
-    MSG_IE_ID,                      //Éí·İÖ¤
-    MSG_IE_WORKID,                  //¹¤×÷Ö¤
-    MSG_IE_WORKUNIT,                //µ¥Î»
-    MSG_IE_TITLE,                   //Ö°Îñ
-    MSG_IE_CARID,                   //³µÅÆ
-    MSG_IE_TEL,                     //µç»°ºÅÂë
-    MSG_IE_OTHER,                   //ÆäËû
-    MSG_IE_SOSNUM,                  //SOSºÅÂë
-    MSG_IE_GPSRECSTR,               //GPS¼ÇÂ¼,STR¸ñÊ½
-    MSG_IE_GTYPE,                   //×éÀàĞÍ
+    MSG_IE_ID,                      //èº«ä»½è¯
+    MSG_IE_WORKID,                  //å·¥ä½œè¯
+    MSG_IE_WORKUNIT,                //å•ä½
+    MSG_IE_TITLE,                   //èŒåŠ¡
+    MSG_IE_CARID,                   //è½¦ç‰Œ
+    MSG_IE_TEL,                     //ç”µè¯å·ç 
+    MSG_IE_OTHER,                   //å…¶ä»–
+    MSG_IE_SOSNUM,                  //SOSå·ç 
+    MSG_IE_GPSRECSTR,               //GPSè®°å½•,STRæ ¼å¼
+    MSG_IE_GTYPE,                   //ç»„ç±»å‹
 
     // 111
-    MSG_IE_GPSSERVERINFOWSS,        //GPS·şÎñÆ÷ĞÅÏ¢,WSS
-    MSG_IE_FWDNUM,                  //Ç°×ª
-    MSG_IE_GMEMBEREXTINFO,          //×éÓÃ»§À©Õ¹ĞÅÏ¢
-    MSG_IE_RESREPORT,               //×ÊÔ´±¨¸æ
-    MSG_IE_FSMPAIR,                 //×´Ì¬»ú¶Ô
-    MSG_IE_CALLREFNUM,              //ºô½Ğ²Î¿¼ºÅ
-    MSG_IE_LEGEXT,                  //ÍÈÀ©Õ¹ĞÅÏ¢
-    MSG_IE_USERMARK,                //ÓÃ»§±êÖ¾
-    MSG_IE_USERCALLREF,             //ÓÃ»§Ê¹ÓÃµÄºô½Ğ²Î¿¼ºÅ,Ö÷½ĞÊÇ×Ô¼º,±»½ĞÊÇÖ÷½Ğ,²é¿´ÊÇ¶Ô¶Ë
-    MSG_IE_ROUTECFG,                //Â·ÓÉÅäÖÃĞÅÏ¢
+    MSG_IE_GPSSERVERINFOWSS,        //GPSæœåŠ¡å™¨ä¿¡æ¯,WSS
+    MSG_IE_FWDNUM,                  //å‰è½¬
+    MSG_IE_GMEMBEREXTINFO,          //ç»„ç”¨æˆ·æ‰©å±•ä¿¡æ¯
+    MSG_IE_RESREPORT,               //èµ„æºæŠ¥å‘Š
+    MSG_IE_FSMPAIR,                 //çŠ¶æ€æœºå¯¹
+    MSG_IE_CALLREFNUM,              //å‘¼å«å‚è€ƒå·
+    MSG_IE_LEGEXT,                  //è…¿æ‰©å±•ä¿¡æ¯
+    MSG_IE_USERMARK,                //ç”¨æˆ·æ ‡å¿—
+    MSG_IE_USERCALLREF,             //ç”¨æˆ·ä½¿ç”¨çš„å‘¼å«å‚è€ƒå·,ä¸»å«æ˜¯è‡ªå·±,è¢«å«æ˜¯ä¸»å«,æŸ¥çœ‹æ˜¯å¯¹ç«¯
+    MSG_IE_ROUTECFG,                //è·¯ç”±é…ç½®ä¿¡æ¯
 
     // 121
-    MSG_IE_COMMQUERY,               //Í¨ÓÃ²éÑ¯Ìõ¼ş
-    MSG_IE_MYUG,                    //×Ô¼ºÊÇÓÃ»§»¹ÊÇ×é
-    MSG_IE_LICENSE_COUNT,           //ÊÚÈ¨Êı
-    MSG_IE_RUN_COUNT,               //ÔËĞĞÊı
-    MSG_IE_ASSIGN_TYPE,             //MC·ÖÅäÒµÎñ×éÖ¯·½Ê½
-    MSG_IE_SUBNUM,                  //·Ö»úºÅ
-    MSG_IE_SLOT,                    //Ê±Ï¶ºÅ
-    MSG_IE_LIC,                     //ÊÚÈ¨ĞÅÏ¢
-    MSG_IE_NSQUERYEXT,              //NS²éÑ¯Ìõ¼ş
+    MSG_IE_COMMQUERY,               //é€šç”¨æŸ¥è¯¢æ¡ä»¶
+    MSG_IE_MYUG,                    //è‡ªå·±æ˜¯ç”¨æˆ·è¿˜æ˜¯ç»„
+    MSG_IE_LICENSE_COUNT,           //æˆæƒæ•°
+    MSG_IE_RUN_COUNT,               //è¿è¡Œæ•°
+    MSG_IE_ASSIGN_TYPE,             //MCåˆ†é…ä¸šåŠ¡ç»„ç»‡æ–¹å¼
+    MSG_IE_SUBNUM,                  //åˆ†æœºå·
+    MSG_IE_SLOT,                    //æ—¶éš™å·
+    MSG_IE_LIC,                     //æˆæƒä¿¡æ¯
+    MSG_IE_NSQUERYEXT,              //NSæŸ¥è¯¢æ¡ä»¶
 
     MSG_IE_MAX
 };
@@ -1184,7 +1184,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"RegType";
     case MSG_IE_RESULT:
         return (char*)"Result";
-        
+
     // 31
     case MSG_IE_RSPCODE:
         return (char*)"RspCode";
@@ -1206,7 +1206,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"UsrNum";
     case MSG_IE_USRNAME:
         return (char*)"UsrName";
-        
+
     // 41
     case MSG_IE_USRPOS:
         return (char*)"UsrPos";
@@ -1250,7 +1250,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"UserAddr";
     case MSG_IE_USERCONTACT:
         return (char*)"UserContact";
-        
+
     // 61
     case MSG_IE_USERDESC:
         return (char*)"UserDesc";
@@ -1272,7 +1272,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"TrueNum";
     case MSG_IE_TRUENAME:
         return (char*)"TrueName";
-        
+
     // 71
     case MSG_IE_ORIGCALLEDNUM:
         return (char*)"OrigCalledNum";
@@ -1294,7 +1294,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"GpsQueryExt";
     case MSG_IE_CALLEXT:
         return (char*)"CallExt";
-        
+
     // 81
     case MSG_IE_BCSMID:
         return (char*)"BcsmID";
@@ -1316,7 +1316,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"FtpServerInfo";
     case MSG_IE_GPSSERVERINFO:
         return (char*)"GpsServerInfo";
-        
+
     // 91
     case MSG_IE_WORKINFO:
         return (char*)"WorkInfo";
@@ -1338,7 +1338,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"MenuRole";
     case MSG_IE_DEPTNUM:
         return (char*)"DeptNum";
-        
+
     // 101
     case MSG_IE_ID:
         return (char*)"ID";
@@ -1368,37 +1368,37 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"FdwNum";
     case MSG_IE_GMEMBEREXTINFO:
         return (char*)"GMemberExtInfo";
-    case MSG_IE_RESREPORT://×ÊÔ´±¨¸æ
+    case MSG_IE_RESREPORT://èµ„æºæŠ¥å‘Š
         return (char*)"ResReport";
-    case MSG_IE_FSMPAIR://×´Ì¬»ú¶Ô
+    case MSG_IE_FSMPAIR://çŠ¶æ€æœºå¯¹
         return (char*)"FsmPair";
-    case MSG_IE_CALLREFNUM://ºô½Ğ²Î¿¼ºÅ
+    case MSG_IE_CALLREFNUM://å‘¼å«å‚è€ƒå·
         return (char*)"CallRefNum";
-    case MSG_IE_LEGEXT://ÍÈÀ©Õ¹ĞÅÏ¢
+    case MSG_IE_LEGEXT://è…¿æ‰©å±•ä¿¡æ¯
         return (char*)"LegExt";
-    case MSG_IE_USERMARK://ÓÃ»§±êÖ¾
+    case MSG_IE_USERMARK://ç”¨æˆ·æ ‡å¿—
         return (char*)"UserMark";
-    case MSG_IE_USERCALLREF://ÓÃ»§Ê¹ÓÃµÄºô½Ğ²Î¿¼ºÅ,Ö÷½ĞÊÇ×Ô¼º,±»½ĞÊÇÖ÷½Ğ,²é¿´ÊÇ¶Ô¶Ë
+    case MSG_IE_USERCALLREF://ç”¨æˆ·ä½¿ç”¨çš„å‘¼å«å‚è€ƒå·,ä¸»å«æ˜¯è‡ªå·±,è¢«å«æ˜¯ä¸»å«,æŸ¥çœ‹æ˜¯å¯¹ç«¯
         return (char*)"UserCallRef";
-    case MSG_IE_ROUTECFG://Â·ÓÉÅäÖÃĞÅÏ¢
+    case MSG_IE_ROUTECFG://è·¯ç”±é…ç½®ä¿¡æ¯
         return (char*)"RouteCfg";
-    case MSG_IE_COMMQUERY://Í¨ÓÃ²éÑ¯
+    case MSG_IE_COMMQUERY://é€šç”¨æŸ¥è¯¢
         return (char*)"CommQuery";
-    case MSG_IE_MYUG://×Ô¼ºÊÇÓÃ»§»¹ÊÇ×é
+    case MSG_IE_MYUG://è‡ªå·±æ˜¯ç”¨æˆ·è¿˜æ˜¯ç»„
         return (char*)"MyUG";
-    case MSG_IE_LICENSE_COUNT://ÊÚÈ¨Êı
+    case MSG_IE_LICENSE_COUNT://æˆæƒæ•°
         return (char*)"LicCount";
-    case MSG_IE_RUN_COUNT://ÔËĞĞÊı
+    case MSG_IE_RUN_COUNT://è¿è¡Œæ•°
         return (char*)"RunCount";
-    case MSG_IE_ASSIGN_TYPE://MC·ÖÅäÒµÎñ×éÖ¯·½Ê½
+    case MSG_IE_ASSIGN_TYPE://MCåˆ†é…ä¸šåŠ¡ç»„ç»‡æ–¹å¼
         return (char*)"AssignType";
-    case MSG_IE_SUBNUM://·Ö»úºÅ
+    case MSG_IE_SUBNUM://åˆ†æœºå·
         return (char*)"SubNum";
-    case MSG_IE_SLOT://Ê±Ï¶ºÅ
+    case MSG_IE_SLOT://æ—¶éš™å·
         return (char*)"Slot";
-    case MSG_IE_LIC://ÊÚÈ¨ĞÅÏ¢
+    case MSG_IE_LIC://æˆæƒä¿¡æ¯
         return (char*)"Lic";
-    case MSG_IE_NSQUERYEXT://NS²éÑ¯Ìõ¼ş
+    case MSG_IE_NSQUERYEXT://NSæŸ¥è¯¢æ¡ä»¶
         return (char*)"NsQueryExt";
 
     default:
@@ -1479,7 +1479,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"REGTYPE";
     case MSG_IE_RESULT:
         return (char*)"RESULT";
-        
+
     // 31
     case MSG_IE_RSPCODE:
         return (char*)"RSPCODE";
@@ -1501,7 +1501,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"USRNUM";
     case MSG_IE_USRNAME:
         return (char*)"USRNAME";
-        
+
     // 41
     case MSG_IE_USRPOS:
         return (char*)"USRPOS";
@@ -1545,7 +1545,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"USERADDR";
     case MSG_IE_USERCONTACT:
         return (char*)"USERCONTACT";
-        
+
     // 61
     case MSG_IE_USERDESC:
         return (char*)"USERDESC";
@@ -1567,7 +1567,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"TRUENUM";
     case MSG_IE_TRUENAME:
         return (char*)"TRUENAME";
-        
+
     // 71
     case MSG_IE_ORIGCALLEDNUM:
         return (char*)"ORIGCALLEDNUM";
@@ -1589,7 +1589,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"GPSQUERYEXT";
     case MSG_IE_CALLEXT:
         return (char*)"CALLEXT";
-        
+
     // 81
     case MSG_IE_BCSMID:
         return (char*)"BCSMID";
@@ -1611,7 +1611,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"FTPSERVERINFO";
     case MSG_IE_GPSSERVERINFO:
         return (char*)"GPSSERVERINFO";
-        
+
     // 91
     case MSG_IE_WORKINFO:
         return (char*)"WORKINFO";
@@ -1633,7 +1633,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"MENUROLE";
     case MSG_IE_DEPTNUM:
         return (char*)"DEPTNUM";
-        
+
     // 101
     case MSG_IE_ID:
         return (char*)"ID";
@@ -1649,7 +1649,7 @@ char *GetSrvIEStr(WORD wIEId)
         return (char*)"TEL";
     case MSG_IE_OTHER:
         return (char*)"OTHER";
-        
+
     default:
         snprintf(cBuf, sizeof(cBuf), "IEId=%d", wIEId);
         return cBuf;
@@ -1756,12 +1756,12 @@ char *GetSrvTypeStr(SRV_TYPE_e SrvType)
     case SRV_TYPE_OAM:
         return (char*)"SRV_TYPE_OAM";
     case SRV_TYPE_GPS:
-        return (char*)"SRV_TYPE_GPS";        
+        return (char*)"SRV_TYPE_GPS";
     case SRV_TYPE_MAX:
         return (char*)"SRV_TYPE_MAX";
     default:
         snprintf(cBuf, sizeof(cBuf), "SRV_TYPE=%d", SrvType);
-        return cBuf;        
+        return cBuf;
     }
 }
 
@@ -1770,18 +1770,18 @@ char *GetImCodeStr(UCHAR ucCode)
     static char cBuf[32];
     switch (ucCode)
     {
-    case PTE_CODE_TXREQ://·¢ËÍÇëÇó
-        return (char*)"·¢ËÍÇëÇó";
+    case PTE_CODE_TXREQ://å‘é€è¯·æ±‚
+        return (char*)"å‘é€è¯·æ±‚";
     case PTE_CODE_TXCFM:
-        return (char*)"´«ÊäÈ·ÈÏ";
+        return (char*)"ä¼ è¾“ç¡®è®¤";
     case PTE_CODE_USRREAD:
-        return (char*)"ÓÃ»§ÔÄ¶Á";
+        return (char*)"ç”¨æˆ·é˜…è¯»";
     case PTE_CODE_USRREADCFM:
-        return (char*)"ÓÃ»§ÔÄ¶ÁÏûÏ¢µÄÈ·ÈÏ";
+        return (char*)"ç”¨æˆ·é˜…è¯»æ¶ˆæ¯çš„ç¡®è®¤";
     case PTE_CODE_FILENAMEREQ:
-        return (char*)"ÎÄ¼şÃûÇëÇó";
+        return (char*)"æ–‡ä»¶åè¯·æ±‚";
     case PTE_CODE_FILENAMERSP:
-        return (char*)"ÎÄ¼şÃûÏìÓ¦";
+        return (char*)"æ–‡ä»¶åå“åº”";
     default:
         snprintf(cBuf, sizeof(cBuf), "IMCode=%d", ucCode);
         return cBuf;
@@ -1794,27 +1794,27 @@ char *GetImTypeStr(DWORD dwType)
     switch (dwType)
     {
     case IM_TYPE_NONE:
-        return (char*)"ÎŞ";
-//01~7fĞèÒª´æ´¢×ª·¢,ÓÃ»§È·ÈÏÊÕµ½µÄ
+        return (char*)"æ— ";
+//01~7féœ€è¦å­˜å‚¨è½¬å‘,ç”¨æˆ·ç¡®è®¤æ”¶åˆ°çš„
     case IM_TYPE_TXT:
-        return (char*)"ÎÄ±¾";
+        return (char*)"æ–‡æœ¬";
     case IM_TYPE_GPS:
         return (char*)"GPS";
     case IM_TYPE_IMAGE:
-        return (char*)"Í¼Ïñ";
+        return (char*)"å›¾åƒ";
     case IM_TYPE_AUDIO:
-        return (char*)"ÓïÒôÎÄ¼ş";
+        return (char*)"è¯­éŸ³æ–‡ä»¶";
     case IM_TYPE_VIDEO:
-        return (char*)"ÊÓÆµÎÄ¼ş";
-//0x80~0xff²»ĞèÒª´æ´¢×ª·¢,ÓÃ»§È·ÈÏ½ÓÊÕµÄ
+        return (char*)"è§†é¢‘æ–‡ä»¶";
+//0x80~0xffä¸éœ€è¦å­˜å‚¨è½¬å‘,ç”¨æˆ·ç¡®è®¤æ¥æ”¶çš„
     case IM_TYPE_NSSUBS:
-        return (char*)"´æ´¢¶©ÔÄ";
+        return (char*)"å­˜å‚¨è®¢é˜…";
     case IM_TYPE_NSQUERYREQ:
-        return (char*)"´æ´¢²éÑ¯";
+        return (char*)"å­˜å‚¨æŸ¥è¯¢";
     case IM_TYPE_NSQUERYRSP:
-        return (char*)"´æ´¢²éÑ¯ÏìÓ¦";
+        return (char*)"å­˜å‚¨æŸ¥è¯¢å“åº”";
     case IM_TYPE_USER:
-        return (char*)"ÓÃ»§×Ô¶¨Òå";
+        return (char*)"ç”¨æˆ·è‡ªå®šä¹‰";
     default:
         snprintf(cBuf, sizeof(cBuf), "IMType=%d", (int)dwType);
         return cBuf;
@@ -1827,13 +1827,13 @@ char *GetGUTypeStr(UCHAR ucType)
     switch (ucType)
     {
     case GROUP_MEMBERTYPE_USER:
-        return (char*)"ÓÃ»§";
+        return (char*)"ç”¨æˆ·";
     case GROUP_MEMBERTYPE_GROUP:
-        return (char*)"×é";
+        return (char*)"ç»„";
     case GROUP_MEMBERTYPE_USER_OUT:
-        return (char*)"ÍâÍøÓÃ»§";
+        return (char*)"å¤–ç½‘ç”¨æˆ·";
     case GROUP_MEMBERTYPE_USER_SLOT2:
-        return (char*)"Ê±Ï¶2ÓÃ»§";
+        return (char*)"æ—¶éš™2ç”¨æˆ·";
 
     default:
         snprintf(cBuf, sizeof(cBuf), "GUType=%d", ucType);
@@ -1847,9 +1847,9 @@ char *GetStatusStr(UCHAR ucStatus)
     switch (ucStatus)
     {
     case UT_STATUS_OFFLINE:
-        return (char*)"ÀëÏß";
+        return (char*)"ç¦»çº¿";
     case UT_STATUS_ONLINE:
-        return (char*)"ÔÚÏß";
+        return (char*)"åœ¨çº¿";
     default:
         snprintf(cBuf, sizeof(cBuf), "Status=%d", ucStatus);
         return cBuf;
@@ -1862,9 +1862,9 @@ char *GetCallOTStr(UCHAR ucOT)
     switch (ucOT)
     {
     case CC_O:
-        return (char*)"Ö÷½Ğ";
+        return (char*)"ä¸»å«";
     case CC_T:
-        return (char*)"±»½Ğ";
+        return (char*)"è¢«å«";
     default:
         snprintf(cBuf, sizeof(cBuf), "OT=%d", ucOT);
         return cBuf;
@@ -1877,23 +1877,23 @@ char *GetCallTypeStr(UCHAR ucCallType)
     switch (ucCallType)
     {
     case SRV_TYPE_BASIC_CALL:
-        return (char*)"»ù±¾ºô½Ğ";
+        return (char*)"åŸºæœ¬å‘¼å«";
     case SRV_TYPE_CONF:
-        return (char*)"»áÒé";
+        return (char*)"ä¼šè®®";
     case SRV_TYPE_CONF_JOIN:
-        return (char*)"»áÒé";
+        return (char*)"ä¼šè®®";
     case SRV_TYPE_FORCE_INJ:
-        return (char*)"Ç¿²å";
+        return (char*)"å¼ºæ’";
     case SRV_TYPE_FORCE_REL:
-        return (char*)"Ç¿²ğ";
+        return (char*)"å¼ºæ‹†";
     case SRV_TYPE_WATCH_DOWN:
-        return (char*)"¼à¿ØÏÂÔØ";
+        return (char*)"ç›‘æ§ä¸‹è½½";
     case SRV_TYPE_WATCH_UP:
-        return (char*)"¼à¿ØÉÏ´«";
+        return (char*)"ç›‘æ§ä¸Šä¼ ";
     case SRV_TYPE_NS_CALL:
-        return (char*)"´æ´¢ºô½Ğ";
+        return (char*)"å­˜å‚¨å‘¼å«";
     case SRV_TYPE_SIMP_CALL:
-        return (char*)"µ¥¹¤ºô½Ğ";
+        return (char*)"å•å·¥å‘¼å«";
     default:
         snprintf(cBuf, sizeof(cBuf), "CallType=%d", ucCallType);
         return cBuf;
@@ -1906,17 +1906,17 @@ char *GetCallStatusStr(UCHAR ucCallStatus)
     switch (ucCallStatus)
     {
     case GU_STATUSCALL_IDLE:
-        return (char*)"¿ÕÏĞ";
+        return (char*)"ç©ºé—²";
     case GU_STATUSCALL_OALERT:
-        return (char*)"Ö÷½Ğ»ØÁå";
+        return (char*)"ä¸»å«å›é“ƒ";
     case GU_STATUSCALL_TALERT:
-        return (char*)"±»½ĞÕñÁå";
+        return (char*)"è¢«å«æŒ¯é“ƒ";
     case GU_STATUSCALL_TALKING:
-        return (char*)"Í¨»°";
+        return (char*)"é€šè¯";
     case GU_STATUSCALL_G_TALKING:
-        return (char*)"»áÒé½²»°";
+        return (char*)"ä¼šè®®è®²è¯";
     case GU_STATUSCALL_G_LISTEN:
-        return (char*)"»áÒéÌı»°";
+        return (char*)"ä¼šè®®å¬è¯";
     default:
         snprintf(cBuf, sizeof(cBuf), "CallStatus=%d", ucCallStatus);
         return cBuf;
@@ -1930,16 +1930,16 @@ char *GetWatchDir(UCHAR ucDir)
     switch (ucDir)
     {
     case WATCH_DIR_NONE:
-        return (char*)"Ã»ÓĞ";
+        return (char*)"æ²¡æœ‰";
     case WATCH_DIR_UP:
-        return (char*)"ÉÏĞĞ";
+        return (char*)"ä¸Šè¡Œ";
     case WATCH_DIR_DOWN:
-        return (char*)"ÏÂĞĞ";
+        return (char*)"ä¸‹è¡Œ";
     case WATCH_DIR_BOTH:
-        return (char*)"Ë«Ïò";
+        return (char*)"åŒå‘";
     default:
-        snprintf(cBuf, sizeof(cBuf), "·½Ïò=%d", ucDir);
-        return cBuf;        
+        snprintf(cBuf, sizeof(cBuf), "æ–¹å‘=%d", ucDir);
+        return cBuf;
     }
 }
 
@@ -1947,48 +1947,48 @@ char *GetInfoStr(DWORD dwInfo)
 {
     UCHAR ucCode    = dwInfo & 0xff;
     UCHAR ucQueue   = (dwInfo & 0xff00) >> 8;
-    
+
     static char cBuf[32];
     switch (ucCode)
     {
     case SRV_INFO_MICREQ:
-        snprintf(cBuf, sizeof(cBuf), "»°È¨ÉêÇë:¶ÓÁĞ%d", ucQueue);
+        snprintf(cBuf, sizeof(cBuf), "è¯æƒç”³è¯·:é˜Ÿåˆ—%d", ucQueue);
         break;
     case SRV_INFO_MICREL:
-        snprintf(cBuf, sizeof(cBuf), "»°È¨ÊÍ·Å:¶ÓÁĞ%d", ucQueue);
+        snprintf(cBuf, sizeof(cBuf), "è¯æƒé‡Šæ”¾:é˜Ÿåˆ—%d", ucQueue);
         break;
     case SRV_INFO_MICGIVE:
-        snprintf(cBuf, sizeof(cBuf), "¸øÓë»°È¨:¶ÓÁĞ%d", ucQueue);
+        snprintf(cBuf, sizeof(cBuf), "ç»™ä¸è¯æƒ:é˜Ÿåˆ—%d", ucQueue);
         break;
     case SRV_INFO_MICTAKE:
-        snprintf(cBuf, sizeof(cBuf), "ÊÕ»Ø»°È¨:¶ÓÁĞ%d", ucQueue);
+        snprintf(cBuf, sizeof(cBuf), "æ”¶å›è¯æƒ:é˜Ÿåˆ—%d", ucQueue);
         break;
     case SRV_INFO_MICINFO:
-        snprintf(cBuf, sizeof(cBuf), "»°È¨ÌáÊ¾:¶ÓÁĞ%d", ucQueue);
+        snprintf(cBuf, sizeof(cBuf), "è¯æƒæç¤º:é˜Ÿåˆ—%d", ucQueue);
         break;
     case SRV_INFO_AUTOMICON:
-        snprintf(cBuf, sizeof(cBuf), "´ò¿ª×ÔÓÉ·¢ÑÔ:¶ÓÁĞ%d", ucQueue);
+        snprintf(cBuf, sizeof(cBuf), "æ‰“å¼€è‡ªç”±å‘è¨€:é˜Ÿåˆ—%d", ucQueue);
         break;
     case SRV_INFO_AUTOMICOFF:
-        snprintf(cBuf, sizeof(cBuf), "¹Ø±Õ×ÔÓÉ·¢ÑÔ:¶ÓÁĞ%d", ucQueue);
+        snprintf(cBuf, sizeof(cBuf), "å…³é—­è‡ªç”±å‘è¨€:é˜Ÿåˆ—%d", ucQueue);
         break;
     case SRV_INFO_CAMHISPLAY:
-        snprintf(cBuf, sizeof(cBuf), "²¥·ÅÀúÊ·ÊÓÆµ");
+        snprintf(cBuf, sizeof(cBuf), "æ’­æ”¾å†å²è§†é¢‘");
         break;
     case SRV_INFO_TALKON:
-        snprintf(cBuf, sizeof(cBuf), "´ò¿ª¶Ô½²");
+        snprintf(cBuf, sizeof(cBuf), "æ‰“å¼€å¯¹è®²");
         break;
     case SRV_INFO_TALKOFF:
-        snprintf(cBuf, sizeof(cBuf), "¹Ø±Õ¶Ô½²");
+        snprintf(cBuf, sizeof(cBuf), "å…³é—­å¯¹è®²");
         break;
     case SRV_INFO_TALKONRSP:
-        snprintf(cBuf, sizeof(cBuf), "´ò¿ª¶Ô½²ÏìÓ¦");
+        snprintf(cBuf, sizeof(cBuf), "æ‰“å¼€å¯¹è®²å“åº”");
         break;
     case SRV_INFO_TALKOFFRSP:
-        snprintf(cBuf, sizeof(cBuf), "¹Ø±Õ¶Ô½²ÏìÓ¦");
+        snprintf(cBuf, sizeof(cBuf), "å…³é—­å¯¹è®²å“åº”");
         break;
     case SRV_INFO_NSREC:
-        snprintf(cBuf, sizeof(cBuf), "NS´æ´¢¼ÇÂ¼");
+        snprintf(cBuf, sizeof(cBuf), "NSå­˜å‚¨è®°å½•");
         break;
     case SRV_INFO_ICECAND:
         snprintf(cBuf, sizeof(cBuf), "IceCandidate");
@@ -1997,22 +1997,22 @@ char *GetInfoStr(DWORD dwInfo)
         snprintf(cBuf, sizeof(cBuf), "IceStateChange");
         break;
     case SRV_INFO_SDP:
-        snprintf(cBuf, sizeof(cBuf), "±¾¶ËSDP´«ËÍ");
+        snprintf(cBuf, sizeof(cBuf), "æœ¬ç«¯SDPä¼ é€");
         break;
     case SRV_INFO_CAMCTRL:
-        snprintf(cBuf, sizeof(cBuf), "ÉãÏñÍ·¿ØÖÆ");
+        snprintf(cBuf, sizeof(cBuf), "æ‘„åƒå¤´æ§åˆ¶");
         break;
     case SRV_INFO_NUM:
-        snprintf(cBuf, sizeof(cBuf), "ºÅÂë");
+        snprintf(cBuf, sizeof(cBuf), "å·ç ");
         break;
     case SRV_INFO_USERMARK:
-        snprintf(cBuf, sizeof(cBuf), "ÓÃ»§±êÊ¶");
+        snprintf(cBuf, sizeof(cBuf), "ç”¨æˆ·æ ‡è¯†");
         break;
     case SRV_INFO_CALLREF:
-        snprintf(cBuf, sizeof(cBuf), "ºô½ĞÁ÷Ë®ºÅ");
+        snprintf(cBuf, sizeof(cBuf), "å‘¼å«æµæ°´å·");
         break;
     case SRV_INFO_MICMODIFY:
-        snprintf(cBuf, sizeof(cBuf), "»°Í²ĞŞ¸Ä");
+        snprintf(cBuf, sizeof(cBuf), "è¯ç­’ä¿®æ”¹");
         break;
     case SRV_INFO_NUM_DTMF:
         snprintf(cBuf, sizeof(cBuf), "DTMF");
@@ -2023,5 +2023,6 @@ char *GetInfoStr(DWORD dwInfo)
     }
     return cBuf;
 }
+
 
 

@@ -22,10 +22,33 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "guiIdtCom_api.h"
 
+static keyState_t preKeyState = 0xff;
+static keyMap_t   preKey      = 0xff;
 bool pocKeypadHandle(keyMap_t id, keyState_t evt, void *p)
 {
-	return false;
+	bool ret = true;
+	if(id == KEY_MAP_4) //poc
+	{
+		if(preKeyState != evt)
+		{
+			if(evt == KEY_STATE_PRESS)
+			{
+				OSI_LOGI(0, "[gic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
+				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+			}
+			else
+			{
+				OSI_LOGI(0, "[gic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
+				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+			}
+		}
+		ret = true;
+	}
+	preKey = id;
+	preKeyState = evt;
+	return ret;
 }
 
 
