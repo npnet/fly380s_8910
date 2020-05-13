@@ -1,8 +1,8 @@
 /******************************************
-*   ½«check box·â×°Îªµ¥Ñ¡(radio box)°´Å¥
-*   ²ÉÓÃ radio box ×éµÄ¹ÜÀí·½Ê½£¬Ò»¸ö radio box ×éÖÐ£¬ÓÐÇÒÖ»ÓÐÒ»¸ö check box ´¦ÓÚÑ¡ÖÐ(°´ÏÂ)×´Ì¬
-*   ¿ÉÒÔÓÐ¶à¸öÆäËû×´Ì¬
-*   rb×é²»¹ÜÀícb¾ßÌå¶ÔÏóµÄ´æÐø£¬rb×éÇå¿ÕÉ¾³ý²Ù×÷²¢²»»áÉ¾³ýÊµ¼Ê¶ÔÏócb, ÐèÒª×Ô¼ºÊ¹ÓÃlv_obj_del()É¾³ýcb
+*   å°†check boxå°è£…ä¸ºå•é€‰(radio box)æŒ‰é’®
+*   é‡‡ç”¨ radio box ç»„çš„ç®¡ç†æ–¹å¼ï¼Œä¸€ä¸ª radio box ç»„ä¸­ï¼Œæœ‰ä¸”åªæœ‰ä¸€ä¸ª check box å¤„äºŽé€‰ä¸­(æŒ‰ä¸‹)çŠ¶æ€
+*   å¯ä»¥æœ‰å¤šä¸ªå…¶ä»–çŠ¶æ€
+*   rbç»„ä¸ç®¡ç†cbå…·ä½“å¯¹è±¡çš„å­˜ç»­ï¼Œrbç»„æ¸…ç©ºåˆ é™¤æ“ä½œå¹¶ä¸ä¼šåˆ é™¤å®žé™…å¯¹è±¡cb, éœ€è¦è‡ªå·±ä½¿ç”¨lv_obj_del()åˆ é™¤cb
 ******************************************/
 #ifndef __INCLUDE_LV_POC_RB__
 #define  __INCLUDE_LV_POC_RB__
@@ -16,9 +16,7 @@ extern "C" {
 *                  INCLUDE
 *
 *************************************************/
-#include "lvgl.h"
-#include "lv_include/lv_poc.h"
-//#include "lv_include/lv_poc_conf.h"
+#include "lv_include/lv_poc_type.h"
 #include <stdarg.h>
 
 /*************************************************
@@ -90,7 +88,7 @@ typedef struct _lv_poc_rb_t{
 /*******************
 *     NAME:   lv_poc_rb_create
 *   AUTHOR:   lugj
-* DESCRIPT:   ´´½¨interphone radio box¶ÔÏó×é
+* DESCRIPT:   åˆ›å»ºinterphone radio boxå¯¹è±¡ç»„
 *     DATE:   2019-11-25
 ********************/
 lv_poc_rb_t * lv_poc_rb_create(void);
@@ -98,7 +96,7 @@ lv_poc_rb_t * lv_poc_rb_create(void);
 /*******************
 *     NAME:   lv_poc_rb_add
 *   AUTHOR:   lugj
-* DESCRIPT:   ½«check box×÷Îªradio boxÌí¼Óµ½radio box¶ÔÏó×éÖÐ
+* DESCRIPT:   å°†check boxä½œä¸ºradio boxæ·»åŠ åˆ°radio boxå¯¹è±¡ç»„ä¸­
 *     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb);
@@ -106,7 +104,7 @@ void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb);
 /*******************
 *     NAME:   lv_poc_rb_press
 *   AUTHOR:   lugj
-* DESCRIPT:   Ñ¡ÖÐrbÖÐcb
+* DESCRIPT:   é€‰ä¸­rbä¸­cb
 *     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb);
@@ -114,7 +112,7 @@ void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb);
 /*******************
 *     NAME:   lv_poc_rb_get_pressed
 *   AUTHOR:   lugj
-* DESCRIPT:   »ñÈ¡rbÖÐµ±Ç°±»Ñ¡ÖÐµÄcb
+* DESCRIPT:   èŽ·å–rbä¸­å½“å‰è¢«é€‰ä¸­çš„cb
 *     DATE:   2019-11-25
 ********************/
 lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb);
@@ -122,7 +120,7 @@ lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb);
 /*******************
 *     NAME:   lv_poc_rb_remove_cb
 *   AUTHOR:   lugj
-* DESCRIPT:   É¾³ýrbÖÐÖ¸¶¨µÄcb
+* DESCRIPT:   åˆ é™¤rbä¸­æŒ‡å®šçš„cb
 *     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb);
@@ -130,7 +128,7 @@ void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb);
 /*******************
 *     NAME:   lv_poc_rb_clean
 *   AUTHOR:   lugj
-* DESCRIPT:   Çå¿ÕrbÖÐËùÓÐcb
+* DESCRIPT:   æ¸…ç©ºrbä¸­æ‰€æœ‰cb
 *     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_clean(lv_poc_rb_t * rb);
@@ -138,7 +136,7 @@ void lv_poc_rb_clean(lv_poc_rb_t * rb);
 /*******************
 *     NAME:   lv_poc_rb_del
 *   AUTHOR:   lugj
-* DESCRIPT:   É¾³ýrb²¢Çå¿ÕËùÓÐcb
+* DESCRIPT:   åˆ é™¤rbå¹¶æ¸…ç©ºæ‰€æœ‰cb
 *     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_del(lv_poc_rb_t * rb);
@@ -151,4 +149,5 @@ void lv_poc_rb_del(lv_poc_rb_t * rb);
 
 
 #endif //__INCLUDE_LV_INTER_PHONE_RB__
+
 
