@@ -4,6 +4,7 @@
 #include "lvgl.h"
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_activity.h"
+#include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
 #include "hwregs.h"
 #include "drv_gpio.h"
 #include "hal_iomux.h"
@@ -182,6 +183,14 @@ bool
 poc_get_network_register_status(IN POC_SIM_ID sim);
 
 /*
+      name : poc_net_work_config
+      param : config network to log idt server
+      date : 2020-05-11
+*/
+void
+poc_net_work_config(IN POC_SIM_ID sim);
+
+/*
       name : poc_mmi_poc_setting_config
      param : [poc_setting] IN param
       date : 2020-03-30
@@ -340,6 +349,24 @@ poc_set_red_status(bool ledstatus);
 */
 bool
 poc_set_green_status(bool ledstatus);
+
+
+/*
+	  name : lv_poc_notation_msg
+	  param : msg_type  (1,2)
+	          text_1
+	          text_2     msg_type = 1
+	                                  listen text , display name and group name of speaker
+	                     msg_type = 2
+	                                  speaking text , you are free.
+	                     msg_type = 3
+	                                  refresh notation ui
+	                     msg_type = 0
+	                                  destory notation ui
+	  date : 2020-05-09
+*/
+extern bool
+lv_poc_notation_msg(int msg_type, const uint8_t *text_1, const uint8_t *text_2);
 
 
 #ifdef __cplusplus
