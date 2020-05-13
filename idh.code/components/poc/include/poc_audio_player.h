@@ -18,6 +18,8 @@
 #include "poc_types.h"
 #include "audio_player.h"
 
+#define POCAUDIOPLAYERDATAPREBUFFSIZE (40*320U)
+
 OSI_EXTERN_C_BEGIN
 /**
  * \brief initialize poc audio player
