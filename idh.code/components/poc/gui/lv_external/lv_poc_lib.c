@@ -624,6 +624,19 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	return true;
 }
 
+/*
+      name : poc_net_work_config
+      param : config network to log idt server
+      date : 2020-05-11
+*/
+void
+poc_net_work_config(IN POC_SIM_ID sim)
+{
+	POC_SIM_ID nsim = POC_SIM_1;
+	CFW_NwSetFTA(0, nsim);
+	CFW_NwSetAutoAttachFlag(1, nsim);
+}
+
 
 
 static void
@@ -1103,7 +1116,7 @@ poc_set_red_status(bool ledstatus)
 		configport=poc_port_init();
     }
 	poc_set_port_status(poc_red_led,configport,ledstatus);
-#endif 
+#endif
 	return ledstatus;
 }
 
@@ -1116,19 +1129,19 @@ bool
 poc_set_green_status(bool ledstatus)
 {
 #if 1
-	//reg 
+	//reg
 	hwp_gpio1->gpio_oen_val&=~(1<<poc_green_led);//set gpio direction
 	hwp_gpio1->gpio_oen_set_out|=(1<<poc_green_led);//set gpio output
-    if(ledstatus)	
+    if(ledstatus)
 	hwp_gpio1->gpio_set_reg|=(1<<poc_green_led);//open status
 	else
 	hwp_gpio1->gpio_clr_reg|=(1<<poc_green_led);//close status
-#endif 
+#endif
 
 #if 0
 	REG_IOMUX_PAD_GPIO_13_CFG_REG_T  *gpio_13_t = NULL;
 	//config
-	gpio_13_t->b.pad_gpio_13_sel=0;//gpio13	
+	gpio_13_t->b.pad_gpio_13_sel=0;//gpio13
 	gpio_13_t->b.pad_gpio_13_pull_dn=1;//pull down
 	gpio_13_t->b.pad_gpio_13_oen_reg=0;//set output mode
 	gpio_13_t->b.pad_gpio_13_out_reg=ledstatus;//open or close

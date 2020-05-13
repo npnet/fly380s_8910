@@ -32,12 +32,12 @@
 
 static void pocIdtStartHandleTask(void * ctx)
 {
+	poc_net_work_config(POC_SIM_1);
 	while(!poc_get_network_register_status(POC_SIM_1))
 	{
 		OSI_LOGI(0, "[poc][idt] checking network\n");
 		osiThreadSleep(1000);
 	}
-	//appTestStart();
 	lvPocGuiIdtCom_log();
 
 	osiThreadExit();
