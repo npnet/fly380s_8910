@@ -113,6 +113,7 @@ static int prvPocAudioRecorderMemReaderRead(auReader_t *d, void *buf, unsigned s
 	if(p->pos + size <= p->size)
 	{
 		memcpy(buf, (const char *)p->buf + p->pos, size);
+		memset((void *)p->buf + p->pos, 0, size);
 		p->pos = p->pos + size;
 	}
 	else
@@ -120,8 +121,10 @@ static int prvPocAudioRecorderMemReaderRead(auReader_t *d, void *buf, unsigned s
 		if(p->size > p->pos)
 		{
 			memcpy(buf, (const char *)p->buf + p->pos, p->size - p->pos);
+			memset((void *)p->buf + p->pos, 0, p->size - p->pos);
 		}
 		memcpy((char *)buf + (p->size - p->pos), (const char *)p->buf, size - (p->size - p->pos));
+		memset((void *)p->buf, 0, size - (p->size - p->pos));
 		p->pos = size - ( p->size - p->pos );
 	}
 
@@ -337,6 +340,10 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
  */
 bool pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
 {
+	if(recorder_id == 0)
+	{
+		return false;
+	}
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
 	bool ret = auRecorderStartWriter(recorder->recorder, AUDEV_RECORD_TYPE_MIC, AUSTREAM_FORMAT_PCM, NULL, (auWriter_t *)recorder->writer);
 	if(ret == false)
@@ -363,12 +370,18 @@ bool pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
  */
 int pocAudioRecorderReset(POCAUDIORECORDER_HANDLE recorder_id)
 {
+	if(recorder_id == 0)
+	{
+		return -1;
+	}
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
 
 	recorder->writer->pos  = 0;
 	recorder->writer->size = 0;
 	recorder->reader->pos  = 0;
 
+	memset(recorder->writer->buf, 0, recorder->writer->max_size);
+	memset(recorder->prvSwapData, 0, recorder->prvSwapDataLength);
 	return 0;
 }
 
@@ -381,6 +394,10 @@ int pocAudioRecorderReset(POCAUDIORECORDER_HANDLE recorder_id)
  */
 bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id)
 {
+	if(recorder_id == 0)
+	{
+		return false;
+	}
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
 
 	osiTimerStop(recorder->prvTimerID);
@@ -388,8 +405,10 @@ bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id)
 	if(auRecorderStop((auRecorder_t *)recorder->recorder))
 	{
 		recorder->status = false;
+		pocAudioRecorderReset(recorder_id);
 		return true;
 	}
+	pocAudioRecorderReset(recorder_id);
 
 	return false;
 }

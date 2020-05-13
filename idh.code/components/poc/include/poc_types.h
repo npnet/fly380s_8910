@@ -73,6 +73,10 @@ typedef struct
 	auPocMemWriter_t *writer;           //storage data that through write API to play
 	auPocMemReader_t *reader;           //get data from writer to play
 	auPlayer_t       *player;           //real player
+    bool              restart;
+    bool              reduce;
+    bool              raise;
+    bool              reduce_index;
 	bool              status;           //true is playying
 } pocAudioPlayer_t;
 
