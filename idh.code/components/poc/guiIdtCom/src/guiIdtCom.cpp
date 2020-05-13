@@ -27,10 +27,12 @@
 #include "poc_audio_player.h"
 #include "poc_audio_recorder.h"
 #include "guiIdtCom_api.h"
+#include "audio_device.h"
+#include <sys/time.h>
 
 #define GUIIDTCOM_DEBUG (0)
 
-
+//#if 0
 #ifdef CONFIG_POC_SUPPORT
 #define FREERTOS
 #define T_TINY_MODE
@@ -41,7 +43,6 @@
 #define APPTEST_STACK_SIZE (8192 * 4)
 #define APPTEST_EVENT_QUEUE_SIZE (64)
 
-osiThread_t *taskIdt = NULL;
 
 
 
@@ -159,9 +160,31 @@ public:
     int m_status; //用户的状态
     CAllGroup m_Group;
 };
+
+#define POCAUDIODATAMAXSIZE (50)
+
+typedef struct
+{
+	uint8_t data[320];
+	uint32_t length;
+} pocAudioData_t;
+
+typedef struct _PocGuiIIdtComAttr_t
+{
+public:
+	MEDIAATTR_s attr;
+	osiThread_t *thread;
+	bool        isReady;
+	POCAUDIOPLAYER_HANDLE   player;
+	POCAUDIORECORDER_HANDLE recorder;
+	//pocAudioData_t pocAudioData[POCAUDIODATAMAXSIZE];
+	uint8_t pocAudioData_read_index;
+	uint8_t pocAudioData_write_index;
+} PocGuiIIdtComAttr_t;
 CIdtUser m_IdtUser;
-POCAUDIOPLAYER_HANDLE   player = 0;
-POCAUDIORECORDER_HANDLE recorder = 0;
+static PocGuiIIdtComAttr_t pocIdtAttr = {0};
+
+
 
 
 
@@ -197,8 +220,12 @@ void callback_IDT_StatusInd(int status, unsigned short usCause)
     if (UT_STATUS_ONLINE == status)
     {
         IDT_StatusSubs((char*)"###", GU_STATUSSUBS_BASIC);
+        m_IdtUser.m_status = 0;
     }
-    m_IdtUser.m_status = status;
+    else
+    {
+	    m_IdtUser.m_status = 0xff;
+    }
 
 	memset(&login_status, 0, sizeof(LvPocGuiIdtCom_login_t));
 	login_status.status = status;
@@ -274,15 +301,11 @@ int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName
 {
     IDT_TRACE("callback_IDT_CallPeerAnswer: pUsrCtx=0x%x, pcPeerNum=%s, pcPeerName=%s, SrvType=%s(%d), pcUserMark=%s, pcUserCallRef=%s",
         pUsrCtx, pcPeerNum, pcPeerName, GetSrvTypeStr(SrvType), SrvType, pcUserMark, pcUserCallRef);
-    if(m_IdtUser.m_status == 1 && recorder != 0)
-    {
-	    OSI_LOGI(0, "[gic] start recorder\n");
-	    pocAudioRecorderReset(recorder);
-	    pocAudioRecorderStart(recorder);
-    }
-    OSI_LOGI(0, "[gic] start recorder 1\n");
-    m_IdtUser.m_status = 2;
-    OSI_LOGI(0, "[gic] start recorder 2\n");
+	if(m_IdtUser.m_status == 3 || m_IdtUser.m_status == 4)
+	{
+	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
+	}
+    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
     //进入通话界面
     return 0;
 }
@@ -324,18 +347,13 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
         //直接接通
         {
 	        OSI_LOGI(0, "[gic] start group call\n");
-            MEDIAATTR_s attr;
-            memset(&attr, 0, sizeof(attr));
-            attr.ucAudioRecv = 1;
-            attr.ucAudioSend = 0;
-            IDT_CallAnswer(m_IdtUser.m_iCallId, &attr, NULL);
+            memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
+            pocIdtAttr.attr.ucAudioRecv = 1;
+            IDT_CallAnswer(m_IdtUser.m_iCallId, &pocIdtAttr.attr, NULL);
             m_IdtUser.m_status = 3;
-            if(player != 0)
-            {
-
-			    OSI_LOGI(0, "[gic] reset player\n");
-	            pocAudioPlayerReset(player);
-            }
+            pocIdtAttr.pocAudioData_read_index = 0;
+            pocIdtAttr.pocAudioData_write_index = 0;
+            lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
         }
         break;
 
@@ -365,10 +383,12 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
     m_IdtUser.m_iRxCount = 0;
     m_IdtUser.m_iTxCount = 0;
     m_IdtUser.m_status = 0;
-    if(player != 0)
-    {
-	    pocAudioPlayerStop(player);
-    }
+
+    pocIdtAttr.pocAudioData_read_index = 0;
+    pocIdtAttr.pocAudioData_write_index = 0;
+
+    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
+    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
     return 0;
 }
 //--------------------------------------------------------------------------------
@@ -404,18 +424,30 @@ int callback_IDT_CallMicInd(void *pUsrCtx, UINT uiInd)
 //--------------------------------------------------------------------------------
 int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCodec, UCHAR *pucBuf, int iLen, DWORD dwTsOfs, DWORD dwTsLen, DWORD dwTs)
 {
-    m_IdtUser.m_iRxCount++;
-    IDT_TRACE("[gic]callback_IDT_CallRecvAudioData: pUsrCtx=0x%x, iLen=%d, m_iRxCount=%d", pUsrCtx, iLen, m_IdtUser.m_iRxCount);
-	if(m_IdtUser.m_status == 3 && player != 0)
+	if(m_IdtUser.m_status == 4 || m_IdtUser.m_status == 3)
 	{
+	    m_IdtUser.m_iRxCount = m_IdtUser.m_iRxCount + 1;
+	    struct timeval tm;
+	    extern int gettimeofday(struct timeval *tv, void *tz);
+	    gettimeofday(&tm, NULL);
+	    OSI_LOGI(0, "[gic]callback_IDT_CallRecvAudioData: m_iRxCount=%d, time=%d", m_IdtUser.m_iRxCount, tm.tv_sec*1000 + tm.tv_usec/1000);
 		OSI_LOGI(0, "[gic] write data player\n");
-		pocAudioPlayerWriteData(player, pucBuf, iLen);
+#if 1
+		pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pucBuf, iLen);
+#else
+		memcpy((void *)(pocIdtAttr.pocAudioData[pocIdtAttr.pocAudioData_write_index].data), (const void *)pucBuf, iLen);
+		pocIdtAttr.pocAudioData[pocIdtAttr.pocAudioData_write_index].length = iLen;
+		pocIdtAttr.pocAudioData_write_index = (pocIdtAttr.pocAudioData_write_index + 1) % POCAUDIODATAMAXSIZE;
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_WRITE_DATA_IND, NULL);
+#endif
 		if(m_IdtUser.m_iRxCount == 10)
 		{
-			OSI_LOGI(0, "[gic] start player on 10\n");
-			pocAudioPlayerStart(player);
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND, NULL);
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_START_REP, NULL);
 		}
 	}
+
     return 0;
 }
 
@@ -649,9 +681,9 @@ void IDT_Entry(void*)
 
     // 0关闭日志,1打开日志
     //g_iLog = 0;
-    g_iLog = 1;
+    g_iLog = 0;
 
-    IDT_CALLBACK_s CallBack;
+    static IDT_CALLBACK_s CallBack;
     memset(&CallBack, 0, sizeof(CallBack));
     CallBack.pfStatusInd        = callback_IDT_StatusInd;
     CallBack.pfGInfoInd         = callback_IDT_GInfoInd;
@@ -671,24 +703,24 @@ void IDT_Entry(void*)
 
     CallBack.pfDbg              = callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"34011", (char*)"34011", 1, &CallBack, 0, 20000, 0);
+    IDT_Start(NULL, 1, (char*)"124.160.11.22", 10000, NULL, 0, (char*)"34018", (char*)"34018", 1, &CallBack, 0, 20000, 0);
 }
 
-static void appTestTaskEntry(void *argument)
+static void pocGuiIdtComTaskEntry(void *argument)
 {
-    int i, iDelay = 10;
 	osiEvent_t event;
 
-    for(i = 0; ; i++)
+    for(int i = 0; i < 10; i++)
     {
-        //不知道为什么,初始化时,不等待一秒以上,会失败
-        if (i == iDelay)//等10秒,拨号成功
-        {
-            IDT_Entry(NULL);
-        }
-    	OSI_LOGE(0, "app main task running = %d", i);
-    	//osiThreadSleep(1000);
-    	if(!osiEventTryWait(taskIdt , &event, 1000))
+	    osiThreadSleep(1000);
+    }
+
+    IDT_Entry(NULL);
+    pocIdtAttr.isReady = true;
+
+    for(; ; )
+    {
+    	if(!osiEventTryWait(pocIdtAttr.thread , &event, 100))
 		{
 			continue;
 		}
@@ -700,6 +732,21 @@ static void appTestTaskEntry(void *argument)
 
 		switch(event.param1)
 		{
+			case LVPOCGUIIDTCOM_SIGNAL_WRITE_DATA_IND:
+			{
+				#if 0
+				if(!(m_IdtUser.m_status == 3 || m_IdtUser.m_status == 4)) break;
+				pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pocIdtAttr.pocAudioData[pocIdtAttr.pocAudioData_read_index].data, pocIdtAttr.pocAudioData[pocIdtAttr.pocAudioData_read_index].length);
+				pocIdtAttr.pocAudioData_read_index = (pocIdtAttr.pocAudioData_read_index + 1) % POCAUDIODATAMAXSIZE;
+				if(!(m_IdtUser.m_status == 3 || m_IdtUser.m_status == 4))
+				{
+					pocIdtAttr.pocAudioData_read_index = 0;
+					pocIdtAttr.pocAudioData_write_index = 0;
+				}
+				#endif
+				break;
+			}
+
 			case LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND:
 			{
 				break;
@@ -708,31 +755,34 @@ static void appTestTaskEntry(void *argument)
 			case LVPOCGUIIDTCOM_SIGNAL_LOGIN_REP:
 			{
 				OSI_LOGI(0, "[gic] LOGIN_REP 1\n");
-				if(player == 0)
+				if(pocIdtAttr.player == 0)
 				{
-					player = pocAudioPlayerCreate(80000);
+					pocIdtAttr.player = pocAudioPlayerCreate(320000);
 				}
+				OSI_LOGI(0, "[gic] LOGIN_REP 2 player <- %d\n", pocIdtAttr.player);
 
-				OSI_LOGI(0, "[gic] LOGIN_REP 2\n");
-
-				if(recorder == 0)
+				if(pocIdtAttr.recorder == 0)
 				{
-					recorder = pocAudioRecorderCreate(80000, 320, 20, lvPocGuiIdtCom_send_data_callback);
+					pocIdtAttr.recorder = pocAudioRecorderCreate(48000, 320, 20, lvPocGuiIdtCom_send_data_callback);
 				}
-				OSI_LOGI(0, "[gic] LOGIN_REP 3\n");
+				OSI_LOGI(0, "[gic] LOGIN_REP 3 recorder  <- %d\n", pocIdtAttr.recorder);
+
+				if(pocIdtAttr.player == 0 || pocIdtAttr.recorder == 0)
+				{
+					pocIdtAttr.isReady = false;
+					osiThreadExit();
+				}
 				break;
 			}
 
 			case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND:
 			{
 				OSI_LOGI(0, "[gic] start speak\n");
-				MEDIAATTR_s attr;
-				memset(&attr, 0, sizeof(MEDIAATTR_s));
-				attr.ucAudioSend = 1;
-				OSI_LOGI(0, "[gic] start speak [%s]\n", (char*)m_IdtUser.m_Group.m_Group[0].m_ucGNum);
+				memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
+				pocIdtAttr.attr.ucAudioSend = 1;
 				m_IdtUser.m_iCallId = IDT_CallMakeOut((char*)m_IdtUser.m_Group.m_Group[0].m_ucGNum,
 															SRV_TYPE_CONF,
-															&attr,
+															&pocIdtAttr.attr,
 															NULL,
 															NULL,
 															1,
@@ -755,11 +805,10 @@ static void appTestTaskEntry(void *argument)
 				OSI_LOGI(0, "[gic] stop speak\n");
 				IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO);
 		        m_IdtUser.m_iCallId = -1;
-		        if(recorder != 0)
-		        {
-			        pocAudioRecorderStop(recorder);
-		        }
+		        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 		        m_IdtUser.m_status = 0;
+				m_IdtUser.m_iRxCount = 0;
+				m_IdtUser.m_iTxCount = 0;
 				break;
 			}
 
@@ -771,8 +820,6 @@ static void appTestTaskEntry(void *argument)
 			case LVPOCGUIIDTCOM_SIGNAL_LISTEN_START_REP:
 			{
 				OSI_LOGI(0, "[gic] start listen\n");
-				m_IdtUser.m_iRxCount = 0;
-				m_IdtUser.m_iTxCount = 0;
 				break;
 			}
 
@@ -782,41 +829,64 @@ static void appTestTaskEntry(void *argument)
 				break;
 			}
 
+			case LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND:
+			{
+				pocAudioPlayerStop(pocIdtAttr.player);
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND:
+			{
+				audevStopPlay();
+				audevStopRecord();
+				OSI_LOGI(0, "[gic][play][ctr] 2");
+				pocAudioPlayerStart(pocIdtAttr.player);
+				m_IdtUser.m_status = 4;
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND:
+			{
+				pocAudioRecorderStop(pocIdtAttr.recorder);
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND:
+			{
+				audevStopPlay();
+				audevStopRecord();
+				pocAudioRecorderStart(pocIdtAttr.recorder);
+				m_IdtUser.m_status = 2;
+				break;
+			}
+
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");
 				break;
 		}
-        if (i >= 1000000)
-        {
-            i = iDelay + 1;
-        }
     }
 }
 
-extern "C" void appTestStart(void)
+extern "C" void pocGuiIdtComStart(void)
 {
-#if 0
     OSI_LOGE(0, "----------------------------------------------------");
-    taskIdt = osiThreadCreate(
-		"IdtTaskEntry", IdtTaskEntry, NULL,
+    pocIdtAttr.thread = osiThreadCreate(
+		"pocGuiIdtCom", pocGuiIdtComTaskEntry, NULL,
 		APPTEST_THREAD_PRIORITY, APPTEST_STACK_SIZE,
 		APPTEST_EVENT_QUEUE_SIZE);
-    return;
-#else
-    OSI_LOGE(0, "----------------------------------------------------");
-    taskIdt = osiThreadCreate(
-		"apptest", appTestTaskEntry, NULL,
-		APPTEST_THREAD_PRIORITY, APPTEST_STACK_SIZE,
-		APPTEST_EVENT_QUEUE_SIZE);
-#endif
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 {
 	OSI_LOGI(0, "[gic] checkout send data conditions\n");
 	OSI_LOGI(0, "[gic] data <- 0x%p  length <- %d \n", data, length);
-    if (recorder == 0 || m_IdtUser.m_iCallId == -1 || data == NULL || length < 1)
+    if (pocIdtAttr.recorder == 0 || m_IdtUser.m_iCallId == -1 || data == NULL || length < 1)
     {
+	    return;
+    }
+    if(m_IdtUser.m_status != 2)
+    {
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 	    return;
     }
 	OSI_LOGI(0, "[gic] send data to server\n");
@@ -828,17 +898,18 @@ static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 						    length,
 						    0);
 	#endif
-    m_IdtUser.m_iTxCount += 1;
+    m_IdtUser.m_iTxCount = m_IdtUser.m_iTxCount + 1;
 }
 
 extern "C" void lvPocGuiIdtCom_Init(void)
 {
-	appTestStart();
+	memset(&pocIdtAttr, 0, sizeof(PocGuiIIdtComAttr_t));
+	pocGuiIdtComStart();
 }
 
 extern "C" bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
 {
-    if (taskIdt == NULL)
+    if (pocIdtAttr.thread == NULL || pocIdtAttr.isReady == false)
     {
 	    return false;
     }
@@ -848,7 +919,7 @@ extern "C" bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ct
 	event.id = 100;
 	event.param1 = signal;
 	event.param2 = (uint32_t)ctx;
-	return osiEventSend(taskIdt, &event);
+	return osiEventSend(pocIdtAttr.thread, &event);
 }
 
 extern "C" void lvPocGuiIdtCom_log(void)
