@@ -25,10 +25,11 @@ lv_obj_t * lv_poc_notation_create(void)
 	{
 		return lv_poc_notationwindow_obj;
 	}
+	poc_setting_conf = lv_poc_setting_conf_read();
 	memset(&lv_poc_notation_style, 0, sizeof(lv_style_t));
     lv_style_copy(&lv_poc_notation_style, &lv_style_pretty_color);
     lv_poc_notation_style.text.color = LV_COLOR_BLACK;
-    lv_poc_notation_style.text.font = &lv_font_dejavu_20;
+    lv_poc_notation_style.text.font = (lv_font_t *)(poc_setting_conf->font.idle_page2_msg_font);
     lv_poc_notation_style.text.opa = 255;
     lv_poc_notation_style.body.main_color = LV_COLOR_BLUE;
     lv_poc_notation_style.body.grad_color = LV_COLOR_BLUE;
@@ -226,13 +227,13 @@ bool lv_poc_notation_msg(int msg_type, const uint8_t *text_1, const uint8_t *tex
 	{
 		case 1:
 		{
-			lv_poc_notation_listenning(text_1, text_2);
+			lv_poc_notation_listenning((const int8_t *)text_1, (const int8_t *)text_2);
 			break;
 		}
 
 		case 2:
 		{
-			lv_poc_notation_speaking(text_1, text_2);
+			lv_poc_notation_speaking((const int8_t *)text_1, (const int8_t *)text_2);
 			break;
 		}
 
