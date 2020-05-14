@@ -47,6 +47,18 @@
 #cmakedefine CONFIG_POC_GUI_SUPPORT
 
 /**
+ * Wheth the POC start animation is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_START_ANIMATION_SUPPORT
+
+/**
+ * Wheth the POC gui choice sim card is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_CHOICE_SIM_SUPPORT
+
+/**
  * Wheth the POC audio data buff is enabled more than 3.
  *
  */

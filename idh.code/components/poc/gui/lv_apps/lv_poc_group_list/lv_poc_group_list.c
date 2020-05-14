@@ -21,6 +21,8 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
+static void lv_poc_get_group_list_cb(int result_type);
+
 
 
 static lv_obj_t * activity_list;
@@ -180,6 +182,14 @@ static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_des
 	return true;
 }
 
+static void lv_poc_get_group_list_cb(int result_type)
+{
+	if(result_type == 1)
+	{
+		lv_poc_group_list_refresh(NULL);
+	}
+}
+
 
 
 
@@ -195,6 +205,12 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     }
 
 	group_list = (lv_poc_group_list_t *)lv_mem_alloc(sizeof(lv_poc_group_list_t));
+
+	if(group_list == NULL)
+	{
+		return;
+	}
+
 	group_list->group_list = NULL;
 	group_list->group_number = 0;
 
@@ -238,7 +254,7 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 
     if(group_list_obj == NULL)
     {
-
+		lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb);
     }
     else
     {

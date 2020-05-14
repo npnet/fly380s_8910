@@ -5,11 +5,6 @@
 extern "C" {
 #endif
 
-typedef struct {
-    unsigned int group_number;
-    list_element_t * group_list;
-} lv_poc_group_list_t;
-
 void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj);
 
 lv_poc_status_t lv_poc_group_list_add(lv_poc_group_list_t *group_list_obj, const char * name, void * information);

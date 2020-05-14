@@ -1160,6 +1160,17 @@ poc_set_green_status(bool ledstatus)
 }
 
 /*
+	  name : lv_poc_get_group_list
+	  param :member_list{@group information} func{@callback GUI}
+	  date : 2020-05-14
+*/
+bool
+lv_poc_get_group_list(lv_poc_group_list_t * member_list, get_group_list_cb func)
+{
+	return true;
+}
+
+/*
 	  name : lv_poc_send_obtain_member_list_msg
   	  describe:发送消息，从服务器获取成员信息
 	  param :
@@ -1212,7 +1223,7 @@ lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_
 	memset(member_list,0,sizeof(lv_poc_member_list_t));//初始化
 
 	OSI_LOGE(0, "[lml]member is = %d",Msg_pGroup->dwNum);
-	
+
 	if(member_list == NULL || func == NULL)
 	{
 		return false;
@@ -1221,9 +1232,9 @@ lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_
 	if(type == 1 || type == 2 || type == 3)//获取全部成员
 	{
 		for(num=0;num<Msg_pGroup->dwNum;num++)
-		{	
+		{
 			pElement = (list_element_t *)lv_mem_alloc(sizeof(list_element_t));
-			
+
 			if(pElement == NULL)
 			{
 				if(type == 2 ||type == 1)
@@ -1255,7 +1266,7 @@ lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_
 			strcpy(pElement->name, (char *)Msg_pGroup->member[num].ucName);
 			if(Msg_pGroup->member[num].ucStatus==1 && (type == 2 ||type == 1))//在线
 			{
-				member_list->online_number++;//计算在线人数		
+				member_list->online_number++;//计算在线人数
 				if(member_list->online_list != NULL)
 				{
 					pCur->next = pElement;
@@ -1263,7 +1274,7 @@ lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_
 				else
 				{
 					member_list->online_list = pElement;
-				}		
+				}
 			}
 
 			if(Msg_pGroup->member[num].ucStatus==0 && (type == 3 ||type == 1))//离线
@@ -1277,16 +1288,16 @@ lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_
 				{
 					member_list->offline_list = pElement;
 				}
-			}	
-			
+			}
+
 			pCur = pElement;
-			pElement = NULL;			
+			pElement = NULL;
 		}
 		func(1);//发送消息
 		return true;
 	}
 	func(0);//发送消息
-	
+
 	return true;
 }
 
@@ -1295,7 +1306,7 @@ lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_
 	  param :mem_type {@1:全部成员 2:在线成员 3:离线成员@}
 	  date : 2020-05-13
 */
-bool 
+bool
 lv_poc_get_member_list_from_msg(int mem_type)
 {
 	//分配内存及初始化
