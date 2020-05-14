@@ -41,6 +41,24 @@ config POC_GUI_SUPPORT
     default y
     help
         poc gui should be supported.
+
+config POC_GUI_CHOICE_SIM_SUPPORT
+    bool "POC gui choice sim card supported"
+    default n
+    help
+        poc gui should be supported.
+
+config POC_GUI_START_ANIMATION_SUPPORT
+    bool "POC gui start animation supported"
+    default n
+    help
+        poc gui should be supported.
+
+config POC_GUI_CHOICE_SIM_SUPPORT
+    bool "POC gui choice sim card supported"
+    default n
+    help
+        poc gui should be supported.
 		
 config POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE
     int "receive idt data by buff"

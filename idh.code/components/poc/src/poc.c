@@ -43,6 +43,7 @@ static void pocIdtStartHandleTask(void * ctx)
 	osiThreadExit();
 }
 
+#ifdef CONFIG_POC_GUI_START_ANIMATION_SUPPORT
 static void pocStartAnimation(void)
 {
 	lv_obj_t * bg = lv_obj_create(lv_scr_act(), NULL);
@@ -53,11 +54,14 @@ static void pocStartAnimation(void)
 	osiThreadSleep(3000);
 	lv_obj_del(bg);
 }
+#endif
 
 #ifdef CONFIG_POC_GUI_SUPPORT
 static void pocLvglStart(void)
 {
-	//pocStartAnimation();
+#ifdef CONFIG_POC_GUI_START_ANIMATION_SUPPORT
+	pocStartAnimation();
+#endif
 
 	lv_poc_create_idle();
 

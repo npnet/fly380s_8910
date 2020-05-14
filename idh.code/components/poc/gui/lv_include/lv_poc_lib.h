@@ -41,6 +41,18 @@ typedef struct Msg_GData_s
     Msg_GROUP_MEMBER_s  member[1024];   //组成员
 }Msg_GData_s;
 
+/*
+	  name :回调函数
+	  param :
+	  date : 2020-05-12
+*/
+typedef void (*get_group_list_cb)(int result_type);
+
+typedef struct
+{
+	get_group_list_cb gui_list_cb;
+} lv_poc_get_group_list_msg_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -375,6 +387,14 @@ bool
 poc_set_green_status(bool ledstatus);
 
 /*
+	  name : lv_poc_get_group_list
+	  param :member_list{@group information} func{@callback GUI}
+	  date : 2020-05-14
+*/
+bool
+lv_poc_get_group_list(lv_poc_group_list_t * member_list, get_group_list_cb func);
+
+/*
 	  name :回调函数
 	  param :
 	  date : 2020-05-12
@@ -386,7 +406,7 @@ typedef void (*get_member_list_cb)(int msg_type);
 	  param :mem_type {@1:全部成员 2:在线成员 3:离线成员@}
 	  date : 2020-05-13
 */
-bool 
+bool
 lv_poc_get_member_list_from_msg(int mem_type);
 
 /*

@@ -5,14 +5,15 @@ extern "C" {
 #include "lv_include/lv_poc.h"
 
 typedef void (* lv_poc_setting_item_func_t)(lv_obj_t * obj);
-#define LV_POC_SETTING_ITEMS_NUM (11)
-
+#define LV_POC_SETTING_ITEMS_NUM (12)
 static lv_poc_win_t * poc_setting_win;
 
 static const char * bright_str[POC_MAX_BRIGHT] = {"0","1","2","3","4","5","6","7","8"};
 static const char * bright_time_str[] = {"5秒","15秒","30秒","1分钟","2分钟","5分钟","10分钟","30分钟"};
 static const char * theme_str[] = {"白色","黑色"};
+#ifdef CONFIG_POC_GUI_CHOICE_SIM_SUPPORT
 static const char * main_sim_str[] = {"卡1","卡2"};
+#endif
 static const char * net_type_str[] = {"4G/3G/2G","仅3G/2G"};
 static const char * lv_poc_setting_title_text = "设置";
 static const char * lv_poc_setting_btn_text_btn_voice = "按键音";
@@ -24,7 +25,9 @@ static const char * lv_poc_setting_btn_text_tourch = "手电筒";
 static const char * lv_poc_setting_btn_text_brightness = "亮度";
 static const char * lv_poc_setting_btn_text_brightness_time = "亮屏时间";
 static const char * lv_poc_setting_btn_text_theme_switch = "主题切换";
+#ifdef CONFIG_POC_GUI_CHOICE_SIM_SUPPORT
 static const char * lv_poc_setting_btn_text_sim_switch = "主卡选择";
+#endif
 static const char * lv_poc_setting_btn_text_net_switch = "网络切换";
 static char is_poc_setting_update_UI_task_running = 0;
 char is_refresh_UI_for_poc = 0;
@@ -201,10 +204,12 @@ static void lv_poc_setting_theme_switch_btn_cb(lv_obj_t * obj)
 	lv_poc_theme_switch_open();
 }
 
+#ifdef CONFIG_POC_GUI_CHOICE_SIM_SUPPORT
 static void lv_poc_setting_sim_switch_btn_cb(lv_obj_t * obj)
 {
 	lv_poc_main_sim_choice_open();
 }
+#endif
 
 static void lv_poc_setting_net_switch_btn_cb(lv_obj_t * obj)
 {
@@ -463,7 +468,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
-#if 0
+#ifdef CONFIG_POC_GUI_CHOICE_SIM_SUPPORT
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_sim_switch);
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
@@ -505,8 +510,8 @@ static void lv_poc_setting_pressed_cb(lv_obj_t * obj, lv_event_t event)
     if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
 	    int index = lv_list_get_btn_index((lv_obj_t *)poc_setting_win->display_obj, obj);
-	    char * text = lv_list_get_btn_text(obj);
-	    poc_broadcast_play_rep(text, strlen(text), poc_setting_conf->voice_broadcast_switch, false);
+	    char * text = (char *)lv_list_get_btn_text((const lv_obj_t *)obj);
+	    poc_broadcast_play_rep((uint8_t *)text, strlen(text), poc_setting_conf->voice_broadcast_switch, false);
 	    setting_selected_item = index;
 	    lv_poc_setting_item_func_t func = lv_poc_setting_items_funcs[index];
 	    func(obj);
