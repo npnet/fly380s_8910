@@ -46,4 +46,10 @@
  */
 #cmakedefine CONFIG_POC_GUI_SUPPORT
 
+/**
+ * Wheth the POC audio data buff is enabled more than 3.
+ *
+ */
+#cmakedefine CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE @CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE@
+
 #endif
