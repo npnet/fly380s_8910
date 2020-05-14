@@ -8,6 +8,9 @@
 #include "hwregs.h"
 #include "drv_gpio.h"
 #include "hal_iomux.h"
+#include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
+#include "guiIdtCom_api.h"
+
 
 enum {
 	poc_torch_led   = 2,//IO touch
@@ -16,6 +19,27 @@ enum {
 	poc_horn_sound  = 9,//IO horn
 };
 
+//字符串长度:
+// 1.32字节，号码，参考号(当前时间+序号,包括呼叫参考号等唯一标识，在一个机器内唯一，不同机器不唯一)
+typedef unsigned char UC_32[32];
+// 2.64字节，用户名，密码，鉴权参数
+typedef unsigned char UC_64[64];
+
+//通过消息获取的群组信息
+typedef struct Msg_GROUP_MEMBER_s
+{
+    UC_32           ucNum;              //号码
+    UC_64           ucName;             //名字
+
+    uint8_t         ucStatus;           //主状态 UT_STATUS_OFFLINE之类
+}Msg_GROUP_MEMBER_s;
+
+//通过消息获取的组数据
+typedef struct Msg_GData_s
+{
+    unsigned long dwNum;                      //用户个数
+    Msg_GROUP_MEMBER_s  member[1024];   //组成员
+}Msg_GData_s;
 
 #ifdef __cplusplus
 extern "C" {
@@ -350,6 +374,47 @@ poc_set_red_status(bool ledstatus);
 bool
 poc_set_green_status(bool ledstatus);
 
+/*
+	  name :回调函数
+	  param :
+	  date : 2020-05-12
+*/
+typedef void (*get_member_list_cb)(int msg_type);
+
+/*
+	  name : lv_poc_get_member_list_from_msg
+	  param :mem_type {@1:全部成员 2:在线成员 3:离线成员@}
+	  date : 2020-05-13
+*/
+bool 
+lv_poc_get_member_list_from_msg(int mem_type);
+
+/*
+	  name : lv_poc_get_member_list
+	  param :member_list{@member information} type{@status } func{@callback GUI}
+	  date : 2020-05-12
+*/
+bool
+lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_list_cb func);
+
+
+/*
+	  name : lv_poc_send_member_list_msg
+	  describe:发送消息，从服务器获取成员信息
+	  param :
+	  date : 2020-05-13
+*/
+bool
+lv_poc_send_obtain_member_list_msg(void);
+
+/*
+	  name : lv_poc_send_deal_member_list_msg
+	  describe:已经从服务器获取到成员信息，发送消息，可以开始做处理
+	  param :
+	  date : 2020-05-14
+*/
+bool
+lv_poc_send_deal_member_list_msg(void);
 
 /*
 	  name : lv_poc_notation_msg

@@ -24,7 +24,7 @@ static lv_poc_win_t * activity_win;
 
 static bool * online_list_array;
 
-static lv_poc_member_list_t *member_list;;
+static lv_poc_member_list_t *member_list;
 
 lv_poc_activity_t * poc_build_group_activity;
 
