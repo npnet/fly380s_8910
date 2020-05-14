@@ -43,8 +43,6 @@ lv_poc_status_t lv_poc_member_list_is_exists(lv_poc_member_list_t *member_list_o
 
 lv_poc_status_t lv_poc_member_list_get_state(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 
-void lv_pov_member_list_get_list_cb(int msg_type);
-
 #ifdef __cplusplus
 }
 #endif

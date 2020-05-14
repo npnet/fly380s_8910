@@ -11,7 +11,6 @@
 #include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
 #include "guiIdtCom_api.h"
 
-
 enum {
 	poc_torch_led   = 2,//IO touch
 	poc_red_led     = 10,//IO redled
@@ -52,6 +51,8 @@ typedef struct
 {
 	get_group_list_cb gui_list_cb;
 } lv_poc_get_group_list_msg_t;
+
+extern Msg_GData_s *Msg_pGroup;//组成员结构体
 
 #ifdef __cplusplus
 extern "C" {
@@ -402,39 +403,12 @@ lv_poc_get_group_list(lv_poc_group_list_t * member_list, get_group_list_cb func)
 typedef void (*get_member_list_cb)(int msg_type);
 
 /*
-	  name : lv_poc_get_member_list_from_msg
-	  param :mem_type {@1:全部成员 2:在线成员 3:离线成员@}
-	  date : 2020-05-13
-*/
-bool
-lv_poc_get_member_list_from_msg(int mem_type);
-
-/*
 	  name : lv_poc_get_member_list
 	  param :member_list{@member information} type{@status } func{@callback GUI}
 	  date : 2020-05-12
 */
 bool
 lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_list_cb func);
-
-
-/*
-	  name : lv_poc_send_member_list_msg
-	  describe:发送消息，从服务器获取成员信息
-	  param :
-	  date : 2020-05-13
-*/
-bool
-lv_poc_send_obtain_member_list_msg(void);
-
-/*
-	  name : lv_poc_send_deal_member_list_msg
-	  describe:已经从服务器获取到成员信息，发送消息，可以开始做处理
-	  param :
-	  date : 2020-05-14
-*/
-bool
-lv_poc_send_deal_member_list_msg(void);
 
 /*
 	  name : lv_poc_notation_msg

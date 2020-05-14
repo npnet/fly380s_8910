@@ -21,10 +21,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-static Msg_GData_s *Msg_pGroup = NULL;//组成员结构体
-static lv_poc_member_list_t * lv_poc_member_list_success = NULL;//成员列表
-
-
 static nv_poc_setting_msg_t poc_setting_conf_local = {0};
 static nv_poc_theme_msg_node_t theme_white = {0};
 static nv_poc_theme_msg_node_t theme_black = {0};
@@ -38,6 +34,9 @@ static drvGpio_t * poc_keypad_led_gpio = NULL;
 static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
 drvGpioConfig_t* configport = NULL;
+
+Msg_GData_s *Msg_pGroup;//组成员结构体
+
 
 
 /*
@@ -1171,42 +1170,6 @@ lv_poc_get_group_list(lv_poc_group_list_t * member_list, get_group_list_cb func)
 }
 
 /*
-	  name : lv_poc_send_obtain_member_list_msg
-  	  describe:发送消息，从服务器获取成员信息
-	  param :
-	  date : 2020-05-14
-*/
-bool
-lv_poc_send_obtain_member_list_msg(void)
-{
-	//分配内存及初始化
-	Msg_pGroup = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
-	if(Msg_pGroup == NULL)
-	{
-		return false;
-	}
-	memset(Msg_pGroup, 0, sizeof(Msg_GData_s));
-
-	OSI_LOGE(0, "[lml]start obtain member from server msg send ok");
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND,Msg_pGroup);//发送消息获取成员列表
-	return true;
-}
-
-/*
-	  name : lv_poc_send_deal_member_list_msg
-  	  describe:已经从服务器获取到成员信息，发送消息，可以开始做处理
-	  param :
-	  date : 2020-05-14
-*/
-bool
-lv_poc_send_deal_member_list_msg(void)
-{
-	OSI_LOGE(0, "[lml]request processes the member list msg send ok");
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP,NULL);//发送消息已经完成获取成员列表
-	return true;
-}
-
-/*
 	  name : lv_poc_get_member_list
 	  param :member_list{@member information} type{@status } func{@callback GUI}
 	  date : 2020-05-12
@@ -1215,7 +1178,7 @@ bool
 lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_list_cb func)
 {
 	uint8_t num=0;
-	list_element_t * pElement = NULL;//GUI
+	list_element_t * pElement = NULL;
 	list_element_t * pCur = NULL;
 
 	OSI_LOGE(0, "[lml]member obtains ok");
@@ -1293,30 +1256,12 @@ lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_
 			pCur = pElement;
 			pElement = NULL;
 		}
+		OSI_LOGE(0, "[lml]offline member is = %d",member_list->offline_number);
+		OSI_LOGE(0, "[lml]online member is = %d",member_list->online_number);
 		func(1);//发送消息
 		return true;
 	}
 	func(0);//发送消息
-
-	return true;
-}
-
-/*
-	  name : lv_poc_get_member_list_from_msg
-	  param :mem_type {@1:全部成员 2:在线成员 3:离线成员@}
-	  date : 2020-05-13
-*/
-bool
-lv_poc_get_member_list_from_msg(int mem_type)
-{
-	//分配内存及初始化
-	lv_poc_member_list_success = (lv_poc_member_list_t *)malloc( sizeof(lv_poc_member_list_t));
-	if(lv_poc_member_list_success == NULL)
-	{
-		return false;
-	}
-	memset(lv_poc_member_list_success, 0, sizeof(lv_poc_member_list_t));
-	lv_poc_get_member_list(lv_poc_member_list_success,mem_type,lv_pov_member_list_get_list_cb);
 
 	return true;
 }
