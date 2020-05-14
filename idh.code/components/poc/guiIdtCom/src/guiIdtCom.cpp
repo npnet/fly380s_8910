@@ -29,6 +29,7 @@
 #include "guiIdtCom_api.h"
 #include "audio_device.h"
 #include <sys/time.h>
+#include "lv_include/lv_poc_lib.h"
 
 #define GUIIDTCOM_DEBUG (0)
 
@@ -43,8 +44,8 @@
 #define APPTEST_STACK_SIZE (8192 * 4)
 #define APPTEST_EVENT_QUEUE_SIZE (64)
 
-
-
+static GData_s *pGroup=NULL;//成员列表结构体
+static uint32_t pGroup_member_number;//成员数量
 
 char *GetCauseStr(USHORT usCause);
 char *GetOamOptStr(DWORD dwOpt);
@@ -542,6 +543,12 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
             return;
         // 持续查询剩下的组成员
         Func_GQueryU(dwSn, m_IdtUser.m_Group.m_Group[dwSn].m_ucGNum);
+
+		/*添加查询组成员是否完成 
+		  通过消息发送触发调用
+		  日期：5.13	
+		*/
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP,NULL);//发送消息已经完成获取成员列表
     }
 }
 
@@ -709,7 +716,7 @@ void IDT_Entry(void*)
 
     CallBack.pfDbg              = callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"124.160.11.22", 10000, NULL, 0, (char*)"34018", (char*)"34018", 1, &CallBack, 0, 20000, 0);
+    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"34012", (char*)"34012", 1, &CallBack, 0, 20000, 0);
 }
 
 static void pocGuiIdtComTaskEntry(void *argument)
@@ -727,7 +734,7 @@ static void pocGuiIdtComTaskEntry(void *argument)
     for(; ; )
     {
     	if(!osiEventTryWait(pocIdtAttr.thread , &event, 100))
-		{
+		{			
 			continue;
 		}
 
@@ -866,6 +873,32 @@ static void pocGuiIdtComTaskEntry(void *argument)
 				break;
 			}
 
+			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND://发送获取成员列表
+			{
+				OSI_LOGI(0, "[lml] start obtain member\n");
+				if(event.param2 == false)
+				{
+					break;
+				}
+				
+				Msg_GData_s * data = (Msg_GData_s *)event.param2;
+				//复制数据
+				data->dwNum=pGroup->dwNum;
+				for(pGroup_member_number=0;pGroup_member_number<data->dwNum;pGroup_member_number++)
+				{
+					strcpy((char *)data->member[pGroup_member_number].ucName,(char *)pGroup->member[pGroup_member_number].ucName);
+					strcpy((char *)data->member[pGroup_member_number].ucNum,(char *)pGroup->member[pGroup_member_number].ucNum);
+					data->member[pGroup_member_number].ucStatus=pGroup->member[pGroup_member_number].ucStatus;//用户状态
+				}	
+			
+				break;
+			}
+			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP://成功获取成员列表
+			{
+				OSI_LOGI(0, "[lml] successfully obtained the member list\n");
+				lv_poc_get_member_list_from_msg(1);
+				break;
+			}
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");
 				break;

@@ -72,7 +72,6 @@ bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
 
 void lvPocGuiIdtCom_log(void);
 
-
 OSI_EXTERN_C_END
 
 #endif
