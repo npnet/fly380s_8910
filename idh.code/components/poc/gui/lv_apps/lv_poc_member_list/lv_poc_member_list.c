@@ -7,6 +7,9 @@ extern "C" {
 #include "lv_include/lv_poc.h"
 #include <stdlib.h>
 #include <string.h>
+#include "guiIdtCom_api.h"
+#include "lv_objx/lv_poc_obj/lv_poc_obj.h"
+
 
 static lv_poc_member_list_t * lv_poc_member_list_obj;
 
@@ -24,6 +27,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 static bool lv_poc_member_list_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
+//static void lv_pov_member_list_get_list_cb(int msg_type);
 
 
 static lv_obj_t * activity_list;
@@ -124,7 +128,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 				}
 
 				case LV_GROUP_KEY_DOWN:
-
+			
 				case LV_GROUP_KEY_UP:
 				{
 					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
@@ -133,13 +137,13 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_GP:
 				{
-
+					
 					break;
 				}
 
 				case LV_GROUP_KEY_MB:
 				{
-
+					
 					break;
 				}
 
@@ -194,8 +198,19 @@ static bool lv_poc_member_list_design_func(struct _lv_obj_t * obj, const lv_area
 	return true;
 }
 
-
-
+//处理成员列表，GUI显示
+void lv_pov_member_list_get_list_cb(int msg_type)
+{
+	//add your information
+	if(msg_type==1)
+	{
+		OSI_LOGE(0, "[lml]callback msg ok");
+	}
+	else
+	{
+		OSI_LOGE(0, "[lml]callback msg falied");
+	}	
+}
 
 void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, IN bool hide_offline)
 {
