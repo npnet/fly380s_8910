@@ -161,13 +161,13 @@ public:
     CAllGroup m_Group;
 };
 
-#define POCAUDIODATAMAXSIZE (50)
-
+#if CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE > 3
 typedef struct
 {
 	uint8_t data[320];
 	uint32_t length;
 } pocAudioData_t;
+#endif
 
 typedef struct _PocGuiIIdtComAttr_t
 {
@@ -177,9 +177,11 @@ public:
 	bool        isReady;
 	POCAUDIOPLAYER_HANDLE   player;
 	POCAUDIORECORDER_HANDLE recorder;
-	//pocAudioData_t pocAudioData[POCAUDIODATAMAXSIZE];
+#if CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE > 3
+	pocAudioData_t pocAudioData[CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE];
 	uint8_t pocAudioData_read_index;
 	uint8_t pocAudioData_write_index;
+#endif
 } PocGuiIIdtComAttr_t;
 CIdtUser m_IdtUser;
 static PocGuiIIdtComAttr_t pocIdtAttr = {0};
@@ -351,8 +353,10 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
             pocIdtAttr.attr.ucAudioRecv = 1;
             IDT_CallAnswer(m_IdtUser.m_iCallId, &pocIdtAttr.attr, NULL);
             m_IdtUser.m_status = 3;
+#if CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE > 3
             pocIdtAttr.pocAudioData_read_index = 0;
             pocIdtAttr.pocAudioData_write_index = 0;
+#endif
             lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
         }
         break;
@@ -384,8 +388,10 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
     m_IdtUser.m_iTxCount = 0;
     m_IdtUser.m_status = 0;
 
+#if CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE > 3
     pocIdtAttr.pocAudioData_read_index = 0;
     pocIdtAttr.pocAudioData_write_index = 0;
+#endif
 
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
@@ -432,12 +438,12 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 	    gettimeofday(&tm, NULL);
 	    OSI_LOGI(0, "[gic]callback_IDT_CallRecvAudioData: m_iRxCount=%d, time=%d", m_IdtUser.m_iRxCount, tm.tv_sec*1000 + tm.tv_usec/1000);
 		OSI_LOGI(0, "[gic] write data player\n");
-#if 1
+#if CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE < 4
 		pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pucBuf, iLen);
 #else
 		memcpy((void *)(pocIdtAttr.pocAudioData[pocIdtAttr.pocAudioData_write_index].data), (const void *)pucBuf, iLen);
 		pocIdtAttr.pocAudioData[pocIdtAttr.pocAudioData_write_index].length = iLen;
-		pocIdtAttr.pocAudioData_write_index = (pocIdtAttr.pocAudioData_write_index + 1) % POCAUDIODATAMAXSIZE;
+		pocIdtAttr.pocAudioData_write_index = (pocIdtAttr.pocAudioData_write_index + 1) % CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE;
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_WRITE_DATA_IND, NULL);
 #endif
 		if(m_IdtUser.m_iRxCount == 10)
@@ -734,16 +740,16 @@ static void pocGuiIdtComTaskEntry(void *argument)
 		{
 			case LVPOCGUIIDTCOM_SIGNAL_WRITE_DATA_IND:
 			{
-				#if 0
+#if CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE > 3
 				if(!(m_IdtUser.m_status == 3 || m_IdtUser.m_status == 4)) break;
 				pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pocIdtAttr.pocAudioData[pocIdtAttr.pocAudioData_read_index].data, pocIdtAttr.pocAudioData[pocIdtAttr.pocAudioData_read_index].length);
-				pocIdtAttr.pocAudioData_read_index = (pocIdtAttr.pocAudioData_read_index + 1) % POCAUDIODATAMAXSIZE;
+				pocIdtAttr.pocAudioData_read_index = (pocIdtAttr.pocAudioData_read_index + 1) % CONFIG_POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE;
 				if(!(m_IdtUser.m_status == 3 || m_IdtUser.m_status == 4))
 				{
 					pocIdtAttr.pocAudioData_read_index = 0;
 					pocIdtAttr.pocAudioData_write_index = 0;
 				}
-				#endif
+#endif
 				break;
 			}
 
