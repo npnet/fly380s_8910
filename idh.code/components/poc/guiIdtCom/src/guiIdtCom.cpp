@@ -44,14 +44,12 @@
 #define APPTEST_STACK_SIZE (8192 * 4)
 #define APPTEST_EVENT_QUEUE_SIZE (64)
 
-static GData_s *pGroup=NULL;//成员列表结构体
-static uint32_t pGroup_member_number;//成员数量
-
 char *GetCauseStr(USHORT usCause);
 char *GetOamOptStr(DWORD dwOpt);
 char *GetSrvTypeStr(SRV_TYPE_e SrvType);
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length);
 
+static uint32_t pGroup_member_number;//成员数量
 
 //--------------------------------------------------------------------------------
 //      TRACE小函数
@@ -524,7 +522,27 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
 
     IDT_TRACE("callback_IDT_GOptRsp: dwOptCode=%s(%d), dwSn=%d, wRes=%s(%d), pGroup->ucNum=%s, pGroup->dwNum=%d",
         GetOamOptStr(dwOptCode), dwOptCode, dwSn, GetCauseStr(wRes), wRes, pGroup->ucNum, pGroup->dwNum);
-    if (OPT_G_QUERYUSER == dwOptCode)
+
+	/*获取服务器成员*/
+
+	Msg_pGroup = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
+	if(Msg_pGroup != NULL)
+	{
+		memset(Msg_pGroup, 0, sizeof(Msg_GData_s));
+
+		Msg_pGroup->dwNum=pGroup->dwNum;
+		for(pGroup_member_number=0;pGroup_member_number<Msg_pGroup->dwNum;pGroup_member_number++)
+		{
+			strcpy((char *)Msg_pGroup->member[pGroup_member_number].ucName,(char *)pGroup->member[pGroup_member_number].ucName);
+			strcpy((char *)Msg_pGroup->member[pGroup_member_number].ucNum,(char *)pGroup->member[pGroup_member_number].ucNum);
+			Msg_pGroup->member[pGroup_member_number].ucStatus=pGroup->member[pGroup_member_number].ucStatus;//用户状态
+		}
+
+		OSI_LOGI(0, "[lml] successfully obtained the member list\n");
+	}
+	/*@ 完成 @*/
+
+	if (OPT_G_QUERYUSER == dwOptCode)
     {
         if (CAUSE_ZERO != wRes)
             return;
@@ -543,12 +561,6 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
             return;
         // 持续查询剩下的组成员
         Func_GQueryU(dwSn, m_IdtUser.m_Group.m_Group[dwSn].m_ucGNum);
-
-		/*添加查询组成员是否完成 
-		  通过消息发送触发调用
-		  日期：5.13	
-		*/
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP,NULL);//发送消息已经完成获取成员列表
     }
 }
 
@@ -716,7 +728,7 @@ void IDT_Entry(void*)
 
     CallBack.pfDbg              = callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"34012", (char*)"34012", 1, &CallBack, 0, 20000, 0);
+    IDT_Start(NULL, 1, (char*)"124.160.11.22", 10000, NULL, 0, (char*)"34012", (char*)"34012", 1, &CallBack, 0, 20000, 0);
 }
 
 static void pocGuiIdtComTaskEntry(void *argument)
@@ -734,7 +746,7 @@ static void pocGuiIdtComTaskEntry(void *argument)
     for(; ; )
     {
     	if(!osiEventTryWait(pocIdtAttr.thread , &event, 100))
-		{			
+		{
 			continue;
 		}
 
@@ -873,30 +885,14 @@ static void pocGuiIdtComTaskEntry(void *argument)
 				break;
 			}
 
-			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND://发送获取成员列表
+			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND:
 			{
 				OSI_LOGI(0, "[lml] start obtain member\n");
-				if(event.param2 == false)
-				{
-					break;
-				}
-				
-				Msg_GData_s * data = (Msg_GData_s *)event.param2;
-				//复制数据
-				data->dwNum=pGroup->dwNum;
-				for(pGroup_member_number=0;pGroup_member_number<data->dwNum;pGroup_member_number++)
-				{
-					strcpy((char *)data->member[pGroup_member_number].ucName,(char *)pGroup->member[pGroup_member_number].ucName);
-					strcpy((char *)data->member[pGroup_member_number].ucNum,(char *)pGroup->member[pGroup_member_number].ucNum);
-					data->member[pGroup_member_number].ucStatus=pGroup->member[pGroup_member_number].ucStatus;//用户状态
-				}	
-			
 				break;
 			}
-			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP://成功获取成员列表
+			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP:
 			{
 				OSI_LOGI(0, "[lml] successfully obtained the member list\n");
-				lv_poc_get_member_list_from_msg(1);
 				break;
 			}
 			default:

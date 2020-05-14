@@ -27,7 +27,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 static bool lv_poc_member_list_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-//static void lv_pov_member_list_get_list_cb(int msg_type);
+static void lv_pov_member_list_get_list_cb(int msg_type);
 
 
 static lv_obj_t * activity_list;
@@ -149,6 +149,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
+
 					break;
 				}
 
@@ -202,14 +203,16 @@ static bool lv_poc_member_list_design_func(struct _lv_obj_t * obj, const lv_area
 void lv_pov_member_list_get_list_cb(int msg_type)
 {
 	//add your information
-	if(msg_type==1)
+	if(msg_type==1)//显示
 	{
-		OSI_LOGE(0, "[lml]callback msg ok");
+		OSI_LOGE(0, "[lml]callback display");
+		lv_poc_member_list_refresh(NULL);
 	}
 	else
 	{
-		OSI_LOGE(0, "[lml]callback msg falied");
+		OSI_LOGE(0, "[lml]callback failed");
 	}
+
 }
 
 void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, IN bool hide_offline)
@@ -272,9 +275,12 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     poc_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);
     lv_poc_activity_set_design_cb(poc_member_list_activity, lv_poc_member_list_design_func);
+
     if(members == NULL)
     {
+		lv_poc_get_member_list(lv_poc_member_list_obj,1,lv_pov_member_list_get_list_cb);
     }
+	//显示获取的成员信息
 }
 
 lv_poc_status_t lv_poc_member_list_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information)
