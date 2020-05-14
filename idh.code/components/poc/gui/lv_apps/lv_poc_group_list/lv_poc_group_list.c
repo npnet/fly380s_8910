@@ -183,7 +183,7 @@ static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_des
 
 
 
-void lv_poc_group_list_open(void)
+void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 {
     static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_GROUP_LIST,
 															activity_create,
@@ -193,19 +193,73 @@ void lv_poc_group_list_open(void)
     {
     	return;
     }
-    group_list = (lv_poc_group_list_t *)lv_mem_alloc(sizeof(lv_poc_group_list_t));
-    group_list->group_list = NULL;
-    group_list->group_number = 0;
+
+	group_list = (lv_poc_group_list_t *)lv_mem_alloc(sizeof(lv_poc_group_list_t));
+	group_list->group_list = NULL;
+	group_list->group_number = 0;
+
+    if(group_list_obj != NULL)
+    {
+		group_list->group_number = group_list_obj->group_number;
+		list_element_t *p_cur = group_list_obj->group_list;
+		list_element_t *p_scr = NULL;
+		group_list->group_list = NULL;
+
+		while(p_cur != NULL)
+		{
+			if(group_list->group_list != NULL)
+			{
+				p_scr->next = (list_element_t *)lv_mem_alloc(sizeof(list_element_t));
+				if(p_scr->next == NULL)
+				{
+					break;
+				}
+				p_scr = p_scr->next ;
+			}
+			else
+			{
+				p_scr = (list_element_t *)lv_mem_alloc(sizeof(list_element_t));
+				if(p_scr == NULL)
+				{
+					break;
+				}
+				group_list->group_list = p_scr;
+			}
+			p_scr->next = NULL;
+			p_scr->information = p_cur->information;
+			strcpy(p_scr->name, p_cur->name);
+			p_cur = p_cur->next;
+		}
+    }
 
     poc_group_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_group_list_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_group_list_activity, design_func);
+
+    if(group_list_obj == NULL)
+    {
+
+    }
+    else
+    {
+	    lv_poc_group_list_refresh(NULL);
+    }
 }
 
 
-lv_poc_status_t lv_poc_group_list_add(const char * name, void * information)
+lv_poc_status_t lv_poc_group_list_add(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
 {
-    lv_poc_status_t status = lv_poc_group_list_is_exists(name, information);
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+        return POC_OPERATE_FAILD;
+	}
+
+    lv_poc_status_t status = lv_poc_group_list_is_exists(group_list_obj, name, information);
     if(status != POC_GROUP_NONENTITY)
     {
         return status;
@@ -227,37 +281,47 @@ lv_poc_status_t lv_poc_group_list_add(const char * name, void * information)
     }
     new_element->information = information;
 
-    if(group_list->group_list)
+    if(group_list_obj->group_list)
     {
-        new_element->next = group_list->group_list;
+        new_element->next = group_list_obj->group_list;
     }
     else
     {
         new_element->next = NULL;
     }
-    group_list->group_list = new_element;
-    group_list->group_number = group_list->group_number + 1;
+    group_list_obj->group_list = new_element;
+    group_list_obj->group_number = group_list_obj->group_number + 1;
 
-    lv_poc_group_list_refresh();
+    //lv_poc_group_list_refresh(group_list_obj);
     return POC_OPERATE_SECCESS;
 }
 
-void lv_poc_group_list_remove(const char * name, void * information)
+void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
 {
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return;
+	}
+
     list_element_t * p_cur;
     list_element_t * p_prv;
-    if(group_list->group_number == 0)
+    if(group_list_obj->group_number == 0)
     {
         return;
     }
 
-    p_cur = group_list->group_list;
+    p_cur = group_list_obj->group_list;
     if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
     {
-        group_list->group_list = p_cur->next;
+        group_list_obj->group_list = p_cur->next;
         lv_obj_del(p_cur->list_item);
         lv_mem_free(p_cur);
-        group_list->group_number = group_list->group_number - 1;
+        group_list_obj->group_number = group_list_obj->group_number - 1;
         return;
     }
     p_prv = p_cur;
@@ -269,7 +333,7 @@ void lv_poc_group_list_remove(const char * name, void * information)
             p_prv->next = p_cur->next;
             lv_obj_del(p_cur->list_item);
             lv_mem_free(p_cur);
-            group_list->group_number = group_list->group_number - 1;
+            group_list_obj->group_number = group_list_obj->group_number - 1;
             return;
         }
 
@@ -278,9 +342,19 @@ void lv_poc_group_list_remove(const char * name, void * information)
     }
 }
 
-int lv_poc_group_list_get_information(const char * name, void *** information)
+int lv_poc_group_list_get_information(lv_poc_group_list_t *group_list_obj, const char * name, void *** information)
 {
-    list_element_t * p_cur = group_list->group_list;
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return 0;
+	}
+
+    list_element_t * p_cur = group_list_obj->group_list;
     unsigned char number = 0;
     while(p_cur)
     {
@@ -304,15 +378,30 @@ int lv_poc_group_list_get_information(const char * name, void *** information)
 
 }
 
-void lv_poc_group_list_refresh(void)
+void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
 {
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return;
+	}
+
+	if(current_activity == poc_group_list_activity)
+	{
+		return;
+	}
+
     list_element_t * p_cur;
     lv_obj_t * btn;
     lv_coord_t btn_height = (display_area.y2 - display_area.y1)/(LV_POC_LIST_COLUM_COUNT + 1);
     char is_first_item = 1;
 
     lv_list_clean(activity_list);
-    p_cur = group_list->group_list;
+    p_cur = group_list_obj->group_list;
     while(p_cur)
     {
         btn = lv_list_add_btn(activity_list, &ic_group, p_cur->name);
@@ -330,17 +419,27 @@ void lv_poc_group_list_refresh(void)
     }
 }
 
-lv_poc_status_t lv_poc_group_list_move_top(const char * name, void * information)
+lv_poc_status_t lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
 {
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return POC_OPERATE_FAILD;
+	}
+
     list_element_t * p_cur;
     list_element_t * p_prv;
-    lv_poc_status_t status = lv_poc_group_list_is_exists(name, information);
+    lv_poc_status_t status = lv_poc_group_list_is_exists(group_list_obj, name, information);
     if(status == POC_OPERATE_FAILD || status == POC_GROUP_NONENTITY)
     {
         return status;
     }
 
-    p_cur = group_list->group_list;
+    p_cur = group_list_obj->group_list;
     if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
     {
         return POC_OPERATE_SECCESS;
@@ -353,8 +452,8 @@ lv_poc_status_t lv_poc_group_list_move_top(const char * name, void * information
         if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
         {
             p_prv->next = p_cur->next;
-            p_cur->next = group_list->group_list;
-            group_list->group_list = p_cur;
+            p_cur->next = group_list_obj->group_list;
+            group_list_obj->group_list = p_cur;
             return POC_OPERATE_SECCESS;
         }
         p_prv = p_cur;
@@ -364,24 +463,35 @@ lv_poc_status_t lv_poc_group_list_move_top(const char * name, void * information
     return POC_UNKNOWN_FAULT;
 }
 
-lv_poc_status_t lv_poc_group_list_move_bottom(const char * name, void * information)
+lv_poc_status_t lv_poc_group_list_move_bottom(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
 {
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return POC_OPERATE_FAILD;
+	}
+
     list_element_t * p_cur;
     list_element_t * p_prv;
     list_element_t * p_scr;
     bool is_find = false;
-    lv_poc_status_t status = lv_poc_group_list_is_exists(name, information);
+    lv_poc_status_t status = lv_poc_group_list_is_exists(group_list_obj, name, information);
     if(status == POC_OPERATE_FAILD || status == POC_GROUP_NONENTITY)
     {
         return status;
     }
 
-    p_cur = group_list->group_list;
+    p_cur = group_list_obj->group_list;
+    p_scr = p_cur;
     if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
     {
         is_find = true;
         p_scr = p_cur;
-        group_list->group_list = p_cur->next;
+        group_list_obj->group_list = p_cur->next;
     }
     p_prv = p_cur;
     p_cur = p_cur->next;
@@ -411,18 +521,28 @@ lv_poc_status_t lv_poc_group_list_move_bottom(const char * name, void * informat
     return POC_UNKNOWN_FAULT;
 }
 
-lv_poc_status_t lv_poc_group_list_move_up(const char * name, void * information)
+lv_poc_status_t lv_poc_group_list_move_up(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
 {
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return POC_OPERATE_FAILD;
+	}
+
     list_element_t * p_cur;
     list_element_t * p_prv;
     list_element_t * p_prv_prv;
-    lv_poc_status_t status = lv_poc_group_list_is_exists(name, information);
+    lv_poc_status_t status = lv_poc_group_list_is_exists(group_list_obj, name, information);
     if(status == POC_OPERATE_FAILD || status == POC_GROUP_NONENTITY)
     {
         return status;
     }
 
-    p_cur = group_list->group_list;
+    p_cur = group_list_obj->group_list;
     if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
     {
         return POC_OPERATE_SECCESS;
@@ -434,7 +554,7 @@ lv_poc_status_t lv_poc_group_list_move_up(const char * name, void * information)
     {
         p_prv->next = p_cur->next;
         p_cur->next = p_prv;
-        group_list->group_list = p_cur;
+        group_list_obj->group_list = p_cur;
         return POC_OPERATE_SECCESS;
     }
 
@@ -458,26 +578,36 @@ lv_poc_status_t lv_poc_group_list_move_up(const char * name, void * information)
     return POC_UNKNOWN_FAULT;
 }
 
-lv_poc_status_t lv_poc_group_list_move_down(const char * name, void * information)
+lv_poc_status_t lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
 {
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return POC_OPERATE_FAILD;
+	}
+
     list_element_t * p_cur;
     list_element_t * p_prv;
     list_element_t * p_prv_prv;
-    lv_poc_status_t status = lv_poc_group_list_is_exists(name, information);
+    lv_poc_status_t status = lv_poc_group_list_is_exists(group_list_obj, name, information);
     if(status == POC_OPERATE_FAILD || status == POC_GROUP_NONENTITY)
     {
         return status;
     }
 
-    p_cur = group_list->group_list;
+    p_cur = group_list_obj->group_list;
     if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
     {
         if(NULL != p_cur->next)
         {
             p_cur = p_cur->next;
-            group_list->group_list->next = p_cur->next;
-            p_cur->next = group_list->group_list;
-            group_list->group_list = p_cur;
+            group_list_obj->group_list->next = p_cur->next;
+            p_cur->next = group_list_obj->group_list;
+            group_list_obj->group_list = p_cur;
         }
         return POC_OPERATE_SECCESS;
     }
@@ -508,15 +638,25 @@ lv_poc_status_t lv_poc_group_list_move_down(const char * name, void * informatio
 
 //void lv_poc_group_list_set_state(const char * name, bool is_online);
 
-lv_poc_status_t lv_poc_group_list_is_exists(const char * name, void * information)
+lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
 {
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return POC_OPERATE_FAILD;
+	}
+
     list_element_t * p_cur;
     if(NULL == name)
     {
         return POC_OPERATE_FAILD;
     }
 
-    p_cur = group_list->group_list;
+    p_cur = group_list_obj->group_list;
     while(p_cur)
     {
         if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
