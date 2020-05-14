@@ -23,6 +23,7 @@
 #include "osi_log.h"
 #include <string.h>
 #include <stdlib.h>
+#include "poc_keypad.h"
 #include "guiIdtCom_api.h"
 
 typedef struct

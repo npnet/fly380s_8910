@@ -225,6 +225,11 @@ typedef struct _list_element_t{
     struct _list_element_t * next;
 } list_element_t;
 
+typedef struct {
+    unsigned int group_number;
+    list_element_t * group_list;
+} lv_poc_group_list_t;
+
 typedef struct _lv_poc_audio_dsc_t
 {
 	uint32_t data_size;
