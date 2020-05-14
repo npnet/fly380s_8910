@@ -166,7 +166,7 @@ static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 
 				case LV_GROUP_KEY_GP:
 				{
-					lv_poc_group_list_open();
+					lv_poc_group_list_open(NULL);
 					break;
 				}
 

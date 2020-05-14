@@ -76,7 +76,7 @@ static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
 		}
 		else if(0 == strcmp(text, (const char *)lv_poc_main_menu_item_text_group_list))
 		{
-			lv_poc_group_list_open();
+			lv_poc_group_list_open(NULL);
 		}
 		else if(0 == strcmp(text, (const char *)lv_poc_main_menu_item_text_setting))
 		{
