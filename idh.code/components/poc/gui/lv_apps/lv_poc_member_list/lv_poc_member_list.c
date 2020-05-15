@@ -205,7 +205,7 @@ void lv_pov_member_list_get_list_cb(int msg_type)
 	//add your information
 	if(msg_type==1)//显示
 	{
-		OSI_LOGE(0, "[lml]callback display");
+		OSI_LOGE(0, "[lml]callback display success");
 		lv_poc_member_list_refresh(NULL);
 	}
 	else
@@ -278,7 +278,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
 
     if(members == NULL)
     {
-		lv_poc_get_member_list(lv_poc_member_list_obj,1,lv_pov_member_list_get_list_cb);
+		lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_pov_member_list_get_list_cb);
     }
 	//显示获取的成员信息
 }

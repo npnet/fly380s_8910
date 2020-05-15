@@ -35,9 +35,7 @@ static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
 drvGpioConfig_t* configport = NULL;
 
-Msg_GData_s *Msg_pGroup;//组成员结构体
-
-
+static Msg_GData_s *Msg_pGroup = NULL;//组成员结构体
 
 /*
       name : lv_poc_get_keypad_dev
@@ -1169,30 +1167,50 @@ lv_poc_get_group_list(lv_poc_group_list_t * member_list, get_group_list_cb func)
 	return true;
 }
 
+static lv_poc_member_list_t * prv_member_list = NULL;
+static get_member_list_cb prv_member_list_cb = NULL;
+static int priv_member_list_get_type = 0;
+
 /*
-	  name : lv_poc_get_member_list
-	  param :member_list{@member information} type{@status } func{@callback GUI}
-	  date : 2020-05-12
+	  name : get_member_list_cbf
+	  param :MData_s{@callback Inf}
+	  date : 2020-05-15
 */
-bool
-lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_list_cb func)
+static void
+get_member_list_cbf(int msgstatus,void *MData_s)
 {
 	uint8_t num=0;
 	list_element_t * pElement = NULL;
 	list_element_t * pCur = NULL;
+	int ret = 0;
 
-	OSI_LOGE(0, "[lml]member obtains ok");
+	Msg_pGroup = (Msg_GData_s *)MData_s;
 
-	memset(member_list,0,sizeof(lv_poc_member_list_t));//初始化
+	if(Msg_pGroup == NULL
+		|| msgstatus == 0
+		|| prv_member_list ==NULL
+		|| prv_member_list_cb == NULL
+		|| priv_member_list_get_type == 0)
+	{
+		//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_CHANGE_MEMBER_CALLBACK_FUNC, NULL);
+		if(prv_member_list_cb != NULL)
+		{
+			prv_member_list_cb(0);
+			prv_member_list_cb = NULL;
+		}
+		priv_member_list_get_type = 0;
+		prv_member_list = NULL;
+		Msg_pGroup = NULL;
+		return;
+	}
+
+	memset(prv_member_list,0,sizeof(lv_poc_member_list_t));//初始化
 
 	OSI_LOGE(0, "[lml]member is = %d",Msg_pGroup->dwNum);
 
-	if(member_list == NULL || func == NULL)
-	{
-		return false;
-	}
-
-	if(type == 1 || type == 2 || type == 3)//获取全部成员
+	if(priv_member_list_get_type == 1
+		|| priv_member_list_get_type == 2
+		|| priv_member_list_get_type == 3)//获取全部成员
 	{
 		for(num=0;num<Msg_pGroup->dwNum;num++)
 		{
@@ -1200,68 +1218,93 @@ lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_
 
 			if(pElement == NULL)
 			{
-				if(type == 2 ||type == 1)
+				pElement = prv_member_list->online_list;
+				while(pElement)
 				{
-					pElement = member_list->online_list;
-					while(pElement)
-					{
-						pCur = pElement;
-						pElement = pElement->next;
-						free(pCur);
-					}
+					pCur = pElement;
+					pElement = pElement->next;
+					free(pCur);
 				}
 
-				if(type == 3 ||type == 1)
+				pElement = prv_member_list->offline_list;
+				while(pElement)
 				{
-					pElement = member_list->offline_list;
-					while(pElement)
-					{
-						pCur = pElement;
-						pElement = pElement->next;
-						free(pCur);
-					}
+					pCur = pElement;
+					pElement = pElement->next;
+					free(pCur);
 				}
 				OSI_LOGE(0, "[lml]pElement is NULL");
-				return false;
+				ret = 0;
+				break;
 			}
 			pElement->next = NULL;
 			pElement->information = &Msg_pGroup->member[num];
 			strcpy(pElement->name, (char *)Msg_pGroup->member[num].ucName);
-			if(Msg_pGroup->member[num].ucStatus==1 && (type == 2 ||type == 1))//在线
+			if(Msg_pGroup->member[num].ucStatus==1
+				&& (priv_member_list_get_type == 2
+				||priv_member_list_get_type == 1))//在线
 			{
-				member_list->online_number++;//计算在线人数
-				if(member_list->online_list != NULL)
+				prv_member_list->online_number++;//计算在线人数
+				if(prv_member_list->online_list != NULL)
 				{
 					pCur->next = pElement;
 				}
 				else
 				{
-					member_list->online_list = pElement;
+					prv_member_list->online_list = pElement;
 				}
 			}
 
-			if(Msg_pGroup->member[num].ucStatus==0 && (type == 3 ||type == 1))//离线
+			if(Msg_pGroup->member[num].ucStatus==0
+				&& (priv_member_list_get_type == 3
+				||priv_member_list_get_type == 1))//离线
 			{
-				member_list->offline_number++;//计算离线人数
-				if(member_list->offline_list != NULL)
+				prv_member_list->offline_number++;//计算离线人数
+				if(prv_member_list->offline_list != NULL)
 				{
 					pCur->next = pElement;
 				}
 				else
 				{
-					member_list->offline_list = pElement;
+					prv_member_list->offline_list = pElement;
 				}
 			}
 
 			pCur = pElement;
 			pElement = NULL;
+			ret = 1;
 		}
-		OSI_LOGE(0, "[lml]offline member is = %d",member_list->offline_number);
-		OSI_LOGE(0, "[lml]online member is = %d",member_list->online_number);
-		func(1);//发送消息
-		return true;
+		OSI_LOGE(0, "[lml]offline member is = %d",prv_member_list->offline_number);
+		OSI_LOGE(0, "[lml]online member is = %d",prv_member_list->online_number);
 	}
-	func(0);//发送消息
+
+	//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_CHANGE_MEMBER_CALLBACK_FUNC, NULL);
+	prv_member_list_cb(ret);//发送消息
+	prv_member_list_cb = NULL;
+	priv_member_list_get_type = 0;
+	prv_member_list = NULL;
+	Msg_pGroup = NULL;
+}
+
+/*
+	  name : lv_poc_get_member_list
+	  param :member_list{@member information} type{@status } func{@callback GUI}
+	  date : 2020-05-12
+*/
+bool
+lv_poc_get_member_list(lv_poc_group_t * group, lv_poc_member_list_t * member_list, int type, get_member_list_cb func)
+{
+	if(member_list == NULL || func == NULL)
+	{
+		return false;
+	}
+
+	prv_member_list = member_list;
+	prv_member_list_cb = func;
+	priv_member_list_get_type = type;
+
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_CHANGE_MEMBER_CALLBACK_FUNC, get_member_list_cbf);
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GROUP_MEMBER_QUERY_IND, NULL);
 
 	return true;
 }

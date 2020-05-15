@@ -16,6 +16,8 @@ typedef struct {
     list_element_t * offline_list;
 } lv_poc_member_list_t;
 
+typedef void lv_poc_group_t;
+
 
 void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, IN bool hide_offline);
 
