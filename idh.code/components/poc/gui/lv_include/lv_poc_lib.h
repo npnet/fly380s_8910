@@ -52,7 +52,16 @@ typedef struct
 	get_group_list_cb gui_list_cb;
 } lv_poc_get_group_list_msg_t;
 
-extern Msg_GData_s *Msg_pGroup;//组成员结构体
+//extern Msg_GData_s *Msg_pGroup;//组成员结构体
+
+typedef void (*get_member_list_inf)(int msgstatus,void *MData_s);
+
+typedef struct
+{
+	Msg_GData_s *Msg_pGroup;
+	get_member_list_inf get_member_Inf;
+} get_member_Inf_callback_t;
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -408,7 +417,7 @@ typedef void (*get_member_list_cb)(int msg_type);
 	  date : 2020-05-12
 */
 bool
-lv_poc_get_member_list(lv_poc_member_list_t * member_list, int type, get_member_list_cb func);
+lv_poc_get_member_list(lv_poc_group_t * group, lv_poc_member_list_t * member_list, int type, get_member_list_cb func);
 
 /*
 	  name : lv_poc_notation_msg

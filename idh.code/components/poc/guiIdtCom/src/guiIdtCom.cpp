@@ -181,6 +181,9 @@ public:
 	uint8_t pocAudioData_read_index;
 	uint8_t pocAudioData_write_index;
 #endif
+	get_member_Inf_callback_t change_member_INF;
+
+
 } PocGuiIIdtComAttr_t;
 CIdtUser m_IdtUser;
 static PocGuiIIdtComAttr_t pocIdtAttr = {0};
@@ -524,20 +527,22 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
         GetOamOptStr(dwOptCode), dwOptCode, dwSn, GetCauseStr(wRes), wRes, pGroup->ucNum, pGroup->dwNum);
 
 	/*获取服务器成员*/
-
-	Msg_pGroup = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
-	if(Msg_pGroup != NULL)
+	if(pocIdtAttr.change_member_INF.Msg_pGroup == NULL)
 	{
-		memset(Msg_pGroup, 0, sizeof(Msg_GData_s));
+		pocIdtAttr.change_member_INF.Msg_pGroup = (Msg_GData_s *)malloc( sizeof(Msg_GData_s));
+	}
 
-		Msg_pGroup->dwNum=pGroup->dwNum;
-		for(pGroup_member_number=0;pGroup_member_number<Msg_pGroup->dwNum;pGroup_member_number++)
+	if(pocIdtAttr.change_member_INF.Msg_pGroup != NULL)
+	{
+		pocIdtAttr.change_member_INF.Msg_pGroup->dwNum=pGroup->dwNum;
+		for(pGroup_member_number=0;
+			pGroup_member_number < pocIdtAttr.change_member_INF.Msg_pGroup->dwNum;
+			pGroup_member_number++)
 		{
-			strcpy((char *)Msg_pGroup->member[pGroup_member_number].ucName,(char *)pGroup->member[pGroup_member_number].ucName);
-			strcpy((char *)Msg_pGroup->member[pGroup_member_number].ucNum,(char *)pGroup->member[pGroup_member_number].ucNum);
-			Msg_pGroup->member[pGroup_member_number].ucStatus=pGroup->member[pGroup_member_number].ucStatus;//用户状态
+			strcpy((char *)pocIdtAttr.change_member_INF.Msg_pGroup->member[pGroup_member_number].ucName,(char *)pGroup->member[pGroup_member_number].ucName);
+			strcpy((char *)pocIdtAttr.change_member_INF.Msg_pGroup->member[pGroup_member_number].ucNum,(char *)pGroup->member[pGroup_member_number].ucNum);
+			pocIdtAttr.change_member_INF.Msg_pGroup->member[pGroup_member_number].ucStatus=pGroup->member[pGroup_member_number].ucStatus;//用户状态
 		}
-
 		OSI_LOGI(0, "[lml] successfully obtained the member list\n");
 	}
 	/*@ 完成 @*/
@@ -728,7 +733,7 @@ void IDT_Entry(void*)
 
     CallBack.pfDbg              = callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"124.160.11.22", 10000, NULL, 0, (char*)"34012", (char*)"34012", 1, &CallBack, 0, 20000, 0);
+    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"34012", (char*)"34012", 1, &CallBack, 0, 20000, 0);
 }
 
 static void pocGuiIdtComTaskEntry(void *argument)
@@ -885,16 +890,39 @@ static void pocGuiIdtComTaskEntry(void *argument)
 				break;
 			}
 
-			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND:
+			case LVPOCGUIIDTCOM_SIGNAL_REGISTER_CHANGE_MEMBER_CALLBACK_FUNC:
 			{
-				OSI_LOGI(0, "[lml] start obtain member\n");
+				if(event.param2 == 0)
+				{
+					break;
+				}
+				pocIdtAttr.change_member_INF.get_member_Inf = (get_member_list_inf)event.param2;
 				break;
 			}
-			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP:
+
+			case LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_CHANGE_MEMBER_CALLBACK_FUNC:
 			{
-				OSI_LOGI(0, "[lml] successfully obtained the member list\n");
+				pocIdtAttr.change_member_INF.get_member_Inf = NULL;
 				break;
 			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_GROUP_MEMBER_QUERY_IND:
+			{
+				int ret = 0;
+				if(pocIdtAttr.change_member_INF.Msg_pGroup != NULL
+					&& pocIdtAttr.change_member_INF.Msg_pGroup->dwNum > 0)
+				{
+					ret = 1;
+				}
+
+				if(pocIdtAttr.change_member_INF.get_member_Inf != NULL)
+				{
+					pocIdtAttr.change_member_INF.get_member_Inf(ret, pocIdtAttr.change_member_INF.Msg_pGroup);//send msg
+					pocIdtAttr.change_member_INF.get_member_Inf = NULL;
+				}
+				break;
+			}
+
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");
 				break;
