@@ -40,28 +40,28 @@ typedef struct Msg_GData_s
     Msg_GROUP_MEMBER_s  member[1024];   //组成员
 }Msg_GData_s;
 
+//组信息
+typedef struct _CGroup
+{
+    uint8_t   m_ucGNum[32];     //组号码
+    uint8_t   m_ucGName[64];    //组名字
+}CGroup;
+
 /*
 	  name :回调函数
 	  param :
 	  date : 2020-05-12
 */
 typedef void (*get_group_list_cb)(int result_type);
+typedef void (*lv_poc_get_group_list_cb_t)(int msg_type, uint32_t num, CGroup *group);
 
-typedef struct
-{
-	get_group_list_cb gui_list_cb;
-} lv_poc_get_group_list_msg_t;
-
-//extern Msg_GData_s *Msg_pGroup;//组成员结构体
-
-typedef void (*get_member_list_inf)(int msgstatus,void *MData_s);
-
-typedef struct
-{
-	Msg_GData_s *Msg_pGroup;
-	get_member_list_inf get_member_Inf;
-} get_member_Inf_callback_t;
-
+/*
+	  name :回调函数
+	  param :
+	  date : 2020-05-12
+*/
+typedef void (*get_member_list_cb)(int msg_type);
+typedef void (*lv_poc_get_member_list_cb_t)(int msg_type, unsigned long num, Msg_GData_s *pGroup);
 
 #ifdef __cplusplus
 extern "C" {
@@ -405,19 +405,12 @@ bool
 lv_poc_get_group_list(lv_poc_group_list_t * member_list, get_group_list_cb func);
 
 /*
-	  name :回调函数
-	  param :
-	  date : 2020-05-12
-*/
-typedef void (*get_member_list_cb)(int msg_type);
-
-/*
 	  name : lv_poc_get_member_list
 	  param :member_list{@member information} type{@status } func{@callback GUI}
 	  date : 2020-05-12
 */
 bool
-lv_poc_get_member_list(lv_poc_group_t * group, lv_poc_member_list_t * member_list, int type, get_member_list_cb func);
+lv_poc_get_member_list(lv_poc_group_info_t *group_info, lv_poc_member_list_t * member_list, int type, get_member_list_cb func);
 
 /*
 	  name : lv_poc_notation_msg

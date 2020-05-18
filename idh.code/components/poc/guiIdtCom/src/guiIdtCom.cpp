@@ -49,8 +49,6 @@ char *GetOamOptStr(DWORD dwOpt);
 char *GetSrvTypeStr(SRV_TYPE_e SrvType);
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length);
 
-static uint32_t pGroup_member_number;//成员数量
-
 //--------------------------------------------------------------------------------
 //      TRACE小函数
 //  输入:
@@ -81,29 +79,6 @@ extern int IDT_TRACE(const char* pcFormat, ...)
     return 0;
 }
 
-//组信息
-class CGroup
-{
-public:
-    CGroup()
-    {
-        Reset();
-    }
-    ~CGroup()
-    {
-    }
-    int Reset()
-    {
-        m_ucGNum[0]     = 0;
-        m_ucGName[0]    = 0;
-        return 0;
-    }
-
-public:
-    UCHAR   m_ucGNum[32];     //组号码
-    UCHAR   m_ucGName[64];    //组名字
-};
-
 //全部的组
 class CAllGroup
 {
@@ -118,15 +93,18 @@ public:
 
     int Reset()
     {
+	    m_Group_Num = 0;
         int i;
         for (i = 0; i < USER_MAX_GROUP; i++)
         {
-            m_Group[i].Reset();
+            m_Group[i].m_ucGName[0] = 0;
+            m_Group[i].m_ucGNum[0] = 0;
         }
         return 0;
     }
 
 public:
+	unsigned int m_Group_Num;
     CGroup  m_Group[USER_MAX_GROUP];//一个用户,最多处于32个组中
 };
 
@@ -181,9 +159,11 @@ public:
 	uint8_t pocAudioData_read_index;
 	uint8_t pocAudioData_write_index;
 #endif
-	get_member_Inf_callback_t change_member_INF;
-
-
+	lv_poc_get_group_list_cb_t pocGetGroupListCb;
+	lv_poc_get_member_list_cb_t pocGetMemberListCb;
+	Msg_GData_s *pPocMemberList;//组成员结构体
+	DWORD current_group;
+	DWORD query_group;
 } PocGuiIIdtComAttr_t;
 CIdtUser m_IdtUser;
 static PocGuiIIdtComAttr_t pocIdtAttr = {0};
@@ -254,6 +234,7 @@ void callback_IDT_GInfoInd(USERGINFO_s *pGInfo)
     IDT_TRACE("callback_IDT_GInfoInd: FGCount=%d\n", pGInfo->usNum);
 
     m_IdtUser.m_Group.Reset();
+    m_IdtUser.m_Group.m_Group_Num = pGInfo->usNum;
     for (int i = 0; i < pGInfo->usNum; i++)
     {
         IDT_TRACE("%s\n", pGInfo->stGInfo[i].ucNum);
@@ -526,46 +507,29 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
     IDT_TRACE("callback_IDT_GOptRsp: dwOptCode=%s(%d), dwSn=%d, wRes=%s(%d), pGroup->ucNum=%s, pGroup->dwNum=%d",
         GetOamOptStr(dwOptCode), dwOptCode, dwSn, GetCauseStr(wRes), wRes, pGroup->ucNum, pGroup->dwNum);
 
-	/*获取服务器成员*/
-	if(pocIdtAttr.change_member_INF.Msg_pGroup == NULL)
+	if(pocIdtAttr.pPocMemberList == NULL)
 	{
-		pocIdtAttr.change_member_INF.Msg_pGroup = (Msg_GData_s *)malloc( sizeof(Msg_GData_s));
+		pocIdtAttr.pPocMemberList = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
+		memset(pocIdtAttr.pPocMemberList, 0, sizeof(unsigned long));
 	}
-
-	if(pocIdtAttr.change_member_INF.Msg_pGroup != NULL)
-	{
-		pocIdtAttr.change_member_INF.Msg_pGroup->dwNum=pGroup->dwNum;
-		for(pGroup_member_number=0;
-			pGroup_member_number < pocIdtAttr.change_member_INF.Msg_pGroup->dwNum;
-			pGroup_member_number++)
-		{
-			strcpy((char *)pocIdtAttr.change_member_INF.Msg_pGroup->member[pGroup_member_number].ucName,(char *)pGroup->member[pGroup_member_number].ucName);
-			strcpy((char *)pocIdtAttr.change_member_INF.Msg_pGroup->member[pGroup_member_number].ucNum,(char *)pGroup->member[pGroup_member_number].ucNum);
-			pocIdtAttr.change_member_INF.Msg_pGroup->member[pGroup_member_number].ucStatus=pGroup->member[pGroup_member_number].ucStatus;//用户状态
-		}
-		OSI_LOGI(0, "[lml] successfully obtained the member list\n");
-	}
-	/*@ 完成 @*/
 
 	if (OPT_G_QUERYUSER == dwOptCode)
     {
         if (CAUSE_ZERO != wRes)
             return;
 
-        int i;
-        for (i = 0; i < (int)pGroup->dwNum; i++)
-        {
-            IDT_TRACE("    %s(%s): %d", pGroup->member[i].ucNum, pGroup->member[i].ucName, pGroup->member[i].ucStatus);
-        }
-
-        dwSn++;
-        if (dwSn >= USER_MAX_GROUP)
-            return;
-
-        if (0 == m_IdtUser.m_Group.m_Group[dwSn].m_ucGNum[0])
-            return;
-        // 持续查询剩下的组成员
-        Func_GQueryU(dwSn, m_IdtUser.m_Group.m_Group[dwSn].m_ucGNum);
+		if(dwSn == pocIdtAttr.query_group
+			&& pocIdtAttr.pPocMemberList != NULL)
+		{
+			pocIdtAttr.pPocMemberList->dwNum = pGroup->dwNum;
+			for(unsigned long i = 0; i < pocIdtAttr.pPocMemberList->dwNum; i++)
+			{
+				strcpy((char *)pocIdtAttr.pPocMemberList->member[i].ucName, (char *)pGroup->member[i].ucName);
+				strcpy((char *)pocIdtAttr.pPocMemberList->member[i].ucNum, (char *)pGroup->member[i].ucNum);
+				pocIdtAttr.pPocMemberList->member[i].ucStatus = pGroup->member[i].ucStatus;//用户状态
+			}
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_REP, NULL);
+		}
     }
 }
 
@@ -695,9 +659,17 @@ int callback_IDT_Dbg(char *pcTxt)
         //释放话权
         IDT_CallMicCtrl(m_IdtUser.m_iCallId, false);
     }
-    else if (0 == _stricmp("gquery", pcTxt))
+    else if (0 == _stricmp("GQuery", pcTxt))
     {
         Func_GQueryU(0, m_IdtUser.m_Group.m_Group[0].m_ucGNum);
+    }
+    else if (0 == _stricmp("LockG", pcTxt))
+    {
+        IDT_SetGMemberExtInfo(0, NULL, (UCHAR*)"2090", NULL);
+    }
+    else if (0 == _stricmp("UnLockG", pcTxt))
+    {
+        IDT_SetGMemberExtInfo(0, NULL, (UCHAR*)"#", NULL);
     }
 
     return 0;
@@ -733,7 +705,7 @@ void IDT_Entry(void*)
 
     CallBack.pfDbg              = callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"34012", (char*)"34012", 1, &CallBack, 0, 20000, 0);
+    IDT_Start(NULL, 1, (char*)"124.160.11.22", 10000, NULL, 0, (char*)"34011", (char*)"34011", 1, &CallBack, 0, 20000, 0);
 }
 
 static void pocGuiIdtComTaskEntry(void *argument)
@@ -890,36 +862,113 @@ static void pocGuiIdtComTaskEntry(void *argument)
 				break;
 			}
 
-			case LVPOCGUIIDTCOM_SIGNAL_REGISTER_CHANGE_MEMBER_CALLBACK_FUNC:
+			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND:
+			{
+				break;
+			}
+			case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP:
+			{
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_IND:
+			{
+				if(pocIdtAttr.pocGetGroupListCb == NULL)
+				{
+					break;
+				}
+
+				do
+				{
+					if(m_IdtUser.m_Group.m_Group_Num < 1)
+					{
+						pocIdtAttr.pocGetGroupListCb(0, 0, NULL);
+						break;
+					}
+					pocIdtAttr.pocGetGroupListCb(1, m_IdtUser.m_Group.m_Group_Num, m_IdtUser.m_Group.m_Group);
+				}while(0);
+				pocIdtAttr.pocGetGroupListCb = NULL;
+				break;
+			}
+
+		    case LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_GROUP_LIST_CB_IND:
 			{
 				if(event.param2 == 0)
 				{
 					break;
 				}
-				pocIdtAttr.change_member_INF.get_member_Inf = (get_member_list_inf)event.param2;
+				pocIdtAttr.pocGetGroupListCb = (lv_poc_get_group_list_cb_t)event.param2;
 				break;
 			}
 
-			case LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_CHANGE_MEMBER_CALLBACK_FUNC:
+		    case LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND:
 			{
-				pocIdtAttr.change_member_INF.get_member_Inf = NULL;
+				pocIdtAttr.pocGetGroupListCb = NULL;
 				break;
 			}
 
-			case LVPOCGUIIDTCOM_SIGNAL_GROUP_MEMBER_QUERY_IND:
+			case LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_IND:
 			{
-				int ret = 0;
-				if(pocIdtAttr.change_member_INF.Msg_pGroup != NULL
-					&& pocIdtAttr.change_member_INF.Msg_pGroup->dwNum > 0)
+				if(pocIdtAttr.pocGetMemberListCb == NULL)
 				{
-					ret = 1;
+					break;
 				}
 
-				if(pocIdtAttr.change_member_INF.get_member_Inf != NULL)
+				if(event.param2 == 0)
 				{
-					pocIdtAttr.change_member_INF.get_member_Inf(ret, pocIdtAttr.change_member_INF.Msg_pGroup);//send msg
-					pocIdtAttr.change_member_INF.get_member_Inf = NULL;
+					pocIdtAttr.query_group = pocIdtAttr.current_group;
 				}
+				else
+				{
+					CGroup * group_info = (CGroup *)event.param2;
+					for(DWORD i = 0; i < m_IdtUser.m_Group.m_Group_Num; i++)
+					{
+						if(0 == strcmp((const char *)group_info->m_ucGNum, (const char *)m_IdtUser.m_Group.m_Group[i].m_ucGNum))
+						{
+							pocIdtAttr.query_group = i;
+							break;
+						}
+					}
+				}
+
+				if(pocIdtAttr.query_group >=  m_IdtUser.m_Group.m_Group_Num
+					|| 0 == m_IdtUser.m_Group.m_Group[pocIdtAttr.query_group].m_ucGNum[0])
+				{
+					pocIdtAttr.pocGetMemberListCb(0, 0, NULL);
+					pocIdtAttr.pocGetMemberListCb = NULL;
+					pocIdtAttr.query_group = 0;
+					break;
+				}
+
+		        // 查询组成员
+		        Func_GQueryU(pocIdtAttr.query_group, m_IdtUser.m_Group.m_Group[pocIdtAttr.query_group].m_ucGNum);
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_REP:
+			{
+				if(pocIdtAttr.pocGetMemberListCb == NULL)
+				{
+					break;
+				}
+				pocIdtAttr.pocGetMemberListCb(1, pocIdtAttr.pPocMemberList->dwNum, pocIdtAttr.pPocMemberList);
+				pocIdtAttr.pocGetMemberListCb = NULL;
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND:
+			{
+				if(event.param2 == 0)
+				{
+					break;
+				}
+				pocIdtAttr.pocGetMemberListCb = (lv_poc_get_member_list_cb_t)event.param2;
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_MEMBER_LIST_CB_IND:
+			{
+				pocIdtAttr.pocGetMemberListCb = NULL;
 				break;
 			}
 
@@ -932,7 +981,6 @@ static void pocGuiIdtComTaskEntry(void *argument)
 
 extern "C" void pocGuiIdtComStart(void)
 {
-    OSI_LOGE(0, "----------------------------------------------------");
     pocIdtAttr.thread = osiThreadCreate(
 		"pocGuiIdtCom", pocGuiIdtComTaskEntry, NULL,
 		APPTEST_THREAD_PRIORITY, APPTEST_STACK_SIZE,
@@ -941,26 +989,21 @@ extern "C" void pocGuiIdtComStart(void)
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 {
-	OSI_LOGI(0, "[gic] checkout send data conditions\n");
-	OSI_LOGI(0, "[gic] data <- 0x%p  length <- %d \n", data, length);
     if (pocIdtAttr.recorder == 0 || m_IdtUser.m_iCallId == -1 || data == NULL || length < 1)
     {
 	    return;
     }
     if(m_IdtUser.m_status != 2)
     {
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
+		//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 	    return;
     }
-	OSI_LOGI(0, "[gic] send data to server\n");
-	#if 1
     IDT_CallSendAuidoData(m_IdtUser.m_iCallId,
 						    0,
 						    0,
 						    data,
 						    length,
 						    0);
-	#endif
     m_IdtUser.m_iTxCount = m_IdtUser.m_iTxCount + 1;
 }
 
