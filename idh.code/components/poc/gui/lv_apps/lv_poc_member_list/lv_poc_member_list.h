@@ -8,17 +8,6 @@
 extern "C" {
 #endif
 
-typedef struct {
-	bool hide_offline;
-    unsigned int online_number;
-    unsigned int offline_number;
-    list_element_t * online_list;
-    list_element_t * offline_list;
-} lv_poc_member_list_t;
-
-typedef void lv_poc_group_t;
-
-
 void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, IN bool hide_offline);
 
 lv_poc_status_t lv_poc_member_list_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information);
