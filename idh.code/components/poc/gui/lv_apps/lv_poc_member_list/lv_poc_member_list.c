@@ -32,6 +32,8 @@ static void lv_pov_member_list_get_list_cb(int msg_type);
 
 static lv_obj_t * activity_list;
 
+static lv_obj_t *lv_poc_member_list_noattion = NULL;
+
 static lv_poc_win_t * activity_win;
 
 static lv_area_t member_list_display_area;
@@ -52,6 +54,7 @@ static lv_obj_t * lv_poc_member_list_activity_create(lv_poc_display_t *display)
 
 static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
 {
+	activity_list = NULL;
 	if(activity_win != NULL)
 	{
 		lv_mem_free(activity_win);
@@ -80,6 +83,8 @@ static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
 		lv_mem_free(lv_poc_member_list_obj);
 	}
 	lv_poc_member_list_obj = NULL;
+	poc_member_list_activity = NULL;
+	lv_poc_member_list_noattion = NULL;
 }
 
 static void * lv_poc_member_list_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -202,15 +207,27 @@ static bool lv_poc_member_list_design_func(struct _lv_obj_t * obj, const lv_area
 //处理成员列表，GUI显示
 void lv_pov_member_list_get_list_cb(int msg_type)
 {
+	if(poc_member_list_activity == NULL)
+	{
+		return;
+	}
 	//add your information
 	if(msg_type==1)//显示
 	{
-		OSI_LOGE(0, "[lml]callback display success");
 		lv_poc_member_list_refresh(NULL);
 	}
 	else
 	{
-		OSI_LOGE(0, "[lml]callback failed");
+		if(lv_poc_member_list_noattion == NULL)
+		{
+			lv_poc_member_list_noattion = lv_label_create(lv_scr_act(), NULL);
+		}
+
+		if(lv_poc_member_list_noattion != NULL)
+		{
+			lv_label_set_text(lv_poc_member_list_noattion, "获取失败");
+		    lv_obj_align(lv_poc_member_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
+		}
 	}
 
 }
@@ -220,7 +237,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_LIST,
     		lv_poc_member_list_activity_create,
 			lv_poc_member_list_activity_destory};
-    if(lv_poc_member_list_obj != NULL)
+    if(lv_poc_member_list_obj != NULL || poc_member_list_activity != NULL)
     {
     	return;
     }
@@ -278,9 +295,18 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
 
     if(members == NULL)
     {
-		lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_pov_member_list_get_list_cb);
+	    lv_poc_member_list_noattion = lv_label_create(lv_scr_act(), NULL);
+	    lv_label_set_text(lv_poc_member_list_noattion, "正在获取成员列表");
+	    lv_obj_align(lv_poc_member_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
+		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_pov_member_list_get_list_cb))
+		{
+			lv_label_set_text(lv_poc_member_list_noattion, "获取失败");
+		}
     }
-	//显示获取的成员信息
+    else
+    {
+	    lv_poc_member_list_refresh(NULL);
+    }
 }
 
 lv_poc_status_t lv_poc_member_list_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information)
@@ -543,6 +569,28 @@ void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
     char member_list_is_first_item = 1;
     lv_list_clean(activity_list);
 
+    if(member_list_obj->online_list == NULL && member_list_obj->offline_list == NULL)
+    {
+	    if(lv_poc_member_list_noattion != NULL)
+	    {
+		    lv_obj_del(lv_poc_member_list_noattion);
+	    }
+	    lv_poc_member_list_noattion = NULL;
+    }
+    else
+    {
+		if(lv_poc_member_list_noattion == NULL)
+		{
+			lv_poc_member_list_noattion = lv_label_create(lv_scr_act(), NULL);
+		}
+
+		if(lv_poc_member_list_noattion != NULL)
+		{
+		    lv_label_set_text(lv_poc_member_list_noattion, "无群组列表");
+		    lv_obj_align(lv_poc_member_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
+	    }
+	    return;
+    }
 
     p_cur = member_list_obj->online_list;
     while(p_cur)
