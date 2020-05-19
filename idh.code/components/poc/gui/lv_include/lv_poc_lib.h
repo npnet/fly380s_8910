@@ -405,12 +405,28 @@ bool
 lv_poc_get_group_list(lv_poc_group_list_t * member_list, get_group_list_cb func);
 
 /*
+	  name : lv_poc_check_group_equation
+	  param :
+	  date : 2020-05-19
+*/
+bool
+lv_poc_check_group_equation(void * A, void *B, void *C, void *D, void *E);
+
+/*
 	  name : lv_poc_get_member_list
 	  param :member_list{@member information} type{@status } func{@callback GUI}
 	  date : 2020-05-12
 */
 bool
 lv_poc_get_member_list(lv_poc_group_info_t *group_info, lv_poc_member_list_t * member_list, int type, get_member_list_cb func);
+
+/*
+	  name : lv_poc_check_member_equation
+	  param :
+	  date : 2020-05-19
+*/
+bool
+lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E);
 
 /*
 	  name : lv_poc_notation_msg

@@ -5,7 +5,7 @@ extern "C" {
 #endif
 #include "lv_include/lv_poc.h"
 
-static lv_poc_member_list_t * member_list; 
+static lv_poc_member_list_t * member_list;
 
 static lv_obj_t * activity_create(lv_poc_display_t *display);
 
@@ -68,7 +68,7 @@ static void activity_destory(lv_obj_t *obj)
 		lv_mem_free(activity_win);
 		activity_win = NULL;
 	}
-	
+
 	if(member_list != NULL)
 	{
 		list_element_t * cur_p = member_list->online_list;
@@ -115,7 +115,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/3;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
 #endif
-    
+
 }
 
 static lv_res_t member_call_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
@@ -129,42 +129,42 @@ static lv_res_t member_call_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 			switch(c)
 			{
 				case LV_GROUP_KEY_ENTER:
-				
+
 				case LV_GROUP_KEY_DOWN:
-				
+
 				case LV_GROUP_KEY_UP:
 				{
 					activity_list->signal_cb(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					member_call_delay_exit_task_create(500);
@@ -173,7 +173,7 @@ static lv_res_t member_call_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 			}
 			break;
 		}
-			
+
 		case LV_SIGNAL_LONG_PRESS:
 		{
 			unsigned int c = *(unsigned int *)param;
@@ -183,42 +183,42 @@ static lv_res_t member_call_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
@@ -240,7 +240,7 @@ static lv_res_t member_call_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 		{
 			break;
 		}
-		
+
 		default:
 		{
 			break;
@@ -256,7 +256,7 @@ static bool member_call_design_func(struct _lv_obj_t * obj, const lv_area_t * ma
 }
 
 static void lv_poc_single_call_press_btn_action(lv_obj_t * obj, lv_event_t event)
-{   
+{
 }
 
 static lv_res_t member_call_set_title(const char * title)
@@ -313,7 +313,7 @@ void lv_poc_member_call_open(void * information)
 		OSI_LOGI(0, "[single_call] infomation of call obj is empty\n");
 		return;
 	}
-	
+
     poc_member_call_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     if(poc_member_call_activity == NULL)
     {
@@ -341,7 +341,7 @@ lv_poc_status_t lv_poc_member_call_add(const char * name, void * information)
     {
         return status;
     }
-    
+
     list_element_t * new_element = (list_element_t *)lv_mem_alloc(sizeof(list_element_t));
     if(NULL == new_element)
     {
@@ -402,13 +402,13 @@ lv_poc_status_t lv_poc_member_call_is_exists(const char * name, void * informati
     p_cur = member_list->online_list;
     while(p_cur)
     {
-        if(MEMBER_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+        if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
             return POC_MEMBER_EXISTS;
         }
         p_cur = p_cur->next;
     }
-    
+
     return POC_MEMBER_NONENTITY;
 }
 
@@ -417,7 +417,7 @@ void lv_poc_member_call_refresh(void)
     list_element_t * p_cur;
     lv_obj_t * btn;
     lv_coord_t btn_height = (member_call_display_area.y2 - member_call_display_area.y1)/3;
-    
+
     lv_list_clean(activity_list);
 
     p_cur = member_list->online_list;
