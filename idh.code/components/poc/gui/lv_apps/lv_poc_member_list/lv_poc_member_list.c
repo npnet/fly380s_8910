@@ -220,7 +220,7 @@ void lv_pov_member_list_get_list_cb(int msg_type)
 	{
 		if(lv_poc_member_list_noattion == NULL)
 		{
-			lv_poc_member_list_noattion = lv_label_create(lv_scr_act(), NULL);
+			lv_poc_member_list_noattion = lv_label_create(poc_member_list_activity->display, NULL);
 		}
 
 		if(lv_poc_member_list_noattion != NULL)
@@ -295,7 +295,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
 
     if(members == NULL)
     {
-	    lv_poc_member_list_noattion = lv_label_create(lv_scr_act(), NULL);
+	    lv_poc_member_list_noattion = lv_label_create(poc_member_list_activity->display, NULL);
 	    lv_label_set_text(lv_poc_member_list_noattion, "正在获取成员列表");
 	    lv_obj_align(lv_poc_member_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
 		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_pov_member_list_get_list_cb))
@@ -569,7 +569,7 @@ void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
     char member_list_is_first_item = 1;
     lv_list_clean(activity_list);
 
-    if(member_list_obj->online_list == NULL && member_list_obj->offline_list == NULL)
+    if(member_list_obj->online_list != NULL && member_list_obj->offline_list != NULL)
     {
 	    if(lv_poc_member_list_noattion != NULL)
 	    {
@@ -581,7 +581,7 @@ void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
     {
 		if(lv_poc_member_list_noattion == NULL)
 		{
-			lv_poc_member_list_noattion = lv_label_create(lv_scr_act(), NULL);
+			lv_poc_member_list_noattion = lv_label_create(poc_member_list_activity->display, NULL);
 		}
 
 		if(lv_poc_member_list_noattion != NULL)

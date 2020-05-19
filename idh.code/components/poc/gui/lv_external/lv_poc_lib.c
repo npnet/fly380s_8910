@@ -616,6 +616,11 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
     uint8_t nSim = POC_SIM_1;
 	uint8_t status;
 
+	if(!poc_check_sim_prsent(POC_SIM_1))
+	{
+		return false;
+	}
+
 	if (CFW_CfgGetNwStatus(&status, nSim) != 0 ||
 		CFW_NwGetStatus(&nStatusInfo, nSim) != 0)
 	{

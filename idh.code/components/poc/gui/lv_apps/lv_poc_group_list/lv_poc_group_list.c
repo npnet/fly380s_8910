@@ -27,6 +27,8 @@ static void lv_poc_get_group_list_cb(int result_type);
 
 static lv_obj_t * activity_list;
 
+static lv_obj_t * lv_poc_group_list_noattion;
+
 static lv_area_t display_area;
 
 lv_poc_activity_t * poc_group_list_activity;
@@ -73,7 +75,7 @@ static void activity_destory(lv_obj_t *obj)
 			//lv_obj_del(temp_p->list_item);
 			lv_mem_free(temp_p);
 		}
-		#if 0
+
 		cur_p = member_list->offline_list;
 		while(cur_p != NULL)
 		{
@@ -82,11 +84,12 @@ static void activity_destory(lv_obj_t *obj)
 			//lv_obj_del(temp_p->list_item);
 			lv_mem_free(temp_p);
 		}
-		#endif
 
 		lv_mem_free(member_list);
 	}
 	member_list = NULL;
+	poc_group_list_activity = NULL;
+	lv_poc_group_list_noattion = NULL;
 }
 
 static void list_config(lv_obj_t * list, lv_area_t list_area)
@@ -184,9 +187,27 @@ static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_des
 
 static void lv_poc_get_group_list_cb(int result_type)
 {
+	if(poc_group_list_activity == NULL)
+	{
+		return;
+	}
+
 	if(result_type == 1)
 	{
 		lv_poc_group_list_refresh(NULL);
+	}
+	else
+	{
+		if(lv_poc_group_list_noattion == NULL)
+		{
+			lv_poc_group_list_noattion = lv_label_create(poc_group_list_activity->display, NULL);
+		}
+
+		if(lv_poc_group_list_noattion != NULL)
+		{
+			lv_label_set_text(lv_poc_group_list_noattion, "获取失败");
+		    lv_obj_align(lv_poc_group_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
+		}
 	}
 }
 
@@ -199,7 +220,7 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 															activity_create,
 															activity_destory};
 
-    if(poc_group_list_activity != NULL)
+    if(poc_group_list_activity != NULL || group_list != NULL || activity_list != NULL)
     {
     	return;
     }
@@ -254,7 +275,13 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 
     if(group_list_obj == NULL)
     {
-		lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb);
+	    lv_poc_group_list_noattion = lv_label_create(poc_group_list_activity->display, NULL);
+	    lv_label_set_text(lv_poc_group_list_noattion, "正在获取群组列表");
+	    lv_obj_align(lv_poc_group_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
+		if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
+		{
+			lv_label_set_text(lv_poc_group_list_noattion, "获取失败");
+		}
     }
     else
     {
@@ -406,7 +433,7 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
 		return;
 	}
 
-	if(current_activity == poc_group_list_activity)
+	if(current_activity != poc_group_list_activity)
 	{
 		return;
 	}
@@ -417,6 +444,30 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
     char is_first_item = 1;
 
     lv_list_clean(activity_list);
+
+    if(group_list_obj->group_list != NULL)
+    {
+	    if(lv_poc_group_list_noattion != NULL)
+	    {
+		    lv_obj_del(lv_poc_group_list_noattion);
+	    }
+	    lv_poc_group_list_noattion = NULL;
+    }
+    else
+    {
+		if(lv_poc_group_list_noattion == NULL)
+		{
+			lv_poc_group_list_noattion = lv_label_create(poc_group_list_activity->display, NULL);
+		}
+
+		if(lv_poc_group_list_noattion != NULL)
+		{
+		    lv_label_set_text(lv_poc_group_list_noattion, "无成员列表");
+		    lv_obj_align(lv_poc_group_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
+	    }
+	    return;
+    }
+
     p_cur = group_list_obj->group_list;
     while(p_cur)
     {
