@@ -705,7 +705,7 @@ void IDT_Entry(void*)
 
     CallBack.pfDbg              = callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"124.160.11.22", 10000, NULL, 0, (char*)"34011", (char*)"34011", 1, &CallBack, 0, 20000, 0);
+    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"34011", (char*)"34011", 1, &CallBack, 0, 20000, 0);
 }
 
 static void pocGuiIdtComTaskEntry(void *argument)
@@ -931,7 +931,8 @@ static void pocGuiIdtComTaskEntry(void *argument)
 					}
 				}
 
-				if(pocIdtAttr.query_group >=  m_IdtUser.m_Group.m_Group_Num
+				if(m_IdtUser.m_Group.m_Group_Num < 1
+					||pocIdtAttr.query_group >=  m_IdtUser.m_Group.m_Group_Num
 					|| 0 == m_IdtUser.m_Group.m_Group[pocIdtAttr.query_group].m_ucGNum[0])
 				{
 					pocIdtAttr.pocGetMemberListCb(0, 0, NULL);
