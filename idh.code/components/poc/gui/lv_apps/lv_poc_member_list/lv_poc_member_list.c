@@ -27,7 +27,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 static bool lv_poc_member_list_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static void lv_pov_member_list_get_list_cb(int msg_type);
+static void lv_poc_member_list_get_list_cb(int msg_type);
 
 
 static lv_obj_t * activity_list;
