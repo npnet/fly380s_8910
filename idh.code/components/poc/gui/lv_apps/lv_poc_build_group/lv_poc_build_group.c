@@ -20,13 +20,17 @@ static bool lv_poc_build_group_design_func(struct _lv_obj_t * obj, const lv_area
 
 static lv_obj_t * activity_list;
 
+static lv_poc_build_group_item_info_t * lv_poc_build_group_info = NULL;
+
+static int32_t lv_poc_build_group_selected_num = 0;
+
+static lv_poc_member_info_t *lv_poc_build_group_selected_members = NULL;
+
 static lv_obj_t *lv_poc_build_group_noattion = NULL;
 
 static lv_poc_win_t * activity_win;
 
 static lv_area_t build_group_display_area;
-
-static bool * members_status_array;
 
 static lv_poc_member_list_t *lv_poc_build_group_member_list;
 
@@ -44,12 +48,6 @@ static lv_obj_t * lv_poc_build_group_activity_create(lv_poc_display_t *display)
 
 static void lv_poc_build_group_activity_destory(lv_obj_t *obj)
 {
-	if(members_status_array != NULL)
-	{
-	    lv_mem_free(members_status_array);
-    }
-    members_status_array = NULL;
-
     if(lv_poc_build_group_member_list != NULL)
     {
 		list_element_t * cur_p = lv_poc_build_group_member_list->online_list;
@@ -72,6 +70,20 @@ static void lv_poc_build_group_activity_destory(lv_obj_t *obj)
 		lv_mem_free(lv_poc_build_group_member_list);
     }
     lv_poc_build_group_member_list = NULL;
+
+    if(lv_poc_build_group_info != NULL)
+    {
+	    lv_mem_free(lv_poc_build_group_info);
+    }
+    lv_poc_build_group_info = NULL;
+    lv_poc_build_group_selected_num = 0;
+
+    if(lv_poc_build_group_selected_members != NULL)
+    {
+	    lv_mem_free(lv_poc_build_group_selected_members);
+    }
+    lv_poc_build_group_selected_members = NULL;
+
     lv_poc_build_group_noattion = NULL;
     poc_build_group_activity = NULL;
 }
@@ -90,28 +102,68 @@ static void lv_poc_build_group_list_config(lv_obj_t * list, lv_area_t list_area)
 {
 }
 
+static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, int32_t info_num, int32_t selected_num)
+{
+	if(info == NULL || info_num < 1 || selected_num < 1)
+	{
+		return false;
+	}
+
+	lv_poc_build_group_selected_members = (lv_poc_member_info_t *)lv_mem_alloc(sizeof(lv_poc_member_info_t) * selected_num);
+	memset(lv_poc_build_group_selected_members, 0, sizeof(lv_poc_member_info_t) * selected_num);
+	if(lv_poc_build_group_selected_members == NULL)
+	{
+		return false;
+	}
+
+	lv_poc_build_group_item_info_t * p_info = info;
+	void ** p_sel = lv_poc_build_group_selected_members;
+	int32_t real_num = 0;
+	for(int i = 0; i < info_num; i++)
+	{
+		if(p_info->is_selected == true)
+		{
+			*p_sel = p_info->item_information;
+			p_sel++;
+			real_num++;
+		}
+		p_info++;
+	}
+
+	if(lv_poc_build_group_selected_members[0] == 0 || real_num < 1)
+	{
+		return false;
+	}
+
+	return lv_poc_build_new_group(lv_poc_build_group_selected_members, real_num);
+}
+
 static void lv_poc_build_group_pressed_cb(lv_obj_t * obj, lv_event_t event)
 {
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
-		if(members_status_array == NULL)
+		if(lv_poc_build_group_info == NULL)
 		{
 			return;
 		}
-		return;
 
-	    int index = lv_list_get_btn_index(activity_list, obj);
-	    bool is_check = members_status_array[index];
-	    is_check = !is_check;
-	    if(is_check)
+		lv_poc_build_group_item_info_t * p_info = (lv_poc_build_group_item_info_t *)obj->user_data;
+		if(p_info == NULL)
+		{
+			return;
+		}
+
+		p_info->is_selected = !p_info->is_selected;
+	    if(p_info->is_selected)
 	    {
-	        lv_btn_set_state((lv_obj_t *)obj->user_data, LV_BTN_STATE_TGL_PR);
+	        lv_btn_set_state((lv_obj_t *)p_info->checkbox, LV_BTN_STATE_TGL_PR);
+	        lv_poc_build_group_selected_num++;
 	    }
 	    else
 	    {
-	        lv_btn_set_state((lv_obj_t *)obj->user_data, LV_BTN_STATE_TGL_REL);
+	        lv_btn_set_state((lv_obj_t *)p_info->checkbox, LV_BTN_STATE_TGL_REL);
+	        lv_poc_build_group_selected_num--;
 	    }
-	    members_status_array[index] = is_check;
     }
 }
 
@@ -167,6 +219,9 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_KEY_ESC:
 				{
+					lv_poc_build_group_operator(lv_poc_build_group_info,
+						lv_poc_build_group_member_list->offline_number + lv_poc_build_group_member_list->online_number,
+						lv_poc_build_group_selected_num);
 					lv_poc_del_activity(poc_build_group_activity);
 					break;
 				}
@@ -340,9 +395,13 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
 		return;
 	}
 
-    list_element_t * p_cur;
+    list_element_t * p_cur = NULL;
     lv_obj_t * btn;
+    lv_obj_t * btn_checkbox = NULL;
+    lv_obj_t * btn_label = NULL;
+    lv_poc_build_group_item_info_t * p_info = NULL;
     lv_coord_t btn_height = (build_group_display_area.y2 - build_group_display_area.y1)/LV_POC_LIST_COLUM_COUNT;
+    lv_coord_t btn_width = (build_group_display_area.x2 - build_group_display_area.x1);
     char member_list_is_first_item = 1;
     lv_list_clean(activity_list);
 
@@ -369,6 +428,32 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
 	    return;
     }
 
+    if(lv_poc_build_group_info != NULL)
+    {
+	    lv_mem_free(lv_poc_build_group_info);
+	    lv_poc_build_group_info = NULL;
+    }
+
+    lv_poc_build_group_info = (lv_poc_build_group_item_info_t *)lv_mem_alloc(sizeof(lv_poc_build_group_item_info_t) * (member_list_obj->online_number + member_list_obj->offline_number));
+
+	if(lv_poc_build_group_info == NULL)
+	{
+		if(lv_poc_build_group_noattion == NULL)
+		{
+			lv_poc_build_group_noattion = lv_label_create(poc_build_group_activity->display, NULL);
+		}
+
+		if(lv_poc_build_group_noattion != NULL)
+		{
+		    lv_label_set_text(lv_poc_build_group_noattion, "刷新失败");
+		    lv_obj_align(lv_poc_build_group_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
+	    }
+	    return;
+	}
+	lv_poc_build_group_selected_num = 0;
+
+	p_info = lv_poc_build_group_info;
+
     p_cur = member_list_obj->online_list;
     while(p_cur)
     {
@@ -378,7 +463,21 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
         p_cur->list_item = btn;
         lv_btn_set_fit(btn, LV_FIT_NONE);
         lv_obj_set_height(btn, btn_height);
-        btn->user_data = p_cur->information;
+
+        btn_label = lv_list_get_btn_label(btn);
+        lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
+
+        btn_checkbox = lv_cb_create(btn, NULL);
+		lv_cb_set_text(btn_checkbox, "");
+		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_online.header.w);
+		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_REL);
+		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+
+        p_info->is_selected = false;
+        p_info->item_information = p_cur->information;
+        p_info->checkbox = btn_checkbox;
+        btn->user_data = (void *)p_info;
+        p_info++;
         p_cur = p_cur->next;
         if(member_list_is_first_item == 1)
         {
@@ -396,7 +495,21 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
         p_cur->list_item = btn;
         lv_btn_set_fit(btn, LV_FIT_NONE);
         lv_obj_set_height(btn, btn_height);
-        btn->user_data = p_cur->information;
+
+        btn_label = lv_list_get_btn_label(btn);
+        lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
+
+        btn_checkbox = lv_cb_create(btn, NULL);
+		lv_cb_set_text(btn_checkbox, "");
+		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_offline.header.w);
+		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_REL);
+		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+
+        p_info->is_selected = false;
+        p_info->item_information = p_cur->information;
+        p_info->checkbox = btn_checkbox;
+        btn->user_data = (void *)p_info;
+        p_info++;
         p_cur = p_cur->next;
         if(member_list_is_first_item == 1)
         {
