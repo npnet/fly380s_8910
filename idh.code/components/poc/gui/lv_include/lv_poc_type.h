@@ -18,10 +18,10 @@ typedef unsigned short int   uint16_t;
 #define IN  const
 #define OUT
 
-#define POC_UI_MACRO     0
+#define POC_UI_MACRO     1
 #if POC_UI_MACRO != 0
-#define GROUP_EQUATION(A,B,C,D,E)
-#define MEMBER_EQUATION(A,B,C,D,E)
+#define GROUP_EQUATION(A,B,C,D,E) lv_poc_check_group_equation((A),(B),(C),(D),(E))
+#define MEMBER_EQUATION(A,B,C,D,E) lv_poc_check_member_equation((A),(B),(C),(D),(E))
 #else
 #define GROUP_EQUATION(A,B,C,D,E) (0 == strcmp((A),(B)))
 #define MEMBER_EQUATION(A,B,C,D,E) (0 == strcmp((A),(B)))
