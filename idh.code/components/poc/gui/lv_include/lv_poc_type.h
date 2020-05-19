@@ -232,6 +232,8 @@ typedef struct {
 
 typedef void lv_poc_group_info_t;
 
+typedef void * lv_poc_member_info_t;
+
 typedef struct {
 	bool hide_offline;
     unsigned int online_number;

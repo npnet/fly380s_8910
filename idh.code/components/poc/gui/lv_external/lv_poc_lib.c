@@ -1445,4 +1445,15 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 	return (ret1 && ret2);
 }
 
+/*
+	  name : lv_poc_build_new_group
+	  param :
+	  date : 2020-05-19
+*/
+bool
+lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num)
+{
+	return true;
+}
+
 
