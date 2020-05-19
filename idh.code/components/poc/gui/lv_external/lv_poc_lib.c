@@ -1260,6 +1260,27 @@ lv_poc_get_group_list(lv_poc_group_list_t * group_list, get_group_list_cb func)
 	return true;
 }
 
+/*
+	  name : lv_poc_check_group_equation
+	  param :
+	  date : 2020-05-19
+*/
+bool
+lv_poc_check_group_equation(void * A, void *B, void *C, void *D, void *E)
+{
+	CGroup *info1 = (CGroup *)C;
+	CGroup *info2 = (CGroup *)D;
+	bool ret1 = false, ret2 = false;
+
+	if(info1 != NULL && info2 != NULL)
+	{
+		ret1 = (0 == strcmp((const char *)info1->m_ucGName, (const char *)info2->m_ucGName));
+		ret2 = (0 == strcmp((const char *)info1->m_ucGNum, (const char *)info2->m_ucGNum));
+	}
+
+	return (ret1 && ret2);
+}
+
 static lv_poc_member_list_t * prv_member_list = NULL;
 static get_member_list_cb prv_member_list_cb = NULL;
 static int prv_member_list_type  = 0;
@@ -1401,6 +1422,27 @@ lv_poc_get_member_list(lv_poc_group_info_t *group_info, lv_poc_member_list_t * m
 	}
 
 	return true;
+}
+
+/*
+	  name : lv_poc_check_member_equation
+	  param :
+	  date : 2020-05-19
+*/
+bool
+lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
+{
+	Msg_GROUP_MEMBER_s *info1 = (Msg_GROUP_MEMBER_s *)C;
+	Msg_GROUP_MEMBER_s *info2 = (Msg_GROUP_MEMBER_s *)D;
+	bool ret1 = false, ret2 = false;
+
+	if(info1 != NULL && info2 != NULL)
+	{
+		ret1 = (0 == strcmp((const char *)info1->ucName, (const char *)info2->ucName));
+		ret2 = (0 == strcmp((const char *)info1->ucNum, (const char *)info2->ucNum));
+	}
+
+	return (ret1 && ret2);
 }
 
 

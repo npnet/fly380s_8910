@@ -9,17 +9,17 @@ static lv_poc_group_list_t * group_list;
 
 static lv_poc_member_list_t * member_list;
 
-static lv_obj_t * activity_create(lv_poc_display_t *display);
+static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display);
 
-static void activity_destory(lv_obj_t *obj);
+static void lv_poc_group_list_activity_destory(lv_obj_t *obj);
 
-static void list_config(lv_obj_t * list, lv_area_t list_area);
+static void lv_poc_group_list_list_config(lv_obj_t * list, lv_area_t list_area);
 
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event);
 
-static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param);
+static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param);
 
-static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
+static bool lv_poc_group_list_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
 static void lv_poc_get_group_list_cb(int result_type);
 
@@ -35,17 +35,19 @@ lv_poc_activity_t * poc_group_list_activity;
 
 char group_member_list_is_open = 0;
 
-static lv_obj_t * activity_create(lv_poc_display_t *display)
+static char lv_poc_group_member_list_title[LIST_ELEMENT_NAME_MAX_LENGTH];
+
+static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
 {
     display_area.x1 = 0;
     display_area.x2 = lv_obj_get_x(display) + lv_poc_get_display_width(display);
     display_area.y1 = 0;
     display_area.y2 = 0 + lv_poc_get_display_height(display);
-    activity_list = lv_poc_list_create(display, NULL, display_area, list_config);
+    activity_list = lv_poc_list_create(display, NULL, display_area, lv_poc_group_list_list_config);
     return (lv_obj_t *)activity_list;
 }
 
-static void activity_destory(lv_obj_t *obj)
+static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 {
 	activity_list = NULL;
 	if(group_list != NULL)
@@ -72,7 +74,6 @@ static void activity_destory(lv_obj_t *obj)
 		{
 			temp_p = cur_p;
 			cur_p =cur_p->next;
-			//lv_obj_del(temp_p->list_item);
 			lv_mem_free(temp_p);
 		}
 
@@ -81,7 +82,6 @@ static void activity_destory(lv_obj_t *obj)
 		{
 			temp_p = cur_p;
 			cur_p =cur_p->next;
-			//lv_obj_del(temp_p->list_item);
 			lv_mem_free(temp_p);
 		}
 
@@ -92,18 +92,64 @@ static void activity_destory(lv_obj_t *obj)
 	lv_poc_group_list_noattion = NULL;
 }
 
-static void list_config(lv_obj_t * list, lv_area_t list_area)
+static void lv_poc_group_list_list_config(lv_obj_t * list, lv_area_t list_area)
 {
+}
+
+static void lv_poc_group_list_get_membet_list_cb(int msg_type)
+{
+	extern lv_poc_activity_t * poc_member_list_activity;
+	if(poc_member_list_activity != NULL)
+    {
+    	return;
+    }
+
+    if(member_list == NULL)
+    {
+	    return;
+    }
+
+    if(msg_type == 1)
+    {
+	    lv_poc_member_list_open(lv_poc_group_member_list_title,
+			member_list,
+			member_list->hide_offline);
+    }
+    else
+    {
+	    //提示获取指定群组的 成员列表失败
+    }
 }
 
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 {
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
+		list_element_t * p_element = (list_element_t *)obj->user_data;
+		if(p_element == NULL)
+		{
+			return;
+		}
+
+		if(member_list == NULL)
+		{
+			member_list = (lv_poc_member_list_t *)lv_mem_alloc(sizeof(lv_poc_member_list_t));
+		}
+
+		if(member_list != NULL)
+		{
+			memset((void *)member_list, 0, sizeof(lv_poc_member_list_t));
+			strcpy(lv_poc_group_member_list_title, (const char *)p_element->name);
+			member_list->hide_offline = true;
+			lv_poc_get_member_list((lv_poc_group_info_t *)p_element->information,
+				member_list,
+				2,
+				lv_poc_group_list_get_membet_list_cb);
+		}
 	}
 }
 
-static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
+static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
 {
 	switch(sign)
 	{
@@ -180,7 +226,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 	return LV_RES_OK;
 }
 
-static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode)
+static bool lv_poc_group_list_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode)
 {
 	return true;
 }
@@ -217,8 +263,8 @@ static void lv_poc_get_group_list_cb(int result_type)
 void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 {
     static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_GROUP_LIST,
-															activity_create,
-															activity_destory};
+															lv_poc_group_list_activity_create,
+															lv_poc_group_list_activity_destory};
 
     if(poc_group_list_activity != NULL || group_list != NULL || activity_list != NULL)
     {
@@ -270,8 +316,8 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     }
 
     poc_group_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
-    lv_poc_activity_set_signal_cb(poc_group_list_activity, signal_func);
-    lv_poc_activity_set_design_cb(poc_group_list_activity, design_func);
+    lv_poc_activity_set_signal_cb(poc_group_list_activity, lv_poc_group_list_signal_func);
+    lv_poc_activity_set_design_cb(poc_group_list_activity, lv_poc_group_list_design_func);
 
     if(group_list_obj == NULL)
     {
@@ -359,7 +405,7 @@ void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * 
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         group_list_obj->group_list = p_cur->next;
         lv_obj_del(p_cur->list_item);
@@ -371,7 +417,7 @@ void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * 
     p_cur = p_cur->next;
     while(p_cur)
     {
-        if((GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0)))
+        if((GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL)))
         {
             p_prv->next = p_cur->next;
             lv_obj_del(p_cur->list_item);
@@ -475,6 +521,7 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
         lv_obj_set_click(btn, true);
         lv_obj_set_event_cb(btn, lv_poc_group_list_press_btn_cb);
         p_cur->list_item = btn;
+        btn->user_data = (lv_obj_user_data_t)p_cur;
         lv_btn_set_fit(btn, LV_FIT_NONE);
         lv_obj_set_height(btn, btn_height);
         p_cur = p_cur->next;
@@ -507,7 +554,7 @@ lv_poc_status_t lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, 
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
@@ -516,7 +563,7 @@ lv_poc_status_t lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, 
     p_cur = p_cur->next;
     while(p_cur)
     {
-        if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+        if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
             p_prv->next = p_cur->next;
             p_cur->next = group_list_obj->group_list;
@@ -554,7 +601,7 @@ lv_poc_status_t lv_poc_group_list_move_bottom(lv_poc_group_list_t *group_list_ob
 
     p_cur = group_list_obj->group_list;
     p_scr = p_cur;
-    if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         is_find = true;
         p_scr = p_cur;
@@ -564,7 +611,7 @@ lv_poc_status_t lv_poc_group_list_move_bottom(lv_poc_group_list_t *group_list_ob
     p_cur = p_cur->next;
     while(p_cur)
     {
-        if(false == is_find && (GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0)))
+        if(false == is_find && (GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL)))
         {
             is_find = true;
             if(NULL == p_cur->next)
@@ -610,14 +657,14 @@ lv_poc_status_t lv_poc_group_list_move_up(lv_poc_group_list_t *group_list_obj, c
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
 
     p_prv = p_cur;
     p_cur = p_cur->next;
-    if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         p_prv->next = p_cur->next;
         p_cur->next = p_prv;
@@ -630,7 +677,7 @@ lv_poc_status_t lv_poc_group_list_move_up(lv_poc_group_list_t *group_list_obj, c
     p_cur = p_cur->next;
     while(p_cur)
     {
-        if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+        if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
             p_prv->next = p_cur->next;
             p_cur->next = p_prv;
@@ -667,7 +714,7 @@ lv_poc_status_t lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj,
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         if(NULL != p_cur->next)
         {
@@ -683,7 +730,7 @@ lv_poc_status_t lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj,
     p_cur = p_cur->next;
     while(p_cur)
     {
-        if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+        if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
             if(NULL != p_cur->next)
             {
@@ -726,7 +773,7 @@ lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj,
     p_cur = group_list_obj->group_list;
     while(p_cur)
     {
-        if(GROUP_EQUATION(p_cur->name, name, p_cur->information, information, 0))
+        if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
             return POC_GROUP_EXISTS;
         }
