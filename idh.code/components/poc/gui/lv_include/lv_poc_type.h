@@ -230,6 +230,16 @@ typedef struct {
     list_element_t * group_list;
 } lv_poc_group_list_t;
 
+typedef void lv_poc_group_info_t;
+
+typedef struct {
+	bool hide_offline;
+    unsigned int online_number;
+    unsigned int offline_number;
+    list_element_t * online_list;
+    list_element_t * offline_list;
+} lv_poc_member_list_t;
+
 typedef struct _lv_poc_audio_dsc_t
 {
 	uint32_t data_size;
