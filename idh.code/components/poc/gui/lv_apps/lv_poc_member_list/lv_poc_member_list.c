@@ -207,7 +207,7 @@ static bool lv_poc_member_list_design_func(struct _lv_obj_t * obj, const lv_area
 }
 
 //处理成员列表，GUI显示
-void lv_pov_member_list_get_list_cb(int msg_type)
+static void lv_poc_member_list_get_list_cb(int msg_type)
 {
 	if(poc_member_list_activity == NULL)
 	{
@@ -283,7 +283,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
 	    lv_poc_member_list_noattion = lv_label_create(poc_member_list_activity->display, NULL);
 	    lv_label_set_text(lv_poc_member_list_noattion, "正在获取成员列表");
 	    lv_obj_align(lv_poc_member_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
-		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_pov_member_list_get_list_cb))
+		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
 		{
 			lv_label_set_text(lv_poc_member_list_noattion, "获取失败");
 		}
@@ -445,39 +445,26 @@ void lv_poc_member_list_clear(lv_poc_member_list_t *member_list_obj)
 		return;
 	}
 
-	if(member_list_obj != NULL)
+	list_element_t * cur_p = member_list_obj->online_list;
+	list_element_t * temp_p;
+	while(cur_p != NULL)
 	{
-		list_element_t * cur_p = member_list_obj->online_list;
-		list_element_t * temp_p;
-		while(cur_p != NULL)
-		{
-			temp_p = cur_p;
-			cur_p =cur_p->next;
-			//lv_obj_del(temp_p->list_item);
-			lv_mem_free(temp_p);
-		}
-		member_list_obj->online_list = NULL;
-
-		cur_p = member_list_obj->offline_list;
-		while(cur_p != NULL)
-		{
-			temp_p = cur_p;
-			cur_p =cur_p->next;
-			//lv_obj_del(temp_p->list_item);
-			lv_mem_free(temp_p);
-		}
-		member_list_obj->offline_list = NULL;
-
+		temp_p = cur_p;
+		cur_p =cur_p->next;
+		//lv_obj_del(temp_p->list_item);
+		lv_mem_free(temp_p);
 	}
-	else
+	member_list_obj->online_list = NULL;
+
+	cur_p = member_list_obj->offline_list;
+	while(cur_p != NULL)
 	{
-		member_list_obj = (lv_poc_member_list_t *)lv_mem_alloc(sizeof(lv_poc_member_list_t));
-		if(member_list_obj == NULL)
-		{
-			return;
-		}
-		memset(member_list_obj, 0, sizeof(lv_poc_member_list_t));
+		temp_p = cur_p;
+		cur_p =cur_p->next;
+		//lv_obj_del(temp_p->list_item);
+		lv_mem_free(temp_p);
 	}
+	member_list_obj->offline_list = NULL;
 }
 
 int lv_poc_member_list_get_information(lv_poc_member_list_t *member_list_obj, const char * name, void *** information)
