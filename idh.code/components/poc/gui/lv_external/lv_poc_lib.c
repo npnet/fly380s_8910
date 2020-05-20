@@ -1451,9 +1451,39 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 	  date : 2020-05-19
 */
 bool
-lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num)
+lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_group_cb func)
 {
+	OSI_LOGI(0, "[build group] members<-0x%p,num<-%d", members, num);
+	func(1);
 	return true;
+}
+
+/*
+	  name : lv_poc_get_self_info
+	  param :
+	  date : 2020-05-20
+*/
+lv_poc_member_info_t
+lv_poc_get_self_info(void)
+{
+	return NULL;
+}
+
+/*
+	  name : lv_poc_get_member_name
+	  param :
+	  date : 2020-05-20
+*/
+char *
+lv_poc_get_member_name(lv_poc_member_info_t members)
+{
+	if(members == NULL)
+	{
+		return NULL;
+	}
+
+	Msg_GROUP_MEMBER_s * member_info = (Msg_GROUP_MEMBER_s *)members;
+	return (char *)member_info->ucName;
 }
 
 
