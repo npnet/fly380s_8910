@@ -38,6 +38,8 @@ lv_poc_activity_t * poc_build_group_activity;
 
 static char * lv_poc_build_group_success_text = "创建群组成功";
 
+static char * lv_poc_build_group_failed_text = "创建群组失败";
+
 static char * lv_poc_build_group_few_member_text1 = "成员数量不";
 
 static char * lv_poc_build_group_few_member_text2 = "能少于两人";
@@ -112,6 +114,10 @@ static void lv_poc_build_group_new_group_cb(int result_type)
 	if(result_type == 1)
 	{
 		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_success_text, NULL);
+	}
+	else
+	{
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_failed_text, NULL);
 	}
 }
 
