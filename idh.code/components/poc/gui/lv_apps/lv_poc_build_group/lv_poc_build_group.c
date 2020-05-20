@@ -119,6 +119,7 @@ static void lv_poc_build_group_new_group_cb(int result_type)
 	{
 		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_failed_text, NULL);
 	}
+	lv_poc_del_activity(poc_build_group_activity);
 }
 
 static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, int32_t info_num, int32_t selected_num)
@@ -128,6 +129,7 @@ static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, i
 		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG,
 			(const uint8_t *)lv_poc_build_group_few_member_text1,
 			(const uint8_t *)lv_poc_build_group_few_member_text2);
+		lv_poc_del_activity(poc_build_group_activity);
 		return false;
 	}
 
@@ -244,7 +246,7 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 					lv_poc_build_group_operator(lv_poc_build_group_info,
 						lv_poc_build_group_member_list->offline_number + lv_poc_build_group_member_list->online_number,
 						lv_poc_build_group_selected_num);
-					lv_poc_del_activity(poc_build_group_activity);
+					//lv_poc_del_activity(poc_build_group_activity);
 					break;
 				}
 			}
