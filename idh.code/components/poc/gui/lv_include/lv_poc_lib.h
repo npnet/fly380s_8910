@@ -62,6 +62,12 @@ typedef void (*lv_poc_get_group_list_cb_t)(int msg_type, uint32_t num, CGroup *g
 */
 typedef void (*get_member_list_cb)(int msg_type);
 typedef void (*lv_poc_get_member_list_cb_t)(int msg_type, unsigned long num, Msg_GData_s *pGroup);
+/*
+	  name :回调函数
+	  param :
+	  date : 2020-05-20
+*/
+typedef void (*poc_build_group_cb)(int result_type);
 
 #ifdef __cplusplus
 extern "C" {
@@ -434,7 +440,23 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E);
 	  date : 2020-05-19
 */
 bool
-lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num);
+lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_group_cb func);
+
+/*
+	  name : lv_poc_get_self_info
+	  param :
+	  date : 2020-05-20
+*/
+lv_poc_member_info_t
+lv_poc_get_self_info(void);
+
+/*
+	  name : lv_poc_get_member_name
+	  param :
+	  date : 2020-05-20
+*/
+char *
+lv_poc_get_member_name(lv_poc_member_info_t members);
 
 /*
 	  name : lv_poc_notation_msg
@@ -451,7 +473,7 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num);
 	  date : 2020-05-09
 */
 extern bool
-lv_poc_notation_msg(int msg_type, const uint8_t *text_1, const uint8_t *text_2);
+lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
 
 
 #ifdef __cplusplus

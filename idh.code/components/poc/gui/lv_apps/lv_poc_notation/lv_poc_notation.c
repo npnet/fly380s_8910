@@ -9,6 +9,15 @@
 
 #define LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE 50
 
+#define LV_POC_NOTATION_TASK_QUEUE_SIZE (10)
+
+typedef struct
+{
+	lv_poc_notation_msg_type_t msg_type;
+	int8_t label_1_text[LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE];
+	int8_t label_2_text[LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE];
+} lv_poc_notation_task_msg_t;
+
 static lv_obj_t * lv_poc_notationwindow_obj = NULL;
 static lv_obj_t * lv_poc_notationwindow_label_1 = NULL;
 static lv_obj_t * lv_poc_notationwindow_label_2 = NULL;
@@ -17,7 +26,17 @@ static int8_t lv_poc_notationwindow_label_2_text[LV_POC_NOTATIONWINDOW_LABEL_TEX
 
 static lv_style_t lv_poc_notation_style = {0};
 
+static lv_task_t * lv_poc_notation_delay_close_task = NULL;
 
+static lv_task_t * lv_poc_notation_task = NULL;
+
+static lv_poc_notation_task_msg_t lv_poc_notation_task_queue[LV_POC_NOTATION_TASK_QUEUE_SIZE] = {0};
+
+static int32_t lv_poc_notation_task_queue_reader = 0;
+
+static int32_t lv_poc_notation_task_queue_writer = 0;
+
+static bool lv_poc_notation_delay_close_task_running = false;
 
 lv_obj_t * lv_poc_notation_create(void)
 {
@@ -160,7 +179,7 @@ lv_obj_t * lv_poc_notation_listenning(const int8_t * text_1, const int8_t * text
 		lv_poc_notation_create();
 	}
 
-	if(text_1 != NULL)
+	if(text_1 != NULL && text_1[0] != 0)
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_1, false);
 		memset(lv_poc_notationwindow_label_1_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
@@ -172,7 +191,7 @@ lv_obj_t * lv_poc_notation_listenning(const int8_t * text_1, const int8_t * text
 		lv_obj_set_hidden(lv_poc_notationwindow_label_1, true);
 	}
 
-	if(text_2 != NULL)
+	if(text_2 != NULL && text_2[0] != 0)
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_2, false);
 		memset(lv_poc_notationwindow_label_2_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
@@ -195,63 +214,193 @@ lv_obj_t * lv_poc_notation_speaking(const int8_t * text_1, const int8_t * text_2
 		lv_poc_notation_create();
 	}
 
-	if(text_1 != NULL)
+	if(text_1 != NULL && text_1[0] != 0)
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_1, false);
-		memset(lv_poc_notationwindow_label_1_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
 		strcpy((char *)lv_poc_notationwindow_label_1_text, (char *)text_1);
 	}
 	else
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_1, true);
+		memset(lv_poc_notationwindow_label_1_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
 	}
 
-	if(text_2 != NULL)
+	if(text_2 != NULL && text_2[0] != 0)
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_2, false);
-		memset(lv_poc_notationwindow_label_2_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
-		strcpy((char *)lv_poc_notationwindow_label_2_text, (char *)text_1);
+		strcpy((char *)lv_poc_notationwindow_label_2_text, (char *)text_2);
 	}
 	else
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_2, true);
+		memset(lv_poc_notationwindow_label_2_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
 	}
 	lv_poc_notation_refresh();
 
 	return lv_poc_notationwindow_obj;
 }
 
-bool lv_poc_notation_msg(int msg_type, const uint8_t *text_1, const uint8_t *text_2)
+lv_obj_t * lv_poc_notation_normal_msg(const int8_t * text_1, const int8_t * text_2)
 {
+	if(lv_poc_notationwindow_obj == NULL)
+	{
+		lv_poc_notation_create();
+	}
+
+	if(text_1 != NULL && text_1[0] != 0)
+	{
+		lv_obj_set_hidden(lv_poc_notationwindow_label_1, false);
+		strcpy((char *)lv_poc_notationwindow_label_1_text, (char *)text_1);
+	}
+	else
+	{
+		lv_obj_set_hidden(lv_poc_notationwindow_label_1, true);
+		memset(lv_poc_notationwindow_label_1_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
+	}
+
+	if(text_2 != NULL && text_2[0] != 0)
+	{
+		lv_obj_set_hidden(lv_poc_notationwindow_label_2, false);
+		strcpy((char *)lv_poc_notationwindow_label_2_text, (char *)text_2);
+	}
+	else
+	{
+		lv_obj_set_hidden(lv_poc_notationwindow_label_2, true);
+		memset(lv_poc_notationwindow_label_2_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
+	}
+	lv_poc_notation_refresh();
+
+	return lv_poc_notationwindow_obj;
+}
+
+static void lv_poc_notation_normal_msg_delay_close_task(lv_task_t * task)
+{
+	OSI_LOGI(0, "[notation] close notation\n");
+
+	lv_poc_notation_delay_close_task_running = true;
+	lv_poc_notation_destory();
+	lv_poc_notation_delay_close_task = NULL;
+	lv_poc_notation_delay_close_task_running = false;
+}
+
+static void lv_poc_notation_task_cb(lv_task_t * task)
+{
+	if(lv_poc_notation_delay_close_task_running == true)
+	{
+		return;
+	}
+
+	lv_poc_notation_task_msg_t * notation_msg = &lv_poc_notation_task_queue[lv_poc_notation_task_queue_reader];
+	lv_poc_notation_msg_type_t   msg_type = notation_msg->msg_type;
+	if(msg_type == LV_POC_NOTATION_NONE)
+	{
+		return;
+	}
+	notation_msg->msg_type = LV_POC_NOTATION_NONE;
+	lv_poc_notation_task_queue_reader = (lv_poc_notation_task_queue_reader + 1) % LV_POC_NOTATION_TASK_QUEUE_SIZE;
+
 	switch(msg_type)
 	{
-		case 1:
-		{
-			lv_poc_notation_listenning((const int8_t *)text_1, (const int8_t *)text_2);
-			break;
-		}
-
-		case 2:
-		{
-			lv_poc_notation_speaking((const int8_t *)text_1, (const int8_t *)text_2);
-			break;
-		}
-
-		case 0:
-		{
-			lv_poc_notation_destory();
-			break;
-		}
-
-		case 3:
+		case LV_POC_NOTATION_REFRESH:
 		{
 			lv_poc_notation_refresh();
+			return;
+		}
+
+		case LV_POC_NOTATION_LISTENING:
+		{
+			lv_poc_notation_listenning((const int8_t *)notation_msg->label_1_text,
+				(const int8_t *)notation_msg->label_2_text);
 			break;
+		}
+
+		case LV_POC_NOTATION_SPEAKING:
+		{
+			lv_poc_notation_speaking((const int8_t *)notation_msg->label_1_text,
+				(const int8_t *)notation_msg->label_2_text);
+			break;
+		}
+
+		case LV_POC_NOTATION_NORMAL_MSG:
+		{
+			lv_poc_notation_normal_msg((const int8_t *)notation_msg->label_1_text,
+				(const int8_t *)notation_msg->label_2_text);
+
+			if(lv_poc_notation_delay_close_task != NULL)
+			{
+				lv_task_del(lv_poc_notation_delay_close_task);
+				lv_poc_notation_delay_close_task = NULL;
+			}
+
+			lv_poc_notation_delay_close_task = lv_task_create(lv_poc_notation_normal_msg_delay_close_task,
+				2000,
+				LV_TASK_PRIO_LOWEST,
+				NULL);
+
+			if(lv_poc_notation_delay_close_task != NULL)
+			{
+				lv_task_once(lv_poc_notation_delay_close_task);
+			}
+			return;
+		}
+
+		case LV_POC_NOTATION_DESTORY:
+		{
+			lv_poc_notation_destory();
+			return;
+		}
+
+		case LV_POC_NOTATION_HIDEN:
+		{
+			if(notation_msg->label_1_text[0] == 0)
+			{
+				lv_poc_notation_hide(false);
+			}
+			else
+			{
+				lv_poc_notation_hide(true);
+			}
+			return;
 		}
 
 		default:
-			return false;
+			return;
 	}
+
+	if(lv_poc_notation_delay_close_task != NULL)
+	{
+		lv_task_del(lv_poc_notation_delay_close_task);
+		lv_poc_notation_delay_close_task = NULL;
+	}
+}
+
+bool lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2)
+{
+	if(lv_poc_notation_task == NULL)
+	{
+		lv_poc_notation_task = lv_task_create(lv_poc_notation_task_cb, 200, LV_TASK_PRIO_LOWEST, NULL);
+		if(lv_poc_notation_task == NULL)
+		{
+			return false;
+		}
+
+		memset(lv_poc_notation_task_queue, 0, sizeof(lv_poc_notation_task_msg_t) * LV_POC_NOTATION_TASK_QUEUE_SIZE);
+	}
+
+	lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].msg_type = msg_type;
+	lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].label_1_text[0] = 0;
+	lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].label_2_text[0] = 0;
+	if(text_1 != NULL)
+	{
+		strcpy((char *)lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].label_1_text, (const char *)text_1);
+	}
+
+	if(text_2 != NULL)
+	{
+		strcpy((char *)lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].label_2_text, (const char *)text_2);
+	}
+	lv_poc_notation_task_queue_writer = (lv_poc_notation_task_queue_writer + 1) % LV_POC_NOTATION_TASK_QUEUE_SIZE;
+
 	return true;
 }
 

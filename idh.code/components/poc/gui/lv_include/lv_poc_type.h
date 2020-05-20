@@ -218,6 +218,17 @@ typedef enum {
     POC_UNKNOWN_FAULT
 } lv_poc_status_t;
 
+typedef enum
+{
+	LV_POC_NOTATION_NONE       = 0,
+	LV_POC_NOTATION_HIDEN      = 1,
+	LV_POC_NOTATION_DESTORY    = 2,
+	LV_POC_NOTATION_REFRESH    = 3,
+	LV_POC_NOTATION_LISTENING  = 4,
+	LV_POC_NOTATION_SPEAKING   = 5,
+	LV_POC_NOTATION_NORMAL_MSG = 6,
+} lv_poc_notation_msg_type_t;
+
 typedef struct _list_element_t{
     char name[LIST_ELEMENT_NAME_MAX_LENGTH];
     lv_obj_t * list_item;

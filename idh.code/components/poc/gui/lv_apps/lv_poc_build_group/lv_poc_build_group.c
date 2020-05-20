@@ -36,6 +36,11 @@ static lv_poc_member_list_t *lv_poc_build_group_member_list;
 
 lv_poc_activity_t * poc_build_group_activity;
 
+static char * lv_poc_build_group_success_text = "创建群组成功";
+
+static char * lv_poc_build_group_few_member_text1 = "成员数量不";
+
+static char * lv_poc_build_group_few_member_text2 = "能少于两人";
 
 
 static lv_obj_t * lv_poc_build_group_activity_create(lv_poc_display_t *display)
@@ -102,10 +107,21 @@ static void lv_poc_build_group_list_config(lv_obj_t * list, lv_area_t list_area)
 {
 }
 
+static void lv_poc_build_group_new_group_cb(int result_type)
+{
+	if(result_type == 1)
+	{
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_success_text, NULL);
+	}
+}
+
 static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, int32_t info_num, int32_t selected_num)
 {
-	if(info == NULL || info_num < 1 || selected_num < 1)
+	if(info == NULL || info_num < 2 || selected_num < 2)
 	{
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG,
+			(const uint8_t *)lv_poc_build_group_few_member_text1,
+			(const uint8_t *)lv_poc_build_group_few_member_text2);
 		return false;
 	}
 
@@ -135,7 +151,7 @@ static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, i
 		return false;
 	}
 
-	return lv_poc_build_new_group(lv_poc_build_group_selected_members, real_num);
+	return lv_poc_build_new_group(lv_poc_build_group_selected_members, real_num, lv_poc_build_group_new_group_cb);
 }
 
 static void lv_poc_build_group_pressed_cb(lv_obj_t * obj, lv_event_t event)
@@ -161,7 +177,7 @@ static void lv_poc_build_group_pressed_cb(lv_obj_t * obj, lv_event_t event)
 	    }
 	    else
 	    {
-	        lv_btn_set_state((lv_obj_t *)p_info->checkbox, LV_BTN_STATE_TGL_REL);
+	        lv_btn_set_state((lv_obj_t *)p_info->checkbox, LV_BTN_STATE_REL);
 	        lv_poc_build_group_selected_num--;
 	    }
     }
@@ -261,6 +277,9 @@ static void lv_poc_build_group_get_list_cb(int msg_type)
 
 	if(msg_type==1)//显示
 	{
+		lv_poc_member_info_t self_info = lv_poc_get_self_info();
+		char * self_name = lv_poc_get_member_name(self_info);
+		lv_poc_build_group_remove(NULL, self_name, self_info);
 		lv_poc_build_group_refresh(NULL);
 	}
 	else
@@ -470,7 +489,7 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
         btn_checkbox = lv_cb_create(btn, NULL);
 		lv_cb_set_text(btn_checkbox, "");
 		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_online.header.w);
-		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_REL);
+		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
         p_info->is_selected = false;
@@ -502,7 +521,7 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
         btn_checkbox = lv_cb_create(btn, NULL);
 		lv_cb_set_text(btn_checkbox, "");
 		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_offline.header.w);
-		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_REL);
+		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
         p_info->is_selected = false;
