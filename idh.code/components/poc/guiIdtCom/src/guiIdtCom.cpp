@@ -41,7 +41,7 @@
 #include "IDT.h"
 
 #define APPTEST_THREAD_PRIORITY (OSI_PRIORITY_NORMAL)
-#define APPTEST_STACK_SIZE (8192 * 4)
+#define APPTEST_STACK_SIZE (8192 * 16)
 #define APPTEST_EVENT_QUEUE_SIZE (64)
 
 char *GetCauseStr(USHORT usCause);
