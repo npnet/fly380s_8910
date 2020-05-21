@@ -926,7 +926,7 @@ void
 poc_torch_init(void)
 {
 	if(poc_torch_gpio != NULL) return;
-	static drvGpioConfig_t * config = NULL;
+	drvGpioConfig_t * config = NULL;
 	if(config == NULL)
 	{
 		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
@@ -940,6 +940,7 @@ poc_torch_init(void)
 		config->out_level = false;
 	}
 	poc_torch_gpio = drvGpioOpen(2, config, NULL, NULL);
+	free(config);
 }
 
 /*
@@ -976,7 +977,7 @@ void
 poc_keypad_led_init(void)
 {
 	if(poc_keypad_led_gpio != NULL) return;
-	static drvGpioConfig_t * config = NULL;
+	drvGpioConfig_t * config = NULL;
 	nv_poc_setting_msg_t * poc_setting = lv_poc_setting_conf_read();
 	if(config == NULL)
 	{
@@ -991,6 +992,7 @@ poc_keypad_led_init(void)
 		config->out_level = poc_setting->keypad_led_switch;
 	}
 	poc_keypad_led_gpio = drvGpioOpen(15, config, NULL, NULL);
+	free(config);
 }
 
 /*
@@ -1031,7 +1033,6 @@ poc_set_ext_pa_status(bool open)
 	{
 		drvGpioWrite(poc_ext_pa_gpio, false);
 	}
-	OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d - %d\n", __LINE__, open);
 	return open;
 }
 
@@ -1057,7 +1058,7 @@ void
 poc_ext_pa_init(void)
 {
 	if(poc_ext_pa_gpio != NULL) return;
-	static drvGpioConfig_t * config = NULL;
+	drvGpioConfig_t * config = NULL;
 	if(config == NULL)
 	{
 		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
@@ -1071,6 +1072,7 @@ poc_ext_pa_init(void)
 		config->out_level = false;
 	}
 	poc_ext_pa_gpio = drvGpioOpen(9, config, NULL, NULL);
+	free(config);
 }
 
 /*
