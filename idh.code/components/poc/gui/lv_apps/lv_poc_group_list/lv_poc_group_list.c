@@ -2,6 +2,8 @@
 extern "C" {
 #endif
 #include "lv_include/lv_poc.h"
+#include <stdio.h>
+#include <string.h>
 
 #define CURRENR_GROUP_NAME_EXTERN 20
 
@@ -36,6 +38,8 @@ lv_poc_activity_t * poc_group_list_activity;
 char group_member_list_is_open = 0;
 
 static char lv_poc_group_member_list_title[LIST_ELEMENT_NAME_MAX_LENGTH];
+
+static char lv_poc_group_list_current_group_title[LIST_ELEMENT_NAME_MAX_LENGTH * 2];
 
 static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
 {
@@ -118,8 +122,24 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     }
     else
     {
-	    //提示获取指定群组的 成员列表失败
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
     }
+}
+
+static void lv_poc_group_list_set_current_group_cb(int result_type)
+{
+	if(result_type == 1)
+	{
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
+	}
+	else if(result_type == 2)
+	{
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
+	}
+	else
+	{
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"失败");
+	}
 }
 
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
@@ -131,6 +151,8 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 		{
 			return;
 		}
+
+		lv_poc_set_current_group((lv_poc_group_info_t)p_element->information, lv_poc_group_list_set_current_group_cb);
 
 		if(member_list == NULL)
 		{
@@ -490,6 +512,7 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
     lv_obj_t * btn;
     lv_coord_t btn_height = (display_area.y2 - display_area.y1)/(LV_POC_LIST_COLUM_COUNT + 1);
     char is_first_item = 1;
+    char is_set_current_group = 1;
 
     lv_list_clean(activity_list);
 
@@ -516,6 +539,9 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
 	    return;
     }
 
+    lv_poc_group_info_t current_group = lv_poc_get_current_group();
+    char * current_group_name = lv_poc_get_group_name(current_group);
+
     p_cur = group_list_obj->group_list;
     while(p_cur)
     {
@@ -526,12 +552,24 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
         btn->user_data = (lv_obj_user_data_t)p_cur;
         lv_btn_set_fit(btn, LV_FIT_NONE);
         lv_obj_set_height(btn, btn_height);
-        p_cur = p_cur->next;
         if(is_first_item == 1)
-        {
+	    {
         	is_first_item = 0;
         	lv_list_set_btn_selected(activity_list, btn);
         }
+
+        if(is_set_current_group == 1
+	        && GROUP_EQUATION((void *)p_cur->name, (void *)current_group_name, (void *)p_cur->information, (void *)current_group, NULL))
+        {
+	        is_set_current_group = 0;
+        	lv_list_set_btn_selected(activity_list, btn);
+        	lv_obj_t * btn_label = lv_list_get_btn_label(btn);
+        	strcpy(lv_poc_group_list_current_group_title, (const char *)p_cur->name);
+        	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+        	lv_label_set_text(btn_label, (const char *)lv_poc_group_list_current_group_title);
+        }
+
+        p_cur = p_cur->next;
     }
 }
 
