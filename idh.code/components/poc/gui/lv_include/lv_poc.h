@@ -26,7 +26,7 @@
 #include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
 #include "lv_apps/lv_poc_group_list/lv_poc_group_list.h"
 #include "lv_apps/lv_poc_build_group/lv_poc_build_group.h"
-#include "lv_apps/lv_poc_single_call/lv_poc_single_call.h"
+#include "lv_apps/lv_poc_member_call/lv_poc_member_call.h"
 #include "lv_apps/lv_poc_edeg_key/lv_poc_edeg_key.h"
 #include "lv_apps/lv_poc_about/lv_poc_about.h"
 #include "lv_apps/lv_poc_notation/lv_poc_notation.h"
