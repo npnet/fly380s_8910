@@ -46,6 +46,8 @@ static bool lv_poc_member_list_need_free_member_list = true;
 
 lv_poc_activity_t * poc_member_list_activity;
 
+static void * lv_poc_member_call_obj_information = NULL;
+
 
 
 static lv_obj_t * lv_poc_member_list_activity_create(lv_poc_display_t *display)
@@ -88,6 +90,7 @@ static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
 	lv_poc_member_list_obj = NULL;
 	poc_member_list_activity = NULL;
 	lv_poc_member_list_noattion = NULL;
+	lv_poc_member_call_obj_information = NULL;
 }
 
 static void * lv_poc_member_list_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -111,11 +114,34 @@ static void lv_poc_member_list_list_config(lv_obj_t * list, lv_area_t list_area)
 #endif
 }
 
+static void lv_poc_member_list_get_member_status_cb(int status)
+{
+	if(status == 1)
+	{
+		lv_poc_member_call_open(lv_poc_member_call_obj_information);
+	}
+	else
+	{
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
+	}
+	lv_poc_member_call_obj_information = NULL;
+}
+
 static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 {
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
-		lv_poc_member_call_open(obj->user_data);
+		if(lv_poc_member_call_obj_information != NULL)
+		{
+			return;
+		}
+
+		lv_poc_member_call_obj_information = obj->user_data;
+		if(!lv_poc_get_member_status(lv_poc_member_call_obj_information, lv_poc_member_list_get_member_status_cb))
+		{
+			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"错误", NULL);
+			lv_poc_member_call_obj_information = NULL;
+		}
 	}
 }
 

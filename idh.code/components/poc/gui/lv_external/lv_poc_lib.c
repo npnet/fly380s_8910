@@ -1507,7 +1507,8 @@ lv_poc_get_member_name(lv_poc_member_info_t members)
 bool
 lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb func)
 {
-	return true;
+	func(1);
+	return true;;
 }
 
 
