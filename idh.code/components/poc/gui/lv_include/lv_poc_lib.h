@@ -68,6 +68,12 @@ typedef void (*lv_poc_get_member_list_cb_t)(int msg_type, unsigned long num, Msg
 	  date : 2020-05-20
 */
 typedef void (*poc_build_group_cb)(int result_type);
+/*
+	  name :回调函数
+	  param :
+	  date : 2020-05-21
+*/
+typedef void (*poc_get_member_status_cb)(int status);
 
 #ifdef __cplusplus
 extern "C" {
@@ -457,6 +463,14 @@ lv_poc_get_self_info(void);
 */
 char *
 lv_poc_get_member_name(lv_poc_member_info_t members);
+
+/*
+	  name : lv_poc_get_member_status
+	  param :
+	  date : 2020-05-21
+*/
+bool
+lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb func);
 
 /*
 	  name : lv_poc_notation_msg

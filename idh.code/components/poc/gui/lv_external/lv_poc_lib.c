@@ -1488,4 +1488,15 @@ lv_poc_get_member_name(lv_poc_member_info_t members)
 	return (char *)member_info->ucName;
 }
 
+/*
+	  name : lv_poc_get_member_status
+	  param :
+	  date : 2020-05-21
+*/
+bool
+lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb func)
+{
+	return true;
+}
+
 
