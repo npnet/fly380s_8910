@@ -56,6 +56,7 @@ static lv_obj_t * lv_poc_member_list_activity_create(lv_poc_display_t *display)
 
 static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
 {
+	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, false);
 	activity_list = NULL;
 	if(activity_win != NULL)
 	{
@@ -277,6 +278,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     poc_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);
     lv_poc_activity_set_design_cb(poc_member_list_activity, lv_poc_member_list_design_func);
+    lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, true);
 
     if(members == NULL)
     {
