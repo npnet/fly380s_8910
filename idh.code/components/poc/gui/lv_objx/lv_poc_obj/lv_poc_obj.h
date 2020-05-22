@@ -413,6 +413,42 @@ typedef struct _lv_poc_activity_list_t{
 	struct _lv_poc_activity_list_node_t * head;
 } lv_poc_activity_list_t;
 
+typedef struct _lv_poc_activity_attribute_cb_set_obj
+{
+	struct{
+		lv_poc_Activity_Id_t activity_id;
+		bool active;
+		lv_poc_member_list_add_cb add;
+		lv_poc_member_list_remove_cb remove;
+		lv_poc_member_list_clear_cb clear;
+		lv_poc_member_list_get_information_cb get_info;
+		lv_poc_member_list_refresh_cb refresh;
+		lv_poc_member_list_move_top_cb move_to_top;
+		lv_poc_member_list_move_bottom_cb move_to_bottom;
+		lv_poc_member_list_move_up_cb move_up;
+		lv_poc_member_list_move_down_cb move_down;
+		lv_poc_member_list_set_state_cb set_state;
+		lv_poc_member_list_is_exists_cb exists;
+		lv_poc_member_list_get_state_cb get_state;
+	} member_list[LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE];
+
+	struct{
+		lv_poc_Activity_Id_t activity_id;
+		bool active;
+		lv_poc_group_list_add_cb add;
+		lv_poc_group_list_remove_cb remove;
+		lv_poc_group_list_get_information_cb get_info;
+		lv_poc_group_list_refresh_cb refresh;
+		lv_poc_group_list_move_top_cb move_to_top;
+		lv_poc_group_list_move_bottom_cb move_to_bottom;
+		lv_poc_group_list_move_up_cb move_up;
+		lv_poc_group_list_move_down_cb move_down;
+		lv_poc_group_list_is_exists_cb exists;
+	} group_list[LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE];
+
+	lv_poc_notation_msg_cb note;
+} lv_poc_activity_attribute_cb_set_obj;
+
 /*******************
 *     NAME:  status_bar_task_t
 *   AUTHOR:  lugj
@@ -744,6 +780,10 @@ int lv_poc_get_refresh_ui(void);
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_refresh_ui_next(void);
+
+void lv_poc_member_list_cb_set_active(lv_poc_Activity_Id_t activity_id, bool enable);
+
+void lv_poc_group_list_cb_set_active(lv_poc_Activity_Id_t activity_id, bool enable);
 
 extern nv_poc_setting_msg_t * poc_setting_conf;
 

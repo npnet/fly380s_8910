@@ -19,7 +19,7 @@ lv_obj_t * lv_poc_notation_listenning(const int8_t * text_1, const int8_t * text
 
 lv_obj_t * lv_poc_notation_speaking(const int8_t * text_1, const int8_t * text_2);
 
-
+bool lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
 
 #ifdef __cplusplus
 }

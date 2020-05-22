@@ -68,6 +68,7 @@ static lv_obj_t * lv_poc_member_call_activity_create(lv_poc_display_t *display)
 
 static void lv_poc_member_call_activity_destory(lv_obj_t *obj)
 {
+	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_CALL, false);
 	if(activity_win != NULL)
 	{
 		lv_mem_free(activity_win);
@@ -272,7 +273,7 @@ static void lv_poc_member_call_delay_exit_task_create(const int delay_time_ms)
 
 void lv_poc_member_call_open(void * information)
 {
-    static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_SINGLE_CALL,
+    static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_CALL,
 															lv_poc_member_call_activity_create,
 															lv_poc_member_call_activity_destory};
 
@@ -304,6 +305,7 @@ void lv_poc_member_call_open(void * information)
 	    lv_mem_free(lv_poc_member_call_member_list_obj);
 	    lv_poc_member_call_member_list_obj = NULL;
     }
+    lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_CALL, true);
 	lv_poc_activity_set_signal_cb(poc_member_call_activity, lv_poc_member_call_signal_func);
 	lv_poc_activity_set_design_cb(poc_member_call_activity, lv_poc_member_call_design_func);
 
