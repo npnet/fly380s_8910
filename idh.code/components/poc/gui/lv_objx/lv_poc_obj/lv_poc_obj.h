@@ -18,7 +18,7 @@ extern "C" {
 *                  DEFINE
 *
 *************************************************/
-#define FT_COUNT_DEBUG         1   //lugj×¨ÓÃµ÷ÊÔºê
+#define FT_COUNT_DEBUG         1   //lugjä¸“ç”¨è°ƒè¯•å®
 
 #define LV_POC_STABAR_TASK_EXT_LENGTH (20)
 
@@ -26,12 +26,12 @@ extern "C" {
 #define LV_POC_SCREEN_SCALE_VER_RES (LV_VER_RES)
 
 
-//ÆÁÄ»µÄÁãµãÎ»ÖÃ
+//å±å¹•çš„é›¶ç‚¹ä½ç½®
 #define LV_POC_SCREEN_X           (0)
 #define LV_POC_SCREEN_Y           (0)
 
 
-//×´Ì¬À¸µÄÎ»ÖÃ
+//çŠ¶æ€æ çš„ä½ç½®
 #define LV_POC_STATUS_BAR_HOR_RES (LV_POC_SCREEN_SCALE_HOR_RES)
 #define LV_POC_STATUS_BAR_VER_RES (LV_POC_SCREEN_SCALE_VER_RES/7)
 #define LV_POC_STATUS_BAR_OFFSET_X   0
@@ -43,19 +43,19 @@ extern "C" {
 #define LV_POC_STATUS_BAR_POSITION_X  (LV_POC_STATUS_BAR_X0)
 #define LV_POC_STATUS_BAR_POSITION_Y  (LV_POC_STATUS_BAR_Y0)
 
-//¿ØÖÆÀ¸³ß´çÒÔ¼°Æ«ÒÆ
+//æ§åˆ¶æ å°ºå¯¸ä»¥åŠåç§»
 #define LV_POC_CONTROL_HOR_RES (LV_POC_SCREEN_SCALE_HOR_RES)
 #define LV_POC_CONTROL_VER_RES (LV_POC_SCREEN_SCALE_VER_RES/21*5)
 #define LV_POC_CONTROL_OFFSET_X   (0)
 #define LV_POC_CONTROL_OFFSET_Y   (0)
 
 
-//ÏÔÊ¾À¸Æ«ÒÆ
+//æ˜¾ç¤ºæ åç§»
 #define LV_POC_DISPLAY_OFFSET_X   (0)
 #define LV_POC_DISPLAY_OFFSET_Y   (0)
 
 
-//ÓĞ×´Ì¬À¸ºÍ¿ØÖÆÀ¸µÄÏÔÊ¾ÇøÓòµÄÎ»ÖÃ
+//æœ‰çŠ¶æ€æ å’Œæ§åˆ¶æ çš„æ˜¾ç¤ºåŒºåŸŸçš„ä½ç½®
 #define LV_POC_DISPLAY_HOR_RES (LV_POC_SCREEN_SCALE_HOR_RES)
 #define LV_POC_DISPLAY_VER_RES (LV_POC_SCREEN_SCALE_VER_RES - LV_POC_STATUS_BAR_VER_RES - LV_POC_CONTROL_VER_RES)
 #define LV_POC_DISPLAY_X0   (LV_POC_SCREEN_X + LV_POC_DISPLAY_OFFSET_X)
@@ -66,7 +66,7 @@ extern "C" {
 #define LV_POC_DISPLAY_POSITION_Y  (LV_POC_DISPLAY_Y0)
 
 
-//ÎŞ¿ØÖÆÀ¸ÓĞ×´Ì¬À¸µÄÏÔÊ¾ÇøÓòÎ»ÖÃ
+//æ— æ§åˆ¶æ æœ‰çŠ¶æ€æ çš„æ˜¾ç¤ºåŒºåŸŸä½ç½®
 #define LV_POC_DISPLAY_NOCTR_HOR_RES (LV_POC_SCREEN_SCALE_HOR_RES)
 #define LV_POC_DISPLAY_NOCTR_VER_RES (LV_POC_SCREEN_SCALE_VER_RES - LV_POC_STATUS_BAR_VER_RES)
 #define LV_POC_DISPLAY_NOCTR_X0   (LV_POC_SCREEN_X + LV_POC_DISPLAY_OFFSET_X)
@@ -76,7 +76,7 @@ extern "C" {
 #define LV_POC_DISPLAY_NOCTR_POSITION_X  (LV_POC_DISPLAY_NOCTR_X0)
 #define LV_POC_DISPLAY_NOCTR_POSITION_Y  (LV_POC_DISPLAY_NOCTR_Y0)
 
-//ÓĞ×´Ì¬À¸Ê±ÏÔÊ¾base
+//æœ‰çŠ¶æ€æ æ—¶æ˜¾ç¤ºbase
 #define LV_POC_DISPLAY_STABAR_BASE_HOR_RES (LV_POC_SCREEN_SCALE_HOR_RES)
 #define LV_POC_DISPLAY_STABAR_BASE_VER_RES (LV_POC_SCREEN_SCALE_VER_RES - LV_POC_STATUS_BAR_VER_RES)
 #define LV_POC_DISPLAY_STABAR_BASE_X0   (LV_POC_SCREEN_X + LV_POC_DISPLAY_OFFSET_X)
@@ -88,7 +88,7 @@ extern "C" {
 
 
 
-//ÓĞ×´Ì¬À¸µÄ¿ØÖÆÀ¸Î»ÖÃ
+//æœ‰çŠ¶æ€æ çš„æ§åˆ¶æ ä½ç½®
 #define LV_POC_CONTROL_X0   (LV_POC_SCREEN_X + LV_POC_CONTROL_OFFSET_X)
 #define LV_POC_CONTROL_Y0   (LV_POC_SCREEN_Y + LV_POC_CONTROL_OFFSET_Y + LV_POC_DISPLAY_VER_RES)
 #define LV_POC_CONTROL_X1   (LV_POC_CONTROL_X0 + LV_POC_CONTROL_HOR_RES - 1)
@@ -99,7 +99,7 @@ extern "C" {
 
 #if 1
 
-//ÎŞ×´Ì¬À¸ÓĞ¿ØÖÆÀ¸µÄÏÔÊ¾ÇøÓòÎ»ÖÃ
+//æ— çŠ¶æ€æ æœ‰æ§åˆ¶æ çš„æ˜¾ç¤ºåŒºåŸŸä½ç½®
 #define LV_POC_DISPLAY_NOSTABAR_HOR_RES (LV_POC_SCREEN_SCALE_HOR_RES)
 #define LV_POC_DISPLAY_NOSTABAR_VER_RES (LV_POC_SCREEN_SCALE_VER_RES - LV_POC_CONTROL_VER_RES)
 #define LV_POC_DISPLAY_NOSTABAR_X0   (LV_POC_SCREEN_X + LV_POC_DISPLAY_OFFSET_X)
@@ -111,7 +111,7 @@ extern "C" {
 
 
 
-//ÎŞ×´Ì¬À¸ºÍ¿ØÖÆÀ¸Ê±µÄÏÔÊ¾ÇøÓòÎ»ÖÃ
+//æ— çŠ¶æ€æ å’Œæ§åˆ¶æ æ—¶çš„æ˜¾ç¤ºåŒºåŸŸä½ç½®
 #define LV_POC_DISPLAY_NOCTR_STABAR_HOR_RES (LV_POC_SCREEN_SCALE_HOR_RES)
 #define LV_POC_DISPLAY_NOCTR_STABAR_VER_RES (LV_POC_SCREEN_SCALE_VER_RES)
 #define LV_POC_DISPLAY_NOCTR_STABAR_X0   (LV_POC_SCREEN_X + LV_POC_DISPLAY_OFFSET_X)
@@ -121,7 +121,7 @@ extern "C" {
 #define LV_POC_DISPLAY_NOCTR_STABAR_POSITION_X  (LV_POC_DISPLAY_NOCTR_STABAR_X0)
 #define LV_POC_DISPLAY_NOCTR_STABAR_POSITION_Y  (LV_POC_DISPLAY_NOCTR_STABAR_Y0)
 
-//ÎŞ×´Ì¬À¸Ê±ÏÔÊ¾base
+//æ— çŠ¶æ€æ æ—¶æ˜¾ç¤ºbase
 #define LV_POC_DISPLAY_NOSTABAR_BASE_HOR_RES (LV_POC_SCREEN_SCALE_HOR_RES)
 #define LV_POC_DISPLAY_NOSTABAR_BASE_VER_RES (LV_POC_SCREEN_SCALE_VER_RES)
 #define LV_POC_DISPLAY_NOSTABAR_BASE_X0   (LV_POC_SCREEN_X + LV_POC_DISPLAY_OFFSET_X)
@@ -132,7 +132,7 @@ extern "C" {
 #define LV_POC_DISPLAY_NOSTABAR_BASE_POSITION_Y  (LV_POC_DISPLAY_NOSTABAR_BASE_Y0)
 
 
-//ÎŞ×´Ì¬À¸µÄ¿ØÖÆÀ¸Î»ÖÃ
+//æ— çŠ¶æ€æ çš„æ§åˆ¶æ ä½ç½®
 #define LV_POC_CONTROL_NOSTABAR_X0   (LV_POC_SCREEN_X + LV_POC_CONTROL_OFFSET_X)
 #define LV_POC_CONTROL_NOSTABAR_Y0   (LV_POC_SCREEN_Y + LV_POC_CONTROL_OFFSET_Y + LV_POC_DISPLAY_NOSTABAR_VER_RES)
 #define LV_POC_CONTROL_NOSTABAR_X1   (LV_POC_CONTROL_NOSTABAR_X0 + LV_POC_CONTROL_HOR_RES)
@@ -143,7 +143,7 @@ extern "C" {
 #endif
 
 
-//×´Ì¬À¸Ê±¼älabelÎ»ÖÃĞÅÏ¢
+//çŠ¶æ€æ æ—¶é—´labelä½ç½®ä¿¡æ¯
 #define LV_POC_STABAR_TIME_HOR_RES       (LV_POC_SCREEN_SCALE_HOR_RES/5)
 #define LV_POC_STABAR_TIME_VER_RES       (LV_POC_STATUS_BAR_VER_RES)
 #define LV_POC_STABAR_TIME_OFFSET_X      (4)
@@ -156,7 +156,7 @@ extern "C" {
 #define LV_POC_STABAR_TIME_POSITION_Y    (LV_POC_STABAR_TIME_Y0)
 
 
-//×´Ì¬À¸µç³ØÎ»ÖÃĞÅÏ¢
+//çŠ¶æ€æ ç”µæ± ä½ç½®ä¿¡æ¯
 #define LV_POC_STABAR_BATTERY_HOR_RES    (LV_POC_SCREEN_SCALE_HOR_RES/12)
 #define LV_POC_STABAR_BATTERY_VER_RES    (LV_POC_STATUS_BAR_VER_RES)
 #define LV_POC_STABAR_BATTERY_OFFSET_X   (0-2)
@@ -169,7 +169,7 @@ extern "C" {
 #define LV_POC_STABAR_BATTERY_POSITION_Y (LV_POC_STABAR_BATTERY_Y0)
 
 
-//×´Ì¬À¸SIM¿¨ĞÅÏ¢Î»ÖÃ1
+//çŠ¶æ€æ SIMå¡ä¿¡æ¯ä½ç½®1
 #define LV_POC_STABAR_SIM_1_HOR_RES    (LV_POC_SCREEN_SCALE_HOR_RES/12)
 #define LV_POC_STABAR_SIM_1_VER_RES    (LV_POC_STATUS_BAR_VER_RES)
 #define LV_POC_STABAR_SIM_1_OFFSET_X   (-1)
@@ -182,7 +182,7 @@ extern "C" {
 #define LV_POC_STABAR_SIM_1_POSITION_Y (LV_POC_STABAR_SIM_1_Y0)
 
 
-//×´Ì¬À¸SIM¿¨ĞÅÏ¢Î»ÖÃ2
+//çŠ¶æ€æ SIMå¡ä¿¡æ¯ä½ç½®2
 #define LV_POC_STABAR_SIM_2_HOR_RES    (LV_POC_SCREEN_SCALE_HOR_RES/12)
 #define LV_POC_STABAR_SIM_2_VER_RES    (LV_POC_STATUS_BAR_VER_RES)
 #define LV_POC_STABAR_SIM_2_OFFSET_X   (-1)
@@ -289,11 +289,11 @@ typedef lv_obj_t           lv_poc_display_t;
 ********************/
 typedef struct _lv_poc_status_bar_sim_obj_t
 {
-	lv_obj_t ** align_l_obj, ** align_r_obj;                 //¶ÔÆä¶ÔÏó£¬ÓÃÓÚÅÅÁĞsim¿¨Í¼±ê
-	lv_obj_t * sim_img;                   //ÔÚ´¦´íÎóÊ±»òÕßÃ»ÓĞSIM¿¨Ê±ÏÔÊ¾ÓÃµÄÍ¼±ê
-	lv_obj_t * sim_up_down_img;           //ÉÏ´«ÏÂÔØÊ±µÄÍ¼±ê
-	lv_obj_t * sim_signal_strength_img;   //ĞÅºÅÇ¿¶ÈÍ¼±ê
-	lv_obj_t * sim_net_type_img;          //ÍøÂçĞÅºÅÀàĞÍÍ¼±ê
+	lv_obj_t ** align_l_obj, ** align_r_obj;                 //å¯¹å…¶å¯¹è±¡ï¼Œç”¨äºæ’åˆ—simå¡å›¾æ ‡
+	lv_obj_t * sim_img;                   //åœ¨å¤„é”™è¯¯æ—¶æˆ–è€…æ²¡æœ‰SIMå¡æ—¶æ˜¾ç¤ºç”¨çš„å›¾æ ‡
+	lv_obj_t * sim_up_down_img;           //ä¸Šä¼ ä¸‹è½½æ—¶çš„å›¾æ ‡
+	lv_obj_t * sim_signal_strength_img;   //ä¿¡å·å¼ºåº¦å›¾æ ‡
+	lv_obj_t * sim_net_type_img;          //ç½‘ç»œä¿¡å·ç±»å‹å›¾æ ‡
 } lv_poc_status_bar_sim_obj_t;
 
 /*******************
@@ -372,17 +372,17 @@ typedef struct _lv_poc_display_t{
 *     DATE:   2019-10-24
 ********************/
 typedef struct _lv_poc_activity_t{
-	bool                               has_stabar;   //Ö»±ê×¢ÊÇ·ñÏÔÊ¾×´Ì¬À¸£¬²»´ú±í×´Ì¬À¸µÄ´æÔÚĞÔ
-	bool                               has_control;     //±ê×¢¸Ã´°¿ÚÊÇ·ñÓĞ¿ØÖÆÀ¸
-	lv_obj_t                        *  base;            //activity»ù´¡£¬²»Òªµ÷ÓÃ£¬Ö»ÔÚ´´½¨ºÍÉ¾³ıÓÃµ½
-	lv_poc_status_bar_t      *  status_bar;     //¼´Ê¹¸Ã´°¿ÚÃ»ÓĞ×´Ì¬À¸£¬¸Ã³ÉÔ±Ò²»áÖ¸Ïò×´Ì¬À¸£¬ÒòÎª×´Ì¬À¸Î¨Ò»
-	lv_poc_control_t         *  control;        //Ö¸Ïò¿ØÖÆÀ¸
-	lv_poc_display_t         *  display;        //Ö¸ÏòÏÔÊ¾ÇøÓò
-    lv_signal_cb_t                   signal_func;    //activityµÄsignalº¯Êı
-    lv_design_cb_t                   design_func;    //activityµÄdesignº¯Êı
-    lv_event_cb_t                     event_func;    //activityµÄeventº¯Êı
-    lv_poc_activity_ext_t            activity_ext;    //activityµÄ´´½¨ºÍÏú»Ù
-    void                            *  ext_data;       //activityµÄÊı¾İÖ¸Õë£¬¾ßÌåÊı¾İÀàĞÍÓÉactivity->base->ext_attr->create()µÄ·µ»ØÖµ¾ö¶¨£¬¿ÉÒÔ¸ù¾İ×Ô¼ºµÄĞèÒª£¬ÔÚ´´½¨activityºó£¬½«Êı¾İ·ÅÖÃÔÚ´Ë
+	bool                               has_stabar;   //åªæ ‡æ³¨æ˜¯å¦æ˜¾ç¤ºçŠ¶æ€æ ï¼Œä¸ä»£è¡¨çŠ¶æ€æ çš„å­˜åœ¨æ€§
+	bool                               has_control;     //æ ‡æ³¨è¯¥çª—å£æ˜¯å¦æœ‰æ§åˆ¶æ 
+	lv_obj_t                        *  base;            //activityåŸºç¡€ï¼Œä¸è¦è°ƒç”¨ï¼Œåªåœ¨åˆ›å»ºå’Œåˆ é™¤ç”¨åˆ°
+	lv_poc_status_bar_t      *  status_bar;     //å³ä½¿è¯¥çª—å£æ²¡æœ‰çŠ¶æ€æ ï¼Œè¯¥æˆå‘˜ä¹Ÿä¼šæŒ‡å‘çŠ¶æ€æ ï¼Œå› ä¸ºçŠ¶æ€æ å”¯ä¸€
+	lv_poc_control_t         *  control;        //æŒ‡å‘æ§åˆ¶æ 
+	lv_poc_display_t         *  display;        //æŒ‡å‘æ˜¾ç¤ºåŒºåŸŸ
+    lv_signal_cb_t                   signal_func;    //activityçš„signalå‡½æ•°
+    lv_design_cb_t                   design_func;    //activityçš„designå‡½æ•°
+    lv_event_cb_t                     event_func;    //activityçš„eventå‡½æ•°
+    lv_poc_activity_ext_t            activity_ext;    //activityçš„åˆ›å»ºå’Œé”€æ¯
+    void                            *  ext_data;       //activityçš„æ•°æ®æŒ‡é’ˆï¼Œå…·ä½“æ•°æ®ç±»å‹ç”±activity->base->ext_attr->create()çš„è¿”å›å€¼å†³å®šï¼Œå¯ä»¥æ ¹æ®è‡ªå·±çš„éœ€è¦ï¼Œåœ¨åˆ›å»ºactivityåï¼Œå°†æ•°æ®æ”¾ç½®åœ¨æ­¤
 } lv_poc_activity_t;
 
 /*******************
@@ -400,7 +400,7 @@ typedef struct _lv_poc_control_text_t{
 /*******************
 *     NAME:   _lv_poc_activity_list_node_t
 *   AUTHOR:   lugj
-* DESCRIPT:   ´æ´¢´´½¨µÄactivity»î¶¯£¬ÒÔ¼°²éÕÒdisplayËùÊôµÄactivity
+* DESCRIPT:   å­˜å‚¨åˆ›å»ºçš„activityæ´»åŠ¨ï¼Œä»¥åŠæŸ¥æ‰¾displayæ‰€å±çš„activity
 *     DATE:   2019-10-30
 ********************/
 typedef struct _lv_poc_activity_list_node_t{
@@ -452,7 +452,7 @@ typedef struct _lv_poc_activity_attribute_cb_set_obj
 /*******************
 *     NAME:  status_bar_task_t
 *   AUTHOR:  lugj
-* DESCRIPT:  ¶¨Òå×´Ì¬À¸ÈÎÎñÖĞ¶îÍâÖ´ĞĞµÄÈÎÎñÀàĞÍ
+* DESCRIPT:  å®šä¹‰çŠ¶æ€æ ä»»åŠ¡ä¸­é¢å¤–æ‰§è¡Œçš„ä»»åŠ¡ç±»å‹
 *     DATE:
 ********************/
 typedef void (*status_bar_task_t)(void);
@@ -554,7 +554,7 @@ extern lv_style_t theme_black_style_control;
 /*******************
 *	  NAME: 	lv_poc_stabar_task
 *	AUTHOR:    lugj
-* DESCRIPT:    ×´Ì¬À¸ÈÎÎñ
+* DESCRIPT:    çŠ¶æ€æ ä»»åŠ¡
 *	  DATE:    2019-10-25
 ********************/
 void lv_poc_stabar_task(lv_task_t * task);
@@ -563,7 +563,7 @@ void lv_poc_stabar_task(lv_task_t * task);
 /*******************
 *     NAME:    lv_poc_get_time
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡±¾µØÊ±¼ä£¬±£´æÔÚlocal_timeÖĞ
+* DESCRIPT:    è·å–æœ¬åœ°æ—¶é—´ï¼Œä¿å­˜åœ¨local_timeä¸­
 *     DATE:    2019-10-25
 ********************/
 bool lv_poc_get_time(void *local_time);
@@ -572,7 +572,7 @@ bool lv_poc_get_time(void *local_time);
 /*******************
 *     NAME:    lv_poc_get_battery_state
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡µç³Ø×´Ì¬£¬
+* DESCRIPT:    è·å–ç”µæ± çŠ¶æ€ï¼Œ
 *     DATE:    2019-10-25
 ********************/
 UINT8 lv_poc_get_battery_state(void);
@@ -580,7 +580,7 @@ UINT8 lv_poc_get_battery_state(void);
 /*******************
 *     NAME:    lv_poc_get_sim1_state
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡SIM1ÊÇ·ñ´æÔÚ
+* DESCRIPT:    è·å–SIM1æ˜¯å¦å­˜åœ¨
 *     DATE:    2019-10-25
 ********************/
 bool lv_poc_get_sim1_state(void);
@@ -588,7 +588,7 @@ bool lv_poc_get_sim1_state(void);
 /*******************
 *     NAME:    lv_poc_get_sim2_state
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡SIM2ÊÇ·ñ´æÔÚ
+* DESCRIPT:    è·å–SIM2æ˜¯å¦å­˜åœ¨
 *     DATE:    2019-10-25
 ********************/
 bool lv_poc_get_sim2_state(void);
@@ -596,7 +596,7 @@ bool lv_poc_get_sim2_state(void);
 /*******************
 *     NAME:    lv_poc_get_battery_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ¸ù¾İµç³ØµÄ×´Ì¬£¬»ñÈ¡ÕıÈ·µÄÍ¼±ê
+* DESCRIPT:    æ ¹æ®ç”µæ± çš„çŠ¶æ€ï¼Œè·å–æ­£ç¡®çš„å›¾æ ‡
 *     DATE:    2020-01-19
 ********************/
 lv_img_dsc_t * lv_poc_get_battery_img(void);
@@ -605,7 +605,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void);
 /*******************
 *     NAME:    lv_poc_create_activity
 *   AUTHOR:    lugj
-* DESCRIPT:    ´´½¨Ò»¸öÓĞĞ§µÄactivity
+* DESCRIPT:    åˆ›å»ºä¸€ä¸ªæœ‰æ•ˆçš„activity
 *     DATE:    2019-10-25
 ********************/
 lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
@@ -617,7 +617,7 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
 /*******************
 *     NAME:    lv_poc_get_user_obj
 *   AUTHOR:    lugj
-* DESCRIPT:    ´ÓactivityÖĞ»ñÈ¡¿ÉÒÔÏÔÊ¾ÇøÓò
+* DESCRIPT:    ä»activityä¸­è·å–å¯ä»¥æ˜¾ç¤ºåŒºåŸŸ
 *     DATE:    2019-10-25
 ********************/
 lv_poc_display_t *lv_poc_get_display(lv_poc_activity_t *activity);
@@ -625,7 +625,7 @@ lv_poc_display_t *lv_poc_get_display(lv_poc_activity_t *activity);
 /*******************
 *     NAME:    lv_poc_del_activity
 *   AUTHOR:    lugj
-* DESCRIPT:    É¾³ıactivity
+* DESCRIPT:    åˆ é™¤activity
 *     DATE:    2019-10-25
 ********************/
 bool lv_poc_del_activity(lv_poc_activity_t *activity);
@@ -633,7 +633,7 @@ bool lv_poc_del_activity(lv_poc_activity_t *activity);
 /*******************
 *     NAME:    lv_poc_group_remove_obj
 *   AUTHOR:    lugj
-* DESCRIPT:    ½«objÌí¼Óµ½keypadÊäÈëÉè±¸×éÖĞ
+* DESCRIPT:    å°†objæ·»åŠ åˆ°keypadè¾“å…¥è®¾å¤‡ç»„ä¸­
 *     DATE:    2019-10-25
 ********************/
 void lv_poc_group_remove_obj(lv_obj_t *obj);
@@ -641,7 +641,7 @@ void lv_poc_group_remove_obj(lv_obj_t *obj);
 /*******************
 *     NAME:    lv_poc_group_add_obj
 *   AUTHOR:    lugj
-* DESCRIPT:    ½«obj´ÓkeypadÊäÈëÉè±¸×éÖĞÒÆ³ı
+* DESCRIPT:    å°†objä»keypadè¾“å…¥è®¾å¤‡ç»„ä¸­ç§»é™¤
 *     DATE:    2019-10-25
 ********************/
 void lv_poc_group_add_obj(lv_obj_t *obj);
@@ -649,7 +649,7 @@ void lv_poc_group_add_obj(lv_obj_t *obj);
 /*******************
 *     NAME:    lv_poc_activity_set_signal_cb
 *   AUTHOR:    lugj
-* DESCRIPT:    ÉèÖÃactivityµÄsignalº¯Êı
+* DESCRIPT:    è®¾ç½®activityçš„signalå‡½æ•°
 *     DATE:    2019-10-30
 ********************/
 void lv_poc_activity_set_signal_cb(lv_poc_activity_t *activity,
@@ -658,7 +658,7 @@ void lv_poc_activity_set_signal_cb(lv_poc_activity_t *activity,
 /*******************
 *     NAME:    lv_poc_activity_set_design_cb
 *   AUTHOR:    lugj
-* DESCRIPT:    ÉèÖÃactivityµÄsignalº¯Êı
+* DESCRIPT:    è®¾ç½®activityçš„signalå‡½æ•°
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_activity_set_design_cb(lv_poc_activity_t *activity,
@@ -667,7 +667,7 @@ void lv_poc_activity_set_design_cb(lv_poc_activity_t *activity,
 /*******************
 *     NAME:    lv_poc_activity_set_background
 *   AUTHOR:    lugj
-* DESCRIPT:    ÉèÖÃ±³¾°Í¼Ïñ
+* DESCRIPT:    è®¾ç½®èƒŒæ™¯å›¾åƒ
 *     DATE:    2019-10-30
 ********************/
 void lv_poc_activity_set_background(lv_poc_activity_t *activity,
@@ -676,7 +676,7 @@ void lv_poc_activity_set_background(lv_poc_activity_t *activity,
 /*******************
 *     NAME:    lv_poc_activity_list_lookup
 *   AUTHOR:    lugj
-* DESCRIPT:    ´Óactivity²éÑ¯±íÖĞ²éÑ¯displayµÄactivity
+* DESCRIPT:    ä»activityæŸ¥è¯¢è¡¨ä¸­æŸ¥è¯¢displayçš„activity
 *     DATE:    2019-10-30
 ********************/
 lv_poc_activity_t *	lv_poc_activity_list_lookup(lv_poc_display_t * display);
@@ -684,7 +684,7 @@ lv_poc_activity_t *	lv_poc_activity_list_lookup(lv_poc_display_t * display);
 /*******************
 *     NAME:    lv_poc_activity_send_sign
 *   AUTHOR:    lugj
-* DESCRIPT:    ´Óactivity²éÑ¯±íÖĞ²éÑ¯activity,²¢¸øÆä·¢ËÍÒ»¸öÏûÏ¢
+* DESCRIPT:    ä»activityæŸ¥è¯¢è¡¨ä¸­æŸ¥è¯¢activity,å¹¶ç»™å…¶å‘é€ä¸€ä¸ªæ¶ˆæ¯
 *     DATE:    2019-10-30
 ********************/
 lv_poc_activity_t *	lv_poc_activity_send_sign(lv_poc_Activity_Id_t ID, int sign, void * param);
@@ -692,7 +692,7 @@ lv_poc_activity_t *	lv_poc_activity_send_sign(lv_poc_Activity_Id_t ID, int sign,
 /*******************
 *     NAME:    lv_poc_get_display_width
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡ÏÔÊ¾ÇøÓò¿í
+* DESCRIPT:    è·å–æ˜¾ç¤ºåŒºåŸŸå®½
 *     DATE:    2019-10-31
 ********************/
 lv_coord_t lv_poc_get_display_width(const lv_poc_display_t * display);
@@ -700,7 +700,7 @@ lv_coord_t lv_poc_get_display_width(const lv_poc_display_t * display);
 /*******************
 *     NAME:    lv_poc_get_display_height
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡ÏÔÊ¾ÇøÓò¸ß
+* DESCRIPT:    è·å–æ˜¾ç¤ºåŒºåŸŸé«˜
 *     DATE:    2019-10-31
 ********************/
 lv_coord_t lv_poc_get_display_height(lv_poc_display_t * display);
@@ -709,7 +709,7 @@ lv_coord_t lv_poc_get_display_height(lv_poc_display_t * display);
 /*******************
 *     NAME:    lv_poc_get_display_area
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡ÏÔÊ¾ÇøÓò·¶Î§
+* DESCRIPT:    è·å–æ˜¾ç¤ºåŒºåŸŸèŒƒå›´
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_get_display_area(lv_poc_display_t * display, lv_area_t * area);
@@ -717,7 +717,7 @@ void lv_poc_get_display_area(lv_poc_display_t * display, lv_area_t * area);
 /*******************
 *     NAME:    lv_poc_status_bar_task_ext_add
 *   AUTHOR:    lugj
-* DESCRIPT:    Ìí¼Ó×´Ì¬À¸¶îÍâÈÎÎñ
+* DESCRIPT:    æ·»åŠ çŠ¶æ€æ é¢å¤–ä»»åŠ¡
 *     DATE:    2019-10-31
 ********************/
 bool lv_poc_status_bar_task_ext_add(status_bar_task_t task);
@@ -726,7 +726,7 @@ bool lv_poc_status_bar_task_ext_add(status_bar_task_t task);
 /*******************
 *     NAME:    lv_poc_activity_hidden
 *   AUTHOR:    lugj
-* DESCRIPT:   Òş²Øactivity
+* DESCRIPT:   éšè—activity
 *     DATE:    2019-10-31
 ********************/
 bool lv_poc_activity_hidden(lv_poc_activity_t * activity, bool isHidden);
@@ -735,7 +735,7 @@ bool lv_poc_activity_hidden(lv_poc_activity_t * activity, bool isHidden);
 /*******************
 *     NAME:    lv_poc_activity_set_idle
 *   AUTHOR:    lugj
-* DESCRIPT:   ÉèÖÃidle activity
+* DESCRIPT:   è®¾ç½®idle activity
 *     DATE:    2019-10-31
 ********************/
 bool lv_poc_activity_set_idle(lv_poc_activity_t * idle_activity);
@@ -743,7 +743,7 @@ bool lv_poc_activity_set_idle(lv_poc_activity_t * idle_activity);
 /*******************
 *     NAME:    lv_poc_activity_enter_idle
 *   AUTHOR:    lugj
-* DESCRIPT:  »Øµ½Ö÷½çÃæ
+* DESCRIPT:  å›åˆ°ä¸»ç•Œé¢
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_activity_enter_idle(void);
@@ -751,7 +751,7 @@ void lv_poc_activity_enter_idle(void);
 /*******************
 *     NAME:    lv_poc_activity_pre
 *   AUTHOR:    lugj
-* DESCRIPT:   ½øÈëÉÏÒ»¸öactivity
+* DESCRIPT:   è¿›å…¥ä¸Šä¸€ä¸ªactivity
 *     DATE:    2019-10-31
 ********************/
 lv_poc_activity_t * lv_poc_activity_pre(bool forcs);
@@ -760,7 +760,7 @@ lv_poc_activity_t * lv_poc_activity_pre(bool forcs);
 /*******************
 *     NAME:    lv_poc_update_stabar_sim_img
 *   AUTHOR:    lugj
-* DESCRIPT:    ¸üĞÂSIM¿¨Í¼±ê
+* DESCRIPT:    æ›´æ–°SIMå¡å›¾æ ‡
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_update_stabar_sim_img(void);
@@ -768,7 +768,7 @@ void lv_poc_update_stabar_sim_img(void);
 /*******************
 *     NAME:    lv_poc_get_refresh_ui
 *   AUTHOR:    lugj
-* DESCRIPT:    »ñÈ¡ÊÇ·ñË¢ĞÂUI
+* DESCRIPT:    è·å–æ˜¯å¦åˆ·æ–°UI
 *     DATE:    2019-10-31
 ********************/
 int lv_poc_get_refresh_ui(void);
@@ -776,13 +776,27 @@ int lv_poc_get_refresh_ui(void);
 /*******************
 *     NAME:    lv_poc_refresh_ui_next
 *   AUTHOR:    lugj
-* DESCRIPT:    Ë¢ĞÂÏÂÒ»¸öUI
+* DESCRIPT:    åˆ·æ–°ä¸‹ä¸€ä¸ªUI
 *     DATE:    2019-10-31
 ********************/
 void lv_poc_refresh_ui_next(void);
 
+
+/*******************
+*     NAME:    lv_poc_member_list_cb_set_active
+*   AUTHOR:    lugj
+* DESCRIPT:    æˆå‘˜åˆ—è¡¨æ¿€æ´»æ¥å£
+*     DATE:    2020-05-22
+********************/
 void lv_poc_member_list_cb_set_active(lv_poc_Activity_Id_t activity_id, bool enable);
 
+
+/*******************
+*     NAME:    lv_poc_group_list_cb_set_active
+*   AUTHOR:    lugj
+* DESCRIPT:    ç¾¤ç»„åˆ—è¡¨æ¿€æ´»æ¥å£
+*     DATE:    2020/5/22
+********************/
 void lv_poc_group_list_cb_set_active(lv_poc_Activity_Id_t activity_id, bool enable);
 
 extern nv_poc_setting_msg_t * poc_setting_conf;
@@ -794,3 +808,4 @@ extern nv_poc_setting_msg_t * poc_setting_conf;
 
 #endif //__INCLUDE_LV_INTER_PHONE_OBJ__
 
+??
