@@ -1483,6 +1483,35 @@ lv_poc_get_current_group(void)
 }
 
 /*
+	  name : lv_poc_set_current_group
+	  param :
+	  date : 2020-05-22
+*/
+bool
+lv_poc_set_current_group(lv_poc_group_info_t group, poc_set_current_group_cb func)
+{
+	func(1);
+	return true;
+}
+
+/*
+	  name : lv_poc_get_group_name
+	  param :
+	  date : 2020-05-22
+*/
+char *
+lv_poc_get_group_name(lv_poc_group_info_t group)
+{
+	if(group == NULL)
+	{
+		return NULL;
+	}
+
+	CGroup * group_info = (CGroup *)group;
+	return (char *)group_info->m_ucGName;
+}
+
+/*
 	  name : lv_poc_get_member_name
 	  param :
 	  date : 2020-05-20
@@ -1508,6 +1537,18 @@ bool
 lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb func)
 {
 	func(1);
+	return true;;
+}
+
+/*
+	  name : lv_poc_get_member_status
+	  param :
+	  date : 2020-05-21
+*/
+bool
+lv_poc_set_member_call_status(bool enable, poc_set_member_call_status_cb func)
+{
+	func(enable, enable);
 	return true;;
 }
 

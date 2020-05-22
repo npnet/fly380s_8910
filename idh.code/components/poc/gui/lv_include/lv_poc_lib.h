@@ -77,6 +77,19 @@ typedef void (*poc_build_group_cb)(int result_type);
 */
 typedef void (*poc_get_member_status_cb)(int status);
 
+/*
+	  name :回调函数
+	  param :
+	  date : 2020-05-22
+*/
+typedef void (*poc_set_member_call_status_cb)(int current_status, int dest_status);
+/*
+	  name :回调函数
+	  param :
+	  date : 2020-05-21
+*/
+typedef void (*poc_set_current_group_cb)(int result_type);
+
 typedef lv_poc_status_t (*lv_poc_member_list_add_cb)(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information);
 
 typedef void (*lv_poc_member_list_remove_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
@@ -562,6 +575,22 @@ lv_poc_group_info_t
 lv_poc_get_current_group(void);
 
 /*
+	  name : lv_poc_set_current_group
+	  param :
+	  date : 2020-05-22
+*/
+bool
+lv_poc_set_current_group(lv_poc_group_info_t group, poc_set_current_group_cb func);
+
+/*
+	  name : lv_poc_get_group_name
+	  param :
+	  date : 2020-05-22
+*/
+char *
+lv_poc_get_group_name(lv_poc_group_info_t group);
+
+/*
 	  name : lv_poc_get_member_name
 	  param :
 	  date : 2020-05-20
@@ -576,6 +605,14 @@ lv_poc_get_member_name(lv_poc_member_info_t members);
 */
 bool
 lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb func);
+
+/*
+	  name : lv_poc_get_member_status
+	  param :
+	  date : 2020-05-21
+*/
+bool
+lv_poc_set_member_call_status(bool enable, poc_set_member_call_status_cb func);
 
 #ifdef __cplusplus
 }

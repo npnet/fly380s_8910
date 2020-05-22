@@ -30,6 +30,8 @@ static void lv_poc_member_call_delay_exit_task_cb(lv_task_t * task);
 
 static void lv_poc_member_call_delay_exit_task_create(const int delay_time_ms);
 
+static void lv_poc_member_call_set_member_call_status_cb(int current_status, int dest_status);
+
 
 static lv_obj_t * activity_list = NULL;
 
@@ -69,6 +71,7 @@ static lv_obj_t * lv_poc_member_call_activity_create(lv_poc_display_t *display)
 static void lv_poc_member_call_activity_destory(lv_obj_t *obj)
 {
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_CALL, false);
+	lv_poc_set_member_call_status(false, lv_poc_member_call_set_member_call_status_cb);
 	if(activity_win != NULL)
 	{
 		lv_mem_free(activity_win);
@@ -271,6 +274,25 @@ static void lv_poc_member_call_delay_exit_task_create(const int delay_time_ms)
 	lv_task_once(lv_poc_member_call_exit_task);
 }
 
+static void lv_poc_member_call_set_member_call_status_cb(int current_status, int dest_status)
+{
+	if(current_status == dest_status)
+	{
+		if(current_status != 1)
+		{
+			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
+		}
+		else
+		{
+			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始单呼", NULL);
+		}
+	}
+	else
+	{
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"发生未知错误", NULL);
+	}
+}
+
 void lv_poc_member_call_open(void * information)
 {
     static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_CALL,
@@ -312,6 +334,7 @@ void lv_poc_member_call_open(void * information)
 	lv_poc_member_call_add(lv_poc_member_call_member_list_obj, lv_poc_get_member_name((lv_poc_member_info_t)information), true, information);
 	lv_poc_member_call_set_title(lv_poc_get_member_name((lv_poc_member_info_t)information));
 	lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
+	lv_poc_set_member_call_status(true, lv_poc_member_call_set_member_call_status_cb);
 }
 
 lv_poc_status_t lv_poc_member_call_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information)
@@ -504,6 +527,20 @@ lv_poc_status_t lv_poc_member_call_set_state(lv_poc_member_list_t *member_list_o
 	if(member_list_obj == NULL)
 	{
 		return POC_OPERATE_FAILD;
+	}
+
+	if(member_list_obj->online_list != NULL
+		&& MEMBER_EQUATION((void *)member_list_obj->online_list->name, (void *)name, (void *)member_list_obj->online_list->information, (void *)information, NULL))
+	{
+		if(is_online == false)
+		{
+			if(!lv_poc_member_call_exit_pressed)
+			{
+				lv_poc_member_call_exit_pressed = true;
+				lv_poc_member_call_delay_exit_task_create(500);
+				return POC_OPERATE_SECCESS;
+			}
+		}
 	}
 
 	return lv_poc_member_list_set_state(member_list_obj, name, information, is_online);
