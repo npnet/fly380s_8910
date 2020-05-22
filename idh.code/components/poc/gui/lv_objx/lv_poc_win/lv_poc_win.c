@@ -22,11 +22,11 @@ static void * empty_win(lv_obj_t * parent, lv_area_t display_area)
 
 
 /*******************
-*     NAME:   lv_poc_win_create  
-*   AUTHOR:   lugj  
-* DESCRIPT:   创建poc窗口 
+*     NAME:   lv_poc_win_create
+*   AUTHOR:   lugj
+* DESCRIPT:   创建poc窗口
               parent只可以是activity中display成员，其他的lv_obj_t在有控制栏时会出现部分内容被控制栏遮挡
-*     DATE:   2019-11-25 
+*     DATE:   2019-11-25
 ********************/
 lv_poc_win_t * lv_poc_win_create(lv_obj_t * parent, const char * title, lv_poc_win_create_func_t func)
 {
@@ -61,6 +61,7 @@ lv_poc_win_t * lv_poc_win_create(lv_obj_t * parent, const char * title, lv_poc_w
         lv_label_set_text(new_win->title, "");
     }
     lv_label_set_long_mode(new_win->title, LV_LABEL_LONG_SROLL);
+    lv_label_set_align(new_win->title, LV_LABEL_ALIGN_CENTER);
     lv_obj_align(new_win->title, lv_obj_get_parent(new_win->title), LV_ALIGN_CENTER, 0, 0);
     new_win->display_area.x1 = lv_obj_get_x(new_win->header);
     new_win->display_area.x2 = lv_obj_get_x(new_win->header) + lv_obj_get_width(new_win->header);
