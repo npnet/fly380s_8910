@@ -10,7 +10,7 @@ enum
     ACT_ID_POC_MEMBER_LIST,             /*1: member list*/
     ACT_ID_POC_GROUP_LIST,              /*2: group list*/
     ACT_ID_POC_GROUP_MEMBER_LIST,       /*3: group member list*/
-    ACT_ID_POC_SINGLE_CALL,             /*4: single call*/
+    ACT_ID_POC_MEMBER_CALL,             /*4: single call*/
     ACT_ID_POC_IDLE,                    /*5: poc idle*/
     ACT_ID_POC_MAIN_MENU,               /*6: main menu*/
     ACT_ID_POC_MAKE_GROUP,              /*7: make group*/

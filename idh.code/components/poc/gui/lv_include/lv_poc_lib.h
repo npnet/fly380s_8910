@@ -11,6 +11,8 @@
 #include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
 #include "guiIdtCom_api.h"
 
+#define LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE (10)
+
 enum {
 	poc_torch_led   = 2,//IO touch
 	poc_red_led     = 10,//IO redled
@@ -75,9 +77,104 @@ typedef void (*poc_build_group_cb)(int result_type);
 */
 typedef void (*poc_get_member_status_cb)(int status);
 
+typedef lv_poc_status_t (*lv_poc_member_list_add_cb)(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information);
+
+typedef void (*lv_poc_member_list_remove_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+
+typedef void (*lv_poc_member_list_clear_cb)(lv_poc_member_list_t *member_list_obj);
+
+typedef int (*lv_poc_member_list_get_information_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void *** information);
+
+typedef void (*lv_poc_member_list_refresh_cb)(lv_poc_member_list_t *member_list_obj);
+
+typedef lv_poc_status_t (*lv_poc_member_list_move_top_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+
+typedef lv_poc_status_t (*lv_poc_member_list_move_bottom_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+
+typedef lv_poc_status_t (*lv_poc_member_list_move_up_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+
+typedef lv_poc_status_t (*lv_poc_member_list_move_down_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+
+typedef lv_poc_status_t (*lv_poc_member_list_set_state_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information, bool is_online);
+
+typedef lv_poc_status_t (*lv_poc_member_list_is_exists_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+
+typedef lv_poc_status_t (*lv_poc_member_list_get_state_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+
+
+typedef lv_poc_status_t (*lv_poc_group_list_add_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+
+typedef void (*lv_poc_group_list_remove_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+
+typedef int (*lv_poc_group_list_get_information_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void *** information);
+
+typedef void (*lv_poc_group_list_refresh_cb)(lv_poc_group_list_t *group_list_obj);
+
+typedef lv_poc_status_t (*lv_poc_group_list_move_top_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+
+typedef lv_poc_status_t (*lv_poc_group_list_move_bottom_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+
+typedef lv_poc_status_t (*lv_poc_group_list_move_up_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+
+typedef lv_poc_status_t (*lv_poc_group_list_move_down_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+
+typedef lv_poc_status_t (*lv_poc_group_list_is_exists_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+
+
+
+/*
+	  name : lv_poc_notation_msg
+	  param : msg_type  (1,2)
+	          text_1
+	          text_2     msg_type = 1
+	                                  listen text , display name and group name of speaker
+	                     msg_type = 2
+	                                  speaking text , you are free.
+	                     msg_type = 3
+	                                  refresh notation ui
+	                     msg_type = 0
+	                                  destory notation ui
+	  date : 2020-05-22
+*/
+typedef bool (*lv_poc_notation_msg_cb)(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
+
+typedef struct _lv_poc_activity_attribute_cb_set
+{
+	struct{
+		lv_poc_member_list_add_cb add;
+		lv_poc_member_list_remove_cb remove;
+		lv_poc_member_list_clear_cb clear;
+		lv_poc_member_list_get_information_cb get_info;
+		lv_poc_member_list_refresh_cb refresh;
+		lv_poc_member_list_move_top_cb move_to_top;
+		lv_poc_member_list_move_bottom_cb move_to_bottom;
+		lv_poc_member_list_move_up_cb move_up;
+		lv_poc_member_list_move_down_cb move_down;
+		lv_poc_member_list_set_state_cb set_state;
+		lv_poc_member_list_is_exists_cb exists;
+		lv_poc_member_list_get_state_cb get_state;
+	} member_list;
+
+	struct{
+		lv_poc_group_list_add_cb add;
+		lv_poc_group_list_remove_cb remove;
+		lv_poc_group_list_get_information_cb get_info;
+		lv_poc_group_list_refresh_cb refresh;
+		lv_poc_group_list_move_top_cb move_to_top;
+		lv_poc_group_list_move_bottom_cb move_to_bottom;
+		lv_poc_group_list_move_up_cb move_up;
+		lv_poc_group_list_move_down_cb move_down;
+		lv_poc_group_list_is_exists_cb exists;
+	} group_list;
+
+	lv_poc_notation_msg_cb note;
+} lv_poc_activity_attribute_cb_set;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
 
 
 /*
@@ -471,24 +568,6 @@ lv_poc_get_member_name(lv_poc_member_info_t members);
 */
 bool
 lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb func);
-
-/*
-	  name : lv_poc_notation_msg
-	  param : msg_type  (1,2)
-	          text_1
-	          text_2     msg_type = 1
-	                                  listen text , display name and group name of speaker
-	                     msg_type = 2
-	                                  speaking text , you are free.
-	                     msg_type = 3
-	                                  refresh notation ui
-	                     msg_type = 0
-	                                  destory notation ui
-	  date : 2020-05-09
-*/
-extern bool
-lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
-
 
 #ifdef __cplusplus
 }

@@ -44,6 +44,8 @@ static char * lv_poc_build_group_few_member_text1 = "成员数量不";
 
 static char * lv_poc_build_group_few_member_text2 = "能少于两人";
 
+static char * lv_poc_build_group_error_text = "错误";
+
 
 static lv_obj_t * lv_poc_build_group_activity_create(lv_poc_display_t *display)
 {
@@ -124,11 +126,23 @@ static void lv_poc_build_group_new_group_cb(int result_type)
 
 static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, int32_t info_num, int32_t selected_num)
 {
-	if(info == NULL || info_num < 2 || selected_num < 2)
+	if(info == NULL || info_num < selected_num)
 	{
 		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG,
-			(const uint8_t *)lv_poc_build_group_few_member_text1,
-			(const uint8_t *)lv_poc_build_group_few_member_text2);
+			(const uint8_t *)lv_poc_build_group_error_text,
+			NULL);
+		lv_poc_del_activity(poc_build_group_activity);
+		return false;
+	}
+
+	if(selected_num < 2)
+	{
+		if(selected_num == 1)
+		{
+			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG,
+				(const uint8_t *)lv_poc_build_group_few_member_text1,
+				(const uint8_t *)lv_poc_build_group_few_member_text2);
+		}
 		lv_poc_del_activity(poc_build_group_activity);
 		return false;
 	}
