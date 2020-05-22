@@ -1389,7 +1389,7 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 	  date : 2020-05-12
 */
 bool
-lv_poc_get_member_list(lv_poc_group_info_t *group_info, lv_poc_member_list_t * member_list, int type, get_member_list_cb func)
+lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * member_list, int type, get_member_list_cb func)
 {
 	if(member_list == NULL
 		|| (type < 1 || type > 3)
@@ -1467,6 +1467,17 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 */
 lv_poc_member_info_t
 lv_poc_get_self_info(void)
+{
+	return NULL;
+}
+
+/*
+	  name : lv_poc_get_current_group
+	  param :
+	  date : 2020-05-22
+*/
+lv_poc_group_info_t
+lv_poc_get_current_group(void)
 {
 	return NULL;
 }

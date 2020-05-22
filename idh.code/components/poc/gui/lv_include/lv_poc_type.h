@@ -241,7 +241,7 @@ typedef struct {
     list_element_t * group_list;
 } lv_poc_group_list_t;
 
-typedef void lv_poc_group_info_t;
+typedef void * lv_poc_group_info_t;
 
 typedef void * lv_poc_member_info_t;
 

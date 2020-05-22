@@ -808,4 +808,3 @@ extern nv_poc_setting_msg_t * poc_setting_conf;
 
 #endif //__INCLUDE_LV_INTER_PHONE_OBJ__
 
-??
