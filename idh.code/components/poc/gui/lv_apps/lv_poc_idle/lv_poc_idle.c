@@ -28,6 +28,7 @@ typedef struct _idle_display_func_t {
 } idle_display_func_t;
 
 typedef enum {
+	lv_poc_idle_page2_none_msg = 0,
 	lv_poc_idle_page2_normal_info,
 	lv_poc_idle_page2_warnning_info,
 	lv_poc_idle_page2_login_info,
@@ -39,6 +40,34 @@ typedef enum {
 	lv_poc_idle_page2_tts,
 	lv_poc_idle_page2_listen
 } lv_poc_idle_page2_display_t;
+
+#define LV_POC_IDLE_PAE_MAX_MSG_SIZE (5)
+
+typedef struct{
+	lv_poc_idle_page2_display_t state;
+	char title[64];
+	char second_line_text_1[64];
+	char second_line_text_2[64];
+	char third_line_text_1[64];
+	char third_line_text_2[64];
+} lv_poc_idle_page2_msg_content_t;
+
+typedef struct{
+	int reader;
+	int writer;
+	int normal_msg_count;
+	lv_poc_idle_page2_msg_content_t msg[LV_POC_IDLE_PAE_MAX_MSG_SIZE];
+	lv_poc_idle_page2_msg_content_t msg_normal_info;
+	lv_poc_idle_page2_msg_content_t msg_warnning_info;
+	lv_poc_idle_page2_msg_content_t msg_login_info;
+	lv_poc_idle_page2_msg_content_t msg_audio;
+	lv_poc_idle_page2_msg_content_t msg_join_group;
+	lv_poc_idle_page2_msg_content_t msg_list_update;
+	lv_poc_idle_page2_msg_content_t msg_speak;
+	lv_poc_idle_page2_msg_content_t msg_tone;
+	lv_poc_idle_page2_msg_content_t msg_tts;
+	lv_poc_idle_page2_msg_content_t msg_listen;
+} lv_poc_idle_page2_msg_t;
 
 typedef enum {
 	lv_poc_idle_page_1,
@@ -64,8 +93,7 @@ static void lv_poc_idle_page_1_hide(void);
 static void lv_poc_idle_page_2_show(void);
 static void lv_poc_idle_page_2_hide(void);
 static void lv_poc_idle_page_2_init(void);
-static void lv_poc_idle_page_task(void);
-static void lv_poc_idle_page_2_normal_display_task(lv_task_t * task);
+static void lv_poc_idle_page_task_cb(lv_task_t * task);
 
 
 /*************************************************
@@ -74,22 +102,20 @@ static void lv_poc_idle_page_2_normal_display_task(lv_task_t * task);
 *
 *************************************************/
 lv_poc_activity_t *activity_idle = NULL;
-static lv_task_t * idle_page2_normal_info_timer_task = NULL;
+static lv_task_t * idle_page_task = NULL;
+static lv_poc_idle_page2_msg_t *idle_page_task_msg = NULL;
+static lv_poc_idle_page2_display_t page2_display_state = lv_poc_idle_page2_normal_info;
 static lv_obj_t * idle_date_label;
 static lv_obj_t * idle_big_clock;
 static char idle_current_page = IDLE_PAGE_CURRENT;
 static char idle_old_page = IDLE_PAGE_CURRENT;
 static char idle_total_page = IDLE_PAGE_NUMBER;
 
-static char get_self_info_success = 0;
-
 static idle_display_func_t idle_display_funcs[] =
 {
     {lv_poc_idle_page_1_show, lv_poc_idle_page_1_hide},
     {lv_poc_idle_page_2_show, lv_poc_idle_page_2_hide},
 };
-
-static lv_poc_idle_page2_display_t page2_display_state = 0;
 
 /*************************************************
 *
@@ -119,7 +145,6 @@ static lv_obj_t * lv_poc_idle_create(lv_poc_display_t *display)
     idle_total_page = sizeof(idle_display_funcs)/sizeof(idle_display_funcs[0]);
     idle_old_page = idle_current_page;
 	lv_poc_status_bar_task_ext_add(lv_poc_idle_time_task);
-    lv_poc_status_bar_task_ext_add(lv_poc_idle_page_task);
     return NULL;
 }
 
@@ -196,19 +221,7 @@ static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 
 		case LV_SIGNAL_FOCUS:
 		{
-		    if(idle_page2_normal_info_timer_task != 0)
-		    {
-		    	lv_task_del(idle_page2_normal_info_timer_task);
-		    	idle_page2_normal_info_timer_task = 0;
-		    }
-
-			if(get_self_info_success == 1
-					&& page2_display_state != lv_poc_idle_page2_normal_info
-					&& page2_display_state != lv_poc_idle_page2_warnning_info)
-			{
-				idle_page2_normal_info_timer_task = lv_task_create(lv_poc_idle_page_2_normal_display_task,
-																		2000, LV_TASK_PRIO_LOWEST, NULL);
-			}
+			lv_poc_idle_time_task();
 
 			if(current_activity == activity_idle)
 			{
@@ -278,6 +291,12 @@ static char * lv_poc_idle_week_map(const int wday)
 
 static void lv_poc_idle_time_task(void)
 {
+	static bool is_running = false;
+	if(is_running == true)
+	{
+		return;
+	}
+	is_running = true;
 	static lv_poc_time_t time = {0};
 	static char big_clock_str[10] = {0};
 	static const char * str = NULL;
@@ -329,6 +348,7 @@ static void lv_poc_idle_time_task(void)
     {
         //lv_obj_set_hidden(idle_big_clock, true);
         //lv_obj_set_hidden(idle_date_label, true);
+        is_running = false;
         return;
     }
     //else if(current_activity->)
@@ -368,6 +388,7 @@ static void lv_poc_idle_time_task(void)
     lv_obj_align(idle_date_label, idle_big_clock, LV_ALIGN_OUT_BOTTOM_MID, 0, -10);
     strcpy(old_big_clock_str, big_clock_str);
     strcpy(old_str,str);
+	is_running = false;
 }
 
 
@@ -555,31 +576,269 @@ static void lv_poc_idle_page_2_init(void)
     }
 }
 
-static void lv_poc_idle_page_task(void)
+static void lv_poc_idle_page_task_cb(lv_task_t * task)
 {
-    static lv_poc_activity_t * old_activity = NULL;
-    static bool isFirst = true;
-    if(true == isFirst)
-    {
-        old_activity = activity_idle;
-    }
-    if(current_activity != activity_idle )
-    {
-        if(old_activity != current_activity)
-        {
-            old_activity = current_activity;
-            for(int k = 0; k < idle_total_page; k++)
-            {
-                idle_display_funcs[k].hide();
-            }
-        }
-        return;
-    }
+    static lv_poc_idle_page2_msg_content_t *dest_msg = NULL;
 
-    if(idle_old_page != idle_current_page || true == isFirst)
+	do{
+  		if(task == NULL || task->user_data == NULL) break;
+
+		lv_poc_idle_page2_msg_t *page2_msg = (lv_poc_idle_page2_msg_t *)task->user_data;
+		lv_poc_idle_page2_msg_content_t *msg_content = &page2_msg->msg[page2_msg->reader];
+
+		//OSI_LOGI(0, "[poc][idle][note] line<-%d\n", __LINE__);
+
+		if(msg_content->state == lv_poc_idle_page2_none_msg)
+		{
+			if(page2_display_state != lv_poc_idle_page2_speak
+				&& page2_display_state != lv_poc_idle_page2_listen
+				&& page2_display_state != lv_poc_idle_page2_normal_info)
+			{
+				page2_msg->normal_msg_count = page2_msg->normal_msg_count + 1;
+
+				if(page2_msg->normal_msg_count > 21)
+				{
+					page2_display_state = lv_poc_idle_page2_normal_info;
+					page2_msg->normal_msg_count = 0;
+					break;
+				}
+			}
+			return;
+		}
+		page2_msg->normal_msg_count = 0;
+
+		if(msg_content->state == lv_poc_idle_page2_normal_info)
+		{
+			page2_display_state = lv_poc_idle_page2_normal_info;
+			msg_content->state = lv_poc_idle_page2_none_msg;
+			page2_msg->reader = (page2_msg->reader + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
+			dest_msg = &page2_msg->msg_normal_info;
+			dest_msg->state = msg_content->state;
+			strcpy(dest_msg->title, (const char *)"公网对讲");
+			strcpy(dest_msg->second_line_text_1, (const char *)"用户:");
+			strcpy(dest_msg->second_line_text_2, (const char *)msg_content->second_line_text_2);
+			strcpy(dest_msg->third_line_text_1, (const char *)"群组:");
+			strcpy(dest_msg->third_line_text_2, (const char *)msg_content->third_line_text_2);
+			break;
+		}
+		else if(msg_content->state == lv_poc_idle_page2_warnning_info)
+		{
+			page2_display_state = lv_poc_idle_page2_warnning_info;
+			dest_msg = &page2_msg->msg_warnning_info;
+		}
+		else if(msg_content->state == lv_poc_idle_page2_login_info)
+		{
+			page2_display_state = lv_poc_idle_page2_login_info;
+			dest_msg = &page2_msg->msg_login_info;
+		}
+		else if(msg_content->state == lv_poc_idle_page2_audio)
+		{
+			switch((int)page2_display_state)
+			{
+				case lv_poc_idle_page2_none_msg:
+				case lv_poc_idle_page2_normal_info:
+				case lv_poc_idle_page2_warnning_info:
+				case lv_poc_idle_page2_login_info:
+				case lv_poc_idle_page2_audio:
+				case lv_poc_idle_page2_join_group:
+				case lv_poc_idle_page2_list_update:
+				case lv_poc_idle_page2_tone:
+				case lv_poc_idle_page2_tts:
+				{
+					page2_display_state = lv_poc_idle_page2_audio;
+					dest_msg = &page2_msg->msg_audio;
+					break;
+				}
+			}
+		}
+		else if(msg_content->state == lv_poc_idle_page2_join_group)
+		{
+			switch((int)page2_display_state)
+			{
+				case lv_poc_idle_page2_none_msg:
+				case lv_poc_idle_page2_normal_info:
+				case lv_poc_idle_page2_warnning_info:
+				case lv_poc_idle_page2_login_info:
+				case lv_poc_idle_page2_audio:
+				case lv_poc_idle_page2_join_group:
+				case lv_poc_idle_page2_list_update:
+				case lv_poc_idle_page2_tone:
+				case lv_poc_idle_page2_tts:
+				{
+					page2_display_state = lv_poc_idle_page2_join_group;
+					dest_msg = &page2_msg->msg_join_group;
+					break;
+				}
+			}
+		}
+		else if(msg_content->state == lv_poc_idle_page2_list_update)
+		{
+			switch((int)page2_display_state)
+			{
+				case lv_poc_idle_page2_none_msg:
+				case lv_poc_idle_page2_normal_info:
+				case lv_poc_idle_page2_warnning_info:
+				case lv_poc_idle_page2_login_info:
+				case lv_poc_idle_page2_audio:
+				case lv_poc_idle_page2_join_group:
+				case lv_poc_idle_page2_list_update:
+				case lv_poc_idle_page2_tone:
+				case lv_poc_idle_page2_tts:
+				{
+					page2_display_state = lv_poc_idle_page2_list_update;
+					dest_msg = &page2_msg->msg_list_update;
+					break;
+				}
+			}
+		}
+		else if(msg_content->state == lv_poc_idle_page2_speak)
+		{
+			switch((int)page2_display_state)
+			{
+				case lv_poc_idle_page2_none_msg:
+				case lv_poc_idle_page2_normal_info:
+				case lv_poc_idle_page2_warnning_info:
+				case lv_poc_idle_page2_login_info:
+				case lv_poc_idle_page2_audio:
+				case lv_poc_idle_page2_join_group:
+				case lv_poc_idle_page2_list_update:
+				case lv_poc_idle_page2_tone:
+				case lv_poc_idle_page2_tts:
+				case lv_poc_idle_page2_speak:
+				case lv_poc_idle_page2_listen:
+				{
+					if(msg_content->title[0] == 0
+						|| msg_content->second_line_text_1[0] == 0
+						|| msg_content->second_line_text_2[0] == 0
+						|| msg_content->third_line_text_1[0] == 0
+						|| msg_content->third_line_text_2[0] == 0)
+					{
+						page2_display_state = lv_poc_idle_page2_normal_info;
+						dest_msg = &page2_msg->msg_normal_info;
+						msg_content->state = lv_poc_idle_page2_normal_info;
+					}
+					else
+					{
+						page2_display_state = lv_poc_idle_page2_speak;
+						dest_msg = &page2_msg->msg_speak;
+					}
+					break;
+				}
+			}
+		}
+		else if(msg_content->state == lv_poc_idle_page2_tone)
+		{
+			switch((int)page2_display_state)
+			{
+				case lv_poc_idle_page2_none_msg:
+				case lv_poc_idle_page2_normal_info:
+				case lv_poc_idle_page2_warnning_info:
+				case lv_poc_idle_page2_login_info:
+				case lv_poc_idle_page2_audio:
+				case lv_poc_idle_page2_join_group:
+				case lv_poc_idle_page2_list_update:
+				case lv_poc_idle_page2_tone:
+				case lv_poc_idle_page2_tts:
+				{
+					page2_display_state = lv_poc_idle_page2_tone;
+					dest_msg = &page2_msg->msg_tone;
+					break;
+				}
+			}
+		}
+		else if(msg_content->state == lv_poc_idle_page2_tts)
+		{
+			switch((int)page2_display_state)
+			{
+				case lv_poc_idle_page2_none_msg:
+				case lv_poc_idle_page2_normal_info:
+				case lv_poc_idle_page2_warnning_info:
+				case lv_poc_idle_page2_login_info:
+				case lv_poc_idle_page2_audio:
+				case lv_poc_idle_page2_join_group:
+				case lv_poc_idle_page2_list_update:
+				case lv_poc_idle_page2_tone:
+				case lv_poc_idle_page2_tts:
+				{
+					page2_display_state = lv_poc_idle_page2_tts;
+					dest_msg = &page2_msg->msg_tts;
+					break;
+				}
+			}
+		}
+		else if(msg_content->state == lv_poc_idle_page2_listen)
+		{
+			switch((int)page2_display_state)
+			{
+				case lv_poc_idle_page2_none_msg:
+				case lv_poc_idle_page2_normal_info:
+				case lv_poc_idle_page2_warnning_info:
+				case lv_poc_idle_page2_login_info:
+				case lv_poc_idle_page2_audio:
+				case lv_poc_idle_page2_join_group:
+				case lv_poc_idle_page2_list_update:
+				case lv_poc_idle_page2_tone:
+				case lv_poc_idle_page2_tts:
+				case lv_poc_idle_page2_speak:
+				case lv_poc_idle_page2_listen:
+				{
+					if(msg_content->title[0] == 0
+						|| msg_content->second_line_text_1[0] == 0
+						|| msg_content->second_line_text_2[0] == 0
+						|| msg_content->third_line_text_1[0] == 0
+						|| msg_content->third_line_text_2[0] == 0)
+					{
+						page2_display_state = lv_poc_idle_page2_normal_info;
+						dest_msg = &page2_msg->msg_normal_info;
+						msg_content->state = lv_poc_idle_page2_normal_info;
+					}
+					else
+					{
+						page2_display_state = lv_poc_idle_page2_listen;
+						dest_msg = &page2_msg->msg_speak;
+					}
+				}
+			}
+		}
+		dest_msg->state = msg_content->state;
+		msg_content->state = lv_poc_idle_page2_none_msg;
+
+		if(dest_msg->state != lv_poc_idle_page2_normal_info)
+		{
+			strcpy(dest_msg->title, (const char *)msg_content->title);
+			strcpy(dest_msg->second_line_text_1, (const char *)msg_content->second_line_text_1);
+			strcpy(dest_msg->second_line_text_2, (const char *)msg_content->second_line_text_2);
+			strcpy(dest_msg->third_line_text_1, (const char *)msg_content->third_line_text_1);
+			strcpy(dest_msg->third_line_text_2, (const char *)msg_content->third_line_text_2);
+		}
+		page2_msg->reader = (page2_msg->reader + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
+	} while(0);
+
+	if(dest_msg != NULL)
+	{
+		idle_title_label_text = dest_msg->title;
+		idle_user_label_text = dest_msg->second_line_text_1;
+		idle_user_name_label_text = dest_msg->second_line_text_2;
+		idle_group_label_text = dest_msg->third_line_text_1;
+		idle_group_name_label_text = dest_msg->third_line_text_2;
+	}
+	else
+	{
+		idle_title_label_text = "检查网络";
+		idle_user_label_text = "";
+		idle_user_name_label_text = "";
+		idle_group_label_text = "";
+		idle_group_name_label_text = "";
+	}
+
+    lv_label_set_text(idle_title_label, idle_title_label_text);
+    lv_label_set_text(idle_user_label, idle_user_label_text);
+    lv_label_set_text(idle_user_name_label, idle_user_name_label_text);
+    lv_label_set_text(idle_group_label, idle_group_label_text);
+    lv_label_set_text(idle_group_name_label, idle_group_name_label_text);
+
+    if(activity_idle != NULL)
     {
-        idle_old_page = idle_current_page;
-        isFirst = false;
         for(int k = 0; k < idle_total_page; k++)
         {
             if( k == idle_current_page)
@@ -595,10 +854,62 @@ static void lv_poc_idle_page_task(void)
 
 }
 
-static void lv_poc_idle_page_2_normal_display_task(lv_task_t * task)
+void lv_poc_idle_set_page2(lv_poc_idle_page2_display_t msg_type, char * content[5])
 {
-	idle_page2_normal_info_timer_task = 0;
-	activity_idle ->signal_func(activity_idle->display, LV_SIGNAL_FOCUS, NULL);
+	if(content == NULL || idle_page_task_msg == NULL || idle_page_task == NULL)
+	{
+		return;
+	}
+
+	lv_poc_idle_page2_msg_t *page2_msg = idle_page_task_msg;
+	lv_poc_idle_page2_msg_content_t *msg_content = &page2_msg->msg[page2_msg->writer];
+	page2_msg->writer = (page2_msg->writer + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
+	msg_content->state = msg_type;
+	if(content[0] != NULL)
+	{
+		strcpy(msg_content->title, (const char *)content[0]);
+	}
+	else
+	{
+		msg_content->title[0] = 0;
+	}
+
+	if(content[1] != NULL)
+	{
+		strcpy(msg_content->second_line_text_1, (const char *)content[1]);
+	}
+	else
+	{
+		msg_content->second_line_text_1[0] = 0;
+	}
+
+	if(content[2] != NULL)
+	{
+		strcpy(msg_content->second_line_text_2, (const char *)content[2]);
+	}
+	else
+	{
+		msg_content->second_line_text_2[0] = 0;
+	}
+
+	if(content[3] != NULL)
+	{
+		strcpy(msg_content->third_line_text_1, (const char *)content[3]);
+	}
+	else
+	{
+		msg_content->third_line_text_1[0] = 0;
+	}
+
+	if(content[4] != NULL)
+	{
+		strcpy(msg_content->third_line_text_2, (const char *)content[4]);
+	}
+	else
+	{
+		msg_content->third_line_text_2[0] = 0;
+	}
+
 }
 
 /*************************************************
@@ -664,13 +975,9 @@ static void  lv_poc_idle_control_left_label_event_cb(lv_obj_t * obj, lv_event_t 
 
 static void  lv_poc_idle_control_right_label_event_cb(lv_obj_t * obj, lv_event_t event)
 {
-	static bool pa_enable = false;
 	if(LV_EVENT_CLICKED == event)
 	{
 		lv_poc_idle_next_page();
-		OSI_LOGI(0, "[poc][audio][PA][idle] audio_device line <- %d - %d\n", __LINE__, pa_enable);
-		poc_set_ext_pa_status(pa_enable);
-		pa_enable = !pa_enable;
 	}
 }
 
@@ -692,6 +999,18 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	lv_obj_set_event_cb(activity_idle->control->left_button, lv_poc_idle_control_left_label_event_cb);
 	lv_obj_set_click(activity_idle->control->right_button, true);
 	lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
+
+	lv_poc_idle_time_task();
+	lv_poc_idle_page_2_hide();
+
+	idle_page_task_msg = (lv_poc_idle_page2_msg_t *)lv_mem_alloc(sizeof(lv_poc_idle_page2_msg_t));
+	if(idle_page_task_msg != NULL)
+	{
+		memset(idle_page_task_msg, 0, sizeof(lv_poc_idle_page2_msg_t));
+		idle_page_task = lv_task_create(lv_poc_idle_page_task_cb, 100, LV_TASK_PRIO_LOWEST, idle_page_task_msg);
+	}
+	char *content[5] = {"对讲机","名字","飞图对讲","组织","飞图"};
+	lv_poc_idle_set_page2(lv_poc_idle_page2_speak, content);
 
 	return activity_idle;
 }
