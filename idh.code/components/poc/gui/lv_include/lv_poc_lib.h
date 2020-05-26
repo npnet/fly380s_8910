@@ -151,6 +151,8 @@ typedef lv_poc_status_t (*lv_poc_group_list_is_exists_cb)(lv_poc_group_list_t *g
 */
 typedef bool (*lv_poc_notation_msg_cb)(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
 
+typedef void (*lv_poc_idle_set_page2_cb)(lv_poc_idle_page2_display_t msg_type, char * content[], int csize);
+
 typedef struct _lv_poc_activity_attribute_cb_set
 {
 	struct{
@@ -180,7 +182,8 @@ typedef struct _lv_poc_activity_attribute_cb_set
 		lv_poc_group_list_is_exists_cb exists;
 	} group_list;
 
-	lv_poc_notation_msg_cb note;
+	lv_poc_notation_msg_cb window_note;
+	lv_poc_idle_set_page2_cb idle_note;
 } lv_poc_activity_attribute_cb_set;
 
 #ifdef __cplusplus

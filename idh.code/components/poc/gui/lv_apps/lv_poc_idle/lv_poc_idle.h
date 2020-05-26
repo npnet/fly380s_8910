@@ -26,6 +26,9 @@ extern lv_obj_t * idle_group_name_label;
 
 lv_poc_activity_t * lv_poc_create_idle(void);
 
+void lv_poc_idle_set_page2(lv_poc_idle_page2_display_t msg_type, char * content[], int csize);
+
+
 #ifdef __cplusplus
 }
 #endif  //__cplusplus
