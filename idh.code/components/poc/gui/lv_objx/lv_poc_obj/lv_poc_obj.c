@@ -6,6 +6,7 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #ifndef __GNUC__
 #define __attribute__(x)
@@ -132,6 +133,9 @@ static lv_poc_status_t prv_lv_poc_group_list_move_up(lv_poc_group_list_t *group_
 static lv_poc_status_t prv_lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 static lv_poc_status_t prv_lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 
+static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_type, int num, ...);
+
+
 
 static bool prv_lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
 
@@ -254,14 +258,13 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 	},
 
 	.window_note = prv_lv_poc_notation_msg,
-	.idle_note = lv_poc_idle_set_page2,
+	.idle_note = prv_lv_poc_idle_set_page2_note_func,
 };
 
 static __attribute__((const)) lv_poc_activity_attribute_cb_set_obj * lv_poc_get_activity_attribute_cb_set_obj(void)
 {
 	return &prv_lv_poc_activity_attribute_cb_set;
 }
-
 
 /*************************************************
 *
@@ -1858,6 +1861,22 @@ static lv_poc_status_t prv_lv_poc_group_list_is_exists(lv_poc_group_list_t *grou
 	 }
 
 	 return status;
+}
+
+static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_type, int num, ...)
+{
+	int str_count = num;
+	char * content[5];
+	int index = 0;
+	memset(content, 0 ,sizeof(char *) * 5);
+	va_list param_list;
+	va_start(param_list, num);
+	for(index = 0; index < str_count; index++)
+	{
+		content[index] = va_arg(param_list, char *);
+	}
+	va_end(param_list);
+	lv_poc_idle_set_page2(msg_type, content, index);
 }
 
 static bool prv_lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2)
