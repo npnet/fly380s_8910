@@ -229,6 +229,20 @@ typedef enum
 	LV_POC_NOTATION_NORMAL_MSG = 6,
 } lv_poc_notation_msg_type_t;
 
+typedef enum {
+	lv_poc_idle_page2_none_msg = 0,
+	lv_poc_idle_page2_normal_info,
+	lv_poc_idle_page2_warnning_info,
+	lv_poc_idle_page2_login_info,
+	lv_poc_idle_page2_audio,
+	lv_poc_idle_page2_join_group,
+	lv_poc_idle_page2_list_update,
+	lv_poc_idle_page2_speak,
+	lv_poc_idle_page2_tone,
+	lv_poc_idle_page2_tts,
+	lv_poc_idle_page2_listen
+} lv_poc_idle_page2_display_t;
+
 typedef struct _list_element_t{
     char name[LIST_ELEMENT_NAME_MAX_LENGTH];
     lv_obj_t * list_item;
