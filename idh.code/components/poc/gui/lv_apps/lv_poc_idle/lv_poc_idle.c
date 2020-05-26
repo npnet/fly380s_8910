@@ -27,20 +27,6 @@ typedef struct _idle_display_func_t {
     void (*hide)(void);
 } idle_display_func_t;
 
-typedef enum {
-	lv_poc_idle_page2_none_msg = 0,
-	lv_poc_idle_page2_normal_info,
-	lv_poc_idle_page2_warnning_info,
-	lv_poc_idle_page2_login_info,
-	lv_poc_idle_page2_audio,
-	lv_poc_idle_page2_join_group,
-	lv_poc_idle_page2_list_update,
-	lv_poc_idle_page2_speak,
-	lv_poc_idle_page2_tone,
-	lv_poc_idle_page2_tts,
-	lv_poc_idle_page2_listen
-} lv_poc_idle_page2_display_t;
-
 #define LV_POC_IDLE_PAE_MAX_MSG_SIZE (5)
 
 typedef struct{
@@ -129,11 +115,11 @@ lv_obj_t * idle_user_name_label;
 lv_obj_t * idle_group_label;
 lv_obj_t * idle_group_name_label;
 
-char * idle_title_label_text;
-char * idle_user_label_text;
-char * idle_user_name_label_text;
-char * idle_group_label_text;
-char * idle_group_name_label_text;
+char * idle_title_label_text = "";
+char * idle_user_label_text  = "";
+char * idle_user_name_label_text = "";
+char * idle_group_label_text = "";
+char * idle_group_name_label_text = "";
 
 /*************************************************
 *
@@ -423,98 +409,229 @@ static void lv_poc_idle_page_1_hide(void)
 static void lv_poc_idle_page_2_show(void)
 {
     lv_poc_idle_page_2_init();
+
+    lv_obj_set_hidden(idle_title_label, true);
+    lv_obj_set_hidden(idle_user_label, true);
+    lv_obj_set_hidden(idle_user_name_label, true);
+    lv_obj_set_hidden(idle_group_label, true);
+    lv_obj_set_hidden(idle_group_name_label, true);
+
+    lv_obj_t *obj_content[5];
+    char * obj_content_text[5];
+    memset(obj_content, 0, sizeof(lv_obj_t *));
+    memset(obj_content_text, 0, sizeof(char *));
+    int obj_write = 0;
+
     if(page2_display_state == lv_poc_idle_page2_login_info)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_label_set_text(idle_title_label, idle_title_label_text);
-	    lv_obj_set_hidden(idle_user_label, true);
-	    lv_obj_set_hidden(idle_user_name_label, true);
-	    lv_obj_set_hidden(idle_group_label, true);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
     }
     else if(page2_display_state == lv_poc_idle_page2_audio)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_obj_set_hidden(idle_user_label, true);
-	    lv_obj_set_hidden(idle_user_name_label, true);
-	    lv_obj_set_hidden(idle_group_label, true);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
+	    obj_content[obj_write] = idle_group_label;
+	    obj_content_text[obj_write++] = idle_group_label_text;
     }
     else if(page2_display_state == lv_poc_idle_page2_join_group)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_label_set_text(idle_title_label, idle_title_label_text);
-	    lv_obj_set_hidden(idle_user_label, true);
-	    lv_obj_set_hidden(idle_user_name_label, true);
-	    lv_obj_set_hidden(idle_group_label, true);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
+	    obj_content[obj_write] = idle_group_label;
+	    obj_content_text[obj_write++] = idle_group_label_text;
     }
     else if(page2_display_state == lv_poc_idle_page2_list_update)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_label_set_text(idle_title_label, idle_title_label_text);
-	    lv_obj_set_hidden(idle_user_label, true);
-	    lv_obj_set_hidden(idle_user_name_label, true);
-	    lv_obj_set_hidden(idle_group_label, true);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
     }
     else if(page2_display_state == lv_poc_idle_page2_speak)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_label_set_text(idle_title_label, idle_title_label_text);
-	    lv_obj_set_hidden(idle_user_label, true);
-	    lv_obj_set_hidden(idle_user_name_label, true);
-	    lv_obj_set_hidden(idle_group_label, true);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
+	    obj_content[obj_write] = idle_group_label;
+	    obj_content_text[obj_write++] = idle_group_label_text;
     }
     else if(page2_display_state == lv_poc_idle_page2_tone)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_label_set_text(idle_title_label, idle_title_label_text);
-	    lv_obj_set_hidden(idle_user_label, true);
-	    lv_obj_set_hidden(idle_user_name_label, true);
-	    lv_obj_set_hidden(idle_group_label, true);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
     }
     else if(page2_display_state == lv_poc_idle_page2_tts)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_label_set_text(idle_title_label, idle_title_label_text);
-	    lv_obj_set_hidden(idle_user_label, true);
-	    lv_obj_set_hidden(idle_user_name_label, true);
-	    lv_obj_set_hidden(idle_group_label, true);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
     }
     else if(page2_display_state == lv_poc_idle_page2_listen)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_label_set_text(idle_title_label, idle_title_label_text);
-	    lv_obj_set_hidden(idle_user_label, false);
-	    lv_label_set_text(idle_user_label, idle_user_label_text);
-	    lv_obj_set_hidden(idle_user_name_label, false);
-	    lv_label_set_text(idle_user_name_label, idle_user_name_label_text);
-	    lv_obj_set_hidden(idle_group_label, true);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
+	    obj_content[obj_write] = idle_group_label;
+	    obj_content_text[obj_write++] = idle_group_label_text;
     }
     else if(page2_display_state == lv_poc_idle_page2_normal_info)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_label_set_text(idle_title_label, idle_title_label_text);
-	    lv_obj_set_hidden(idle_user_label, false);
-	    lv_label_set_text(idle_user_label, idle_user_label_text);
-	    lv_obj_set_hidden(idle_user_name_label, true);
-	    lv_obj_set_hidden(idle_group_label, false);
-	    lv_label_set_text(idle_group_label, idle_group_label_text);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_title_label;
+	    obj_content_text[obj_write++] = idle_title_label_text;
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
+	    obj_content[obj_write] = idle_group_label;
+	    obj_content_text[obj_write++] = idle_group_label_text;
+	    obj_content[obj_write] = idle_user_name_label;
+	    obj_content_text[obj_write++] = idle_user_name_label_text;
+	    obj_content[obj_write] = idle_group_name_label;
+	    obj_content_text[obj_write++] = idle_group_name_label_text;
     }
     else if(page2_display_state == lv_poc_idle_page2_warnning_info)
     {
-	    lv_obj_set_hidden(idle_title_label, false);
-	    lv_label_set_text(idle_title_label, idle_title_label_text);
-	    lv_obj_set_hidden(idle_user_label, true);
-	    lv_obj_set_hidden(idle_user_name_label, true);
-	    lv_obj_set_hidden(idle_group_label, true);
-	    lv_obj_set_hidden(idle_group_name_label, true);
+	    obj_content[obj_write] = idle_user_label;
+	    obj_content_text[obj_write++] = idle_user_label_text;
+    }
+
+	if(obj_write == 1)
+	{
+		lv_obj_align(obj_content[0],
+			activity_idle->display,
+			LV_ALIGN_IN_TOP_LEFT,
+			lv_poc_get_display_width(activity_idle->display)/20,
+			lv_poc_get_display_height(activity_idle->display)/12*5);
+	}
+	else if(obj_write == 2)
+	{
+		lv_obj_align(obj_content[0],
+			activity_idle->display,
+			LV_ALIGN_IN_TOP_LEFT,
+			lv_poc_get_display_width(activity_idle->display)/20,
+			lv_poc_get_display_height(activity_idle->display)/40*9);
+
+		lv_obj_align(obj_content[1],
+			obj_content[0],
+			LV_ALIGN_OUT_BOTTOM_LEFT,
+			0,
+			0);
+	}
+	else if(obj_write == 3)
+	{
+		lv_obj_align(obj_content[0],
+			activity_idle->display,
+			LV_ALIGN_IN_TOP_LEFT,
+			lv_poc_get_display_width(activity_idle->display)/20,
+			lv_poc_get_display_height(activity_idle->display)/5);
+
+		lv_obj_align(obj_content[1],
+			obj_content[0],
+			LV_ALIGN_OUT_BOTTOM_LEFT,
+			0,
+			0);
+		lv_obj_align(obj_content[2],
+			obj_content[1],
+			LV_ALIGN_OUT_BOTTOM_LEFT,
+			0,
+			0);
+	}
+	else if(obj_write == 4)
+	{
+		lv_obj_set_width(obj_content[0], lv_poc_get_display_width(activity_idle->display)/40*9);
+		lv_obj_align(obj_content[0],
+			activity_idle->display,
+			LV_ALIGN_IN_TOP_LEFT,
+			lv_poc_get_display_width(activity_idle->display)/20,
+			lv_poc_get_display_height(activity_idle->display)/5);
+		lv_obj_set_width(obj_content[1], lv_poc_get_display_width(activity_idle->display)/40*9);
+		lv_obj_align(obj_content[0],
+			obj_content[0],
+			LV_ALIGN_OUT_BOTTOM_LEFT,
+			0,
+			0);
+		lv_obj_align(obj_content[2],
+			obj_content[0],
+			LV_ALIGN_OUT_RIGHT_MID,
+			0,
+			0);
+		lv_obj_align(obj_content[3],
+			obj_content[1],
+			LV_ALIGN_OUT_RIGHT_MID,
+			0,
+			0);
+	}
+    else if(obj_write == 5)
+    {
+		lv_obj_set_width(obj_content[0], lv_poc_get_display_width(activity_idle->display)/10*9);
+		lv_obj_align(obj_content[0],
+			activity_idle->display,
+			LV_ALIGN_IN_TOP_LEFT,
+			lv_poc_get_display_width(activity_idle->display)/20,
+			lv_poc_get_display_height(activity_idle->display)/10);
+
+		lv_obj_set_width(obj_content[1], lv_poc_get_display_width(activity_idle->display)/40*9);
+		lv_obj_align(obj_content[1],
+			obj_content[0],
+			LV_ALIGN_OUT_BOTTOM_LEFT,
+			0,
+			0);
+		lv_obj_set_width(obj_content[2], lv_poc_get_display_width(activity_idle->display)/40*9);
+		lv_obj_align(obj_content[2],
+			obj_content[1],
+			LV_ALIGN_OUT_BOTTOM_LEFT,
+			0,
+			0);
+		lv_obj_align(obj_content[3],
+			obj_content[1],
+			LV_ALIGN_OUT_RIGHT_MID,
+			0,
+			0);
+		lv_obj_align(obj_content[4],
+			obj_content[2],
+			LV_ALIGN_OUT_RIGHT_MID,
+			0,
+			0);
+    }
+
+    for(int obj_read = 0; obj_read < obj_write; obj_read++)
+    {
+	    if(obj_content[obj_read] != NULL)
+	    {
+		    lv_obj_set_hidden(obj_content[obj_read], false);
+		    if(obj_content_text[obj_read] != NULL)
+		    {
+			    lv_label_set_text(obj_content[obj_read], obj_content_text[obj_read]);
+		    }
+		    else
+		    {
+			    lv_label_set_text(obj_content[obj_read], "");
+		    }
+
+			if(obj_write > 3)
+			{
+				if(obj_write == 4)
+				{
+					if(obj_read > 1)
+					{
+						lv_label_set_long_mode(obj_content[obj_read], LV_LABEL_LONG_EXPAND);
+					}
+					else
+					{
+						lv_label_set_long_mode(obj_content[obj_read], LV_LABEL_LONG_SROLL_CIRC);
+					}
+				}
+				else if(obj_write == 5)
+				{
+					if(obj_read > 2)
+					{
+						lv_label_set_long_mode(obj_content[obj_read], LV_LABEL_LONG_EXPAND);
+					}
+					else
+					{
+						lv_label_set_long_mode(obj_content[obj_read], LV_LABEL_LONG_SROLL_CIRC);
+					}
+				}
+			}
+			else
+			{
+				lv_label_set_long_mode(obj_content[obj_read], LV_LABEL_LONG_EXPAND);
+			}
+	    }
     }
 }
 static void lv_poc_idle_page_2_hide(void)
@@ -547,11 +664,11 @@ static void lv_poc_idle_page_2_init(void)
         lv_label_set_style(idle_user_name_label, LV_LABEL_STYLE_MAIN, style);
         lv_label_set_style(idle_group_label, LV_LABEL_STYLE_MAIN, style);
         lv_label_set_style(idle_group_name_label, LV_LABEL_STYLE_MAIN, style);
-        lv_label_set_text(idle_title_label, "检查网络");
-        lv_label_set_text(idle_user_label, "");
-        lv_label_set_text(idle_group_label, "");
-        lv_label_set_text(idle_user_name_label, "");
-        lv_label_set_text(idle_group_name_label, "");
+        lv_label_set_text(idle_title_label, idle_title_label_text);
+        lv_label_set_text(idle_user_label, idle_user_label_text);
+        lv_label_set_text(idle_group_label, idle_user_name_label_text);
+        lv_label_set_text(idle_user_name_label, idle_group_label_text);
+        lv_label_set_text(idle_group_name_label, idle_group_name_label_text);
         lv_label_set_long_mode(idle_user_name_label, LV_LABEL_LONG_SROLL);
         lv_label_set_long_mode(idle_group_name_label, LV_LABEL_LONG_SROLL);
         if(activity_idle->has_control == true)
@@ -579,26 +696,40 @@ static void lv_poc_idle_page_2_init(void)
 static void lv_poc_idle_page_task_cb(lv_task_t * task)
 {
     static lv_poc_idle_page2_msg_content_t *dest_msg = NULL;
+    static bool have_warning = false;
 
 	do{
   		if(task == NULL || task->user_data == NULL) break;
 
 		lv_poc_idle_page2_msg_t *page2_msg = (lv_poc_idle_page2_msg_t *)task->user_data;
 		lv_poc_idle_page2_msg_content_t *msg_content = &page2_msg->msg[page2_msg->reader];
-
-		//OSI_LOGI(0, "[poc][idle][note] line<-%d\n", __LINE__);
+		bool is_normal = false;
 
 		if(msg_content->state == lv_poc_idle_page2_none_msg)
 		{
 			if(page2_display_state != lv_poc_idle_page2_speak
 				&& page2_display_state != lv_poc_idle_page2_listen
-				&& page2_display_state != lv_poc_idle_page2_normal_info)
+				&& page2_display_state != lv_poc_idle_page2_normal_info
+				&& page2_display_state != lv_poc_idle_page2_warnning_info)
 			{
-				page2_msg->normal_msg_count = page2_msg->normal_msg_count + 1;
+				page2_msg->normal_msg_count = (page2_msg->normal_msg_count + 1) % 25;
 
 				if(page2_msg->normal_msg_count > 21)
 				{
-					page2_display_state = lv_poc_idle_page2_normal_info;
+					if(have_warning == true)
+					{
+						page2_display_state = lv_poc_idle_page2_warnning_info;
+						dest_msg = &page2_msg->msg_warnning_info;
+						char *content[] = {dest_msg->second_line_text_1,};
+						lv_poc_idle_set_page2(lv_poc_idle_page2_warnning_info, content, 1);
+					}
+					else
+					{
+						page2_display_state = lv_poc_idle_page2_normal_info;
+						dest_msg = &page2_msg->msg_normal_info;
+						char *content[] = {dest_msg->second_line_text_2, dest_msg->third_line_text_2};
+						lv_poc_idle_set_page2(lv_poc_idle_page2_normal_info, content, 2);
+					}
 					page2_msg->normal_msg_count = 0;
 					break;
 				}
@@ -607,29 +738,72 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 		}
 		page2_msg->normal_msg_count = 0;
 
+
 		if(msg_content->state == lv_poc_idle_page2_normal_info)
 		{
-			page2_display_state = lv_poc_idle_page2_normal_info;
-			msg_content->state = lv_poc_idle_page2_none_msg;
 			page2_msg->reader = (page2_msg->reader + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
 			dest_msg = &page2_msg->msg_normal_info;
-			dest_msg->state = msg_content->state;
-			strcpy(dest_msg->title, (const char *)"公网对讲");
+			memset(dest_msg, 0, sizeof(lv_poc_idle_page2_msg_content_t));
+			dest_msg->state = lv_poc_idle_page2_normal_info;
+			if(msg_content->title[0] == 0)
+			{
+				strcpy(dest_msg->title, (const char *)"公网对讲");
+			}
+			else
+			{
+				strcpy(dest_msg->title, (const char *)msg_content->title);
+			}
 			strcpy(dest_msg->second_line_text_1, (const char *)"用户:");
 			strcpy(dest_msg->second_line_text_2, (const char *)msg_content->second_line_text_2);
 			strcpy(dest_msg->third_line_text_1, (const char *)"群组:");
 			strcpy(dest_msg->third_line_text_2, (const char *)msg_content->third_line_text_2);
-			break;
+			is_normal = true;
 		}
 		else if(msg_content->state == lv_poc_idle_page2_warnning_info)
 		{
-			page2_display_state = lv_poc_idle_page2_warnning_info;
-			dest_msg = &page2_msg->msg_warnning_info;
+			switch((int)page2_display_state)
+			{
+				case lv_poc_idle_page2_none_msg:
+				case lv_poc_idle_page2_normal_info:
+				case lv_poc_idle_page2_warnning_info:
+				case lv_poc_idle_page2_login_info:
+				case lv_poc_idle_page2_audio:
+				case lv_poc_idle_page2_join_group:
+				case lv_poc_idle_page2_list_update:
+				case lv_poc_idle_page2_tone:
+				case lv_poc_idle_page2_tts:
+				{
+					if(msg_content->second_line_text_1[0] == 0)
+					{
+						have_warning = false;
+					}
+					else
+					{
+						have_warning = true;
+					}
+					dest_msg = &page2_msg->msg_warnning_info;
+					break;
+				}
+			}
 		}
 		else if(msg_content->state == lv_poc_idle_page2_login_info)
 		{
-			page2_display_state = lv_poc_idle_page2_login_info;
-			dest_msg = &page2_msg->msg_login_info;
+			switch((int)page2_display_state)
+			{
+				case lv_poc_idle_page2_none_msg:
+				case lv_poc_idle_page2_normal_info:
+				case lv_poc_idle_page2_warnning_info:
+				case lv_poc_idle_page2_login_info:
+				case lv_poc_idle_page2_audio:
+				case lv_poc_idle_page2_join_group:
+				case lv_poc_idle_page2_list_update:
+				case lv_poc_idle_page2_tone:
+				case lv_poc_idle_page2_tts:
+				{
+					dest_msg = &page2_msg->msg_login_info;
+					break;
+				}
+			}
 		}
 		else if(msg_content->state == lv_poc_idle_page2_audio)
 		{
@@ -645,7 +819,6 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				case lv_poc_idle_page2_tone:
 				case lv_poc_idle_page2_tts:
 				{
-					page2_display_state = lv_poc_idle_page2_audio;
 					dest_msg = &page2_msg->msg_audio;
 					break;
 				}
@@ -665,7 +838,6 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				case lv_poc_idle_page2_tone:
 				case lv_poc_idle_page2_tts:
 				{
-					page2_display_state = lv_poc_idle_page2_join_group;
 					dest_msg = &page2_msg->msg_join_group;
 					break;
 				}
@@ -685,7 +857,6 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				case lv_poc_idle_page2_tone:
 				case lv_poc_idle_page2_tts:
 				{
-					page2_display_state = lv_poc_idle_page2_list_update;
 					dest_msg = &page2_msg->msg_list_update;
 					break;
 				}
@@ -707,19 +878,14 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				case lv_poc_idle_page2_speak:
 				case lv_poc_idle_page2_listen:
 				{
-					if(msg_content->title[0] == 0
-						|| msg_content->second_line_text_1[0] == 0
-						|| msg_content->second_line_text_2[0] == 0
-						|| msg_content->third_line_text_1[0] == 0
-						|| msg_content->third_line_text_2[0] == 0)
+					if(msg_content->second_line_text_1[0] == 0
+						|| msg_content->third_line_text_1[0] == 0)
 					{
-						page2_display_state = lv_poc_idle_page2_normal_info;
 						dest_msg = &page2_msg->msg_normal_info;
-						msg_content->state = lv_poc_idle_page2_normal_info;
+						is_normal = true;
 					}
 					else
 					{
-						page2_display_state = lv_poc_idle_page2_speak;
 						dest_msg = &page2_msg->msg_speak;
 					}
 					break;
@@ -740,7 +906,6 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				case lv_poc_idle_page2_tone:
 				case lv_poc_idle_page2_tts:
 				{
-					page2_display_state = lv_poc_idle_page2_tone;
 					dest_msg = &page2_msg->msg_tone;
 					break;
 				}
@@ -760,7 +925,6 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				case lv_poc_idle_page2_tone:
 				case lv_poc_idle_page2_tts:
 				{
-					page2_display_state = lv_poc_idle_page2_tts;
 					dest_msg = &page2_msg->msg_tts;
 					break;
 				}
@@ -782,28 +946,33 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				case lv_poc_idle_page2_speak:
 				case lv_poc_idle_page2_listen:
 				{
-					if(msg_content->title[0] == 0
-						|| msg_content->second_line_text_1[0] == 0
-						|| msg_content->second_line_text_2[0] == 0
-						|| msg_content->third_line_text_1[0] == 0
-						|| msg_content->third_line_text_2[0] == 0)
+					if(msg_content->second_line_text_1[0] == 0
+						|| msg_content->third_line_text_1[0] == 0)
 					{
-						page2_display_state = lv_poc_idle_page2_normal_info;
 						dest_msg = &page2_msg->msg_normal_info;
-						msg_content->state = lv_poc_idle_page2_normal_info;
+						is_normal = true;
 					}
 					else
 					{
-						page2_display_state = lv_poc_idle_page2_listen;
 						dest_msg = &page2_msg->msg_speak;
 					}
 				}
 			}
 		}
-		dest_msg->state = msg_content->state;
-		msg_content->state = lv_poc_idle_page2_none_msg;
+		else
+		{
+			memset(msg_content, 0, sizeof(lv_poc_idle_page2_msg_content_t));
+			page2_msg->reader = (page2_msg->reader + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
+			return;
+		}
 
-		if(dest_msg->state != lv_poc_idle_page2_normal_info)
+		dest_msg->state = msg_content->state;
+		if(is_normal)
+		{
+			dest_msg->state = lv_poc_idle_page2_normal_info;
+		}
+
+		if(!is_normal)
 		{
 			strcpy(dest_msg->title, (const char *)msg_content->title);
 			strcpy(dest_msg->second_line_text_1, (const char *)msg_content->second_line_text_1);
@@ -811,6 +980,9 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 			strcpy(dest_msg->third_line_text_1, (const char *)msg_content->third_line_text_1);
 			strcpy(dest_msg->third_line_text_2, (const char *)msg_content->third_line_text_2);
 		}
+
+		page2_display_state = dest_msg->state;
+		memset(msg_content, 0, sizeof(lv_poc_idle_page2_msg_content_t));
 		page2_msg->reader = (page2_msg->reader + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
 	} while(0);
 
@@ -822,20 +994,14 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 		idle_group_label_text = dest_msg->third_line_text_1;
 		idle_group_name_label_text = dest_msg->third_line_text_2;
 	}
-	else
-	{
-		idle_title_label_text = "检查网络";
-		idle_user_label_text = "";
-		idle_user_name_label_text = "";
-		idle_group_label_text = "";
-		idle_group_name_label_text = "";
-	}
 
-    lv_label_set_text(idle_title_label, idle_title_label_text);
-    lv_label_set_text(idle_user_label, idle_user_label_text);
-    lv_label_set_text(idle_user_name_label, idle_user_name_label_text);
-    lv_label_set_text(idle_group_label, idle_group_label_text);
-    lv_label_set_text(idle_group_name_label, idle_group_name_label_text);
+#if 0
+	lv_label_set_text(idle_title_label, idle_title_label_text);
+	lv_label_set_text(idle_user_label, idle_user_label_text);
+	lv_label_set_text(idle_user_name_label, idle_user_name_label_text);
+	lv_label_set_text(idle_group_label, idle_group_label_text);
+	lv_label_set_text(idle_group_name_label, idle_group_name_label_text);
+#endif
 
     if(activity_idle != NULL)
     {
@@ -854,62 +1020,95 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 
 }
 
-void lv_poc_idle_set_page2(lv_poc_idle_page2_display_t msg_type, char * content[5])
+void lv_poc_idle_set_page2(lv_poc_idle_page2_display_t msg_type, char * content[], int csize)
 {
-	if(content == NULL || idle_page_task_msg == NULL || idle_page_task == NULL)
+	if(content == NULL || idle_page_task_msg == NULL || idle_page_task == NULL || csize < 1)
 	{
 		return;
 	}
 
+	int content_index = 0;
+	char * text_content[5];
+	int text_content_write = 0;
+	memset(text_content, 0, sizeof(char *) * 5);
+
 	lv_poc_idle_page2_msg_t *page2_msg = idle_page_task_msg;
 	lv_poc_idle_page2_msg_content_t *msg_content = &page2_msg->msg[page2_msg->writer];
-	page2_msg->writer = (page2_msg->writer + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
-	msg_content->state = msg_type;
-	if(content[0] != NULL)
+
+	memset(msg_content, 0, sizeof(lv_poc_idle_page2_msg_content_t));
+
+    if(msg_type == lv_poc_idle_page2_login_info && csize > 0)
+    {
+	    text_content[text_content_write++] = msg_content->second_line_text_1;
+    }
+    else if(msg_type == lv_poc_idle_page2_audio && csize > 1)
+    {
+	    text_content[text_content_write++] = msg_content->second_line_text_1;
+	    text_content[text_content_write++] = msg_content->third_line_text_1;
+    }
+    else if(msg_type == lv_poc_idle_page2_join_group && csize > 1)
+    {
+	    text_content[text_content_write++] = msg_content->second_line_text_1;
+	    text_content[text_content_write++] = msg_content->third_line_text_1;
+    }
+    else if(msg_type == lv_poc_idle_page2_list_update && csize > 0)
+    {
+	    text_content[text_content_write++] = msg_content->second_line_text_1;
+    }
+    else if(msg_type == lv_poc_idle_page2_speak && csize > 1)
+    {
+	    text_content[text_content_write++] = msg_content->second_line_text_1;
+	    text_content[text_content_write++] = msg_content->third_line_text_1;
+    }
+    else if(msg_type == lv_poc_idle_page2_tone && csize > 0)
+    {
+	    text_content[text_content_write++] = msg_content->second_line_text_1;
+    }
+    else if(msg_type == lv_poc_idle_page2_tts && csize > 0)
+    {
+	    text_content[text_content_write++] = msg_content->second_line_text_1;
+    }
+    else if(msg_type == lv_poc_idle_page2_listen && csize > 1)
+    {
+	    text_content[text_content_write++] = msg_content->second_line_text_1;
+	    text_content[text_content_write++] = msg_content->third_line_text_1;
+    }
+    else if(msg_type == lv_poc_idle_page2_normal_info && csize > 1)
+    {
+	    if(csize > 2)
+	    {
+		    text_content[text_content_write++] = msg_content->title;
+		    text_content[text_content_write++] = msg_content->second_line_text_2;
+		    text_content[text_content_write++] = msg_content->third_line_text_2;
+	    }
+	    else
+	    {
+		    text_content[text_content_write++] = msg_content->second_line_text_2;
+		    text_content[text_content_write++] = msg_content->third_line_text_2;
+	    }
+    }
+    else if(msg_type == lv_poc_idle_page2_warnning_info && csize > 0)
+    {
+	    text_content[text_content_write++] = msg_content->second_line_text_1;
+    }
+
+	for(int text_read = 0; text_read < text_content_write; text_read++)
 	{
-		strcpy(msg_content->title, (const char *)content[0]);
-	}
-	else
-	{
-		msg_content->title[0] = 0;
+		if(text_content[text_read] != NULL)
+		{
+			if(content[content_index] != NULL)
+			{
+				strcpy(text_content[text_read], content[content_index]);
+			}
+			content_index++;
+		}
 	}
 
-	if(content[1] != NULL)
+	if(text_content_write > 0)
 	{
-		strcpy(msg_content->second_line_text_1, (const char *)content[1]);
+		page2_msg->writer = (page2_msg->writer + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
+		msg_content->state = msg_type;
 	}
-	else
-	{
-		msg_content->second_line_text_1[0] = 0;
-	}
-
-	if(content[2] != NULL)
-	{
-		strcpy(msg_content->second_line_text_2, (const char *)content[2]);
-	}
-	else
-	{
-		msg_content->second_line_text_2[0] = 0;
-	}
-
-	if(content[3] != NULL)
-	{
-		strcpy(msg_content->third_line_text_1, (const char *)content[3]);
-	}
-	else
-	{
-		msg_content->third_line_text_1[0] = 0;
-	}
-
-	if(content[4] != NULL)
-	{
-		strcpy(msg_content->third_line_text_2, (const char *)content[4]);
-	}
-	else
-	{
-		msg_content->third_line_text_2[0] = 0;
-	}
-
 }
 
 /*************************************************
@@ -1009,8 +1208,9 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 		memset(idle_page_task_msg, 0, sizeof(lv_poc_idle_page2_msg_t));
 		idle_page_task = lv_task_create(lv_poc_idle_page_task_cb, 100, LV_TASK_PRIO_LOWEST, idle_page_task_msg);
 	}
-	char *content[5] = {"对讲机","名字","飞图对讲","组织","飞图"};
-	lv_poc_idle_set_page2(lv_poc_idle_page2_speak, content);
+
+	char * content[] = {"正在检查网络",};
+	lv_poc_idle_set_page2(lv_poc_idle_page2_warnning_info, content, 1);
 
 	return activity_idle;
 }
