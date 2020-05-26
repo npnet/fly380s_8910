@@ -38,6 +38,8 @@ static void pocIdtStartHandleTask(void * ctx)
 		OSI_LOGI(0, "[poc][idt] checking network\n");
 		osiThreadSleep(1000);
 	}
+	char * content[] = {"正在登录...",};
+	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, content, 1);
 	lvPocGuiIdtCom_log();
 
 	osiThreadExit();

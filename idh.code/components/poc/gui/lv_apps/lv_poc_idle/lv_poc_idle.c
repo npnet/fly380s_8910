@@ -491,6 +491,7 @@ static void lv_poc_idle_page_2_show(void)
 
 	if(obj_write == 1)
 	{
+		lv_obj_set_width(obj_content[0], lv_poc_get_display_width(activity_idle->display)/40*35);
 		lv_obj_align(obj_content[0],
 			activity_idle->display,
 			LV_ALIGN_IN_TOP_LEFT,
@@ -499,12 +500,14 @@ static void lv_poc_idle_page_2_show(void)
 	}
 	else if(obj_write == 2)
 	{
+		lv_obj_set_width(obj_content[0], lv_poc_get_display_width(activity_idle->display)/40*35);
 		lv_obj_align(obj_content[0],
 			activity_idle->display,
 			LV_ALIGN_IN_TOP_LEFT,
 			lv_poc_get_display_width(activity_idle->display)/20,
 			lv_poc_get_display_height(activity_idle->display)/40*9);
 
+		lv_obj_set_width(obj_content[1], lv_poc_get_display_width(activity_idle->display)/40*35);
 		lv_obj_align(obj_content[1],
 			obj_content[0],
 			LV_ALIGN_OUT_BOTTOM_LEFT,
@@ -513,17 +516,21 @@ static void lv_poc_idle_page_2_show(void)
 	}
 	else if(obj_write == 3)
 	{
+		lv_obj_set_width(obj_content[0], lv_poc_get_display_width(activity_idle->display)/40*35);
 		lv_obj_align(obj_content[0],
 			activity_idle->display,
 			LV_ALIGN_IN_TOP_LEFT,
 			lv_poc_get_display_width(activity_idle->display)/20,
 			lv_poc_get_display_height(activity_idle->display)/5);
 
+		lv_obj_set_width(obj_content[1], lv_poc_get_display_width(activity_idle->display)/40*35);
 		lv_obj_align(obj_content[1],
 			obj_content[0],
 			LV_ALIGN_OUT_BOTTOM_LEFT,
 			0,
 			0);
+
+		lv_obj_set_width(obj_content[2], lv_poc_get_display_width(activity_idle->display)/40*35);
 		lv_obj_align(obj_content[2],
 			obj_content[1],
 			LV_ALIGN_OUT_BOTTOM_LEFT,
@@ -532,23 +539,28 @@ static void lv_poc_idle_page_2_show(void)
 	}
 	else if(obj_write == 4)
 	{
-		lv_obj_set_width(obj_content[0], lv_poc_get_display_width(activity_idle->display)/40*9);
+		lv_obj_set_width(obj_content[0], lv_poc_get_display_width(activity_idle->display)/40*13);
 		lv_obj_align(obj_content[0],
 			activity_idle->display,
 			LV_ALIGN_IN_TOP_LEFT,
 			lv_poc_get_display_width(activity_idle->display)/20,
 			lv_poc_get_display_height(activity_idle->display)/5);
-		lv_obj_set_width(obj_content[1], lv_poc_get_display_width(activity_idle->display)/40*9);
+
+		lv_obj_set_width(obj_content[1], lv_poc_get_display_width(activity_idle->display)/40*13);
 		lv_obj_align(obj_content[0],
 			obj_content[0],
 			LV_ALIGN_OUT_BOTTOM_LEFT,
 			0,
 			0);
+
+		lv_obj_set_width(obj_content[2], lv_poc_get_display_width(activity_idle->display)/40*35 - lv_poc_get_display_width(obj_content[0]));
 		lv_obj_align(obj_content[2],
 			obj_content[0],
 			LV_ALIGN_OUT_RIGHT_MID,
 			0,
 			0);
+
+		lv_obj_set_width(obj_content[3], lv_poc_get_display_width(activity_idle->display)/40*35 - lv_poc_get_display_width(obj_content[1]));
 		lv_obj_align(obj_content[3],
 			obj_content[1],
 			LV_ALIGN_OUT_RIGHT_MID,
@@ -564,23 +576,28 @@ static void lv_poc_idle_page_2_show(void)
 			lv_poc_get_display_width(activity_idle->display)/20,
 			lv_poc_get_display_height(activity_idle->display)/10);
 
-		lv_obj_set_width(obj_content[1], lv_poc_get_display_width(activity_idle->display)/40*9);
+		lv_obj_set_width(obj_content[1], lv_poc_get_display_width(activity_idle->display)/40*13);
 		lv_obj_align(obj_content[1],
 			obj_content[0],
 			LV_ALIGN_OUT_BOTTOM_LEFT,
 			0,
 			0);
-		lv_obj_set_width(obj_content[2], lv_poc_get_display_width(activity_idle->display)/40*9);
+
+		lv_obj_set_width(obj_content[2], lv_poc_get_display_width(activity_idle->display)/40*13);
 		lv_obj_align(obj_content[2],
 			obj_content[1],
 			LV_ALIGN_OUT_BOTTOM_LEFT,
 			0,
 			0);
+
+		lv_obj_set_width(obj_content[3], lv_poc_get_display_width(activity_idle->display)/40*35 - lv_poc_get_display_width(obj_content[1]));
 		lv_obj_align(obj_content[3],
 			obj_content[1],
 			LV_ALIGN_OUT_RIGHT_MID,
 			0,
 			0);
+
+		lv_obj_set_width(obj_content[4], lv_poc_get_display_width(activity_idle->display)/40*35 - lv_poc_get_display_width(obj_content[2]));
 		lv_obj_align(obj_content[4],
 			obj_content[2],
 			LV_ALIGN_OUT_RIGHT_MID,
@@ -602,6 +619,7 @@ static void lv_poc_idle_page_2_show(void)
 			    lv_label_set_text(obj_content[obj_read], "");
 		    }
 
+			#if 0
 			if(obj_write > 3)
 			{
 				if(obj_write == 4)
@@ -631,6 +649,7 @@ static void lv_poc_idle_page_2_show(void)
 			{
 				lv_label_set_long_mode(obj_content[obj_read], LV_LABEL_LONG_EXPAND);
 			}
+			#endif
 	    }
     }
 }
@@ -669,8 +688,11 @@ static void lv_poc_idle_page_2_init(void)
         lv_label_set_text(idle_group_label, idle_user_name_label_text);
         lv_label_set_text(idle_user_name_label, idle_group_label_text);
         lv_label_set_text(idle_group_name_label, idle_group_name_label_text);
-        lv_label_set_long_mode(idle_user_name_label, LV_LABEL_LONG_SROLL);
-        lv_label_set_long_mode(idle_group_name_label, LV_LABEL_LONG_SROLL);
+        lv_label_set_long_mode(idle_title_label, LV_LABEL_LONG_SROLL_CIRC);
+        lv_label_set_long_mode(idle_user_label, LV_LABEL_LONG_SROLL_CIRC);
+        lv_label_set_long_mode(idle_group_label, LV_LABEL_LONG_SROLL_CIRC);
+        lv_label_set_long_mode(idle_group_name_label, LV_LABEL_LONG_SROLL_CIRC);
+        lv_label_set_long_mode(idle_user_name_label, LV_LABEL_LONG_SROLL_CIRC);
         if(activity_idle->has_control == true)
         {
             lv_obj_align(idle_title_label, activity_idle->display, LV_ALIGN_IN_TOP_LEFT,
@@ -710,7 +732,7 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 			if(page2_display_state != lv_poc_idle_page2_speak
 				&& page2_display_state != lv_poc_idle_page2_listen
 				&& page2_display_state != lv_poc_idle_page2_normal_info
-				&& page2_display_state != lv_poc_idle_page2_warnning_info)
+				&& (have_warning == false || (have_warning == true && page2_display_state != lv_poc_idle_page2_warnning_info)))
 			{
 				page2_msg->normal_msg_count = (page2_msg->normal_msg_count + 1) % 25;
 
@@ -775,13 +797,17 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				{
 					if(msg_content->second_line_text_1[0] == 0)
 					{
+						dest_msg = &page2_msg->msg_normal_info;
+						is_normal = true;
 						have_warning = false;
+						char *content[] = {dest_msg->second_line_text_2, dest_msg->third_line_text_2};
+						lv_poc_idle_set_page2(lv_poc_idle_page2_normal_info, content, 2);
 					}
 					else
 					{
+						dest_msg = &page2_msg->msg_warnning_info;
 						have_warning = true;
 					}
-					dest_msg = &page2_msg->msg_warnning_info;
 					break;
 				}
 			}
@@ -883,6 +909,8 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 					{
 						dest_msg = &page2_msg->msg_normal_info;
 						is_normal = true;
+						char *content[] = {dest_msg->second_line_text_2, dest_msg->third_line_text_2};
+						lv_poc_idle_set_page2(lv_poc_idle_page2_normal_info, content, 2);
 					}
 					else
 					{
@@ -951,6 +979,8 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 					{
 						dest_msg = &page2_msg->msg_normal_info;
 						is_normal = true;
+						char *content[] = {dest_msg->second_line_text_2, dest_msg->third_line_text_2};
+						lv_poc_idle_set_page2(lv_poc_idle_page2_normal_info, content, 2);
 					}
 					else
 					{
