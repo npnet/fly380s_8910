@@ -51,6 +51,7 @@ char *GetOamOptStr(DWORD dwOpt);
 char *GetSrvTypeStr(SRV_TYPE_e SrvType);
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length);
 
+
 //--------------------------------------------------------------------------------
 //      TRACE小函数
 //  输入:
@@ -203,21 +204,17 @@ void callback_IDT_StatusInd(int status, unsigned short usCause)
 {
     IDT_TRACE("callback_IDT_StatusInd: status=%d, usCause=%s(%d)", status, GetCauseStr(usCause), usCause);
 	static LvPocGuiIdtCom_login_t login_status = {0};
-	char * content[] = {(char *)"",};
     if (UT_STATUS_ONLINE == status)
     {
         IDT_StatusSubs((char*)"###", GU_STATUSSUBS_BASIC);
         m_IdtUser.m_status = 0;
-		content[0] = (char *)"成功登录";
-		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, content, 1);
-		content[0] = NULL;
-		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, content, 1);
+		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "成功登录");
+		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
     }
     else
     {
 	    m_IdtUser.m_status = 0xff;
-		content[0] = (char *)"成功失败";
-		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, content, 1);
+		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
     }
 
 	memset(&login_status, 0, sizeof(LvPocGuiIdtCom_login_t));
