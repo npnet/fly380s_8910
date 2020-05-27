@@ -652,31 +652,17 @@ poc_net_work_config(IN POC_SIM_ID sim)
 static void
 prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 {
-#if 0
-	poc_setting->font.list_btn_big_font = (uint32_t)&lv_poc_font_noto_sans_cjk_20;
-	poc_setting->font.list_btn_small_font = (uint32_t)&lv_poc_font_noto_sans_cjk_16;
-	poc_setting->font.about_label_big_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-	poc_setting->font.about_label_small_font = (uint32_t)&lv_poc_font_noto_sans_cjk_14;
-	poc_setting->font.win_title_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-	poc_setting->font.activity_control_font = (uint32_t)&lv_poc_font_noto_sans_cjk_16;
-	poc_setting->font.status_bar_time_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-	//poc_setting->font.status_bar_signal_type_font = (uint32_t)&lv_poc_font_noto_sans_cjk_20;
-	poc_setting->font.idle_big_clock_font = (uint32_t)&lv_poc_font_noto_sans_cjk_20;
-	poc_setting->font.idle_date_label_font = (uint32_t)&lv_poc_font_noto_sans_cjk_20;
-	poc_setting->font.idle_page2_msg_font = (uint32_t)&lv_poc_font_noto_sans_cjk_20;
-#elif 1
-	poc_setting->font.list_btn_big_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-	poc_setting->font.list_btn_small_font = (uint32_t)&lv_poc_font_noto_sans_cjk_16;
-	poc_setting->font.about_label_big_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-	poc_setting->font.about_label_small_font = (uint32_t)&lv_poc_font_noto_sans_cjk_14;
-	poc_setting->font.win_title_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-	poc_setting->font.activity_control_font = (uint32_t)&lv_poc_font_noto_sans_cjk_16;
-	poc_setting->font.status_bar_time_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-	//poc_setting->font.status_bar_signal_type_font = (uint32_t)&lv_poc_font_noto_sans_cjk_20;
-	poc_setting->font.idle_big_clock_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-	poc_setting->font.idle_date_label_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-	poc_setting->font.idle_page2_msg_font = (uint32_t)&lv_poc_font_noto_sans_cjk_18;
-#endif
+	poc_setting->font.list_btn_big_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
+	poc_setting->font.list_btn_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
+	poc_setting->font.about_label_big_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
+	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
+	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
+	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
+	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
+	//poc_setting->font.status_bar_signal_type_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
+	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 45);
+	poc_setting->font.idle_date_label_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
+	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
 
 	poc_setting->theme.white = &theme_white;
 	poc_setting->theme.white->style_list_scroll = (uint32_t)&theme_white_style_list_scroll;
@@ -814,7 +800,10 @@ poc_get_device_imei_rep(OUT int8_t * imei)
     {
 	    memset(nImei, 0, 16);
     }
-	strcpy((char *)imei, (const char *)nImei);
+    else
+    {
+	    memcpy(imei, (const void *)nImei, nImeiLen);
+	}
 }
 
 /*

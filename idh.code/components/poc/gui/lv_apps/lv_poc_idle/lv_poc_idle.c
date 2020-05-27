@@ -1025,7 +1025,7 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 		idle_group_name_label_text = dest_msg->third_line_text_2;
 	}
 
-#if 0
+#if 1  //关掉会导致不在idle界面时，信息不刷新
 	lv_label_set_text(idle_title_label, idle_title_label_text);
 	lv_label_set_text(idle_user_label, idle_user_label_text);
 	lv_label_set_text(idle_user_name_label, idle_user_name_label_text);
