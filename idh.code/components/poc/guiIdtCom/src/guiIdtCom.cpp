@@ -30,6 +30,7 @@
 #include "audio_device.h"
 #include <sys/time.h>
 #include "lv_include/lv_poc_lib.h"
+#include "cJSON.h"
 
 extern "C" lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
 
@@ -45,6 +46,8 @@ extern "C" lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
 #define APPTEST_THREAD_PRIORITY (OSI_PRIORITY_NORMAL)
 #define APPTEST_STACK_SIZE (8192 * 16)
 #define APPTEST_EVENT_QUEUE_SIZE (64)
+#define GUIIDTCOM_SELF_INFO_SZIE (1400)
+
 
 char *GetCauseStr(USHORT usCause);
 char *GetOamOptStr(DWORD dwOpt);
@@ -167,6 +170,8 @@ public:
 	Msg_GData_s *pPocMemberList;//组成员结构体
 	DWORD current_group;
 	DWORD query_group;
+	char *self_info_cjson_str;
+	cJSON * self_info_cjson;
 } PocGuiIIdtComAttr_t;
 CIdtUser m_IdtUser;
 static PocGuiIIdtComAttr_t pocIdtAttr = {0};
@@ -209,7 +214,30 @@ void callback_IDT_StatusInd(int status, unsigned short usCause)
         IDT_StatusSubs((char*)"###", GU_STATUSSUBS_BASIC);
         m_IdtUser.m_status = 0;
 		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "成功登录");
-		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
+		if(pocIdtAttr.self_info_cjson_str != NULL)
+		{
+			if(0 == IDT_GetStatus(pocIdtAttr.self_info_cjson_str, GUIIDTCOM_SELF_INFO_SZIE))
+			{
+				if(pocIdtAttr.self_info_cjson != NULL)
+				{
+					cJSON_Delete(pocIdtAttr.self_info_cjson);
+					pocIdtAttr.self_info_cjson = NULL;
+				}
+
+				pocIdtAttr.self_info_cjson = cJSON_Parse(pocIdtAttr.self_info_cjson_str);
+				if(pocIdtAttr.self_info_cjson != NULL)
+				{
+					char *self_name = cJSON_GetObjectItem(pocIdtAttr.self_info_cjson, "Name")->valuestring;
+					char *current_group = cJSON_GetObjectItem(pocIdtAttr.self_info_cjson, "FNum")->valuestring;
+					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, self_name, current_group);
+					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
+				}
+			}
+			else
+			{
+				memset(pocIdtAttr.self_info_cjson_str, 0, GUIIDTCOM_SELF_INFO_SZIE);
+			}
+		}
     }
     else
     {
@@ -1017,6 +1045,7 @@ static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 extern "C" void lvPocGuiIdtCom_Init(void)
 {
 	memset(&pocIdtAttr, 0, sizeof(PocGuiIIdtComAttr_t));
+	pocIdtAttr.self_info_cjson_str = (char *)malloc(sizeof(char) * GUIIDTCOM_SELF_INFO_SZIE);
 	pocGuiIdtComStart();
 }
 
