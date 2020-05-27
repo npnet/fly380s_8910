@@ -112,6 +112,7 @@ static void lv_poc_setting_big_font_btn_cb(lv_obj_t * obj)
 		poc_setting_conf->font.big_font_switch = 0;
 		poc_setting_conf->font.list_page_colum_count = 4;
 		poc_setting_conf->font.list_btn_current_font = poc_setting_conf->font.list_btn_small_font;
+		poc_setting_conf->font.about_label_current_font = poc_setting_conf->font.about_label_small_font;
 	}
 	else
 	{
@@ -119,6 +120,7 @@ static void lv_poc_setting_big_font_btn_cb(lv_obj_t * obj)
 		poc_setting_conf->font.big_font_switch = 1;
 		poc_setting_conf->font.list_page_colum_count = 3;
 		poc_setting_conf->font.list_btn_current_font = poc_setting_conf->font.list_btn_big_font;
+		poc_setting_conf->font.about_label_current_font = poc_setting_conf->font.about_label_big_font;
 	}
 
 	lv_poc_setting_conf_write();
