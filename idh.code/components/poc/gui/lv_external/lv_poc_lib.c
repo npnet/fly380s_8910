@@ -838,16 +838,12 @@ poc_get_device_iccid_rep(int8_t * iccid)
 char *
 poc_get_device_account_rep(POC_SIM_ID nSim)
 {
-	static char * name = NULL;
+	char * name = NULL;
+	name = lv_poc_get_member_name(lv_poc_get_self_info());
 	if(name == NULL)
 	{
-		name = (char *)malloc(sizeof(char) * 64);
-		if(name == NULL)
-		{
-			return NULL;
-		}
+		return "";
 	}
-	strcpy(name, "飞图测试1");
 	return name;
 }
 
