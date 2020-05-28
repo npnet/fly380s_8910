@@ -1365,6 +1365,9 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 		p_element = NULL;
 	}
 	prv_member_list_cb(1);
+	prv_member_list_cb = NULL;
+	prv_member_list = NULL;
+	prv_member_list_type  = 0;
 }
 
 
