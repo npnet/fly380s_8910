@@ -1453,7 +1453,7 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 lv_poc_member_info_t
 lv_poc_get_self_info(void)
 {
-	return NULL;
+	return (lv_poc_member_info_t *)lvPocGuiIdtCom_get_self_info();
 }
 
 /*
@@ -1464,7 +1464,7 @@ lv_poc_get_self_info(void)
 lv_poc_group_info_t
 lv_poc_get_current_group(void)
 {
-	return NULL;
+	return (lv_poc_group_info_t)lvPocGuiIdtCom_get_current_group_info();
 }
 
 /*
@@ -1475,7 +1475,20 @@ lv_poc_get_current_group(void)
 bool
 lv_poc_set_current_group(lv_poc_group_info_t group, poc_set_current_group_cb func)
 {
-	func(1);
+	if(group == NULL || func == NULL)
+	{
+		return false;
+	}
+
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND, func))
+	{
+		return false;
+	}
+
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SET_CURRENT_GROUP_IND, group))
+	{
+		return false;
+	}
 	return true;
 }
 
