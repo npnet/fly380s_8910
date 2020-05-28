@@ -29,8 +29,6 @@ static void lv_poc_get_group_list_cb(int result_type);
 
 static lv_obj_t * activity_list;
 
-static lv_obj_t * lv_poc_group_list_noattion;
-
 static lv_area_t display_area;
 
 lv_poc_activity_t * poc_group_list_activity;
@@ -94,7 +92,6 @@ static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 	}
 	member_list = NULL;
 	poc_group_list_activity = NULL;
-	lv_poc_group_list_noattion = NULL;
 }
 
 static void lv_poc_group_list_list_config(lv_obj_t * list, lv_area_t list_area)
@@ -267,16 +264,7 @@ static void lv_poc_get_group_list_cb(int result_type)
 	}
 	else
 	{
-		if(lv_poc_group_list_noattion == NULL)
-		{
-			lv_poc_group_list_noattion = lv_label_create(poc_group_list_activity->display, NULL);
-		}
-
-		if(lv_poc_group_list_noattion != NULL)
-		{
-			lv_label_set_text(lv_poc_group_list_noattion, "获取失败");
-		    lv_obj_align(lv_poc_group_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
-		}
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 }
 
@@ -345,12 +333,9 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 
     if(group_list_obj == NULL)
     {
-	    lv_poc_group_list_noattion = lv_label_create(poc_group_list_activity->display, NULL);
-	    lv_label_set_text(lv_poc_group_list_noattion, "正在获取群组列表");
-	    lv_obj_align(lv_poc_group_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
 		if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
 		{
-			lv_label_set_text(lv_poc_group_list_noattion, "获取失败");
+			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 		}
     }
     else
@@ -516,26 +501,9 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
 
     lv_list_clean(activity_list);
 
-    if(group_list_obj->group_list != NULL)
+    if(group_list_obj->group_list == NULL)
     {
-	    if(lv_poc_group_list_noattion != NULL)
-	    {
-		    lv_obj_del(lv_poc_group_list_noattion);
-	    }
-	    lv_poc_group_list_noattion = NULL;
-    }
-    else
-    {
-		if(lv_poc_group_list_noattion == NULL)
-		{
-			lv_poc_group_list_noattion = lv_label_create(poc_group_list_activity->display, NULL);
-		}
-
-		if(lv_poc_group_list_noattion != NULL)
-		{
-		    lv_label_set_text(lv_poc_group_list_noattion, "无成员列表");
-		    lv_obj_align(lv_poc_group_list_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
-	    }
+	    lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
 	    return;
     }
 
