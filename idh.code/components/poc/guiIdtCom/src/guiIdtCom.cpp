@@ -587,10 +587,6 @@ static int LvGuiIdtCom_self_info_json_parse_status(void)
 		return -1;
 	}
 
-	//LvGuiIdtCom_insert_str(pocIdtAttr.self_info_cjson_str,
-	//	(char *)",",
-	//	(strstr(pocIdtAttr.self_info_cjson_str, (char *)"\"FNum\"") - pocIdtAttr.self_info_cjson_str) / sizeof(char));
-
 	if(pocIdtAttr.self_info_cjson != NULL)
 	{
 		cJSON_Delete(pocIdtAttr.self_info_cjson);
@@ -610,6 +606,12 @@ static int LvGuiIdtCom_self_info_json_parse_status(void)
 	strcpy((char *)pocIdtAttr.self_info.ucNum, (const char *)self_num);
 	pocIdtAttr.self_info.ucStatus = (uint8_t)status;
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocIdtAttr.self_info.ucName, NULL);
+
+	if(pocIdtAttr.self_info_cjson != NULL)
+	{
+		cJSON_Delete(pocIdtAttr.self_info_cjson);
+		pocIdtAttr.self_info_cjson = NULL;
+	}
 
 	return 0;
 }
