@@ -175,7 +175,22 @@ static __attribute__((unused)) lv_poc_activity_attribute_cb_set_obj prv_lv_poc_a
 			.get_state = lv_poc_member_call_get_state,
 		},
 
-		{0},
+		{
+			.activity_id = ACT_ID_POC_MAKE_GROUP,
+			.active = false,
+			.add = lv_poc_build_group_add,
+			.remove = lv_poc_build_group_remove,
+			.clear = lv_poc_build_group_clear,
+			.get_info = lv_poc_build_group_get_information,
+			.refresh = lv_poc_build_group_refresh,
+			.move_to_top = lv_poc_build_group_move_top,
+			.move_to_bottom = lv_poc_build_group_move_bottom,
+			.move_up = lv_poc_build_group_move_up,
+			.move_down = lv_poc_build_group_move_down,
+			.set_state = lv_poc_build_group_set_state,
+			.exists = lv_poc_build_group_is_exists,
+			.get_state = lv_poc_build_group_get_state,
+		},
 
 		{0},
 
