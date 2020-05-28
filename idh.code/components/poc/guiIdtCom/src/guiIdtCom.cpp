@@ -176,10 +176,12 @@ public:
 #endif
 	lv_poc_get_group_list_cb_t pocGetGroupListCb;
 	lv_poc_get_member_list_cb_t pocGetMemberListCb;
+	poc_set_current_group_cb pocSetCurrentGroupCb;
 	Msg_GData_s *pPocMemberList;//组成员结构体
+	Msg_GROUP_MEMBER_s self_info;
 	DWORD current_group;
 	DWORD query_group;
-	char *self_info_cjson_str;
+	char self_info_cjson_str[GUIIDTCOM_SELF_INFO_SZIE];
 	cJSON * self_info_cjson;
 } PocGuiIIdtComAttr_t;
 
@@ -573,6 +575,45 @@ void callback_IDT_OamNotify(DWORD dwOptCode, UCHAR *pucGNum, UCHAR *pucGName, UC
     }
 }
 
+static int LvGuiIdtCom_self_info_json_parse_status(void)
+{
+	if(m_IdtUser.m_status < UT_STATUS_ONLINE)
+	{
+		return -1;
+	}
+	if(0 != IDT_GetStatus(pocIdtAttr.self_info_cjson_str, GUIIDTCOM_SELF_INFO_SZIE))
+	{
+		memset(pocIdtAttr.self_info_cjson_str, 0, GUIIDTCOM_SELF_INFO_SZIE);
+		return -1;
+	}
+
+	//LvGuiIdtCom_insert_str(pocIdtAttr.self_info_cjson_str,
+	//	(char *)",",
+	//	(strstr(pocIdtAttr.self_info_cjson_str, (char *)"\"FNum\"") - pocIdtAttr.self_info_cjson_str) / sizeof(char));
+
+	if(pocIdtAttr.self_info_cjson != NULL)
+	{
+		cJSON_Delete(pocIdtAttr.self_info_cjson);
+		pocIdtAttr.self_info_cjson = NULL;
+	}
+
+	pocIdtAttr.self_info_cjson = cJSON_Parse(pocIdtAttr.self_info_cjson_str);
+	if(pocIdtAttr.self_info_cjson == NULL)
+	{
+		return -1;
+	}
+
+	char *self_name = cJSON_GetObjectItem(pocIdtAttr.self_info_cjson, "Name")->valuestring;
+	char *self_num = cJSON_GetObjectItem(pocIdtAttr.self_info_cjson, "ID")->valuestring;
+	int status = cJSON_GetObjectItem(pocIdtAttr.self_info_cjson, "Reg")->valueint;
+	strcpy((char *)pocIdtAttr.self_info.ucName, (const char *)self_name);
+	strcpy((char *)pocIdtAttr.self_info.ucNum, (const char *)self_num);
+	pocIdtAttr.self_info.ucStatus = (uint8_t)status;
+	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocIdtAttr.self_info.ucName, NULL);
+
+	return 0;
+}
+
 //--------------------------------------------------------------------------------
 //      用户调试函数
 //  输入:
@@ -787,33 +828,11 @@ static void pocGuiIdtComTaskEntry(void *argument)
 		        IDT_StatusSubs((char*)"###", GU_STATUSSUBS_BASIC);
 		        m_IdtUser.m_status = UT_STATUS_ONLINE;
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "成功登录");
-				if(pocIdtAttr.self_info_cjson_str == NULL)
-				{
-					break;
-				}
 
-				if(0 != IDT_GetStatus(pocIdtAttr.self_info_cjson_str, GUIIDTCOM_SELF_INFO_SZIE))
+				if(LvGuiIdtCom_self_info_json_parse_status() >= 0)
 				{
-					memset(pocIdtAttr.self_info_cjson_str, 0, GUIIDTCOM_SELF_INFO_SZIE);
-					break;
+					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
 				}
-
-				if(pocIdtAttr.self_info_cjson != NULL)
-				{
-					cJSON_Delete(pocIdtAttr.self_info_cjson);
-					pocIdtAttr.self_info_cjson = NULL;
-				}
-
-				pocIdtAttr.self_info_cjson = cJSON_Parse(pocIdtAttr.self_info_cjson_str);
-				if(pocIdtAttr.self_info_cjson == NULL)
-				{
-					break;
-				}
-
-				char *self_name = cJSON_GetObjectItem(pocIdtAttr.self_info_cjson, "Name")->valuestring;
-				char *current_group = cJSON_GetObjectItem(pocIdtAttr.self_info_cjson, "FNum")->valuestring;
-				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, self_name, current_group);
-				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
 				break;
 			}
 
@@ -1099,6 +1118,62 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			    //free(grop);
 			}
 
+			case LVPOCGUIIDTCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND:
+			{
+				if(event.param2 == 0)
+				{
+					break;
+				}
+				pocIdtAttr.pocSetCurrentGroupCb = (poc_set_current_group_cb)event.param2;
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_SET_CURRENT_GROUP_CB_IND:
+			{
+				pocIdtAttr.pocSetCurrentGroupCb = NULL;
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_SET_CURRENT_GROUP_IND:
+			{
+				if(pocIdtAttr.pocSetCurrentGroupCb == NULL)
+				{
+					break;
+				}
+
+				if(event.param2 == 0)
+				{
+					pocIdtAttr.pocSetCurrentGroupCb(0);
+					break;
+				}
+
+				CGroup * group_info = (CGroup *)event.param2;
+				DWORD index = 0;
+				for(index = 0; index < m_IdtUser.m_Group.m_Group_Num; index++)
+				{
+					if(0 == strcmp((const char *)group_info->m_ucGNum, (const char *)m_IdtUser.m_Group.m_Group[index].m_ucGNum)) break;
+				}
+
+				if(m_IdtUser.m_Group.m_Group_Num < 1
+					|| index >=  m_IdtUser.m_Group.m_Group_Num
+					|| 0 == m_IdtUser.m_Group.m_Group[index].m_ucGNum[0])
+				{
+					pocIdtAttr.pocSetCurrentGroupCb(0);
+				}
+				else if(index == pocIdtAttr.current_group)
+				{
+					pocIdtAttr.pocSetCurrentGroupCb(2);
+				}
+				else
+				{
+					pocIdtAttr.current_group = index;
+					pocIdtAttr.pocSetCurrentGroupCb(1);
+				}
+
+				pocIdtAttr.pocSetCurrentGroupCb = NULL;
+				break;
+			}
+
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");
 				break;
@@ -1137,7 +1212,6 @@ static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 extern "C" void lvPocGuiIdtCom_Init(void)
 {
 	memset(&pocIdtAttr, 0, sizeof(PocGuiIIdtComAttr_t));
-	pocIdtAttr.self_info_cjson_str = (char *)malloc(sizeof(char) * GUIIDTCOM_SELF_INFO_SZIE);
 	pocGuiIdtComStart();
 }
 
@@ -1160,6 +1234,26 @@ extern "C" void lvPocGuiIdtCom_log(void)
 {
 	lvPocGuiIdtCom_Init();
 }
+
+extern "C" void *lvPocGuiIdtCom_get_self_info(void)
+{
+	if(m_IdtUser.m_status < UT_STATUS_ONLINE || pocIdtAttr.self_info_cjson == NULL)
+	{
+		return NULL;
+	}
+
+	return (void *)&pocIdtAttr.self_info;
+}
+
+extern "C" void *lvPocGuiIdtCom_get_current_group_info(void)
+{
+	if(m_IdtUser.m_status < UT_STATUS_ONLINE || pocIdtAttr.self_info_cjson == NULL)
+	{
+		return NULL;
+	}
+	return (void *)&m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group];
+}
+
 
 #endif
 
