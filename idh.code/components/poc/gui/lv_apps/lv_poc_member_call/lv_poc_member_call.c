@@ -41,8 +41,6 @@ lv_poc_activity_t * poc_member_call_activity = NULL;
 
 static lv_area_t member_call_display_area = {0};
 
-static __attribute__((unused)) lv_obj_t * lv_poc_member_call_noattion = NULL;
-
 static __attribute__((unused)) char lv_poc_member_call_win_title_text[LV_POC_NAME_LEN + 10] = {0};
 
 static __attribute__((unused)) char lv_poc_member_call_text_win_title_head[] = "正在连接";
@@ -102,7 +100,6 @@ static void lv_poc_member_call_activity_destory(lv_obj_t *obj)
 	lv_poc_member_call_member_list_obj = NULL;
 
 	activity_list = NULL;
-	lv_poc_member_call_noattion = NULL;
     lv_poc_member_call_exit_pressed = false;
     poc_member_call_activity = NULL;
 }
@@ -420,26 +417,9 @@ void lv_poc_member_call_refresh(lv_poc_member_list_t *member_list_obj)
 
     lv_list_clean(activity_list);
 
-	if(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL)
+	if(!(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL))
 	{
-		if(lv_poc_member_call_noattion != NULL)
-		{
-			lv_obj_del(lv_poc_member_call_noattion);
-		}
-		lv_poc_member_call_noattion = NULL;
-	}
-	else
-	{
-		if(lv_poc_member_call_noattion == NULL)
-		{
-			lv_poc_member_call_noattion = lv_label_create(poc_member_call_activity->display, NULL);
-		}
-
-		if(lv_poc_member_call_noattion != NULL)
-		{
-			lv_label_set_text(lv_poc_member_call_noattion, "无成员列表");
-			lv_obj_align(lv_poc_member_call_noattion, activity_list, LV_ALIGN_CENTER, 0, 0);
-		}
+		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
 		return;
 	}
 
