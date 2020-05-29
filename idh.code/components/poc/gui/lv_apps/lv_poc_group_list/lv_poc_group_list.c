@@ -119,7 +119,7 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     }
     else
     {
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
     }
 }
 
@@ -127,15 +127,15 @@ static void lv_poc_group_list_set_current_group_cb(int result_type)
 {
 	if(result_type == 1)
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
 	}
 	else if(result_type == 2)
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
 	}
 	else
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"失败");
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"失败");
 	}
 }
 
@@ -264,7 +264,7 @@ static void lv_poc_get_group_list_cb(int result_type)
 	}
 	else
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 }
 
@@ -335,7 +335,7 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     {
 		if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
 		{
-			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 		}
     }
     else
@@ -503,7 +503,7 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
 
     if(group_list_obj->group_list == NULL)
     {
-	    lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
+	    lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
 	    return;
     }
 

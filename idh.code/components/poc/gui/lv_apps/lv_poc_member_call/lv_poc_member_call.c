@@ -277,16 +277,16 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 	{
 		if(current_status != 1)
 		{
-			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
 		}
 		else
 		{
-			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始单呼", NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始单呼", NULL);
 		}
 	}
 	else
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"发生未知错误", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"发生未知错误", NULL);
 	}
 }
 
@@ -419,7 +419,7 @@ void lv_poc_member_call_refresh(lv_poc_member_list_t *member_list_obj)
 
 	if(!(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL))
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
 		return;
 	}
 
