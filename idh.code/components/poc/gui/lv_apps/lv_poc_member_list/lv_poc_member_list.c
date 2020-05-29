@@ -119,7 +119,7 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 	}
 	else
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
 	}
 	lv_poc_member_call_obj_information = NULL;
 }
@@ -136,7 +136,7 @@ static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 		lv_poc_member_call_obj_information = obj->user_data;
 		if(!lv_poc_get_member_status(lv_poc_member_call_obj_information, lv_poc_member_list_get_member_status_cb))
 		{
-			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"错误", NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"错误", NULL);
 			lv_poc_member_call_obj_information = NULL;
 		}
 	}
@@ -244,7 +244,7 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	}
 	else
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 
 }
@@ -298,7 +298,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     {
 		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
 		{
-			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 		}
     }
     else
@@ -556,7 +556,7 @@ void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
 
     if(!(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL))
     {
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无群组列表", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无群组列表", NULL);
 	    return;
     }
 

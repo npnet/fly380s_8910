@@ -9,7 +9,7 @@
 
 #define LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE 50
 
-#define LV_POC_NOTATION_TASK_QUEUE_SIZE (10)
+#define LV_POC_NOTATION_TASK_QUEUE_SIZE (15)
 
 typedef struct
 {
@@ -387,19 +387,20 @@ bool lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *tex
 		memset(lv_poc_notation_task_queue, 0, sizeof(lv_poc_notation_task_msg_t) * LV_POC_NOTATION_TASK_QUEUE_SIZE);
 	}
 
-	lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].msg_type = msg_type;
-	lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].label_1_text[0] = 0;
-	lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].label_2_text[0] = 0;
+	lv_poc_notation_task_msg_t * dest = &lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer];
+	lv_poc_notation_task_queue_writer = (lv_poc_notation_task_queue_writer + 1) % LV_POC_NOTATION_TASK_QUEUE_SIZE;
+	dest->msg_type = msg_type;
+	dest->label_1_text[0] = 0;
+	dest->label_2_text[0] = 0;
 	if(text_1 != NULL)
 	{
-		strcpy((char *)lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].label_1_text, (const char *)text_1);
+		strcpy((char *)dest->label_1_text, (const char *)text_1);
 	}
 
 	if(text_2 != NULL)
 	{
-		strcpy((char *)lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer].label_2_text, (const char *)text_2);
+		strcpy((char *)dest->label_2_text, (const char *)text_2);
 	}
-	lv_poc_notation_task_queue_writer = (lv_poc_notation_task_queue_writer + 1) % LV_POC_NOTATION_TASK_QUEUE_SIZE;
 
 	return true;
 }
