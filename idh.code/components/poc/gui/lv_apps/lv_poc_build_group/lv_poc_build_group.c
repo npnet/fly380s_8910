@@ -113,11 +113,11 @@ static void lv_poc_build_group_new_group_cb(int result_type)
 {
 	if(result_type == 1)
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_success_text, NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_success_text, NULL);
 	}
 	else
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_failed_text, NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_failed_text, NULL);
 	}
 	lv_poc_del_activity(poc_build_group_activity);
 }
@@ -126,7 +126,7 @@ static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, i
 {
 	if(info == NULL || info_num < selected_num)
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG,
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,
 			(const uint8_t *)lv_poc_build_group_error_text,
 			NULL);
 		lv_poc_del_activity(poc_build_group_activity);
@@ -137,7 +137,7 @@ static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, i
 	{
 		if(selected_num == 1)
 		{
-			lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG,
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,
 				(const uint8_t *)lv_poc_build_group_few_member_text1,
 				(const uint8_t *)lv_poc_build_group_few_member_text2);
 		}
@@ -304,7 +304,7 @@ static void lv_poc_build_group_get_list_cb(int msg_type)
 	}
 	else
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 }
 
@@ -340,7 +340,7 @@ void lv_poc_build_group_open(void)
 
 	if(!lv_poc_get_member_list(NULL, lv_poc_build_group_member_list, 1, lv_poc_build_group_get_list_cb))
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 
 
@@ -435,7 +435,7 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
 
     if(!(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL))
     {
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
 	    return;
     }
 
@@ -449,7 +449,7 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
 
 	if(lv_poc_build_group_info == NULL)
 	{
-		lv_poc_notation_msg(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"刷新失败", NULL);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"刷新失败", NULL);
 	    return;
 	}
 	lv_poc_build_group_selected_num = 0;

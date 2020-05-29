@@ -27,7 +27,7 @@ typedef struct _idle_display_func_t {
     void (*hide)(void);
 } idle_display_func_t;
 
-#define LV_POC_IDLE_PAE_MAX_MSG_SIZE (5)
+#define LV_POC_IDLE_PAE_MAX_MSG_SIZE (20)
 
 typedef struct{
 	lv_poc_idle_page2_display_t state;
@@ -776,9 +776,15 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				strcpy(dest_msg->title, (const char *)msg_content->title);
 			}
 			strcpy(dest_msg->second_line_text_1, (const char *)"用户:");
-			strcpy(dest_msg->second_line_text_2, (const char *)msg_content->second_line_text_2);
+			if(msg_content->second_line_text_2[0] != 0)
+			{
+				strcpy(dest_msg->second_line_text_2, (const char *)msg_content->second_line_text_2);
+			}
 			strcpy(dest_msg->third_line_text_1, (const char *)"群组:");
-			strcpy(dest_msg->third_line_text_2, (const char *)msg_content->third_line_text_2);
+			if(msg_content->third_line_text_2[0] != 0)
+			{
+				strcpy(dest_msg->third_line_text_2, (const char *)msg_content->third_line_text_2);
+			}
 			is_normal = true;
 		}
 		else if(msg_content->state == lv_poc_idle_page2_warnning_info)

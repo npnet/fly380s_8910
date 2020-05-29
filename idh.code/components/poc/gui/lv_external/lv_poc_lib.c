@@ -1233,7 +1233,7 @@ lv_poc_get_group_list(lv_poc_group_list_t * group_list, get_group_list_cb func)
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_IND, NULL))
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GROUP_LIST_QUERY_IND, NULL))
 	{
 		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL))
 		{
@@ -1399,7 +1399,7 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_IND, group_info))
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND, group_info))
 	{
 		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_MEMBER_LIST_CB_IND, NULL))
 		{
@@ -1537,7 +1537,20 @@ lv_poc_get_member_name(lv_poc_member_info_t members)
 bool
 lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb func)
 {
-	func(1);
+	if(members == NULL || func == NULL)
+	{
+		return false;
+	}
+
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP, func))
+	{
+		return false;
+	}
+
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND, members))
+	{
+		return false;
+	}
 	return true;;
 }
 
