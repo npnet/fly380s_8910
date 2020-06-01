@@ -186,6 +186,12 @@ typedef struct _lv_poc_activity_attribute_cb_set
 	lv_poc_idle_set_page2_cb idle_note;
 } lv_poc_activity_attribute_cb_set;
 
+typedef struct _lv_poc_build_new_group_t
+{
+	lv_poc_member_info_t *members;
+	int32_t num;
+} lv_poc_build_new_group_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

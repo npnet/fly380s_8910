@@ -1443,8 +1443,24 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 bool
 lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_group_cb func)
 {
-	OSI_LOGI(0, "[build group] members<-0x%p,num<-%d", members, num);
-	func(1);
+	if(members == NULL || num < 1 || func == NULL)
+	{
+		return false;
+	}
+
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_BIUILD_GROUP_CB_IND, func))
+	{
+		return false;
+	}
+	static lv_poc_build_new_group_t group_member = {0};
+	memset(&group_member, 0, sizeof(lv_poc_build_new_group_t));
+	group_member.members = members;
+	group_member.num = num;
+
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND, &group_member))
+	{
+		return false;
+	}
 	return true;
 }
 
