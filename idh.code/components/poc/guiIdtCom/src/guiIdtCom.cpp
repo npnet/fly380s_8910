@@ -178,6 +178,7 @@ public:
 	lv_poc_get_member_list_cb_t pocGetMemberListCb;
 	poc_set_current_group_cb pocSetCurrentGroupCb;
 	poc_get_member_status_cb pocGetMemberStatusCb;
+	poc_build_group_cb       pocBuildGroupCb;
 	Msg_GData_s *pPocMemberList;//组成员结构体
 	Msg_GROUP_MEMBER_s self_info;
 	Msg_GROUP_MEMBER_s speaker;
@@ -777,7 +778,7 @@ void IDT_Entry(void*)
 
     // 0关闭日志,1打开日志
     //g_iLog = 0;
-    g_iLog = 0;
+    g_iLog = 1;
 
     static IDT_CALLBACK_s CallBack;
     memset(&CallBack, 0, sizeof(CallBack));
@@ -1269,8 +1270,10 @@ static void pocGuiIdtComTaskEntry(void *argument)
 						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_REP, NULL);
 					}
 				}
-
-			    //free(grop);
+				else if (OPT_G_ADD == grop->dwOptCode)
+				{
+					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_REP, grop);
+				}
 			}
 
 			case LVPOCGUIIDTCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND:
@@ -1336,6 +1339,77 @@ static void pocGuiIdtComTaskEntry(void *argument)
 
 			case LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_END_IND:
 			{
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND:
+			{
+				if(event.param2 == 0)
+				{
+					break;
+				}
+
+				lv_poc_build_new_group_t * new_group = (lv_poc_build_new_group_t *)event.param2;
+				Msg_GROUP_MEMBER_s * member = NULL;
+				GROUP_MEMBER_s * gmember = NULL;
+				static GData_s g_data = {0};
+				memset(&g_data, 0, sizeof(GData_s));
+				g_data.dwNum = new_group->num;
+
+				for(int i = 0; i < new_group->num; i++)
+				{
+					member = (Msg_GROUP_MEMBER_s *)new_group->members[i];
+					gmember = (GROUP_MEMBER_s *)&g_data.member[i];
+					gmember->ucType = GROUP_MEMBERTYPE_USER;
+					strcpy((char *)gmember->ucName, (const char *)member->ucName);
+					strcpy((char *)gmember->ucNum, (const char *)member->ucNum);
+				}
+
+				OSI_LOGI(0, "[poc][build group][gic] create a new group\n");
+
+				IDT_GAdd(m_IdtUser.m_Group.m_Group_Num, &g_data);
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_REP:
+			{
+				if(event.param2 == 0)
+				{
+					break;
+				}
+
+				if(pocIdtAttr.pocBuildGroupCb == NULL)
+				{
+					break;
+				}
+
+				LvPocGuiIdtCom_Group_Operator_t *grop = (LvPocGuiIdtCom_Group_Operator_t *)event.param2;
+
+				if(grop->wRes != CAUSE_ZERO)
+				{
+					pocIdtAttr.pocBuildGroupCb(0);
+					pocIdtAttr.pocBuildGroupCb = NULL;
+					break;
+				}
+				pocIdtAttr.pocBuildGroupCb(1);
+				pocIdtAttr.pocBuildGroupCb = NULL;
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_REGISTER_BIUILD_GROUP_CB_IND:
+			{
+				if(event.param2 == 0)
+				{
+					break;
+				}
+
+				pocIdtAttr.pocBuildGroupCb = (poc_build_group_cb)event.param2;
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_BIUILD_GROUP_CB_IND:
+			{
+				pocIdtAttr.pocBuildGroupCb = NULL;
 				break;
 			}
 
