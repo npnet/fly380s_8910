@@ -69,6 +69,7 @@ typedef struct
 	uint32_t idle_big_clock_font;
 	uint32_t idle_date_label_font;
 	uint32_t idle_page2_msg_font;
+	uint32_t idle_popwindows_msg_font;
 } nv_poc_font_size_msg_t;
 
 
