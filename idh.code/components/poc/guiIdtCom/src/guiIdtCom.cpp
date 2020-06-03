@@ -185,6 +185,7 @@ public:
 	Msg_GROUP_MEMBER_s speaker;
 	Msg_GROUP_MEMBER_s member_call_obj;
 	bool is_member_call;
+	int member_call_dir;  //0 tx,  1 rx
 	unsigned int mic_ctl;
 	DWORD current_group;
 	DWORD query_group;
@@ -364,7 +365,17 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
     {
 	    case SRV_TYPE_BASIC_CALL://单呼
 	        {
+		        static Msg_GROUP_MEMBER_s member_call_obj = {0};
+		        IDT_TRACE("[mct] %d@", __LINE__);
+		        memset(&member_call_obj, 0, sizeof(Msg_GROUP_MEMBER_s));
+		        strcpy((char *)member_call_obj.ucName, (const char *)pcPeerName);
+		        strcpy((char *)member_call_obj.ucNum, (const char *)pcPeerNum);
+		        member_call_obj.ucStatus = UT_STATUS_ONLINE;
 	            IDT_CallAnswer(m_IdtUser.m_iCallId, &pocIdtAttr.attr, NULL);
+		        IDT_TRACE("[mct] %d@", __LINE__);
+	            pocIdtAttr.member_call_dir = 1;
+	            lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
+		        IDT_TRACE("[mct] %d@", __LINE__);
 	        }
 	        break;
 
@@ -1629,54 +1640,86 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			{
 			    if (member_call_config->enable == true)
 			    {
-				    unsigned long k = 0;
-					for(k = 0; k < pocIdtAttr.pPocMemberList->dwNum; k++)
-					{
-						member = &pocIdtAttr.pPocMemberList->member[k];
-						if(lv_poc_check_member_equation(member_call_obj->ucName, member->ucName, member_call_obj, member, NULL))
+		        IDT_TRACE("[mct] %d@", __LINE__);
+				    if(pocIdtAttr.member_call_dir < 1)
+				    {
+		        IDT_TRACE("[mct] %d@", __LINE__);
+					    unsigned long k = 0;
+						for(k = 0; k < pocIdtAttr.pPocMemberList->dwNum; k++)
 						{
+		        IDT_TRACE("[mct] %d@", __LINE__);
+							member = &pocIdtAttr.pPocMemberList->member[k];
+							if(lv_poc_check_member_equation(member_call_obj->ucName, member->ucName, member_call_obj, member, NULL))
+							{
+		        IDT_TRACE("[mct] %d@", __LINE__);
+								break;
+							}
+						}
+		        IDT_TRACE("[mct] %d@", __LINE__);
+
+						if(k >= pocIdtAttr.pPocMemberList->dwNum)
+						{
+		        IDT_TRACE("[mct] %d@", __LINE__);
 							break;
 						}
 					}
 
-					if(k >= pocIdtAttr.pPocMemberList->dwNum)
-					{
-						break;
-					}
+					IDT_TRACE("[mct] %d@", __LINE__);
 
 					strcpy((char *)pocIdtAttr.member_call_obj.ucName, (const char *)member->ucName);
 					strcpy((char *)pocIdtAttr.member_call_obj.ucNum, (const char *)member->ucNum);
 					pocIdtAttr.member_call_obj.ucStatus = UT_STATUS_ONLINE;
 
-					if(m_IdtUser.m_iCallId != -1)
-					{
-						IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO);
-						osiThreadSleep(500);
-						m_IdtUser.m_iCallId = -1;
-					}
+					IDT_TRACE("[mct] %d@", __LINE__);
 
-					memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
-					pocIdtAttr.attr.ucAudioSend = 1;
-					pocIdtAttr.is_member_call = true;
-					m_IdtUser.m_iCallId = IDT_CallMakeOut((char*)pocIdtAttr.member_call_obj.ucNum,
-																SRV_TYPE_BASIC_CALL,
-																&pocIdtAttr.attr,
-																NULL,
-																NULL,
-																1,
-																0,
-																1,
-																NULL);
+					if(pocIdtAttr.member_call_dir < 1)
+					{
+		        IDT_TRACE("[mct] %d@", __LINE__);
+						if(m_IdtUser.m_iCallId != -1)
+						{
+		        IDT_TRACE("[mct] %d@", __LINE__);
+							IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO);
+							osiThreadSleep(500);
+							m_IdtUser.m_iCallId = -1;
+						}
+
+						IDT_TRACE("[mct] %d@", __LINE__);
+
+						memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
+						pocIdtAttr.attr.ucAudioSend = 1;
+						pocIdtAttr.is_member_call = true;
+						m_IdtUser.m_iCallId = IDT_CallMakeOut((char*)pocIdtAttr.member_call_obj.ucNum,
+																	SRV_TYPE_BASIC_CALL,
+																	&pocIdtAttr.attr,
+																	NULL,
+																	NULL,
+																	1,
+																	0,
+																	1,
+																	NULL);
+					}
+					else
+					{
+		        IDT_TRACE("[mct] %d@", __LINE__);
+						pocIdtAttr.member_call_dir = 0;
+						pocIdtAttr.is_member_call = true;
+						pocIdtAttr.pocMemberCallCb(true, true);
+						pocIdtAttr.pocMemberCallCb = NULL;
+					}
 			    }
 			    else
 			    {
+		        IDT_TRACE("[mct] %d@", __LINE__);
+			        bool is_member_call = pocIdtAttr.is_member_call;
 					pocIdtAttr.is_member_call = false;
-					if(pocIdtAttr.is_member_call && m_IdtUser.m_iCallId != -1)
+					if(is_member_call && m_IdtUser.m_iCallId != -1)
 					{
+		        IDT_TRACE("[mct] %d@", __LINE__);
 						IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO);
 						osiThreadSleep(500);
 						m_IdtUser.m_iCallId = -1;
 					}
+		        IDT_TRACE("[mct] %d@", __LINE__);
 					pocIdtAttr.pocMemberCallCb(false, false);
 					pocIdtAttr.pocMemberCallCb = NULL;
 			    }
