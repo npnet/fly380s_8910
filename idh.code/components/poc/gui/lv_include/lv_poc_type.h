@@ -1,4 +1,4 @@
-#ifndef __LV_POC_TYPR_H_
+﻿#ifndef __LV_POC_TYPR_H_
 #define __LV_POC_TYPR_H_
 #include "lvgl.h"
 
@@ -36,7 +36,7 @@ typedef unsigned short int   uint16_t;
 /*******************
 *     NAME:   lv_poc_time_t
 *   AUTHOR:   lugj
-* DESCRIPT:   ��ȡʱ��Ľṹ��
+* DESCRIPT:   获取时间的结构体
 *     DATE:   2019-11-01
 ********************/
 typedef struct
@@ -113,12 +113,12 @@ typedef struct
 	uint8_t GPS_switch;               //[0]close   [1]open   [default 0]
 	uint8_t electric_torch_switch;    //[0]close   [1]open   [default 0]
 	uint8_t screen_brightness;        //[0 - 9]    [default 4]
-	uint8_t screen_bright_time;       //[0]5�� [1]15�� [2]30�� [3]1���� [4]2���� [5]5���� [6]10���� [7]30����     [default 2]
+	uint8_t screen_bright_time;       //[0]5秒 [1]15秒 [2]30秒 [3]1分钟 [4]2分钟 [5]5分钟 [6]10分钟 [7]30分钟     [default 2]
 	//uint8_t current_theme;          //[0] white theme   [1]black theme    [default 0]
 	uint8_t main_SIM;                 //[0]SIM 1   [1]SIM 2     [default 0]
 	uint8_t net_type;                 //[0]4G/3G/2G  [1]only 3G/2G    [default 0]
 	uint8_t volume;                   //[0-10]    [default 5]
-	uint8_t language;                 //[0]��������       [default 0]
+	uint8_t language;                 //[0]简体中文       [default 0]
 	nv_poc_font_size_msg_t font;
 	nv_poc_theme_msg_t theme;
 } nv_poc_setting_msg_t;
@@ -242,6 +242,32 @@ typedef enum {
 	lv_poc_idle_page2_tts,
 	lv_poc_idle_page2_listen
 } lv_poc_idle_page2_display_t;
+
+typedef enum{//指示灯状�?
+	LVPOCLEDIDTCOM_SIGNAL_STATUS_START = 0,
+
+	LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS ,//正常状�?	LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS ,//充电状�?	LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS	,//低电�?	LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_SUCCESS_STATUS	,//获取成员列表成功
+	LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_FAIL_STATUS	,//获取成员列表失败
+	LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_SUCCESS_STATUS	,//获取群组列表成功
+	LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_FAIL_STATUS	,//获取群组列表失败
+	LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS	,//对讲状�?	LVPOCLEDIDTCOM_SIGNAL_CONNECT_NETWORK_STATUS	,//注册上网络状�?	LVPOCLEDIDTCOM_SIGNAL_FAIL_STATUS	,//错误消息
+}LVPOCIDTCOM_Led_SignalType_t;
+
+typedef enum{//呼吸灯周�?
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 = 0,
+
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_50 = 50,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_100 = 100 ,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_300 = 300	,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 = 500	,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800 = 800	,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_1200 = 1200	,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_1500 = 1500	,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_2000 = 2000	,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 = 3000	,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_5000 = 5000	,
+	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_INVALID = 100000U	,
+}LVPOCIDTCOM_Led_Period_t;
 
 typedef struct _list_element_t{
     char name[LIST_ELEMENT_NAME_MAX_LENGTH];

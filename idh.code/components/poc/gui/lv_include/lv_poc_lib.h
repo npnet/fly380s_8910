@@ -153,6 +153,8 @@ typedef bool (*lv_poc_notation_msg_cb)(lv_poc_notation_msg_type_t msg_type, cons
 
 typedef void (*lv_poc_idle_set_page2_cb)(lv_poc_idle_page2_display_t msg_type, int num, ...);
 
+typedef bool (*lvPocLedIdtCom_Msg_cb)(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx);
+
 typedef struct _lv_poc_activity_attribute_cb_set
 {
 	struct{
@@ -184,6 +186,7 @@ typedef struct _lv_poc_activity_attribute_cb_set
 
 	lv_poc_notation_msg_cb window_note;
 	lv_poc_idle_set_page2_cb idle_note;
+	lvPocLedIdtCom_Msg_cb status_led;
 } lv_poc_activity_attribute_cb_set;
 
 typedef struct _lv_poc_build_new_group_t
@@ -191,6 +194,13 @@ typedef struct _lv_poc_build_new_group_t
 	lv_poc_member_info_t *members;
 	int32_t num;
 } lv_poc_build_new_group_t;
+
+typedef struct _lv_poc_member_call_config_t
+{
+	lv_poc_member_info_t members;
+	bool enable;
+	poc_set_member_call_status_cb func;
+} lv_poc_member_call_config_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -621,7 +631,7 @@ lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb 
 	  date : 2020-05-21
 */
 bool
-lv_poc_set_member_call_status(bool enable, poc_set_member_call_status_cb func);
+lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_member_call_status_cb func);
 
 #ifdef __cplusplus
 }

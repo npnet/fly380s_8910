@@ -69,7 +69,7 @@ static lv_obj_t * lv_poc_member_call_activity_create(lv_poc_display_t *display)
 static void lv_poc_member_call_activity_destory(lv_obj_t *obj)
 {
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_CALL, false);
-	lv_poc_set_member_call_status(false, lv_poc_member_call_set_member_call_status_cb);
+	lv_poc_set_member_call_status(NULL, false, lv_poc_member_call_set_member_call_status_cb);
 	if(activity_win != NULL)
 	{
 		lv_mem_free(activity_win);
@@ -331,7 +331,7 @@ void lv_poc_member_call_open(void * information)
 	lv_poc_member_call_add(lv_poc_member_call_member_list_obj, lv_poc_get_member_name((lv_poc_member_info_t)information), true, information);
 	lv_poc_member_call_set_title(lv_poc_get_member_name((lv_poc_member_info_t)information));
 	lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
-	lv_poc_set_member_call_status(true, lv_poc_member_call_set_member_call_status_cb);
+	lv_poc_set_member_call_status(information, true, lv_poc_member_call_set_member_call_status_cb);
 }
 
 lv_poc_status_t lv_poc_member_call_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information)

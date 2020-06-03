@@ -135,6 +135,7 @@ static lv_poc_status_t prv_lv_poc_group_list_is_exists(lv_poc_group_list_t *grou
 
 static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_type, int num, ...);
 
+static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx);
 
 
 static bool prv_lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
@@ -274,6 +275,7 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 
 	.window_note = prv_lv_poc_notation_msg,
 	.idle_note = prv_lv_poc_idle_set_page2_note_func,
+	.status_led = prv_lvPocLedIdtCom_Msg_func,
 };
 
 static __attribute__((const)) lv_poc_activity_attribute_cb_set_obj * lv_poc_get_activity_attribute_cb_set_obj(void)
@@ -1892,6 +1894,11 @@ static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_
 	}
 	va_end(param_list);
 	lv_poc_idle_set_page2(msg_type, content, index);
+}
+
+static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx)
+{
+	return lvPocLedIdtCom_Msg(signal, ctx);
 }
 
 static bool prv_lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2)

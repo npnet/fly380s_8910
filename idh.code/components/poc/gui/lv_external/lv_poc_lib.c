@@ -1576,9 +1576,24 @@ lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb 
 	  date : 2020-05-21
 */
 bool
-lv_poc_set_member_call_status(bool enable, poc_set_member_call_status_cb func)
+lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_member_call_status_cb func)
 {
-	func(enable, enable);
+	static lv_poc_member_call_config_t member_call_config = {0};
+
+	if(NULL == func)
+	{
+		return false;
+	}
+
+	memset(&member_call_config, 0, sizeof(lv_poc_member_call_config_t));
+	member_call_config.members = member,
+	member_call_config.enable = enable;
+	member_call_config.func = func;
+
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_IND, &member_call_config))
+	{
+		return false;
+	}
 	return true;;
 }
 
