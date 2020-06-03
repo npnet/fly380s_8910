@@ -48,31 +48,30 @@ lv_obj_t * lv_poc_notation_create(void)
 	memset(&lv_poc_notation_style, 0, sizeof(lv_style_t));
     lv_style_copy(&lv_poc_notation_style, &lv_style_pretty_color);
     lv_poc_notation_style.text.color = LV_COLOR_BLACK;
-    lv_poc_notation_style.text.font = (lv_font_t *)(poc_setting_conf->font.idle_page2_msg_font);
+    lv_poc_notation_style.text.font = (lv_font_t *)(poc_setting_conf->font.idle_popwindows_msg_font);
     lv_poc_notation_style.text.opa = 255;
-    lv_poc_notation_style.body.main_color = LV_COLOR_BLUE;
-    lv_poc_notation_style.body.grad_color = LV_COLOR_BLUE;
-    lv_poc_notation_style.body.opa = 200;
+    lv_poc_notation_style.body.main_color = LV_COLOR_SILVER;
+    lv_poc_notation_style.body.grad_color = LV_COLOR_SILVER;
+    lv_poc_notation_style.body.opa = 150;
 
 	lv_poc_notationwindow_obj = lv_obj_create(lv_scr_act(), NULL);
     lv_obj_set_style(lv_poc_notationwindow_obj,&lv_poc_notation_style);
     lv_obj_set_size(lv_poc_notationwindow_obj, LV_HOR_RES * 27/ 40, LV_VER_RES / 2);
     lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80, LV_VER_RES / 4);
-
 	lv_poc_notationwindow_label_1 = lv_label_create(lv_poc_notationwindow_obj, NULL);
 	lv_obj_set_size(lv_poc_notationwindow_label_1, lv_obj_get_width(lv_poc_notationwindow_obj) - 4, lv_obj_get_height(lv_poc_notationwindow_obj) / 3);
     lv_label_set_style(lv_poc_notationwindow_label_1, 1,&lv_poc_notation_style);
-    lv_label_set_long_mode(lv_poc_notationwindow_label_1, LV_LABEL_LONG_SROLL);
+    lv_label_set_long_mode(lv_poc_notationwindow_label_1, LV_LABEL_LONG_SROLL_CIRC);
     lv_label_set_text(lv_poc_notationwindow_label_1, "                    ");
-    lv_label_set_align(lv_poc_notationwindow_label_1, LV_LABEL_ALIGN_LEFT);
+    lv_label_set_align(lv_poc_notationwindow_label_1, LV_LABEL_ALIGN_CENTER);
     //lv_obj_align(lv_poc_notationwindow_label_1, lv_poc_notationwindow_obj, LV_ALIGN_IN_TOP_LEFT, 0, 0);
 
 	lv_poc_notationwindow_label_2 = lv_label_create(lv_poc_notationwindow_obj, NULL);
 	lv_obj_set_size(lv_poc_notationwindow_label_2, lv_obj_get_width(lv_poc_notationwindow_obj) - 4, lv_obj_get_height(lv_poc_notationwindow_obj) / 3);
     lv_label_set_style(lv_poc_notationwindow_label_2,1,&lv_poc_notation_style);
-    lv_label_set_long_mode(lv_poc_notationwindow_label_2, LV_LABEL_LONG_SROLL);
+    lv_label_set_long_mode(lv_poc_notationwindow_label_2, LV_LABEL_LONG_SROLL_CIRC);
     lv_label_set_text(lv_poc_notationwindow_label_2, "                    ");
-    lv_label_set_align(lv_poc_notationwindow_label_2, LV_LABEL_ALIGN_LEFT);
+    lv_label_set_align(lv_poc_notationwindow_label_2, LV_LABEL_ALIGN_CENTER);
     //lv_obj_align(lv_poc_notationwindow_label_2, lv_poc_notationwindow_label_1, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
 
     return lv_poc_notationwindow_obj;
@@ -104,6 +103,10 @@ void lv_poc_notation_destory(void)
 
 void lv_poc_notation_refresh(void)
 {
+	uint8_t notationwindows_size = 0;//判断换是否有两行字
+	lv_obj_t *label_1 = NULL;
+	lv_obj_t *label_2 = NULL;
+
 	if(lv_poc_notationwindow_obj == NULL)
 	{
 		return;
@@ -115,51 +118,70 @@ void lv_poc_notation_refresh(void)
 	}
 
 	lv_obj_set_parent(lv_poc_notationwindow_obj, lv_scr_act());
-    lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80, LV_VER_RES / 4);
 
     if(lv_poc_notationwindow_label_1->hidden == true)
     {
 	    if(lv_poc_notationwindow_label_2->hidden == false)
 	    {
     		lv_label_set_text(lv_poc_notationwindow_label_2,(char *) lv_poc_notationwindow_label_2_text);
-			lv_obj_set_size(lv_poc_notationwindow_label_2,
-							lv_obj_get_width(lv_poc_notationwindow_obj) - 4,
-							lv_obj_get_height(lv_poc_notationwindow_obj) / 3);
+			lv_obj_set_width(lv_poc_notationwindow_label_2,lv_obj_get_width(lv_poc_notationwindow_obj) - 4);
     		lv_obj_set_pos(lv_poc_notationwindow_label_2, 2,
-    						lv_obj_get_height(lv_poc_notationwindow_obj) / 2
-    							- lv_obj_get_height(lv_poc_notationwindow_label_2) / 2);
+    						lv_obj_get_height(lv_poc_notationwindow_obj) / 3//消息框居中
+    							- lv_obj_get_height(lv_poc_notationwindow_label_2) / 3);
 		}
+		label_1 = lv_poc_notationwindow_label_2;
+		notationwindows_size = 1;//1行
     }
     else
     {
     	if(lv_poc_notationwindow_label_2->hidden == true)
     	{
 		    lv_label_set_text(lv_poc_notationwindow_label_1, (char *)lv_poc_notationwindow_label_1_text);
-			lv_obj_set_size(lv_poc_notationwindow_label_1,
-							lv_obj_get_width(lv_poc_notationwindow_obj) - 4,
-							lv_obj_get_height(lv_poc_notationwindow_obj) / 3);
+			lv_obj_set_width(lv_poc_notationwindow_label_1,lv_obj_get_width(lv_poc_notationwindow_obj) - 4);
     		lv_obj_set_pos(lv_poc_notationwindow_label_1, 2,
-    						lv_obj_get_height(lv_poc_notationwindow_obj) / 2
-    							- lv_obj_get_height(lv_poc_notationwindow_label_1) / 2);
+    						lv_obj_get_height(lv_poc_notationwindow_obj) / 3//消息框居中
+    							- lv_obj_get_height(lv_poc_notationwindow_label_1) / 3);
+			label_1 = lv_poc_notationwindow_label_1;
+			notationwindows_size = 1;//1行
     	}
     	else
     	{
 		    lv_label_set_text(lv_poc_notationwindow_label_1, (char *)lv_poc_notationwindow_label_1_text);
-			lv_obj_set_size(lv_poc_notationwindow_label_1,
-							lv_obj_get_width(lv_poc_notationwindow_obj) - 4,
-							lv_obj_get_height(lv_poc_notationwindow_obj) / 3);
+			lv_obj_set_width(lv_poc_notationwindow_label_1,lv_obj_get_width(lv_poc_notationwindow_obj) - 4);
     		lv_obj_set_pos(lv_poc_notationwindow_label_1, 2,
     						lv_obj_get_height(lv_poc_notationwindow_obj) / 2
     							- lv_obj_get_height(lv_poc_notationwindow_label_1) - 4);
 
     		lv_label_set_text(lv_poc_notationwindow_label_2, (char *)lv_poc_notationwindow_label_2_text);
-			lv_obj_set_size(lv_poc_notationwindow_label_2,
-							lv_obj_get_width(lv_poc_notationwindow_obj) - 4,
-							lv_obj_get_height(lv_poc_notationwindow_obj) / 3);
+			lv_obj_set_width(lv_poc_notationwindow_label_2,lv_obj_get_width(lv_poc_notationwindow_obj) - 4);
     		lv_obj_set_pos(lv_poc_notationwindow_label_2, 2,
     						lv_obj_get_height(lv_poc_notationwindow_obj) / 2 + 4);
+			notationwindows_size = 2;//2行
+			label_1 = lv_poc_notationwindow_label_1;
+			label_2 = lv_poc_notationwindow_label_2;
     	}
     }
+
+    /*设置消息框大小*/
+	if(notationwindows_size == 1)
+	{
+		//消息框位置
+		lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80, LV_VER_RES / 3);
+		lv_obj_set_height(lv_poc_notationwindow_obj,LV_VER_RES / 3);//1行消息
+
+		//设置文本框
+		lv_obj_align(label_1, lv_poc_notationwindow_obj, LV_ALIGN_CENTER, 0, 0);
+
+	}
+	else if(notationwindows_size == 2)
+	{
+		lv_obj_set_height(lv_poc_notationwindow_obj,LV_VER_RES / 2);//2行消息
+
+		//设置文本框
+		lv_obj_align(label_1, lv_poc_notationwindow_obj, LV_ALIGN_IN_TOP_MID, 0, 10);
+		lv_obj_align(label_2, lv_poc_notationwindow_obj, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
+	}
+
 }
 
 void lv_poc_notation_hide(const bool hide)
@@ -318,6 +340,9 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 		{
 			lv_poc_notation_speaking((const int8_t *)notation_msg->label_1_text,
 				(const int8_t *)notation_msg->label_2_text);
+
+			//log查看
+			OSI_LOGI(0, "[song] test height");
 			break;
 		}
 
