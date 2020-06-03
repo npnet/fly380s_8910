@@ -9,6 +9,8 @@ extern "C"{
 
 void lv_poc_member_call_open(void * information);
 
+void lv_poc_member_call_close(void);
+
 lv_poc_status_t lv_poc_member_call_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information);
 
 void lv_poc_member_call_remove(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
