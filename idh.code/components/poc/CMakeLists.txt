@@ -41,6 +41,7 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_setting/lv_poc_volum/lv_poc_volum.c
 	gui/lv_apps/lv_poc_member_call/lv_poc_member_call.c
 	gui/lv_apps/lv_poc_notation/lv_poc_notation.c
+	gui/lv_apps/lv_poc_led/lv_poc_led.c
 
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c
