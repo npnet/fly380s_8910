@@ -59,6 +59,7 @@ static __attribute__((unused)) bool lv_poc_member_call_exit_pressed = false;
 
 static lv_task_t * lv_poc_member_call_exit_task = NULL;
 
+static int lv_poc_member_call_self_call_close = 0;
 
 static lv_obj_t * lv_poc_member_call_activity_create(lv_poc_display_t *display)
 {
@@ -69,7 +70,15 @@ static lv_obj_t * lv_poc_member_call_activity_create(lv_poc_display_t *display)
 static void lv_poc_member_call_activity_destory(lv_obj_t *obj)
 {
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_CALL, false);
-	lv_poc_set_member_call_status(NULL, false, lv_poc_member_call_set_member_call_status_cb);
+	if(lv_poc_member_call_self_call_close == 0)
+	{
+		lv_poc_member_call_self_call_close = 1;
+	}
+
+	if(lv_poc_member_call_self_call_close == 1)
+	{
+		lv_poc_set_member_call_status(NULL, false, lv_poc_member_call_set_member_call_status_cb);
+	}
 	if(activity_win != NULL)
 	{
 		lv_mem_free(activity_win);
@@ -278,6 +287,10 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 		if(current_status != 1)
 		{
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
+			if(lv_poc_member_call_self_call_close == 0)
+			{
+				lv_poc_member_call_close();
+			}
 		}
 		else
 		{
@@ -328,10 +341,25 @@ void lv_poc_member_call_open(void * information)
 	lv_poc_activity_set_signal_cb(poc_member_call_activity, lv_poc_member_call_signal_func);
 	lv_poc_activity_set_design_cb(poc_member_call_activity, lv_poc_member_call_design_func);
 
+
 	lv_poc_member_call_add(lv_poc_member_call_member_list_obj, lv_poc_get_member_name((lv_poc_member_info_t)information), true, information);
 	lv_poc_member_call_set_title(lv_poc_get_member_name((lv_poc_member_info_t)information));
 	lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
+	lv_poc_member_call_self_call_close = 0;
 	lv_poc_set_member_call_status(information, true, lv_poc_member_call_set_member_call_status_cb);
+}
+
+void lv_poc_member_call_close(void)
+{
+	lv_poc_member_call_self_call_close = 2;
+	if(lv_poc_member_call_exit_pressed)
+	{
+		return;
+	}
+
+	lv_poc_member_call_exit_pressed = true;
+	lv_poc_member_call_delay_exit_task_create(500);
+	//lv_poc_activity_send_sign(ACT_ID_POC_MEMBER_CALL, LV_SIGNAL_CONTROL, (void *)LV_GROUP_KEY_ESC);
 }
 
 lv_poc_status_t lv_poc_member_call_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information)
