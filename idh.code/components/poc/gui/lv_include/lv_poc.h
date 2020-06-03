@@ -30,5 +30,6 @@
 #include "lv_apps/lv_poc_edeg_key/lv_poc_edeg_key.h"
 #include "lv_apps/lv_poc_about/lv_poc_about.h"
 #include "lv_apps/lv_poc_notation/lv_poc_notation.h"
+#include "lv_apps/lv_poc_led/lv_poc_led.h"
 
 #endif //__LV_POC_H_
