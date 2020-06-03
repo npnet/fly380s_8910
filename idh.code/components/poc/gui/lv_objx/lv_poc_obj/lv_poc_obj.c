@@ -276,6 +276,7 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 	.window_note = prv_lv_poc_notation_msg,
 	.idle_note = prv_lv_poc_idle_set_page2_note_func,
 	.status_led = prv_lvPocLedIdtCom_Msg_func,
+	.member_call_open = lv_poc_member_call_open,
 };
 
 static __attribute__((const)) lv_poc_activity_attribute_cb_set_obj * lv_poc_get_activity_attribute_cb_set_obj(void)

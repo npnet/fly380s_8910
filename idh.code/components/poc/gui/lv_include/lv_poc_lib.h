@@ -187,6 +187,7 @@ typedef struct _lv_poc_activity_attribute_cb_set
 	lv_poc_notation_msg_cb window_note;
 	lv_poc_idle_set_page2_cb idle_note;
 	lvPocLedIdtCom_Msg_cb status_led;
+	void (*member_call_open)(void * information);
 } lv_poc_activity_attribute_cb_set;
 
 typedef struct _lv_poc_build_new_group_t
