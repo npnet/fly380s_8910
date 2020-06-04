@@ -1,4 +1,6 @@
 ﻿
+#ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -216,4 +218,6 @@ void lv_poc_net_switch_open(void)
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

@@ -101,7 +101,9 @@ typedef struct
 {
 	uint8_t  type;                      //[0] white theme   [1]black theme    [default 0]
 	nv_poc_theme_msg_node_t * current_theme;
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 	nv_poc_theme_msg_node_t * black;
+#endif
 	nv_poc_theme_msg_node_t * white;
 } nv_poc_theme_msg_t;
 
@@ -110,14 +112,18 @@ typedef struct
 	uint8_t read_and_write_check;
 	uint8_t btn_voice_switch;         //[0]close   [1]open   [default 0]
 	uint8_t voice_broadcast_switch;   //[0]close   [1]open   [default 0]
+#ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	uint8_t keypad_led_switch;        //[0]close   [1]open   [default 0]
+#endif
 	uint8_t GPS_switch;               //[0]close   [1]open   [default 0]
 	uint8_t electric_torch_switch;    //[0]close   [1]open   [default 0]
 	uint8_t screen_brightness;        //[0 - 9]    [default 4]
 	uint8_t screen_bright_time;       //[0]5秒 [1]15秒 [2]30秒 [3]1分钟 [4]2分钟 [5]5分钟 [6]10分钟 [7]30分钟     [default 2]
 	//uint8_t current_theme;          //[0] white theme   [1]black theme    [default 0]
 	uint8_t main_SIM;                 //[0]SIM 1   [1]SIM 2     [default 0]
+#ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
 	uint8_t net_type;                 //[0]4G/3G/2G  [1]only 3G/2G    [default 0]
+#endif
 	uint8_t volume;                   //[0-10]    [default 5]
 	uint8_t language;                 //[0]简体中文       [default 0]
 	nv_poc_font_size_msg_t font;

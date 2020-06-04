@@ -451,6 +451,7 @@ poc_get_torch_status(void);
 void
 poc_torch_init(void);
 
+#ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 /*
       name : poc_set_keypad_led_status
      param : open  true is open keypad led
@@ -474,6 +475,7 @@ poc_get_keypad_led_status(void);
 */
 void
 poc_keypad_led_init(void);
+#endif
 
 /*
       name : poc_set_PA_status

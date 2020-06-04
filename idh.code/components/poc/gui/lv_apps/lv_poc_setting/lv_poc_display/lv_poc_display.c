@@ -8,8 +8,10 @@ typedef enum{
 	poc_display_edeg_big_font,
 	poc_display_edeg_bright,
 	poc_display_edeg_bright_time,
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 	poc_display_edeg_theme_switch,
-	poc_display_edeg_item_max_num	
+#endif
+	poc_display_edeg_item_max_num
 } poc_display_edeg_item_t;
 
 static lv_obj_t * activity_create(lv_poc_display_t *display);
@@ -36,7 +38,9 @@ static char is_poc_display_update_UI_task_running = 0;
 
 static const char * bright_str[POC_MAX_BRIGHT] = {"0","1","2","3","4","5"};
 static const char * bright_time_str[] = {"5秒","15秒","30秒","1分钟","2分钟","5分钟","10分钟","30分钟"};
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 static const char * theme_str[] = {"白色","黑色"};
+#endif
 
 lv_poc_activity_t * poc_display_activity;
 
@@ -98,7 +102,7 @@ static void display_list_config(lv_obj_t * list, lv_area_t list_area)
     btn->user_data = (void *)sw;
     lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 10);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-    lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);    
+    lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
     if(poc_setting_conf->font.big_font_switch == 1)
     {
     	lv_sw_on(sw, LV_ANIM_OFF);
@@ -106,7 +110,7 @@ static void display_list_config(lv_obj_t * list, lv_area_t list_area)
     else
     {
     	lv_sw_off(sw, LV_ANIM_OFF);
-    }    
+    }
 
     btn = lv_list_add_btn(list, NULL, "亮度");
     lv_obj_set_click(btn, true);
@@ -121,7 +125,7 @@ static void display_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 20);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-   
+
     btn = lv_list_add_btn(list, NULL, "亮屏时间");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_display_press_btn_action);
@@ -136,6 +140,7 @@ static void display_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
     btn = lv_list_add_btn(list, NULL, "主题切换");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_display_press_btn_action);
@@ -148,10 +153,11 @@ static void display_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_label_set_text(label, theme_str[poc_setting_conf->theme.type]);
     lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 20);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-    lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);  
+    lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+#endif
 
     lv_list_set_btn_selected(list, btns[display_selected_item]);
-    
+
 }
 
 
@@ -221,12 +227,13 @@ static void lv_poc_display_press_btn_action(lv_obj_t * obj, lv_event_t event)
                 lv_poc_bright_time_open();
     			break;
     		}
-
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
     		case poc_display_edeg_theme_switch:
     		{
                 lv_poc_theme_switch_open();
     			break;
     		}
+#endif
 
     		default:
     		{
@@ -246,42 +253,42 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			switch(c)
 			{
 				case LV_GROUP_KEY_ENTER:
-				
+
 				case LV_GROUP_KEY_DOWN:
-				
+
 				case LV_GROUP_KEY_UP:
 				{
 					activity_list->signal_cb(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					lv_poc_del_activity(poc_display_activity);
@@ -290,7 +297,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			}
 			break;
 		}
-			
+
 		case LV_SIGNAL_LONG_PRESS:
 		{
 			unsigned int c = *(unsigned int *)param;
@@ -300,42 +307,42 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_ESC:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
@@ -358,7 +365,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			break;
 		}
-			
+
 		default:
 		{
 			break;
