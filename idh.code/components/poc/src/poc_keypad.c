@@ -26,29 +26,36 @@
 
 static keyState_t preKeyState = 0xff;
 static keyMap_t   preKey      = 0xff;
+static keyState_t prvPttKeyState = 0xff;
 bool pocKeypadHandle(keyMap_t id, keyState_t evt, void *p)
 {
 	bool ret = true;
 	if(id == KEY_MAP_4) //poc
 	{
-		if(preKeyState != evt)
+		if(prvPttKeyState != evt)
 		{
 			if(evt == KEY_STATE_PRESS)
 			{
-				OSI_LOGI(0, "[gic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
+				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
 			}
 			else
 			{
-				OSI_LOGI(0, "[gic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
+				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 			}
 		}
+		prvPttKeyState = evt;
 		ret = true;
 	}
 	preKey = id;
 	preKeyState = evt;
 	return ret;
+}
+
+bool pocGetPttKeyState(void)
+{
+	return prvPttKeyState == KEY_STATE_PRESS ? true : false;
 }
 
 

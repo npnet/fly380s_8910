@@ -32,6 +32,8 @@ OSI_EXTERN_C_BEGIN
 
 bool pocKeypadHandle(keyMap_t id, keyState_t evt, void *p);
 
+bool pocGetPttKeyState(void);
+
 OSI_EXTERN_C_END
 
 #endif
