@@ -23,7 +23,9 @@
 
 static nv_poc_setting_msg_t poc_setting_conf_local = {0};
 static nv_poc_theme_msg_node_t theme_white = {0};
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 static nv_poc_theme_msg_node_t theme_black = {0};
+#endif
 
 #define POC_SETTING_CONFIG_FILENAME CONFIG_FS_AP_NVM_DIR "/poc_setting_config.nv"
 #define POC_SETTING_CONFIG_FILESIZE (sizeof(nv_poc_setting_msg_t))
@@ -687,6 +689,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->theme.white->style_control = (uint32_t)&theme_white_style_control;
 
 
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 	poc_setting->theme.black = &theme_black;
 	poc_setting->theme.black->style_list_scroll = (uint32_t)&theme_black_style_list_scroll;
 	poc_setting->theme.black->style_list_page = (uint32_t)&theme_black_style_list_page;
@@ -707,6 +710,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->theme.black->style_status_bar_time = (uint32_t)&theme_black_style_status_bar_time;
 	poc_setting->theme.black->style_win_header = (uint32_t)&theme_black_style_win_header;
 	poc_setting->theme.black->style_control = (uint32_t)&theme_black_style_control;
+#endif
 }
 
 /*
@@ -723,14 +727,18 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->read_and_write_check = 0x3f;
 	poc_setting->btn_voice_switch = 0;
 	poc_setting->voice_broadcast_switch = 0;
+#ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_setting->keypad_led_switch = 0;
+#endif
 	poc_setting->GPS_switch = 0;
 	poc_setting->electric_torch_switch = 0;
 	poc_setting->screen_brightness = 4;
 	poc_setting->screen_bright_time = 2;
 	//poc_setting->current_theme = 0;
 	poc_setting->main_SIM = 0;
+#ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
 	poc_setting->net_type = 0;
+#endif
 	poc_setting->font.big_font_switch = 1;
 	poc_setting->font.list_page_colum_count = 3;
 	poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
@@ -750,6 +758,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 	prv_poc_mmi_poc_setting_config_const(poc_setting);
 
 #if 1
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 	if(poc_setting->theme.type == 0)
 	{
 		poc_setting->theme.current_theme = poc_setting->theme.white;
@@ -758,6 +767,10 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 	{
 		poc_setting->theme.current_theme = poc_setting->theme.black;
 	}
+#else
+	poc_setting->theme.type = 0;
+	poc_setting->theme.current_theme = poc_setting->theme.white;
+#endif
 
 	if(poc_setting->font.big_font_switch == 0)
 	{
@@ -929,6 +942,7 @@ poc_torch_init(void)
 	free(config);
 }
 
+#ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 /*
       name : poc_set_keypad_led_status
      param : open  true is open keypad led
@@ -980,6 +994,7 @@ poc_keypad_led_init(void)
 	poc_keypad_led_gpio = drvGpioOpen(15, config, NULL, NULL);
 	free(config);
 }
+#endif
 
 /*
       name : poc_set_PA_status

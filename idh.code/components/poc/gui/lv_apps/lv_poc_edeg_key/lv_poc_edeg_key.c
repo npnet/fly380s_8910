@@ -6,7 +6,9 @@ extern "C" {
 
 typedef enum edeg_key_set_item
 {
+#ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
 	EDEG_KEY_ITEM_NET_SWITCH,
+#endif
 	EDEG_KEY_ITEM_DISPLAY,
 	EDEG_KEY_ITEM_VOLUM,
 	EDEG_KEY_ITEM_LOCATION
@@ -31,7 +33,10 @@ static lv_poc_win_t * edeg_key_set_win;
 static lv_obj_t * activity_list;
 
 
+#ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
 static const char * net_type_str[] = {"4G/3G/2G","仅3G/2G"};
+#endif
+
 static char is_poc_edeg_key_setting_update_UI_task_running = 0;
 
 static edeg_key_set_item_e edeg_key_set_selected_item = 0;
@@ -82,11 +87,13 @@ static void lv_poc_edeg_key_set_press_btn_action(lv_obj_t * obj, lv_event_t even
     {
         switch(item)
         {
+#ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
         	case EDEG_KEY_ITEM_NET_SWITCH:
         	{
         		lv_poc_net_switch_open();
         		break;
         	}
+#endif
 
         	case EDEG_KEY_ITEM_DISPLAY:
         	{
@@ -116,17 +123,19 @@ static void lv_poc_edeg_key_set_press_btn_action(lv_obj_t * obj, lv_event_t even
 static void edeg_key_set_list_config(lv_obj_t * list, lv_area_t list_area)
 {
     lv_obj_t *btn;
-    lv_obj_t *label;
-    lv_obj_t *btn_label;
+    __attribute__((unused)) lv_obj_t *label;
+    __attribute__((unused)) lv_obj_t *btn_label;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
-    lv_coord_t btn_width = (list_area.x2 - list_area.x1);
+    __attribute__((unused)) lv_coord_t btn_width = (list_area.x2 - list_area.x1);
     lv_obj_t * btns[4];
+    int item_index = 0;
     poc_setting_conf = lv_poc_setting_conf_read();
 
+#ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
     btn = lv_list_add_btn(list, NULL, "网络切换");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_edeg_key_set_press_btn_action);
-    btns[0] = btn;
+    btns[item_index++] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
     btn_label = lv_list_get_btn_label(btn);
@@ -137,11 +146,12 @@ static void edeg_key_set_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
     lv_label_set_long_mode(btn_label, LV_LABEL_LONG_DOT);
+#endif
 
     btn = lv_list_add_btn(list, NULL, "显示");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_edeg_key_set_press_btn_action);
-    btns[1] = btn;
+    btns[item_index++] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
     btn_label = lv_list_get_btn_label(btn);
@@ -149,7 +159,7 @@ static void edeg_key_set_list_config(lv_obj_t * list, lv_area_t list_area)
     btn = lv_list_add_btn(list, NULL, "音量调节");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_edeg_key_set_press_btn_action);
-    btns[2] = btn;
+    btns[item_index++] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
     btn_label = lv_list_get_btn_label(btn);
@@ -157,13 +167,13 @@ static void edeg_key_set_list_config(lv_obj_t * list, lv_area_t list_area)
     btn = lv_list_add_btn(list, NULL, "位置信息");
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_edeg_key_set_press_btn_action);
-    btns[3] = btn;
+    btns[item_index++] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
     btn_label = lv_list_get_btn_label(btn);
-    
+
     lv_list_set_btn_selected(list, btns[edeg_key_set_selected_item]);
-    
+
 }
 
 
@@ -177,42 +187,42 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			switch(c)
 			{
 				case LV_KEY_ENTER:
-				
+
 				case LV_KEY_DOWN:
-				
+
 				case LV_KEY_UP:
 				{
 					activity_list->signal_cb(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
-					
+
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
 				}
-				
+
 				case LV_KEY_ESC:
 				{
 					lv_poc_del_activity(poc_edeg_key_set_activity);
@@ -221,7 +231,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			}
 			break;
 		}
-			
+
 		case LV_SIGNAL_LONG_PRESS:
 		{
 			unsigned int c = *(unsigned int *)param;
@@ -231,42 +241,42 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 				{
 					break;
 				}
-				
+
 				case LV_KEY_ESC:
 				{
 					break;
 				}
-				
+
 				case LV_KEY_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_KEY_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_GP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_MB:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_DOWN:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_VOL_UP:
 				{
 					break;
 				}
-				
+
 				case LV_GROUP_KEY_POC:
 				{
 					break;
@@ -296,7 +306,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			break;
 		}
-			
+
 		default:
 		{
 			break;

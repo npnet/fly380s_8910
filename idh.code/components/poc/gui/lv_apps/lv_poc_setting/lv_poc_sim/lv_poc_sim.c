@@ -1,4 +1,6 @@
 ﻿
+#ifdef CONFIG_POC_GUI_CHOICE_SIM_SUPPORT
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -212,4 +214,6 @@ void lv_poc_main_sim_choice_open(void)
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

@@ -10,7 +10,10 @@ extern lv_poc_activity_t * bright_time_activity;
 
 void lv_poc_bright_time_open(void);
 
+
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 void lv_poc_theme_switch_open(void);
+#endif
 
 void lv_poc_display_open(void);
 

@@ -59,6 +59,24 @@ config POC_GUI_CHOICE_SIM_SUPPORT
     default n
     help
         poc gui should be supported.
+
+config POC_GUI_CHOICE_NET_TYPE_SUPPORT
+    bool "POC gui choice net type supported"
+    default n
+    help
+        poc gui should be supported.
+
+config POC_GUI_CHOICE_THEME_SUPPORT
+    bool "POC gui choice theme supported"
+    default n
+    help
+        poc gui should be supported.
+
+config POC_GUI_KEYPAD_LIGHT_SUPPORT
+    bool "POC gui keypad light supported"
+    default n
+    help
+        poc gui should be supported.
 		
 config POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE
     int "receive idt data by buff"

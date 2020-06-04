@@ -64,6 +64,7 @@ lv_style_t theme_white_style_status_bar = {0};
 lv_style_t theme_white_style_status_bar_time = {0};
 lv_style_t theme_white_style_control = {0};
 
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 lv_style_t theme_black_style_base = {0};
 lv_style_t theme_black_style_list_scroll = {0};
 lv_style_t theme_black_style_list_page = {0};
@@ -84,7 +85,7 @@ lv_style_t theme_black_style_about_label = {0};
 lv_style_t theme_black_style_status_bar = {0};
 lv_style_t theme_black_style_status_bar_time = {0};
 lv_style_t theme_black_style_control = {0};
-
+#endif
 
 
 /*************************************************
@@ -531,7 +532,9 @@ static bool lv_poc_setting_init(void)
 	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
+#ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_keypad_led_init();
+#endif
 	poc_ext_pa_init();
     return true;
 }
@@ -683,6 +686,7 @@ static bool lv_poc_theme_init(void)
     theme_white_style_control.text.color = LV_COLOR_WHITE;
     theme_white_style_control.text.font = (lv_font_t *)poc_setting_conf->font.activity_control_font;
 
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 // 初始化黑色主题
     lv_style_copy(&theme_black_style_base,&lv_style_transp);
     theme_black_style_base.body.main_color = LV_COLOR_MAKE(0x00,0x00,0x00);
@@ -829,6 +833,7 @@ static bool lv_poc_theme_init(void)
     theme_black_style_control.body.grad_color = LV_COLOR_MAKE(0x88,0x33,0x00);
     theme_black_style_control.text.color = LV_COLOR_WHITE;
     theme_black_style_control.text.font = (lv_font_t *)poc_setting_conf->font.activity_control_font;
+#endif
     return true;
 }
 
