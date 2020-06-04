@@ -1,4 +1,6 @@
 ﻿
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -246,4 +248,6 @@ void lv_poc_theme_switch_open(void)
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

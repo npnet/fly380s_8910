@@ -205,8 +205,8 @@ lv_obj_t * lv_poc_notation_listenning(const int8_t * text_1, const int8_t * text
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_1, false);
 		memset(lv_poc_notationwindow_label_1_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
-		strcpy((char *)lv_poc_notationwindow_label_1_text,(char *)"用户：");
-		strcat((char *)lv_poc_notationwindow_label_1_text, (char *)text_1);
+		//strcpy((char *)lv_poc_notationwindow_label_1_text,(char *)"用户：");
+		strcpy((char *)lv_poc_notationwindow_label_1_text, (char *)text_1);
 	}
 	else
 	{
@@ -217,8 +217,8 @@ lv_obj_t * lv_poc_notation_listenning(const int8_t * text_1, const int8_t * text
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_2, false);
 		memset(lv_poc_notationwindow_label_2_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
-		strcpy((char *)lv_poc_notationwindow_label_2_text,(char *)"群组：");
-		strcat((char *)lv_poc_notationwindow_label_2_text, (char *)text_2);
+		//strcpy((char *)lv_poc_notationwindow_label_2_text,(char *)"群组：");
+		strcpy((char *)lv_poc_notationwindow_label_2_text, (char *)text_2);
 	}
 	else
 	{

@@ -59,6 +59,24 @@
 #cmakedefine CONFIG_POC_GUI_CHOICE_SIM_SUPPORT
 
 /**
+ * Wheth the POC gui choice net type is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
+
+/**
+ * Wheth the POC gui choice theme is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
+
+/**
+ * Wheth the POC keypad light is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
+
+/**
  * Wheth the POC audio data buff is enabled more than 3.
  *
  */
