@@ -326,7 +326,9 @@ int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName
 
 	if(m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)
 	{
-	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_REQUEST_MIC);
+		OSI_LOGI(0, "[gic][gicmic] send msg to get mic ctl on new callid\n");
+	    //lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_REQUEST_MIC);
+	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, (void *)2);
     }
 
     return 0;
@@ -454,6 +456,7 @@ int callback_IDT_CallMicInd(void *pUsrCtx, UINT uiInd)
     IDT_TRACE("callback_IDT_CallMicInd: pUsrCtx=0x%x, uiInd=%d", pUsrCtx, uiInd);
     // 0本端不讲话
     // 1本端讲话
+    OSI_LOGI(0, "[gic][gicmic] call mic ctl callback\n");
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, (void *)(uiInd + 1));
     return 0;
 }
@@ -523,27 +526,20 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 		    {
 			    m_IdtUser.m_status = UT_STATUS_ONLINE;
 		    }
-    IDT_TRACE("callback_IDT_CallTalkingIDInd: LINE=%d", __LINE__);
 		    m_IdtUser.m_iRxCount = 0;
 		    m_IdtUser.m_iTxCount = 0;
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
 	    }
-    IDT_TRACE("callback_IDT_CallTalkingIDInd: LINE=%d", __LINE__);
 	    return 0;
     }
-
-    IDT_TRACE("callback_IDT_CallTalkingIDInd: LINE=%d", __LINE__);
-
     strcpy((char *)pocIdtAttr.speaker.ucNum, (const char *)pcNum);
-
     strcpy((char *)pocIdtAttr.speaker.ucName, (const char *)pcName);
 
     pocIdtAttr.speaker.ucStatus = UT_STATUS_ONLINE;
     if(m_IdtUser.m_status < USER_OPRATOR_START_LISTEN || m_IdtUser.m_status > USER_OPRATOR_LISTENNING)
     {
-    IDT_TRACE("callback_IDT_CallTalkingIDInd: LINE=%d", __LINE__);
 	    if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
 	    {
 		    m_IdtUser.m_status = USER_OPRATOR_START_LISTEN;
@@ -954,6 +950,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					srv_type = SRV_TYPE_CONF;
 					dest_num = (char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum;
 				}
+				OSI_LOGI(0, "[gic][gicmic] create a callid\n");
 				m_IdtUser.m_iCallId = IDT_CallMakeOut(dest_num,
 					srv_type,
 					&pocIdtAttr.attr,
@@ -966,6 +963,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			}
 			else
 			{
+				OSI_LOGI(0, "[gic][gicmic] send msg to get mic ctl on have a callid\n");
 		        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_REQUEST_MIC);
 			}
 			break;
@@ -973,8 +971,8 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP:
 		{
-			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "开始对讲", NULL);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
+			//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "开始对讲", NULL);
+			//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, "正在讲话", "");
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"正在讲话", (const uint8_t *)"");
 			break;
@@ -1019,15 +1017,16 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 			}
 
 			unsigned int mic_ctl = (unsigned int)ctx;
-			pocIdtAttr.mic_ctl = mic_ctl;
 			if(mic_ctl <= 1)
 			{
 		        //释放话权
+		        OSI_LOGI(0, "[gic][gicmic] release mic ctl\n");
 		        IDT_CallMicCtrl(m_IdtUser.m_iCallId, false);
 			}
 			else
 			{
 		        //请求话权
+		        OSI_LOGI(0, "[gic][gicmic] request mic ctl\n");
 		        IDT_CallMicCtrl(m_IdtUser.m_iCallId, true);
 			}
 			break;
@@ -1040,24 +1039,31 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				break;
 			}
 			unsigned int mic_ctl = (unsigned int)ctx;
+			bool pttStatus = pocGetPttKeyState();
 
-			if(mic_ctl > 1)  //获得话权
+			if(mic_ctl > 1 && pocIdtAttr.mic_ctl <= 1 && m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)  //获得话权
 			{
-				if(m_IdtUser.m_status > 0)
+				if(pttStatus)
 				{
-					m_IdtUser.m_status = USER_OPRATOR_START_SPEAK;
-				}
-				m_IdtUser.m_iRxCount = 0;
-				m_IdtUser.m_iTxCount = 0;
-				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "获得话权", NULL);
+					m_IdtUser.m_iRxCount = 0;
+					m_IdtUser.m_iTxCount = 0;
+					//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "获得话权", NULL);
 
-				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
-				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
+					OSI_LOGI(0, "[gic][gicmic] get mic ctl\n");
+					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
+					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 
-			    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
-			    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+				    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
+				    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+				    pocIdtAttr.mic_ctl = mic_ctl;
+			    }
+			    else
+			    {
+				    IDT_CallMicCtrl(m_IdtUser.m_iCallId, false);
+				    pocIdtAttr.mic_ctl = 0;
+			    }
 			}
-			else
+			else if(mic_ctl <= 1 && pocIdtAttr.mic_ctl > 1) // 释放话权
 			{
 				int status = m_IdtUser.m_status;
 
@@ -1068,17 +1074,17 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				m_IdtUser.m_iRxCount = 0;
 				m_IdtUser.m_iTxCount = 0;
 
+				OSI_LOGI(0, "[gic][gicmic] give up mic ctl\n");
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 
 				if(status >= USER_OPRATOR_START_SPEAK && status <= USER_OPRATOR_SPEAKING)
 				{
-					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "释放话权", NULL);
+					//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "释放话权", NULL);
+			        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, NULL);
 				}
-		        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, NULL);
+				pocIdtAttr.mic_ctl = mic_ctl;
 			}
-
-			pocIdtAttr.mic_ctl = mic_ctl;
 
 #if 0
 			if(pocIdtAttr.mic_ctl == 0)
@@ -1137,7 +1143,6 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				break;
 			}
 #endif
-			pocIdtAttr.mic_ctl = 0;
 			break;
 		}
 
@@ -1777,8 +1782,8 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			memset(speaker_name, 0, sizeof(char) * 100);
 			strcpy(speaker_name, (const char *)pocIdtAttr.speaker.ucName);
 			strcat(speaker_name, (const char *)"正在讲话");
-			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "正在聆听", NULL);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在聆听", NULL);
+			//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "正在聆听", NULL);
+			//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在聆听", NULL);
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, speaker_name, speaker_group);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)speaker_group);
 			break;
