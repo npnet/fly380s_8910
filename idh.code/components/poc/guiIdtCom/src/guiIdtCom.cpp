@@ -49,6 +49,10 @@ extern "C" lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
 #define GUIIDTCOM_SELF_INFO_SZIE (1400)
 #define GUIIDTCOM_RELEASE_MIC (void *)1
 #define GUIIDTCOM_REQUEST_MIC (void *)2
+#define GUIIDTCOM_MEMBER_CALL_HALFSINGLE "HALFSINGLE"
+#define GUIIDTCOM_MEMBER_CALL_NORMAL "NORMAL"
+#define GUIIDTCOM_MEMBER_CALL_MARK "{\"pfCallIn\": \"HALFSINGLE\"}"
+#define GUIIDTCOM_GROUP_CALL_MARK "{\"pfCallIn\": \"NORMAL\"}"
 
 enum{
 	USER_OPRATOR_START_SPEAK = 3,
@@ -62,6 +66,8 @@ char *GetCauseStr(USHORT usCause);
 char *GetOamOptStr(DWORD dwOpt);
 char *GetSrvTypeStr(SRV_TYPE_e SrvType);
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length);
+static int LvGuiIdtCom_self_info_json_parse_status(void);
+static bool LvGuiIdtCom_self_is_member_call(char * info);
 
 
 //--------------------------------------------------------------------------------
@@ -183,6 +189,7 @@ public:
 	Msg_GData_s *pPocMemberList;//组成员结构体
 	Msg_GROUP_MEMBER_s self_info;
 	Msg_GROUP_MEMBER_s speaker;
+	CGroup speaker_group;
 	Msg_GROUP_MEMBER_s member_call_obj;
 	bool is_member_call;
 	int member_call_dir;  //0 tx,  1 rx
@@ -366,26 +373,33 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
     m_IdtUser.m_iTxCount = 0;
     memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
     pocIdtAttr.attr.ucAudioRecv = 1;
+    bool is_member_call = LvGuiIdtCom_self_is_member_call(pcUserMark);
 
     switch (SrvType)
     {
 	    case SRV_TYPE_BASIC_CALL://单呼
 	        {
-		        static Msg_GROUP_MEMBER_s member_call_obj = {0};
-		        memset(&member_call_obj, 0, sizeof(Msg_GROUP_MEMBER_s));
-				strcpy((char *)member_call_obj.ucName, (const char *)pcPeerName);
-				strcpy((char *)member_call_obj.ucNum, (const char *)pcPeerName);
-				member_call_obj.ucStatus = UT_STATUS_ONLINE;
-				pocIdtAttr.attr.ucAudioSend = 1;
-	            IDT_CallAnswer(m_IdtUser.m_iCallId, &pocIdtAttr.attr, NULL);
-	            pocIdtAttr.member_call_dir = 1;
-	            lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
 	        }
 	        break;
 
 	    case SRV_TYPE_CONF://组呼
 	        {
-	            IDT_CallAnswer(m_IdtUser.m_iCallId, &pocIdtAttr.attr, NULL);
+		        IDT_CallAnswer(m_IdtUser.m_iCallId, &pocIdtAttr.attr, NULL);
+		        if(is_member_call)
+	            {
+			        static Msg_GROUP_MEMBER_s member_call_obj = {0};
+			        memset(&member_call_obj, 0, sizeof(Msg_GROUP_MEMBER_s));
+					strcpy((char *)member_call_obj.ucName, (const char *)pcPeerName);
+					strcpy((char *)member_call_obj.ucNum, (const char *)pcPeerName);
+					member_call_obj.ucStatus = UT_STATUS_ONLINE;
+		            pocIdtAttr.member_call_dir = 1;
+		            lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
+	            }
+	            else
+	            {
+					strcpy((char *)pocIdtAttr.speaker_group.m_ucGName, (const char *)pcPeerName);
+					strcpy((char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)pcPeerName);
+	            }
 	        }
 	        break;
 
@@ -711,6 +725,44 @@ static int LvGuiIdtCom_self_info_json_parse_status(void)
 	return 0;
 }
 
+static bool LvGuiIdtCom_self_is_member_call(char * info)
+{
+	bool ret = false;
+	if(info == NULL)
+	{
+		return ret;
+	}
+
+	cJSON * user_mark_cjson = cJSON_Parse(info);
+
+	if(user_mark_cjson == NULL)
+	{
+		return ret;
+	}
+
+	do
+	{
+		cJSON *method_cjson = cJSON_GetObjectItem(user_mark_cjson, "pfCallIn");
+		if(method_cjson == NULL)
+		{
+			break;
+		}
+
+		if(method_cjson->valuestring == NULL)
+		{
+			break;
+		}
+
+		if(strcmp((const char *)GUIIDTCOM_MEMBER_CALL_HALFSINGLE, (const char *)method_cjson->valuestring) != 0)
+		{
+			break;
+		}
+		ret = true;
+	}while(0);
+	cJSON_Delete(user_mark_cjson);
+	return ret;
+}
+
 //--------------------------------------------------------------------------------
 //      用户调试函数
 //  输入:
@@ -840,7 +892,7 @@ void IDT_Entry(void*)
 
     CallBack.pfDbg              = callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"34011", (char*)"34011", 1, &CallBack, 0, 20000, 0);
+    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"34014", (char*)"34014", 1, &CallBack, 0, 20000, 0);
 }
 
 static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
@@ -939,16 +991,18 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				pocIdtAttr.attr.ucAudioSend = 1;
 				SRV_TYPE_e srv_type = SRV_TYPE_NONE;
 				char *dest_num = NULL;
+				char *user_mark = NULL;
 				if(pocIdtAttr.is_member_call)
 				{
-					srv_type = SRV_TYPE_BASIC_CALL;
+					srv_type = SRV_TYPE_SIMP_CALL;
 					dest_num = (char *)pocIdtAttr.member_call_obj.ucNum;
-					pocIdtAttr.attr.ucAudioRecv = 1;
+					user_mark = (char *)GUIIDTCOM_MEMBER_CALL_MARK;
 				}
 				else
 				{
 					srv_type = SRV_TYPE_CONF;
 					dest_num = (char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum;
+					user_mark = (char *)GUIIDTCOM_GROUP_CALL_MARK;
 				}
 				OSI_LOGI(0, "[gic][gicmic] create a callid\n");
 				m_IdtUser.m_iCallId = IDT_CallMakeOut(dest_num,
@@ -959,7 +1013,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					1,
 					0,
 					1,
-					NULL);
+					user_mark);
 			}
 			else
 			{
@@ -1694,17 +1748,17 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 
 						memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
 						pocIdtAttr.attr.ucAudioSend = 1;
-						pocIdtAttr.attr.ucAudioRecv = 1;
 						pocIdtAttr.is_member_call = true;
+						char *user_mark = (char *)GUIIDTCOM_MEMBER_CALL_MARK;
 						m_IdtUser.m_iCallId = IDT_CallMakeOut((char*)pocIdtAttr.member_call_obj.ucNum,
-																	SRV_TYPE_BASIC_CALL,
+																	SRV_TYPE_SIMP_CALL,
 																	&pocIdtAttr.attr,
 																	NULL,
 																	NULL,
 																	1,
 																	0,
 																	1,
-																	NULL);
+																	user_mark);
 					}
 					else
 					{
@@ -1778,14 +1832,21 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 		case LVPOCGUIIDTCOM_SIGNAL_LISTEN_SPEAKER_REP:
 		{
 			char speaker_name[100];
-			char *speaker_group = (char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGName;
+			char *speaker_group = (char *)pocIdtAttr.speaker_group.m_ucGName;
 			memset(speaker_name, 0, sizeof(char) * 100);
 			strcpy(speaker_name, (const char *)pocIdtAttr.speaker.ucName);
 			strcat(speaker_name, (const char *)"正在讲话");
 			//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "正在聆听", NULL);
 			//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在聆听", NULL);
-			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, speaker_name, speaker_group);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)speaker_group);
+			if(!pocIdtAttr.is_member_call)
+			{
+				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, speaker_name, speaker_group);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)speaker_group);
+			}
+			else
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, NULL);
+			}
 			break;
 		}
 
