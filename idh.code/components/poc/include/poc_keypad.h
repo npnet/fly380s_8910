@@ -17,6 +17,7 @@
 #include "poc_config.h"
 #include "hal_keypad_def.h"
 #include "drv_keypad.h"
+#include "lvgl.h"
 
 #define POC_KEY_PTT
 #define POC_KEY_VOLUM_DOWN
@@ -30,7 +31,7 @@
 
 OSI_EXTERN_C_BEGIN
 
-bool pocKeypadHandle(keyMap_t id, keyState_t evt, void *p);
+bool pocKeypadHandle(uint32_t id, lv_indev_state_t evt, void *p);
 
 bool pocGetPttKeyState(void);
 

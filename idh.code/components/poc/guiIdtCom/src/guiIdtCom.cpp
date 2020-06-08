@@ -68,6 +68,7 @@ char *GetSrvTypeStr(SRV_TYPE_e SrvType);
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length);
 static int LvGuiIdtCom_self_info_json_parse_status(void);
 static bool LvGuiIdtCom_self_is_member_call(char * info);
+static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx);
 
 
 //--------------------------------------------------------------------------------
@@ -196,6 +197,8 @@ public:
 	unsigned int mic_ctl;
 	DWORD current_group;
 	DWORD query_group;
+	osiTimer_t * delay_close_listen_timer;
+	bool delay_close_listen_timer_running;
 	char self_info_cjson_str[GUIIDTCOM_SELF_INFO_SZIE];
 	cJSON * self_info_cjson;
 } PocGuiIIdtComAttr_t;
@@ -536,15 +539,28 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
     {
 	    if(m_IdtUser.m_status >= USER_OPRATOR_START_LISTEN && m_IdtUser.m_status <= USER_OPRATOR_LISTENNING)
 	    {
-		    if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
+		    if(pocIdtAttr.delay_close_listen_timer != NULL)
 		    {
-			    m_IdtUser.m_status = UT_STATUS_ONLINE;
+			    if(pocIdtAttr.delay_close_listen_timer_running)
+			    {
+				    osiTimerStop(pocIdtAttr.delay_close_listen_timer);
+				    pocIdtAttr.delay_close_listen_timer_running = false;
+			    }
+			    osiTimerStart(pocIdtAttr.delay_close_listen_timer, 560);
+			    pocIdtAttr.delay_close_listen_timer_running = true;
 		    }
-		    m_IdtUser.m_iRxCount = 0;
-		    m_IdtUser.m_iTxCount = 0;
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
+		    else
+		    {
+			    if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
+			    {
+				    m_IdtUser.m_status = UT_STATUS_ONLINE;
+			    }
+			    m_IdtUser.m_iRxCount = 0;
+			    m_IdtUser.m_iTxCount = 0;
+				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
+				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
+				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
+		    }
 	    }
 	    return 0;
     }
@@ -761,6 +777,19 @@ static bool LvGuiIdtCom_self_is_member_call(char * info)
 	}while(0);
 	cJSON_Delete(user_mark_cjson);
 	return ret;
+}
+static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx)
+{
+	pocIdtAttr.delay_close_listen_timer_running = false;
+    if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
+    {
+	    m_IdtUser.m_status = UT_STATUS_ONLINE;
+    }
+    m_IdtUser.m_iRxCount = 0;
+    m_IdtUser.m_iTxCount = 0;
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
 }
 
 //--------------------------------------------------------------------------------
@@ -1980,6 +2009,17 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 	}
 }
 
+static void prvPocGuiIdtTaskHandleReleaseListenTimer(uint32_t id, uint32_t ctx)
+{
+	if(pocIdtAttr.delay_close_listen_timer == NULL)
+	{
+		return;
+	}
+
+	osiTimerDelete(pocIdtAttr.delay_close_listen_timer);
+	pocIdtAttr.delay_close_listen_timer = NULL;
+}
+
 static void pocGuiIdtComTaskEntry(void *argument)
 {
 
@@ -2127,6 +2167,12 @@ static void pocGuiIdtComTaskEntry(void *argument)
 				break;
 			}
 
+			case LVPOCGUIIDTCOM_SIGNAL_RELEASE_LISTEN_TIMER_REP:
+			{
+				prvPocGuiIdtTaskHandleReleaseListenTimer(event.param1, event.param2);
+				break;
+			}
+
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");
 				break;
@@ -2166,6 +2212,7 @@ static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 extern "C" void lvPocGuiIdtCom_Init(void)
 {
 	memset(&pocIdtAttr, 0, sizeof(PocGuiIIdtComAttr_t));
+	pocIdtAttr.delay_close_listen_timer = osiTimerCreate(NULL, LvGuiIdtCom_delay_close_listen_timer_cb, NULL);
 	pocGuiIdtComStart();
 }
 

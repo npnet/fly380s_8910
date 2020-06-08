@@ -22,19 +22,31 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "lv_include/lv_poc_type.h"
+#include "lv_include/lv_poc_lib.h"
 #include "guiIdtCom_api.h"
 
-static keyState_t preKeyState = 0xff;
-static keyMap_t   preKey      = 0xff;
-static keyState_t prvPttKeyState = 0xff;
-bool pocKeypadHandle(keyMap_t id, keyState_t evt, void *p)
+static lv_indev_state_t preKeyState = 0xff;
+static uint32_t   preKey      = 0xff;
+static lv_indev_state_t prvPttKeyState = 0xff;
+static lv_indev_state_t prvPowerKeyState = 0xff;
+static osiTimer_t * prvPowerTimer = NULL;
+static bool isReadyPowerOff = false;
+
+static void prvPowerKeyCb(void *ctx)
 {
-	bool ret = true;
-	if(id == KEY_MAP_4) //poc
+	isReadyPowerOff = true;
+    osiShutdown(OSI_SHUTDOWN_POWER_OFF);
+}
+
+bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
+{
+	bool ret = false;
+	if(id == LV_GROUP_KEY_POC) //poc
 	{
-		if(prvPttKeyState != evt)
+		if(prvPttKeyState != state)
 		{
-			if(evt == KEY_STATE_PRESS)
+			if(state == LV_INDEV_STATE_PR)
 			{
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
@@ -45,11 +57,48 @@ bool pocKeypadHandle(keyMap_t id, keyState_t evt, void *p)
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 			}
 		}
-		prvPttKeyState = evt;
+		prvPttKeyState = state;
+		ret = true;
+	}
+	else if(id == 0xf0)
+	{
+		if(prvPowerTimer == NULL)
+		{
+			prvPowerTimer = osiTimerCreate(NULL, prvPowerKeyCb, NULL);
+		}
+
+		if(prvPowerKeyState != state)
+		{
+			if(state == LV_INDEV_STATE_PR)
+			{
+				if(prvPowerTimer != NULL)
+				{
+					osiTimerStart(prvPowerTimer, 5000);
+					isReadyPowerOff = false;
+				}
+			}
+			else
+			{
+				if(prvPowerTimer != NULL)
+				{
+		            if (isReadyPowerOff)
+		            {
+		                //osiDelayUS(1000 * 100);
+		                //osiShutdown(OSI_SHUTDOWN_POWER_OFF);
+		            }
+		            else
+		            {
+						osiTimerStop(prvPowerTimer);
+						poc_set_lcd_status(!poc_get_lcd_status());
+		            }
+				}
+			}
+		}
+		prvPowerKeyState = state;
 		ret = true;
 	}
 	preKey = id;
-	preKeyState = evt;
+	preKeyState = state;
 	return ret;
 }
 
