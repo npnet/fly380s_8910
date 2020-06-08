@@ -215,10 +215,6 @@ static bool prvLvInitLcd(void)
 static void prvKeypadCallback(keyMap_t key, keyState_t evt, void *p)
 {
     lvGuiContext_t *d = &gLvGuiCtx;
-    if(!pocKeypadHandle(key, evt, p))
-    {
-	    return;
-    }
     d->last_key = key;
     d->last_key_state = evt;
     d->keypad_pending = true;
@@ -256,7 +252,10 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
             }
         }
 
-        lvGuiScreenOn();
+	    if(!pocKeypadHandle(data->key, data->state, NULL))
+	    {
+		    lvGuiScreenOn();
+	    }
     }
 
     // no more to be read
