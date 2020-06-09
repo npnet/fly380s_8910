@@ -1310,6 +1310,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     if(is_keypad_msg)
     {
 		cur_key = *((uint32_t *)param);
+
 		OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] cur_key <- %d \n", cur_key);
 		if(cur_key == LV_GROUP_KEY_VOL_DOWN)
         {
@@ -2084,6 +2085,8 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
     }
     else
     {
+		#if 0
+		#else
         if(battery_t.battery_value >= 100)
         {
             battery_img = &stat_sys_battery_charge_anim100;
@@ -2116,6 +2119,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         {
             battery_img = &stat_sys_battery_charge_anim0;
         }
+		#endif
     }
     return (lv_img_dsc_t *)battery_img;
 }

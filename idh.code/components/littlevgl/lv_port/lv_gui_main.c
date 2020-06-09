@@ -233,7 +233,6 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
     bool keypad_pending = d->keypad_pending;
     d->keypad_pending = false;
     osiExitCritical(critical);
-
     if (keypad_pending)
     {
         data->state = (last_key_state & KEY_STATE_RELEASE) ? LV_INDEV_STATE_REL : LV_INDEV_STATE_PR;
@@ -273,6 +272,9 @@ static bool prvLvInitKeypad(void)
     lv_indev_drv_init(&kp_drv);
     kp_drv.type = LV_INDEV_TYPE_KEYPAD;
     kp_drv.read_cb = prvLvKeypadRead;
+	kp_drv.long_press_time = 1000;
+	kp_drv.long_press_rep_time = 400;
+
     d->keypad = lv_indev_drv_register(&kp_drv); // pointer copy
 
     drvKeypadInit(); // permit multiple calls
