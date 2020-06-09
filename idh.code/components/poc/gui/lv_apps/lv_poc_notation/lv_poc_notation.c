@@ -224,8 +224,8 @@ void lv_poc_notation_refresh(void)
 	}
 	else if(notationwindows_size == 2)//2行消息
 	{
-		//重新设置消息框原点															//消息框拉高		LV_VER_RES / 3
-		lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 3/ 80, LV_VER_RES / 4);
+		//重新设置消息框原点															//消息框拉高		LV_VER_RES / 3(中间)
+		lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 3/ 80, LV_VER_RES / 4);//（空白的中间）
 		//重新设置消息框高度
 		lv_obj_set_height(lv_poc_notationwindow_obj,LV_VER_RES / 2);
 
