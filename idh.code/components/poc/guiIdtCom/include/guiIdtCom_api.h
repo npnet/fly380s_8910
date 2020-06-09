@@ -102,6 +102,8 @@ void *lvPocGuiIdtCom_get_self_info(void);
 
 void *lvPocGuiIdtCom_get_current_group_info(void);
 
+int lvPocGuiIdtCom_listen_status(void);
+
 OSI_EXTERN_C_END
 
 #endif

@@ -216,11 +216,12 @@ lv_poc_get_time(OUT lv_poc_time_t * time)
     time_t lt = osiEpochSecond();
     gmtime_r(&lt, &system_time);
     system_time.tm_hour = system_time.tm_hour + 8;
+	system_time.tm_mon = system_time.tm_mon + 1;/*优化月份 + 1 0-11*/
 	if(system_time.tm_hour > 23)
 	{
 		system_time.tm_hour = system_time.tm_hour % 24;
 		system_time.tm_mday = system_time.tm_mday + 1;
-		switch(system_time.tm_mon)
+		switch(system_time.tm_mon)//月份0-11
 		{
 			case 1:
 			case 3:
@@ -364,7 +365,7 @@ void
 poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 {
 	static auPlayer_t * player = NULL;
-	if(!quiet)
+	if(!quiet && (!lvPocGuiIdtCom_listen_status()))
 	{
 		extern lv_poc_audio_dsc_t lv_poc_audio_msg;
 		if(NULL == player)
