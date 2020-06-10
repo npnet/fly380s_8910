@@ -24,7 +24,7 @@ char cNtpServer[AT_SNTP_SERVER_MAX_LEN + 1];
 
 /*****************************************************************************
 * Name:        sntpSyncDoneCB
-* Description: sntp callback 
+* Description: sntp callback
 * Parameter:  void *param
 * Return:       viod
 * Remark:      n/a
@@ -51,7 +51,7 @@ void sntpSyncDoneCB(void *param)
 
 /*****************************************************************************
 * Name:        sntpSyncDone
-* Description:  finish sntp sync and callback 
+* Description:  finish sntp sync and callback
 * Parameter:  void *param
 * Return:       viod
 * Remark:      n/a
@@ -65,7 +65,7 @@ void sntpSyncDone(void *param)
 
 /*****************************************************************************
 * Name:        sntpConfigInit
-* Description: sntp client config init 
+* Description: sntp client config init
 * Parameter:  void
 * Return:       void
 * Remark:      n/a
@@ -85,7 +85,7 @@ void sntpConfigInit()
 
 /*****************************************************************************
 * Name:        sntpUpdateStart
-* Description:  start sntp sync operation 
+* Description:  start sntp sync operation
 * Parameter:  void
 * Return:       sntp_status_t
 * Remark:      n/a
@@ -99,7 +99,7 @@ sntp_status_t sntpUpdateStart()
 
 /*****************************************************************************
 * Name:        AT_CmdFunc_SNTP
-* Description:  Sync system time with the NTP server 
+* Description:  Sync system time with the NTP server
 * Parameter:  atCommand_t *cmd
 * Return:       void
 * Remark:      n/a
