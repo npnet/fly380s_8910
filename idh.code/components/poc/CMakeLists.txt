@@ -42,6 +42,7 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_member_call/lv_poc_member_call.c
 	gui/lv_apps/lv_poc_notation/lv_poc_notation.c
 	gui/lv_apps/lv_poc_led/lv_poc_led.c
+	gui/lv_apps/lv_poc_sntp/lv_poc_sntp.c
 
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c
@@ -252,7 +253,8 @@ add_library(${target} STATIC
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_POC)
 target_include_directories(${target} PUBLIC include gui idt/include idt/src guiIdtCom/include guiIdtCom/src cJSON)
-target_include_targets(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts net)
+target_include_targets(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts net lwip)
+
 
 relative_glob(srcs */*.h */*.c)
 beautify_c_code(${target} ${srcs})
