@@ -42,7 +42,8 @@ static void pocIdtStartHandleTask(void * ctx)
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0);
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
 	lvPocGuiIdtCom_log();
-
+	/*网络校时*/
+	lv_poc_sntp_Update_Time();
 	osiThreadExit();
 }
 
