@@ -992,7 +992,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 			}
 			LvPocGuiIdtCom_login_t * login_info = (LvPocGuiIdtCom_login_t *)ctx;
 
-		    if (UT_STATUS_ONLINE != login_info->status)
+		    if (UT_STATUS_ONLINE > login_info->status)
 		    {
 			    m_IdtUser.m_status = UT_STATUS_OFFLINE;
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
@@ -1039,10 +1039,11 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 	{
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND:
 		{
-			if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
+			if(m_IdtUser.m_status < UT_STATUS_ONLINE)
 			{
-				m_IdtUser.m_status = USER_OPRATOR_START_SPEAK;
+				break;
 			}
+			m_IdtUser.m_status = USER_OPRATOR_START_SPEAK;
 
 			if(m_IdtUser.m_iCallId == -1)
 			{
@@ -1098,9 +1099,9 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 		{
 			if(m_IdtUser.m_status < UT_STATUS_ONLINE)
 			{
+				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, GUIIDTCOM_RELEASE_MIC);
 				break;
 			}
-
 	        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_RELEASE_MIC);
 			break;
 		}
