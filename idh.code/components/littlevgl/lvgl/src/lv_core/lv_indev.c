@@ -426,17 +426,14 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
         /*Just send other keys to the object (e.g. 'A' or `LV_GROUP_KEY_RIGHT`)*/
         else {
             lv_group_send_data(g, data->key);
-			OSI_LOGI(0, "[asong]Key press happened entry");
         }
     }
     /*Pressing*/
     else if(data->state == LV_INDEV_STATE_PR && prev_state == LV_INDEV_STATE_PR) {
         /*Long press time has elapsed?*/
-		OSI_LOGI(0, "[check][long press] LINE<-%d", __LINE__);
         if(i->proc.long_pr_sent == 0 && lv_tick_elaps(i->proc.pr_timestamp) > i->driver.long_press_time) {
             i->proc.long_pr_sent = 1;
 			i->proc.longpr_rep_timestamp = lv_tick_get();
-			OSI_LOGI(0, "[asong]long press entry");
             if(data->key == LV_KEY_ENTER) {
                 indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS, NULL);
                 if(indev_reset_check(&i->proc)) return;
@@ -447,7 +444,6 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
         /*Long press repeated time has elapsed?*/
         else if(i->proc.long_pr_sent != 0 &&
                 lv_tick_elaps(i->proc.longpr_rep_timestamp) > i->driver.long_press_rep_time) {
-			OSI_LOGI(0, "[check][long press] LINE<-%d", __LINE__);
             i->proc.longpr_rep_timestamp = lv_tick_get();
 
             /*Send LONG_PRESS_REP on ENTER*/
@@ -477,7 +473,6 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
 				|| data->key == 46/*音量减*/)
 			{
 				lv_group_send_data(g, data->key);
-				OSI_LOGI(0, "[asong]long press entry repeated");
 				if(indev_reset_check(&i->proc)) return;
 			}
             /*Just send other keys again to the object (e.g. 'A' or `LV_GORUP_KEY_RIGHT)*/
@@ -494,7 +489,6 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
     else if(data->state == LV_INDEV_STATE_REL && prev_state == LV_INDEV_STATE_PR) {
         /*The user might clear the key when it was released. Always release the pressed key*/
         data->key = prev_key;
-		OSI_LOGI(0, "[check][long press] LINE<-%d", __LINE__);
         if(data->key == LV_KEY_ENTER) {
 
             indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, NULL);

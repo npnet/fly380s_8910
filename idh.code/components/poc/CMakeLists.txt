@@ -242,6 +242,7 @@ add_library(${target} STATIC
 	gui/resource/font/lv_poc_font_msyh_1bit_6500_9.c
 
 	gui/resource/audiofile/lv_poc_audio_msg.c
+	gui/resource/audiofile/lv_poc_audio_start_machine.c
 
 	idt/src/app_test.cpp
 	idt/core/idt-freertos.o
