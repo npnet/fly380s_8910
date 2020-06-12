@@ -1632,17 +1632,19 @@ static void prvPocGuiIdtTaskHandlePlay(uint32_t id, uint32_t ctx)
 		case LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND:
 		{
 			pocAudioPlayerStop(pocIdtAttr.player);
-			audevStopPlay();
 			break;
 		}
 
 		case LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND:
 		{
-			pocAudioPlayerStart(pocIdtAttr.player);
-			if(m_IdtUser.m_status > 0)
+			if(m_IdtUser.m_status < UT_STATUS_ONLINE)
 			{
-				m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
+			    m_IdtUser.m_iRxCount = 0;
+			    m_IdtUser.m_iTxCount = 0;
+				break;
 			}
+			pocAudioPlayerStart(pocIdtAttr.player);
+			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
 			break;
 		}
 
@@ -1660,17 +1662,18 @@ static void prvPocGuiIdtTaskHandleRecord(uint32_t id, uint32_t ctx)
 		case LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND:
 		{
 			pocAudioRecorderStop(pocIdtAttr.recorder);
-			audevStopRecord();
 			break;
 		}
 
 		case LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND:
 		{
-			pocAudioRecorderStart(pocIdtAttr.recorder);
-			if(m_IdtUser.m_status > 0)
+			if(m_IdtUser.m_status < UT_STATUS_ONLINE)
 			{
-				m_IdtUser.m_status = USER_OPRATOR_SPEAKING;
+				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, GUIIDTCOM_RELEASE_MIC);
+				break;
 			}
+			pocAudioRecorderStart(pocIdtAttr.recorder);
+			m_IdtUser.m_status = USER_OPRATOR_SPEAKING;
 			break;
 		}
 
