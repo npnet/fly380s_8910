@@ -488,7 +488,7 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 
     if(status >= USER_OPRATOR_START_SPEAK && status <= USER_OPRATOR_SPEAKING)
     {
-	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, NULL);
+	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)status);
     }
 
     if(status >= USER_OPRATOR_START_LISTEN && status <= USER_OPRATOR_LISTENNING)
@@ -1107,10 +1107,13 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP:
 		{
-			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, "停止对讲", NULL);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"停止对讲", NULL);
-			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, NULL, NULL);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+			if(ctx == USER_OPRATOR_SPEAKING)
+			{
+				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, "停止对讲", NULL);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"停止对讲", NULL);
+				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, NULL, NULL);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+			}
 			break;
 		}
 
@@ -1191,7 +1194,7 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				if(status >= USER_OPRATOR_START_SPEAK && status <= USER_OPRATOR_SPEAKING)
 				{
 					//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "释放话权", NULL);
-			        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, NULL);
+			        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)status);
 				}
 				pocIdtAttr.mic_ctl = mic_ctl;
 			}
@@ -1219,24 +1222,21 @@ static void prvPocGuiIdtTaskHandleGroupList(uint32_t id, uint32_t ctx)
 			//IDT_UQueryG(0, pocIdtAttr.self_info.ucNum);
 			do
 			{
-
 				if(pocIdtAttr.pocGetGroupListCb == NULL)
 				{
-
 					break;
 				}
 
 
 				if(m_IdtUser.m_Group.m_Group_Num < 1)
 				{
-
 					pocIdtAttr.pocGetGroupListCb(0, 0, NULL);
 					break;
 				}
 
 				pocIdtAttr.pocGetGroupListCb(1, m_IdtUser.m_Group.m_Group_Num, m_IdtUser.m_Group.m_Group);
-				pocIdtAttr.pocGetGroupListCb = NULL;
 			}while(0);
+			pocIdtAttr.pocGetGroupListCb = NULL;
 
 			break;
 		}
@@ -1266,24 +1266,21 @@ static void prvPocGuiIdtTaskHandleGroupList(uint32_t id, uint32_t ctx)
 			#if 0
 			do
 			{
-
 				if(pocIdtAttr.pocGetGroupListCb == NULL)
 				{
-
 					break;
 				}
 
 
 				if(m_IdtUser.m_Group.m_Group_Num < 1)
 				{
-
 					pocIdtAttr.pocGetGroupListCb(0, 0, NULL);
 					break;
 				}
 
 				pocIdtAttr.pocGetGroupListCb(1, m_IdtUser.m_Group.m_Group_Num, m_IdtUser.m_Group.m_Group);
-				pocIdtAttr.pocGetGroupListCb = NULL;
 			}while(0);
+			pocIdtAttr.pocGetGroupListCb = NULL;
 			#endif
 
 		    Func_GQueryU(0, pGInfo->stGInfo[pocIdtAttr.current_group].ucNum);
@@ -1320,6 +1317,11 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 		case LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND:
 		{
 			if(ctx == 0)
+			{
+				break;
+			}
+
+			if(pocIdtAttr.pocBuildGroupCb == NULL)
 			{
 				break;
 			}
