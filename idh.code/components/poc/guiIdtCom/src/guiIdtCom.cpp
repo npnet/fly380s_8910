@@ -2197,11 +2197,17 @@ extern "C" bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ct
 	    return false;
     }
 
-	osiEvent_t event = {0};
+	static osiEvent_t event = {0};
+
+	uint32_t critical = osiEnterCritical();
+
 	memset(&event, 0, sizeof(osiEvent_t));
 	event.id = 100;
 	event.param1 = signal;
 	event.param2 = (uint32_t)ctx;
+
+	osiExitCritical(critical);
+
 	return osiEventSend(pocIdtAttr.thread, &event);
 }
 
