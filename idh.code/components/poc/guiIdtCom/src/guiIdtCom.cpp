@@ -1982,13 +1982,6 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 			}
 			LvPocGuiIdtCom_Group_Operator_t *grop = (LvPocGuiIdtCom_Group_Operator_t *)ctx;
 
-
-			if(pocIdtAttr.pPocMemberList == NULL)
-			{
-				pocIdtAttr.pPocMemberList = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
-				memset(pocIdtAttr.pPocMemberList, 0, sizeof(unsigned long));
-			}
-
 			if (OPT_G_QUERYUSER == grop->dwOptCode)
 			{
 				if (CAUSE_ZERO != grop->wRes)
@@ -2224,6 +2217,7 @@ static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 extern "C" void lvPocGuiIdtCom_Init(void)
 {
 	memset(&pocIdtAttr, 0, sizeof(PocGuiIIdtComAttr_t));
+	pocIdtAttr.pPocMemberList = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
 	pocIdtAttr.delay_close_listen_timer = osiTimerCreate(NULL, LvGuiIdtCom_delay_close_listen_timer_cb, NULL);
 	pocGuiIdtComStart();
 }
