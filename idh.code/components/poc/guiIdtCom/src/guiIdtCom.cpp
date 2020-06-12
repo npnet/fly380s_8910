@@ -344,8 +344,6 @@ int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName
 
 	if(m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)
 	{
-		OSI_LOGI(0, "[gic][gicmic] send msg to get mic ctl on new callid\n");
-	    //lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_REQUEST_MIC);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, (void *)2);
     }
 
@@ -481,7 +479,6 @@ int callback_IDT_CallMicInd(void *pUsrCtx, UINT uiInd)
     IDT_TRACE("callback_IDT_CallMicInd: pUsrCtx=0x%x, uiInd=%d", pUsrCtx, uiInd);
     // 0本端不讲话
     // 1本端讲话
-    OSI_LOGI(0, "[gic][gicmic] call mic ctl callback\n");
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, (void *)(uiInd + 1));
     return 0;
 }
@@ -504,16 +501,13 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 {
     IDT_TRACE("callback_IDT_CallRecvAudioData: pUsrCtx=0x%x, dwStreamId=%d, ucCodec=%d pucBuf=0x%x iLen=%d dwTsOfs=%d dwTsLen=%d dwTs=%d",
 	    pUsrCtx, dwStreamId, ucCodec, pucBuf, iLen, dwTsOfs, dwTsLen, dwTs);
-		OSI_LOGI(0, "callback_IDT_CallRecvAudioData LINE=%d \n", __LINE__);
 	if(m_IdtUser.m_status >= USER_OPRATOR_START_LISTEN || m_IdtUser.m_status <= USER_OPRATOR_LISTENNING)
 	{
-		OSI_LOGI(0, "callback_IDT_CallRecvAudioData deal data\n");
 	    m_IdtUser.m_iRxCount = m_IdtUser.m_iRxCount + 1;
 
 		pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pucBuf, iLen);
 		if(m_IdtUser.m_iRxCount == 10)
 		{
-			OSI_LOGI(0, "callback_IDT_CallRecvAudioData start play\n");
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND, NULL);
 		}
@@ -1041,7 +1035,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					dest_num = (char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum;
 					user_mark = (char *)GUIIDTCOM_GROUP_CALL_MARK;
 				}
-				OSI_LOGI(0, "[gic][gicmic] create a callid\n");
 				m_IdtUser.m_iCallId = IDT_CallMakeOut(dest_num,
 					srv_type,
 					&pocIdtAttr.attr,
@@ -1054,7 +1047,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			}
 			else
 			{
-				OSI_LOGI(0, "[gic][gicmic] send msg to get mic ctl on have a callid\n");
 		        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_REQUEST_MIC);
 			}
 			break;
@@ -1140,7 +1132,6 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 					m_IdtUser.m_iTxCount = 0;
 					//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "获得话权", NULL);
 
-					OSI_LOGI(0, "[gic][gicmic] get mic ctl\n");
 					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 
@@ -1165,7 +1156,6 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				m_IdtUser.m_iRxCount = 0;
 				m_IdtUser.m_iTxCount = 0;
 
-				OSI_LOGI(0, "[gic][gicmic] give up mic ctl\n");
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 
@@ -2146,7 +2136,6 @@ static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 		//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 	    return;
     }
-    OSI_LOGI(0, "lvPocGuiIdtCom_send_data_callback send data to server\n");
     IDT_CallSendAuidoData(m_IdtUser.m_iCallId,
 						    0,
 						    0,
