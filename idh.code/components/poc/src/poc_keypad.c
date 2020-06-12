@@ -58,7 +58,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 			}
 		}
 		prvPttKeyState = state;
-		ret = true;
+		ret = false;
 	}
 	else if(id == 0xf0)
 	{
