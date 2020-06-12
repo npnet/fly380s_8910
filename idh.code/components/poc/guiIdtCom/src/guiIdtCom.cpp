@@ -388,6 +388,8 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
     {
 	    case SRV_TYPE_BASIC_CALL://单呼
 	        {
+		        IDT_CallRel(ID, NULL, CAUSE_SRV_NOTSUPPORT);
+		        m_IdtUser.m_iCallId = -1;
 	        }
 	        break;
 
@@ -398,17 +400,47 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 	            {
 			        static Msg_GROUP_MEMBER_s member_call_obj = {0};
 			        memset(&member_call_obj, 0, sizeof(Msg_GROUP_MEMBER_s));
-					strcpy((char *)member_call_obj.ucName, (const char *)pcPeerName);
-					strcpy((char *)member_call_obj.ucNum, (const char *)pcPeerName);
+			        if(pcPeerName != NULL)
+			        {
+						strcpy((char *)member_call_obj.ucName, (const char *)pcPeerName);
+					}
+					else
+					{
+					member_call_obj.ucName[0] = 0;
+					}
+
+			        if(pcPeerNum != NULL)
+			        {
+						strcpy((char *)member_call_obj.ucNum, (const char *)pcPeerNum);
+					}
+					else
+					{
+						member_call_obj.ucNum[0] = 0;
+					}
 					member_call_obj.ucStatus = UT_STATUS_ONLINE;
 		            pocIdtAttr.member_call_dir = 1;
 		            lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
 	            }
 	            else
 	            {
-					strcpy((char *)pocIdtAttr.speaker_group.m_ucGName, (const char *)pcPeerName);
-					strcpy((char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)pcPeerName);
-	            }
+			        if(pcPeerName != NULL)
+			        {
+						strcpy((char *)pocIdtAttr.speaker_group.m_ucGName, (const char *)pcPeerName);
+					}
+					else
+					{
+						pocIdtAttr.speaker_group.m_ucGName[0] = 0;
+					}
+
+			        if(pcPeerNum != NULL)
+			        {
+						strcpy((char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)pcPeerNum);
+					}
+					else
+					{
+						pocIdtAttr.speaker_group.m_ucGNum[0] = 0;
+					}
+	           }
 	        }
 	        break;
 
@@ -1027,14 +1059,19 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				{
 					srv_type = SRV_TYPE_SIMP_CALL;
 					dest_num = (char *)pocIdtAttr.member_call_obj.ucNum;
+					pocIdtAttr.speaker_group.m_ucGName[0] = 0;
+					pocIdtAttr.speaker_group.m_ucGNum[0] = 0;
 					user_mark = (char *)GUIIDTCOM_MEMBER_CALL_MARK;
 				}
 				else
 				{
 					srv_type = SRV_TYPE_CONF;
 					dest_num = (char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum;
+					strcpy((char *)pocIdtAttr.speaker_group.m_ucGName, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGName);
+					strcpy((char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum);
 					user_mark = (char *)GUIIDTCOM_GROUP_CALL_MARK;
 				}
+
 				m_IdtUser.m_iCallId = IDT_CallMakeOut(dest_num,
 					srv_type,
 					&pocIdtAttr.attr,
