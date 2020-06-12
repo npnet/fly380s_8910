@@ -1176,64 +1176,6 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				}
 				pocIdtAttr.mic_ctl = mic_ctl;
 			}
-
-#if 0
-			if(pocIdtAttr.mic_ctl == 0)
-			{
-				break;
-			}
-
-			if(mic_ctl > 1 && pocIdtAttr.mic_ctl > 1)  //申请话权成功
-			{
-				if(m_IdtUser.m_status > 0)
-				{
-					m_IdtUser.m_status = USER_OPRATOR_START_SPEAK;
-				}
-				m_IdtUser.m_iRxCount = 0;
-				m_IdtUser.m_iTxCount = 0;
-
-				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "申请话权成功", NULL);
-				if(m_IdtUser.m_status == USER_OPRATOR_START_LISTEN || m_IdtUser.m_status == USER_OPRATOR_LISTENNING)
-				{
-				    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
-				}
-
-			    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
-			    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
-			}
-			else if(mic_ctl <= 1 && pocIdtAttr.mic_ctl > 1)  //申请话权失败
-			{
-				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "申请话权失败", NULL);
-			}
-			else if(mic_ctl <= 1 && pocIdtAttr.mic_ctl <= 1) //释放话权成功
-			{
-				int status = m_IdtUser.m_status;
-
-		        if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
-		        {
-			        m_IdtUser.m_status = UT_STATUS_ONLINE;
-		        }
-				m_IdtUser.m_iRxCount = 0;
-				m_IdtUser.m_iTxCount = 0;
-
-		        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
-
-				if(status >= USER_OPRATOR_START_SPEAK && status <= USER_OPRATOR_SPEAKING)
-				{
-					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "释放话权成功", NULL);
-			        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, NULL);
-				}
-			}
-			else if(mic_ctl > 1 && pocIdtAttr.mic_ctl <= 1)  //释放话权失败
-			{
-				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "释放话权失败", NULL);
-				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_RELEASE_MIC);
-			}
-			else
-			{
-				break;
-			}
-#endif
 			break;
 		}
 
