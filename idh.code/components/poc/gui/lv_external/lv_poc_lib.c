@@ -354,6 +354,111 @@ poc_set_lcd_blacklight(IN int8_t blacklight)
 	drvLcdSetBackLightNess(NULL, blacklight);
 }
 
+static osiThread_t * prv_play_btn_voice_one_time_thread = NULL;
+static auPlayer_t * prv_play_btn_voice_one_time_player = NULL;
+static osiThread_t * prv_play_voice_one_time_thread = NULL;
+static auPlayer_t * prv_play_voice_one_time_player = NULL;
+extern lv_poc_audio_dsc_t lv_poc_audio_msg;
+extern lv_poc_audio_dsc_t lv_poc_audio_start_machine;
+
+static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
+{
+	do
+	{
+		if(NULL == prv_play_btn_voice_one_time_player)
+		{
+			prv_play_btn_voice_one_time_player = auPlayerCreate();
+			if(NULL == prv_play_btn_voice_one_time_player)
+			{
+				break;
+			}
+		}
+		auPlayerStop(prv_play_btn_voice_one_time_player);
+	    auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
+	    auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
+		auPlayerStartMem(prv_play_btn_voice_one_time_player, AUSTREAM_FORMAT_PCM, params, lv_poc_audio_msg.data, lv_poc_audio_msg.data_size);
+		osiThreadSleep(140);
+		auPlayerStop(prv_play_btn_voice_one_time_player);
+	}while(0);
+	prv_play_btn_voice_one_time_thread = NULL;
+	osiThreadExit();
+}
+
+static void prv_play_voice_one_time_thread_callback(void * ctx)
+{
+    auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
+   auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
+	bool isPlayVoice = false;
+	osiEvent_t event = {0};
+	LVPOCAUDIO_Type_e voice_queue[10] = {0};
+	int voice_queue_reader = 0;
+	int voice_queue_writer = 0;
+	LVPOCAUDIO_Type_e voice_type = 0;
+
+	while(1)
+{
+		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 50))
+		{
+		if(event.id != 101)
+			{
+				continue;
+			}
+
+			voice_type = event.param1;
+
+			if(event.param2 > 0)
+			{
+				if(isPlayVoice)
+				{
+					auPlayerStop(prv_play_voice_one_time_player);
+					isPlayVoice = false;
+				}
+			}
+		else if(isPlayVoice)
+			{
+				voice_queue[voice_queue_writer] = voice_type;
+				voice_queue_writer = (voice_queue_writer + 1) % 10;
+				continue;
+			}
+		}
+		else
+		{
+			if(isPlayVoice)
+			{
+				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 40))
+				{
+					auPlayerStop(prv_play_voice_one_time_player);
+					isPlayVoice = false;
+				}
+				else
+				{
+				continue;
+				}
+		}
+
+			if(voice_queue_reader == voice_queue_writer)
+			{
+				continue;
+			}
+			voice_type = voice_queue[voice_queue_reader];
+			voice_queue_reader = (voice_queue_reader + 1) % 10;
+		}
+
+		if(voice_type <= LVPOCAUDIO_Type_Start_Index || voice_type >= LVPOCAUDIO_Type_End_Index)
+		{
+			continue;
+		}
+
+		if(voice_type == LVPOCAUDIO_Type_Start_Machine)
+		{
+			auPlayerStartMem(prv_play_voice_one_time_player, AUSTREAM_FORMAT_MP3, params, lv_poc_audio_start_machine.data, lv_poc_audio_start_machine.data_size);
+			isPlayVoice = true;
+		}
+	}
+
+	osiThreadExit();
+}
+
 /*
       name : poc_play_btn_voice_one_time
      param :
@@ -364,25 +469,53 @@ poc_set_lcd_blacklight(IN int8_t blacklight)
 void
 poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 {
-	static auPlayer_t * player = NULL;
 	if(!quiet && (!lvPocGuiIdtCom_listen_status()))
 	{
-		extern lv_poc_audio_dsc_t lv_poc_audio_msg;
-		if(NULL == player)
+		if(prv_play_btn_voice_one_time_thread != NULL)
 		{
-			player = auPlayerCreate();
-			if(NULL == player)
-			{
-				return;
-			}
-		}
-		auPlayerStop(player);
-	    auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
-	    auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
-		auPlayerStartMem(player, AUSTREAM_FORMAT_PCM, params, lv_poc_audio_msg.data, lv_poc_audio_msg.data_size);
+			return;
+		}prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_LOW, 1024*3, 64);
 	}
 }
 
+/*
+      name : poc_play_voice_one_time
+     param :
+     			[voice_type] type
+      date : 2020-06-11
+*/
+void
+poc_play_voice_one_time(IN       LVPOCAUDIO_Type_e voice_type, IN bool isBreak)
+{
+	if(NULL != prv_play_btn_voice_one_time_player)
+	{
+		auPlayerStop(prv_play_btn_voice_one_time_player);
+	}
+
+	if(NULL == prv_play_voice_one_time_player)
+	{
+		prv_play_voice_one_time_player = auPlayerCreate();
+		if(NULL == prv_play_voice_one_time_player)
+		{
+			return;
+	}
+	}
+
+	if(prv_play_voice_one_time_thread == NULL)
+	{
+		prv_play_voice_one_time_thread = osiThreadCreate("play_voice", prv_play_voice_one_time_thread_callback, NULL, OSI_PRIORITY_LOW, 1024*3, 64);
+		if(prv_play_voice_one_time_thread == NULL)
+	{
+			return;
+		}
+	}
+
+	osiEvent_t event = {0};
+	event.id = 101;
+	event.param1 = voice_type;
+	event.param2 = (int)isBreak;
+	osiEventSend(prv_play_voice_one_time_thread, &event);
+}
 /*
       name : poc_battery_get_status
      param : point a battery buff

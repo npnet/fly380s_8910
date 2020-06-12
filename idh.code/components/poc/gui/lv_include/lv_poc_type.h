@@ -282,6 +282,12 @@ typedef enum{//呼吸灯周期
 	LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_5000 = 5000	,
 }LVPOCIDTCOM_Led_Period_t;
 
+typedef enum{
+	LVPOCAUDIO_Type_Start_Index,
+	LVPOCAUDIO_Type_Start_Machine,      // 欢迎使用数字公网对讲机
+	LVPOCAUDIO_Type_End_Index,
+} LVPOCAUDIO_Type_e;
+
 typedef struct _list_element_t{
     char name[LIST_ELEMENT_NAME_MAX_LENGTH];
     lv_obj_t * list_item;
