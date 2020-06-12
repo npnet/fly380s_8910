@@ -1627,6 +1627,7 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND, &group_member))
 	{
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_BIUILD_GROUP_CB_IND, func);
 		return false;
 	}
 	return true;
