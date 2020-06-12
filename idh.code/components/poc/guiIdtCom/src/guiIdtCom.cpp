@@ -464,7 +464,6 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 {
     IDT_TRACE("callback_IDT_CallRelInd: ID=%d, pUsrCtx=0x%x, uiCause=%d, m_iCallId=%d", ID, pUsrCtx, uiCause, m_IdtUser.m_iCallId);
-	int call_id = ID;
     m_IdtUser.m_iCallId = -1;
     m_IdtUser.m_iRxCount = 0;
     m_IdtUser.m_iTxCount = 0;
@@ -474,26 +473,22 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
     {
 	    m_IdtUser.m_status = UT_STATUS_ONLINE;
     }
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
-
-    if(pocIdtAttr.is_member_call)
-    {
-	    if(call_id != -1)
-	    {
-		    IDT_CallRel(call_id, NULL, CAUSE_ZERO);
-	    }
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_REP, (void *)0);
-    }
 
     if(status >= USER_OPRATOR_START_SPEAK && status <= USER_OPRATOR_SPEAKING)
     {
+	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)status);
     }
 
     if(status >= USER_OPRATOR_START_LISTEN && status <= USER_OPRATOR_LISTENNING)
     {
+	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
+    }
+
+    if(pocIdtAttr.is_member_call)
+    {
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_REP, (void *)0);
     }
     return 0;
 }
