@@ -315,6 +315,15 @@ void
 poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet);
 
 /*
+      name : poc_play_voice_one_time
+     param :
+     			[voice_type] type
+      date : 2020-06-11
+*/
+void
+poc_play_voice_one_time(IN       LVPOCAUDIO_Type_e voice_type, IN bool isBreak);
+
+/*
       name : poc_battery_get_status
      param : point a battery buff
       date : 2020-03-30
