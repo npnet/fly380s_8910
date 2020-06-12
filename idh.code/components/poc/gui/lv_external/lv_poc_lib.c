@@ -1411,6 +1411,10 @@ lv_poc_check_group_equation(void * A, void *B, void *C, void *D, void *E)
 
 	if(info1 != NULL && info2 != NULL)
 	{
+		if(info1 == info2)
+		{
+			return true;
+		}
 		ret1 = (0 == strcmp((const char *)info1->m_ucGName, (const char *)info2->m_ucGName));
 		ret2 = (0 == strcmp((const char *)info1->m_ucGNum, (const char *)info2->m_ucGNum));
 	}
@@ -1425,6 +1429,10 @@ static int prv_member_list_type  = 0;
 static void
 prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGroup)
 {
+	bool is_self_wrote = false;
+	lv_poc_member_info_t self_info = lv_poc_get_self_info();
+	char *self_name = lv_poc_get_member_name(self_info);
+
 	if(prv_member_list == NULL
 		|| prv_member_list_cb == NULL
 		|| (prv_member_list_type < 1 || prv_member_list_type > 3))
@@ -1479,6 +1487,12 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 		p_element->list_item = NULL;
 		p_element->information = (void *)(&pGroup->member[i]);
 		strcpy(p_element->name, (const char *)(pGroup->member[i].ucName));
+		if(!is_self_wrote && MEMBER_EQUATION(self_name, pGroup->member[i].ucName, self_info, &pGroup->member[i], NULL))
+		{
+			is_self_wrote = true;
+			strcat(p_element->name, (const char *)"[我]");
+		}
+
 		if(pGroup->member[i].ucStatus == 1
 			&& (prv_member_list_type == 2
 			|| prv_member_list_type == 1))//在线
@@ -1578,6 +1592,10 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 
 	if(info1 != NULL && info2 != NULL)
 	{
+		if(info1 == info2)
+		{
+			return true;
+		}
 		ret1 = (0 == strcmp((const char *)info1->ucName, (const char *)info2->ucName));
 		ret2 = (0 == strcmp((const char *)info1->ucNum, (const char *)info2->ucNum));
 	}
@@ -1622,7 +1640,7 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 lv_poc_member_info_t
 lv_poc_get_self_info(void)
 {
-	return (lv_poc_member_info_t *)lvPocGuiIdtCom_get_self_info();
+	return (lv_poc_member_info_t)lvPocGuiIdtCom_get_self_info();
 }
 
 /*

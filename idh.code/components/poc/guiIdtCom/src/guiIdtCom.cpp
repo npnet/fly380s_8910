@@ -2218,17 +2218,16 @@ extern "C" void lvPocGuiIdtCom_log(void)
 
 extern "C" void *lvPocGuiIdtCom_get_self_info(void)
 {
-	if(m_IdtUser.m_status < UT_STATUS_ONLINE || pocIdtAttr.self_info_cjson == NULL)
+	if(m_IdtUser.m_status < UT_STATUS_ONLINE)
 	{
 		return NULL;
 	}
-
 	return (void *)&pocIdtAttr.self_info;
 }
 
 extern "C" void *lvPocGuiIdtCom_get_current_group_info(void)
 {
-	if(m_IdtUser.m_status < UT_STATUS_ONLINE || pocIdtAttr.self_info_cjson == NULL)
+	if(m_IdtUser.m_status < UT_STATUS_ONLINE)
 	{
 		return NULL;
 	}

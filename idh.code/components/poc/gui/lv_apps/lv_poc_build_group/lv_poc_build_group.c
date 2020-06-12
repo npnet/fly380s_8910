@@ -297,9 +297,6 @@ static void lv_poc_build_group_get_list_cb(int msg_type)
 
 	if(msg_type==1)//显示
 	{
-		lv_poc_member_info_t self_info = lv_poc_get_self_info();
-		char * self_name = lv_poc_get_member_name(self_info);
-		lv_poc_build_group_remove(NULL, self_name, self_info);
 		lv_poc_build_group_refresh(NULL);
 	}
 	else
