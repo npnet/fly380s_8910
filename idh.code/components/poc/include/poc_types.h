@@ -87,6 +87,7 @@ typedef struct
 {
 	auPocMemWriter_t *writer;           //storage data that through write API to record
 	auPocMemReader_t *reader;           //get data from writer to send others
+	bool              prvRestart;       //restart write data
 	auRecorder_t     *recorder;         //real recorder
 	uint8_t          *prvSwapData;      //storage temp data
 	uint32_t          prvSwapDataLength;//length of temp data
