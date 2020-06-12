@@ -972,12 +972,12 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 		{
 			if(pocIdtAttr.player == 0)
 			{
-				pocIdtAttr.player = pocAudioPlayerCreate(320000);
+				pocIdtAttr.player = pocAudioPlayerCreate(81920);
 			}
 
 			if(pocIdtAttr.recorder == 0)
 			{
-				pocIdtAttr.recorder = pocAudioRecorderCreate(48000, 320, 20, lvPocGuiIdtCom_send_data_callback);
+				pocIdtAttr.recorder = pocAudioRecorderCreate(40960, 320, 20, lvPocGuiIdtCom_send_data_callback);
 			}
 
 			if(pocIdtAttr.player == 0 || pocIdtAttr.recorder == 0)
