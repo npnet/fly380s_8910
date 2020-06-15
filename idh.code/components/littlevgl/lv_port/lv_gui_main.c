@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include "poc_keypad.h"
 #include "guiIdtCom_api.h"
+#include "lv_include/lv_poc.h"
+
 
 typedef struct
 {
@@ -468,6 +470,7 @@ void lvGuiScreenOn(void)
     drvLcdWakeup(d->lcd);
     prvDispForceFlush();
     drvLcdSetBackLightEnable(d->lcd, true);
+	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
     d->screen_on = true;
 }
 
