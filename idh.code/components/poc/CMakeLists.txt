@@ -244,6 +244,9 @@ add_library(${target} STATIC
 	gui/resource/audiofile/lv_poc_audio_msg.c
 	gui/resource/audiofile/lv_poc_audio_start_machine.c
 
+	gps/gps_nmea.c 
+	gps/uart3_gps.c
+	
 	idt/src/app_test.cpp
 	idt/core/idt-freertos.o
 
@@ -253,7 +256,7 @@ add_library(${target} STATIC
 
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_POC)
-target_include_directories(${target} PUBLIC include gui idt/include idt/src guiIdtCom/include guiIdtCom/src cJSON)
+target_include_directories(${target} PUBLIC include gui idt/include idt/src guiIdtCom/include guiIdtCom/src cJSON gps)
 target_include_targets(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts net lwip)
 
 

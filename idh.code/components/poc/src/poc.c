@@ -29,6 +29,7 @@
 #include "lv_include/lv_poc.h"
 #include "app_test.h"
 #include "guiIdtCom_api.h"
+#include "uart3_gps.h"
 
 static void pocIdtStartHandleTask(void * ctx)
 {
@@ -86,6 +87,7 @@ static void pocLvglStart(void)
 void pocStart(void *ctx)
 {
     OSI_LOGI(0, "lvgl poc start");
+	gpsInit();
     poc_Status_Led_Task();
     lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0);
     drvLcdInitV2();
