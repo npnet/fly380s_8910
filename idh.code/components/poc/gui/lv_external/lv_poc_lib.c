@@ -763,7 +763,7 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		return false;
 	}
 
-	if(nStatusInfo.nStatus == 0 || nStatusInfo.nStatus == 2 || nStatusInfo.nStatus == 4)
+	if(nStatusInfo.nStatus == 0 || nStatusInfo.nStatus == 2 || nStatusInfo.nStatus == 3 || nStatusInfo.nStatus == 4)
 	{
 		return false;
 	}
