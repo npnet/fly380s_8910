@@ -281,6 +281,16 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 	.member_call_close = lv_poc_member_call_close,
 };
 
+/*电池图标*/
+const lv_img_dsc_t *battery_img_dispaly[9] = { &stat_sys_battery_charge_anim0
+												,&stat_sys_battery_charge_anim15
+												,&stat_sys_battery_charge_anim28
+												,&stat_sys_battery_charge_anim43
+												,&stat_sys_battery_charge_anim57
+												,&stat_sys_battery_charge_anim71
+												,&stat_sys_battery_charge_anim85
+												,&stat_sys_battery_charge_anim100};
+
 static __attribute__((const)) lv_poc_activity_attribute_cb_set_obj * lv_poc_get_activity_attribute_cb_set_obj(void)
 {
 	return &prv_lv_poc_activity_attribute_cb_set;
@@ -2041,6 +2051,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 	battery_values_t battery_t;
 	poc_battery_get_status(&battery_t);
     const lv_img_dsc_t * battery_img = NULL;
+	static uint8_t battery_img_cur = 0;
 
     if(!battery_t.battery_status)
     {
@@ -2085,8 +2096,64 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
     }
     else
     {
-		#if 0
-		#else
+#if 1
+        if(battery_t.battery_value >= 100)
+        {
+			battery_img_cur = 7;
+            battery_img = battery_img_dispaly[battery_img_cur];
+        }
+        else if(battery_t.battery_value >= 85)
+        {
+			battery_img = battery_img_dispaly[battery_img_cur];
+			battery_img_cur++;
+			if(battery_img_cur>7)
+			battery_img_cur=6;
+        }
+        else if(battery_t.battery_value >= 71)
+        {
+			battery_img = battery_img_dispaly[battery_img_cur];
+
+			battery_img_cur++;
+			if(battery_img_cur>7)
+			battery_img_cur=5;
+        }
+        else if(battery_t.battery_value >= 57)
+        {
+            battery_img = battery_img_dispaly[battery_img_cur];
+			battery_img_cur++;
+			if(battery_img_cur>7)
+			battery_img_cur=4;
+        }
+        else if(battery_t.battery_value >= 43)
+        {
+            battery_img = battery_img_dispaly[battery_img_cur];
+			battery_img_cur++;
+			if(battery_img_cur>7)
+			battery_img_cur=3;
+        }
+        else if(battery_t.battery_value >= 28)
+        {
+            battery_img = battery_img_dispaly[battery_img_cur];
+			battery_img_cur++;
+			if(battery_img_cur>7)
+			battery_img_cur=2;
+        }
+        else if(battery_t.battery_value >= 15)
+        {
+            battery_img = battery_img_dispaly[battery_img_cur];
+			battery_img_cur++;
+			if(battery_img_cur>7)
+			battery_img_cur=1;
+        }
+        else if(battery_t.battery_value >= 0)
+        {
+            battery_img = battery_img_dispaly[battery_img_cur];
+			battery_img_cur++;
+			if(battery_img_cur>7)
+			battery_img_cur=0;
+        }
+
+#else
         if(battery_t.battery_value >= 100)
         {
             battery_img = &stat_sys_battery_charge_anim100;
@@ -2119,7 +2186,8 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         {
             battery_img = &stat_sys_battery_charge_anim0;
         }
-		#endif
+#endif
+
     }
     return (lv_img_dsc_t *)battery_img;
 }
