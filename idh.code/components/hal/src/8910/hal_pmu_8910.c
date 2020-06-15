@@ -154,13 +154,13 @@ void halPmuInit(void)
 #ifdef CONFIG_CAMA_POWER_ON_INIT
     halPmuSwitchPower(HAL_POWER_CAMA, true, false);
 #else
-    halPmuSwitchPower(HAL_POWER_CAMA, false, false);
+    halPmuSwitchPower(HAL_POWER_CAMA, true, true);
 #endif
     halPmuSwitchPower(HAL_POWER_CAMD, false, false);
     halPmuSwitchPower(HAL_POWER_LCD, false, false);
     halPmuSwitchPower(HAL_POWER_WCN, false, false);
     halPmuSwitchPower(HAL_POWER_USB, false, false);
-    halPmuSwitchPower(HAL_POWER_VIBR, false, false);
+    halPmuSwitchPower(HAL_POWER_VIBR, true, false);
     halPmuSwitchPower(HAL_POWER_SD, false, false);
     halPmuSwitchPower(HAL_POWER_BUCK_PA, false, false);
 #ifdef CONFIG_BOARD_KPLED_USED_FOR_RF_SWITCH
