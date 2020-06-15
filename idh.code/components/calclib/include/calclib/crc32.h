@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,6 +118,29 @@ uint8_t crc8RohcCalc(const void *p, size_t size);
  * \return  CRC16 value
  */
 uint16_t crc16NvCalc(const void *p, size_t size);
+
+/**
+ * calculate CRC16 used in BSL/FDL
+ *
+ * \param p         buffer
+ * \param size      buffer size
+ * \return  CRC16 value
+ */
+uint16_t crc16BslCalc(const void *p, unsigned size);
+
+/**
+ * check whether BSL/FDL CCR16 matches
+ *
+ * It will check whether the last 2 bytes of the buffer is the big endian
+ * CRC16 calculated by \p romBslCrc16 for the preceeding bytes.
+ *
+ * \param p         buffer
+ * \param size      buffer size
+ * \return
+ *      - true if the tail CR16 matches
+ *      - false if the tail CRC16 doesn't match
+ */
+bool crc16BslCheck(const void *p, unsigned size);
 
 #ifdef __cplusplus
 }

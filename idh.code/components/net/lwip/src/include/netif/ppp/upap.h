@@ -116,7 +116,9 @@ void upap_authwithpeer(ppp_pcb *pcb, const char *user, const char *password);
 #if PPP_SERVER
 void upap_authpeer(ppp_pcb *pcb);
 #endif /* PPP_SERVER */
-
+#if PPP_AUTHGPRS_SUPPORT
+void upap_sAuthRsp(ppp_pcb *pcb, int ActStatus);
+#endif
 extern const struct protent pap_protent;
 
 #endif /* UPAP_H */

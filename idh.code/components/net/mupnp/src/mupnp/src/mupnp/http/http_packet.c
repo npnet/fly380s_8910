@@ -19,6 +19,7 @@
 #include <mupnp/net/interface.h>
 
 #include <limits.h>
+#include <osi_log.h>
 
 //#include <http_types.h>
 #define READBUF_LENGTH 1024
@@ -460,13 +461,13 @@ ssize_t mupnp_http_packet_read_chunk(mUpnpHttpPacket *httpPkt, mUpnpSocket *sock
         if (buf == NULL)
         {
             readLen = 0;
-            sys_arch_printf("mupnp_http_packet_appendncontent alloc failed");
+            OSI_LOGI(0x10007690, "mupnp_http_packet_appendncontent alloc failed");
         }
     }
     else
     {
         readLen = 0;
-        sys_arch_printf("mupnp_socket_readline readLen %d conLen is %d nequal", readLen, conLen);
+        OSI_LOGI(0x10007691, "mupnp_socket_readline readLen %d conLen is %d nequal", readLen, conLen);
     }
 
     free(content);

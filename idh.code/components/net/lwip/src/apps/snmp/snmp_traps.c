@@ -83,7 +83,7 @@ static err_t snmp_trap_varbind_enc(struct snmp_msg_trap *trap, struct snmp_pbuf_
 
 #define BUILD_EXEC(code) \
   if ((code) != ERR_OK) { \
-    LWIP_DEBUGF(SNMP_DEBUG, ("SNMP error during creation of outbound trap frame!")); \
+    LWIP_DEBUGF(SNMP_DEBUG, (0x100076e0, "SNMP error during creation of outbound trap frame!")); \
     return ERR_ARG; \
   }
 

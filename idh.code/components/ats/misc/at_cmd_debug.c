@@ -29,6 +29,8 @@
 #include "hal_config.h"
 #include "drv_config.h"
 #include "drv_spi_flash.h"
+#include "srv_simlock.h"
+#include "simlock.h"
 #ifdef CONFIG_SOC_6760
 #include "cfw_nb_nv_api.h"
 #endif
@@ -177,7 +179,6 @@ void atCmdHandleTrace(atCommand_t *cmd)
         OSI_TRACE_DEVICE_NONE,
         OSI_TRACE_DEVICE_DEBUGHOST,
         OSI_TRACE_DEVICE_USBSERIAL,
-        OSI_TRACE_DEVICE_DEBUGHOST_USBSERIAL,
     };
 #ifdef CONFIG_SOC_8910
     static uint32_t cp_valid_devices[] = {
@@ -335,12 +336,13 @@ void atCmdHandleUSBSWITCH(atCommand_t *cmd)
     }
     else if (AT_CMD_TEST == cmd->type)
     {
-        atCmdRespInfoText(cmd->engine, "+USBSWITCH: (0,1)\r\n0. Disable USB\r\n1. Enable USB\r\n");
+        sprintf(resp, "%s: (0,1)", cmd->desc->name);
+        atCmdRespInfoText(cmd->engine, resp);
         atCmdRespOK(cmd->engine);
     }
     else if (AT_CMD_READ == cmd->type)
     {
-        snprintf(resp, 64, "+USBSWITCH: %s", drvUsbIsEnabled() ? "1. Enabled" : "0. Disabled");
+        sprintf(resp, "%s: %d", cmd->desc->name, drvUsbIsEnabled());
         atCmdRespInfoText(cmd->engine, resp);
         atCmdRespOK(cmd->engine);
     }
@@ -354,6 +356,32 @@ void atCmdHandleUSBRMTWK(atCommand_t *cmd)
 {
     drvUsbRemoteWakeup();
     atCmdRespOK(cmd->engine);
+}
+
+void simlockVerifyTest(void)
+{
+    if (simlockDataVerify())
+        OSI_LOGI(0, "simlock verify ok");
+}
+
+void atCmdHandleSimlockTest(atCommand_t *cmd)
+{
+    if (AT_CMD_SET == cmd->type)
+    {
+        simlockVerifyTest();
+        atCmdRespOK(cmd->engine);
+    }
+    else if (AT_CMD_TEST == cmd->type)
+    {
+        char rspStr[20] = {0};
+        sprintf(rspStr, "+SIMLOCKTEST");
+        atCmdRespInfoText(cmd->engine, rspStr);
+        atCmdRespOK(cmd->engine);
+    }
+    else
+    {
+        atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_NOT_SURPORT);
+    }
 }
 
 void atCmdHandleSet7sReset(atCommand_t *cmd)

@@ -66,4 +66,11 @@ config APPIMG_LOAD_FILE_NAME
 
 endif
 
+config ATR_UART_BLUE_SCREEN_DEBUG
+    bool "Reuse AT UART for debugging in blue screen"
+    default y
+    help
+        When enable, the AT UART will be reused as debugging at blue screen
+        mode.
+
 endmenu

@@ -283,7 +283,7 @@ dtls_context_t * get_dtls_context(dtls_connection_t * connList) {
     return dtlsContext;
 }
 
-int get_port(struct sockaddr *x)
+static int get_port(struct sockaddr *x)
 {
    if (x->sa_family == AF_INET)
    {
@@ -296,7 +296,7 @@ int get_port(struct sockaddr *x)
    }
 }
 
-int sockaddr_cmp(struct sockaddr *x, struct sockaddr *y)
+static int sockaddr_cmp(struct sockaddr *x, struct sockaddr *y)
 {
     int portX = get_port(x);
     int portY = get_port(y);
@@ -335,6 +335,7 @@ int sockaddr_cmp(struct sockaddr *x, struct sockaddr *y)
 
 int create_socket(const char * portStr, int ai_family)
 {
+#if 0
     int s = -1;
     struct addrinfo hints;
     struct addrinfo *res;
@@ -364,7 +365,32 @@ int create_socket(const char * portStr, int ai_family)
     }
 
     freeaddrinfo(res);
-
+#else
+    int s = -1;
+    int port_nr = atoi(portStr);
+    if ((port_nr <= 0) || (port_nr > 0xffff)) {
+      return -1;
+    }
+    if(netif_default == NULL)
+    {
+        return -1;
+    }
+    s = socket(ai_family,SOCK_DGRAM,IPPROTO_UDP);
+    if (s >= 0)
+    {
+        ip4_addr_t *ip_addr = (ip4_addr_t *)netif_ip4_addr(netif_default);
+        struct sockaddr_in bindAddr = {0};
+        bindAddr.sin_len = sizeof(bindAddr);
+        bindAddr.sin_family = AF_INET;
+        bindAddr.sin_port = lwip_htons((u16_t)port_nr);
+        inet_addr_from_ip4addr(&(bindAddr.sin_addr), ip_addr);
+        if(-1 == bind(s,(const struct sockaddr *)&bindAddr,sizeof(bindAddr)))
+        {
+            close(s);
+            s = -1;
+        }
+    }
+#endif
     return s;
 }
 
@@ -578,7 +604,7 @@ int connection_handle_packet(dtls_connection_t *connP, uint8_t * buffer, size_t 
     if (connP->dtlsSession != NULL)
     {
         // Let liblwm2m respond to the query depending on the context
-        int result = dtls_handle_message(connP->dtlsContext, connP->dtlsSession, buffer, numBytes);
+        int result = dtls_handle_message(connP->dtlsContext, connP->dtlsSession, buffer, MAX_PACKET_SIZE);
         if (result !=0) {
              printf("error dtls handling message %d\n",result);
         }

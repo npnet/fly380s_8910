@@ -50,6 +50,27 @@ int auReaderSeek(auReader_t *d, int offset, int whence)
     return -1;
 }
 
+int auReaderDrop(auReader_t *d, unsigned size)
+{
+    if (d == NULL)
+        return -1;
+
+    if (d->ops.seek != NULL)
+        return d->ops.seek(d, size, SEEK_CUR) < 0 ? -1 : 0;
+
+    char buf[64];
+    while (size > 0)
+    {
+        unsigned count = OSI_MIN(unsigned, size, 64);
+        int rbytes = auReaderRead(d, buf, count);
+        if (rbytes < 0)
+            return -1;
+
+        size -= count;
+    }
+    return 0;
+}
+
 bool auReaderIsEof(auReader_t *d)
 {
     if (d != NULL && d->ops.is_eof != NULL)
@@ -266,4 +287,80 @@ auPipeReader_t *auPipeReaderCreate(osiPipe_t *pipe)
 void auPipeReaderSetWait(auPipeReader_t *d, unsigned timeout)
 {
     d->timeout = timeout;
+}
+
+/**
+ * Read buffer initialization
+ */
+void auReadBufInit(auReadBuf_t *d, void *buf)
+{
+    d->buf = (uint8_t *)buf;
+    d->size = 0;
+    d->pos = 0;
+    d->file_pos = 0;
+    d->data_start = 0;
+    d->data_end = UINT32_MAX;
+}
+
+/**
+ * Read buffer reset
+ */
+void auReadBufReset(auReadBuf_t *d, unsigned file_pos)
+{
+    d->size = 0;
+    d->pos = 0;
+    d->file_pos = file_pos;
+}
+
+/**
+ * Read buffer fetch, return valid data size
+ */
+unsigned auReadBufFetch(auReadBuf_t *d, auReader_t *reader, unsigned size)
+{
+    if (auReadBufSize(d) >= size)
+        goto done;
+
+    if (d->pos >= d->size)
+    {
+        d->pos = 0;
+        d->size = 0;
+    }
+    else if (d->pos != 0)
+    {
+        memmove(&d->buf[0], &d->buf[d->pos], d->size - d->pos);
+        d->size -= d->pos;
+        d->pos = 0;
+    }
+
+    if (d->file_pos >= d->data_end)
+        goto done;
+
+    unsigned bytes = OSI_MIN(unsigned, size - d->size, d->data_end - d->file_pos);
+    int rbytes = auReaderRead(reader, &d->buf[d->size], bytes);
+    if (rbytes <= 0)
+        goto done;
+
+    d->size += rbytes;
+
+done:
+    return auReadBufSize(d);
+}
+
+/**
+ * Read buffer skip
+ */
+void auReadBufSkip(auReadBuf_t *d, auReader_t *reader, unsigned size)
+{
+    d->file_pos += size;
+    if (auReadBufSize(d) >= size)
+    {
+        d->pos += size;
+    }
+    else
+    {
+        // coverity[check_return] return value ignored intentionally
+        auReaderDrop(reader, size - (d->size - d->pos));
+        d->size = 0;
+        d->pos = 0;
+    }
 }

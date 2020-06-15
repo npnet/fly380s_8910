@@ -207,7 +207,7 @@ void location_setVelocity(lwm2m_object_t* locationObj,
 {
     //-------------------------------------------------------------------- JH --
     location_data_t* pData = locationObj->userData;
-    pData->velocity[0] = HORIZONTAL_VELOCITY_WITH_UNCERTAINTY << 4;
+    //pData->velocity[0] = HORIZONTAL_VELOCITY_WITH_UNCERTAINTY << 4; //for converity cid 39353
     pData->velocity[0] = (bearing & 0x100) >> 8;
     pData->velocity[1] = (bearing & 0x0FF);
     pData->velocity[2] = horizontalSpeed >> 8;
@@ -251,7 +251,7 @@ static void free_object_location(lwm2m_object_t * object)
   * @return gives back allocated LWM2M data object structure pointer. On error, 
   * NULL value is returned.
   */
-lwm2m_object_t * get_object_location(void)
+lwm2m_object_t * get_object_location(void* lwm2mH)
 {
     //-------------------------------------------------------------------- JH --
     lwm2m_object_t * locationObj;

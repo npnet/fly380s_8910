@@ -30,6 +30,69 @@
 
 #define PSM_CNT_MS (80) // (clk_cal_64k_div_th + 1) * 10ms
 
+typedef struct
+{
+    uint32_t power_id;
+    int32_t step;
+    int32_t min_uV;
+    int32_t max_uV;
+} powerLevelConfigInfo_t;
+
+static const powerLevelConfigInfo_t pmic_power_level_table[] = {
+    {.power_id = HAL_POWER_SIM0, .step = 12500, .min_uV = 1612500, .max_uV = 3200000},
+    {.power_id = HAL_POWER_SIM1, .step = 12500, .min_uV = 1612500, .max_uV = 3200000},
+    {.power_id = HAL_POWER_LCD, .step = 12500, .min_uV = 1612500, .max_uV = 3200000},
+    {.power_id = HAL_POWER_WCN, .step = 12500, .min_uV = 1100000, .max_uV = 1887500},
+    {.power_id = HAL_POWER_CAMA, .step = 12500, .min_uV = 1612500, .max_uV = 3200000},
+    {.power_id = HAL_POWER_CAMD, .step = 12500, .min_uV = 1400000, .max_uV = 2187500},
+    {.power_id = HAL_POWER_SD, .step = 12500, .min_uV = 1612500, .max_uV = 3200000},
+    {.power_id = HAL_POWER_SPIMEM, .step = 12500, .min_uV = 1750000, .max_uV = 3337500},
+    {.power_id = HAL_POWER_VIBR, .step = 100000, .min_uV = 2800000, .max_uV = 3500000},
+    {.power_id = HAL_POWER_KEYLED, .step = 100000, .min_uV = 2800000, .max_uV = 3500000},
+
+};
+
+static bool prvGetPowerLevelTableMap(uint32_t power_id, powerLevelConfigInfo_t *info)
+{
+    int32_t i = 0;
+
+    int32_t count = sizeof(pmic_power_level_table) / sizeof(pmic_power_level_table[0]);
+    for (i = 0; i < count; i++)
+    {
+        if (pmic_power_level_table[i].power_id == power_id)
+        {
+            memcpy(info, &pmic_power_level_table[i], sizeof(powerLevelConfigInfo_t));
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static int32_t prvVoltageSettingValue(uint32_t power_id, uint32_t mv)
+{
+#define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
+    powerLevelConfigInfo_t info;
+
+    if (!prvGetPowerLevelTableMap(power_id, &info))
+        return -1;
+
+    int32_t uv = mv * 1000;
+    int32_t min_uV = info.min_uV;
+    int32_t max_uV = info.max_uV;
+    int32_t step = info.step;
+
+    OSI_LOGD(0, "power_id = %4c, step = %d, min_uV = %d, max_uV = %d",
+             power_id, info.step, info.min_uV, info.max_uV);
+
+    if ((uv < min_uV) || (uv > max_uV))
+        return -1;
+
+    int32_t value = DIV_ROUND_UP((int)(uv - min_uV), step);
+
+    return value;
+}
+
 uint32_t halPmuReadPsmInitCnt(void)
 {
     uint32_t cnt_init = halAdiBusRead(&hwp_rda2720mPsm->psm_cnt_update_l_value);
@@ -84,7 +147,7 @@ void halBootCauseMode(void)
     swrst_ctrl0.v = halAdiBusRead(&hwp_rda2720mGlobal->swrst_ctrl0);
     por_src_flag.v = halAdiBusRead(&hwp_rda2720mGlobal->por_src_flag);
     OSI_LOGI(0, "pmu: boot por_src_flag 0x%08x, swrst_ctrl0 0x%x",
-              por_src_flag.v, swrst_ctrl0.b.reg_rst_en);
+             por_src_flag.v, swrst_ctrl0.b.reg_rst_en);
     if (swrst_ctrl0.b.reg_rst_en == 0)
     {
         if (por_src_flag.v & (1 << 11))
@@ -156,6 +219,7 @@ void halPmuInit(void)
 #else
     halPmuSwitchPower(HAL_POWER_CAMA, false, false);
 #endif
+    halPmuSwitchPower(HAL_POWER_BACK_LIGHT, false, false);
     halPmuSwitchPower(HAL_POWER_CAMD, false, false);
     halPmuSwitchPower(HAL_POWER_LCD, false, false);
     halPmuSwitchPower(HAL_POWER_WCN, false, false);
@@ -214,17 +278,116 @@ void halPmuInit(void)
                     dcdc_core_nor_sw_sel, 1,
                     dcdc_core_slp_sw_sel, 1);
 
-    // reset pin enable
-    REG_RDA2720M_GLOBAL_POR_7S_CTRL_T por_7s_ctrl;
-    REG_ADI_CHANGE3(hwp_rda2720mGlobal->por_7s_ctrl, por_7s_ctrl,
-                    ext_rstn_mode, 1, key2_7s_rst_en, 1,
-                    pbint_7s_rst_disable, 1);
-
     // check PSM module for boot cause/mode
     halPmuCheckPsm();
 
     // check boot cause and mode
     halBootCauseMode();
+}
+
+void halPmuExtFlashPowerOn(void)
+{
+#ifdef CONFIG_BOARD_WITH_EXT_FLASH
+    // Usually, iomux, power with correct voltage, clock should be
+    // configured here. There are 2 examples below.
+
+#define EXT_FLASH_EXAMPLE_W25Q64JV_ON_LCDIO
+
+#ifdef EXT_FLASH_EXAMPLE_W25Q64JV_ON_LCDIO
+    hwp_iomux->pad_spi_lcd_sio_cfg_reg = IOMUX_PAD_SPI_LCD_SIO_SEL_FUN_SPI_FLASH1_CLK_SEL;
+    hwp_iomux->pad_spi_lcd_sdc_cfg_reg = IOMUX_PAD_SPI_LCD_SDC_SEL_FUN_SPI_FLASH1_CS_SEL;
+    hwp_iomux->pad_spi_lcd_clk_cfg_reg = IOMUX_PAD_SPI_LCD_CLK_SEL_FUN_SPI_FLASH1_SIO_0_SEL;
+    hwp_iomux->pad_spi_lcd_cs_cfg_reg = IOMUX_PAD_SPI_LCD_CS_SEL_FUN_SPI_FLASH1_SIO_1_SEL;
+    hwp_iomux->pad_spi_lcd_select_cfg_reg = IOMUX_PAD_SPI_LCD_SELECT_SEL_FUN_SPI_FLASH1_SIO_2_SEL;
+    hwp_iomux->pad_lcd_fmark_cfg_reg = IOMUX_PAD_LCD_FMARK_SEL_FUN_SPI_FLASH1_SIO_3_SEL;
+
+    // config power
+    REG_RDA2720M_GLOBAL_LDO_LCD_REG0_T lcd_reg0 = {};
+    lcd_reg0.b.ldo_lcd_pd = 0;
+    lcd_reg0.b.ldo_lcd_cl_adj = 1;
+    lcd_reg0.b.ldo_lcd_shpt_adj = 1;
+    lcd_reg0.b.ldo_lcd_stb = 2;
+    lcd_reg0.b.ldo_lcd_cap_sel = 0;
+    lcd_reg0.b.ldo_lcd_shpt_pd = 0;
+    halAdiBusWrite(&hwp_rda2720mGlobal->ldo_lcd_reg0, lcd_reg0.v);
+
+    REG_RDA2720M_GLOBAL_LDO_LCD_REG1_T lcd_reg1 = {};
+    lcd_reg1.b.ldo_lcd_v = 0x6f; // 3v
+    halAdiBusWrite(&hwp_rda2720mGlobal->ldo_lcd_reg1, lcd_reg1.v);
+
+    REG_RDA2720M_GLOBAL_SLP_LDO_LP_CTRL0_T ldo_lp_ctrl0 = {};
+    ldo_lp_ctrl0.v = halAdiBusRead(&hwp_rda2720mGlobal->slp_ldo_lp_ctrl0);
+    ldo_lp_ctrl0.b.slp_ldolcd_lp_en = 0;
+    halAdiBusWrite(&hwp_rda2720mGlobal->slp_ldo_lp_ctrl0, ldo_lp_ctrl0.v);
+
+    osiDelayUS(300);
+
+    REG_SYS_CTRL_CFG_PLL_SPIFLASH1_DIV_T spiflash1_div = {
+        .b.cfg_pll_spiflash1_div = 5,
+        .b.cfg_pll_spiflash1_div_update = 1,
+    };
+    hwp_sysCtrl->cfg_pll_spiflash1_div = spiflash1_div.v; // 166M
+
+    REG_SYS_CTRL_SEL_CLOCK_T sel_clock = {hwp_sysCtrl->sel_clock};
+    sel_clock.b.soft_sel_spiflash1 = 0; // fast
+    hwp_sysCtrl->sel_clock = sel_clock.v;
+
+    REG_SPI_FLASH_SPI_CONFIG_T spi_config = {
+        .b.quad_mode = 1,
+        .b.sample_delay = 2,
+        .b.clk_divider = 2,
+    };
+    hwp_spiFlash1->spi_config = spi_config.v;
+#endif // EXT_FLASH_EXAMPLE_W25Q64JV_ON_LCDIO
+
+#ifdef EXT_FLASH_EXAMPLE_GD25LQ128C_ON_LCDIO
+    hwp_iomux->pad_spi_lcd_sio_cfg_reg = IOMUX_PAD_SPI_LCD_SIO_SEL_FUN_SPI_FLASH1_CLK_SEL;
+    hwp_iomux->pad_spi_lcd_sdc_cfg_reg = IOMUX_PAD_SPI_LCD_SDC_SEL_FUN_SPI_FLASH1_CS_SEL;
+    hwp_iomux->pad_spi_lcd_clk_cfg_reg = IOMUX_PAD_SPI_LCD_CLK_SEL_FUN_SPI_FLASH1_SIO_0_SEL;
+    hwp_iomux->pad_spi_lcd_cs_cfg_reg = IOMUX_PAD_SPI_LCD_CS_SEL_FUN_SPI_FLASH1_SIO_1_SEL;
+    hwp_iomux->pad_spi_lcd_select_cfg_reg = IOMUX_PAD_SPI_LCD_SELECT_SEL_FUN_SPI_FLASH1_SIO_2_SEL;
+    hwp_iomux->pad_lcd_fmark_cfg_reg = IOMUX_PAD_LCD_FMARK_SEL_FUN_SPI_FLASH1_SIO_3_SEL;
+
+    // config power
+    REG_RDA2720M_GLOBAL_LDO_LCD_REG0_T lcd_reg0 = {};
+    lcd_reg0.b.ldo_lcd_pd = 0;
+    lcd_reg0.b.ldo_lcd_cl_adj = 1;
+    lcd_reg0.b.ldo_lcd_shpt_adj = 1;
+    lcd_reg0.b.ldo_lcd_stb = 2;
+    lcd_reg0.b.ldo_lcd_cap_sel = 0;
+    lcd_reg0.b.ldo_lcd_shpt_pd = 0;
+    halAdiBusWrite(&hwp_rda2720mGlobal->ldo_lcd_reg0, lcd_reg0.v);
+
+    REG_RDA2720M_GLOBAL_LDO_LCD_REG1_T lcd_reg1 = {};
+    lcd_reg1.b.ldo_lcd_v = 0xf; // 1.8v
+    halAdiBusWrite(&hwp_rda2720mGlobal->ldo_lcd_reg1, lcd_reg1.v);
+
+    REG_RDA2720M_GLOBAL_SLP_LDO_LP_CTRL0_T ldo_lp_ctrl0 = {};
+    ldo_lp_ctrl0.v = halAdiBusRead(&hwp_rda2720mGlobal->slp_ldo_lp_ctrl0);
+    ldo_lp_ctrl0.b.slp_ldolcd_lp_en = 0;
+    halAdiBusWrite(&hwp_rda2720mGlobal->slp_ldo_lp_ctrl0, ldo_lp_ctrl0.v);
+
+    osiDelayUS(10000);
+
+    REG_SYS_CTRL_CFG_PLL_SPIFLASH1_DIV_T spiflash1_div = {
+        .b.cfg_pll_spiflash1_div = 5,
+        .b.cfg_pll_spiflash1_div_update = 1,
+    };
+    hwp_sysCtrl->cfg_pll_spiflash1_div = spiflash1_div.v; // 166M
+
+    REG_SYS_CTRL_SEL_CLOCK_T sel_clock = {hwp_sysCtrl->sel_clock};
+    sel_clock.b.soft_sel_spiflash1 = 0; // fast
+    hwp_sysCtrl->sel_clock = sel_clock.v;
+
+    REG_SPI_FLASH_SPI_CONFIG_T spi_config = {
+        .b.quad_mode = 1,
+        .b.sample_delay = 2,
+        .b.clk_divider = 2,
+    };
+    hwp_spiFlash1->spi_config = spi_config.v;
+#endif // EXT_FLASH_EXAMPLE_GD25LQ128C_ON_LCDIO
+
+#endif
 }
 
 void halPmuEnterPm1(void)
@@ -283,6 +446,7 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
     REG_RDA2720M_GLOBAL_MODULE_EN0_T module_en0;
     REG_RDA2720M_BLTC_RG_RGB_V0_T rg_rgb_v0;
     REG_RDA2720M_BLTC_RG_RGB_V1_T rg_rgb_v1;
+    REG_RDA2720M_GLOBAL_FLASH_CTRL_T flash_ctrl;
 
     switch (id)
     {
@@ -335,8 +499,8 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
     case HAL_POWER_WCN:
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_con_reg0, ldo_con_reg0,
                         ldo_con_pd, enabled ? 0 : 1);
-        REG_ADI_CHANGE1(hwp_rda2720mGlobal->slp_ldo_pd_ctrl0, slp_ldo_pd_ctrl0,
-                        slp_ldolcd_pd_en, lp_enabled ? 0 : 1);
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->slp_ldo_pd_ctrl1, slp_ldo_pd_ctrl1,
+                        slp_ldocon_pd_en, lp_enabled ? 0 : 1);
         break;
 
     case HAL_POWER_USB:
@@ -359,6 +523,10 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
         // no setting for lp
         break;
 
+    case HAL_POWER_CAMFLASH:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, flash_ctrl,
+                flash_pon, enabled ? 1 : 0);
+        break;
     case HAL_POWER_KEYLED:
         REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
                         b_sel, 1, b_sw, 1);
@@ -380,9 +548,6 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
 
     case HAL_POWER_BACK_LIGHT:
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, 1);
-        REG_ADI_CHANGE4(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
-                        g_sel, 1, g_sw, 1,
-                        r_sel, 1, r_sw, 1);
         REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_pd_ctrl, bltc_pd_ctrl,
                         hw_pd, 0,
                         sw_pd, enabled ? 0 : 1);
@@ -430,78 +595,84 @@ void halPmuSet7sReset(bool enable)
                         pbint_7s_rst_disable, 1);
 }
 
+
+bool halPmuSetCamFlashLevel(uint8_t level)
+{
+    REG_RDA2720M_GLOBAL_FLASH_CTRL_T flash_ctrl;
+
+    if(level >= 0 && level < 16)
+    {
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, flash_ctrl, flash_v_sw, level);
+	return true;
+    }
+    return false;
+}
+
 bool halPmuSetPowerLevel(uint32_t id, uint32_t mv)
 {
-    //for CAM;
-
-    bool lp_enabled = false; // lowpower disable
-
-    REG_RDA2720M_GLOBAL_LDO_CAMD_REG0_T ldo_camd_reg0;
-    REG_RDA2720M_GLOBAL_LDO_CAMA_REG0_T ldo_cama_reg0;
+    REG_RDA2720M_GLOBAL_LDO_CAMD_REG1_T ldo_camd_reg1;
     REG_RDA2720M_GLOBAL_LDO_CAMA_REG1_T ldo_cama_reg1;
-    REG_RDA2720M_GLOBAL_SLP_LDO_PD_CTRL0_T slp_ldo_pd_ctrl0;
+    REG_RDA2720M_GLOBAL_LDO_SIM0_REG1_T ldo_sim0_reg1;
+    REG_RDA2720M_GLOBAL_LDO_SIM1_REG1_T ldo_sim1_reg1;
+    REG_RDA2720M_GLOBAL_LDO_CON_REG1_T ldo_con_reg1;
+    REG_RDA2720M_GLOBAL_LDO_LCD_REG1_T ldo_lcd_reg1;
+    REG_RDA2720M_GLOBAL_LDO_MMC_REG1_T ldo_mmc_reg1;
+    REG_RDA2720M_GLOBAL_LDO_SPIMEM_REG1_T ldo_spimem_reg1;
+    REG_RDA2720M_GLOBAL_VIBR_CTRL1_T vibr_ctrl1;
+    REG_RDA2720M_GLOBAL_KPLED_CTRL1_T kpled_ctrl1;
 
-    if (id == HAL_POWER_CAMD)
+    int32_t level = prvVoltageSettingValue(id, mv);
+
+    if (level < 0)
+        return false;
+
+    switch (id)
     {
-        switch (mv)
-        {
-        case SENSOR_VDD_1800MV:
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_camd_reg0, ldo_camd_reg0,
-                            ldo_camd_pd, true ? 0 : 1);
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->slp_ldo_pd_ctrl0, slp_ldo_pd_ctrl0,
-                            slp_ldocamd_pd_en, lp_enabled ? 0 : 1);
-            break;
+    case HAL_POWER_SIM0:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_sim0_reg1, ldo_sim0_reg1, ldo_sim0_v, level);
+        break;
 
-        case SENSOR_VDD_CLOSED:
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_camd_reg0, ldo_camd_reg0,
-                            ldo_camd_pd, false ? 0 : 1);
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->slp_ldo_pd_ctrl0, slp_ldo_pd_ctrl0,
-                            slp_ldocamd_pd_en, lp_enabled ? 0 : 1);
-            break;
+    case HAL_POWER_SIM1:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_sim1_reg1, ldo_sim1_reg1, ldo_sim1_v, level);
+        break;
 
-        default:
-            break;
-        }
+    case HAL_POWER_LCD:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_lcd_reg1, ldo_lcd_reg1, ldo_lcd_v, level);
+        break;
+
+    case HAL_POWER_WCN:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_con_reg1, ldo_con_reg1, ldo_con_v, level);
+        break;
+
+    case HAL_POWER_CAMA:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_cama_reg1, ldo_cama_reg1, ldo_cama_v, level);
+        break;
+
+    case HAL_POWER_CAMD:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_camd_reg1, ldo_camd_reg1, ldo_camd_v, level);
+        break;
+
+    case HAL_POWER_SD:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_mmc_reg1, ldo_mmc_reg1, ldo_mmc_v, level);
+        break;
+
+    case HAL_POWER_SPIMEM:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_spimem_reg1, ldo_spimem_reg1, ldo_spimem_v, level);
+        break;
+
+    case HAL_POWER_VIBR:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->vibr_ctrl1, vibr_ctrl1, ldo_vibr_reftrim, level);
+        break;
+
+    case HAL_POWER_KEYLED:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->kpled_ctrl1, kpled_ctrl1, ldo_kpled_reftrim, level);
+        break;
+
+    default:
+        break;
     }
 
-    if (id == HAL_POWER_CAMA)
-    {
-        switch (mv)
-        {
-        case SENSOR_VDD_1800MV:
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_cama_reg0, ldo_cama_reg0,
-                            ldo_cama_pd, true ? 0 : 1);
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->slp_ldo_pd_ctrl0, slp_ldo_pd_ctrl0,
-                            slp_ldocama_pd_en, lp_enabled ? 0 : 1);
-            break;
-
-        case SENSOR_VDD_2800MV:
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_cama_reg0, ldo_cama_reg0,
-                            ldo_cama_pd, true ? 0 : 1);
-
-            ldo_cama_reg1.v = hwp_rda2720mGlobal->ldo_cama_reg1;
-            ldo_cama_reg1.b.ldo_cama_v = 0b1011111;
-            hwp_rda2720mGlobal->ldo_cama_reg1 = ldo_cama_reg1.v;
-
-            halAdiBusWrite(&hwp_rda2720mGlobal->ldo_cama_reg1, ldo_cama_reg1.v);
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->slp_ldo_pd_ctrl0, slp_ldo_pd_ctrl0,
-                            slp_ldocama_pd_en, lp_enabled ? 0 : 1);
-            break;
-
-        case SENSOR_VDD_CLOSED:
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->ldo_cama_reg0, ldo_cama_reg0,
-                            ldo_cama_pd, 1);
-
-            REG_ADI_CHANGE1(hwp_rda2720mGlobal->slp_ldo_pd_ctrl0, slp_ldo_pd_ctrl0,
-                            slp_ldocama_pd_en, lp_enabled ? 0 : 1);
-            break;
-
-        default:
-            // ignore silently
-            break;
-        }
-    };
-    return false;
+    return true;
 }
 
 void halPmuPsmPrepare(void)
@@ -609,6 +780,33 @@ void halPmuPsmPrepare(void)
 OSI_NO_RETURN void halShutdown(int mode, int64_t wake_uptime)
 {
     OSI_LOGD(0, "psm: shutdown mode/0x%x wake/%u", mode, (unsigned)wake_uptime);
+
+#ifdef CONFIG_SHUTDOWN_NORMAL_POWER_OFF
+    if (mode == OSI_SHUTDOWN_POWER_OFF)
+    {
+        //need to set dcxo lp,otherwise 400ua electric leakage when power off
+        REG_RF_RTC_REG_C4_REG_T reg_c4_reg = {};
+        reg_c4_reg.b.xtal_osc_ibit_n = 8;
+        reg_c4_reg.b.xtal_reg_bit = 8;
+        reg_c4_reg.b.xtal26m_plls1_en = 1;
+        reg_c4_reg.b.xtal26m_plls2_en = 1;
+        hwp_rfRtc->reg_c4_reg = reg_c4_reg.v;
+
+        REG_RF_RTC_REG_C8_REG_T reg_c8_reg = {};
+        reg_c8_reg.b.xtal_fixi_bit_n = 16;
+        reg_c8_reg.b.xtal_fixi_bit_l = 1;
+        reg_c8_reg.b.xtal26m_ts_en = 1;
+        reg_c8_reg.b.xtal26m_pllcal_en = 1;
+        hwp_rfRtc->reg_c8_reg = reg_c8_reg.v;
+
+        halPmuUnlockPowerReg();
+        REG_RDA2720M_GLOBAL_POWER_PD_HW_T power_pd_hw = {};
+        power_pd_hw.b.pwr_off_seq_en = 1;
+        halAdiBusWrite(&hwp_rda2720mGlobal->power_pd_hw, power_pd_hw.v);
+
+        OSI_DEAD_LOOP;
+    }
+#endif
 
     if (mode == OSI_SHUTDOWN_PSM_SLEEP || mode == OSI_SHUTDOWN_POWER_OFF)
     {

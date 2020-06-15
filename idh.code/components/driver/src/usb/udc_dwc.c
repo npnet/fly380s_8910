@@ -11,7 +11,7 @@
  */
 
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('U', 'S', 'B', 'C')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
+// #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
 #include <stddef.h>
 #include <string.h>
@@ -32,6 +32,9 @@
 #define DWC_EP_MPS_FULL (64)
 #define DWC_EP_MPS_HIGH (512)
 #define DWC_EP0_MPS (64)
+
+#define ISRAM(n) (OSI_IS_IN_REGION(unsigned, n, CONFIG_RAM_PHY_ADDRESS, CONFIG_RAM_SIZE) || \
+                  OSI_IS_IN_REGION(unsigned, n, CONFIG_SRAM_PHY_ADDRESS, CONFIG_SRAM_SIZE))
 
 typedef REG_USBC_DIEPCTL1_T usbcDiepctl_t;
 typedef REG_USBC_DIEPINT1_T usbcDiepint_t;
@@ -98,6 +101,7 @@ typedef struct dwc_ep
     uint8_t periodic : 1;
     uint8_t used : 1;
     uint8_t halted : 1;
+    uint8_t dynamic_fifo : 1;
     uint32_t dma_max;
     dwcXfer_t *xfer_schedule;
     dwc_xfer_head_t xfer_q;
@@ -177,7 +181,8 @@ static void prvFreeTxFifo(dwcUdc_t *dwc, dwcEp_t *ep);
 static void prvEpCancelXferInQueue(dwcEp_t *ep);
 static inline void prvRxFifoFlush(dwcUdc_t *dwc);
 static inline void prvTxFifoFlushAll(dwcUdc_t *dwc);
-static void prvHwInit(dwcUdc_t *dwc);
+static void prvHwInit(dwcUdc_t *dwc, bool reset_int);
+static void prvExitHibernation(dwcUdc_t *dwc);
 
 static void prvDisconnectISR(dwcUdc_t *dwc)
 {
@@ -245,6 +250,9 @@ static void prvEpXferStopLocked(dwcUdc_t *dwc, dwcEp_t *ep)
             dctl.b.sgnpinnak = 1;
             dwc->hw->dctl |= dctl.v;
         }
+
+        if (ep->dynamic_fifo)
+            prvFreeTxFifo(dwc, ep);
     }
     else
     {
@@ -304,9 +312,10 @@ static uint32_t prvEpXferStartLocked(dwcUdc_t *dwc, dwcEp_t *ep, void *buf, uint
         return 0;
     }
 
-    if (buf == NULL)
+    // these conditional judgements contribute a little time delay
+    if (buf == NULL || !OSI_IS_ALIGNED(buf, 4) || !ISRAM(buf) || !ISRAM((uint32_t)buf + length - 1))
     {
-        OSI_LOGE(0, "ep %x transfer buffer NULL", ep->ep.address);
+        OSI_LOGE(0, "ep %x dma buf %p invalid", ep->ep.address, buf);
         osiPanic();
     }
 
@@ -338,20 +347,15 @@ static uint32_t prvEpXferStartLocked(dwcUdc_t *dwc, dwcEp_t *ep, void *buf, uint
             else
                 dieptsiz.b.mc = 1;
             eptsiz = dieptsiz.v;
-            if (dwc->dedicated_fifo == 0 && ep->periodic == 0)
+            if (ep->dynamic_fifo)
             {
                 int8_t index = prvAllocateTxFifo(dwc, ep);
                 if (index < 0)
                 {
-                    OSI_LOGE(0, "EP %x transfer fail to allocate fifo", ep->ep.address);
-                    if (ep->periodic)
-                        osiPanic();
-                    ep->fifo_index = 0;
+                    OSI_LOGW(0, "EP %x/%u xfer fail allocate fifo, use 0", ep->ep.address, ep->type);
+                    index = 0;
                 }
-                else
-                {
-                    ep->fifo_index = index;
-                }
+                ep->fifo_index = index;
             }
         }
 
@@ -634,6 +638,22 @@ static void prvEp0CompleteCB(usbEp_t *ep_, usbXfer_t *xfer)
     }
 }
 
+static void prvDwcRmtWakeup_(dwcUdc_t *dwc)
+{
+    uint32_t critical = osiEnterCritical();
+    if (dwc->pm_level == DWC_SUSPEND)
+    {
+        REG_USBC_DCTL_T dctl = {dwc->hw->dctl};
+        dctl.b.rmtwkupsig = 1;
+        dwc->hw->dctl = dctl.v;
+        prvExitHibernation(dwc);
+        dctl.b.rmtwkupsig = 0;
+        dwc->hw->dctl = dctl.v;
+        dwc->pm_level = DWC_NORMAL;
+    }
+    osiExitCritical(critical);
+}
+
 static void prvScheduleEpLocked(dwcUdc_t *dwc, dwcEp_t *ep)
 {
     uint32_t sc = osiEnterCritical();
@@ -643,6 +663,9 @@ static void prvScheduleEpLocked(dwcUdc_t *dwc, dwcEp_t *ep)
     dwcXfer_t *dx = TAILQ_FIRST(&ep->xfer_q);
     if (dx == NULL)
         goto end;
+
+    if (dwc->pm_level == DWC_SUSPEND && ep->ep.dirin && (dwc->gadget->feature & UDC_FEATURE_WAKEUP_ON_WRITE))
+        prvDwcRmtWakeup_(dwc);
 
     TAILQ_REMOVE(&ep->xfer_q, dx, anchor);
     ep->xfer_schedule = dx;
@@ -659,7 +682,7 @@ end:
 
 static int prvEpQueueLocked(dwcUdc_t *dwc, dwcEp_t *ep, dwcXfer_t *dx)
 {
-    if (dx->occupied)
+    if (OSI_UNLIKELY(dx->occupied))
     {
         OSI_LOGW(0, "ep queue busy. (ep: %x, ep0_state: %d)", ep->ep.address, dwc->ep0_state);
         return -EBUSY;
@@ -685,7 +708,7 @@ static void prvQueueSetup(dwcUdc_t *dwc)
 
     dwcXfer_t *dx = &dwc->setup_xfer;
     dx->xfer.buf = dwc->setup_buf;
-    dx->xfer.length = 8;
+    dx->xfer.length = 64; // more space for back2back package
     dx->xfer.param = dwc;
     dx->xfer.complete = prvEp0CompleteCB;
 
@@ -803,9 +826,9 @@ static void prvSetEpMps(dwcUdc_t *dwc, dwcEp_t *ep, uint16_t mps)
     ep->ep.mps = max_pkt_size;
     ep->dma_max = max_dma_size;
 
-    usbcDiepctl_t epctl = {};
+    usbcDiepctl_t epctl = {ep->hep->epctl};
     epctl.b.mps = mps;
-    ep->hep->epctl |= epctl.v;
+    ep->hep->epctl = epctl.v;
 }
 
 static void prvEpCancelXferInQueue(dwcEp_t *ep)
@@ -831,9 +854,6 @@ static void prvEpStopLocked(dwcUdc_t *dwc, dwcEp_t *ep)
     usbcDiepctl_t epctl = {ep->hep->epctl};
     if (epctl.b.epena)
         prvEpXferStopLocked(dwc, ep);
-
-    if (ep->ep.dirin && dwc->dedicated_fifo == 0 && ep->periodic == 0)
-        prvFreeTxFifo(dwc, ep);
 
     if (ep->xfer_schedule)
     {
@@ -878,7 +898,7 @@ static int8_t prvAllocateTxFifo(dwcUdc_t *dwc, dwcEp_t *ep)
         dwc->tx_fifo_map |= (1 << best);
 
     osiExitCritical(critical);
-
+    OSI_LOGD(0, "EP %x/%u allocate txfifo %d", ep->ep.address, ep->type, best);
     return best;
 }
 
@@ -887,6 +907,7 @@ static inline void prvFreeTxFifo(dwcUdc_t *dwc, dwcEp_t *ep)
     uint32_t critical = osiEnterCritical();
     if (ep->fifo_index != 0)
     {
+        OSI_LOGD(0, "EP %x/%u free txfifo %u", ep->ep.address, ep->type, ep->fifo_index);
         dwc->tx_fifo_map &= ~(1 << ep->fifo_index);
         ep->fifo_index = 0;
     }
@@ -900,8 +921,18 @@ static void prvEpDisableLocked(dwcUdc_t *dwc, dwcEp_t *ep)
     else
         dwc->hw->daintmsk &= ~((1 << ep->ep.num) << 16);
     prvEpStopLocked(dwc, ep);
+    // always free in ep tx fifo
     if (ep->ep.dirin)
         prvFreeTxFifo(dwc, ep);
+
+    if (ep->ep.num != 0)
+    {
+        usbcDiepctl_t epctl = {ep->hep->epctl};
+        epctl.b.usbactep = 0;
+        epctl.b.eptype = 0;
+        epctl.b.snak = 1;
+        ep->hep->epctl = epctl.v;
+    }
 }
 
 static int prvEpEnableLocked(dwcUdc_t *dwc, dwcEp_t *ep)
@@ -910,24 +941,26 @@ static int prvEpEnableLocked(dwcUdc_t *dwc, dwcEp_t *ep)
     usbcDiepctl_t epctl = {hep->epctl};
     if (!epctl.b.usbactep)
     {
-        ep->fifo_index = 0;
-        if ((dwc->dedicated_fifo == 1 || ep->periodic == 1) && ep->ep.dirin && ep->ep.num != 0)
+        int8_t index = 0;
+        if (ep->dynamic_fifo == 0 && ep->ep.dirin)
         {
-            int8_t index = prvAllocateTxFifo(dwc, ep);
+            index = prvAllocateTxFifo(dwc, ep);
             if (index < 0)
             {
-                OSI_LOGE(0, "ep %x fail to allocate fifo", ep->ep.address);
-                return -ENOMEM;
+                OSI_LOGW(0, "EP %x/%u enable fail allocate txfifo", ep->ep.address, ep->type);
+                // periodic transfer must use dedicated fifo
+                if (ep->periodic)
+                    osiPanic();
+                // use shared fifo
+                index = 0;
             }
-            ep->fifo_index = index;
-            OSI_LOGI(0, "ep %x allocate fifo %d", ep->ep.address, index);
+            OSI_LOGI(0, "ep %x/%u allocate fifo %d", ep->ep.address, ep->type, index);
         }
-
-        epctl.v = 0;
+        ep->fifo_index = index;
         epctl.b.usbactep = 1;
         epctl.b.eptype = ep->type;
         epctl.b.epdis = 0;
-        hep->epctl |= epctl.v;
+        hep->epctl = epctl.v;
     }
 
     if (ep->ep.dirin)
@@ -1047,27 +1080,10 @@ static int prvSetTestMode(dwcUdc_t *dwc, uint8_t test_mode)
 
 static void prvEpInDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
 {
-    uint32_t critical = osiEnterCritical();
-
-    if (dwc->dedicated_fifo == 0 && ep->periodic == 0)
-        prvFreeTxFifo(dwc, ep);
-
     uint32_t size_left;
-    if (ep->ep.num == 0)
-        size_left = REGTYPE_FIELD_GET(REG_USBC_DIEPTSIZ0_T, ep->hep->eptsiz, xfersize);
-    else
-        size_left = REGTYPE_FIELD_GET(usbcDieptsiz_t, ep->hep->eptsiz, xfersize);
-
+    uint32_t critical = osiEnterCritical();
     if (ep->ep.num == 0)
     {
-        if (!(dwc->ep0_state & EP0_STATE_DIRIN_MASK))
-        {
-            osiExitCritical(critical);
-            // must be something wrong
-            OSI_LOGW(0, "ep0 in done, state mismatch (%d)", dwc->ep0_state);
-            return;
-        }
-
         // complete the ctrl transfer
         if (dwc->ep0_state == EP0_STATUS_IN)
         {
@@ -1091,6 +1107,21 @@ static void prvEpInDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
             prvQueueSetup(dwc);
             return;
         }
+
+        if (OSI_UNLIKELY(!(dwc->ep0_state & EP0_STATE_DIRIN_MASK)))
+        {
+            osiExitCritical(critical);
+            // must be something wrong
+            OSI_LOGW(0, "ep0 in done, state mismatch (%d)", dwc->ep0_state);
+            return;
+        }
+        size_left = REGTYPE_FIELD_GET(REG_USBC_DIEPTSIZ0_T, ep->hep->eptsiz, xfersize);
+    }
+    else
+    {
+        size_left = REGTYPE_FIELD_GET(usbcDieptsiz_t, ep->hep->eptsiz, xfersize);
+        if (ep->dynamic_fifo)
+            prvFreeTxFifo(dwc, ep);
     }
 
     dwcXfer_t *dx = ep->xfer_schedule;
@@ -1133,6 +1164,7 @@ static void prvEpInDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
     if (transfer_done)
     {
         dx->xfer.status = 0;
+        dx->xfer_size = 0;
         if (ep->ep.num == 0 && dwc->ep0_state == EP0_DATA_IN)
         {
             prvChangeEp0State(dwc, EP0_STATUS_OUT);
@@ -1141,7 +1173,6 @@ static void prvEpInDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
         }
         else
         {
-            dx->xfer_size = 0;
             osiExitCritical(critical);
             prvGiveBackEpCurrent(dwc, ep);
         }
@@ -1152,23 +1183,10 @@ static void prvEpInDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
 
 static void prvEpOutDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
 {
-    uint32_t critical = osiEnterCritical();
     uint32_t size_left;
-    if (ep->ep.num == 0)
-        size_left = REGTYPE_FIELD_GET(REG_USBC_DOEPTSIZ0_T, ep->hep->eptsiz, xfersize);
-    else
-        size_left = REGTYPE_FIELD_GET(usbcDoeptsiz_t, ep->hep->eptsiz, xfersize);
-
+    uint32_t critical = osiEnterCritical();
     if (ep->ep.num == 0)
     {
-        if (dwc->ep0_state & EP0_STATE_DIRIN_MASK)
-        {
-            osiExitCritical(critical);
-            // must be something wrong
-            OSI_LOGW(0, "ep0 out done, state mismatch (%d)", dwc->ep0_state);
-            return;
-        }
-
         if (dwc->ep0_state == EP0_STATUS_OUT)
         {
             osiExitCritical(critical);
@@ -1180,6 +1198,19 @@ static void prvEpOutDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
             prvQueueSetup(dwc);
             return;
         }
+
+        if (OSI_UNLIKELY(dwc->ep0_state & EP0_STATE_DIRIN_MASK))
+        {
+            osiExitCritical(critical);
+            // must be something wrong
+            OSI_LOGW(0, "ep0 out done, state mismatch (%d)", dwc->ep0_state);
+            return;
+        }
+        size_left = REGTYPE_FIELD_GET(REG_USBC_DOEPTSIZ0_T, ep->hep->eptsiz, xfersize);
+    }
+    else
+    {
+        size_left = REGTYPE_FIELD_GET(usbcDoeptsiz_t, ep->hep->eptsiz, xfersize);
     }
 
     dwcXfer_t *dx = ep->xfer_schedule;
@@ -1214,6 +1245,7 @@ static void prvEpOutDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
     if (transfer_done)
     {
         dx->xfer.status = 0;
+        dx->xfer_size = 0;
         if (ep->ep.num == 0 && dwc->ep0_state == EP0_DATA_OUT)
         {
             prvChangeEp0State(dwc, EP0_STATUS_IN);
@@ -1222,7 +1254,6 @@ static void prvEpOutDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
         }
         else
         {
-            dx->xfer_size = 0;
             osiExitCritical(critical);
             prvGiveBackEpCurrent(dwc, ep);
         }
@@ -1233,51 +1264,70 @@ static void prvEpOutDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
 
 static void prvEpISR(dwcUdc_t *dwc, dwcEp_t *ep)
 {
-    uint32_t epint = {ep->hep->epint};
+    uint32_t epint = ep->hep->epint;
     if (!(ep->hep->epctl & REGTYPE_FIELD_MASK(usbcDiepctl_t, usbactep)))
     {
-        ep->hep->epint = epint & (ep->ep.dirin ? dwc->hw->diepmsk : dwc->hw->doepmsk);
+        ep->hep->epint = epint;
         OSI_LOGW(0, "ep %x intr %x, not actep", ep->ep.address, epint);
         return;
     }
 
     if (ep->ep.dirin)
     {
-        usbcDiepint_t diepint = {epint & dwc->hw->diepmsk};
-        ep->hep->epint = diepint.v;
-        if (diepint.b.xfercompl)
+        epint &= dwc->hw->diepmsk;
+        ep->hep->epint = epint;
+        if (epint & REGTYPE_FIELD_MASK(usbcDiepint_t, xfercompl))
+        {
             prvEpInDoneISR(dwc, ep);
+            return;
+        }
 
-        if (diepint.b.timeout)
-            OSI_LOGE(0, "ep %x in timeout", ep->ep.address);
-
-        if (diepint.b.ahberr)
-            OSI_LOGE(0, "ep %x in ahberror", ep->ep.address);
+        if (epint & REGTYPE_FIELD_MASK(usbcDiepint_t, timeout))
+        {
+            OSI_LOGW(0, "ep %x timeout", ep->ep.address);
+        }
     }
     else
     {
-        uint16_t oepmsk = dwc->hw->doepmsk | REGTYPE_FIELD_MASK(usbcDoepint_t, stuppktrcvd);
-        usbcDoepint_t doepint = {epint & oepmsk};
-        ep->hep->epint = doepint.v;
+        epint &= (dwc->hw->doepmsk | REGTYPE_FIELD_MASK(usbcDoepint_t, stuppktrcvd));
+        ep->hep->epint = epint;
 
-        /**
-         * ignore complete bit when in SETUP stage, and process
-         * out handler by setup bit.
-         *
-         * 1. clear xfercompl bit if has any [setup, stuppktrcvd] bit
-         * 2. clear xfercompl bit if in SETUP stage (may not have setup interrupt bits)
-         */
-        if (doepint.b.setup || doepint.b.stuppktrcvd)
+        usbcDoepint_t doepint = {epint};
+        if (ep->ep.num == 0 && (doepint.b.setup || doepint.b.stuppktrcvd))
+        {
             doepint.b.xfercompl = 0;
-
-        if (ep->ep.num == 0 && dwc->ep0_state == EP0_SETUP && !(doepint.b.setup))
-            doepint.b.xfercompl = 0;
+        }
 
         if (doepint.b.xfercompl)
+        {
             prvEpOutDoneISR(dwc, ep);
+            return;
+        }
 
         if (ep->ep.num == 0 && doepint.b.setup)
+        {
+            if (OSI_UNLIKELY(dwc->ep0_state != EP0_SETUP))
+            {
+                OSI_LOGW(0, "out isr setup invalid stage %d", dwc->ep0_state);
+            }
             prvEpOutDoneISR(dwc, ep);
+            return;
+        }
+
+        if (doepint.b.stsphsercvd)
+        {
+            OSI_LOGW(0, "ep %x stsphsercvd", ep->ep.address);
+        }
+    }
+
+    if (epint & REGTYPE_FIELD_MASK(usbcDiepint_t, ahberr))
+    {
+        OSI_LOGW(0, "ep %x ahberr", ep->ep.address);
+    }
+
+    if (epint & REGTYPE_FIELD_MASK(usbcDiepint_t, txfifoundrn))
+    {
+        OSI_LOGW(0, "ep %x txfifoundrn/outpkterrmsk", ep->ep.address);
     }
 }
 
@@ -1286,6 +1336,8 @@ static void prvEnterHibernation(dwcUdc_t *dwc)
     // clear any pending interrupts, since dwc2 will not able to
     // clear them after entering hibernation
     dwc->hw->gintsts = 0xffffffff;
+
+    osiDelayUS(10);
 
     REG_USBC_PCGCCTL_T pcgcctl = {dwc->hw->pcgcctl};
     pcgcctl.b.stoppclk = 1;
@@ -1301,6 +1353,8 @@ static void prvExitHibernation(dwcUdc_t *dwc)
     REG_USBC_PCGCCTL_T pcgcctl = {dwc->hw->pcgcctl};
     pcgcctl.b.stoppclk = 0;
     dwc->hw->pcgcctl = pcgcctl.v;
+
+    osiDelayUS(10);
 }
 
 static inline void prvSuspendISR(dwcUdc_t *dwc)
@@ -1318,16 +1372,22 @@ static inline void prvResumeISR(dwcUdc_t *dwc)
 static void prvDwcISR(void *p)
 {
     dwcUdc_t *dwc = (dwcUdc_t *)p;
+    bool transfer_ready = true;
+    unsigned retry_cnt = 3;
     REG_USBC_GINTSTS_T gintsts = {dwc->hw->gintsts};
+
+    // check device mode
+    if (gintsts.b.curmod == 1)
+        return;
+
+isr_retry:
     dwc->hw->gintsts = gintsts.v;
     gintsts.v &= dwc->hw->gintmsk;
 
-    bool transfer_ready = true;
-
     if (gintsts.b.usbrst || gintsts.b.resetdet)
     {
-        OSI_LOGI(0, "usb irq, usbrst %x", dwc->hw->gotgctl);
         bool connect = dwc->connected == 1;
+        OSI_LOGI(0, "usb irq, usbrst %d/%x/%x", connect, dwc->hw->gotgctl, gintsts.v);
         if (dwc->pm_level == DWC_SUSPEND)
         {
             prvExitHibernation(dwc);
@@ -1340,7 +1400,10 @@ static void prvDwcISR(void *p)
         REG_USBC_GOTGCTL_T otgctl = {dwc->hw->gotgctl};
         if (connect && otgctl.b.bsesvld)
         {
-            prvHwInit(dwc);
+            OSI_LOGE(0, "usb irq, usbrst when connect %x", gintsts.v);
+            prvHwInit(dwc, true);
+            dwc->pm_level = DWC_NORMAL;
+            return;
         }
     }
 
@@ -1354,18 +1417,57 @@ static void prvDwcISR(void *p)
 
     if (gintsts.b.usbsusp)
     {
-        OSI_LOGI(0, "usb irq, usbsusp, %d", dwc->connected);
+        OSI_LOGI(0, "usb irq, usbsusp, %d/%x", dwc->connected, dwc->hw->dsts);
         if (!!dwc->connected)
             prvSuspendISR(dwc);
         transfer_ready = false;
+        return;
     }
 
     if (gintsts.b.wkupint)
     {
-        OSI_LOGI(0, "usb irq, wkupint");
+        OSI_LOGI(0, "usb irq, wkupint, %x/%x", dwc->hw->pcgcctl, dwc->hw->dsts);
         if (dwc->pm_level == DWC_SUSPEND)
+        {
             prvResumeISR(dwc);
+        }
+        else
+        {
+            // abnormal state, reset the controller
+            prvHwInit(dwc, false);
+            return;
+        }
         transfer_ready = true;
+    }
+
+    // do not process endpoints if udc may be disconnected
+    if (OSI_LIKELY(transfer_ready))
+    {
+        uint32_t daint = (dwc->hw->daint & dwc->hw->daintmsk);
+        if (daint & 0x1) // IEP0
+            prvEpISR(dwc, &dwc->iep[0]);
+
+        if (daint & 0x10000) // OEP0
+            prvEpISR(dwc, &dwc->oep[0]);
+
+        if (daint & 0xfffe) // IEPx
+        {
+            for (uint8_t i = 1; i < dwc->iep_count; ++i)
+            {
+                if (daint & (1 << i))
+                    prvEpISR(dwc, &dwc->iep[i]);
+            }
+        }
+
+        if (daint & 0xfffe0000) // OEPx
+        {
+            uint16_t ointmap = (daint >> 16);
+            for (uint8_t i = 1; i < dwc->oep_count; ++i)
+            {
+                if (ointmap & (1 << i))
+                    prvEpISR(dwc, &dwc->oep[i]);
+            }
+        }
     }
 
     if (gintsts.b.sessreqint)
@@ -1378,47 +1480,15 @@ static void prvDwcISR(void *p)
         OSI_LOGE(0, "usb irq, fetsusp");
     }
 
-    // do not process endpoints if udc may be disconnected
-    if (OSI_LIKELY(transfer_ready))
-    {
-        uint32_t daint = dwc->hw->daint;
-        daint &= dwc->hw->daintmsk;
-        if (gintsts.b.oepint)
-        {
-            uint16_t ointmap = daint >> 16;
-            for (uint8_t i = 0; i < dwc->oep_count; ++i)
-            {
-                if (ointmap & (1 << i))
-                    prvEpISR(dwc, &dwc->oep[i]);
-            }
-        }
-
-        if (gintsts.b.iepint)
-        {
-            for (uint8_t i = 0; i < dwc->iep_count; ++i)
-            {
-                if (daint & (1 << i))
-                    prvEpISR(dwc, &dwc->iep[i]);
-            }
-        }
-    }
+    gintsts.v = dwc->hw->gintsts;
+    if ((gintsts.v & dwc->hw->gintmsk) && retry_cnt-- > 0)
+        goto isr_retry;
 }
 
 static bool prvDwcRmtWakeup(udc_t *udc)
 {
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    if (dwc->pm_level == DWC_SUSPEND)
-    {
-        uint32_t critical = osiEnterCritical();
-        REG_USBC_DCTL_T dctl = {dwc->hw->dctl};
-        dctl.b.rmtwkupsig = 1;
-        dwc->hw->dctl = dctl.v;
-        prvExitHibernation(dwc);
-        dctl.b.rmtwkupsig = 0;
-        dwc->hw->dctl = dctl.v;
-        dwc->pm_level = DWC_NORMAL;
-        osiExitCritical(critical);
-    }
+    prvDwcRmtWakeup_(dwc);
     return true;
 }
 
@@ -1471,22 +1541,50 @@ static void prvHwFifoInit(dwcUdc_t *dwc)
     prvTxFifoFlushAll(dwc);
 }
 
-static void prvHwInit(dwcUdc_t *dwc)
+static void inline prvGlobalSoftReset(dwcUdc_t *dwc)
 {
-    dwc->hw->pcgcctl = 0;
-
-    // soft disconnect to the host
-    REG_USBC_DCTL_T dctl = {};
-    dctl.b.sftdiscon = 1;
-    dwc->hw->dctl = dctl.v;
-
-    // global reset the usb controller
     REG_USBC_GRSTCTL_T grstctl = {dwc->hw->grstctl};
     grstctl.b.csftrst = 1;
     dwc->hw->grstctl = grstctl.v;
 
     REG_WAIT_FIELD_EQZ(grstctl, dwc->hw->grstctl, csftrst);
     REG_WAIT_FIELD_NEZ(grstctl, dwc->hw->grstctl, ahbidle);
+}
+
+static void prvHwInit(dwcUdc_t *dwc, bool reset_int)
+{
+    dwc->hw->pcgcctl = 0;
+
+    // global reset the usb controller
+    if (!reset_int)
+        prvGlobalSoftReset(dwc);
+
+    REG_USBC_GAHBCFG_T gahbcfg = {};
+    dwc->hw->gahbcfg = gahbcfg.v;
+
+    REG_USBC_DCFG_T dcfg = {};
+#ifdef FORCE_FULL_SPEED
+    dcfg.b.devspd = DWC_SPEED_FULL_20;
+#else
+    dcfg.b.devspd = DWC_SPEED_HIGH_20;
+#endif
+    dwc->hw->dcfg = dcfg.v;
+
+    if (!reset_int)
+    {
+        // soft disconnect to the host
+        REG_USBC_DCTL_T dctl = {dwc->hw->dctl};
+        dctl.b.sftdiscon = 1;
+        dwc->hw->dctl = dctl.v;
+
+        // at-least 3ms to allow bus to see disconnect
+        osiDelayUS(3100);
+
+        dctl.b.sftdiscon = 0;
+        dwc->hw->dctl = dctl.v;
+
+        prvGlobalSoftReset(dwc);
+    }
 
     REG_USBC_GUSBCFG_T gusbcfg = {};
     gusbcfg.b.forcedevmode = 1;
@@ -1497,15 +1595,7 @@ static void prvHwInit(dwcUdc_t *dwc)
     gusbcfg.b.usbtrdtim = 9;
     dwc->hw->gusbcfg = gusbcfg.v;
 
-    REG_USBC_DCFG_T dcfg = {};
-#ifdef FORCE_FULL_SPEED
-    dcfg.b.devspd = DWC_SPEED_FULL_20;
-#else
-    dcfg.b.devspd = DWC_SPEED_HIGH_20;
-#endif
-    dwc->hw->dcfg = dcfg.v;
-
-    osiDelayUS(100);
+    prvHwFifoInit(dwc);
 
     dwc->hw->gotgint = 0xffffffff;
 
@@ -1519,8 +1609,6 @@ static void prvHwInit(dwcUdc_t *dwc)
     gintmsk.b.sessreqintmsk = 1;
     gintmsk.b.fetsuspmsk = 1;
     dwc->hw->gintmsk = gintmsk.v;
-
-    prvHwFifoInit(dwc);
 
     dwcEpReg_t *hep;
     // Set nak for all endpoints
@@ -1543,12 +1631,16 @@ static void prvHwInit(dwcUdc_t *dwc)
     doepmsk.b.ahberrmsk = 1;
     doepmsk.b.xfercomplmsk = 1;
     doepmsk.b.stsphsercvdmsk = 1;
+    doepmsk.b.back2backsetup = 1;
+    doepmsk.b.stsphsercvdmsk = 1;
+    doepmsk.b.outpkterrmsk = 1;
     dwc->hw->doepmsk = doepmsk.v;
 
     REG_USBC_DIEPMSK_T diepmsk = {};
     diepmsk.b.xfercomplmsk = 1;
     diepmsk.b.ahberrmsk = 1;
     diepmsk.b.timeoutmsk = 1;
+    diepmsk.b.txfifoundrnmsk = 1;
     dwc->hw->diepmsk = diepmsk.v;
 
     // enable in/out ep0 interrupt
@@ -1560,16 +1652,10 @@ static void prvHwInit(dwcUdc_t *dwc)
     // clear all pending interrupt
     dwc->hw->gintsts = 0xffffffff;
 
-    REG_USBC_GAHBCFG_T gahbcfg = {};
     gahbcfg.b.dmaen = 1;
     gahbcfg.b.hbstlen = BURST_INCR16;
     gahbcfg.b.glblintrmsk = 1;
     dwc->hw->gahbcfg = gahbcfg.v;
-
-    osiDelayUS(3000); // at least 3ms can bus see the disconnect
-
-    dctl.b.sftdiscon = 0;
-    dwc->hw->dctl = dctl.v;
 }
 
 static void prvHwExit(dwcUdc_t *dwc)
@@ -1594,27 +1680,27 @@ static void prvHwExit(dwcUdc_t *dwc)
 
 static inline void prvPlatformInit(udc_t *udc)
 {
-    udcPlatSetClock(udc, true);
     udcPlatSetPower(udc, true);
+    udcPlatSetClock(udc, true);
     udcPlatEnable(udc);
 }
 
 static inline void prvPlatformExit(udc_t *udc)
 {
     udcPlatDisable(udc);
-    udcPlatSetPower(udc, false);
     udcPlatSetClock(udc, false);
+    udcPlatSetPower(udc, false);
 }
 
 static void prvDwcStart(udc_t *udc)
 {
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
     prvPlatformInit(udc);
-    prvHwInit(dwc);
-    dwc->pm_level = DWC_NORMAL;
     osiIrqSetHandler(HAL_SYSIRQ_NUM(SYS_IRQ_ID_USBC), prvDwcISR, dwc);
     osiIrqSetPriority(HAL_SYSIRQ_NUM(SYS_IRQ_ID_USBC), SYS_IRQ_PRIO_USBC);
     osiIrqEnable(HAL_SYSIRQ_NUM(SYS_IRQ_ID_USBC));
+    prvHwInit(dwc, false);
+    dwc->pm_level = DWC_NORMAL;
 }
 
 static void prvDwcStop(udc_t *udc)
@@ -1635,13 +1721,17 @@ static int prvDwcEpQueue(udc_t *udc, usbEp_t *ep_, usbXfer_t *xfer)
     uint32_t critical = osiEnterCritical();
     dwcXfer_t *dx = prvXferGetDwcXfer(xfer);
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
+    dwcEp_t *ep;
     if (ep_->num == 0)
     {
         if (dwc->ep0_state & EP0_STATE_DIRIN_MASK)
             ep = &dwc->iep[0];
         else
             ep = &dwc->oep[0];
+    }
+    else
+    {
+        ep = prvAddressGetEndpoint(dwc, ep_->address);
     }
 
     if (!(ep->hep->epctl & REGTYPE_FIELD_MASK(usbcDiepctl_t, usbactep)))
@@ -1667,13 +1757,17 @@ static void prvDwcEpDequeue(udc_t *udc, usbEp_t *ep_, usbXfer_t *xfer)
     }
 
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
-    if (UE_GET_ADDR(ep_->address) == 0)
+    dwcEp_t *ep;
+    if (ep_->num == 0)
     {
         if (dwc->ep0_state & EP0_STATE_DIRIN_MASK)
             ep = &dwc->iep[0];
         else
             ep = &dwc->oep[0];
+    }
+    else
+    {
+        ep = prvAddressGetEndpoint(dwc, ep_->address);
     }
 
     if (dx == ep->xfer_schedule)
@@ -1692,7 +1786,7 @@ static void prvDwcEpDequeueAll(udc_t *udc, usbEp_t *ep_)
     uint32_t critical = osiEnterCritical();
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
     dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
-    if (UE_GET_ADDR(ep_->address) == 0)
+    if (ep_->num == 0)
     {
         if (dwc->ep0_state & EP0_STATE_DIRIN_MASK)
             ep = &dwc->iep[0];
@@ -1770,8 +1864,11 @@ static usbEp_t *prvDwcEpAllocate(udc_t *udc, usb_endpoint_descriptor_t *desc)
             ep->type = type & 0b11;
             ep->halted = 0;
             ep->periodic = 0;
+            ep->dynamic_fifo = 0;
             if (type == UE_ISOCHRONOUS || type == UE_INTERRUPT)
                 ep->periodic = dirin ? 1 : 0;
+            if (dirin && dwc->dedicated_fifo == 0 && ep->periodic == 0)
+                ep->dynamic_fifo = 1;
             break;
         }
     }
@@ -1784,11 +1881,11 @@ static usbEp_t *prvDwcEpAllocate(udc_t *udc, usb_endpoint_descriptor_t *desc)
 
 static void prvDwcEpFree(udc_t *udc, usbEp_t *ep_)
 {
+    uint32_t critical = osiEnterCritical();
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
     dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
-    if (!ep->used)
-        return;
     ep->used = 0;
+    osiExitCritical(critical);
 }
 
 static usbXfer_t *prvDwcXferAllocate(udc_t *udc)
@@ -1803,14 +1900,21 @@ static void prvDwcXferFree(udc_t *udc, usbXfer_t *xfer)
     free(dx);
 }
 
+static void prvDwcGdbPollIntr(udc_t *udc)
+{
+    dwcUdc_t *dwc = prvGadgetGetDwc(udc);
+    if (dwc->connected)
+        prvDwcISR(dwc);
+}
+
 static void prvDwcInit(udc_t *udc, dwcUdc_t *dwc)
 {
-    static uint8_t _ep0_dma[64] OSI_CACHE_LINE_ALIGNED OSI_SECTION_SRAM_BSS;
+    static uint8_t _ep0_dma[96] OSI_CACHE_LINE_ALIGNED OSI_SECTION_SRAM_BSS;
 
     dwc->iep_count = UDC_IEP_COUNT + 1;
     dwc->oep_count = UDC_OEP_COUNT + 1;
-    dwc->ep0_buf = _ep0_dma;
-    dwc->setup_buf = &_ep0_dma[32];
+    dwc->ep0_buf = _ep0_dma;        // 32 bytes
+    dwc->setup_buf = &_ep0_dma[32]; // 64 bytes
     dwc->gadget = udc;
     dwc->dedicated_fifo = 1;
     dwc->connected = 0;
@@ -1868,7 +1972,11 @@ void dwcUdcInit(udc_t *udc)
     udc->ops.ep_free = prvDwcEpFree;
     udc->ops.xfer_alloc = prvDwcXferAllocate;
     udc->ops.xfer_free = prvDwcXferFree;
+    // gdb mode
+    udc->ops.gdb_poll = prvDwcGdbPollIntr;
     osiExitCritical(sc);
+
+    osiRegisterBlueScreenHandler(NULL, (osiCallback_t)prvDwcGdbPollIntr, udc);
 }
 
 void dwcUdcExit(udc_t *udc)

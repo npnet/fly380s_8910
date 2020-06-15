@@ -50,6 +50,9 @@ enum
     NVID_AUD_CALIB = 0x278,
     NVID_PHY_NV_CATM = 0x279,
     NVID_AUD_CODEC_NV = 0x27a,
+    NVID_BT_CONFIG = 0x191,
+    NVID_BT_ADDRESS = 0x192,
+    NVID_BT_SPRD = 0x1ba,
 };
 
 typedef struct
@@ -91,10 +94,16 @@ static const nvDescription_t gNvDesc[] = {
     {NVID_MODEM_RF_NV, "rf_nv.bin", MODEMNV_DIR, RUNNINGNV_DIR},
     {NVID_CFW_NV, "cfw_nv.bin", MODEMNV_DIR, RUNNINGNV_DIR},
     {NVID_AUD_CALIB, "audio_calib.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_BT_CONFIG, "bt_config.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_BT_ADDRESS, "db_record.bin", RUNNINGNV_DIR, RUNNINGNV_DIR}, //no init data
+    {NVID_BT_SPRD, "bt_sprd.bin", MODEMNV_DIR, RUNNINGNV_DIR},
     {NVID_AUD_CODEC_NV, "audio_codec_nv.bin", MODEMNV_DIR, RUNNINGNV_DIR},
 #if defined(CONFIG_NON_BL_CE_SUPPORT)
     {NVID_PHY_NV_CATM, "phy_nv_catm.bin", MODEMNV_DIR, RUNNINGNV_DIR},
 #endif
+    {NVID_SIM_LOCK_CUSTOMIZE_DATA, "sim_lock_customize_data.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_SIM_LOCK_USER_DATA, "sim_lock_user_data.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_SIM_LOCK_CONTROL_KEY_ID, "sim_lock_control_key.bin", MODEMNV_DIR, RUNNINGNV_DIR},
 };
 
 void nvmInit(void)

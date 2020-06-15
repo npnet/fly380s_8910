@@ -46,42 +46,6 @@ typedef struct
 } osiValueStrMap_t;
 
 /**
- * data structure to define an unsigned integer range
- */
-typedef struct
-{
-    uint32_t minval; ///< minimal value, inclusive
-    uint32_t maxval; ///< maximum value, inclusive
-} osiUintRange_t;
-
-/**
- * data structure to define a signed integer range
- */
-typedef struct
-{
-    int minval; ///< minimal value, inclusive
-    int maxval; ///< maximum value, inclusive
-} osiIntRange_t;
-
-/**
- * data structure to define a unsigned 64bits integer range
- */
-typedef struct
-{
-    uint64_t minval; ///< minimal value, inclusive
-    uint64_t maxval; ///< maximum value, inclusive
-} osiUint64Range_t;
-
-/**
- * data structure to define a signed 64bits integer range
- */
-typedef struct
-{
-    int64_t minval; ///< minimal value, inclusive
-    int64_t maxval; ///< maximum value, inclusive
-} osiInt64Range_t;
-
-/**
  * @brief function for comparison
  *
  * In bsearch(3) and qsort(3), a comparison function is needed.

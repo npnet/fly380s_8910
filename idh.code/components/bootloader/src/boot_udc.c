@@ -202,7 +202,7 @@ static void _initUdcRomConfig(bootUdc_t *udc)
 static void _initUdcConfig(bootUdc_t *udc)
 {
     _initUdcCommonConfig(udc);
-    bootPanic(); // TODO
+    osiPanic(); // TODO
 }
 
 bootUdc_t *bootUdcOpen(uint32_t name, bool rom)
@@ -228,7 +228,7 @@ void bootUdcClose(bootUdc_t *udc)
 
 static void _enqueueSetup(bootUdc_t *udc)
 {
-    bootPanic(); // TODO
+    osiPanic(); // TODO
 }
 
 static void _epInIsrDone(bootUdc_t *udc, udcEp_t *ep)
@@ -239,7 +239,7 @@ static void _epInIsrDone(bootUdc_t *udc, udcEp_t *ep)
     if (ep->ep.num == 0)
     {
         OSI_LOGE(0, "ep0 in done (TODO)");
-        bootPanic();
+        osiPanic();
         if (!(udc->ep0_state & EP0_STATE_DIRIN_MASK))
         {
             OSI_LOGW(0, "ep0 in done, state mismatch (%d)", udc->ep0_state);
@@ -306,7 +306,7 @@ static void _epInIsrDone(bootUdc_t *udc, udcEp_t *ep)
         if (ep->ep.num == 0 && udc->ep0_state == EP0_DATA_IN)
         {
             udc->ep0_state = EP0_STATUS_OUT;
-            bootPanic(); // TODO
+            osiPanic(); // TODO
             return;
         }
         _giveBackComplete(udc, ep, x);
@@ -327,7 +327,7 @@ static void _epOutIsrDone(bootUdc_t *udc, udcEp_t *ep)
     if (ep->ep.num == 0)
     {
         OSI_LOGE(0, "ep0 out done (TODO)");
-        bootPanic();
+        osiPanic();
         if (udc->ep0_state & EP0_STATE_DIRIN_MASK)
         {
             OSI_LOGW(0, "ep0 out done, state mismatch (%d)", udc->ep0_state);
@@ -381,7 +381,7 @@ static void _epOutIsrDone(bootUdc_t *udc, udcEp_t *ep)
         {
             OSI_LOGE(0, "ep0 data phase done, swith in status");
             udc->ep0_state = EP0_STATUS_IN;
-            bootPanic(); // TODO
+            osiPanic(); // TODO
             return;
         }
         _giveBackComplete(udc, ep, x);
@@ -444,13 +444,13 @@ bool bootUdcIsrPoll(bootUdc_t *udc)
     if (gintsts.b.usbrst || gintsts.b.resetdet)
     {
         OSI_LOGE(0, "usb reset");
-        bootPanic(); // TODO
+        osiPanic(); // TODO
     }
 
     if (gintsts.b.enumdone)
     {
         OSI_LOGE(0, "usb enumdone");
-        bootPanic();
+        osiPanic();
     }
 
     if (gintsts.b.usbsusp)
@@ -660,7 +660,7 @@ static uint32_t _epXferStart(bootUdc_t *udc, udcEp_t *ep, void *buf, uint32_t le
                 {
                     OSI_LOGE(0, "fail to alloc tx fifo (ep %x)", ep->ep.address);
                     if (ep->periodic == 1)
-                        bootPanic();
+                        osiPanic();
                     ep->fifo_index = 0;
                 }
                 else
@@ -723,7 +723,7 @@ bool bootUdcXferEnqueue(bootUdc_t *udc, bootUsbEp_t *ep_, bootUsbXfer_t *xfer_)
     if (ep_->num == 0)
     {
         OSI_LOGE(0, "udc enqueue ep0 %x (TODO)", ep_->address);
-        bootPanic(); // TODO
+        osiPanic(); // TODO
     }
 
     udcEp_t *ep = (udcEp_t *)ep_;

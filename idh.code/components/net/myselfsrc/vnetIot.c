@@ -1,8 +1,5 @@
-
-
 #include "cJSON.h"
 #include "netutils.h"
-#include "async_worker.h"
 #include "mupnp/util/string.h"
 #include "http_api.h"
 #include "sockets.h"
@@ -18,6 +15,7 @@
 #include "http_lunch_api.h"
 #include "at_command.h"
 #include "vfs.h"
+#include "osi_api.h"
 
 #ifdef CONFIG_SOC_8910
 
@@ -28,9 +26,13 @@
 #define SOFTWARE_VER_NUM "BC60_1268D_V1.0"
 
 osiTimer_t *ghttpregtimer = NULL;
+osiThread_t *dxhttpThread = NULL;
 
 static void do_dxregProcess(uint8_t nCid, uint8_t nSimId);
+
 extern char *vnetregdata;
+
+extern osiThread_t *netGetTaskID();
 
 typedef struct {
     uint8_t simId;
@@ -40,9 +42,9 @@ typedef struct {
     uint8_t resultDesc[12];
 }reg_ctrl_t;
 
-reg_ctrl_t gRegCtrl;
 reg_ctrl_t *reg_ctrl;
-nHttp_info *at_nHttp_reg;
+nHttp_info *at_nHttp_reg = NULL;
+bool is_dxreg_inited = false;
 
 static bool isResultOk(reg_ctrl_t *reg_ctrl)
 {
@@ -53,29 +55,29 @@ static void parseJson(char *pMsg, reg_ctrl_t *reg_ctrl)
 {
     if (NULL == pMsg)
     {
-        sys_arch_printf("parseJson: pMsg is NULL!!!\n");
+        OSI_LOGI(0, "parseJson: pMsg is NULL!!!\n");
         return;
     }
     cJSON *pJson = cJSON_Parse(pMsg);
     if (NULL == pJson)
     {
-        sys_arch_printf("parseJson: pJson is NULL!!!\n");
+        OSI_LOGI(0, "parseJson: pJson is NULL!!!\n");
         return;
     }
     char *regdatajs = cJSON_PrintUnformatted(pJson);
-    sys_arch_printf("parseJson: %s\n", regdatajs);
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "parseJson: %s\n", regdatajs);	
 
     cJSON *pSub = cJSON_GetObjectItem(pJson, "resultCode");
     if (NULL != pSub)
     {
-        sys_arch_printf("resultCode: %s\n", pSub->valuestring);
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "resultCode: %s\n", pSub->valuestring);
         reg_ctrl->resultCode = atoi(pSub->valuestring);
     }
 
     pSub = cJSON_GetObjectItem(pJson, "resultDesc");
     if (NULL != pSub)
     {
-        sys_arch_printf("resultDesc: %s\n", pSub->valuestring);
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "resultDesc: %s\n", pSub->valuestring);
         strncpy((char *)reg_ctrl->resultDesc,pSub->valuestring,10);
     }
      free(regdatajs);
@@ -143,13 +145,12 @@ static char *genRegData(uint8_t simid)
 
     if (regdatajs == NULL)
     {
-        sys_arch_printf("JsonString error...");
+        OSI_LOGI(0, "JsonString error...");
         cJSON_Delete(pJsonRoot);
         return NULL;
     }
     else
-        sys_arch_printf("genRegData :%s\n", regdatajs);
-
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "genRegData :%s\n", regdatajs);
     out_len = strlen(regdatajs);
 
     mbedtls_base64_encode( NULL, 0, &buffer_len, (const unsigned char *)regdatajs, out_len);
@@ -157,85 +158,65 @@ static char *genRegData(uint8_t simid)
 
     if (buffer != NULL && mbedtls_base64_encode(buffer, buffer_len, &len, (const unsigned char *)regdatajs, out_len) != 0)
     {
-        sys_arch_printf("base64 error...");
+        OSI_LOGI(0, "base64 error...");
     }
     free(regdatajs);
     cJSON_Delete(pJsonRoot);
     return (char *)buffer;
 }
-
-static AWORKER_RC at_httpreg_worker_handler(AWORKER_REQ *req)
+static void dx_registercb(void *param)
 {
-    uint32_t event = req->event;
-    AWORKER_RC rc = AWRC_SUCCESS;
-    bool paramret = true;
-    uint16_t index = 0;
-    nHttp_info *nHttp_inforeg;
-    sys_arch_printf("at_httpx_worker_handler event:%ld", event);
-    switch (event)
+    nHttp_info *nHttp_inforeg = (nHttp_info *)param;
+    OSI_LOGI(0, "dx_registercb Entering at_nHttp_reg->CID= %d", at_nHttp_reg->CID);
+    if (Http_postnreg(nHttp_inforeg) == false)
     {
-        case 1:
+        if (Term_Http(at_nHttp_reg) != true)
         {
-            uint32_t ADDR;
-            ADDR = aworker_param_getu32(req, index++, (bool *)&paramret);
-            if (!paramret)
-            {
-                sys_arch_printf("AT_HTTPpostreg get param fail from async worker");
-                rc = AWRC_FAIL;
-                break;
-            }
-            nHttp_inforeg = (nHttp_info *)ADDR;
-
-            if (Http_postnreg(nHttp_inforeg) == false)
-            {
-                rc = AWRC_FAIL;
-	         break;
-            }
-            else
-            {
-
-                rc = AWRC_SUCCESS;
-            }
-
-            break;
+            OSI_LOGI(0, "dx_registercb Term fail, please try again later\n");
+            at_nHttp_reg = NULL;
+            is_dxreg_inited = false;
+            goto threadexit;
         }
-        default:
-            sys_arch_printf("at_httpreg_worker_handler unhandled event:%ld", event);
-        break;
+	 at_nHttp_reg = NULL;
+        if(reg_ctrl->retryCount < 10)
+        {
+            reg_ctrl->retryCount++;
+            OSI_LOGI(0, "dx_registercb error Http_postnreg error reg_ctrl->retryCount=%d", reg_ctrl->retryCount );
+            ghttpregtimer = osiTimerCreate(netGetTaskID(), httpreg_timeout, NULL);
+            if (ghttpregtimer == NULL)
+            {
+                OSI_LOGI(0, "HTTPreg# dx_registercb HTTPregTimmer create timer failed result error");
+                is_dxreg_inited = false;
+                goto threadexit;
+            }
+            osiTimerStart(ghttpregtimer , 60 * 60 * 1000);
+            goto threadexit;
+        }
+        else
+        {
+             OSI_LOGI(0, "dx_registercb response operation errorreg_ctrl->retryCount = %d", reg_ctrl->retryCount );
+             if(NULL != vnetregdata)
+             {
+                free(vnetregdata);
+                vnetregdata = NULL;
+             }
+             is_dxreg_inited = false;
+             goto tmdethexit;
+        }
     }
-
-    if (rc != AWRC_PROCESSING)
+    else
     {
-        sys_arch_printf("the httpreg request will be deleted by aworker, and become invalid\n");     
-        // if return value was not AWRC_PROCESSING,
-        // the request will be deleted by aworker, and become invalid
-    }
-    return rc;
-}
-
-static void at_httpreg_worker_callback(int result, uint32_t event, void *param)
-{
-
-    sys_arch_printf("at_httpreg_worker_callback result:%d event:%ld", result, event);
-    switch (event)
-    {
-    case 1:
-        break;
-    default:
-        sys_arch_printf("at_httpreg_worker_callback unhandled event:%ld", event);
-        break;
-    }
-     if (Term_Http(at_nHttp_reg) != true)
-     {
-            sys_arch_printf("Term fail, please try again later\n");
-            return;
-      }
-
-    if (result == 0)
-    {
+         if (Term_Http(at_nHttp_reg) != true)
+        {
+            OSI_LOGI(0, "dx_registercb Term fail, please try again later\n");
+            at_nHttp_reg = NULL;
+            is_dxreg_inited = false;
+            goto threadexit;
+        }
+         at_nHttp_reg = NULL;
         // response operation succuss
-        //char *data = NULL;    //data 做一个全局变量下行下去得到返回的数据
-       sys_arch_printf("at_httpreg_worker_callback");
+       //char *data = NULL;    //data 做一个全局变量下行下去得到返回的数据
+       OSI_LOGI(0, "dx_registercb postnreg success");
        parseJson(vnetregdata, reg_ctrl);
        if(NULL != vnetregdata)
        {
@@ -252,113 +233,151 @@ static void at_httpreg_worker_callback(int result, uint32_t event, void *param)
                osiTimerDelete(ghttpregtimer);
                ghttpregtimer = NULL;
            }
-           sys_arch_printf("response operation succuss data right");
+           OSI_LOGI(0, "dx_registercb response operation succuss data right");
            getSimIccid(reg_ctrl->simId,simiccid,&iccid_len);
            vfs_file_write(NV_SELF_REG, simiccid, 20);
+           is_dxreg_inited = false;
            //NV_SetUEIccid(simiccid,iccid_len,reg_ctrl->simId);
+           goto threadexit;
        }
        else if (reg_ctrl->retryCount < 10)
        {
            reg_ctrl->retryCount++;
-           sys_arch_printf("response operation succuss data error");
-           ghttpregtimer = osiTimerCreate(osiThreadCurrent(), httpreg_timeout, NULL);
+           OSI_LOGI(0, "dx_registercb response operation succuss data error");
+           ghttpregtimer = osiTimerCreate(netGetTaskID(), httpreg_timeout, NULL);
            if (ghttpregtimer == NULL)
            {
-               sys_arch_printf("HTTPreg# HTTPregTimmer create timer failed");
-               return;
+               OSI_LOGI(0, "HTTPreg# dx_registercb HTTPregTimmer create timer failed");
+               is_dxreg_inited = false;
+               goto threadexit;
            }
            osiTimerStart(ghttpregtimer , 60 * 60 * 1000);
+           goto threadexit;
            //COS_StartFunctionTimer(60*60*1000,do_dxregProcess,reg_ctrl->simId);
-	 }
-
-    }
-    else
-    {
-        // response operation fail
-        if(reg_ctrl->retryCount < 10)
-        {
-            reg_ctrl->retryCount++;
-            sys_arch_printf("response operation succuss data error result error");
-            ghttpregtimer = osiTimerCreate(osiThreadCurrent(), httpreg_timeout, NULL);
-            if (ghttpregtimer == NULL)
+       }
+       else
+       {
+            OSI_LOGI(0, "dx_registercb httppostreg success reg_ctrl->retryCount = %d", reg_ctrl->retryCount );
+            if(NULL != vnetregdata)
             {
-                sys_arch_printf("HTTPreg# HTTPregTimmer create timer failed result error");
-                return;
+               free(vnetregdata);
+               vnetregdata = NULL;
             }
-            osiTimerStart(ghttpregtimer , 60 * 60 * 1000);
-        }
-        sys_arch_printf("response operation fail:%ld", event);
+            is_dxreg_inited = false;
+            goto tmdethexit;
+       }
+
     }
-}
+tmdethexit:
+    if (ghttpregtimer != NULL)
+    {
+        //osiTimerStop(ghttpregtimer);
+        osiTimerDelete(ghttpregtimer);
+        ghttpregtimer = NULL;
+    }
+    if(dxhttpThread  != NULL)
+    {
+        dxhttpThread = NULL;
+        OSI_LOGI(0, "dx_registercb will exit...");
+        osiThreadExit();
+    }
+    return;
 
-static AWORKER_REQ *at_httpreg_create_async_req(uint32_t event, void *param, uint32_t bufflen)
-{
-    AWORKER_REQ *areq = aworker_create_request(atEngineGetThreadId(),
-                                               at_httpreg_worker_handler, at_httpreg_worker_callback, event, param, bufflen);
-    return areq;
+threadexit:
+    if(dxhttpThread  != NULL)
+    {
+        dxhttpThread = NULL;
+        OSI_LOGI(0, "dx_registercb will exit...");
+        osiThreadExit();
+    }
+    return;
 }
-
 
 static void do_dxregProcess(uint8_t nCid, uint8_t nSimId)
 {
     char *regdata = NULL;
-    AWORKER_REQ *areq;
-    bool paramRet = true;
 
     if (netif_default == NULL)
         goto retry;
-    at_nHttp_reg= Init_Http();
+    if(at_nHttp_reg != NULL)
+    {
+        OSI_LOGI(0, "do_dxregProcess#at_nHttp_reg is not null first term ");
+        Term_Http(at_nHttp_reg);
+    }
+    at_nHttp_reg = Init_Http();
     if (at_nHttp_reg == NULL)
     {
-        sys_arch_printf("Init fail, please try again later\n");
+        OSI_LOGI(0, "Init fail, please try again later\n");
         goto retry;
     }
     regdata = genRegData(nSimId);
     if (regdata == NULL)
     {
-        sys_arch_printf("regdata error...");
+        OSI_LOGI(0, "regdata error...");
         goto retry;
     }
     at_nHttp_reg->CID = nCid;
-    sys_arch_printf("do_dxregProcessat_nHttp_reg->CID=%d", at_nHttp_reg->CID);
+    OSI_LOGI(0, "do_dxregProcessat_nHttp_reg->CID=%d", at_nHttp_reg->CID);
     strcpy(at_nHttp_reg->url,  REG_HTTP_URL);
     strcpy(at_nHttp_reg->CONTENT_TYPE,  REG_HTTP_CONTENT );
     strcpy(at_nHttp_reg->user_data,  regdata );
 
     free(regdata);
-    (at_nHttp_reg->cg_http_api)->nSIM = 0;
-    (at_nHttp_reg->cg_http_api)->nCID = 1;
-    areq = at_httpreg_create_async_req( 1, NULL, 0);
-    if (areq == NULL)
+    (at_nHttp_reg->cg_http_api)->nSIM = nSimId;
+    (at_nHttp_reg->cg_http_api)->nCID = nCid;
+    dxhttpThread = osiThreadCreate("dx_register", dx_registercb, at_nHttp_reg, OSI_PRIORITY_NORMAL,4096, 0);
+    if(dxhttpThread == NULL)
     {
-        sys_arch_printf("httppost create async request fail");
+        OSI_LOGI(0, "httppost create async osiThreadCreate fail");
         goto retry;
     }
     reg_ctrl->nCid = nCid;
     reg_ctrl->simId = nSimId;
-    aworker_param_putu32(areq, (uint32_t)at_nHttp_reg, &paramRet);
-    if (!aworker_post_req_delay(areq, 0, &paramRet))
-    {
-        sys_arch_printf("httppostreg send async request fail");
-        goto retry;
-    }
-
     return;
 retry:
     if (reg_ctrl->retryCount < 10)
     {
         reg_ctrl->retryCount++;
-        sys_arch_printf("do_dxregProcess error");
-        ghttpregtimer = osiTimerCreate(osiThreadCurrent(), httpreg_timeout, NULL);
+        OSI_LOGI(0, "do_dxregProcess error");
+        ghttpregtimer = osiTimerCreate(netGetTaskID(), httpreg_timeout, NULL);
         if (ghttpregtimer == NULL)
         {
-            sys_arch_printf("do_dxregProcess# do_dxregProcessTimmer create timer failed");
+            OSI_LOGI(0, "do_dxregProcess# do_dxregProcessTimmer create timer failed");
+            if(dxhttpThread  != NULL)
+            {
+                dxhttpThread = NULL;
+                OSI_LOGI(0, "dx_registercb will exit...");
+                osiThreadExit();
+            }
+            is_dxreg_inited = false;
             return;
         }
         osiTimerStart(ghttpregtimer , 60 * 60 * 1000);
-        //COS_StartFunctionTimer(60*60*1000, do_dxregProcess, gRegCtrl.simId);
+        if(dxhttpThread  != NULL)
+        {
+            dxhttpThread = NULL;
+            OSI_LOGI(0, "dx_registercb will exit...");
+            osiThreadExit();
+        }
     }
-    return;
+    else
+    {
+         if (ghttpregtimer != NULL)
+         {
+             //osiTimerStop(ghttpregtimer);
+             osiTimerDelete(ghttpregtimer);
+             ghttpregtimer = NULL;
+         }
+         is_dxreg_inited = false;
+
+         if(dxhttpThread  != NULL)
+         {
+             dxhttpThread = NULL;
+             OSI_LOGI(0, "dx_registercb will exit...");
+             osiThreadExit();
+         }
+         return;
+    }
 }
 
 bool sul_ZeroMemory8(void  *pBuf, uint32_t count)
@@ -376,44 +395,58 @@ int vnet4gSelfRegister(uint8_t nCid, uint8_t nSimId)
     uint8_t *pOperShortName = NULL;
     uint8_t ueiccid[UEICCID_LEN + 1] = {0};
     uint8_t  nRet = 0;
-
+    if(is_dxreg_inited )
+    {
+        OSI_LOGI(0, "vnet4gSelfRegister#register is processing do not repeat exit");
+        return 0;
+    }
+    is_dxreg_inited = true;
     sul_ZeroMemory8(operatorId, 6);
     nRet = CFW_NwGetCurrentOperator(operatorId, &tmpMode, nSimId);
     if (nRet != 0)
+    {
+        is_dxreg_inited = false;
         return -1;
-    sys_arch_printf("vnet4gSelfRegister#CFW_NwGetCurrentOperator operatorId=%s %d", operatorId, tmpMode);
+    }
+    OSI_LOGXI(OSI_LOGPAR_IS, 0, "vnet4gSelfRegister#CFW_NwGetCurrentOperator operatorId=%d %s", tmpMode, operatorId);
     nRet =  CFW_CfgNwGetOperatorName(operatorId, &pOperName, &pOperShortName);
     if (nRet != 0)
+    {
+        is_dxreg_inited = false;
         return -1;
-    sys_arch_printf("vnet4gSelfRegister#CFW_CfgNwGetOperatorName pOperName=%s", pOperName);
-    if (0 == strcmp("ChinaTelecom", (char*)pOperName))
+    }
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "vnet4gSelfRegister#CFW_CfgNwGetOperatorName pOperName=%s", pOperName);
+    if ((0 == strcmp("ChinaTelecom", (char*)pOperName))||(0 == strcmp("CHN-CT", (char*)pOperName)))
     {
         uint8_t simiccid[21] = {0};
         uint8_t iccid_len = UEICCID_LEN;
         if (!getSimIccid(nSimId,simiccid,&iccid_len))
+        {
+            is_dxreg_inited = false;
             return -1;
+        }
         int fd = vfs_open(NV_SELF_REG, 2);
         if (fd < 0)
         {
-            sys_arch_printf("vnet4gSelfRegister#This file is not exit vfs_open failed fd =%d", fd);
+            OSI_LOGI(0, "vnet4gSelfRegister#This file is not exit vfs_open failed fd =%d", fd);
             vfs_file_write(NV_SELF_REG, "0", 1);
         }
         else
         {
-            sys_arch_printf("vnet4gSelfRegister#This file is  exit vfs_open success fd =%d", fd);
+            OSI_LOGI(0, "vnet4gSelfRegister#This file is  exit vfs_open success fd =%d", fd);
             struct stat st = {};
             vfs_fstat(fd, &st);
             int file_size = st.st_size;
             if(file_size == 1 || file_size == 20)
             {
-                sys_arch_printf("vnet4gSelfRegister#This file size is right =%d", file_size);
+                OSI_LOGI(0, "vnet4gSelfRegister#This file size is right =%d", file_size);
                 vfs_read(fd, ueiccid, 20);
-                sys_arch_printf("vnet4gSelfRegister#This file ueiccid =%s", ueiccid);
+                OSI_LOGXI(OSI_LOGPAR_S, 0, "vnet4gSelfRegister#This file ueiccid =%s", ueiccid);
                 vfs_close(fd);
             }
             else
             {
-                sys_arch_printf("vnet4gSelfRegister#This file size is error =%d", file_size);
+                OSI_LOGI(0, "vnet4gSelfRegister#This file size is error =%d", file_size);
                 vfs_unlink(NV_SELF_REG);
                 vfs_file_write(NV_SELF_REG, "0", 1);
             }
@@ -421,14 +454,19 @@ int vnet4gSelfRegister(uint8_t nCid, uint8_t nSimId)
         }
         // NV_GetUEIccid(ueiccid,iccid_len,simId);    //读flag   比较iccid
         if (memcmp(ueiccid, simiccid,iccid_len) == 0)
-            return 0;
+        {
+             is_dxreg_inited = false;
+             OSI_LOGI(0, "vnet4gSelfRegister# ueiccid same as simiccid register success");
+             return 0;
+        }
         else
         {
-            sys_arch_printf("guangzusimiccid = %s", simiccid);
+            OSI_LOGXI(OSI_LOGPAR_S, 0, "vnet4gSelfRegister#simiccid = %s", simiccid);
             reg_ctrl = (reg_ctrl_t *)malloc(sizeof(reg_ctrl));
             if(NULL == reg_ctrl)
             {
-                sys_arch_printf("reg_ctrl malloc error");
+                OSI_LOGI(0, "reg_ctrl malloc error");
+                is_dxreg_inited = false;
                 return -1;
             }
             reg_ctrl->retryCount = 0;
@@ -438,7 +476,8 @@ int vnet4gSelfRegister(uint8_t nCid, uint8_t nSimId)
     }
     else
     {
-        sys_arch_printf("vnet4gSelfRegister# dvnet4gSelfRegister operator is not vnet4g");
+        OSI_LOGI(0, "vnet4gSelfRegister# dvnet4gSelfRegister operator is not vnet4g");
+        is_dxreg_inited = false;
         return 0;
     }
 }

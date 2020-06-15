@@ -311,7 +311,7 @@ typedef struct ip6_addr ip6_addr_t;
 #endif /* LWIP_IPV6_ADDRESS_LIFETIMES */
 
 #define ip6_addr_debug_print_parts(debug, a, b, c, d, e, f, g, h) \
-  LWIP_DEBUGF(debug, ("%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F, \
+  LWIP_DEBUGF(debug, (0,"%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F, \
                       a, b, c, d, e, f, g, h))
 #define ip6_addr_debug_print(debug, ipaddr) \
   ip6_addr_debug_print_parts(debug, \

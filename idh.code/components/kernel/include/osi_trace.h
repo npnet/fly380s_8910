@@ -21,27 +21,20 @@
 OSI_EXTERN_C_BEGIN
 
 /**
+ * \brief forward declaration for debug port
+ */
+struct drvDebugPort;
+
+/**
  * \brief trace output device
  */
 typedef enum
 {
-    OSI_TRACE_DEVICE_NONE = 0,                   ///< no output
-    OSI_TRACE_DEVICE_DEBUGHOST = 0x01,           ///< output through debughost
-    OSI_TRACE_DEVICE_USBSERIAL = 0x02,           ///< output through USB serial
-    OSI_TRACE_DEVICE_FILESYS = 0x04,             ///< output to file system, usually on SDCARD
-    OSI_TRACE_DEVICE_DEBUGHOST_USBSERIAL = 0x03, ///< output to both debughost and USB serial
+    OSI_TRACE_DEVICE_NONE = 0,         ///< no output
+    OSI_TRACE_DEVICE_DEBUGHOST = 0x01, ///< output through debughost
+    OSI_TRACE_DEVICE_USBSERIAL = 0x02, ///< output through USB serial
+    OSI_TRACE_DEVICE_FILESYS = 0x04,   ///< output to file system, usually on SDCARD
 } osiTraceDevice_t;
-
-/**
- * \brief function prototype to send out trace data
- *
- * \param data      trace data
- * \param size      trace data size
- * \return
- *      - true if the trace data is output
- *      - false if output fails
- */
-typedef bool (*osiTraceSender_t)(const void *data, unsigned size);
 
 /**
  * \brief data structure of host packet
@@ -72,6 +65,26 @@ typedef struct
 } osiTraPacketHeader_t;
 
 /**
+ * \brief diag packet header
+ */
+typedef struct
+{
+    uint32_t seq_num; ///< Message sequence number, used for flow control
+    uint16_t len;     ///< The totoal size of the packet
+    uint8_t type;     ///< Main command type
+    uint8_t subtype;  ///< Sub command type
+} osiDiagPacketHeader_t;
+
+/**
+ * \brief diag log packet header
+ */
+typedef struct
+{
+    uint16_t type;   ///< log type
+    uint16_t length; ///< log length
+} osiDiagLogHeader_t;
+
+/**
  * \brief global trace sequence number
  *
  * *Don't* modify it, unless in trace output engine.
@@ -89,7 +102,11 @@ extern bool gTraceEnabled;
 /**
  * \brief set trace enable or not
  *
- * @param enable    false for disable, true for enable
+ * After disable, trace calls won't put trace data to trace buffer. Also,
+ * debug port will stop trace output (after the already started transfer
+ * finished).
+ *
+ * \param enable false for disable, true for enable
  */
 void osiTraceSetEnable(bool enable);
 
@@ -99,7 +116,7 @@ void osiTraceSetEnable(bool enable);
  * When GSM frame number is needed to be embedded into trace, this function
  * should be implemented outside trace module.
  *
- * \return      GSM frame number
+ * \return GSM frame number
  */
 uint32_t osiTraceGsmFrameNumber(void);
 
@@ -109,7 +126,7 @@ uint32_t osiTraceGsmFrameNumber(void);
  * When LTE frame number is needed to be embedded into trace, this function
  * should be implemented outside trace module.
  *
- * \return      GSM frame number
+ * \return GSM frame number
  */
 uint32_t osiTraceLteFrameNumber(void);
 
@@ -118,9 +135,9 @@ uint32_t osiTraceLteFrameNumber(void);
  *
  * It is just a helper to fill host packet header.
  *
- * \param [in] header   host packet header
- * \param [in] flowid   host packet flowid
- * \param [in] frame_len    host packet frame length
+ * \param [in] header host packet header
+ * \param [in] flowid host packet flowid
+ * \param [in] frame_len host packet frame length
  */
 static inline void osiFillHostHeader(osiHostPacketHeader_t *header, uint8_t flowid, uint16_t frame_len)
 {
@@ -131,134 +148,128 @@ static inline void osiFillHostHeader(osiHostPacketHeader_t *header, uint8_t flow
 }
 
 /**
- * \brief trace module initialization
+ * \brief trace buffer initialization
  *
  * It should be called only once at system boot. When this is called,
- * it is possible that RTOS hasn't initialized. So, it will only
- * initialize trace data management data structure, and OS resources
- * won't be initialized.
- *
- * This should be called before \p osiTraceBufRequest.
+ * it is possible that RTOS hasn't initialized.
  */
-void osiTraceEarlyInit(void);
+void osiTraceBufInit(void);
 
 /**
- * \brief set trace data sender
+ * \brief put a trace packet into trace buffer
  *
- * It should be called only once after RTOS is ready. It also means that
- * trace data sender can't be changed dynamically.
+ * Inside, packet data may be copied to global trace buffer or malloc-copy
+ * to dynamic memory, depends on the packet size. After the call, \p data
+ * won't be used any more.
  *
- * Before \p osiTraceSenderInit is called, trace data will be kept in
- * memory. And when trace buffer is full, new trace data will be dropped.
+ * When diag trace is used, this is the real packet, rather than hdlc
+ * encoded packet. Hdlc encoding will be performed inside.
  *
- * Two senders should be set, \p sender is for normal mode, and
- * \p bs_sender is for blue screen mode.
- *
- * When \p sender is NULL, trace data will be dropped directly. When
- * \p bs_sender is NULL, trace data will be dropped directly in blue
- * screeen mode.
- *
- * \param sender    trace data sender
- * \param bs_sender trace data sender in blue screen mode
- */
-void osiTraceSenderInit(osiTraceSender_t sender, osiTraceSender_t bs_sender);
-
-/**
- * \brief trace work queue
- *
- * In case that operations should be executed in trace thread, the trace
- * work queue can be get by this API, and then queue work to trace work
- * queue.
- *
- * \return      trace work queue
- */
-osiWorkQueue_t *osiTraceWorkQueue(void);
-
-/**
- * \brief request trace buffer
- *
- * To reduce extra copy for trace, trace function can request buffer from
- * trace driver, and write the buffer directly.
- *
- * At trace buffer full or not enough for the requested size, NULL will be
- * returned.
- *
- * The returned buffer is 4 bytes aligned.
- *
- * It is just tarce buffer management, others won't be handled inside. For
- * example, caller should maintain trace sequence number, track tick.
- *
- * \param [in] size     requested buffer size
+ * \param data packet data
+ * \param size packet total size
  * \return
- *      - on buffer full, NULL will be returned
- *      - on success, return trace buffer
+ *      - true on success
+ *      - false on error, invalid paramters or trace buffer full
  */
-uint32_t *osiTraceBufRequest(uint32_t size);
+bool osiTraceBufPut(const void *data, unsigned size);
 
 /**
- * \brief request trace buffer inside critical section
+ * \brief put a trace packet into trace buffer
  *
- * It is similar to \p osiTraceBufRequest, just it is assumed that this is
- * called inside critical section.
+ * It is similar to \p osiTraceBufPut, just the packet is described by
+ * multiple pieces of buffer. It can save time for caller to combine them.
  *
- * \param [in] size     requested buffer size
+ * When \p size is -1, the total size will be calculated. Otherwise it will be
+ * used as total size. Total size will only be used to check whether space is
+ * enough, and caller should ensure \p size matches the total size.
+ *
+ * \param bufs buffers of packet data
+ * \param count buffer count
+ * \param size total size, -1 means callee should calculate total size
  * \return
- *      - on buffer full, NULL will be returned
- *      - on success, return trace buffer
+ *      - true on success
+ *      - false on error, invalid paramters or trace buffer full
  */
-uint32_t *osiTraceBufRequestLocked(uint32_t size);
+bool osiTraceBufPutMulti(const osiBuffer_t *bufs, unsigned count, int size);
 
 /**
- * \brief request trace buffer in tra packet format
+ * \brief put an external trace packet into trace buffer
  *
- * Request trace buffer, and manage trace sequence, fill packet header.
- * Caller should overwrite \p type field in header.
+ * Put a "reference" of packet to trace output. The data won't be copied,
+ * so \p data will still be accessed after this returns. Only after
+ * \p osiTraceBufPacketFinished returns true, the packet has been transfered,
+ * and won't be accessed any more.
  *
- * The returned pointer is pointed to the start of tra packet header,
- * rather than the trace buffer header.
+ * For host packet, \p size should be 4 bytes aligned.
  *
- * \param [in] tra_len      tra packet length, including tra packet header
+ * For diag packet, it is hdlc encoded packet, with leading and trailing
+ * sync byte.
+ *
+ * There is count limit of raw packets. When there are too many raw packets
+ * are pending, it will return false.
+ *
+ * \param data raw packet data
+ * \param size raw packet total size
  * \return
- *      - on buffer full, NULL will be returned
- *      - on success, return tra packet buffer
+ *      - true on success
+ *      - false on error, invalid paramters or too many raw packets
  */
-uint32_t *osiTraceTraBufRequest(uint32_t tra_len);
+bool osiTraceBufPutPacket(const void *data, unsigned size);
 
 /**
- * \brief indicate trace buffer is filled
+ * \brief whether the external trace packet is transfered
  *
- * After the requested trace buffer is filled, this shall be called to
- * let trace driver send the data to output.
+ * \p data must be the pointer called by \p osiTraceBufPutPacket.
+ *
+ * \param data raw packet data
+ * \return true if transfer done
  */
-void osiTraceBufFilled(void);
+bool osiTraceBufPacketFinished(const void *data);
 
 /**
- * \brief trace enter blue screen mode
+ * \brief fetch a piece of trace buffer
  *
- * When blue screen occurs during trace, it is possible that trace module
- * will be blocked. This will clean up incomplete status, and make sure
- * trace in blue screen can be ouput.
+ * When trace buffer is empty, the returned size will be 0.
+ *
+ * The returned buffer may contain one or more packets, and it won't
+ * contain partial packet.
+ *
+ * After \p osiTraceBufFetch is called, it is needed to call
+ * \p osiTraceBufHandled before next call.
+ *
+ * It should be called by trace output only.
+ *
+ * \return buffer with trace data
  */
-void osiTraceBlueScreenEnter(void);
+osiBuffer_t osiTraceBufFetch(void);
 
 /**
- * \brief trace polling on blue screen mode
+ * \brief indicate trace buffer is handled
  *
- * In blue screen mode, there are no thread scheduling and timer. Trace
- * output should work in polling mode.
+ * It should be called by trace output only.
  */
-void osiTraceBlueScreenPoll(void);
+void osiTraceBufHandled(void);
 
 /**
- * \brief wait trace output finish
+ * \brief get existed trace data size
  *
- * It may wait long time for trace output finish. And in rare cases, it may
- * never return.
+ * In most cases, this shouldn't be cared. One excception is in usb trace,
+ * when the remaining trace data is smaller than the threshold, usb
+ * transfer should wait a while.
  *
- * This is for *dirty* debug only, only when some issue is debugging with
- * huge amount trace, and all the traces are needed.
+ * \return existed trace data size
  */
-void osiTraceWaitFinish(void);
+unsigned osiTraceDataSize(void);
+
+/**
+ * \brief set trace debug port
+ *
+ * \p drvDebugPortSetTraceEnable will be called when the current enabled
+ * state changed.
+ *
+ * \param port debug port for trace
+ */
+void osiTraceSetDebugPort(struct drvDebugPort *port);
 
 OSI_EXTERN_C_END
 #endif

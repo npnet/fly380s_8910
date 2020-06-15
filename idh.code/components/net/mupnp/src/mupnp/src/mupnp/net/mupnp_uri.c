@@ -252,7 +252,7 @@ void mupnp_net_uri_setvalue(mUpnpNetURI *uri, const char *value)
         mupnp_string_setnvalue(uri->path, value + currIdx, sharpIdx);
         mupnp_string_setnvalue(uri->fragment, value + currIdx + sharpIdx + 1, uriLen - (currIdx + sharpIdx + 1));
     }
-    questionIdx = mupnp_strstr(value + currIdx, MUPNP_NET_URI_ESCAPING_CHAR);
+    questionIdx = mupnp_strstr(value + currIdx, MUPNP_NET_URI_QUESTION_DELIM);
     if (0 < questionIdx)
     {
         mupnp_string_setnvalue(uri->path, value + currIdx, questionIdx);

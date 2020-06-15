@@ -517,15 +517,15 @@ uint8_t registration_start(lwm2m_context_t * contextP)
                 if (objects[i].objId != 0)
                 {
                     if (objects[i].objId == LWM2M_DEVICE_OBJECT_ID)
-                        lwm2m_add_object(contextP,get_object_device());
+                        lwm2m_add_object(contextP,get_object_device(contextP));
                     else if (objects[i].objId == LWM2M_CONN_MONITOR_OBJECT_ID)
-                        lwm2m_add_object(contextP,get_object_conn_m());
+                        lwm2m_add_object(contextP,get_object_conn_m(contextP));
                     else if (objects[i].objId == LWM2M_FIRMWARE_UPDATE_OBJECT_ID)
-                        lwm2m_add_object(contextP,get_object_firmware());
+                        lwm2m_add_object(contextP,get_object_firmware(contextP));
                     else if (objects[i].objId == LWM2M_LOCATION_OBJECT_ID)
-                        lwm2m_add_object(contextP,get_object_location());
+                        lwm2m_add_object(contextP,get_object_location(contextP));
                     else if (objects[i].objId == LWM2M_CONN_STATS_OBJECT_ID)
-                        lwm2m_add_object(contextP,get_object_conn_s());
+                        lwm2m_add_object(contextP,get_object_conn_s(contextP));
                     else {
                         if (!lwm2m_isObjSupport(objects[i].objId, contextP->ref))
                             lwm2m_registNewObj(objects[i].objId, objects[i].resCount, contextP->ref);

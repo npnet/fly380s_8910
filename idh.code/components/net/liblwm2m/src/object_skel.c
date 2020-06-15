@@ -42,6 +42,7 @@ typedef struct _skel_instance_
     struct _skel_instance_ *next; // matches lwm2m_list_t::next
     uint16_t instanceId;
     skel_res_t *dataArray;
+    int arraySize; //Add to avoid mem leak when free dataArray
     bool isResReady;
 } skel_instance_t;
 
@@ -66,8 +67,9 @@ static int skel_valuedecode(lwm2m_data_t *dataP,
     {
         uint8_t intString[_PRV_STR_LENGTH];
         int64_t v = 0;
-        lwm2m_data_decode_int(dataP, &v);
-        res = utils_intToText(v, intString, _PRV_STR_LENGTH);
+        res = lwm2m_data_decode_int(dataP, &v);
+        if (res != 0)
+            res = utils_intToText(v, intString, _PRV_STR_LENGTH);
         if (res == 0)
             return -1;
 
@@ -83,8 +85,9 @@ static int skel_valuedecode(lwm2m_data_t *dataP,
     {
         uint8_t floatString[_PRV_STR_LENGTH * 2];
         double v = 0;
-        lwm2m_data_decode_float(dataP, &v);
-        res = utils_floatToText(v, floatString, _PRV_STR_LENGTH * 2);
+        res = lwm2m_data_decode_float(dataP, &v);
+        if (res != 0)
+            res = utils_floatToText(v, floatString, _PRV_STR_LENGTH * 2);
         if (res == 0)
             return -1;
 
@@ -99,13 +102,18 @@ static int skel_valuedecode(lwm2m_data_t *dataP,
     case LWM2M_TYPE_BOOLEAN:
     {
         bool v = 0;
-        lwm2m_data_decode_bool(dataP, &v);
-        char *sv = v ? "1" : "0";
-        *bufferP = (uint8_t *)lwm2m_malloc(strlen(sv) + 1);
-        if (NULL == *bufferP)
+        res = lwm2m_data_decode_bool(dataP, &v);
+        if (res == 1)
+        {
+            char *sv = v ? "1" : "0";
+            *bufferP = (uint8_t *)lwm2m_malloc(strlen(sv) + 1);
+            if (NULL == *bufferP)
+                return -1;
+            strcpy((char *)(*bufferP), sv);
+            return strlen(sv);
+        }
+        else
             return -1;
-        strcpy((char *)(*bufferP), sv);
-        return strlen(sv);
     }
     case LWM2M_TYPE_UNDEFINED:
     default:
@@ -118,10 +126,10 @@ static int wait_and_process_rsp(lwm2m_context_t *context, command_desc_t *skel_c
     struct timeval tv = {0};
     fd_set readfds;
     int result = -1;
-    ;
+
     uint8_t buffer[256];
     int numBytes = 0;
-    uint8_t ipc_socket = lwm2m_get_ipcSocket(context->ref);
+    uint8_t ipc_socket = lwm2m_get_ipcDataSocket(context->ref);
     bool check_update = false;
     time_t timeout = 0;
 retry:
@@ -401,7 +409,6 @@ static uint8_t prv_skel_read(uint16_t instanceId,
                 *numData = 1;
                 (*dataP)[0].id = targetP->dataArray[i].resId;
 
-                result = COAP_205_CONTENT;
                 i = 0;
                 do
                 {
@@ -426,7 +433,6 @@ static uint8_t prv_skel_read(uint16_t instanceId,
             {
                 isHasNofity = true;
                 targetP->dataArray[i].hasNotify = false;
-                result = COAP_205_CONTENT;
                 break;
             }
         }
@@ -468,7 +474,6 @@ static uint8_t prv_skel_read(uint16_t instanceId,
         else
         {
             fprintf(stdout, "prv_skel_read some or all resources are read");
-            result = COAP_205_CONTENT;
         }
 
         if (*numDataP == 0)
@@ -492,11 +497,6 @@ static uint8_t prv_skel_read(uint16_t instanceId,
     else
     {
         lwm2m_free(readparam);
-    }
-
-    if (result != COAP_205_CONTENT)
-    {
-        return result;
     }
 
     i = 0;
@@ -668,7 +668,7 @@ static uint8_t prv_skel_read_object(lwm2m_object_t *objectP, lwm2m_data_t **data
         instanceP = instanceP->next;
         i++;
     }
-    fprintf(stdout, "prv_skel_read_object final result: %u.%2u", (result & 0xFF) >> 5, (result && 0x1F));
+    fprintf(stdout, "prv_skel_read_object final result: %u.%2u", (result & 0xFF) >> 5, (result & 0x1F));
     return result;
 }
 
@@ -771,7 +771,7 @@ static uint8_t prv_skel_discover(uint16_t instanceId,
         }
     }
 
-    if (!targetP->isResReady)
+    if (targetP != NULL && !targetP->isResReady)
     {
         for (int i = 0; i < nbRes; i++)
         {
@@ -976,6 +976,11 @@ static uint8_t prv_skel_notify(uint16_t instanceId,
                     {
                         targetP->dataArray[j].floatValue = dataArray[i].value.asFloat;
                     }
+                    if (targetP->dataArray[j].data != NULL)
+                    {
+                        lwm2m_free(targetP->dataArray[j].data);
+                        targetP->dataArray[j].data = NULL;
+                    }
                     targetP->dataArray[j].data = data;
                     targetP->dataArray[j].len = len;
                     targetP->dataArray[j].hasNotify = true;
@@ -1105,6 +1110,7 @@ static uint8_t prv_skel_create(uint16_t instanceId,
         fprintf(stdout, "prv_skel_create numData(%d) != nbRes(%d)", numData, nbRes);
     }
     skelInstance->dataArray = (skel_res_t *)lwm2m_malloc(nbRes * sizeof(skel_res_t));
+    skelInstance->arraySize = nbRes;
     if (lwm2m_isResReady(objectP->objID, contextP->ref))
     {
         for (int i = 0; i < nbRes; i++)
@@ -1136,7 +1142,7 @@ static void clean_skel_object(lwm2m_object_t *object)
     lwm2m_context_t *contextP = (lwm2m_context_t *)object->userData;
     if (contextP != NULL && !lwm2m_is_dynamic_ipso(contextP->ref))
     {
-        lwm2m_resetResDiscoverState(object->objID, object->objID);
+        lwm2m_resetResDiscoverState(object->objID, 0);
     }
 
     while (object->instanceList != NULL)
@@ -1146,8 +1152,8 @@ static void clean_skel_object(lwm2m_object_t *object)
 
         if (skelInstance->dataArray != NULL)
         {
-            //int i = 0;
-            for (int i = 0; skelInstance->dataArray != NULL && i < sizeof(skelInstance->dataArray) / sizeof(skelInstance->dataArray[0]); i++)
+            int size = skelInstance->arraySize;
+            for (int i = 0; skelInstance->dataArray[i].data != NULL && i < size; i++)
             {
                 lwm2m_free(skelInstance->dataArray[i].data);
             }

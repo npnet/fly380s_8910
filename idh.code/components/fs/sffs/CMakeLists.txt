@@ -10,16 +10,4 @@
 # without further testing or modification.
 
 set(target sffs)
-add_library(${target} STATIC)
-set_target_properties(${target} PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir}
-    LINKER_LANGUAGE C)
-target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_FS)
-target_include_directories(${target} PUBLIC include)
-target_include_targets(${target} PRIVATE kernel fs driver sffs)
-target_link_libraries(${target} PRIVATE bdev)
-
 include(core.cmake)
-
-relative_glob(srcs include/*.h src/*.c src/*.h)
-beautify_c_code(${target} ${srcs})

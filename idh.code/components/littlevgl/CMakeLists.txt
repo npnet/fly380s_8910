@@ -9,10 +9,10 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/lv_gui_config.h.in ${BINARY_TOP_DIR}/include/lv_gui_config.h)
+configure_file(include/lv_gui_config.h.in ${out_inc_dir}/lv_gui_config.h)
 
 set(target lvgl)
-# add_app_libraries($<TARGET_FILE:${target}>)
+add_app_libraries($<TARGET_FILE:${target}>)
 
 add_library(${target} STATIC ${dummy_c_file})
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})

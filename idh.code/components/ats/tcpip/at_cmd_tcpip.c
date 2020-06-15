@@ -1387,6 +1387,7 @@ static void tcpip_rsp(void *param)
                     else
                         sprintf(uaRspStr, "%d,SEND FAIL", nMuxIndex);
                     free(tcpparam);
+                    free(pEvent);
                     AT_CMD_RETURN(atCmdRespErrorText(engine, uaRspStr));
                 }
             }
@@ -1688,7 +1689,11 @@ static bool useOutsidePdp(atCommand_t *cmd)
             continue;
         }
         struct netif *netif = getGprsNetIf(nSim, i);
+#if IP_NAT
+        if (netif != NULL && (netif->link_mode == NETIF_LINK_MODE_LWIP || netif->link_mode == NETIF_LINK_MODE_NAT_LWIP_LAN))
+#else
         if (netif != NULL && netif->link_mode == NETIF_LINK_MODE_LWIP)
+#endif
             break;
     }
     if (i >= 8)
@@ -4986,7 +4991,7 @@ int AT_TCPIP_ServerStart(atCmdEngine_t *engine)
 
         //inet6_addr_from_ip6addr(&stLocalAddr.sin6_addr, ip_addr);
         OSI_LOGI(0, "AT_TCPIP_ServerStart ip_addr=%p", ip_addr);
-        sys_arch_printf("AT_TCPIP_ServerStart addr=%s", inet6_ntoa(stLocalAddr.sin6_addr));
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "AT_TCPIP_ServerStart addr=%s", inet6_ntoa(stLocalAddr.sin6_addr));
         OSI_LOGI(0, "AT_TCPIP_ServerStart port:%d", htons(stLocalAddr.sin6_port));
         if (SOCKET_ERROR == CFW_TcpipSocketBind(iResult, (CFW_TCPIP_SOCKET_ADDR *)&stLocalAddr, sizeof(struct sockaddr_in6)))
         {
@@ -5023,7 +5028,7 @@ int AT_TCPIP_ServerStart(atCmdEngine_t *engine)
         stLocalAddr.sin_port = htons(gCipserver.port);
 
         inet_addr_from_ip4addr(&stLocalAddr.sin_addr, ip_addr);
-        sys_arch_printf("AT_TCPIP_ServerStart addr=%s", inet_ntoa(stLocalAddr.sin_addr));
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "AT_TCPIP_ServerStart addr=%s", inet_ntoa(stLocalAddr.sin_addr));
         OSI_LOGI(0, "AT_TCPIP_ServerStart addr=%s", inet_ntoa(stLocalAddr.sin_addr));
         OSI_LOGI(0, "AT_TCPIP_ServerStart port:%d", htons(stLocalAddr.sin_port));
         if (SOCKET_ERROR == CFW_TcpipSocketBind(iResult, (CFW_TCPIP_SOCKET_ADDR *)&stLocalAddr, sizeof(struct sockaddr_in)))

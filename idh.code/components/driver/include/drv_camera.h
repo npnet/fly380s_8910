@@ -34,10 +34,8 @@ typedef struct
     uint8_t dma : 1;
 } cameraIrqCause_t;
 
-// enum: mclk of chip output
 typedef enum
 {
-
     //CAM_NPIX_UXGA = (1600*1200),
     CAM_NPIX_VGA = (640 * 480),
 } CAM_SIZE_T;
@@ -45,16 +43,10 @@ typedef enum
 // enum: image format about sensor output
 typedef enum
 {
-    SENSOR_IMAGE_FORMAT_YUV422 = 0,
-    SENSOR_IMAGE_FORMAT_YUV420,
-    SENSOR_IMAGE_FORMAT_RAW,
-    SENSOR_IMAGE_FORMAT_RGB565,
-    SENSOR_IMAGE_FORMAT_RGB666,
-    SENSOR_IMAGE_FORMAT_RGB888,
-    SENSOR_IMAGE_FORMAT_CCIR656,
-    SENSOR_IMAGE_FORMAT_JPEG,
-
-    SENSOR_IMAGE_FORMAT_MAX
+    CAM_FORMAT_RGB565,
+    CAM_FORMAT_YUV,
+    CAM_FORMAT_RAW8,
+    CAM_FORMAT_RAW10,
 } cameraImageFormat_t;
 
 typedef enum
@@ -82,12 +74,6 @@ typedef enum
 
 typedef enum
 {
-    CAM_OUT_PACKET_DDR_2BIT,
-    CAM_OUT_CCIR656_2BIT
-} sensorOutformat_t;
-
-typedef enum
-{
     camCaptureIdle = 0,
     camCaptureState1,
     camCaptureState2,
@@ -110,6 +96,12 @@ typedef enum
     COL_RATIO_1_3,
     COL_RATIO_1_4,
 } camColRatio_t;
+
+typedef enum
+{
+    camSpi_In,
+    camCsi_In,
+} camInputSensor_t;
 
 typedef struct sensorInfo
 {
@@ -156,7 +148,7 @@ typedef struct sensorInfo
     camSpiMode_t camSpiMode;
     camSpiYuv_t camYuvMode;
     camCapture_t camCapStatus;
-    sensorOutformat_t sensorFormat;
+    camInputSensor_t sensorType;
     drvIfcChannel_t *camp_ipc;
     drvI2cMaster_t *i2c_p;
     osiSemaphore_t *cam_sem_capture;

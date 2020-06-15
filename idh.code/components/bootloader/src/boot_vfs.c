@@ -142,6 +142,42 @@ bool bootVfsMount(const char *path, sffsFs_t *fs)
     return true;
 }
 
+void *bootVfsMountHandle(const char *path)
+{
+    if (path == NULL)
+        return NULL;
+
+    size_t len = strlen(path);
+    if (len == 0 || len >= VFS_PREFIX_MAX)
+        return NULL;
+
+    bootVfsRegistry_t *r;
+    SLIST_FOREACH(r, &gBootVfsRegList, iter)
+    {
+        if (memcmp(path, r->prefix, r->prefix_len + 1) == 0)
+            return r->fs;
+    }
+
+    return NULL;
+}
+
+int bootVfsUmount(const char *path)
+{
+    bootVfsRegistry_t *r;
+    SLIST_FOREACH(r, &gBootVfsRegList, iter)
+    {
+        if (memcmp(path, r->prefix, r->prefix_len + 1) == 0)
+        {
+            sffsUnmount(r->fs);
+            SLIST_REMOVE(&gBootVfsRegList, r, bootVfsRegistry, iter);
+            free(r);
+            return 0;
+        }
+    }
+
+    ERR_RETURN(ENOENT, -1);
+}
+
 void bootVfsUmountAll(void)
 {
     while (!SLIST_EMPTY(&gBootVfsRegList))
@@ -186,7 +222,7 @@ int bootVfsWrite(int fd, const void *data, size_t size)
     CHECK_RESULT_RETURN(res);
 }
 
-int bootVfsLseek(int fd, off_t offset, int mode)
+long bootVfsLseek(int fd, long offset, int mode)
 {
     bootFileInfo_t fi = _getFileByFd(fd);
     if (fi.fs == NULL)
@@ -240,7 +276,7 @@ int bootVfsRename(const char *src, const char *dest)
     CHECK_RESULT_RETURN(res);
 }
 
-int bootVfsMkDir(const char *path)
+int bootVfsMkDir(const char *path, mode_t mode)
 {
     bootFileInfo_t fi = _getFileByPath(path);
     if (fi.fs == NULL)
@@ -463,34 +499,36 @@ int bootSffsMount(const char *base_path, blockDevice_t *bdev,
 
     return 0;
 }
-OSI_STRONG_ALIAS(sffsVfsMount, bootSffsMount);
 
 int bootSffsMkfs(blockDevice_t *bdev)
 {
     int res = sffsMakeFs(bdev);
     return (res < 0) ? -1 : 0;
 }
-OSI_STRONG_ALIAS(sffsVfsMkfs, bootSffsMkfs);
 
-OSI_STRONG_ALIAS(vfs_open, bootVfsOpen);
-OSI_STRONG_ALIAS(vfs_close, bootVfsClose);
-OSI_STRONG_ALIAS(vfs_read, bootVfsRead);
-OSI_STRONG_ALIAS(vfs_write, bootVfsWrite);
-OSI_STRONG_ALIAS(vfs_lseek, bootVfsLseek);
-OSI_STRONG_ALIAS(vfs_fstat, bootVfsFstat);
-OSI_STRONG_ALIAS(vfs_unlink, bootVfsUnlink);
-OSI_STRONG_ALIAS(vfs_rename, bootVfsRename);
-OSI_STRONG_ALIAS(vfs_mkdir, bootVfsMkDir);
-OSI_STRONG_ALIAS(vfs_rmdir, bootVfsRmDir);
-OSI_STRONG_ALIAS(vfs_statvfs, bootVfsStatVfs);
-OSI_STRONG_ALIAS(vfs_mkpath, bootVfsMkPath);
-OSI_STRONG_ALIAS(vfs_mkfilepath, bootVfsMkFilePath);
-OSI_STRONG_ALIAS(vfs_file_size, bootVfsFileSize);
-OSI_STRONG_ALIAS(vfs_file_read, bootVfsFileRead);
-OSI_STRONG_ALIAS(vfs_file_write, bootVfsFileWrite);
-OSI_STRONG_ALIAS(vfs_sfile_init, bootVfsSfileInit);
-OSI_STRONG_ALIAS(vfs_sfile_size, bootVfsFileSize);
-OSI_STRONG_ALIAS(vfs_sfile_read, bootVfsFileRead);
-OSI_STRONG_ALIAS(vfs_sfile_write, bootVfsSfileWrite);
-OSI_STRONG_ALIAS(vfs_rmchildren, bootVfsRmChildren);
-OSI_STRONG_ALIAS(vfs_umount_all, bootVfsUmountAll);
+OSI_DECL_STRONG_ALIAS(bootVfsMountHandle, void *vfs_mount_handle(const char *path));
+OSI_DECL_STRONG_ALIAS(bootVfsUmount, int vfs_umount(const char *path));
+OSI_DECL_STRONG_ALIAS(bootVfsUmountAll, void vfs_umount_all(void));
+OSI_DECL_STRONG_ALIAS(bootVfsOpen, int vfs_open(const char *path, int flags, ...));
+OSI_DECL_STRONG_ALIAS(bootVfsRead, int vfs_read(int fd, void *data, size_t size));
+OSI_DECL_STRONG_ALIAS(bootVfsWrite, int vfs_write(int fd, const void *data, size_t size));
+OSI_DECL_STRONG_ALIAS(bootVfsLseek, long vfs_lseek(int fd, long offset, int mode));
+OSI_DECL_STRONG_ALIAS(bootVfsFstat, int vfs_fstat(int fd, struct stat *st));
+OSI_DECL_STRONG_ALIAS(bootVfsClose, int vfs_close(int fd));
+OSI_DECL_STRONG_ALIAS(bootVfsUnlink, int vfs_unlink(const char *path));
+OSI_DECL_STRONG_ALIAS(bootVfsRename, int vfs_rename(const char *src, const char *dest));
+OSI_DECL_STRONG_ALIAS(bootVfsMkDir, int vfs_mkdir(const char *path, mode_t mode));
+OSI_DECL_STRONG_ALIAS(bootVfsRmDir, int vfs_rmdir(const char *path));
+OSI_DECL_STRONG_ALIAS(bootVfsStatVfs, int vfs_statvfs(const char *path, struct statvfs *buf));
+OSI_DECL_STRONG_ALIAS(bootVfsFileSize, int vfs_file_size(const char *path));
+OSI_DECL_STRONG_ALIAS(bootVfsFileSize, int vfs_sfile_size(const char *path));
+OSI_DECL_STRONG_ALIAS(bootVfsFileRead, int vfs_file_read(const char *path, void *data, size_t size));
+OSI_DECL_STRONG_ALIAS(bootVfsFileRead, int vfs_sfile_read(const char *path, void *data, size_t size));
+OSI_DECL_STRONG_ALIAS(bootVfsFileWrite, int vfs_file_write(const char *path, const void *data, size_t size));
+OSI_DECL_STRONG_ALIAS(bootVfsSfileInit, int vfs_sfile_init(const char *path));
+OSI_DECL_STRONG_ALIAS(bootVfsSfileWrite, int vfs_sfile_write(const char *path, const void *data, size_t size));
+OSI_DECL_STRONG_ALIAS(bootVfsMkPath, int vfs_mkpath(const char *path, mode_t mode));
+OSI_DECL_STRONG_ALIAS(bootVfsMkFilePath, int vfs_mkfilepath(const char *path, mode_t mode));
+OSI_DECL_STRONG_ALIAS(bootVfsRmChildren, int vfs_rmchildren(const char *path));
+OSI_DECL_STRONG_ALIAS(bootSffsMount, int sffsVfsMount(const char *base_path, blockDevice_t *bdev, size_t cache_count, size_t sfile_reserved_lb, bool read_only));
+OSI_DECL_STRONG_ALIAS(bootSffsMkfs, int sffsVfsMkfs(blockDevice_t *bdev));

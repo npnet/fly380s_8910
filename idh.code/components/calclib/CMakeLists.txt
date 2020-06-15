@@ -10,6 +10,8 @@
 # without further testing or modification.
 
 set(target calclib)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC
     src/cmux_fcs.c
     src/crc32.c
@@ -20,7 +22,7 @@ set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_di
 target_include_directories(${target} PUBLIC include)
 target_include_targets(${target} PRIVATE fs kernel)
 
-relative_glob(srcs include/*.h src/*.c src/*.h)
+relative_glob(srcs include/*.h src/*.[ch])
 list(FILTER srcs EXCLUDE REGEX ".*/unlzma.h")
 list(FILTER srcs EXCLUDE REGEX ".*/decompress_unlzma.c")
 beautify_c_code(${target} ${srcs})

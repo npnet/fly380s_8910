@@ -113,7 +113,7 @@ static uint32_t _serialFillDesc(copsFunc_t *f, void *buf, uint32_t size)
 static int _serialSetAlt(copsFunc_t *f, uint8_t intf, uint8_t alt_must_0)
 {
     fSerial_t *s = _f2s(f);
-    return intf == s->intf_num ? usbSerialEnable(&s->serial) : -1;
+    return intf == s->intf_num ? s->serial.ops->enable(&s->serial) : -1;
 }
 
 static int _serialSetup(copsFunc_t *f, const usb_device_request_t *ctrl)
@@ -125,9 +125,9 @@ static int _serialSetup(copsFunc_t *f, const usb_device_request_t *ctrl)
     case ((UCDC_SET_CONTROL_LINE_STATE << 8) | UT_CLASS | UT_RECIP_INTERFACE):
         OSI_LOGI(0, "GS %4c port change value %u", s->serial_name, w_value);
         if (w_value == SPRD_OPEN_V || w_value == OPTION_OPEN_V)
-            usbSerialOpen(&s->serial);
+            s->serial.ops->open(&s->serial);
         else if (w_value == SPRD_CLOSE_V || w_value == OPTION_CLOSE_V)
-            usbSerialClose(&s->serial);
+            s->serial.ops->close(&s->serial);
         return 0;
 
     default:
@@ -147,7 +147,7 @@ static int _serialBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
     s->serial.func = f;
     s->serial.epin_desc = &s->desc.in_ep;
     s->serial.epout_desc = &s->desc.out_ep;
-    int r = usbSerialBind(s->serial_name, &s->serial);
+    int r = s->serial.ops->bind(s->serial_name, &s->serial);
     if (r < 0)
         return r;
 
@@ -161,14 +161,14 @@ static int _serialBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
     return 0;
 
 fail:
-    usbSerialUnbind(&s->serial);
+    s->serial.ops->unbind(&s->serial);
     return -1;
 }
 
 static void _serialUnbind(copsFunc_t *f)
 {
     fSerial_t *s = _f2s(f);
-    usbSerialUnbind(&s->serial);
+    s->serial.ops->unbind(&s->serial);
 
     if (s->intf_num != -1)
         copsRemoveInterface(s->cdev, s->intf_num);
@@ -179,7 +179,7 @@ static void _serialUnbind(copsFunc_t *f)
 static void _serialDisable(copsFunc_t *f)
 {
     fSerial_t *s = _f2s(f);
-    usbSerialDisable(&s->serial);
+    s->serial.ops->disable(&s->serial);
 }
 
 static void _serialDestroy(copsFunc_t *f)
@@ -203,6 +203,32 @@ copsFunc_t *createSerialFunc(uint32_t name)
 
     s->intf_num = -1;
     s->serial_name = name;
+    s->serial.ops = usbSerialGetOps();
+    s->func.name = OSI_MAKE_TAG('G', 'S', 'R', 'L');
+    s->func.ops.fill_desc = _serialFillDesc;
+    s->func.ops.destroy = _serialDestroy;
+    s->func.ops.setup = _serialSetup;
+    s->func.ops.bind = _serialBind;
+    s->func.ops.unbind = _serialUnbind;
+    s->func.ops.set_alt = _serialSetAlt;
+    s->func.ops.disable = _serialDisable;
+
+    return &s->func;
+}
+
+copsFunc_t *createDebugSerialFunc(uint32_t name)
+{
+    fSerial_t *s = (fSerial_t *)calloc(1, sizeof(fSerial_t));
+    if (s == NULL)
+        return NULL;
+
+    memcpy(&s->desc.intf, &generic_serial_intf_desc, USB_DT_INTERFACE_SIZE);
+    memcpy(&s->desc.in_ep, &hs_data_in, USB_DT_ENDPOINT_SIZE);
+    memcpy(&s->desc.out_ep, &hs_data_out, USB_DT_ENDPOINT_SIZE);
+
+    s->intf_num = -1;
+    s->serial_name = name;
+    s->serial.ops = usbDebugSerialGetOps();
     s->func.name = OSI_MAKE_TAG('G', 'S', 'R', 'L');
     s->func.ops.fill_desc = _serialFillDesc;
     s->func.ops.destroy = _serialDestroy;

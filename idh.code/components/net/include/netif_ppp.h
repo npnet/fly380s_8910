@@ -33,7 +33,7 @@ typedef struct __ctx_cb
     gprs_state_t gprsState;
 } ctx_cb_t;
 
-void ppp_ip_output(struct pbuf *p, ctx_cb_t *ctx);
+void ppp_ip_output(struct pbuf *p, void *ctx);
 bool ppp_ip_input(struct pbuf *p, struct netif *gprs_netif, uint8_t nDLCI);
 void ppp_StartGprs(uint8_t *usrname, uint8_t *usrpwd, void *ctx);
 err_t ppp_netif_output_ip4(struct netif *netif, struct pbuf *pb, const ip4_addr_t *ipaddr);

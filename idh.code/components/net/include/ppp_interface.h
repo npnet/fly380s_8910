@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 #define GPRS_UNACTIVE 5 // The same as PPPERR_USER in ppp.h
+
 typedef struct pppSession pppSession_t;
 
 typedef int (*pppOutputCallback_t)(void *ctx, uint8_t *data, uint32_t size);

@@ -460,7 +460,9 @@ static void clean_server_object(lwm2m_object_t * object)
 
 void update_lifetime(lwm2m_context_t * lwm2mH, uint16_t shortServerID, uint32_t lifetime)
 {
+    if(lwm2mH == NULL) return;
     lwm2m_object_t *serverobj = (lwm2m_object_t *)LWM2M_LIST_FIND(lwm2mH->objectList, LWM2M_SERVER_OBJECT_ID);
+    if(serverobj == NULL) return;
     server_instance_t *targetP = (server_instance_t *)lwm2m_list_find(serverobj->instanceList, 0);
     while (targetP != NULL)
     {
@@ -477,7 +479,7 @@ void update_lifetime(lwm2m_context_t * lwm2mH, uint16_t shortServerID, uint32_t 
         targetP = targetP->next;
     }
     
-    lwm2m_server_t * serverP;
+    lwm2m_server_t * serverP = NULL;
     serverP = lwm2mH->serverList;
     while (serverP != NULL)
     {

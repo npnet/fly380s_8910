@@ -18,6 +18,7 @@
 #include "at_cfg.h"
 #include "cfw_event.h"
 #include "cfw_chset.h"
+#include "at_cmd_ss.h"
 #include "cfw_errorcode.h"
 #include "audio_device.h"
 #include <stdio.h>
@@ -41,7 +42,7 @@
 #define AT_GPRS_DIALSTR5 "*98"
 #define AT_GPRS_DIALSTR6 "*99"
 
-#define AT_RING_ELAPSE_MS 1000
+#define AT_RING_ELAPSE_MS 6000
 #define ATD_EXTENSION_FIRST_DELAY_MS 2000
 #define ATD_EXTENSION_INTERVAL_MS 100
 
@@ -109,7 +110,7 @@ static bool AT_CC_IsNwEmcNum(uint8_t *pBcd, uint8_t nBcdLen, CFW_SIM_ID sim)
         }
 
         if (memcmp(&(gAtNwEmcNumList.listContent[i + 2]), pBcd, nBcdLen) == 0)
-            return false;
+            return true;
 
         i += (nLen + 1);
     }
@@ -413,23 +414,120 @@ static void _ringTimeout(void *param)
     }
 }
 
+typedef uint32_t (*PFN_AT_CC_CB)(const osiEvent_t *event);
+
+PFN_AT_CC_CB pAT_CC_SPEECH_CALL_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_RELEASE_CALL_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_PROGRESS_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_ERROR_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_CALL_INFO_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_CRSSINFO_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_AUDIOON_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_ALERT_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_ACCEPT_SPEECH_CALL_RSP_CB = NULL;
+PFN_AT_CC_CB pAT_CC_CALL_PATH_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_CALL_TI_ASSIGNED_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_AUDIO_RESTART_IND_CB = NULL;
+PFN_AT_CC_CB pAT_CC_INITIATE_SPEECH_CALL_RSP_CB = NULL;
+PFN_AT_CC_CB pAT_CC_RELEASE_CALL_RSP_CB = NULL;
+
+#define URI_MAX_NUMBER 21
+#define SIP_STR "sip:"
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+bool atGetUriCallNumber(
+    const char *uri_ptr,            //[IN]
+    char uriNum[URI_MAX_NUMBER + 1] //[OUT]
+)
+{
+    const char *pURINumStart = NULL;
+    const char *pURINumEnd = NULL;
+    const char *pURIHostStart = NULL;
+    const char *pURINumSemic = NULL; //semicolon
+
+    if (uri_ptr == NULL || uriNum == NULL)
+    {
+        return false;
+    }
+
+    pURINumStart = strstr(uri_ptr, SIP_STR);
+    if (pURINumStart != NULL)
+    {
+        pURINumStart += strlen(SIP_STR);
+    }
+    else
+    {
+        return false;
+    }
+
+    //get host string start pointer
+    pURIHostStart = strstr(uri_ptr, "@");
+    pURINumSemic = strstr(uri_ptr, ";");
+    if (NULL != pURINumSemic)
+    {
+        if (NULL == pURIHostStart)
+        {
+            pURINumEnd = pURINumSemic;
+        }
+        else if (0 > (pURINumSemic - pURIHostStart))
+        {
+            pURINumEnd = pURINumSemic;
+        }
+        else
+        {
+            pURINumEnd = pURIHostStart;
+        }
+    }
+    else if (NULL != pURIHostStart)
+    {
+        pURINumEnd = pURIHostStart;
+    }
+    else
+    {
+        return false;
+    }
+
+    if (pURINumEnd != pURINumStart)
+    {
+        strncpy(
+            uriNum,
+            pURINumStart,
+            min(URI_MAX_NUMBER, pURINumEnd - pURINumStart));
+    }
+
+    return false;
+}
+
 static void _onEV_CFW_CC_SPEECH_CALL_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_SPEECH_CALL_IND_CB)
+        (*pAT_CC_SPEECH_CALL_IND_CB)(event);
+
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     if (cfw_event->nType != 0)
         return; // shouldn't exist
-#ifndef CONFIG_SOC_8910
-    audevStartVoice();
-#endif
+
+    audevPlayTone(AUDEV_TONE_DIAL, 500);
+
     uint8_t sim = cfw_event->nFlag;
     CFW_SPEECH_CALL_IND *call_info = (CFW_SPEECH_CALL_IND *)cfw_event->nParam1;
     atMemFreeLater(call_info);
 
-    gAtCfwCtx.sim[sim].ring_count = 1;
+    gAtCfwCtx.sim[sim].ring_count = 0;
     atCmdRingInd(sim);
 
-    char *num_str = alloca(call_info->TelNumber.nSize * 2 + 1);
-    cfwBcdToDialString(call_info->TelNumber.nTelNumber, call_info->TelNumber.nSize, num_str);
+    char num_str[TEL_NUMBER_MAX_LEN + 2];
+
+    if (call_info->TelNumber.nSize)
+    {
+        cfwBcdToDialString(call_info->TelNumber.nTelNumber, call_info->TelNumber.nSize, (char *)num_str);
+    }
+    else
+    {
+        atGetUriCallNumber((const char *)call_info->calling_uri, num_str);
+    }
+    // char *num_str = alloca(call_info->TelNumber.nSize * 2 + 1);
+    // cfwBcdToDialString(call_info->TelNumber.nTelNumber, call_info->TelNumber.nSize, num_str);
 
     // 1: CLIP
     // 2: CSSI
@@ -490,6 +588,9 @@ static void _onEV_CFW_CC_SPEECH_CALL_IND(const osiEvent_t *event)
 
 static void _onEV_CFW_CC_RELEASE_CALL_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_RELEASE_CALL_IND_CB)
+        (*pAT_CC_RELEASE_CALL_IND_CB)(event);
+
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     if (cfw_event->nType != 0)
         return; // shouldn't exist
@@ -515,6 +616,9 @@ static void _onEV_CFW_CC_RELEASE_CALL_IND(const osiEvent_t *event)
 
 static void _onEV_CFW_CC_PROGRESS_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_PROGRESS_IND_CB)
+        (*pAT_CC_PROGRESS_IND_CB)(event);
+
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t sim = cfw_event->nFlag;
 
@@ -573,6 +677,9 @@ static void _onEV_CFW_CC_PROGRESS_IND(const osiEvent_t *event)
 
 static void _onEV_CFW_CC_ERROR_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_ERROR_IND_CB)
+        (*pAT_CC_ERROR_IND_CB)(event);
+
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     if (cfw_event->nType != 0xf0 && cfw_event->nType != 0x10)
         return; // shouldn't exist
@@ -609,11 +716,17 @@ static void _onEV_CFW_CC_ERROR_IND(const osiEvent_t *event)
 
 static void _onEV_CFW_CC_CALL_INFO_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_CALL_INFO_IND_CB)
+        (*pAT_CC_CALL_INFO_IND_CB)(event);
+
     _onEV_CFW_CC_PROGRESS_IND(event);
 }
 
 static void _onEV_CFW_CC_CRSSINFO_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_CRSSINFO_IND_CB)
+        (*pAT_CC_CRSSINFO_IND_CB)(event);
+
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t sim = cfw_event->nFlag;
 
@@ -637,6 +750,9 @@ static void _onEV_CFW_CC_CRSSINFO_IND(const osiEvent_t *event)
 
 static void _onEV_CFW_CC_AUDIOON_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_AUDIOON_IND_CB)
+        (*pAT_CC_AUDIOON_IND_CB)(event);
+
     OSI_LOGI(0, "_onEV_CFW_CC_AUDIOON_IND event");
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t sim = cfw_event->nFlag;
@@ -659,6 +775,9 @@ static void prvAlertTimerCB(void *param)
 
 static void _onEV_CFW_CC_ALERT_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_ALERT_IND_CB)
+        (*pAT_CC_ALERT_IND_CB)(event);
+
     OSI_LOGI(0, "_onEV_CFW_CC_ALERT_IND event");
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t sim = cfw_event->nFlag;
@@ -675,6 +794,9 @@ static void _onEV_CFW_CC_ALERT_IND(const osiEvent_t *event)
 
 static void _onEV_CFW_CC_ACCEPT_SPEECH_CALL_RSP(const osiEvent_t *event)
 {
+    if (pAT_CC_ACCEPT_SPEECH_CALL_RSP_CB)
+        (*pAT_CC_ACCEPT_SPEECH_CALL_RSP_CB)(event);
+
     char rsp[32];
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t sim = cfw_event->nFlag;
@@ -687,6 +809,11 @@ static void _onEV_CFW_CC_ACCEPT_SPEECH_CALL_RSP(const osiEvent_t *event)
     else
     {
         sprintf(rsp, "ERROR");
+
+        if (0 == AT_CC_GetCCCount(sim))
+        {
+            audevStopVoice();
+        }
         atCfwCcSetOffline();
     }
     atCmdRespSimUrcText(sim, rsp);
@@ -694,12 +821,18 @@ static void _onEV_CFW_CC_ACCEPT_SPEECH_CALL_RSP(const osiEvent_t *event)
 
 static void _onEV_CFW_CC_CALL_PATH_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_CALL_PATH_IND_CB)
+        (*pAT_CC_CALL_PATH_IND_CB)(event);
+
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     gAtCfwCtx.cc.ims_call = (cfw_event->nParam1 != 0);
 }
 
 static void _onEV_CFW_CC_CALL_TI_ASSIGNED_IND(const osiEvent_t *event)
 {
+    if (pAT_CC_CALL_TI_ASSIGNED_IND_CB)
+        (*pAT_CC_CALL_TI_ASSIGNED_IND_CB)(event);
+
     gAudioOnFlag = 0;
     gAtCfwCtx.cc.alert_flag = false;
     audevStartVoice();
@@ -708,6 +841,8 @@ static void _onEV_CFW_CC_CALL_TI_ASSIGNED_IND(const osiEvent_t *event)
 static void _onEV_CFW_CC_AUDIO_RESTART_IND(const osiEvent_t *event)
 {
     audevRestartVoice();
+    if (pAT_CC_AUDIO_RESTART_IND_CB)
+        (*pAT_CC_AUDIO_RESTART_IND_CB)(event);
 }
 
 static void _onEV_DM_SPEECH_IND(const osiEvent_t *event)
@@ -790,6 +925,9 @@ static void _sendExtenstion(void *param)
 
 static void _onEV_CFW_CC_INITIATE_SPEECH_CALL_RSP(const osiEvent_t *event)
 {
+    if (pAT_CC_INITIATE_SPEECH_CALL_RSP_CB)
+        (*pAT_CC_INITIATE_SPEECH_CALL_RSP_CB)(event);
+
     atCmdEngine_t *engine = atCfwDialingEngine();
     if (engine == NULL)
         return; // unexpected event
@@ -851,6 +989,8 @@ void atCfwCcInit(void)
     {
         gAtCfwCtx.sim[n].ring_count = 0;
         gAtCfwCtx.sim[n].ring_timer = osiTimerCreate(atEngineGetThreadId(), _ringTimeout, (void *)n);
+
+        CFW_CfgSetSSN(gAtSetting.sim[n].cssi, gAtSetting.sim[n].cssu, n);
     }
 
     gAtCfwCtx.cc.extension_timer = osiTimerCreate(atEngineGetThreadId(), _sendExtenstion, NULL);
@@ -922,77 +1062,10 @@ void atCmdHandleA(atCommand_t *cmd)
 //  for example test@realtimecommunication.info, where realtimecommunication.info is the domain of a SIP service provider.
 //  A SIP or SIPS URI identifies a communications resource. Its general form, in the case of a SIP URI, is:
 //  sip:user:password@host:port;uri-parameters?headers
-//  password: we don¡¯t use passwords in VoLTE networks in SIP Protocol
+//  password: we donï¿½ï¿½t use passwords in VoLTE networks in SIP Protocol
 //
 //  RFC3261
 //
-
-#define URI_MAX_NUMBER 21
-#define SIP_STR "sip:"
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
-bool atGetUriCallNumber(
-    const char *uri_ptr,            //[IN]
-    char uriNum[URI_MAX_NUMBER + 1] //[OUT]
-)
-{
-    const char *pURINumStart = NULL;
-    const char *pURINumEnd = NULL;
-    const char *pURIHostStart = NULL;
-    const char *pURINumSemic = NULL; //semicolon
-
-    if (uri_ptr == NULL || uriNum == NULL)
-    {
-        return false;
-    }
-
-    pURINumStart = strstr(uri_ptr, SIP_STR);
-    if (pURINumStart != NULL)
-    {
-        pURINumStart += strlen(SIP_STR);
-    }
-    else
-    {
-        return false;
-    }
-
-    //get host string start pointer
-    pURIHostStart = strstr(uri_ptr, "@");
-    pURINumSemic = strstr(uri_ptr, ";");
-    if (NULL != pURINumSemic)
-    {
-        if (NULL == pURIHostStart)
-        {
-            pURINumEnd = pURINumSemic;
-        }
-        else if (0 > (pURINumSemic - pURIHostStart))
-        {
-            pURINumEnd = pURINumSemic;
-        }
-        else
-        {
-            pURINumEnd = pURIHostStart;
-        }
-    }
-    else if (NULL != pURIHostStart)
-    {
-        pURINumEnd = pURIHostStart;
-    }
-    else
-    {
-        return false;
-    }
-
-    if (pURINumEnd != pURINumStart)
-    {
-        strncpy(
-            uriNum,
-            pURINumStart,
-            min(URI_MAX_NUMBER, pURINumEnd - pURINumStart));
-    }
-
-    return false;
-}
 
 // 7.18 List current calls
 void atCmdHandleCLCC(atCommand_t *cmd)
@@ -1151,6 +1224,7 @@ static void _voiceDail(atCommand_t *cmd, CFW_DIALNUMBER_V2 *dnum, bool redial)
                    _isSimEmcNum(dnum->pDialNumber, dnum->nDialNumberSize)) ||
                   ((sim_status != CFW_SIM_NORMAL && sim_status != CFW_SIM_TEST) &&
                    _isNoSimEmcNum(dnum->pDialNumber, dnum->nDialNumberSize));
+    OSI_LOGI(0, "_voiceDail: is_emc=%d", is_emc);
 
     if (is_emc)
     {
@@ -1190,6 +1264,8 @@ static void _voiceDail(atCommand_t *cmd, CFW_DIALNUMBER_V2 *dnum, bool redial)
 
     // NOTE: this is special case, the command will finished here, however
     // there are UTI events to be handled.
+    OSI_LOGI(0, "ss:dnum.Clir=%d nType=%d", dnum->nClir, dnum->nType);
+    OSI_LOGXI(OSI_LOGPAR_SI, 0, "ss dnum->pDialNumber=%s size=%d", dnum->pDialNumber, dnum->nDialNumberSize);
     cmd->uti = cfwRequestNoWaitUTI();
     if ((res = CFW_CcInitiateSpeechCall_V2(dnum, cmd->uti, sim)) != 0)
     {
@@ -1332,7 +1408,7 @@ void atCmdHandleD(atCommand_t *cmd)
 
     if (bcd_len < 0)
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_INVALID_CHAR_INDIAL);
-    if (bcd_len > SIM_PBK_NUMBER_SIZE)
+    if (bcd_len > 50 /*SIM_PBK_NUMBER_SIZE*/)
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_DAIL_STR_LONG);
 
     dnum.nDialNumberSize = bcd_len;
@@ -1340,7 +1416,7 @@ void atCmdHandleD(atCommand_t *cmd)
     if (('+' == dial_num[0]) || (('0' == dial_num[0]) && ('0' == dial_num[1])))
         dnum.nType = CFW_TELNUMBER_TYPE_INTERNATIONAL;
     else
-        dnum.nType = CFW_TELNUMBER_TYPE_UNKNOWN;
+        dnum.nType = gAtSetting.csta;
 
     OSI_LOGXI(OSI_LOGPAR_MSII, 0, "ATD num/%*s ext/%s/%d type/%d",
               bcd_len, dnum.pDialNumber, gAtCfwCtx.cc.extension,
@@ -1357,6 +1433,33 @@ void atCmdHandleD(atCommand_t *cmd)
 #endif
     gAtCfwCtx.cc.last_dail_present = true;
     gAtCfwCtx.cc.last_dial = dnum;
+
+    //for ss test
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "ss:ATD ss phone number=%s", dial_num);
+    if (AT_IsSSString(dial_num, sim))
+    {
+        at_ss_parsing_string_req_struct sStringSTR;
+        OSI_LOGI(0x100044b3, "ss:CmdFunc_D This is ss operation!!\n\r");
+        memset(&sStringSTR, 0, sizeof(at_ss_parsing_string_req_struct));
+        memcpy(sStringSTR.input, dial_num, dial_num_len);
+        sStringSTR.length = dial_num_len;
+        //#ifndef  AT_WITHOUT_SS
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "ss:CmdFunc_D sStringSTR.input=%s", sStringSTR.input);
+        cmd->uti = cfwRequestNoWaitUTI();
+        if (AT_SS_Adaption_ParseStringREQ(&sStringSTR, cmd->uti, sim))
+        {
+            OSI_LOGI(0x100044b4, "ss:CmdFunc_D The operation is OK!!\n\r");
+            RETURN_OK(cmd->engine);
+        }
+        else
+        //#endif
+        {
+            OSI_LOGI(0x100044b5, "ss:CmdFunc_D The operation is fail!!\n\r");
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CMS_UNKNOWN_ERROR);
+        }
+        return;
+    }
+    OSI_LOGI(0, "ss:dnum.nClir = %d", dnum.nClir);
     _voiceDail(cmd, &dnum, false);
 }
 
@@ -1405,6 +1508,9 @@ static void _athRspCB(atCommand_t *cmd, const osiEvent_t *event)
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
         return;
     }
+
+    if (pAT_CC_RELEASE_CALL_RSP_CB)
+        (*pAT_CC_RELEASE_CALL_RSP_CB)(event);
 
     prvAlertStop();
 
@@ -1861,8 +1967,11 @@ void atCmdHandleCHLD(atCommand_t *cmd)
 
 #ifdef CFW_VOLTE_SUPPORT
         //Active + Hold in VOLTE
-        if (CFW_ImsIsSet(sim) && 2 == nCmd && 0xff == nIndex && (active > 0 && hold > 0 && wait == 0))
+        uint8_t nCurrentRat = CFW_NWGetStackRat(sim);
+        OSI_LOGI(0, "CHLD: CFW_NWGetStackRat nCurrentRat=%d", nCurrentRat);
+        if (CFW_ImsIsSet(sim) && 2 == nCmd && 0xff == nIndex && (active > 0 && hold > 0 && wait == 0) && nCurrentRat != CFW_RAT_GSM_ONLY)
         {
+            OSI_LOGI(0, "CHLD: volte chld CFW_ImsIsSet(sim) != 0");
             ctx->g_cc_chld = 1;
             cmd->uti = cfwRequestUTIEx((osiEventCallback_t)_chldvolteRspCB, cmd, NULL, false);
             ret = CFW_CcCallHoldMultiparty_V2(cmd->uti, nCmd, nIndex, sim);
@@ -1876,6 +1985,7 @@ void atCmdHandleCHLD(atCommand_t *cmd)
 #endif
         {
             //   atSetPendingIdCmd(cmd, EV_CFW_CC_CALL_HOLD_MULTIPARTY_RSP, _chldRspCB);
+            OSI_LOGI(0, "CHLD: chld wait EV_CFW_CC_CALL_HOLD_MULTIPARTY_RSP event");
             cmd->uti = cfwRequestUTIEx((osiEventCallback_t)_chldRspCB, cmd, NULL, false);
             ret = CFW_CcCallHoldMultiparty_V2(cmd->uti, nCmd, nIndex, sim);
             if (ERR_SUCCESS != ret)
@@ -2501,4 +2611,36 @@ static int generateCeerRCCode(uint32_t cause)
 
     sprintf(gAtCfwCtx.g_pCeer, "+CEER: %s", _getCCresultCodeText(code));
     return code;
+}
+
+void atCmdHandleCSTA(atCommand_t *cmd)
+{
+    char rsp[64];
+
+    if (cmd->type == AT_CMD_SET)
+    {
+        // AT+CSTA=<type>
+        bool paramok = true;
+        const uint32_t list[] = {129, 145, 161};
+        uint8_t type = atParamUintInList(cmd->params[0], list, 3, &paramok);
+        if (!paramok || cmd->param_count != 1)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        gAtSetting.csta = type;
+        RETURN_OK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_READ)
+    {
+        sprintf(rsp, "%s: %d", cmd->desc->name, gAtSetting.csta);
+        atCmdRespInfoText(cmd->engine, rsp);
+        RETURN_OK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_TEST)
+    {
+        sprintf(rsp, "%s: (129,145,161)", cmd->desc->name);
+        atCmdRespInfoText(cmd->engine, rsp);
+        RETURN_OK(cmd->engine);
+    }
+    else
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_NOT_SURPORT);
 }

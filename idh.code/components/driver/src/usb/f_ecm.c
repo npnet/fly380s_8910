@@ -413,6 +413,7 @@ static int prvEcmFuncSetAlt(copsFunc_t *f, uint8_t intf, uint8_t alt)
 {
     struct f_ecm *ecm = prvF2ECM(f);
     int retval = 0;
+    OSI_LOGI(0, "ECM set alt %u/%u/%d", intf, alt, ecm->is_data_enable);
     if (intf == ecm->ctrl_id)
     {
         retval = udcEpEnable(f->controller, ecm->notify_ep);

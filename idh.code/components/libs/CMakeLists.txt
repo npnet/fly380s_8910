@@ -14,4 +14,3 @@ add_library(${target} STATIC IMPORTED GLOBAL)
 set_target_properties(${target} PROPERTIES
     IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/boot_encrypt/libboot_encrypt.a)
 target_include_directories(${target} INTERFACE boot_encrypt)
-target_link_libraries(${target} INTERFACE ${libc_file_name})

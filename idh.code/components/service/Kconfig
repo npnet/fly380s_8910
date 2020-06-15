@@ -68,4 +68,10 @@ config SRV_DTR_DEBOUNCE_TIME
 endif
 endif
 
+config SRV_SIMLOCK_ENABLE
+    bool "Enable simlock service"
+    default n
+    help
+        Enbale simlock service.
+
 endmenu

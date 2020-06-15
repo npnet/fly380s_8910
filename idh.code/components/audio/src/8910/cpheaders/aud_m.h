@@ -204,7 +204,6 @@ typedef enum
     AUD_ERR_QTY
 } AUD_ERR_T;
 
-
 // =============================================================================
 // AUD_SPK_T
 // -----------------------------------------------------------------------------
@@ -225,9 +224,8 @@ typedef enum
 
     AUD_SPK_QTY,
 
-    AUD_SPK_DISABLE=255
+    AUD_SPK_DISABLE = 255
 } AUD_SPK_T;
-
 
 // =============================================================================
 // AUD_MIC_T
@@ -248,7 +246,6 @@ typedef enum
     AUD_MIC_DISABLE = 255
 } AUD_MIC_T;
 
-
 // =============================================================================
 // AUD_SPEAKER_TYPE_T
 // -----------------------------------------------------------------------------
@@ -268,7 +265,6 @@ typedef enum
 
     AUD_SPEAKER_QTY
 } AUD_SPEAKER_TYPE_T;
-
 
 // =============================================================================
 // AUD_LEVEL_T
@@ -293,7 +289,6 @@ typedef struct
     SND_APP_MODE_T appMode;
 } AUD_LEVEL_T;
 
-
 // =============================================================================
 // AUD_DEVICE_CFG_T
 // -----------------------------------------------------------------------------
@@ -305,19 +300,18 @@ typedef struct
 typedef struct
 {
     /// Type of speaker
-    AUD_SPK_T    spkSel;
+    AUD_SPK_T spkSel;
 
     /// Kind of the speaker (stereo, mono, etc)
     AUD_SPEAKER_TYPE_T spkType;
 
     /// Type of mic
-    AUD_MIC_T    micSel;
+    AUD_MIC_T micSel;
 
     /// Speaker level,
-    CONST AUD_LEVEL_T* level;
+    CONST AUD_LEVEL_T *level;
 
 } AUD_DEVICE_CFG_T;
-
 
 // =============================================================================
 //  AUD_TEST_T
@@ -357,7 +351,7 @@ typedef enum
     AUD_TEST_VOICE_MODE_WB,
     AUD_TEST_VOICE_MODE_PCM,
     AUD_TEST_VOICE_MODE_ERROR
-}AUD_TEST_VOICE_MODE_T;
+} AUD_TEST_VOICE_MODE_T;
 
 typedef enum
 {
@@ -388,7 +382,6 @@ typedef enum
     AUD_INPUT_MIC_CIRCUITY_TYPE_SINGLEEND,
     AUD_INPUT_MIC_CIRCUITY_TYPE_QTY = 0xFF000000
 } AUD_INPUT_MIC_CIRCUITY_TYPE_T;
-
 
 typedef enum
 {
@@ -436,11 +429,11 @@ typedef struct
 {
     /// Type of speaker
     AUD_INPUT_TYPE_T inputType;
-    AUD_INPUT_MIC_CIRCUITY_TYPE_T    inputCircuityType;
-    AUD_INPUT_PATH_T   inputPath;
-    AUD_LINE_PATH_T     linePath;
+    AUD_INPUT_MIC_CIRCUITY_TYPE_T inputCircuityType;
+    AUD_INPUT_PATH_T inputPath;
+    AUD_LINE_PATH_T linePath;
     /// Type of mic
-    AUD_SPKPA_TYPE_T    spkpaType;
+    AUD_SPKPA_TYPE_T spkpaType;
 } AUD_DEVICE_CFG_EXT_T;
 
 typedef enum
@@ -450,7 +443,6 @@ typedef enum
     AUD_HEADSET_TYPE_INSERT3P,
     AUD_HEADSET_TYPE_QTY = 0xFF000000
 } AUD_HEADSET_TYPE_T;
-
 
 typedef enum
 {
@@ -478,7 +470,7 @@ typedef enum
     AUD_TESTMODE_SETUP_BEGIN,
     AUD_TESTMODE_SETUP_DONE,
     AUD_CODEC_STATUS_MAX = 0xFF000000
-}AUD_CP_STATUS_E;
+} AUD_CP_STATUS_E;
 // =============================================================================
 // AUD_STREAM_PLAY_T
 // -----------------------------------------------------------------------------
@@ -486,10 +478,9 @@ typedef enum
 /// Each configured audio interface allowing to play a stream must implement
 /// one of them.
 // =============================================================================
-typedef AUD_ERR_T (*AUD_STREAM_PLAY_T) (SND_ITF_T itf,
-                                        CONST HAL_AIF_STREAM_T* stream,
-                                        CONST AUD_DEVICE_CFG_T* cfg);
-
+typedef AUD_ERR_T (*AUD_STREAM_PLAY_T)(SND_ITF_T itf,
+                                       CONST HAL_AIF_STREAM_T *stream,
+                                       CONST AUD_DEVICE_CFG_T *cfg);
 
 // =============================================================================
 // AUD_STREAM_RECORD_T
@@ -498,10 +489,9 @@ typedef AUD_ERR_T (*AUD_STREAM_PLAY_T) (SND_ITF_T itf,
 /// Each configured audio interface allowing to record a stream must implement
 /// one of them.
 // =============================================================================
-typedef AUD_ERR_T (*AUD_STREAM_RECORD_T) (SND_ITF_T itf,
-        CONST HAL_AIF_STREAM_T* stream,
-        CONST AUD_DEVICE_CFG_T* cfg);
-
+typedef AUD_ERR_T (*AUD_STREAM_RECORD_T)(SND_ITF_T itf,
+                                         CONST HAL_AIF_STREAM_T *stream,
+                                         CONST AUD_DEVICE_CFG_T *cfg);
 
 // =============================================================================
 // AUD_STREAM_STOP_T
@@ -510,8 +500,7 @@ typedef AUD_ERR_T (*AUD_STREAM_RECORD_T) (SND_ITF_T itf,
 /// Each configured audio interface allowing to stop a stream must implement
 /// one of them. This function stops both playing or recording stream.
 // =============================================================================
-typedef AUD_ERR_T (*AUD_STREAM_STOP_T) (SND_ITF_T itf);
-
+typedef AUD_ERR_T (*AUD_STREAM_STOP_T)(SND_ITF_T itf);
 
 // =============================================================================
 // AUD_CALIB_UPDATE_T
@@ -521,8 +510,7 @@ typedef AUD_ERR_T (*AUD_STREAM_STOP_T) (SND_ITF_T itf);
 /// calibration values have been changed manually, and must be applied so that
 /// their effect is observed.
 // =============================================================================
-typedef AUD_ERR_T (*AUD_CALIB_UPDATE_T) (SND_ITF_T itf);
-
+typedef AUD_ERR_T (*AUD_CALIB_UPDATE_T)(SND_ITF_T itf);
 
 // =============================================================================
 // AUD_STREAM_PAUSE_T
@@ -531,8 +519,7 @@ typedef AUD_ERR_T (*AUD_CALIB_UPDATE_T) (SND_ITF_T itf);
 /// Each configured audio interface allowing to pause a stream must implement
 /// one of them. This function pauses both playing or recording stream.
 // =============================================================================
-typedef AUD_ERR_T (*AUD_STREAM_PAUSE_T) (SND_ITF_T itf, BOOL);
-
+typedef AUD_ERR_T (*AUD_STREAM_PAUSE_T)(SND_ITF_T itf, BOOL);
 
 // =============================================================================
 // AUD_STREAM_SETUP_T
@@ -540,8 +527,7 @@ typedef AUD_ERR_T (*AUD_STREAM_PAUSE_T) (SND_ITF_T itf, BOOL);
 /// This type is the one describing the prototype for configuring functions.
 /// This enables to set the speaker and mic used and adjust some the gains.
 // =============================================================================
-typedef AUD_ERR_T (*AUD_STREAM_SETUP_T) (SND_ITF_T itf, CONST AUD_DEVICE_CFG_T* cfg);
-
+typedef AUD_ERR_T (*AUD_STREAM_SETUP_T)(SND_ITF_T itf, CONST AUD_DEVICE_CFG_T *cfg);
 
 // =============================================================================
 // AUD_TONE_PLAY_T
@@ -551,12 +537,11 @@ typedef AUD_ERR_T (*AUD_STREAM_SETUP_T) (SND_ITF_T itf, CONST AUD_DEVICE_CFG_T* 
 /// Each configured audio interface allowing to play a tone must implement
 /// one.
 // =============================================================================
-typedef AUD_ERR_T (*AUD_TONE_PLAY_T) (
-    SND_ITF_T            itf,
-    CONST SND_TONE_TYPE_T   tone,
-    CONST AUD_DEVICE_CFG_T*        cfg,
-    CONST BOOL              start);
-
+typedef AUD_ERR_T (*AUD_TONE_PLAY_T)(
+    SND_ITF_T itf,
+    CONST SND_TONE_TYPE_T tone,
+    CONST AUD_DEVICE_CFG_T *cfg,
+    CONST BOOL start);
 
 // =============================================================================
 // AUD_TONE_PAUSE_T
@@ -565,8 +550,7 @@ typedef AUD_ERR_T (*AUD_TONE_PLAY_T) (
 /// Each configured audio interface allowing to pause a tone must implement
 /// one of them.
 // =============================================================================
-typedef AUD_ERR_T (*AUD_TONE_PAUSE_T) (SND_ITF_T itf, BOOL);
-
+typedef AUD_ERR_T (*AUD_TONE_PAUSE_T)(SND_ITF_T itf, BOOL);
 
 // =============================================================================
 // AUD_ITF_CFG_T
@@ -577,24 +561,23 @@ typedef AUD_ERR_T (*AUD_TONE_PAUSE_T) (SND_ITF_T itf, BOOL);
 // =============================================================================
 typedef struct
 {
-    AUD_STREAM_PLAY_T   play;
+    AUD_STREAM_PLAY_T play;
     AUD_STREAM_RECORD_T record;
-    AUD_STREAM_STOP_T   stop;
-    AUD_STREAM_PAUSE_T  pause;
-    AUD_STREAM_SETUP_T  setup;
-    AUD_TONE_PLAY_T     tone;
-    AUD_TONE_PAUSE_T    tonePause;
-    AUD_CALIB_UPDATE_T  calibUpdate;
+    AUD_STREAM_STOP_T stop;
+    AUD_STREAM_PAUSE_T pause;
+    AUD_STREAM_SETUP_T setup;
+    AUD_TONE_PLAY_T tone;
+    AUD_TONE_PAUSE_T tonePause;
+    AUD_CALIB_UPDATE_T calibUpdate;
     // A (set) of parameters specifics to a driver
-    UINT32              parameter;
+    UINT32 parameter;
     /// Speaker to use on that device
-    AUD_SPK_T           spkSel;
+    AUD_SPK_T spkSel;
     /// Type of speaker
-    AUD_SPEAKER_TYPE_T  spkType;
+    AUD_SPEAKER_TYPE_T spkType;
     /// Mic to use on that device
-    AUD_MIC_T           micSel;
+    AUD_MIC_T micSel;
 } AUD_ITF_CFG_T;
-
 
 // =============================================================================
 // AUD_CONFIG_T
@@ -606,14 +589,11 @@ typedef struct
 // =============================================================================
 typedef CONST AUD_ITF_CFG_T AUD_CONFIG_T[SND_ITF_QTY];
 
-
 // Test mode buffer malloc function type
-typedef VOID* (*AUD_TEST_MODE_MALLOC_FUNC_T)(UINT32);
-
+typedef VOID *(*AUD_TEST_MODE_MALLOC_FUNC_T)(UINT32);
 
 // Test mode buffer free function type
-typedef VOID (*AUD_TEST_MODE_FREE_FUNC_T)(VOID*);
-
+typedef VOID (*AUD_TEST_MODE_FREE_FUNC_T)(VOID *);
 
 // =============================================================================
 //  FUNCTIONS
@@ -628,7 +608,6 @@ typedef VOID (*AUD_TEST_MODE_FREE_FUNC_T)(VOID*);
 // =============================================================================
 PUBLIC VOID aud_MutexTake(VOID);
 
-
 // =============================================================================
 // aud_MutexRelease
 // -----------------------------------------------------------------------------
@@ -637,7 +616,6 @@ PUBLIC VOID aud_MutexTake(VOID);
 /// @param userId The user ID to release this mutex
 // =============================================================================
 PUBLIC VOID aud_MutexRelease(VOID);
-
 
 // =============================================================================
 // aud_Setup
@@ -656,8 +634,7 @@ PUBLIC VOID aud_MutexRelease(VOID);
 /// #AUD_LEVEL_T for more details.
 /// @return #AUD_ERR_NO if it can execute the configuration.
 // =============================================================================
-PUBLIC AUD_ERR_T aud_Setup(SND_ITF_T itf, CONST AUD_LEVEL_T* cfg);
-
+PUBLIC AUD_ERR_T aud_Setup(SND_ITF_T itf, CONST AUD_LEVEL_T *cfg);
 
 // =============================================================================
 // aud_StreamStart
@@ -680,10 +657,9 @@ PUBLIC AUD_ERR_T aud_Setup(SND_ITF_T itf, CONST AUD_LEVEL_T* cfg);
 ///         #AUD_ERR_NO it can execute the command.
 // =============================================================================
 PUBLIC AUD_ERR_T aud_StreamStart(
-    CONST SND_ITF_T      itf,
-    CONST HAL_AIF_STREAM_T* stream,
-    CONST AUD_LEVEL_T *       cfg);
-
+    CONST SND_ITF_T itf,
+    CONST HAL_AIF_STREAM_T *stream,
+    CONST AUD_LEVEL_T *cfg);
 
 // =============================================================================
 // aud_StreamStop
@@ -699,7 +675,6 @@ PUBLIC AUD_ERR_T aud_StreamStart(
 // =============================================================================
 PUBLIC AUD_ERR_T aud_StreamStop(CONST SND_ITF_T itf);
 
-
 // =============================================================================
 // aud_StreamRecordStop
 // -----------------------------------------------------------------------------
@@ -713,7 +688,6 @@ PUBLIC AUD_ERR_T aud_StreamStop(CONST SND_ITF_T itf);
 ///         #AUD_ERR_NO if it can execute the command.
 // =============================================================================
 PUBLIC AUD_ERR_T aud_StreamRecordStop(SND_ITF_T itf);
-
 
 // =============================================================================
 // aud_StreamPause
@@ -729,7 +703,6 @@ PUBLIC AUD_ERR_T aud_StreamRecordStop(SND_ITF_T itf);
 ///         #AUD_ERR_NO if it can execute the command.
 // =============================================================================
 PUBLIC AUD_ERR_T aud_StreamPause(CONST SND_ITF_T itf, CONST BOOL pause);
-
 
 // =============================================================================
 // aud_StreamRecord
@@ -750,10 +723,9 @@ PUBLIC AUD_ERR_T aud_StreamPause(CONST SND_ITF_T itf, CONST BOOL pause);
 ///         #AUD_ERR_NO if the stream ca be recorded.
 // =============================================================================
 PUBLIC AUD_ERR_T aud_StreamRecord(
-    CONST SND_ITF_T      itf,
-    CONST HAL_AIF_STREAM_T* stream,
-    CONST AUD_LEVEL_T *       cfg);
-
+    CONST SND_ITF_T itf,
+    CONST HAL_AIF_STREAM_T *stream,
+    CONST AUD_LEVEL_T *cfg);
 
 // =============================================================================
 // aud_ToneStart
@@ -779,10 +751,9 @@ PUBLIC AUD_ERR_T aud_StreamRecord(
 ///         #AUD_ERR_NO otherwise
 // =============================================================================
 PUBLIC AUD_ERR_T aud_ToneStart(
-    CONST SND_ITF_T           itf,
-    CONST SND_TONE_TYPE_T        tone,
-    CONST AUD_LEVEL_T*             cfg);
-
+    CONST SND_ITF_T itf,
+    CONST SND_TONE_TYPE_T tone,
+    CONST AUD_LEVEL_T *cfg);
 
 // =============================================================================
 // aud_ToneStop
@@ -796,7 +767,6 @@ PUBLIC AUD_ERR_T aud_ToneStart(
 ///         #AUD_ERR_NO otherwise
 // =============================================================================
 PUBLIC AUD_ERR_T aud_ToneStop(CONST SND_ITF_T itf);
-
 
 // =============================================================================
 // aud_TonePause
@@ -813,7 +783,6 @@ PUBLIC AUD_ERR_T aud_ToneStop(CONST SND_ITF_T itf);
 ///         #AUD_ERR_NO if it can execute the command.
 // =============================================================================
 PUBLIC AUD_ERR_T aud_TonePause(CONST SND_ITF_T itf, CONST BOOL pause);
-
 
 // =============================================================================
 // aud_TestModeSetup
@@ -838,11 +807,10 @@ PUBLIC AUD_ERR_T aud_TonePause(CONST SND_ITF_T itf, CONST BOOL pause);
 /// @param mode Test mode to set.
 /// @return #AUD_ERR_NO if it succeeds.
 // =============================================================================
-PUBLIC AUD_ERR_T aud_TestModeSetup(CONST SND_ITF_T         itf,
-                                   CONST HAL_AIF_STREAM_T* stream,
-                                   CONST AUD_LEVEL_T *     cfg,
-                                   AUD_TEST_T              mode);
-
+PUBLIC AUD_ERR_T aud_TestModeSetup(CONST SND_ITF_T itf,
+                                   CONST HAL_AIF_STREAM_T *stream,
+                                   CONST AUD_LEVEL_T *cfg,
+                                   AUD_TEST_T mode);
 
 // =============================================================================
 // aud_CalibUpdateValues
@@ -855,7 +823,6 @@ PUBLIC AUD_ERR_T aud_TestModeSetup(CONST SND_ITF_T         itf,
 // =============================================================================
 PUBLIC AUD_ERR_T aud_CalibUpdateValues(CONST SND_ITF_T itf);
 
-
 // =============================================================================
 //  aud_SetAudDeviceCFG
 // -----------------------------------------------------------------------------
@@ -865,31 +832,24 @@ PUBLIC AUD_ERR_T aud_CalibUpdateValues(CONST SND_ITF_T itf);
 // =============================================================================
 PUBLIC void aud_SetAudDeviceCFG(AUD_DEVICE_CFG_EXT_T cfg);
 
-
 PUBLIC VOID aud_ForceReceiverMicSelection(BOOL on);
-
 
 PUBLIC VOID aud_SetCurOutputDevice(SND_ITF_T itf);
 
-
 PUBLIC SND_ITF_T aud_GetCurOutputDevice(VOID);
-
 
 PUBLIC VOID aud_LoudspeakerWithEarpiece(BOOL on);
 
-
 PUBLIC BOOL aud_TestModeRegisterMallocFreeFunc(AUD_TEST_MODE_MALLOC_FUNC_T mallocFunc,
-        AUD_TEST_MODE_FREE_FUNC_T freeFunc);
-
+                                               AUD_TEST_MODE_FREE_FUNC_T freeFunc);
 
 PUBLIC VOID aud_CodecCommonSetAifConfigByAp(BOOL on);
 
-
-PUBLIC AUD_ERR_T aud_TestModeSetupExt(CONST SND_ITF_T         itf,
-                                      CONST HAL_AIF_STREAM_T* stream,
-                                      CONST AUD_LEVEL_T *     cfg,
+PUBLIC AUD_ERR_T aud_TestModeSetupExt(CONST SND_ITF_T itf,
+                                      CONST HAL_AIF_STREAM_T *stream,
+                                      CONST AUD_LEVEL_T *cfg,
                                       UINT8 *audRecordBuffer);
-PUBLIC AUD_ERR_T aud_TestModeStopExt(CONST SND_ITF_T     itf);
+PUBLIC AUD_ERR_T aud_TestModeStopExt(CONST SND_ITF_T itf);
 #ifndef CHIP_HAS_AP
 PUBLIC VOID aud_SetMicMuteFlag(BOOL muteflag);
 
@@ -928,7 +888,6 @@ PUBLIC BOOL aud_GetForceReceiverMicSelectionFlag(VOID);
 // =============================================================================
 PUBLIC BOOL aud_GetWorkingFlag(VOID);
 
-
 ///  @} <- End of the aud group
 #if (AUDIO_CALIB_VER == 2)
 // =============================================================================
@@ -941,7 +900,6 @@ PUBLIC BOOL aud_GetWorkingFlag(VOID);
 // =============================================================================
 PUBLIC CALIB_AUD_PATH_T aud_ItfToPath(SND_ITF_T itf, SND_APP_MODE_T mode);
 
-
 // =============================================================================
 // aud_PathToItf
 // -----------------------------------------------------------------------------
@@ -951,7 +909,6 @@ PUBLIC CALIB_AUD_PATH_T aud_ItfToPath(SND_ITF_T itf, SND_APP_MODE_T mode);
 /// @return itf AUD interface
 // =============================================================================
 PUBLIC SND_ITF_T aud_PathToItf(CALIB_AUD_PATH_T path, CALIB_AUD_MODE_T mode);
-
 
 // =============================================================================
 // aud_GetOutAlgGainDb2Val
@@ -965,7 +922,7 @@ PUBLIC INT16 aud_GetOutAlgGainDb2Val(VOID);
 // -----------------------------------------------------------------------------
 /// get the audio codec latest AUD_LEVEL_T.
 // =============================================================================
-PUBLIC AUD_LEVEL_T* aud_GetLatestLevel(VOID);
+PUBLIC AUD_LEVEL_T *aud_GetLatestLevel(VOID);
 
 // =============================================================================
 // aud_SetUpdateCalibValueFlag
@@ -980,7 +937,7 @@ PUBLIC VOID aud_SetUpdateCalibValueFlag(BOOL flag);
 /// aud_SetBtGain
 // =============================================================================
 PUBLIC VOID aud_SetBtGain(CALIB_AUD_PATH_T path, SND_APP_MODE_T appMode,
-	SND_SPK_LEVEL_T spkLevel, BOOL micMute);
+                          SND_SPK_LEVEL_T spkLevel, BOOL micMute);
 
 #endif
 
@@ -995,45 +952,45 @@ PUBLIC BOOL aud_GetFMWorkingFlag(VOID);
 // -----------------------------------------------------------------------------
 /// aud_SetBtClk
 // =============================================================================
-PUBLIC AUD_ERR_T  aud_SetBtClk(VOID);
+PUBLIC AUD_ERR_T aud_SetBtClk(VOID);
 
 // =============================================================================
 // aud_ClrBtClk
 // -----------------------------------------------------------------------------
 /// aud_ClrBtClk
 // =============================================================================
-PUBLIC AUD_ERR_T  aud_ClrBtClk(VOID);
+PUBLIC AUD_ERR_T aud_ClrBtClk(VOID);
 
-PUBLIC  AUD_ERR_T aud_HeadsetConfig(UINT32 isInsert,UINT32 isBbat);
-
+PUBLIC AUD_ERR_T aud_HeadsetConfig(UINT32 isInsert, UINT32 isBbat);
 
 // =============================================================================
 // aud_SetSharkingMode
 // -----------------------------------------------------------------------------
 /// aud_SetSharkingMode
 // =============================================================================
-PUBLIC VOID  aud_SetSharkingMode(UINT32 isSharkingMode);
+PUBLIC VOID aud_SetSharkingMode(UINT32 isSharkingMode);
 
 // =============================================================================
 // aud_GetSharkingMode
 // -----------------------------------------------------------------------------
 /// aud_GetSharkingMode
 // =============================================================================
-PUBLIC UINT32  aud_GetSharkingMode(VOID);
+PUBLIC UINT32 aud_GetSharkingMode(VOID);
 
 // =============================================================================
 // aud_SetToneMode
 // -----------------------------------------------------------------------------
 /// aud_SetToneMode
 // =============================================================================
-PUBLIC VOID  aud_SetToneMode(UINT32 isToneMode);
+PUBLIC VOID aud_SetToneMode(UINT32 isToneMode);
 
 // =============================================================================
 // aud_GetToneMode
 // -----------------------------------------------------------------------------
 /// aud_GetToneMode
 // =============================================================================
-PUBLIC UINT32  aud_GetToneMode(VOID);
+PUBLIC UINT32 aud_GetToneMode(VOID);
 
+PUBLIC void aud_SetLdoVB(UINT32 en);
 
 #endif // _AUD_M_H_

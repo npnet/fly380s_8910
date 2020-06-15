@@ -1014,7 +1014,7 @@ void halGoudatResetLcdPin(void)
     {
         ctrl_lcd.b.lcd_resetb = 0;
         hwp_gouda->gd_lcd_ctrl = ctrl_lcd.v;
-        osiDelayUS(2000);
+        osiDelayUS(20000);
         ctrl_lcd.b.lcd_resetb = 1;
         hwp_gouda->gd_lcd_ctrl = ctrl_lcd.v;
     }
@@ -1022,7 +1022,7 @@ void halGoudatResetLcdPin(void)
     {
         ctrl_lcd.b.lcd_resetb = 1;
         hwp_gouda->gd_lcd_ctrl = ctrl_lcd.v;
-        osiDelayUS(2000);
+        osiDelayUS(20000);
         ctrl_lcd.b.lcd_resetb = 0;
         hwp_gouda->gd_lcd_ctrl = ctrl_lcd.v;
     }

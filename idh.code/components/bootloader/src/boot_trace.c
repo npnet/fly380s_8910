@@ -15,25 +15,18 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define BOOT_TRACE_SIZE (256)
-
-static uint32_t gBootTraceBuf[BOOT_TRACE_SIZE / 4];
-static uint32_t gBootTraceRequested;
-
-uint32_t *bootTraceBufRequest(uint32_t size)
+bool bootTraceBufPut(const void *data, unsigned size)
 {
-    if (size > BOOT_TRACE_SIZE)
-        return NULL;
-    gBootTraceRequested = size;
-    return gBootTraceBuf;
+    bootDebuguartWriteAll(data, size);
+    return true;
 }
 
-void bootTraceBufFilled(void)
+bool bootTraceBufPutMulti(const osiBuffer_t *bufs, unsigned count, int size)
 {
-    bootDebuguartWriteAll(gBootTraceBuf, gBootTraceRequested);
-    gBootTraceRequested = 0;
+    for (unsigned n = 0; n < count; n++)
+        bootDebuguartWriteAll((const void *)bufs[n].ptr, bufs[n].size);
+    return true;
 }
 
-OSI_STRONG_ALIAS(osiTraceBufRequestLocked, bootTraceBufRequest);
-OSI_STRONG_ALIAS(osiTraceBufRequest, bootTraceBufRequest);
-OSI_STRONG_ALIAS(osiTraceBufFilled, bootTraceBufFilled);
+OSI_DECL_STRONG_ALIAS(bootTraceBufPut, bool osiTraceBufPut(const void *data, unsigned size));
+OSI_DECL_STRONG_ALIAS(bootTraceBufPutMulti, bool osiTraceBufPutMulti(const osiBuffer_t *bufs, unsigned count, int size));

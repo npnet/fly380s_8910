@@ -9,4 +9,8 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-target_sources(${target} PRIVATE core/${CONFIG_SOC}/osi_core.o)
+set(import_lib ${out_lib_dir}/libosi_core.a)
+configure_file(core/${CONFIG_SOC}/libosi_core.a ${import_lib} COPYONLY)
+add_app_libraries(${import_lib})
+add_library(osi_core STATIC IMPORTED GLOBAL)
+set_target_properties(osi_core PROPERTIES IMPORTED_LOCATION ${import_lib})

@@ -17,7 +17,8 @@
 #include "unity_fixture.h"
 #include "drv_uart.h"
 #include "drv_axidma.h"
-#include "drv_debughost.h"
+#include "drv_debug_port.h"
+#include "drv_host_cmd.h"
 #include "hal_config.h"
 #include "atr_config.h"
 #include "unity_port.h"
@@ -30,9 +31,16 @@ static void prvUnityWorkEntry(void *ctx)
 #ifdef CONFIG_SOC_8910
     drvAxidmaInit();
 #endif
-    drvDhostInit();
     osiTraceSetEnable(gSysnvTraceEnabled);
-    osiTraceSenderInit(drvDhostSendAll, drvDhostBlueScreenSend);
+
+    drvDebugPortMode_t dhost_mode = {
+        .protocol = DRV_DEBUG_PROTOCOL_HOST,
+        .trace_enable = true,
+        .cmd_enable = true,
+        .bs_enable = true,
+    };
+    drvDebugPort_t *dhost_port = drvDhostCreate(dhost_mode);
+    drvHostCmdEngineCreate(dhost_port);
 
     unityInit();
     unityOpenUart(CONFIG_ATR_DEFAULT_UART, CONFIG_ATR_DEFAULT_UART_BAUD);
@@ -47,5 +55,3 @@ void unityAppStart(void)
     osiWorkQueue_t *wq = osiWorkQueueCreate("unity", 1, OSI_PRIORITY_BELOW_NORMAL, 32 * 1024);
     osiWorkEnqueue(work, wq);
 }
-
-OSI_STRONG_ALIAS(osiAppStart, unityAppStart);

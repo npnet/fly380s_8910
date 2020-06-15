@@ -9,4 +9,8 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-target_sources(${target} PRIVATE core/${CONFIG_SOC}/audio_core.o)
+set(import_lib ${out_lib_dir}/libaudio_core.a)
+configure_file(core/${CONFIG_SOC}/libaudio_core.a ${import_lib} COPYONLY)
+add_app_libraries(${import_lib})
+add_library(audio_core STATIC IMPORTED GLOBAL)
+set_target_properties(audio_core PROPERTIES IMPORTED_LOCATION ${import_lib})

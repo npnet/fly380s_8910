@@ -72,6 +72,8 @@ extern "C" {
 #define HAL_DESCL2_PAGE4K_DEVICE_R 0x00000233
 #define HAL_DESCL2_PAGE4K_NO_ACCESS 0x00000003
 
+#define HAL_CHIP_FLASH_DEVICE_NAME(address) ({unsigned _p = (address); _p &= 0xff000000; (_p == CONFIG_NOR_PHY_ADDRESS)? DRV_NAME_SPI_FLASH : (_p == CONFIG_NOR_EXT_PHY_ADDRESS)? DRV_NAME_SPI_FLASH_EXT : DRV_NAME_INVALID; })
+
 void halPmuUnlockPowerReg(void);
 
 /**
@@ -142,6 +144,35 @@ void halCameraClockRequest(cameraUser_t user, cameraClk_t Mclk);
  * \param user  the user
  */
 void halCameraClockRelease(cameraUser_t user);
+
+/**
+ * \brief init hw aes trng module
+ */
+void halAesTrngInit();
+
+/**
+ * \brief reset hw aes trng module
+ */
+void halAesTrngReset();
+
+/**
+ * \brief start hw aes trng module
+ */
+void halAesTrngEnable();
+
+/**
+ * \brief get hw aes generated random data, two word generated each time
+ * \param v0    data0
+ * \param v1    data1
+ */
+void halAesTrngGetValue(uint32_t *v0, uint32_t *v1);
+
+/**
+ * \brief check hw aes trng module if has already generated random data
+ * \return
+ *      - true if done else false
+ */
+bool halAesCheckTrngComplete();
 
 #ifdef __cplusplus
 }

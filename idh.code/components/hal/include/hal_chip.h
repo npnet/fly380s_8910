@@ -69,6 +69,9 @@ extern "C" {
 #define REG_APPLY_UDELAY(us) (uint32_t)(REG_APPLY_TYPE_UDELAY), (uint32_t)(us)
 #define REG_APPLY_END REG_APPLY_TYPE_END
 
+#define HAL_FLASH_OFFSET(address) ((unsigned)(address)&0xffffff)
+#define HAL_FLASH_DEVICE_NAME(address) HAL_CHIP_FLASH_DEVICE_NAME(address)
+
 enum
 {
     HAL_CLK_DIV1P0 = 2,
@@ -123,29 +126,30 @@ enum
 
 enum
 {
-    HAL_POWER_DCDC_GEN,
-    HAL_POWER_CORE,
-    HAL_POWER_BUCK_PA,
-    HAL_POWER_SPIMEM,
-    HAL_POWER_MEM,
-    HAL_POWER_AVDD18,
-    HAL_POWER_RF15,
-    HAL_POWER_WCN,
-    HAL_POWER_DDR12,
-    HAL_POWER_CAMD,
-    HAL_POWER_CAMA,
-    HAL_POWER_USB,
-    HAL_POWER_LCD,
-    HAL_POWER_SD,
-    HAL_POWER_SIM0,
-    HAL_POWER_SIM1,
-    HAL_POWER_VIBR,
-    HAL_POWER_DCXO,
-    HAL_POWER_VDD28,
-    HAL_POWER_VIO18,
-    HAL_POWER_KEYLED,
-    HAL_POWER_BACK_LIGHT,
-    HAL_POWER_ANALOG,
+    HAL_POWER_DCDC_GEN = OSI_MAKE_TAG('D', 'C', 'D', 'C'),
+    HAL_POWER_CORE = OSI_MAKE_TAG('C', 'O', 'R', 'E'),
+    HAL_POWER_BUCK_PA = OSI_MAKE_TAG('C', 'O', 'R', 'E'),
+    HAL_POWER_SPIMEM = OSI_MAKE_TAG('S', 'P', 'I', 'M'),
+    HAL_POWER_MEM = OSI_MAKE_TAG('M', 'E', 'M', ' '),
+    HAL_POWER_AVDD18 = OSI_MAKE_TAG('A', 'V', '1', '8'),
+    HAL_POWER_RF15 = OSI_MAKE_TAG('R', 'F', '1', '5'),
+    HAL_POWER_WCN = OSI_MAKE_TAG('W', 'C', 'N', ' '),
+    HAL_POWER_DDR12 = OSI_MAKE_TAG('D', 'D', 'R', '1'),
+    HAL_POWER_CAMD = OSI_MAKE_TAG('C', 'A', 'M', 'D'),
+    HAL_POWER_CAMA = OSI_MAKE_TAG('C', 'A', 'M', 'A'),
+    HAL_POWER_USB = OSI_MAKE_TAG('U', 'S', 'B', ' '),
+    HAL_POWER_LCD = OSI_MAKE_TAG('L', 'C', 'D', ' '),
+    HAL_POWER_SD = OSI_MAKE_TAG('S', 'D', ' ', ' '),
+    HAL_POWER_SIM0 = OSI_MAKE_TAG('S', 'I', 'M', '0'),
+    HAL_POWER_SIM1 = OSI_MAKE_TAG('S', 'I', 'M', '1'),
+    HAL_POWER_VIBR = OSI_MAKE_TAG('V', 'I', 'B', 'R'),
+    HAL_POWER_DCXO = OSI_MAKE_TAG('D', 'C', 'X', 'O'),
+    HAL_POWER_VDD28 = OSI_MAKE_TAG('V', 'D', 'D', '2'),
+    HAL_POWER_VIO18 = OSI_MAKE_TAG('V', 'I', 'O', '1'),
+    HAL_POWER_KEYLED = OSI_MAKE_TAG('K', 'E', 'Y', 'L'),
+    HAL_POWER_BACK_LIGHT = OSI_MAKE_TAG('B', 'A', 'C', 'K'),
+    HAL_POWER_ANALOG = OSI_MAKE_TAG('A', 'N', 'A', 'L'),
+    HAL_POWER_CAMFLASH = OSI_MAKE_TAG('C', 'A', 'M', 'F'),
 };
 
 typedef enum
@@ -158,17 +162,57 @@ typedef enum
 
 typedef enum
 {
-    SENSOR_VDD_3300MV = 0,
-    SENSOR_VDD_3000MV,
-    SENSOR_VDD_2800MV,
-    SENSOR_VDD_2500MV,
-    SENSOR_VDD_1800MV,
-    SENSOR_VDD_1500MV,
-    SENSOR_VDD_1300MV,
-    SENSOR_VDD_1200MV,
+    SENSOR_VDD_3300MV = 3300,
+    SENSOR_VDD_3000MV = 3000,
+    SENSOR_VDD_2800MV = 2800,
+    SENSOR_VDD_2500MV = 2500,
+    SENSOR_VDD_1800MV = 1800,
+    SENSOR_VDD_1500MV = 1500,
+    SENSOR_VDD_1300MV = 1300,
+    SENSOR_VDD_1200MV = 1200,
     SENSOR_VDD_CLOSED,
     SENSOR_VDD_UNUSED
 } cameraVDD_t;
+
+typedef enum
+{
+    WCN_VDD_1800MV = 1800,
+    WCN_VDD_1700MV = 1700,
+    WCN_VDD_1600MV = 1600,
+    WCN_VDD_1500MV = 1500, //default
+    WCN_VDD_1400MV = 1400,
+    WCN_VDD_1300MV = 1300,
+    WCN_VDD_1200MV = 1200,
+    WCN_VDD_1100MV = 1100,
+    WCN_VDD_UNUSED
+} wcnVDD_t;
+
+typedef enum
+{
+    POWER_LEVEL_3200MV = 3200,
+    POWER_LEVEL_3100MV = 3100,
+    POWER_LEVEL_3000MV = 3000,
+    POWER_LEVEL_2900MV = 2900,
+    POWER_LEVEL_2800MV = 2800,
+    POWER_LEVEL_2700MV = 2700,
+    POWER_LEVEL_2600MV = 2600,
+    POWER_LEVEL_2500MV = 2500,
+    POWER_LEVEL_2400MV = 2400,
+    POWER_LEVEL_2300MV = 2300,
+    POWER_LEVEL_2200MV = 2200,
+    POWER_LEVEL_2100MV = 2100,
+    POWER_LEVEL_2000MV = 2000,
+    POWER_LEVEL_1900MV = 1900,
+    POWER_LEVEL_1800MV = 1800,
+    POWER_LEVEL_1700MV = 1700,
+    POWER_LEVEL_1600MV = 1600,
+    POWER_LEVEL_1500MV = 1500,
+    POWER_LEVEL_1400MV = 1400,
+    POWER_LEVEL_1300MV = 1300,
+    POWER_LEVEL_1200MV = 1200,
+    POWER_LEVEL_1100MV = 1100,
+    POWER_LEVEL_UNUSED
+} powerLevel_t;
 
 /**
  * \brief read chip id
@@ -269,6 +313,52 @@ void halApplyRegisters(uint32_t address, ...);
  */
 void halApplyRegisterList(const uint32_t *data);
 
+/**
+ * \brief calculate 24bits divider
+ *
+ * The divider is: output = (input * num) / denom
+ * - [9:0]: num
+ * - [23:10]: denom
+ *
+ * It is used in UART divider calculation.
+ *
+ * \param input     input clock frequency
+ * \param output    output clock frequency
+ * \return
+ *      - caclulated divider
+ *      - 0 on failed
+ */
+unsigned halCalcDivider24(unsigned input, unsigned output);
+
+/**
+ * \brief calculate 24bits divider
+ *
+ * The divider is: output = input / (div * set)
+ * - [15:0]: div - 1, div >= 2
+ * - [19:16]: set - 1, set >= 6
+ *
+ * It is better to choose larger set. And it is used in ARM UART divider
+ * calculation.
+ *
+ * \param input     input clock frequency
+ * \param output    output clock frequency
+ * \return
+ *      - caclulated divider
+ *      - 0 on failed
+ */
+unsigned halCalcDivider20(unsigned input, unsigned output);
+
+/**
+ * \brief power on external flash
+ *
+ * The implementation may be empty. It should be implemented according to
+ * board connection and flash type.
+ *
+ * When external flash isn't supported, or CONFIG_BOARD_WITH_EXT_FLASH is
+ * not defined, it should be implemented as empty.
+ */
+void halPmuExtFlashPowerOn(void);
+
 uint32_t halFreqToPllDivider(uint32_t freq);
 void hal_SysSetBBClock(uint32_t freq);
 void hal_SysStartBcpu(void *bcpu_main, void *stack_start_addr);
@@ -289,6 +379,7 @@ uint8_t halRequestVcoreRegs(uint32_t id, uint32_t level, uint16_t *addr, uint16_
 
 bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled);
 bool halPmuSetPowerLevel(uint32_t id, uint32_t mv);
+bool halPmuSetCamFlashLevel(uint8_t level);
 
 void halPmuEnterPm1(void);
 void halPmuAbortPm1(void);

@@ -362,7 +362,7 @@ void sys_untimeout(sys_timeout_handler handler, void *arg)
 
 void sys_settime(uint32_t sec, uint32_t frac)
 {
-    sys_arch_printf("sys_settime sec is %lu frac is %lu\n", sec, frac);
+    OSI_LOGI(0x1000752d, "sys_settime sec is %lu frac is %lu\n", sec, frac);
     osiSetEpochTime(sec * 1000LL + frac);
     drvRtcUpdateTime();
 }

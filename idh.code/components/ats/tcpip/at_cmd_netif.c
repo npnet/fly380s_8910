@@ -29,7 +29,6 @@ void AT_NET_CmdFunc_NetInfo(atCommand_t *pParam)
     };
     if (NULL == pParam)
     {
-        RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         return;
     }
     switch (pParam->type)
@@ -115,11 +114,11 @@ void AT_NET_CmdFunc_NetInfo(atCommand_t *pParam)
             int i = 0;
             for (i = 1; i <= RNDIS_DATA; i++)
             {
-                CFW_get_Netif_dataCount(sim, cid, UPLOAD, i, &datacount);
+                CFW_get_Netif_dataCount(netinfo, UPLOAD, i, &datacount);
                 sprintf(outString, "  UPLOAD %s : %ld", propmtString[i - 1], datacount);
                 atCmdRespInfoText(pParam->engine, outString);
 
-                CFW_get_Netif_dataCount(sim, cid, DOWNLOAD, i, &datacount);
+                CFW_get_Netif_dataCount(netinfo, DOWNLOAD, i, &datacount);
                 sprintf(outString, "  DOWNLOAD %s : %ld", propmtString[i - 1], datacount);
                 atCmdRespInfoText(pParam->engine, outString);
             }
@@ -127,65 +126,6 @@ void AT_NET_CmdFunc_NetInfo(atCommand_t *pParam)
         atCmdRespOK(pParam->engine);
         break;
     }
-#if 0	
-    case AT_CMD_SET:
-    {
-        UINT8 uParamCount = 0;
-        INT32 iRet = ERR_SUCCESS;
-        UINT8 ifname[6];
-        UINT16 uSize = 6;
-        iRet = AT_Util_GetParaCount(pParam->pPara, &uParamCount);
-        if ((iRet != ERR_SUCCESS) || (uParamCount != 1))
-        {
-            COS_LOGI(0x100040b9, "AT_NET_CmdFunc_NetInfo, parameters error or parameter number not satisfied\n");
-            at_CmdRespCmeError(pParam->engine, ERR_AT_CME_PARAM_INVALID);
-            return;
-        }
-        iRet = AT_Util_GetParaWithRule(pParam->pPara, 0, AT_UTIL_PARA_TYPE_STRING, ifname, &uSize);
-        COS_LOGXI(COS_LOGPAR_S, 0x100040ba, "AT_NET_CmdFunc_NetInfo... ... ifname= %s", ifname);
-        if (iRet != ERR_SUCCESS)
-        {
-            COS_LOGI(0x100040bb, "AT_NET_CmdFunc_NetInfo, get parameter error\n");
-            at_CmdRespCmeError(pParam->engine, ERR_AT_CME_PARAM_INVALID);
-            return;
-        }
-        else
-        {
-            struct netif *netif = netif_find(ifname);
-            if (netif != NULL)
-            {
-                if (netif_default != netif)
-                {
-                    netif_set_default(netif);
-                    int cid = netif->sim_cid & 0x0f;
-                    int sim = (netif->sim_cid & 0xf0) >> 4;
-                    if (cid > 0 && cid < 8 && sim < CFW_SIM_COUNT)
-                    {
-                        UINT32 *server = getDNSServer(cid, sim);
-                        ip_addr_t dns_server = IPADDR4_INIT(server[0]);
-                        ip_addr_t dns_server2 = IPADDR4_INIT(server[1]);
-                        dns_setserver(0, &dns_server);
-                        dns_setserver(1, &dns_server2);
-                    }
-                    else if (netif->sim_cid == (0xf0 | 0x11))
-                    {
-#ifdef WIFI_SUPPORT
-                        dns_setserver(0, wifi_dns_getserver(0));
-                        dns_setserver(1, wifi_dns_getserver(1));
-#endif
-                    }
-                }
-                at_CmdRespOK(pParam->engine);
-            }
-            else
-            {
-                COS_LOGI(0x100040bc, "NetInfo set ERROR");
-                at_CmdRespCmeError(pParam->engine, ERR_AT_CME_PARAM_INVALID);
-            }
-        }
-    }
-    break;
-#endif
     default:
         OSI_LOGI(0x100040bd, "NetInfo ERROR");
         RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);

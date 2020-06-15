@@ -210,7 +210,7 @@ snmp_err_t snmp_table_simple_get_instance(const u32_t *root_oid, u8_t root_oid_l
             instance->get_value = snmp_table_extract_value_from_refconstptr;
             break;
           default:
-            LWIP_DEBUGF(SNMP_DEBUG, ("snmp_table_simple_get_instance(): unknown column data_type: %d\n", col_def->data_type));
+            LWIP_DEBUGF(SNMP_DEBUG, (0x100076d7, "snmp_table_simple_get_instance(): unknown column data_type: %d\n", col_def->data_type));
             return SNMP_ERR_GENERROR;
         }        
 
@@ -303,7 +303,7 @@ snmp_err_t snmp_table_simple_get_next_instance(const u32_t *root_oid, u8_t root_
       instance->get_value = snmp_table_extract_value_from_refconstptr;
       break;
     default:
-      LWIP_DEBUGF(SNMP_DEBUG, ("snmp_table_simple_get_instance(): unknown column data_type: %d\n", col_def->data_type));
+      LWIP_DEBUGF(SNMP_DEBUG, (0x100076d7, "snmp_table_simple_get_instance(): unknown column data_type: %d\n", col_def->data_type));
       return SNMP_ERR_GENERROR;
   }
 

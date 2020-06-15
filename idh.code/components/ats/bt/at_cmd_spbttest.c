@@ -10,37 +10,42 @@
 #include "at_response.h"
 #include "at_command.h"
 #include "at_engine.h"
-//#include "bt_config.h"
 #include "bt_abs.h"
 
 //----------------------------------------------------------
 //#define SPBTTEST
 
-#define BLUETOOTH_SUPPORT_SPRD_BT
-
 #ifndef WIN32
-#ifdef BLUETOOTH_SUPPORT_SPRD_BT
-#ifdef BT_NONSIG_SUPPORT
-BOOLEAN spbttest_bt_rx_data_flag = FALSE;
 static uint32 rx_data_show_pkt_cnt = 0;
 static uint32 rx_data_show_pkt_err_cnt = 0;
 static uint32 rx_data_show_bit_cnt = 0;
 static uint32 rx_data_show_bit_err_cnt = 0;
 static uint8 rx_data_show_rssi = 0;
 static BT_STATUS rx_data_show_status = BT_SUCCESS;
-#endif
-#endif
+BOOLEAN spbttest_bt_rx_data_flag = FALSE;
 #endif
 
 char g_rsp_str[512] = {
     0,
 };
+static void BT_SPBTTEST_GetRXDataCallback(const BT_NONSIG_DATA *data)
+{
+#ifndef WIN32
+    rx_data_show_rssi = data->rssi;
+    rx_data_show_status = data->status;
+    rx_data_show_pkt_cnt = data->pkt_cnt;
+    rx_data_show_pkt_err_cnt = data->pkt_err_cnt;
+    rx_data_show_bit_cnt = data->bit_cnt;
+    rx_data_show_bit_err_cnt = data->bit_err_cnt;
+
+    spbttest_bt_rx_data_flag = TRUE;
+#endif
+}
 
 //AT_CMD_FUNC(ATC_ProcessSPBTTEST)
 void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
 {
 #ifndef WIN32
-#ifdef BLUETOOTH_SUPPORT_SPRD_BT
 
 #if defined(BLE_INCLUDED) || defined(BT_BLE_SUPPORT)
     OSI_LOGI(0, "SPBTTEST: Not support.");
@@ -85,7 +90,7 @@ void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
     static unsigned char spbttest_bt_rx_gain_mode = 0;
     static unsigned char spbttest_bt_rx_gain_value = 0;
     static unsigned char spbttest_bt_rx_status = 0;
-    static unsigned char spbttest_bt_create_flag = 0;
+    //    static unsigned char spbttest_bt_create_flag = 0;
     bool spbttest_bt_status = false;
 
     switch (pParam->type)
@@ -684,7 +689,7 @@ void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
 #ifdef BT_NONSIG_SUPPORT
                 //here call the low layer API to get RXDATA, such as error_bits,total_bits,error_packets,total_packets,rssi
                 spbttest_bt_rx_data_flag = false;
-                spbttest_bt_status = BT_GetNonSigRxData(BT_NonSig_RX_Data_Callback);
+                spbttest_bt_status = BT_GetNonSigRxData((BT_NONSIGCALLBACK)BT_SPBTTEST_GetRXDataCallback);
 
                 if (spbttest_bt_status)
                 {
@@ -778,7 +783,6 @@ void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
     }
 #endif
 #endif
-#endif
     return;
 }
 
@@ -868,13 +872,14 @@ static int _RecvBDataformUARTCb(void *param, const void *data, size_t length)
         length--;
 
         // Remove previous byte for BACKSPACE
-
+#if 0
         if (c == CHAR_BACKSPACE)
         {
             if (g_bypass_buf->buffLen > 0)
                 --g_bypass_buf->buffLen;
             continue;
         }
+#endif
         // Drop whole buffer at overflow, maybe caused by data error
         // or buffer too small
         if (g_bypass_buf->buffLen >= g_bypass_buf->buffSize)
@@ -886,7 +891,7 @@ static int _RecvBDataformUARTCb(void *param, const void *data, size_t length)
     }
     osiMutexUnlock(g_bypass_buf->mutex);
     SET_RE_FLAG(1);
-    UART_Write(g_bypass_buf->buff, length_input);
+    UartDrv_Tx(g_bypass_buf->buff, length_input);
     g_bypass_buf->buffLen = 0;
 
     return length_input;
@@ -915,7 +920,8 @@ void _RecvBDataformBTCb(char *buf, unsigned int length)
     }
     return;
 }
-void (*BT_UART_FUCTION)(char *, unsigned int) = NULL;
+extern void (*BT_UART_FUCTION)(char *, unsigned int);
+//void (*BT_UART_FUCTION)(char *, unsigned int) = NULL;
 void BtTOUARTSetCallback(void (*RecvBDataTOUART)(char *, unsigned int))
 {
     BT_UART_FUCTION = RecvBDataTOUART;
@@ -932,6 +938,7 @@ static void start_transparent_mode(atCmdEngine_t *engine)
     //set callback, from BT to UART
     //ToDo:
     BtTOUARTSetCallback(_RecvBDataformBTCb);
+    UART_SetControllerBqbMode(TRUE);
 }
 
 static void stop_transparent_mode(atCmdEngine_t *engine)
@@ -944,6 +951,8 @@ static void stop_transparent_mode(atCmdEngine_t *engine)
     }
     at_DataBufDestroy(g_bypass_buf);
     g_bypass_buf = NULL;
+    BtTOUARTSetCallback(NULL);
+    UART_SetControllerBqbMode(FALSE);
 }
 
 void AT_SPBQB_CmdFunc_TEST(atCommand_t *pParam)

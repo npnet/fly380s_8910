@@ -9,19 +9,17 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
+configure_file(include/mbedtls_config.h.in ${out_inc_dir}/mbedtls_config.h)
+
 set(target mbedtls)
+add_app_libraries($<TARGET_FILE:${target}>)
 
 add_library(${target} STATIC)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 #target_compile_definitions(${target} PRIVATE AT_MQTTSN_SUPPORT=1)
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel driver calclib net lwip cfw)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-
-target_include_directories(${target} PRIVATE ../external/platform/include)
-#target_include_directories(${target} PRIVATE src/paho.mqtt-sn.embedded-c/MQTTSNPacket/src)
-#target_include_directories(${target} PRIVATE ../../posix/include)
-#target_include_directories(${target} PRIVATE ../lwip/src/include)
+target_include_targets(${target} PRIVATE kernel driver calclib net lwip cfw)
 
 set(MBEDLIBDIR library)
 set(src_crypto

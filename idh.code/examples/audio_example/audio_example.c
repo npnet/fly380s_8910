@@ -27,6 +27,12 @@
 
 #define EXAMPLE_FILE_NAME "/example.pcm"
 
+typedef struct
+{
+    osiPipe_t *pipe;
+    int fd;
+} pipeAndFd_t;
+
 static short *prvGenSamples(void)
 {
     short *samples = (short *)malloc(32000); // 2s for 8K
@@ -74,31 +80,52 @@ static void prvPlayFile(void)
     auPlayerDelete(player);
 }
 
+static void prvPipeWriteWork(void *param)
+{
+    pipeAndFd_t *d = (pipeAndFd_t *)param;
+
+    char buf[256];
+    for (;;)
+    {
+        int bytes = vfs_read(d->fd, buf, 256);
+        if (bytes < 0)
+        {
+            osiPipeStop(d->pipe);
+            break;
+        }
+        else if (bytes == 0)
+        {
+            osiPipeSetEof(d->pipe);
+            break;
+        }
+        else
+        {
+            osiPipeWriteAll(d->pipe, buf, bytes, OSI_WAIT_FOREVER);
+        }
+    }
+}
+
 static void prvPlayPipe(void)
 {
+    // In "auPlayerStartPipe", audio decoder may read data to detect the
+    // audio format, such as WAV and MP3. So, it can't be executed in the
+    // same thread to write data to pipe, and it is needed to offload to
+    // another thread.
+
+    int fd = vfs_open(EXAMPLE_FILE_NAME, O_RDONLY);
     osiPipe_t *pipe = osiPipeCreate(1024);
+    pipeAndFd_t pipefd = {.pipe = pipe, .fd = fd};
+    osiWork_t *work = osiWorkCreate(prvPipeWriteWork, NULL, &pipefd);
+    osiWorkEnqueue(work, osiSysWorkQueueLowPriority());
 
     auPlayer_t *player = auPlayerCreate();
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
     auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
     auPlayerStartPipe(player, AUSTREAM_FORMAT_PCM, params, pipe);
 
-    int fd = vfs_open(EXAMPLE_FILE_NAME, O_RDONLY);
-    char buf[256];
-    for (;;)
-    {
-        int bytes = vfs_read(fd, buf, 256);
-        if (bytes <= 0)
-        {
-            osiPipeSetEof(pipe);
-            break;
-        }
-
-        osiPipeWriteAll(pipe, buf, bytes, OSI_WAIT_FOREVER);
-    }
-
     auPlayerWaitFinish(player, OSI_WAIT_FOREVER);
     auPlayerDelete(player);
+    osiWorkDelete(work);
     osiPipeDelete(pipe);
     vfs_close(fd);
 }
@@ -161,12 +188,6 @@ static void prvRecordFile(void)
     int file_size = vfs_file_size(EXAMPLE_FILE_NAME);
     OSI_LOGI(0, "record file size/%d", file_size);
 }
-
-typedef struct
-{
-    osiPipe_t *pipe;
-    int fd;
-} pipeAndFd_t;
 
 static void prvPipeReadWork(void *param)
 {

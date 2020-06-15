@@ -79,7 +79,7 @@ bool isRouterSolicitationPackage(drvEthPacket_t *pkt, uint32_t size)
     struct icmp6_hdr *icmp_pkg = (struct icmp6_hdr *)(ipData + 40);
     if (icmp_pkg->type == ICMP6_TYPE_RS)
     {
-        OSI_LOGI(0, "isRSPackage isICMP6 RS");
+        OSI_LOGI(0x100075a7, "isRSPackage isICMP6 RS");
         return true;
     }
     return false;
@@ -162,7 +162,7 @@ void routerAdvertisement_reply(drvEther_t *ether, drvEthPacket_t *pkt, uint32_t 
         ip6_addr_copy_from_packed(dst_ip, ip6_pkg_out->dest);
 
         ra_hdr->chksum = ip6_chksum_pseudo(p, IP6_NEXTH_ICMP6, p->len, &src_ip, &dst_ip);
-        OSI_LOGI(0, "RA chksum 0x%x", ra_hdr->chksum);
+        OSI_LOGI(0x100075a8, "RA chksum 0x%x", ra_hdr->chksum);
         pbuf_free(p);
     }
 
@@ -229,7 +229,7 @@ bool isNeighborSolicitationPackage(drvEthPacket_t *pkt, uint32_t size)
     struct icmp6_hdr *icmp_pkg = (struct icmp6_hdr *)(ipData + 40);
     if (icmp_pkg->type == ICMP6_TYPE_NS)
     {
-        OSI_LOGI(0, "isRSPackage isICMP6 NS");
+        OSI_LOGI(0x100075a9, "isRSPackage isICMP6 NS");
         return true;
     }
     return false;
@@ -296,7 +296,7 @@ void neighborAdvertisement_reply(drvEther_t *ether, drvEthPacket_t *pkt, uint32_
         ip6_addr_copy_from_packed(dst_ip, ip6_pkg_out->dest);
 
         na_hdr->chksum = ip6_chksum_pseudo(p, IP6_NEXTH_ICMP6, p->len, &src_ip, &dst_ip);
-        OSI_LOGI(0, "NA chksum 0x%x", na_hdr->chksum);
+        OSI_LOGI(0x100075aa, "NA chksum 0x%x", na_hdr->chksum);
         pbuf_free(p);
     }
 

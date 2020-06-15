@@ -5,7 +5,7 @@
 #include <cis_log.h>
 #include <cis_if_sys.h>
 #include <cis_internals.h>
-
+#include <osi_log.h>
 #define MAX_PACKET_SIZE			(1024)
 
 static int prvCreateSocket(uint16_t localPort,int ai_family);
@@ -25,7 +25,7 @@ bool  cisnet_attached_state(void * ctx)
 cis_ret_t cisnet_init(void *context,const cisnet_config_t* config,cisnet_callback_t cb)
 {
 
-    sys_arch_printf("fall in cisnet_init\r\n");
+    OSI_LOGI(0x10007692, "fall in cisnet_init\r\n");
     cis_memcpy(&((struct st_cis_context *)context)->netConfig,config,sizeof(cisnet_config_t));
     ((struct st_cis_context *)context)->netCallback.onEvent = cb.onEvent;
 	osiThreadSleep(1000);
@@ -72,7 +72,7 @@ cis_ret_t cisnet_create(cisnet_t* netctx,const char* host,void* context)
 
 void     cisnet_destroy(cisnet_t netctx)
 {
-    sys_arch_printf("cisnet_destroy");
+    OSI_LOGI(0x10007693, "cisnet_destroy");
     closesocket(netctx->sock);
     cissys_lockdestory(netctx->lockpacket);
     cis_free(netctx);
@@ -95,7 +95,7 @@ cis_ret_t cisnet_connect(cisnet_t netctx)
     sock = prvCreateSocket(0,AF_INET);
     if (sock < 0)
     {
-        sys_arch_printf("Failed to open socket: %d %s\r\n", errno, strerror(errno));
+        OSI_LOGI(0x10007694, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
         return CIS_RET_ERROR;
     }
     netctx->sock = sock;
@@ -105,7 +105,7 @@ cis_ret_t cisnet_connect(cisnet_t netctx)
    ((struct st_cis_context *)(netctx->context))->netCallback.hander = osiThreadCreate("cisnet_recv", callbackRecvThread,(void *)netctx, OSI_PRIORITY_NORMAL, 8192 * 4, 32);
    if(((struct st_cis_context *)(netctx->context))->netCallback.hander == NULL)
    {
-        sys_arch_printf("Failed to create cisnet_recv thread!");
+        OSI_LOGI(0x10007695, "Failed to create cisnet_recv thread!");
         return CIS_RET_ERROR;
    }
 #endif
@@ -137,10 +137,10 @@ cis_ret_t cisnet_write(cisnet_t netctx,const uint8_t * buffer,uint32_t  length)
         nbSent = sendto(netctx->sock, (const char*)buffer + offset, length - offset, 0, (struct sockaddr *)&saddr, addrlen);
 
         if (nbSent == -1){
-            sys_arch_printf("socket sendto [%s:%d] failed.\r\n",netctx->host,ntohs(saddr.sin_port));
+            OSI_LOGXI(OSI_LOGPAR_SI, 0x10007696, "socket sendto [%s:%d] failed.\r\n",netctx->host,ntohs(saddr.sin_port));
             return -1;
         }else{
-            sys_arch_printf("socket sendto [%s:%d] %d bytes\r\n",netctx->host,ntohs(saddr.sin_port),nbSent);
+            OSI_LOGXI(OSI_LOGPAR_SII, 0x10007697, "socket sendto [%s:%d] %d bytes\r\n",netctx->host,ntohs(saddr.sin_port),nbSent);
         }
         offset += nbSent;
     }
@@ -153,7 +153,7 @@ cis_ret_t cisnet_read(cisnet_t netctx,uint8_t** buffer,uint32_t *length)
     struct st_net_packet * target = NULL;
     cissys_lock(netctx->lockpacket, CIS_CONFIG_LOCK_INFINITY);
     for(target=netctx->g_packetlist;target!=NULL;target=target->next){
-        sys_arch_printf("cisnet_read target address:%p, target length:%ld", target, target->length);
+        OSI_LOGI(0x10007698, "cisnet_read target address:%p, target length:%ld", target, target->length);
     }
     if(netctx->g_packetlist != NULL){
         struct st_net_packet* delNode;
@@ -212,7 +212,7 @@ static void callbackRecvThread(void* lpParam)
 
 		if (result < 0)
 		{
-			sys_arch_printf("Error in select(): %d %s\r\n", errno, strerror(errno));
+			OSI_LOGXI(OSI_LOGPAR_IS, 0x10003fdd, "Error in select(): %d %s\r\n", errno, strerror(errno));
             goto TAG_END;
 		}
 		else if (result > 0)
@@ -238,7 +238,7 @@ static void callbackRecvThread(void* lpParam)
 				if (numBytes < 0)
 				{
 					if(errno == 0)continue;
-					sys_arch_printf("Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
+					OSI_LOGXI(OSI_LOGPAR_IS, 0x10003fdf, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
 				}
 				else if (numBytes > 0)
 				{
@@ -247,7 +247,7 @@ static void callbackRecvThread(void* lpParam)
 					struct sockaddr_in *saddr = (struct sockaddr_in *)&addr;
 					inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET_ADDRSTRLEN);
 
-					sys_arch_printf("%d bytes received from [%s]:%hu", numBytes, s, ntohs(saddr->sin_port));
+					OSI_LOGXI(OSI_LOGPAR_ISI, 0x10007699, "%d bytes received from [%s]:%hu", numBytes, s, ntohs(saddr->sin_port));
 					
                     uint8_t* data = (uint8_t*)cis_malloc(numBytes);
                     cis_memcpy(data,buffer,numBytes);
@@ -262,7 +262,7 @@ static void callbackRecvThread(void* lpParam)
                     netctx->g_packetlist = (struct st_net_packet*)CIS_LIST_ADD(netctx->g_packetlist,packet);
                     struct st_net_packet * target = NULL;
                     for(target=netctx->g_packetlist;target!=NULL;target=target->next){
-                        sys_arch_printf("callbackRecvThread target address:%p, target length:%ld", target, target->length);
+                        OSI_LOGI(0x1000769a, "callbackRecvThread target address:%p, target length:%ld", target, target->length);
                     }
                     cissys_unlock(netctx->lockpacket);
 				}
@@ -270,6 +270,6 @@ static void callbackRecvThread(void* lpParam)
 		}
 	}
 TAG_END:
-	sys_arch_printf("Error in socket recv thread exit..\n");
+	OSI_LOGI(0x1000769b, "Error in socket recv thread exit..\n");
     osiThreadExit();
 }

@@ -14,9 +14,11 @@
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('B', 'B', 'A', 'T')
 #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
+#include "hwregs.h"
+#undef CAMERA_PWDN // HACK: duplicated macro in camera.h and pin_reg.h
+
 #include "pin_reg.h"
 #include "drv_gpio.h"
-#include "hwregs.h"
 #include "cfw.h"
 #include "hal_adi_bus.h"
 #include <drv_names.h>
@@ -28,6 +30,7 @@
 #include <stdlib.h>
 #include "../cmddef.h"
 #include "drv_adc.h"
+#include "image_sensor.h"
 #include "osi_mem.h"
 #include "osi_compiler.h"
 #include "hal_chip.h"
@@ -51,12 +54,13 @@ typedef enum _DEVICE_AUTOTEST_ID_E
     DEVICE_AUTOTEST_KEYPAD = 1,
     DEVICE_AUTOTEST_LCD_SPI = 3,
     DEVICE_AUTOTEST_CAMERA_IIC = 4,
-    DEVICE_AUTOTEST_CAMERA_SPI = 6,
+    DEVICE_AUTOTEST_CAMERA_OPENCLOSE = 5,
+    DEVICE_AUTOTEST_CAMERA_MIPI = 6,
     DEVICE_AUTOTEST_GPIO = 7, //and TP test
     DEVICE_AUTOTEST_SIM = 9,
     DEVICE_AUTOTEST_MIC = 10,
-    DEVICE_AUTOTEST_SPEAK = 11, //speak&&receiver&&earphone
-    DEVICE_AUTOTEST_UART = 12,  //DEVICE_AUTOTEST_MISC = 12,  //lcd backlight,vibrator,keypadbacklight
+    DEVICE_AUTOTEST_SPEAK = 11,    //speak&&receiver&&earphone
+    DEVICE_AUTOTEST_CAMFLASH = 12, //DEVICE_AUTOTEST_MISC = 12,  //lcd backlight,vibrator,keypadbacklight
     DEVICE_AUTOTEST_FM = 13,
     DEVICE_AUTOTEST_IIC_DEV = 17, //speak&&receiver&&earphone
     DEVICE_AUTOTEST_CHARGE = 18,
@@ -66,6 +70,7 @@ typedef enum _DEVICE_AUTOTEST_ID_E
     DEVICE_AUTOTEST_CHECK = 28,
     DEVICE_AUTOTEST_VIB = 30,
     DEVICE_AUTOTEST_USB = 31,
+    DEVICE_AUTOTEST_UART = 32,
     DEVICE_AUTOTEST_MAX_F
 } DEVICE_AUTOTEST_ID_E;
 
@@ -113,6 +118,19 @@ typedef enum
 
 typedef enum
 {
+    CAM_OPEN = 0x01,
+    CAM_CLOSE = 0x03
+} AUTOTEST_CAMOPENCLOSE_E;
+
+typedef enum
+{
+    CAM_MIPI_OPEN = 0x01,
+    CAM_MIPI_READ,
+    CAM_MIPI_CLOSE
+} AUTOTEST_MIPICAM_E;
+
+typedef enum
+{
     GPIO_GET_VALUE = 0x0,
     GPIO_SET_VALUE = 0x1,
     GPIO_SETBACK = 0x2
@@ -135,6 +153,13 @@ typedef struct
     uint8_t gpio_value;
     uint8_t reserved;
 } diagMsgGPIO_t;
+
+typedef struct
+{
+    diagMsgHead_t msg_head;
+    uint8_t command;
+    uint8_t level;
+} diagMsgCAMFLASH_t;
 
 typedef struct
 {
@@ -681,6 +706,106 @@ static void _diagInitAutotestCallback(void)
     }
 }
 
+static uint32_t _handleCamOpenCloseAutotest(
+    const uint8_t *src_ptr, // Pointer of the input message.
+    uint16_t src_len        // Size of the source buffer in uint8_t.
+)
+{
+    uint8_t command = 0;
+    diagMsgHead_t *msg_head = (diagMsgHead_t *)src_ptr;
+    command = *(uint8_t *)(msg_head + 1);
+    diagMsgHead_t respMsg;
+    OSI_LOGE(0, "bbat: _handleCamOpenCloseAutotest !");
+    memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
+    switch (command)
+    {
+    case CAM_OPEN:
+    {
+        halPmuSetPowerLevel(HAL_POWER_CAMD, SENSOR_VDD_1800MV);
+        halPmuSwitchPower(HAL_POWER_CAMD, true, false);
+        osiDelayUS(1000);
+        halPmuSetPowerLevel(HAL_POWER_CAMA, SENSOR_VDD_2800MV);
+        halPmuSwitchPower(HAL_POWER_CAMA, true, false);
+        osiDelayUS(1000);
+        respMsg.subtype = BBAT_SUCCESS;
+        _autotestGenerateRspMsg(&respMsg);
+    }
+    break;
+    case CAM_CLOSE:
+    {
+        halPmuSwitchPower(HAL_POWER_CAMA, false, false);
+        osiDelayUS(1000);
+        halPmuSwitchPower(HAL_POWER_CAMD, false, false);
+        osiDelayUS(1000);
+        respMsg.subtype = BBAT_SUCCESS;
+        _autotestGenerateRspMsg(&respMsg);
+    }
+    break;
+    default:
+        OSI_LOGE(0, "bbat: _handleCamOpenCloseAutotest error!");
+        break;
+    }
+    return 1;
+}
+
+static uint32_t _handleMipiCamAutotest(
+    const uint8_t *src_ptr, // Pointer of the input message.
+    uint16_t src_len        // Size of the source buffer in uint8_t.
+)
+{
+    uint8_t command = 0;
+    diagMsgHead_t *msg_head = (diagMsgHead_t *)src_ptr;
+    command = *(uint8_t *)(msg_head + 1);
+    diagMsgHead_t respMsg;
+    OSI_LOGE(0, "bbat: _handleMipiCamAutotest !");
+    memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
+    switch (command)
+    {
+    case CAM_MIPI_OPEN:
+    {
+
+        if (drvCamInit() == false)
+        {
+            respMsg.subtype = BBAT_FAILURE;
+            _autotestGenerateRspMsg(&respMsg);
+            return BBAT_FAILURE;
+        }
+        if (drvCamPowerOn() == false)
+        {
+            respMsg.subtype = BBAT_FAILURE;
+            _autotestGenerateRspMsg(&respMsg);
+            return BBAT_FAILURE;
+        }
+        respMsg.subtype = BBAT_SUCCESS;
+        _autotestGenerateRspMsg(&respMsg);
+    }
+    break;
+    case CAM_MIPI_READ:
+    {
+        uint16_t *pCamPreviewDataBuffer = NULL;
+        if (!drvCamCaptureImage(&pCamPreviewDataBuffer))
+        {
+            respMsg.subtype = BBAT_FAILURE;
+            _autotestGenerateRspMsg(&respMsg);
+            return BBAT_FAILURE;
+        }
+        respMsg.subtype = BBAT_SUCCESS;
+        _autotestGenerateRspDataMsg(&respMsg, pCamPreviewDataBuffer, 768);
+    }
+    break;
+    case CAM_MIPI_CLOSE:
+    {
+        drvCamClose();
+        respMsg.subtype = BBAT_SUCCESS;
+        _autotestGenerateRspMsg(&respMsg);
+    }
+    break;
+    default:
+        break;
+    }
+    return BBAT_SUCCESS;
+}
+
 static void _diagRegisterAutotestCallback(uint32_t type, DIAG_AUTOTEST_CALLBACK routine)
 {
     if (type < DEVICE_AUTOTEST_MAX_F)
@@ -791,6 +916,42 @@ static uint32_t _handleVibAutotest(
     default:
         OSI_LOGE(0, "bbat: _handleVibAutotest error!");
         break;
+    }
+    return 1;
+}
+
+static uint32_t _handleCamFlashAutotest(
+    const uint8_t *src_ptr, // Pointer of the input message.
+    uint16_t src_len        // Size of the source buffer in uint8_t.
+)
+{
+    diagMsgHead_t *msg_head = (diagMsgHead_t *)src_ptr;
+    diagMsgCAMFLASH_t *msg_falsh = (diagMsgCAMFLASH_t *)src_ptr;
+    diagMsgHead_t respMsg;
+    osiPanic();
+    OSI_LOGE(0, "bbat: _handleCamFlashAutotest !");
+    memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
+    if (msg_falsh->command == 0x04)
+    {
+        if (msg_falsh->level >= 0 && msg_falsh->level < 16)
+        {
+            if (msg_falsh->level == 0)
+            {
+                halPmuSwitchPower(HAL_POWER_CAMFLASH, false, false);
+            }
+            else
+            {
+                halPmuSetCamFlashLevel(msg_falsh->level);
+                halPmuSwitchPower(HAL_POWER_CAMFLASH, true, false);
+            }
+            respMsg.subtype = BBAT_SUCCESS;
+            _autotestGenerateRspMsg(&respMsg);
+        }
+        else
+        {
+            respMsg.subtype = BBAT_FAILURE;
+            _autotestGenerateRspMsg(&respMsg);
+        }
     }
     return 1;
 }
@@ -1110,7 +1271,9 @@ void _drvRegisterDeviceAutoTestCmdRoutine(void)
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_USB, _handleUSBAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_ADC, _handleAdcAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_UART, _handleUartAutotest);
-
+    _diagRegisterAutotestCallback(DEVICE_AUTOTEST_CAMFLASH, _handleCamFlashAutotest);
+    _diagRegisterAutotestCallback(DEVICE_AUTOTEST_CAMERA_OPENCLOSE, _handleCamOpenCloseAutotest);
+    _diagRegisterAutotestCallback(DEVICE_AUTOTEST_CAMERA_MIPI, _handleMipiCamAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_NVRAM_R, _autotestResultRead);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_NVRAM_W, _autotestResultWrite);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_CHECK, _handleAutotestCheck);

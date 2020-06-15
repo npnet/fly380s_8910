@@ -35,7 +35,13 @@
  */
 
 #include "liblwm2m.h"
-
+#include "lwm2mclient.h"
+#include "internals.h"
+#include "lwm2m_api.h"
+#ifdef CONFIG_LWM2M_FOTA_SUPPORT
+#include "fupdate.h"
+#include "vfs.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,7 +65,26 @@ typedef struct
     uint8_t result;
 } firmware_data_t;
 
+lwm2m_fota_state_t g_fota_state;
+static lwm2m_fota_result_t s_fota_resulte;
 
+void execute_fota_upgrade();
+#if 0
+#ifdef LTE_NBIOT_SUPPORT
+static uint8_t s_psm_state;
+extern UINT8 nbiot_nvGetPsmEnable(void);
+extern void nbiot_nvSetPsmEnable(UINT8 psmEnable);
+extern void CFW_NvParasChangedNotification(UINT8  ChangedValue);
+#endif
+#endif
+static uint8_t * prv_get_uri_path(uint8_t* uri)
+{//"coap://192.168.188.200:8763/test/text1.file"
+    uint8_t * path = (uint8_t *)strchr((const char *)uri, '/');
+    if(path == NULL) return path;
+    path = path + 2;
+    path = (uint8_t *)strchr((const char *)path, '/');
+    return path;
+}
 static uint8_t prv_firmware_read(uint16_t instanceId,
                                  int * numDataP,
                                  lwm2m_data_t ** dataArrayP,
@@ -99,7 +124,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
 
         case RES_M_STATE:
             // firmware update state (int)
-            lwm2m_data_encode_int(data->state, *dataArrayP + i);
+            lwm2m_data_encode_int(g_fota_state, *dataArrayP + i);
             result = COAP_205_CONTENT;
             break;
 
@@ -109,7 +134,7 @@ static uint8_t prv_firmware_read(uint16_t instanceId,
             break;
 
         case RES_M_UPDATE_RESULT:
-            lwm2m_data_encode_int(data->result, *dataArrayP + i);
+            lwm2m_data_encode_int(s_fota_resulte, *dataArrayP + i);
             result = COAP_205_CONTENT;
             break;
 
@@ -131,7 +156,7 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
     int i;
     uint8_t result;
     firmware_data_t * data = (firmware_data_t*)(objectP->userData);
-
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t*)(objectP->lwm2mH);
     // this is a single instance object
     if (instanceId != 0)
     {
@@ -150,8 +175,38 @@ static uint8_t prv_firmware_write(uint16_t instanceId,
             break;
 
         case RES_M_PACKAGE_URI:
+        {
             // URL for download the firmware
+            lwm2m_data_t * data = &dataArray[i];
+            int length = data->value.asBuffer.length;
+            uint8_t * downloadURI = malloc(length+1);
+            memcpy(downloadURI, data->value.asBuffer.buffer, length);
+            downloadURI[length] = 0;
+            LOG_ARG("get RES_M_PACKAGE_URI %d downloadURI %s",length,downloadURI);
+            uint8_t * path = prv_get_uri_path(downloadURI);
+            if(path != NULL)
+            {
+#if 0
+#ifdef LTE_NBIOT_SUPPORT
+                s_psm_state = nbiot_nvGetPsmEnable();
+                if(s_psm_state != 0)
+                {
+                    nbiot_nvSetPsmEnable(0);
+                    CFW_NvParasChangedNotification(1);
+                }
+#endif
+#endif
+                lwm2mH->fota_context.block2Num = 0;
+                lwm2mH->fota_context.block2bufferSize = 0;
+                notify_fota_state(LWM2M_FOTA_STATE_DOWNLOADING, LWM2M_FOTA_RESULT_INIT, lwm2mH->ref);
+                lwm2m_start_fota_download(path, lwm2mH->ref);
+            }else
+            {
+                notify_fota_state(LWM2M_FOTA_STATE_IDLE, LWM2M_FOTA_RESULT_INVALID_URI, lwm2mH->ref);
+            }
+            free(downloadURI);
             result = COAP_204_CHANGED;
+        }
             break;
 
         case RES_O_UPDATE_SUPPORTED_OBJECTS:
@@ -182,6 +237,7 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
                                     lwm2m_object_t * objectP)
 {
     firmware_data_t * data = (firmware_data_t*)(objectP->userData);
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t*)(objectP->lwm2mH);
 
     // this is a single instance object
     if (instanceId != 0)
@@ -199,6 +255,9 @@ static uint8_t prv_firmware_execute(uint16_t instanceId,
         {
             fprintf(stdout, "\n\t FIRMWARE UPDATE\r\n\n");
             // trigger your firmware download and update logic
+            LOG("FIRMWARE UPDATE \r\n");
+            notify_fota_state(LWM2M_FOTA_STATE_UPDATING, LWM2M_FOTA_RESULT_SUCCESS, lwm2mH->ref);
+            execute_fota_upgrade();
             data->state = 2;
             return COAP_204_CHANGED;
         }
@@ -237,10 +296,10 @@ static void free_object_firmware(lwm2m_object_t * objectP)
         lwm2m_free(objectP->instanceList);
         objectP->instanceList = NULL;
     }
-    lwm2m_free(objectP);
+    //lwm2m_free(objectP);
 }
 
-lwm2m_object_t * get_object_firmware(void)
+lwm2m_object_t * get_object_firmware(void * lwm2mH)
 {
     /*
      * The get_object_firmware function create the object itself and return a pointer to the structure that represent it.
@@ -258,6 +317,7 @@ lwm2m_object_t * get_object_firmware(void)
          * The 5 is the standard ID for the optional object "Object firmware".
          */
         firmwareObj->objID = LWM2M_FIRMWARE_UPDATE_OBJECT_ID;
+        firmwareObj->lwm2mH = lwm2mH;
 
         /*
          * and its unique instance
@@ -302,5 +362,87 @@ lwm2m_object_t * get_object_firmware(void)
     }
 
     return firmwareObj;
+}
+
+void notify_fota_state(lwm2m_fota_state_t state, lwm2m_fota_result_t resulte, uint8_t ref)
+{
+    g_fota_state = state;
+    s_fota_resulte = resulte;
+    LOG_ARG("notify_fota_state state %d resulte %d\r\n", state, resulte);
+    if(state == LWM2M_FOTA_STATE_IDLE && (resulte == LWM2M_FOTA_RESULT_SUCCESS || resulte == LWM2M_FOTA_RESULT_INIT))
+    {
+        LOG_ARG( "get fota err state %d resulte %d\r\n", state, resulte);
+#if 0
+#ifdef LTE_NBIOT_SUPPORT
+        if(s_psm_state != 0)
+        {
+            nbiot_nvSetPsmEnable(s_psm_state);
+            CFW_NvParasChangedNotification(1);
+        }
+#endif
+#endif
+    }
+    lwm2m_notify_fota_state(state, resulte, ref);
+
+}
+
+uint32_t write_fota_upgrade_data(uint32_t block_num, uint8_t  block_more, uint8_t * data, uint16_t datalen)
+{
+#ifdef CONFIG_LWM2M_FOTA_SUPPORT
+    static int fd = 0;
+    if (0==block_num)
+    {
+        fupdateInvalidate(true);
+        vfs_mkdir(CONFIG_FS_FOTA_DATA_DIR, 0);
+        fd  = vfs_open(FUPDATE_PACK_FILE_NAME, O_RDWR | O_CREAT | O_TRUNC | O_APPEND, 0);
+        if (fd < 0)
+            return COAP_IGNORE;
+    }
+
+    if (fd <= 0)
+        return COAP_IGNORE;
+
+    ssize_t write_len = vfs_write(fd, data, datalen);
+    if(write_len != datalen)
+    {
+      vfs_close(fd);
+      fd = 0;
+      LOG("write_fota_upgrade_data vfs_write failed\r\n");
+      return COAP_IGNORE;
+    }
+    if(!block_more)
+    {
+        vfs_close(fd);
+        fd = 0;
+    }
+#endif
+    return COAP_NO_ERROR;
+}
+
+bool check_fota_file_sanity()
+{
+    LOG("check_fota_file_sanity \r\n");
+ #ifdef CONFIG_LWM2M_FOTA_SUPPORT
+    return fupdateIsPackValid(NULL);
+ #else
+    return true;
+ #endif
+}
+
+void execute_fota_upgrade()
+{
+ #ifdef CONFIG_LWM2M_FOTA_SUPPORT
+    bool result = fupdateSetReady(NULL);
+
+    if (result)
+    {
+        LOG("execute_fota_upgrade swithoff \r\n");
+        g_reboot = 1;
+    }
+    else
+    {
+         fupdateInvalidate(true);
+    }
+#endif
 }
 

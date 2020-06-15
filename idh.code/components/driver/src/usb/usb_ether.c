@@ -25,7 +25,7 @@
 
 #define ETHER_PACKET_SIZE (2048)
 #define ETHER_TX_QUEUE_COUNT 64
-#define ETHER_RX_QUEUE_COUNT 64
+#define ETHER_RX_QUEUE_COUNT 16
 
 typedef struct usb_ether_req usbEthReq_t;
 typedef struct usb_ether usbEther_t;
@@ -77,7 +77,6 @@ static void prvEtherRxWork(void *param)
     ue->rx_working = true;
     osiExitCritical(critical);
 
-    OSI_LOGI(0, "rx work");
 rx_continue:
     critical = osiEnterCritical();
     while (!TAILQ_EMPTY(&ue->rx_frames))
@@ -107,13 +106,7 @@ rx_continue:
     if (prvEtherReady(ue) && ue->open)
     {
         if (!TAILQ_EMPTY(&ue->rx_reqs))
-        {
             prvEtherRxStart(ue);
-        }
-        else
-        {
-            OSI_LOGW(0, "ether rx queue empty 2");
-        }
 
         // retry again
         if (!TAILQ_EMPTY(&ue->rx_frames))
@@ -130,40 +123,36 @@ static void prvEtherRxComplete(usbEp_t *ep, usbXfer_t *xfer)
     uint32_t critical = osiEnterCritical();
     usbEthReq_t *ur = (usbEthReq_t *)xfer->param;
     usbEther_t *ue = ur->ue;
-    int retval;
 
-    OSI_LOGI(0, "rx done: 0x%x, %d/%u", xfer, xfer->status, xfer->actual);
-    switch (xfer->status)
+    if (xfer->status == 0)
     {
-    case 0:
-        retval = ue->cfg.ops.unwrap(&ue->eth, &ur->req, ur->xfer->buf, ur->xfer->actual);
+        int retval = ue->cfg.ops.unwrap(&ue->eth, &ur->req, ur->xfer->buf, ur->xfer->actual);
         if (retval == 0)
         {
             ue->stats.rx_packets++;
             ue->stats.rx_bytes += xfer->actual;
             TAILQ_INSERT_TAIL(&ue->rx_frames, ur, anchor);
-
             if (!ue->rx_working)
                 osiWorkEnqueue(ue->rx_work, ue->rx_work_queue);
         }
         else
         {
-            OSI_LOGE(0, "unwrap ether packet failed %d", retval);
+            OSI_LOGE(0, "unwrap ether packet fail %d", retval);
             ue->stats.rx_errors++;
             ue->stats.rx_length_errors++;
             TAILQ_INSERT_TAIL(&ue->rx_reqs, ur, anchor);
         }
-
-        break;
-
-    default:
+    }
+    else
+    {
         OSI_LOGE(0, "rx complete fail %d", xfer->status);
+        if (xfer->status != ECANCELED)
+            ue->stats.rx_errors++;
         TAILQ_INSERT_TAIL(&ue->rx_reqs, ur, anchor);
-        break;
     }
 
     osiExitCritical(critical);
-    if (xfer->status == 0 && !TAILQ_EMPTY(&ue->rx_reqs))
+    if (xfer->status != -ECANCELED && !TAILQ_EMPTY(&ue->rx_reqs))
     {
         prvEtherRxStart(ue);
     }
@@ -174,16 +163,14 @@ static void prvEtherTxComplete(usbEp_t *ep, usbXfer_t *xfer)
     usbEthReq_t *ur = (usbEthReq_t *)xfer->param;
     usbEther_t *ue = ur->ue;
 
-    if (xfer->status != 0 && xfer->status != -ECANCELED)
+    if (xfer->status == 0)
     {
-        OSI_LOGE(0, "CDC ether tx done fail, status (%d)", xfer->status);
-        ue->stats.tx_errors++;
-    }
-    else
-    {
-        OSI_LOGI(0, "Tx done: %p/%d status/%d",
-                 xfer->buf, xfer->length, xfer->status);
         ue->stats.tx_bytes += xfer->actual;
+    }
+    else if (xfer->status != -ECANCELED)
+    {
+        ue->stats.tx_errors++;
+        OSI_LOGE(0, "usb ether tx done fail, %d/%lu", xfer->status, ue->stats.tx_errors);
     }
     ue->stats.tx_packets++;
     TAILQ_INSERT_TAIL(&ue->tx_free_reqs, ur, anchor);
@@ -366,6 +353,13 @@ static void prvImplClose(drvEther_t *eth)
         return;
     }
 
+    while (!TAILQ_EMPTY(&ue->rx_frames))
+    {
+        usbEthReq_t *r = TAILQ_FIRST(&ue->rx_frames);
+        TAILQ_REMOVE(&ue->rx_frames, r, anchor);
+        TAILQ_INSERT_TAIL(&ue->rx_reqs, r, anchor);
+    }
+
     ue->open = false;
     osiExitCritical(critical);
 
@@ -426,6 +420,7 @@ static bool prvImplTxReqSubmit(drvEther_t *eth, drvEthReq_t *req, size_t size)
     uint32_t length = size + ETH_HLEN + ue->cfg.header_len;
     ue->cfg.ops.wrap(&ue->eth, ur->xfer->buf, length);
 
+    ur->xfer->zlp = 1;
     ur->xfer->length = length;
     ur->xfer->param = (void *)ur;
     ur->xfer->complete = prvEtherTxComplete;
@@ -469,6 +464,7 @@ static void prvImplSetUldataCB(drvEther_t *eth, drvEthULDataCB_t cb, void *priv)
 static bool prvImplEnable(drvEther_t *eth)
 {
     usbEther_t *ue = prvEth2U(eth);
+    OSI_LOGI(0, "usb ether enable, %p", ue->event_cb);
     if (ue->event_cb)
         ue->event_cb(DRV_ETHER_EVENT_CONNECT, ue->event_cb_ctx);
     return true;
@@ -477,6 +473,7 @@ static bool prvImplEnable(drvEther_t *eth)
 static void prvImplDisable(drvEther_t *eth)
 {
     usbEther_t *ue = prvEth2U(eth);
+    OSI_LOGI(0, "usb ether disable, %p", ue->event_cb);
     if (ue->event_cb)
         ue->event_cb(DRV_ETHER_EVENT_DISCONNECT, ue->event_cb_ctx);
 }

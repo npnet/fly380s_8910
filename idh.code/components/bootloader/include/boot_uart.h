@@ -21,20 +21,92 @@
 extern "C" {
 #endif
 
-typedef enum
-{
-    BOOT_UART1,
-    BOOT_UART2,
-    BOOT_UART3
-} bootUartID_t;
-
+/**
+ * \brief opaque data structure for uart
+ */
 typedef struct bootUart bootUart_t;
 
-bootUart_t *bootUartOpen(bootUartID_t id, uint32_t baud);
+/**
+ * \brief open uart
+ *
+ * When \p reconfig is false, the UART won't be re-configured, such as
+ * iomux, uart config and baud rate. This is useful that it is known
+ * that the uart is already configured. For example, when ROM jumps to
+ * FDL, the uart is already configured, and the configured baud rate
+ * should be used.
+ *
+ * When \p reconfig is false, \p baud will be ignored.
+ *
+ * \param name      uart device name
+ * \param baud      baud rate
+ * \param reconfig  false to ignore re-configuration
+ * \return
+ *      - the uart instance
+ *      - NULL for failed
+ */
+bootUart_t *bootUartOpen(uint32_t name, uint32_t baud, bool reconfig);
+
+/**
+ * \brief whether baud rate is supported
+ *
+ * \param uart      uart instance
+ * \param baud      baud rate to be checked
+ * \return
+ *      - true on supported
+ *      - false on unsupported
+ */
+bool bootUartBaudSupported(bootUart_t *uart, uint32_t baud);
+
+/**
+ * \brief set baud rate
+ *
+ * \param uart      uart instance
+ * \param baud      baud rate to be set
+ * \return
+ *      - true on success
+ *      - false on failed
+ */
 bool bootUartSetBaud(bootUart_t *uart, uint32_t baud);
+
+/**
+ * \brief get available size for read
+ *
+ * \param uart      uart instance
+ * \return
+ *      - available size for read
+ */
 int bootUartAvail(bootUart_t *uart);
+
+/**
+ * \brief read from the uart
+ *
+ * \param uart      uart instance
+ * \param data      memory for read data
+ * \param size      maximum read size
+ * \return
+ *      - actual read size
+ */
 int bootUartRead(bootUart_t *uart, void *data, size_t size);
+
+/**
+ * \brief write to the uart
+ *
+ * \param uart      uart instance
+ * \param data      pointer of data to be written
+ * \param size      maximum write size
+ * \return
+ *      - actual written size
+ */
 int bootUartWrite(bootUart_t *uart, const void *data, size_t size);
+
+/**
+ * \brief flush output
+ *
+ * This will wait all data will be sent out, and the peer is able to
+ * receive all data.
+ *
+ * \param uart      uart instance
+ */
 void bootUartFlush(bootUart_t *uart);
 
 #ifdef __cplusplus

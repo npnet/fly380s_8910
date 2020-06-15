@@ -10,14 +10,21 @@
  * without further testing or modification.
  */
 
+// #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+
+#include "hal_config.h"
 #include "boot_spi_flash.h"
 #include "hal_spi_flash.h"
+#include "hal_spi_flash_defs.h"
 #include "boot_platform.h"
 #include "hwregs.h"
 #include "osi_api.h"
+#include "osi_log.h"
 #include "osi_byte_buf.h"
+#include "drv_names.h"
+#include <string.h>
 
-#define DELAYUS(us) bootDelayUS(us)
+#define DELAYUS(us) osiDelayUS(us)
 
 #define SIZE_4K (4 * 1024)
 #define SIZE_32K (32 * 1024)
@@ -27,24 +34,89 @@
 struct bootSpiFlash
 {
     bool opened;
+    unsigned name;
     uintptr_t hwp;
-    uint32_t id;
-    uint32_t capacity;
+    halSpiFlashProp_t prop;
     uintptr_t base_address;
     uint32_t block_prohibit[8]; // 16M/64K/32bit_per_word
+#ifdef CONFIG_MED_CODE_ENCRYPT
+    uint32_t med_buf_size;
+    void *med_input_buf;
+    void *med_remap_buf;
+#endif
 };
 
-static bootSpiFlash_t gDrvSpiFlashCtx = {
-    .opened = false,
-    .hwp = (uintptr_t)hwp_spiFlash,
-    .base_address = 0x60000000,
+#ifdef CONFIG_SOC_8910
+static bootSpiFlash_t gDrvSpiFlashCtx[] = {
+    {
+        .opened = false,
+        .name = DRV_NAME_SPI_FLASH,
+        .hwp = (uintptr_t)hwp_spiFlash,
+        .base_address = CONFIG_NOR_PHY_ADDRESS,
+    },
+    {
+        .opened = false,
+        .name = DRV_NAME_SPI_FLASH_EXT,
+        .hwp = (uintptr_t)hwp_spiFlash1,
+        .base_address = CONFIG_NOR_EXT_PHY_ADDRESS,
+    },
 };
+#endif
 
-static bootSpiFlash_t gDrvSpiFlashExCtx = {
-    .opened = false,
-    .hwp = (uintptr_t)hwp_spiFlash1,
-    .base_address = 0x70000000,
+#ifdef CONFIG_SOC_8811
+
+#ifdef CONFIG_MED_CODE_ENCRYPT
+static OSI_ALIGNED(32) uint8_t gMedBuffer[PAGE_SIZE * 2];
+static bool prvDataMedEncrypt(bootSpiFlash_t *d, uint32_t offset, size_t size)
+{
+    uint32_t base = d->base_address + offset;
+    REG_MED_MED_CH0_WORK_CFG_T ch0_work_cfg = {hwp_med->med_ch0_work_cfg};
+    if (ch0_work_cfg.b.med_ch0_enable && !ch0_work_cfg.b.med_ch0_bypass_en)
+    {
+        if (base >= hwp_med->med_ch0_base_addr_cfg &&
+            base + size <= hwp_med->med_ch0_base_addr_cfg + hwp_med->med_ch0_addr_size_cfg)
+            return true;
+    }
+
+    return false;
+}
+#endif
+
+static bootSpiFlash_t gDrvSpiFlashCtx[] = {
+    {
+        .opened = false,
+        .name = DRV_NAME_SPI_FLASH,
+        .hwp = (uintptr_t)hwp_spiFlash,
+        .base_address = CONFIG_NOR_PHY_ADDRESS,
+#ifdef CONFIG_MED_CODE_ENCRYPT
+        .med_buf_size = PAGE_SIZE,
+        .med_input_buf = gMedBuffer,
+        .med_remap_buf = &gMedBuffer[PAGE_SIZE],
+#endif
+    },
+    {
+        .opened = false,
+        .name = DRV_NAME_SPI_FLASH_EXT,
+        .hwp = (uintptr_t)hwp_spiflashExt,
+        .base_address = CONFIG_NOR_EXT_PHY_ADDRESS,
+#ifdef CONFIG_MED_CODE_ENCRYPT
+        .med_buf_size = PAGE_SIZE,
+        .med_input_buf = gMedBuffer,
+        .med_remap_buf = &gMedBuffer[PAGE_SIZE],
+#endif
+    },
 };
+#endif
+
+static bootSpiFlash_t *prvFlashGetByName(unsigned name)
+{
+    for (unsigned n = 0; n < OSI_ARRAY_SIZE(gDrvSpiFlashCtx); n++)
+    {
+        if (gDrvSpiFlashCtx[n].name == name)
+            return &gDrvSpiFlashCtx[n];
+    }
+    return NULL;
+}
 
 static inline bool prvIsWriteProhibit(bootSpiFlash_t *d, uint32_t address)
 {
@@ -54,13 +126,44 @@ static inline bool prvIsWriteProhibit(bootSpiFlash_t *d, uint32_t address)
 
 static void prvPageProgram(bootSpiFlash_t *d, uint32_t offset, const uint8_t *data, size_t size)
 {
-    halSpiFlashPrepareEraseProgram(d->hwp, d->id, offset, size);
+#ifdef CONFIG_MED_CODE_ENCRYPT
+    if (prvDataMedEncrypt(d, offset, size))
+    {
+        uint32_t copy_size = OSI_ALIGN_UP(size, 32);
+        if (copy_size > d->med_buf_size)
+        {
+            osiPanic();
+        }
+
+        memcpy(d->med_input_buf, data, size);
+        hwp_med->med_write_addr_remap = (uint32_t)d->med_remap_buf;
+        hwp_med->med_write_base_addr_cfg = d->base_address + offset;
+        hwp_med->med_write_addr_size_cfg = copy_size - 1;
+
+        const uint32_t *data32 = (const uint32_t *)data;
+        uint32_t *flash_addr = (uint32_t *)(d->base_address + offset);
+        for (unsigned i = 0; i < (copy_size / 4); ++i)
+        {
+            flash_addr[i] = data32[i];
+        }
+
+        osiDCacheClean(flash_addr, copy_size);
+
+        REG_MED_MED_INT_RAW_T med_int_raw = {};
+        REG_WAIT_FIELD_NEZ(med_int_raw, hwp_med->med_int_raw, med_wr_done_int_raw);
+        hwp_med->med_clr = 0xffffffff;
+
+        osiDCacheInvalidate(d->med_remap_buf, copy_size);
+        data = d->med_remap_buf;
+    }
+#endif
+    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
     halSpiFlashPageProgram(d->hwp, offset, data, size);
 }
 
 static void prvErase(bootSpiFlash_t *d, uint32_t offset, size_t size)
 {
-    halSpiFlashPrepareEraseProgram(d->hwp, d->id, offset, size);
+    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
     halSpiFlashErase(d->hwp, offset, size);
 }
 
@@ -70,28 +173,25 @@ static void prvFlashOpen(bootSpiFlash_t *d)
         return;
 
     halSpiFlashStatusCheck(d->hwp);
-    d->id = halSpiFlashReadId(d->hwp);
-    d->capacity = (1 << ((d->id >> 16) & 0xff));
+    d->prop.mid = halSpiFlashReadId(d->hwp);
+    halSpiFlashPropsByMid(d->prop.mid, &d->prop);
     d->opened = true;
+    OSI_LOGD(0, "FLASH (0x%x) id/0x%06x cap/0x%x", d->base_address, d->prop.mid, d->prop.capacity);
 }
 
-bootSpiFlash_t *bootSpiFlashOpen(void)
+bootSpiFlash_t *bootSpiFlashOpen(unsigned name)
 {
-    bootSpiFlash_t *d = &gDrvSpiFlashCtx;
-    prvFlashOpen(d);
-    return d;
-}
+    bootSpiFlash_t *d = prvFlashGetByName(name);
+    if (d == NULL)
+        return NULL;
 
-bootSpiFlash_t *bootSpiFlashExtOpen(void)
-{
-    bootSpiFlash_t *d = &gDrvSpiFlashExCtx;
     prvFlashOpen(d);
     return d;
 }
 
 void bootSpiFlashSetRangeWriteProhibit(bootSpiFlash_t *d, uint32_t start, uint32_t end)
 {
-    if (start > d->capacity || end > d->capacity)
+    if (start > d->prop.capacity || end > d->prop.capacity)
         return;
 
     unsigned block_start = OSI_ALIGN_UP(start, SIZE_64K) / SIZE_64K;
@@ -102,7 +202,7 @@ void bootSpiFlashSetRangeWriteProhibit(bootSpiFlash_t *d, uint32_t start, uint32
 
 void bootSpiFlashClearRangeWriteProhibit(bootSpiFlash_t *d, uint32_t start, uint32_t end)
 {
-    if (start > d->capacity || end > d->capacity)
+    if (start > d->prop.capacity || end > d->prop.capacity)
         return;
 
     unsigned block_start = OSI_ALIGN_UP(start, SIZE_64K) / SIZE_64K;
@@ -113,12 +213,12 @@ void bootSpiFlashClearRangeWriteProhibit(bootSpiFlash_t *d, uint32_t start, uint
 
 uint32_t bootSpiFlashID(bootSpiFlash_t *d)
 {
-    return (d == NULL) ? 0 : d->id;
+    return (d == NULL) ? 0 : d->prop.mid;
 }
 
 uint32_t bootSpiFlashCapacity(bootSpiFlash_t *d)
 {
-    return (d == NULL) ? 0 : d->capacity;
+    return (d == NULL) ? 0 : d->prop.capacity;
 }
 
 const void *bootSpiFlashMapAddress(bootSpiFlash_t *d, uint32_t offset)
@@ -128,24 +228,29 @@ const void *bootSpiFlashMapAddress(bootSpiFlash_t *d, uint32_t offset)
 
 bool bootSpiFlashOffsetValid(bootSpiFlash_t *d, uint32_t offset)
 {
-    return offset < d->capacity;
+    return offset < d->prop.capacity;
 }
 
 bool bootSpiFlashMapAddressValid(bootSpiFlash_t *d, const void *address)
 {
     uintptr_t ptr = (uintptr_t)address;
-    return (ptr >= d->base_address) && (ptr < d->base_address + d->capacity);
+    return (ptr >= d->base_address) && (ptr < d->base_address + d->prop.capacity);
+}
+
+bool bootSpiFlashIsDone(bootSpiFlash_t *d)
+{
+    return halSpiFlashIsWipFinished(d->hwp);
 }
 
 void bootSpiFlashWaitDone(bootSpiFlash_t *d)
 {
     halSpiFlashWaitWipFinish(d->hwp);
-    halSpiFlashFinishEraseProgram(d->hwp, d->id);
+    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
 }
 
 int bootSpiFlashWriteNoWait(bootSpiFlash_t *d, uint32_t offset, const void *data, size_t size)
 {
-    if (data == NULL || offset + size > d->capacity)
+    if (data == NULL || offset + size > d->prop.capacity)
         return -1;
 
     if (prvIsWriteProhibit(d, offset))
@@ -164,7 +269,7 @@ int bootSpiFlashWriteNoWait(bootSpiFlash_t *d, uint32_t offset, const void *data
 
 int bootSpiFlashEraseNoWait(bootSpiFlash_t *d, uint32_t offset, size_t size)
 {
-    if (offset + size > d->capacity)
+    if (offset + size > d->prop.capacity)
         return -1;
 
     if (prvIsWriteProhibit(d, offset))
@@ -198,11 +303,11 @@ int bootSpiFlashEraseNoWait(bootSpiFlash_t *d, uint32_t offset, size_t size)
 void bootSpiFlashChipErase(bootSpiFlash_t *d)
 {
     halSpiFlashWaitWipFinish(d->hwp);
-    halSpiFlashPrepareEraseProgram(d->hwp, d->id, 0, d->capacity);
+    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, 0, d->prop.capacity);
     halSpiFlashChipErase(d->hwp);
     halSpiFlashWaitWipFinish(d->hwp);
-    halSpiFlashFinishEraseProgram(d->hwp, d->id);
-    osiDCacheInvalidate(bootSpiFlashMapAddress(d, 0), d->capacity);
+    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
+    osiDCacheInvalidate(bootSpiFlashMapAddress(d, 0), d->prop.capacity);
 }
 
 bool bootSpiFlashErase(bootSpiFlash_t *d, uint32_t offset, size_t size)
@@ -212,7 +317,7 @@ bool bootSpiFlashErase(bootSpiFlash_t *d, uint32_t offset, size_t size)
         int esize = bootSpiFlashEraseNoWait(d, offset, size);
         if (esize < 0)
         {
-            halSpiFlashFinishEraseProgram(d->hwp, d->id);
+            halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
             return false;
         }
 
@@ -220,7 +325,7 @@ bool bootSpiFlashErase(bootSpiFlash_t *d, uint32_t offset, size_t size)
         offset += esize;
         halSpiFlashWaitWipFinish(d->hwp);
     }
-    halSpiFlashFinishEraseProgram(d->hwp, d->id);
+    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
     return true;
 }
 
@@ -231,7 +336,7 @@ bool bootSpiFlashWrite(bootSpiFlash_t *d, uint32_t offset, const void *data, siz
         int wsize = bootSpiFlashWriteNoWait(d, offset, data, size);
         if (wsize < 0)
         {
-            halSpiFlashFinishEraseProgram(d->hwp, d->id);
+            halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
             return false;
         }
 
@@ -240,11 +345,56 @@ bool bootSpiFlashWrite(bootSpiFlash_t *d, uint32_t offset, const void *data, siz
         data = (const char *)data + wsize;
         halSpiFlashWaitWipFinish(d->hwp);
     }
-    halSpiFlashFinishEraseProgram(d->hwp, d->id);
+    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
     return true;
 }
 
-void bootSpiFlashReadUniqueId(bootSpiFlash_t *d, uint8_t id[8])
+/**
+ * read data from flash
+ */
+bool bootSpiFlashRead(bootSpiFlash_t *d, uint32_t offset, void *data, uint32_t size)
 {
-    halSpiFlashReadUniqueId(d->hwp, id);
+    if (size == 0)
+        return true;
+    if (d == NULL || data == NULL || offset + size > d->prop.capacity)
+        return false;
+
+    const void *fl = (const void *)REG_ACCESS_ADDRESS((uintptr_t)d->base_address + offset);
+    memcpy(data, fl, size);
+    return true;
+}
+
+/**
+ * read data from flash, and check with provided data
+ */
+bool bootSpiFlashReadCheck(bootSpiFlash_t *d, uint32_t offset, const void *data, uint32_t size)
+{
+    if (size == 0)
+        return true;
+    if (d == NULL || data == NULL || offset + size > d->prop.capacity)
+        return false;
+
+    const void *fl = (const void *)REG_ACCESS_ADDRESS((uintptr_t)d->base_address + offset);
+    return memcmp(data, fl, size) == 0;
+}
+
+int bootSpiFlashReadUniqueId(bootSpiFlash_t *d, uint8_t *id)
+{
+    int size = -1;
+    if (d->prop.uid_gd_en)
+    {
+        size = 8;
+        halSpiFlashReadUniqueId(d->hwp, id);
+    }
+    else if (d->prop.type == HAL_SPI_FLASH_TYPE_XMCA)
+    {
+        size = 12;
+        halSpiFlashReadSFDP(d->hwp, 0x80, id, 12);
+    }
+    else if (d->prop.type == HAL_SPI_FLASH_TYPE_XTX)
+    {
+        size = 16;
+        halSpiFlashReadSFDP(d->hwp, 0x194, id, 16);
+    }
+    return size;
 }

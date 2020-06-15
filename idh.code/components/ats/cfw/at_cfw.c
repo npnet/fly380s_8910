@@ -24,6 +24,8 @@
 atCfwCtx_t gAtCfwCtx;
 
 #define AT_PM3_FLAG 0 // TODO:
+//When there is no card in the current sim slot,go to RESET another sim card.
+//#define AT_PROIORITY_RESET_SIM
 extern uint8_t atGetFlightModeFlag(CFW_SIM_ID nSimID);
 static void _onEV_CFW_INIT_IND(const osiEvent_t *event)
 {
@@ -250,6 +252,7 @@ void atCfwInit(void)
     atCfwNwInit();
     atCfwCcInit();
     atCfwGprsInit();
+    AT_SS_Init();
 }
 
 #ifdef CONFIG_SOC_8910
@@ -281,7 +284,9 @@ void atCfwPowerOn(const osiEvent_t *event)
     CFW_ShellControl(CFW_CONTROL_CMD_POWER_ON);
 
     atEngineSetDeviceAutoSleep(gAtSetting.csclk == 2 ? true : false);
-
+#ifdef AT_PROIORITY_RESET_SIM
+    CFW_SimSetProiorityResetFlag(1);
+#endif
 #ifdef CONFIG_SOC_8910
     atSetFMProcess();
 #endif

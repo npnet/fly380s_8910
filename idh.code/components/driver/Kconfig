@@ -11,23 +11,6 @@
 
 menu "Driver configuration"
 
-config DEBUGHOST_RX_USE_IFC
-    bool "Debughost rx use IFC"
-    default n
-    help
-        When debughost RX uses IFC, one additional IFC channel will be
-        occupied. Though it is possible there is data lose without IFC,
-        it is recommended not to use IFC.
-
-if DEBUGHOST_RX_USE_IFC
-config DEBUGHOST_RX_DMA_SIZE
-    hex "Debughost rx DMA size"
-    default 0x200
-    help
-        Debughost RX DMA size. The size mus be multiple of D-cache
-        line size.
-endif
-
 config DEBUGHOST_RX_BUF_SIZE
     hex "Debughost rx buffer size"
     default 0x200
@@ -39,50 +22,6 @@ config HOST_CMD_ENGINE_MAX_PACKET_SIZE
     default 0x2020
     help
         The maximum packet size of host command engine.
-
-config UART_BLUESCREEN_ENABLE
-    bool "Enable UART daemon on blue screen"
-    default y
-    help
-        At panic, start the daemon on UART. Usually, the UART will be the same
-        as AT UART, due to AT can't work at blue screen. Also, the UART will
-        work at fixed higher baud rate.
-
-if UART_BLUESCREEN_ENABLE
-choice
-    prompt "UART used in blue screen"
-    default UART_BLUESCREEN_UART2 if SOC_8955 || SOC_8909
-    default UART_BLUESCREEN_UART1
-    help
-        UART to be used in blue screen mode. It is suggested to reuse AT UART,
-        though it is not necessary.
-
-    config UART_BLUESCREEN_UART1
-        bool "UART1"
-
-    config UART_BLUESCREEN_UART2
-        bool "UART2"
-
-    config UART_BLUESCREEN_UART3
-        bool "UART3"
-endchoice
-
-config UART_BLUESCREEN
-    string
-    default "DRV_NAME_UART1" if UART_BLUESCREEN_UART1
-    default "DRV_NAME_UART2" if UART_BLUESCREEN_UART2
-    default "DRV_NAME_UART3" if UART_BLUESCREEN_UART3
-    default ""
-
-config UART_BLUESCREEN_BAUD
-    int "Baud rate of bluescreen UART"
-    default 921600
-    help
-        It is suggested to set a higher baud rate in blue screen mode.
-
-        To reduce complexity in blue screen mode, only limited baud rates are
-        supported.
-endif
 
 config UART_AUTOMODE_DEFAULT_BAUD
     int "Default baud rate of adaptive mode"
@@ -101,12 +40,6 @@ config SUPPORT_BATTERY_CHARGER
     default y
     help
         enable charger.
-
-config SUPPORT_EXT_FLASH
-    bool "support extra flash"
-    default n
-    help
-        When enable, it will config clock about FLASH1 to support extra flash.
 
 config USB_SUPPORT
     bool "support usb"
@@ -130,6 +63,12 @@ config USB_DETECT_DEBOUNCE_TIME
     default 800
     help
         Debuouce a little milliseconds before start enumerating.
+
+config USB_DEVICE_CONTROLLER_FEATURE
+    hex "udc feature"
+    default 0xE0
+    help
+        Lower 8 bits for config descriptor -> bmAttributes, higher are software defined
 endif
 
 config LCD_SUPPORT

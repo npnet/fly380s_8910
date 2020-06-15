@@ -60,4 +60,9 @@
  */
 #define LOG_TAG_SRV OSI_MAKE_LOG_TAG('S', 'E', 'R', 'V')
 
+/**
+ * whether to enable simlock service
+ */
+#cmakedefine CONFIG_SRV_SIMLOCK_ENABLE
+
 #endif

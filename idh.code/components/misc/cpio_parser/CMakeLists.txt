@@ -10,6 +10,8 @@
 # without further testing or modification.
 
 set(target cpio_parser)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC src/cpio_parser.c)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_include_directories(${target} PUBLIC include)

@@ -164,7 +164,7 @@ do_sync(const u32_t *root_oid, u8_t root_oid_len, struct snmp_node_instance* ins
   struct threadsync_data *call_data = &threadsync_node->instance->data;
 
   if (threadsync_node->node.node.oid != threadsync_node->target->node.oid) {
-    LWIP_DEBUGF(SNMP_DEBUG, ("Sync node OID does not match target node OID"));
+    LWIP_DEBUGF(SNMP_DEBUG, (0x100076e1, "Sync node OID does not match target node OID"));
     return SNMP_ERR_NOSUCHINSTANCE;
   }
 

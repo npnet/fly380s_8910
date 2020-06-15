@@ -14,11 +14,12 @@
 #include "boot_platform.h"
 #include "cmsis_core.h"
 #include "hal_chip.h"
+#include "osi_api.h"
 
 void bootMmuEnable(uint32_t *l1, uint32_t *l2)
 {
     if (!OSI_IS_ALIGNED((unsigned)l1, 16 * 1024))
-        bootPanic();
+        osiPanic();
 
     __set_TLBIALL(0);
     __set_BPIALL(0);
@@ -55,6 +56,10 @@ void bootMmuEnable(uint32_t *l1, uint32_t *l2)
 
 void bootMmuDisable(void)
 {
+    L1C_CleanInvalidateDCacheAll();
+    __DSB();
+    __ISB();
+
     L1C_DisableCaches();
     MMU_Disable();
 }

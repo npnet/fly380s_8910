@@ -216,3 +216,42 @@ uint16_t crc16NvCalc(const void *p, size_t len)
     }
     return crc;
 }
+
+#define CRC_16_POLYNOMIAL 0x1021
+#define CRC_16_L_POLYNOMIAL 0x8000
+#define CRC_16_L_SEED 0x80
+#define CRC_16_L_OK 0x00
+
+uint16_t romBslCrc16(const void *p, unsigned len)
+{
+    const uint8_t *ptr = (const uint8_t *)p;
+    uint16_t crc = 0;
+
+    while (len-- > 0)
+    {
+        for (unsigned i = CRC_16_L_SEED; i != 0; i = i >> 1)
+        {
+            if ((crc & CRC_16_L_POLYNOMIAL) != 0)
+            {
+                crc = crc << 1;
+                crc = crc ^ CRC_16_POLYNOMIAL;
+            }
+            else
+            {
+                crc = crc << 1;
+            }
+            if ((*ptr & i) != 0)
+            {
+                crc = crc ^ CRC_16_POLYNOMIAL;
+            }
+        }
+        ptr++;
+    }
+
+    return (crc);
+}
+
+bool romBslCrc16Check(const void *p, unsigned size)
+{
+    return romBslCrc16(p, size) == CRC_16_L_OK;
+}

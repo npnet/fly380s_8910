@@ -24,10 +24,11 @@
 #include <osi_api.h>
 #include <osi_log.h>
 
+#include "drv_usb.h"
 #include "usb_utils.h"
 
-#define COPS_DEFAULT_VID 0x0525
-#define COPS_DEFAULT_PID 0xa4a7
+#define COPS_DEFAULT_VID USB_VID_RDA_DOWNLOAD // 0x0525
+#define COPS_DEFAULT_PID USB_PID_RDA_DOWNLOAD // 0xa4a7
 
 typedef TAILQ_HEAD(, composite_func_s) copsFuncHead_t;
 struct composite_device_s
@@ -90,7 +91,7 @@ static uint32_t _copsGenConfigDesc(cops_t *c, void *buf, uint32_t size)
     cfg.bNumInterface = c->n_intf;
     cfg.bConfigurationValue = 1;
     cfg.iConfiguration = 0;
-    cfg.bmAttributes = UC_BUS_POWERED | UC_SELF_POWERED | UC_REMOTE_WAKEUP;
+    cfg.bmAttributes = (c->driver.udc->feature & UDC_FEATURE_ATTRIBUTE_MASK);
     cfg.bMaxPower = 0xC8; // 400 mA
     if (size <= USB_DT_CONFIG_SIZE)
     {

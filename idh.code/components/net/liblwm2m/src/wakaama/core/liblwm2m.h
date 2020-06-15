@@ -67,6 +67,7 @@ extern "C" {
 #include <unistd.h>
 #include "osi_api.h"
 #include "lwm2m_api.h"
+#include "er-coap-13.h"
 
 #define LWM2M_LITTLE_ENDIAN
 #define LWM2M_CLIENT_MODE
@@ -185,6 +186,8 @@ bool lwm2m_session_is_equal(void * session1, void * session2, void * userData);
 #define LWM2M_FIRMWARE_UPDATE_OBJECT_ID     5
 #define LWM2M_LOCATION_OBJECT_ID            6
 #define LWM2M_CONN_STATS_OBJECT_ID          7
+
+#define LWM2M_FOTA_UPDATE_OBJECT_ID     LWM2M_FIRMWARE_UPDATE_OBJECT_ID
 
 #define LWM2M_TEMPERATURE_OBJECT_ID 3303
 #define LWM2M_ILLUMINANCE_OBJECT_ID 3301
@@ -315,6 +318,38 @@ typedef enum
     LWM2M_TYPE_OBJECT_LINK
 } lwm2m_data_type_t;
 
+typedef enum
+{
+    LWM2M_FOTA_STATE_IDLE=0,
+    LWM2M_FOTA_STATE_DOWNLOADING,
+    LWM2M_FOTA_STATE_DOWNLOADED,
+    LWM2M_FOTA_STATE_UPDATING
+}lwm2m_fota_state_t;
+
+typedef enum
+{
+    LWM2M_FOTA_RESULT_INIT=0,
+    LWM2M_FOTA_RESULT_SUCCESS,
+    LWM2M_FOTA_RESULT_NOT_ENOUGH_FLASH,
+    LWM2M_FOTA_RESULT_OUT_OF_RAM,
+    LWM2M_FOTA_RESULT_CONNECTION_LOST,
+    LWM2M_FOTA_RESULT_INTEGRITY_FAILUER,
+    LWM2M_FOTA_RESULT_UNSUPPORTED_PACKAGE,
+    LWM2M_FOTA_RESULT_INVALID_URI,
+    LWM2M_FOTA_RESULT_FIRMWARE_UPDATE_FAILED,
+    LWM2M_FOTA_RESULT_UNSUPPORTED_PROTOCOL
+}lwm2m_fota_result_t;
+
+typedef struct _lwm2m_fota_
+{
+size_t block2bufferSize;
+uint32_t block2Num;
+uint16_t lastmid;
+uint8_t token[COAP_TOKEN_LEN];
+uint8_t* uri;
+}lwm2m_fota_t;
+
+
 typedef struct _lwm2m_data_t lwm2m_data_t;
 
 struct _lwm2m_data_t
@@ -373,6 +408,7 @@ void lwm2m_data_encode_objlink(uint16_t objectId, uint16_t objectInstanceId, lwm
 void lwm2m_data_encode_instances(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 void lwm2m_data_include(lwm2m_data_t * subDataP, size_t count, lwm2m_data_t * dataP);
 
+void notify_fota_state(lwm2m_fota_state_t state, lwm2m_fota_result_t resulte, uint8_t ref);
 
 /*
  * Utility function to parse TLV buffers directly
@@ -428,6 +464,7 @@ struct _lwm2m_object_t
     lwm2m_clean_callback_t    cleanFunc;
     lwm2m_write_callback_t    notifyFunc;
     lwm2m_read_object_callback_t readObjectFunc;
+    void * lwm2mH;
     void * userData;
 };
 
@@ -680,6 +717,8 @@ typedef struct
     lwm2m_server_t *     serverList;
     lwm2m_object_t *     objectList;
     lwm2m_observed_t *   observedList;
+    lwm2m_observed_t *   fota_upgrade_observed;
+    lwm2m_fota_t fota_context;
 #endif
 #ifdef LWM2M_SERVER_MODE
     lwm2m_client_t *        clientList;
@@ -709,6 +748,8 @@ typedef struct
 lwm2m_context_t * lwm2m_init(void * userData);
 // close a liblwm2m context.
 void lwm2m_close(lwm2m_context_t * contextP);
+
+void lwm2m_delete_context_list(lwm2m_context_t * contextP);
 
 // perform any required pending operation and adjust timeoutP to the maximal time interval to wait in seconds.
 int lwm2m_step(lwm2m_context_t * contextP, time_t * timeoutP);

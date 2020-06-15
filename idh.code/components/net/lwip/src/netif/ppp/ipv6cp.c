@@ -656,7 +656,7 @@ static int ipv6cp_ackci(fsm *f, u_char *p, int len) {
     return (1);
 
 bad:
-    IPV6CPDEBUG(("ipv6cp_ackci: received bad Ack!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000781a, "ipv6cp_ackci: received bad Ack!"));
     return (0);
 }
 
@@ -726,7 +726,7 @@ static int ipv6cp_nakci(fsm *f, u_char *p, int len, int treat_as_reject) {
 			    eui64_equals(ifaceid, go->hisid)) /* bad luck */
 			 eui64_magic(ifaceid);
 		     try_.ourid = ifaceid;
-		     IPV6CPDEBUG(("local LL address %s", llv6_ntoa(ifaceid)));
+		     LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000781b, "local LL address %d", ifaceid));
 		 }
 		 );
 
@@ -796,7 +796,7 @@ static int ipv6cp_nakci(fsm *f, u_char *p, int len, int treat_as_reject) {
     return 1;
 
 bad:
-    IPV6CPDEBUG(("ipv6cp_nakci: received bad Nak!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000781c, "ipv6cp_nakci: received bad Nak!"));
     return 0;
 }
 
@@ -869,7 +869,7 @@ static int ipv6cp_rejci(fsm *f, u_char *p, int len) {
     return 1;
 
 bad:
-    IPV6CPDEBUG(("ipv6cp_rejci: received bad Reject!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000781d, "ipv6cp_rejci: received bad Reject!"));
     return 0;
 }
 
@@ -918,7 +918,7 @@ static int ipv6cp_reqci(fsm *f, u_char *inp, int *len, int reject_if_disagree) {
 	if (l < 2 ||			/* Not enough data for CI header or */
 	    p[1] < 2 ||			/*  CI length too small or */
 	    p[1] > l) {			/*  CI length too big? */
-	    IPV6CPDEBUG(("ipv6cp_reqci: bad CI length!"));
+	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000781e, "ipv6cp_reqci: bad CI length!"));
 	    orc = CONFREJ;		/* Reject bad CI */
 	    cilen = l;			/* Reject till end of packet */
 	    l = 0;			/* Don't loop again */
@@ -931,7 +931,7 @@ static int ipv6cp_reqci(fsm *f, u_char *inp, int *len, int reject_if_disagree) {
 
 	switch (citype) {		/* Check CI type */
 	case CI_IFACEID:
-	    IPV6CPDEBUG(("ipv6cp: received interface identifier "));
+	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000781f, "ipv6cp: received interface identifier "));
 
 	    if (!ao->neg_ifaceid ||
 		cilen != CILEN_IFACEID) {	/* Check CI length */
@@ -946,7 +946,7 @@ static int ipv6cp_reqci(fsm *f, u_char *inp, int *len, int reject_if_disagree) {
 	     * then accept it.
 	     */
 	    eui64_get(ifaceid, p);
-	    IPV6CPDEBUG(("(%s)", llv6_ntoa(ifaceid)));
+	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x10007820, "(%d)", ifaceid));
 	    if (eui64_iszero(ifaceid) && eui64_iszero(go->ourid)) {
 		orc = CONFREJ;		/* Reject CI */
 		break;
@@ -979,14 +979,14 @@ static int ipv6cp_reqci(fsm *f, u_char *inp, int *len, int reject_if_disagree) {
 
 #ifdef IPV6CP_COMP
 	case CI_COMPRESSTYPE:
-	    IPV6CPDEBUG(("ipv6cp: received COMPRESSTYPE "));
+	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x10007821, "ipv6cp: received COMPRESSTYPE "));
 	    if (!ao->neg_vj ||
 		(cilen != CILEN_COMPRESS)) {
 		orc = CONFREJ;
 		break;
 	    }
 	    GETSHORT(cishort, p);
-	    IPV6CPDEBUG(("(%d)", cishort));
+	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x10007820, "(%d)", cishort));
 
 	    if (!(cishort == IPV6CP_COMP)) {
 		orc = CONFREJ;
@@ -1004,7 +1004,7 @@ static int ipv6cp_reqci(fsm *f, u_char *inp, int *len, int reject_if_disagree) {
 	}
 
 endswitch:
-	IPV6CPDEBUG((" (%s)\n", CODENAME(orc)));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x10007822, " (%d)\n", orc));
 
 	if (orc == CONFACK &&		/* Good CI */
 	    rc != CONFACK)		/*  but prior CI wasnt? */
@@ -1057,7 +1057,7 @@ endswitch:
     }
 
     *len = ucp - inp;			/* Compute output length */
-    IPV6CPDEBUG(("ipv6cp: returning Configure-%s", CODENAME(rc)));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x10007823, "ipv6cp: returning Configure-%d", rc));
     return (rc);			/* Return final code */
 }
 
@@ -1155,7 +1155,7 @@ static void ipv6cp_up(fsm *f) {
     ipv6cp_options *ho = &pcb->ipv6cp_hisoptions;
     ipv6cp_options *go = &pcb->ipv6cp_gotoptions;
 
-    IPV6CPDEBUG(("ipv6cp: up"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x10007824, "ipv6cp: up"));
 
     /*
      * We must have a non-zero LL address for both ends of the link.
@@ -1232,7 +1232,7 @@ static void ipv6cp_up(fsm *f) {
 #ifndef LTE_NBIOT_SUPPORT
      //  set our link local address is useless, but this will start an unexpected nd6_timer for nbiot
 	if (!sif6addr(f->pcb, go->ourid, ho->hisid)) {
-	    PPPDEBUG(LOG_DEBUG, ("sif6addr failed"));
+	   LWIP_DEBUGF(LOG_DEBUG, (0x10007825, "sif6addr failed"));
 	    ipv6cp_close(f->pcb, "Interface configuration failed");
 	    return;
 	}
@@ -1240,7 +1240,7 @@ static void ipv6cp_up(fsm *f) {
 
 	/* bring the interface up for IPv6 */
 	if (!sif6up(f->pcb)) {
-	    PPPDEBUG(LOG_DEBUG, ("sif6up failed (IPV6)"));
+	    LWIP_DEBUGF(LOG_DEBUG, (0x10007826, "sif6up failed (IPV6)"));
 	    ipv6cp_close(f->pcb, "Interface configuration failed");
 	    return;
 	}
@@ -1280,7 +1280,7 @@ static void ipv6cp_down(fsm *f) {
     ipv6cp_options *go = &pcb->ipv6cp_gotoptions;
     ipv6cp_options *ho = &pcb->ipv6cp_hisoptions;
 #endif
-    IPV6CPDEBUG(("ipv6cp: down"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x10007827, "ipv6cp: down"));
 #if PPP_STATS_SUPPORT
     update_link_stats(f->unit);
 #endif /* PPP_STATS_SUPPORT */

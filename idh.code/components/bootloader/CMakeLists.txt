@@ -9,19 +9,21 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/boot_config.h.in ${BINARY_TOP_DIR}/include/boot_config.h)
+configure_file(include/boot_config.h.in ${out_inc_dir}/boot_config.h)
 
 if(CONFIG_SOC_8910)
     set(target bootloader)
     add_library(${target} STATIC
-        src/boot_entry.S
+        src/8910/boot_platform_8910.c
+        src/boot_entry_v7a.S
         src/boot_sffs_port.c
-        src/boot_platform.c
+        src/boot_delay.c
         src/boot_mem.c
         src/boot_spi_flash.c
         src/boot_debuguart.c
         src/boot_trace.c
         src/boot_fdl.c
+        src/boot_fdl_dnld.c
         src/boot_secure.c
         src/boot_aes.c
         src/boot_vfs.c
@@ -30,51 +32,66 @@ if(CONFIG_SOC_8910)
         src/boot_adi_bus.c
         src/boot_uart.c
         src/boot_mmu.c
+        src/boot_uimage.c
         src/boot_udc.c
         src/boot_usb_fdl_channel.c
+        src/boot_pdl.c
+        src/boot_pdl_uimage.c
     )
     set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
     target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_BOOT)
     target_include_directories(${target} PUBLIC include)
     target_link_libraries(${target} PRIVATE boot_encrypt calclib)
-    target_include_targets(${target} PRIVATE hal fs sffs bdev driver)
-
-    # It is a dirty hack, create source for calibparam.bin
-    # There may multiple nvm for one project, the first one will be used.
-    # And it is assumed that calibparam should be the same in all nvm.
-    list(GET CONFIG_NVM_VARIANTS 0 nvmvariant)
-    set(calibparam_bin ${out_hex_dir}/calibparam.bin)
-    set(nvitem_bin ${out_hex_dir}/${nvmvariant}_nvitem.bin)
-    add_custom_command(OUTPUT ${calibparam_bin}
-        COMMAND python3 ${nvbintool_py} extract ${nvitem_bin} 2 ${calibparam_bin}
-        DEPENDS ${nvbintool_py} ${nvitem_bin}
-    )
-    target_incbin_size(${target} ${calibparam_bin} gDefCalibParam gDefCalibParamSize)
+    target_include_targets(${target} PRIVATE hal fs sffs bdev driver fsmount nvm cpio_parser)
 
     set(rmarun_ld ldscripts/ramrun_uimage_arm.ld)
 
+    set(target boot2)
+    add_uimage(${target} ${rmarun_ld} boot/boot2_start_8910.c)
+    target_compile_definitions(${target}_ldscript PRIVATE
+        RAMRUN_IMAGE_START=${CONFIG_BOOT2_IMAGE_START}
+        RAMRUN_IMAGE_SIZE=${CONFIG_BOOT2_IMAGE_SIZE}
+        RAMRUN_MMU_ENABLE=1
+    )
+    target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_BOOT)
+    target_link_whole_archive(${target} PRIVATE bootloader)
+    target_link_group(${target} PRIVATE hal osi_lib fupdate fsmount sffs bdev bdev_core)
+    target_include_targets(${target} PRIVATE hal fs sffs bdev fupdate driver)
+    target_link_libraries(${target} PRIVATE ${libc_file_name} ${libgcc_file_name})
+
+    set(boot2_img ${out_hex_dir}/boot2.img)
+    set(boot2_lzma ${boot2_img}.lzmar)
+    add_custom_command(OUTPUT ${boot2_lzma}
+        COMMAND ${cmd_lzmare2} ${boot2_img} ${boot2_lzma}
+        DEPENDS ${boot2_img}
+    )
+
     set(target boot)
-    add_uimage(${target} ${rmarun_ld} boot/boot_start.c)
+    add_uimage(${target} ${rmarun_ld} boot/boot_start_8910.c)
     target_compile_definitions(${target}_ldscript PRIVATE
         RAMRUN_IMAGE_START=${CONFIG_BOOT_IMAGE_START}
         RAMRUN_IMAGE_SIZE=${CONFIG_BOOT_IMAGE_SIZE}
         RAMRUN_FLASH_SIZE=${CONFIG_BOOT_UNSIGN_IMAGE_SIZE}
+        RAMRUN_MMU_ENABLE=0
     )
     target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_BOOT)
     target_link_whole_archive(${target} PRIVATE bootloader)
-    target_link_group(${target} PRIVATE hal osi_lib fupdate fsmount sffs bdev)
-    target_include_targets(${target} PRIVATE hal fs sffs bdev fupdate)
+    target_link_group(${target} PRIVATE hal calclib)
+    target_include_targets(${target} PRIVATE kernel)
     target_link_libraries(${target} PRIVATE ${libc_file_name} ${libgcc_file_name})
+    target_incbin(${target} ${boot2_lzma} gBoot2CompData BALIGN 8)
 
     set(target fdl1)
     add_uimage(${target} ${rmarun_ld} fdl1/fdl1_main.c)
     target_compile_definitions(${target}_ldscript PRIVATE
         RAMRUN_IMAGE_START=${CONFIG_FDL1_IMAGE_START}
         RAMRUN_IMAGE_SIZE=${CONFIG_FDL1_IMAGE_SIZE}
+        RAMRUN_MMU_ENABLE=0
     )
     target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_BOOT)
     target_link_whole_archive(${target} PRIVATE bootloader)
     target_link_group(${target} PRIVATE hal osi_lib)
+    target_include_targets(${target} PRIVATE driver)
     target_link_libraries(${target} PRIVATE ${libc_file_name} ${libgcc_file_name})
 
     set(target fdl2)
@@ -82,30 +99,31 @@ if(CONFIG_SOC_8910)
     target_compile_definitions(${target}_ldscript PRIVATE
         RAMRUN_IMAGE_START=${CONFIG_FDL2_IMAGE_START}
         RAMRUN_IMAGE_SIZE=${CONFIG_FDL2_IMAGE_SIZE}
+        RAMRUN_MMU_ENABLE=1
     )
     target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_BOOT)
-    target_include_targets(${target} PRIVATE fs fsmount nvm calclib cpio_parser)
+    target_include_targets(${target} PRIVATE fs fsmount nvm calclib cpio_parser driver)
     target_link_whole_archive(${target} PRIVATE bootloader cpio_parser)
-    target_link_group(${target} PRIVATE hal calclib sffs fsmount bdev osi_lib nvm)
+    target_link_group(${target} PRIVATE hal calclib sffs fsmount bdev bdev_core osi_lib nvm)
     target_link_libraries(${target} PRIVATE ${libc_file_name} ${libgcc_file_name})
+    target_incbin_size(${target} ${CMAKE_CURRENT_SOURCE_DIR}/fdl2/calibparam.bin gDefCalibParam gDefCalibParamSize)
 
     set(target flash_test_fdl)
     add_uimage(${target} ${rmarun_ld} flash_test_fdl/flash_test_main.c)
     target_compile_definitions(${target}_ldscript PRIVATE
         RAMRUN_IMAGE_START=${CONFIG_FDL1_IMAGE_START}
         RAMRUN_IMAGE_SIZE=${CONFIG_FDL1_IMAGE_SIZE}
+        RAMRUN_MMU_ENABLE=0
     )
     target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_BOOT)
     target_link_whole_archive(${target} PRIVATE bootloader)
     target_link_group(${target} PRIVATE hal osi_lib)
+    target_include_targets(${target} PRIVATE driver)
     target_link_libraries(${target} PRIVATE ${libc_file_name} ${libgcc_file_name})
 endif()
 
-relative_glob(srcs include/*.h src/*.c src/*.h
-    fdl1/*.c fdl1/*.h
-    fdl2/*.c fdl2/*.h
-    flash_test_fdl/*.c flash_test_fdl/*.h
-    boot/*.c boot/*.h
-    uart_ramrun/*.c uart_ramrun/*.h
+relative_glob(srcs include/*.h src/*.[ch]
+    fdl1/*.[ch] fdl2/*.[ch] flash_test_fdl/*.[ch]
+    boot/*.[ch] uart_ramrun/*.[ch]
 )
 beautify_c_code(bootloader ${srcs})

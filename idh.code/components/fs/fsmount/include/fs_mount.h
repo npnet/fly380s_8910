@@ -20,92 +20,96 @@
 OSI_EXTERN_C_BEGIN
 
 /**
- * \brief global partition information
+ * \brief file system usage scenario
  *
- * The real data structure is a binary partition table. "unsigned" just
- * indicates that it is 4 bytes aligned.
+ * The file system mount options may be different on varioud scenario.
  */
-extern const unsigned gPartInfo;
+typedef enum
+{
+    FS_SCENRARIO_UNKNOWN,    ///< prohibitted
+    FS_SCENRARIO_APP,        ///< normal application
+    FS_SCENRARIO_BOOTLOADER, ///< bootloader
+    FS_SCENRARIO_FDL,        ///< FDL
+} fsMountScenario_t;
 
 /**
- * \brief mount all file systems in bootloader
+ * \brief set file system usage scenario
  *
- * \p parti is the partition descriptions.
+ * The default scenario is \p FS_SCENRARIO_APP.
  *
- * \param parti     partition descriptions
+ * \param scenario file system usage scenario
+ */
+void fsMountSetScenario(fsMountScenario_t scenario);
+
+/**
+ * \brief mount all file systems
+ *
  * \return
  *      - true on success
- *      - false on failed
+ *      - false on fail
  */
-bool fsMountAllBoot(const void *parti);
+bool fsMountAll(void);
 
 /**
- * \brief mount all file systems in FDL
+ * \brief mount all file systems, format on fail
  *
- * \p parti is the partition descriptions. When mount is faile, the block
- * device or file system will be formatted.
+ * It is **dangerous**. Only call it at absolutely needed. Also, Don't call
+ * this in application.
  *
- * \param parti     partition descriptions
  * \return
  *      - true on success
- *      - false on failed
+ *      - false on fail
  */
-bool fsMountAllFdl(const void *parti);
+bool fsMountWithFormatAll(void);
 
 /**
- * \brief mount all file systems in application
+ * \brief format a file system
  *
- * \p parti is the partition descriptions.
+ * It will perform:
+ * - unmount file system;
+ * - create flash block device, and format on fail;
+ * - format and mount file system;
  *
- * \param parti     partition descriptions
+ * \param path mount point
  * \return
  *      - true on success
- *      - false on failed
+ *      - false on fail
  */
-bool fsMountAllApp(const void *parti);
+bool fsMountFormat(const char *path);
 
 /**
- * \brief format and mount all file systems
+ * \brief format all file systems on flash block device
  *
- * \p parti is the partition descriptions.
+ * When sub-partition is not used, there will only exist one file system
+ * on the block device. When sub-partition is used, there may exist
+ * multiple sub-partitions on the flash block device, and there may exit
+ * one file system on each sub-partition.
  *
- * It is DANGERUOUS! Only call it absolutely needed. Also, Don't call this
- * in application.
+ * It will perform:
+ * - unmount all file systems;
+ * - create flash block device, and format on fail;
+ * - format and mount all file systems;
  *
- * \param parti     partition descriptions
+ * \param name flash block device name
  * \return
  *      - true on success
- *      - false on failed
+ *      - false on fail
  */
-bool fsMountFormatAll(const void *parti);
+bool fsMountFormatFlash(unsigned name);
 
 /**
- * \brief umount all file system and block devices in FDL
- *
- * \p parti is the partition descriptions.
- *
- * \param parti     partition descriptions
+ * \brief umount all file system and block devices
  */
-void fsUmountAllFdl(void);
+void fsUmountAll(void);
 
 /**
  * \brief remount factory file system
  *
  * Refer to \p vfs_remount.
  *
- * \param flags     file system mount flags
+ * \param flags file system mount flags
  */
 void fsRemountFactory(unsigned flags);
-
-/**
- * \brief get the default partition information
- *
- * The default partition information is auto generated at build
- * from the configuration json file.
- *
- * \return      the default partition information
- */
-const void *fsMountPartInfo(void);
 
 OSI_EXTERN_C_END
 #endif

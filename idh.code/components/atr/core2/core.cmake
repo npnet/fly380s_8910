@@ -9,16 +9,22 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-target_sources(${target} PRIVATE core/${CONFIG_SOC}/atr_core1.o)
-target_sources(${target} PRIVATE ${out_rel_dir}/atr_core2.o)
+set(import_lib ${out_lib_dir}/libatr_core1.a)
+configure_file(core/${CONFIG_SOC}/libatr_core1.a ${import_lib} COPYONLY)
+add_app_libraries(${import_lib})
+add_library(atr_core1 STATIC IMPORTED GLOBAL)
+set_target_properties(atr_core1 PROPERTIES IMPORTED_LOCATION ${import_lib})
 
 set(target atr_core2)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC
     core2/at_cmux_engine.c
     core2/at_parse.lex.c
-    core2/at_parse.y.c)
+    core2/at_parse.y.c
+)
+set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_ATE)
 target_include_directories(${target} PUBLIC include)
 target_include_directories(${target} PRIVATE src)
-target_link_libraries(${target} PRIVATE kernel calclib net)
-release_lib(${target})
+target_include_targets(${target} PRIVATE kernel calclib net)

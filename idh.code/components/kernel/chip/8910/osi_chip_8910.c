@@ -26,6 +26,7 @@
 #include "vfs.h"
 #include <string.h>
 #include "drv_usb.h"
+#include "connectivity_config.h"
 
 // #define SLEEP_DEBUG(n) *(volatile unsigned *)0x802ffc = (n)
 
@@ -176,11 +177,20 @@ void osiChipLightSleepExit(void)
     }
 }
 
+#ifdef CONFIG_BLUEU_BT_ENABLE
+extern uint8_t BT_enable_deep_sleep_check(void);
+#endif
+
 bool osiChipSuspendPermitted(void)
 {
     REG_CP_IDLE_IDL_CTRL_TIMER_T idl_ctrl_timer = {hwp_idle->idl_ctrl_timer};
     if (hwp_idle->idl_ctrl_sys1 && idl_ctrl_timer.b.idct_ctrl_timer)
     {
+#ifdef CONFIG_BLUEU_BT_ENABLE
+        if (BT_enable_deep_sleep_check() == 0)
+            return false;
+#endif
+
         uint32_t curr_tick = hwp_idle->idl_32k_ref;
         uint32_t wake_tick = hwp_idle->idl_m_timer;
         int sleep_tick = wake_tick - curr_tick;

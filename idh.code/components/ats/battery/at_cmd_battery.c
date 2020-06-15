@@ -63,7 +63,12 @@ void atNotcieClientPmInfo(const osiEvent_t *event)
     else if (2 == nBcs)
         sprintf((char *)pOutStr, "+CIEV: Charging, capacity %u", nBcl);
     else if (3 == nBcs)
-        sprintf((char *)pOutStr, "+CIEV: Charge Full, capacity %u", nBcl);
+    {
+        if (nBcl != 100)
+            sprintf((char *)pOutStr, "+CIEV: Charging, capacity %u", nBcl);
+        else
+            sprintf((char *)pOutStr, "+CIEV: Charge Full, capacity %u", nBcl);
+    }
 
     atCmdRespDefUrcText(pOutStr);
 }

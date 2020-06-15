@@ -92,7 +92,7 @@ static uint8_t AT_security_currentCMD[CFW_SIM_COUNT] = {
 #include "at_cmd_sim.h"
 #include "csw.h"
 
-uint8_t at_ascii2hex(uint8_t *pInput, uint8_t *pOutput);
+uint16_t ascii2hex(const char *pInput, uint16_t length, uint8_t *pOutput);
 uint8_t SUL_hex2ascii(uint8_t *pInput, uint16_t nInputLen, uint8_t *pOutput);
 // define trigger debug inform output by trace:   1 ---> debug;   0 ---> colse debug  //add by wxd
 #define SIM_DEBUG 0
@@ -544,7 +544,7 @@ static void CRSM_rspCB(atCommand_t *cmd, const osiEvent_t *event)
         return;
     }
     // +CRSM: <sw1>,<sw2>[,<response>]
-    uint16_t bytes = ((cfw_event->nEventId == EV_CFW_SIM_READ_BINARY_RSP) || (cfw_event->nEventId == EV_CFW_SIM_READ_RECORD_RSP))
+    uint16_t bytes = ((cfw_event->nEventId == EV_CFW_SIM_READ_BINARY_RSP) || (cfw_event->nEventId == EV_CFW_SIM_READ_RECORD_RSP) || (cfw_event->nEventId == EV_CFW_SIM_GET_FILE_STATUS_RSP))
                          ? ((cfw_event->nParam2 >> 16) & 0xffff)
                          : cfw_event->nParam2;
     if ((cfw_event->nEventId == EV_CFW_SIM_UPDATE_RECORD_RSP) ||
@@ -949,6 +949,79 @@ void atCmdHandleCRSML(atCommand_t *cmd)
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
     }
 }
+//convert ucs2 starting with 0x81 or 0x82 to 0x80
+bool converUCS2toStandard(uint8_t *dest, int16_t *length, uint8_t *src, int16_t size)
+{
+    OSI_LOGI(0, "src[0] = %d, src[1] = %d, src[2] = %d", src[0], src[1], src[2]);
+    uint16_t d = 0;
+    if (src[0] == 0x80)
+    {
+        if ((size - 1) > *length)
+            return false;
+        memcpy(dest, src + 1, size - 1);
+        *length = size - 1;
+        return true;
+    }
+    else if (src[0] == 0x81)
+    {
+        int16_t data_len = src[1];
+        if ((data_len << 1) > *length)
+        {
+            OSI_LOGI(0, "data_len = %d, *length = %d", data_len << 1, *length);
+            return false;
+        }
+        *length = data_len << 1;
+        uint16_t base = src[2] << 7;
+        uint16_t ucs2;
+        for (uint8_t i = 0; i < data_len; i++)
+        {
+            if ((src[3 + i] & 0x80) == 0)
+            {
+                dest[d++] = 0x0;
+                dest[d++] = src[3 + i];
+            }
+            else
+            {
+                ucs2 = base + (src[3 + i] & 0x7F);
+                dest[d++] = ucs2 >> 8;
+                dest[d++] = ucs2 & 0xFF;
+            }
+
+            OSI_LOGI(0, "dest = %X, %X", dest[d - 2], dest[d - 1]);
+        }
+        return true;
+    }
+    else if (src[0] == 0x82)
+    {
+        uint16_t data_len = src[1];
+        if ((data_len << 1) > *length)
+        {
+            OSI_LOGI(0, "data_len = %d, *length = %d", data_len << 1, *length);
+            return false;
+        }
+        *length = data_len << 1;
+        uint16_t base = (src[2] << 8) | src[3];
+        uint16_t ucs2;
+        for (uint8_t i = 0; i < data_len; i++)
+        {
+            if ((src[4 + i] & 0x80) == 0)
+            {
+                dest[d++] = 0x0;
+                dest[d++] = src[4 + i];
+            }
+            else
+            {
+                ucs2 = base + (src[4 + i] & 0x7F);
+                dest[d++] = ucs2 >> 8;
+                dest[d++] = ucs2 & 0xFF;
+            }
+            OSI_LOGI(0, "dest = %X, %X", dest[d - 2], dest[d - 1]);
+        }
+        return true;
+    }
+    else
+        return false;
+}
 static void _qspnRspCB(atCommand_t *cmd, const osiEvent_t *event)
 {
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
@@ -957,7 +1030,7 @@ static void _qspnRspCB(atCommand_t *cmd, const osiEvent_t *event)
     {
         uint8_t *nData = (uint8_t *)cfw_event->nParam1;
         int i = 0;
-        for (i = 0; i < 17; i++)
+        for (i = 1; i < 17; i++)
         {
             if (nData[i] == 0xFF)
             {
@@ -965,36 +1038,44 @@ static void _qspnRspCB(atCommand_t *cmd, const osiEvent_t *event)
                 break;
             }
         }
-        if (i > 0)
-            i--;
-        uint8_t nSPN[17] = {0};
-        uint8_t nShow = nData[0] & 0x01;
-        OSI_LOGI(0, "nData[1] = %d", nData[1]);
-        if (nData[1] == 0x80)
+        i--;
+        uint8_t nSPN[18] = {0};
+        char nResponse[30] = {0};
+        //according to 31.102(4.2.12),if byte[0]B2==0 display SPN,B2==1 dont display
+        uint8_t nShow = nData[0] & 0x02;
+        OSI_LOGI(0, "nData[0] = 0x%02x, nData[1] = 0x%02x, i = %d", nData[0], nData[1], i);
+        if ((nShow == 0) && (nData[1] != 0))
         {
-#ifdef PORTING_ON_GOING
-            uint8_t num = 0;
-            OSI_LOGI(0, "Chinese charactor, i = %d", i);
-            num = unicode2gbk(nSPN, nData + 2, i - 1); //skip 0x80
-            if (num == 0)
-                OSI_LOGI(0, "Convert failed!");
-            i = num;
-#endif
+            nShow = 0x01;
         }
-        else if (nData[1] > 0x80)
+        else if ((nShow == 1) && (nData[1] == 0))
         {
-            if (i - 1 > 8)
-                i = 8;
-            else
-                i--;
-            if (i < 0)
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-            cfwBytesToHexStr(nData + 2, i, nSPN);
+            nShow = 0;
         }
         else
-            memcpy(nSPN, nData + 1, i);
-        char nResponse[30] = {0};
-        sprintf(nResponse, "+QSPN: %d, %s", nShow, nSPN);
+        {
+            nShow = nData[0] & 0x02;
+        }
+        uint8_t offset = sprintf(nResponse, "+QSPN: %d", nShow);
+        if (i > 0)
+        {
+            if (nData[1] < 0x80)
+                memcpy(nSPN, nData + 1, i);
+            else
+            {
+                int16_t size = 18;
+                if (converUCS2toStandard(nSPN, &size, nData + 1, i) == false)
+                {
+                    OSI_LOGI(0, "convert FALSE!");
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                }
+                int length;
+                uint8_t *ucs2 = mlConvertStr(nSPN, size, ML_UTF16BE, ML_CP936, &length);
+                OSI_LOGI(0, "ucs2 = %X, size = %d", ucs2, length);
+                memcpy(nSPN, ucs2, length);
+            }
+            sprintf(nResponse + offset, ", %s", nSPN);
+        }
         atCmdRespInfoText(cmd->engine, nResponse);
         atCmdRespOK(cmd->engine);
     }
@@ -2983,7 +3064,133 @@ void atCmdHandleSIMCROSS(atCommand_t *cmd)
     else
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
 }
+static void _csimRspCB(atCommand_t *cmd, const osiEvent_t *event)
+{
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    if (cfw_event->nType == 0)
+    {
+        uint16_t length = cfw_event->nParam2;
+        OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: nParam2 = %d!", length);
+        uint8_t *TPDU = (uint8_t *)cfw_event->nParam1;
+        char *prefix = "+CSIM";
+        if (length > 0)
+        {
+            atMemFreeLater((void *)cfw_event->nParam1);
+        }
 
+        if (length > 260)
+        {
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP failed: length = %d", length);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        else if (length == 0)
+        {
+            uint16_t sw = cfw_event->nParam1;
+            char response[16] = {0};
+            sprintf(response, "%s: 4, %X", prefix, sw);
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: response data length = %d", strlen(response));
+            atCmdRespInfoText(cmd->engine, response);
+            atCmdRespOK(cmd->engine);
+        }
+        else
+        {
+            uint16_t sw = cfw_event->nParam2 >> 16;
+            uint16_t len = (cfw_event->nParam2 & 0xFFFF) << 1;
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: length = %d!", len);
+            len += 12 + 4 + 1; //add prefix and length, sw1 and sw2, terminal zero
+            char *response = malloc(len);
+            if (response == NULL)
+            {
+                OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP Malloc failed!");
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+            }
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: update length = %d!", len);
+            memset(response, 0, len);
+            uint16_t i = sprintf(response, "%s: %d, ", prefix, (length + 2) << 1);
+            length = cfwBytesToHexStr(TPDU, length, response + i);
+            if (length == 0)
+            {
+                OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP SUL_hex2ascii failed!");
+                free(response);
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+            }
+            i += sprintf(response + i + length, "%X", sw);
+
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: return data length = %d, i = %d", length, i);
+            atCmdRespInfoText(cmd->engine, response);
+            atCmdRespOK(cmd->engine);
+            free(response);
+        }
+    }
+}
+
+void atCmdHandleCSIM(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        if (cmd->param_count != 2)
+        {
+            OSI_LOGI(0, "CSIM:ERROR!need three parameters!");
+        CSIM_ERROR:
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        bool status = true;
+        uint16_t length = atParamUint(cmd->params[0], &status);
+        if (status != true)
+        {
+            OSI_LOGI(0, "CSIM:ERROR! Get parameters error.");
+            goto CSIM_ERROR;
+        }
+
+        status = true;
+        const char *command = atParamStr(cmd->params[1], &status);
+        if ((status != true) || (strlen(command) != length))
+        {
+            OSI_LOGI(0, "CSIM:ERROR! the command parameter is error.");
+            goto CSIM_ERROR;
+        }
+        if (length > 530)
+        {
+            OSI_LOGI(0, "CSIM:ERROR! Length parameter is error.");
+            goto CSIM_ERROR;
+        }
+        uint8_t tpdu[265] = {0};
+        uint32_t retval = cfwHexStrToBytes(command, length, tpdu);
+        if (retval == 0)
+        {
+            OSI_LOGI(0, "CSIM: parameter error = %d !", retval);
+            goto CSIM_ERROR;
+        }
+        //CSW_TC_MEMBLOCK(0, tpdu, retval, 16);
+
+        OSI_LOGI(0, "CSIM: CFW_SimTPDUCommand, nSim = %d", nSim);
+        cmd->uti = cfwRequestUTI((osiEventCallback_t)_csimRspCB, cmd);
+        retval = CFW_SimTPDUCommand(tpdu, retval, 0, cmd->uti, nSim);
+        if (ERR_SUCCESS != retval)
+        {
+            OSI_LOGI(0, "CSIM: ERR_AT_CME_EXE_FAIL = %d !", retval);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        else
+            RETURN_FOR_ASYNC();
+    }
+    break;
+    case AT_CMD_TEST:
+    {
+        RETURN_OK(cmd->engine);
+    }
+    break;
+    default:
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+    }
+    break;
+    }
+}
 /*
  *******************************************************************************
  *  #define EV_CFW_SIM_CHANGE_PWD_RSP        (EV_CFW_SIM_RSP_BASE+8)
@@ -3851,238 +4058,6 @@ void AT_SIM_CmdFunc_SIM(atCommand_t *cmd)
     }
 }
 
-uint8_t sessionid = 0x2;
-void AT_TCPIP_CmdFunc_CCHO(atCommand_t *cmd)
-{
-    uint32_t return_val;
-
-    if (pParam == NULL)
-    {
-        AT_SIM_Result_Err(ERR_AT_CME_PARAM_INVALID, 0);
-        return;
-    }
-    uint8_t nUTI = pParam->nDLCI;
-    uint8_t nSim = atCmdGetSim(cmd->engine);
-    u_gCurrentCmdStamp[nSim] = pParam->uCmdStamp;
-
-    switch (cmd->type)
-    {
-    case AT_CMD_SET:
-    {
-        if (CFW_GetSimType(nSim) == FALSE)
-        {
-            OSI_LOGI(0x100046ed, "CCHO:ERROR! This is a SIM card. only USIM support this command!");
-            goto CCHO_ERROR;
-        }
-
-        uint8_t NumOfParam = 0;
-        uint8_t *Num = pParam->pPara;
-        if (ERR_SUCCESS != AT_Util_GetParaCount(Num, &NumOfParam))
-        {
-            OSI_LOGI(0x100046ee, "CCHO:ERROR!GetParaCount");
-        CCHO_ERROR:
-            AT_SIM_Result_Err(ERR_AT_CME_PARAM_INVALID, pParam->nDLCI);
-            return;
-        }
-
-        if (NumOfParam != 1)
-        {
-            OSI_LOGI(0x100046ef, "CCHO:ERROR, need one parameters!");
-            goto CCHO_ERROR;
-        }
-
-        uint16_t len = 40;
-        uint8_t dfname[40] = {0};
-        if (ERR_SUCCESS != AT_Util_GetParaWithRule(pParam->pPara, 0, AT_UTIL_PARA_TYPE_STRING, &dfname, &len))
-        {
-            OSI_LOGI(0x100046f0, "CCHO:ERROR! the dfname parameter is error.");
-            goto CCHO_ERROR;
-        }
-        uint8_t df[20] = {0};
-        if ((SUL_ascii2hex(dfname, df) == 0) || (len > 32))
-        {
-            OSI_LOGI(0x100046f1, "CCHO:ERROR! the dfname parameter is error(%d).", len);
-            goto CCHO_ERROR;
-        }
-        len = len >> 1;
-        uint8_t aid[20] = {0};
-        uint8_t length = 20;
-        if (CFW_GetSimAID(aid, &length, nSim) != TRUE)
-        {
-            OSI_LOGI(0x100046f2, "CCHO:ERROR! Please check the length of aid(%d)!", length);
-            goto CCHO_ERROR;
-        }
-        OSI_LOGXI(OSI_LOGPAR_ISI, 0x100046f3, "aid length: %d======%s(%d)", length, df, len);
-        CSW_TC_MEMBLOCK(g_sw_AT_SAT, aid, length, 16);
-        if ((length != len) || (memcmp(aid, df, length) != 0))
-        {
-            OSI_LOGI(0x100046f4, "CCHO:ERROR! Cannot find the application(%d)!", length);
-            goto CCHO_ERROR;
-        }
-
-        //AT_SIM_Result_OK(CMD_FUNC_SUCC_ASYN, CMD_RC_OK,"",pParam->nDLCI);
-        AT_SIM_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, "", pParam->nDLCI);
-        break;
-    }
-    case AT_CMD_TEST:
-    {
-        AT_SIM_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, "", pParam->nDLCI);
-        break;
-    }
-    default:
-        AT_SIM_Result_Err(ERR_AT_CME_OPERATION_NOT_SUPPORTED, pParam->nDLCI);
-        break;
-    } // <----------end of switch cmd  type-------
-    return;
-}
-
-void AT_TCPIP_CmdFunc_CCHC(atCommand_t *cmd)
-{
-    uint32_t return_val;
-
-    if (pParam == NULL)
-    {
-        AT_SIM_Result_Err(ERR_AT_CME_PARAM_INVALID, 0);
-        return;
-    }
-    uint8_t nUTI = pParam->nDLCI;
-    uint8_t nSim = atCmdGetSim(cmd->engine);
-    u_gCurrentCmdStamp[nSim] = pParam->uCmdStamp;
-
-    switch (cmd->type)
-    {
-    case AT_CMD_SET:
-    {
-        uint8_t NumOfParam = 0;
-        uint8_t *Num = pParam->pPara;
-        if (ERR_SUCCESS != AT_Util_GetParaCount(Num, &NumOfParam))
-        {
-            OSI_LOGI(0x100046f5, "CCHC:ERROR! GetParaCount");
-        CCHC_ERROR:
-            AT_SIM_Result_Err(ERR_AT_CME_PARAM_INVALID, pParam->nDLCI);
-            return;
-        }
-
-        if (NumOfParam != 1)
-        {
-            OSI_LOGI(0x100046f6, "CCHC:ERROR, need one parameters!");
-            goto CCHC_ERROR;
-        }
-
-        uint16_t len = 1;
-        uint8_t session = 0;
-        if (ERR_SUCCESS != AT_Util_GetParaWithRule(pParam->pPara, 0, AT_UTIL_PARA_TYPE_UINT8, &session, &len))
-        {
-            OSI_LOGI(0x100046f7, "CCHC:ERROR! The first parameter is error.");
-            goto CCHC_ERROR;
-        }
-        if (session != sessionid)
-        {
-            OSI_LOGI(0x100046f8, "CCHC:ERROR! The session id is not activated(session id = %d, active session id = %d)", session, sessionid);
-            goto CCHC_ERROR;
-        }
-        AT_SIM_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, "", pParam->nDLCI);
-        break;
-    }
-    case AT_CMD_TEST:
-    {
-        AT_SIM_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, "", pParam->nDLCI);
-        break;
-    }
-    default:
-        AT_SIM_Result_Err(ERR_AT_CME_OPERATION_NOT_SUPPORTED, pParam->nDLCI);
-        break;
-    } // <----------end of switch cmd  type-------
-    return;
-}
-
-void AT_TCPIP_CmdFunc_CGLA(atCommand_t *cmd)
-{
-    uint32_t return_val;
-    if (pParam == NULL)
-    {
-        AT_SIM_Result_Err(ERR_AT_CME_PARAM_INVALID, 0);
-        return;
-    }
-    uint8_t nUTI = pParam->nDLCI;
-    uint8_t nSim = atCmdGetSim(cmd->engine);
-    u_gCurrentCmdStamp[nSim] = pParam->uCmdStamp;
-
-    switch (cmd->type)
-    {
-    case AT_CMD_SET:
-    {
-        uint8_t NumOfParam = 0;
-        uint8_t *Num = pParam->pPara;
-
-        if (ERR_SUCCESS != AT_Util_GetParaCount(Num, &NumOfParam))
-        {
-            OSI_LOGI(0x100046f9, "CGLA:ERROR!GetParaCount");
-        CGLA_ERROR:
-            AT_SIM_Result_Err(ERR_AT_CME_PARAM_INVALID, pParam->nDLCI);
-            return;
-        }
-
-        if (NumOfParam != 3)
-        {
-            OSI_LOGI(0x100046fa, "CGLA:ERROR, need three parameters!");
-            goto CGLA_ERROR;
-        }
-
-        uint16_t len = 1;
-        uint8_t session = 0;
-        if (ERR_SUCCESS != AT_Util_GetParaWithRule(pParam->pPara, 0, AT_UTIL_PARA_TYPE_UINT8, &session, &len))
-        {
-            OSI_LOGI(0x100046fb, "CGLA:ERROR! The first parameter is error.");
-            goto CGLA_ERROR;
-        }
-        if (session != sessionid)
-        {
-            OSI_LOGI(0x100046fc, "CGLA:ERROR! This session is not active session(session = %d, sessionid = %d).", session, sessionid);
-            goto CGLA_ERROR;
-        }
-        len = 1;
-        uint8_t length = 0;
-        if (ERR_SUCCESS != AT_Util_GetParaWithRule(pParam->pPara, 1, AT_UTIL_PARA_TYPE_UINT8, &length, &len))
-        {
-            OSI_LOGI(0x100046fd, "CGLA:ERROR! The second parameter is error.");
-            goto CGLA_ERROR;
-        }
-        len = 254;
-        uint8_t command[255] = {0};
-        if (ERR_SUCCESS != AT_Util_GetParaWithRule(pParam->pPara, 2, AT_UTIL_PARA_TYPE_STRING, command, &len))
-        {
-            OSI_LOGI(0x100046fe, "CGLA:ERROR! The third parameter is error.");
-            goto CGLA_ERROR;
-        }
-        if (strlen(command) != length)
-        {
-            OSI_LOGI(0x100046ff, "CGLA:ERROR! length of third parameter isn't equal to input.");
-            goto CGLA_ERROR;
-        }
-        OSI_LOGXI(OSI_LOGPAR_IS, 0x10004700, "CGLA:session id = %d, command = %s", session, command);
-        uint8_t proactcmd[255] = {0};
-        if (SUL_ascii2hex(command, proactcmd) == 0)
-        {
-            OSI_LOGI(0x10004701, "SUL_ascii2hex ERROR!");
-            goto CGLA_ERROR;
-        }
-        //extract pro active command
-
-        AT_SIM_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, "", pParam->nDLCI);
-        break;
-    }
-    case AT_CMD_TEST:
-    {
-        AT_SIM_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, "", pParam->nDLCI);
-        break;
-    }
-    default:
-        AT_SIM_Result_Err(ERR_AT_CME_OPERATION_NOT_SUPPORTED, pParam->nDLCI);
-        break;
-    } // <----------end of switch cmd  type-------
-    return;
-}
 #if defined(SIMCARD_HOT_DETECT) && (SIMCARD_HOT_DETECT > NUMBER_OF_SIM || SIMCARD_HOT_DETECT < 0)
 #error "SIMCARD_HOT_DETECT MUST be [1..NUMBER_OF_SIM]"
 #endif
@@ -4114,3 +4089,958 @@ uint8_t AT_SimCardDetectIsInit(void)
 
 #endif
 #endif
+
+struct
+{
+    uint8_t aid[20];
+    uint8_t aid_len;
+    uint8_t sim_channel;
+    uint8_t channel_status;
+} at_sim_session[8] = {
+    {{0}, 0, 0, 0},
+};
+static uint8_t at_session = 0;
+
+uint8_t getSession(uint8_t sim_channel)
+{
+    if (sim_channel > 8)
+        return 0xFF;
+    else
+    {
+        uint8_t i = 0;
+        for (i = 0; i < 8; i++)
+        {
+            if (at_sim_session[i].sim_channel == sim_channel)
+                return i;
+        }
+        return 0xFF;
+    }
+}
+uint8_t getFreeSession()
+{
+    uint8_t i = 0;
+    for (i = 0; i < 8; i++)
+    {
+        if (at_sim_session[i].aid_len == 0)
+            return i;
+    }
+    return 0xFF;
+}
+
+uint16_t ascii2hex(const char *pInput, uint16_t length, uint8_t *pOutput)
+{
+    uint16_t j = length;
+
+    uint8_t nData;
+    uint8_t *pBuffer = pOutput;
+    const char *pIn = pInput;
+
+    if ((length & 0x01) == 0x01)
+    {
+        nData = pIn[0];
+        if ((nData >= '0') && (nData <= '9'))
+            *pBuffer = nData - '0';
+        else if ((nData >= 'a') && (nData <= 'f'))
+            *pBuffer = nData - 'a' + 10;
+        else if ((nData >= 'A') && (nData <= 'F'))
+            *pBuffer = nData - 'A' + 10;
+        else
+            return 0;
+        length--;
+        pBuffer++;
+        pIn++;
+    }
+
+    uint16_t i = 0;
+    for (i = 0; i < length; i++)
+    {
+        if ((i & 0x01) == 0x01) // even is high 4 bits, it should be shift 4 bits for left.
+            *pBuffer = (*pBuffer) << 4;
+        else
+            *pBuffer = 0;
+
+        nData = pIn[i];
+        if ((nData >= '0') && (nData <= '9'))
+            *pBuffer |= nData - '0';
+        else if ((nData >= 'a') && (nData <= 'f'))
+            *pBuffer |= nData - 'a' + 10;
+        else if ((nData >= 'A') && (nData <= 'F'))
+            *pBuffer |= nData - 'A' + 10;
+        else
+            return 0;
+        if ((i & 0x01) == 0x01)
+            pBuffer++;
+    }
+    if ((j & 0x01) == 0x01)
+        length++;
+    return (length + 1) >> 1;
+}
+
+uint16_t hex2ascii(uint8_t *pInput, uint16_t nInputLen, char *pOutput)
+{
+    uint16_t i;
+    char *pBuffer = pOutput;
+    for (i = 0; i < nInputLen; i++)
+    {
+        uint8_t high4bits = pInput[i] >> 4;
+        uint8_t low4bits = pInput[i] & 0x0F;
+
+        if (high4bits < 0x0A)
+            *pOutput++ = high4bits + '0'; // 0 - 9
+        else                              // 0x0A - 0x0F
+            *pOutput++ = high4bits - 0x0A + 'A';
+
+        if (low4bits < 0x0A)
+            *pOutput++ = low4bits + '0'; // 0 - 0x09
+        else                             // 0x0A - 0x0F
+            *pOutput++ = low4bits - 0x0A + 'A';
+    }
+    return pOutput - pBuffer;
+}
+
+static void callback_ccho(atCommand_t *cmd, const osiEvent_t *event)
+{
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    OSI_LOGI(0, "ccho_callback: receive event id = %X", cfw_event->nEventId);
+    switch (cfw_event->nEventId)
+    {
+    case EV_CFW_SIM_MANAGE_CHANNEL_RSP:
+    {
+        OSI_LOGI(0, "receive EV_CFW_SIM_MANAGE_CHANNEL_RSP = %d", cfw_event->nType);
+        if (cfw_event->nType == 0)
+        {
+            if (at_sim_session[at_session].channel_status == 0)
+            {
+                at_sim_session[at_session].sim_channel = cfw_event->nParam1;
+
+                OSI_LOGI(0, "---- at_sim_session[at_session].sim_channel = %d", at_sim_session[at_session].sim_channel);
+                uint16_t uti = cfwRequestUTI((osiEventCallback_t)callback_ccho, cmd);
+                uint32_t ret = CFW_SimSelectApplication(at_sim_session[at_session].aid, at_sim_session[at_session].aid_len,
+                                                        at_sim_session[at_session].sim_channel, uti, nSim);
+                if (ret != ERR_SUCCESS)
+                {
+                    memset(at_sim_session[at_session].aid, 0, 20);
+                    at_sim_session[at_session].aid_len = 0;
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                }
+                else
+                    at_sim_session[at_session].channel_status = 1;
+            }
+            else //close channel response
+            {
+                OSI_LOGI(0, "Open channel failed, close channel!");
+                memset(at_sim_session[at_session].aid, 0, 20);
+                at_sim_session[at_session].aid_len = 0;
+                at_sim_session[at_session].channel_status = 0;
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+            }
+        }
+        else
+        {
+            memset(at_sim_session[at_session].aid, 0, 20);
+            at_sim_session[at_session].aid_len = 0;
+            at_sim_session[at_session].channel_status = 0;
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+    }
+    break;
+    case EV_CFW_SIM_SELECT_APPLICATION_RSP:
+    {
+        OSI_LOGI(0, "receive EV_CFW_SIM_SELECT_APPLICATION_RSP = %d", cfw_event->nType);
+        char response[11] = {0};
+        if (cfw_event->nType == 0)
+        {
+            sprintf(response, "+CCHO: %d", at_session + 1);
+            atCmdRespInfoText(cmd->engine, response);
+            RETURN_OK(cmd->engine);
+        }
+        else
+        {
+            OSI_LOGI(0, "Close channel, channel id = %d", at_sim_session[at_session].sim_channel);
+            cmd->uti = cfwRequestUTI((osiEventCallback_t)callback_ccho, cmd);
+            uint32_t ret = CFW_SimManageChannel(CLOSE_CHANNEL_CMD, at_sim_session[at_session].sim_channel, cmd->uti, nSim);
+            if (ret != ERR_SUCCESS)
+            {
+                memset(at_sim_session[at_session].aid, 0, 20);
+                at_sim_session[at_session].aid_len = 0;
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+            }
+        }
+    }
+    break;
+    default:
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        break;
+    }
+}
+
+static void callback_cchc(atCommand_t *cmd, const osiEvent_t *event)
+{
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    if (cfw_event->nType == 0)
+    {
+        memset(at_sim_session[at_session].aid, 0, 20);
+        at_sim_session[at_session].aid_len = 0;
+        at_sim_session[at_session].channel_status = 0;
+        at_session = 0xFF;
+        atCmdRespOK(cmd->engine);
+    }
+    else
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+}
+
+static void callback_cgla(atCommand_t *cmd, const osiEvent_t *event)
+{
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    if (cfw_event->nType == 0)
+    {
+        uint16_t length = cfw_event->nParam2;
+        uint8_t *TPDU = (uint8_t *)cfw_event->nParam1;
+        if (length > 260)
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+            return;
+        }
+
+        if (length == 0)
+        {
+            uint16_t sw = cfw_event->nParam1;
+            char response[16] = {0};
+            uint8_t i = sprintf(response, "+CGLA: 4, %X", sw);
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: return data length = %d", strlen(response), i);
+            atCmdRespInfoText(cmd->engine, response);
+            RETURN_OK(cmd->engine);
+        }
+        else
+        {
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: length = %d!", length);
+            uint16_t sw = cfw_event->nParam2 >> 16;
+            uint16_t len = (cfw_event->nParam2 & 0xFF) << 1;
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: updated len = %d!", len);
+            len += 12 + 4 + 1; //add prefix and length, sw1 and sw2, terminal zero
+            char *response = malloc(len);
+            if (response == NULL)
+            {
+                OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP Malloc failed!");
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+                return;
+            }
+            memset((void *)response, 0, len);
+            uint8_t i = sprintf(response, "+CGLA: %d, ", (length + 2) << 1);
+            length = hex2ascii(TPDU, length, (response + i));
+            if (length == 0)
+            {
+                OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP hex2ascii failed!");
+                free(response);
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+            }
+            i += sprintf(response + i + length, "%X", sw);
+            atCmdRespInfoText(cmd->engine, response);
+            atCmdRespOK(cmd->engine);
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: return data length = %X, len = %d", response, len);
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: return data length = %d, i = %d", length, i);
+            atMemFreeLater((void *)cfw_event->nParam1);
+            free(response);
+        }
+    }
+    else
+    {
+        OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP exec failed!");
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+    }
+}
+
+void atCmdHandleCCHO(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        if (CFW_GetSimType(nSim) == 0)
+        {
+            OSI_LOGI(0, "CCHO:ERROR! This is a SIM card. only USIM support this command!");
+        CCHO_ERROR:
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        if (cmd->param_count > 1)
+        {
+            OSI_LOGI(0, "CCHO:ERROR!more than one parameter");
+            goto CCHO_ERROR;
+        }
+
+        bool status = true;
+        const char *dfname = atParamStr(cmd->params[0], &status);
+        if (status != true)
+        {
+            OSI_LOGI(0, "CCHO:ERROR! the dfname parameter is error.");
+            goto CCHO_ERROR;
+        }
+        at_session = getFreeSession();
+        if (at_session == 0xFF)
+        {
+            OSI_LOGI(0, "CCHO:ERROR! There is no free sesstion.");
+            goto CCHO_ERROR;
+        }
+        OSI_LOGI(0, "CCHO:   at_session=%d", at_session);
+        memset(at_sim_session[at_session].aid, 0, 20);
+        at_sim_session[at_session].channel_status = 0;
+        uint16_t length = ascii2hex(dfname, strlen(dfname), at_sim_session[at_session].aid);
+        if ((length == 0) || (length > 32))
+        {
+            OSI_LOGI(0, "CCHO:ERROR! the dfname parameter is error(%d).", length);
+            at_sim_session[at_session].aid_len = 0;
+            goto CCHO_ERROR;
+        }
+        cmd->uti = cfwRequestUTI((osiEventCallback_t)callback_ccho, cmd);
+        uint8_t ret = CFW_SimManageChannel(OPEN_CHANNEL_CMD, 0, cmd->uti, nSim);
+        if (ret != ERR_SUCCESS)
+        {
+            at_sim_session[at_session].aid_len = 0;
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        else
+        {
+            at_sim_session[at_session].aid_len = length;
+            RETURN_FOR_ASYNC();
+        }
+        break;
+    }
+    case AT_CMD_TEST:
+    {
+        OSI_LOGI(0, "======================= CCHO =======================");
+        uint8_t i = 0;
+        for (i = 0; i < 8; i++)
+        {
+            OSI_LOGI(0, "------------ %d ---------------", i);
+            //CSW_TC_MEMBLOCK(4, at_sim_session[i].aid, at_sim_session[i].aid_len, 16);
+            OSI_LOGI(0, "aid_len = %d", at_sim_session[i].aid_len);
+            OSI_LOGI(0, "channel_status = %d", at_sim_session[i].channel_status);
+            OSI_LOGI(0, "sim_channel = %d", at_sim_session[i].sim_channel);
+        }
+        OSI_LOGI(0, "====================================================");
+
+        RETURN_OK(cmd->engine);
+        break;
+    }
+    default:
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+        break;
+    } // <----------end of switch cmd  type-------
+    return;
+}
+
+void atCmdHandleCCHC(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        if (cmd->param_count != 1)
+        {
+            OSI_LOGI(0, "CCHC:ERROR! more than one parameter");
+        CCHC_ERROR:
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        bool status = true;
+        uint8_t cmd_session = atParamUint(cmd->params[0], &status);
+        if (status != true || cmd_session <= 0)
+        {
+            OSI_LOGI(0, "CCHC:ERROR! The first parameter is error.");
+            goto CCHC_ERROR;
+        }
+        cmd_session--;
+        if (at_sim_session[cmd_session].channel_status == 0)
+        {
+            OSI_LOGI(0, "CCHC:ERROR! The session id is not activated(session id = %d)", cmd_session + 1);
+            goto CCHC_ERROR;
+        }
+        at_session = cmd_session;
+        cmd->uti = cfwRequestUTI((osiEventCallback_t)callback_cchc, cmd);
+        uint32_t ret = CFW_SimManageChannel(CLOSE_CHANNEL_CMD, at_sim_session[at_session].sim_channel, cmd->uti, nSim);
+        if (ret != ERR_SUCCESS)
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        else
+            RETURN_FOR_ASYNC();
+        break;
+    }
+    case AT_CMD_TEST:
+    {
+        OSI_LOGI(0, "======================= CCHC =======================");
+        uint8_t i = 0;
+        for (i = 0; i < 8; i++)
+        {
+            OSI_LOGI(0, "------------ %d ---------------", i);
+            //CSW_TC_MEMBLOCK(4, at_sim_session[i].aid, at_sim_session[i].aid_len, 16);
+            OSI_LOGI(0, "aid_len = %d", at_sim_session[i].aid_len);
+            OSI_LOGI(0, "channel_status = %d", at_sim_session[i].channel_status);
+            OSI_LOGI(0, "sim_channel = %d", at_sim_session[i].sim_channel);
+        }
+        OSI_LOGI(0, "====================================================");
+        RETURN_OK(cmd->engine);
+        break;
+    }
+    default:
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+        break;
+    } // <----------end of switch cmd  type-------
+    return;
+}
+
+void atCmdHandleCGLA(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        if (cmd->param_count != 3)
+        {
+            OSI_LOGI(0, "CGLA:ERROR!need three parameters!");
+        CGLA_ERROR:
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        bool status = true;
+        uint8_t cmd_session = atParamUint(cmd->params[0], &status);
+        if (status != true || cmd_session <= 0)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! Get parameters error.");
+            goto CGLA_ERROR;
+        }
+
+        cmd_session--;
+        if (at_sim_session[cmd_session].aid_len == 0)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! The session id is not activated(session id = %d)", cmd_session + 1);
+            goto CGLA_ERROR;
+        }
+
+        uint16_t length = atParamUint(cmd->params[1], &status);
+        if (status != true)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! Get parameters two error.");
+            goto CGLA_ERROR;
+        }
+
+        const char *pCommand = atParamStr(cmd->params[2], &status);
+        if (status != true)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! The third parameter three error.");
+            goto CGLA_ERROR;
+        }
+        if (strlen(pCommand) != length)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! length of third parameter isn't equal to input.");
+            goto CGLA_ERROR;
+        }
+
+        int16_t tpdu_len = (length + 1) >> 1;
+        OSI_LOGI(0, "CGLA:length = %d, tpdu_len = %d", length, tpdu_len);
+        uint8_t *pTPDU = malloc(tpdu_len);
+        if (pTPDU == NULL)
+        {
+            OSI_LOGI(0, "AT+CGLA: no more memory");
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+        }
+        if (ascii2hex(pCommand, strlen(pCommand), pTPDU) == 0)
+        {
+            OSI_LOGI(0, "ascii2hex ERROR!");
+            free(pTPDU);
+            goto CGLA_ERROR;
+        }
+        OSI_LOGI(0, "at_sim_session[at_session].sim_channel = %d", at_sim_session[cmd_session].sim_channel);
+        cmd->uti = cfwRequestUTI((osiEventCallback_t)callback_cgla, cmd);
+        uint32_t ret = CFW_SimTPDUCommand(pTPDU, length >> 1, at_sim_session[cmd_session].sim_channel, cmd->uti, nSim);
+        free(pTPDU);
+
+        if (ERR_SUCCESS != ret)
+        {
+            OSI_LOGI(0, "AT+CGLA: ERR_AT_CME_EXE_FAIL = %d !", ret);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+
+        OSI_LOGI(0, "AT+CGLA: OK");
+        RETURN_FOR_ASYNC();
+        break;
+    }
+    case AT_CMD_TEST:
+    {
+        RETURN_OK(cmd->engine);
+        break;
+    }
+    default:
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+        break;
+    } // <----------end of switch cmd  type-------
+    return;
+}
+#if 0 //test for mal interface
+
+void atCmdHandleMCCHO(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        if (CFW_GetSimType(nSim) == 0)
+        {
+            OSI_LOGI(0, "CCHO:ERROR! This is a SIM card. only USIM support this command!");
+        CCHO_ERROR:
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        if (cmd->param_count > 1)
+        {
+            OSI_LOGI(0, "CCHO:ERROR!more than one parameter");
+            goto CCHO_ERROR;
+        }
+
+        bool status = true;
+        const char *dfname = atParamStr(cmd->params[0], &status);
+        if (status != true)
+        {
+            OSI_LOGI(0, "CCHO:ERROR! the dfname parameter is error.");
+            goto CCHO_ERROR;
+        }
+        at_session = getFreeSession();
+        if (at_session == 0xFF)
+        {
+            OSI_LOGI(0, "CCHO:ERROR! There is no free sesstion.");
+            goto CCHO_ERROR;
+        }
+        OSI_LOGI(0, "CCHO:  at_session=%d", at_session);
+        memset(at_sim_session[at_session].aid, 0, 20);
+        at_sim_session[at_session].channel_status = 0;
+        uint8_t channel_id;
+        if (sim_channel_open(dfname, &channel_id, 60, nSim) == -1)
+        {
+            at_sim_session[at_session].aid_len = 0;
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        at_sim_session[at_session].sim_channel = channel_id;
+
+        char response[11] = {0};
+        at_sim_session[at_session].aid_len = strlen(dfname) >> 2;
+        at_sim_session[at_session].channel_status = 1;
+        sprintf(response, "+CCHO: %d", at_session + 1);
+        atCmdRespInfoText(cmd->engine, response);
+        RETURN_OK(cmd->engine);
+    }
+    case AT_CMD_TEST:
+    {
+        OSI_LOGI(0, "======================= CCHO =======================");
+        uint8_t i = 0;
+        for (i = 0; i < 8; i++)
+        {
+            OSI_LOGI(0, "------------ %d ---------------", i);
+            //CSW_TC_MEMBLOCK(4, at_sim_session[i].aid, at_sim_session[i].aid_len, 16);
+            OSI_LOGI(0, "aid_len = %d", at_sim_session[i].aid_len);
+            OSI_LOGI(0, "channel_status = %d", at_sim_session[i].channel_status);
+            OSI_LOGI(0, "sim_channel = %d", at_sim_session[i].sim_channel);
+        }
+        OSI_LOGI(0, "====================================================");
+
+        RETURN_OK(cmd->engine);
+        break;
+    }
+    default:
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+        break;
+    } // <----------end of switch cmd  type-------
+    return;
+}
+
+void atCmdHandleMCCHC(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        if (cmd->param_count != 1)
+        {
+            OSI_LOGI(0, "CCHC:ERROR! more than one parameter");
+        CCHC_ERROR:
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        bool status = true;
+        uint8_t cmd_session = atParamUint(cmd->params[0], &status);
+        if (status != true || cmd_session <= 0)
+        {
+            OSI_LOGI(0, "CCHC:ERROR! The first parameter is error.");
+            goto CCHC_ERROR;
+        }
+        cmd_session--;
+        if (at_sim_session[cmd_session].channel_status == 0)
+        {
+            OSI_LOGI(0, "CCHC:ERROR! The session id is not activated(session id = %d)", cmd_session + 1);
+            goto CCHC_ERROR;
+        }
+        at_session = cmd_session;
+        if (sim_channel_close(at_sim_session[at_session].sim_channel, 60, nSim) == -1)
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        else
+        {
+            char response[11] = {0};
+            at_sim_session[at_session].channel_status = 0;
+            at_sim_session[at_session].aid_len = 0;
+            sprintf(response, "+CCHC: %d", at_session + 1);
+            atCmdRespInfoText(cmd->engine, response);
+            RETURN_OK(cmd->engine);
+        }
+        break;
+    }
+    case AT_CMD_TEST:
+    {
+        OSI_LOGI(0, "======================= CCHC =======================");
+        uint8_t i = 0;
+        for (i = 0; i < 8; i++)
+        {
+            OSI_LOGI(0, "------------ %d ---------------", i);
+            //CSW_TC_MEMBLOCK(4, at_sim_session[i].aid, at_sim_session[i].aid_len, 16);
+            OSI_LOGI(0, "aid_len = %d", at_sim_session[i].aid_len);
+            OSI_LOGI(0, "channel_status = %d", at_sim_session[i].channel_status);
+            OSI_LOGI(0, "sim_channel = %d", at_sim_session[i].sim_channel);
+        }
+        OSI_LOGI(0, "====================================================");
+        RETURN_OK(cmd->engine);
+        break;
+    }
+    default:
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+        break;
+    } // <----------end of switch cmd  type-------
+    return;
+}
+
+void atCmdHandleMCGLA(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        if (cmd->param_count != 3)
+        {
+            OSI_LOGI(0, "CGLA:ERROR!need three parameters!");
+        CGLA_ERROR:
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        bool status = true;
+        uint8_t cmd_session = atParamUint(cmd->params[0], &status);
+        if (status != true || cmd_session <= 0)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! Get parameters error.");
+            goto CGLA_ERROR;
+        }
+
+        cmd_session--;
+        if (at_sim_session[cmd_session].aid_len == 0)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! The session id is not activated(session id = %d)", cmd_session + 1);
+            goto CGLA_ERROR;
+        }
+
+        uint16_t length = atParamUint(cmd->params[1], &status);
+        if (status != true)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! Get parameters two error.");
+            goto CGLA_ERROR;
+        }
+
+        const char *pCommand = atParamStr(cmd->params[2], &status);
+        if (status != true)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! The third parameter three error.");
+            goto CGLA_ERROR;
+        }
+        if (strlen(pCommand) != length)
+        {
+            OSI_LOGI(0, "CGLA:ERROR! length of third parameter isn't equal to input.");
+            goto CGLA_ERROR;
+        }
+
+        int16_t tpdu_len = (length + 1) >> 1;
+        OSI_LOGI(0, "CGLA:length = %d, tpdu_len = %d", length, tpdu_len);
+        uint8_t *pTPDU = malloc(tpdu_len);
+        if (pTPDU == NULL)
+        {
+            OSI_LOGI(0, "AT+CGLA: no more memory");
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+        }
+        length = ascii2hex(pCommand, strlen(pCommand), pTPDU);
+        if (length == 0)
+        {
+            OSI_LOGI(0, "ascii2hex ERROR!");
+            free(pTPDU);
+            goto CGLA_ERROR;
+        }
+        OSI_LOGI(0, "tpdu_len = %d，length = %d", tpdu_len, length);
+        OSI_LOGI(0, "at_sim_session[at_session].sim_channel = %d", at_sim_session[cmd_session].sim_channel);
+
+        uint8_t resp[600] = {0};
+        uint16_t respLen = 600;
+        uint8_t ret = sim_channel_transmit(at_sim_session[cmd_session].sim_channel, pTPDU, length,
+                                           resp, &respLen, 60, nSim);
+        free(pTPDU);
+        if (0 != ret)
+        {
+            OSI_LOGI(0, "AT+CGLA: ERR_AT_CME_EXE_FAIL = %d !", ret);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+
+        OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: respLen = %d!", respLen);
+        char response[1024] = {0};
+        memset((void *)response, 0, 1024);
+
+        uint8_t i = sprintf(response, "+CGLA: %d, ", respLen << 1);
+        OSI_LOGI(0, "i = %d!", i);
+        length = hex2ascii(resp, respLen, response + i);
+        if (length == 0)
+        {
+            OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP hex2ascii failed!");
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+        }
+
+        OSI_LOGI(0, "EV_CFW_SIM_TPDU_COMMAND_RSP: return data length = %d, i = %d", length, i);
+        atCmdRespInfoText(cmd->engine, response);
+        atCmdRespOK(cmd->engine);
+        OSI_LOGI(0, "AT+CGLA: OK");
+        break;
+    }
+    case AT_CMD_TEST:
+    {
+        OSI_LOGI(0, "======================= CGLA =======================");
+        uint8_t i = 0;
+        for (i = 0; i < 8; i++)
+        {
+            OSI_LOGI(0, "------------ %d ---------------", i);
+            //CSW_TC_MEMBLOCK(4, at_sim_session[i].aid, at_sim_session[i].aid_len, 16);
+            OSI_LOGI(0, "aid_len = %d", at_sim_session[i].aid_len);
+            OSI_LOGI(0, "channel_status = %d", at_sim_session[i].channel_status);
+            OSI_LOGI(0, "sim_channel = %d", at_sim_session[i].sim_channel);
+        }
+        OSI_LOGI(0, "====================================================");
+        RETURN_OK(cmd->engine);
+    }
+    default:
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+        break;
+    } // <----------end of switch cmd  type-------
+    return;
+}
+#endif
+static uint8_t g_simCon = 0;
+void atCmdHandleSIMCON(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        if (cmd->param_count != 1)
+        {
+            OSI_LOGI(0, "SIMCON:ERROR!param count error!");
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+        bool paramok = true;
+        uint32_t op_mode = atParamUintInRange(cmd->params[0], 0, 2, &paramok);
+        if (!paramok)
+        {
+            OSI_LOGI(0, "SIMCON:ERROR!param error!");
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+        //reset command should not affect current state
+        if (op_mode == 1)
+            g_simCon = 1;
+        else if (op_mode == 0)
+            g_simCon = 0;
+        CFW_SetSimFileUpdateCountMode((uint8_t)op_mode, nSim);
+        RETURN_OK(cmd->engine);
+    }
+    break;
+    case AT_CMD_READ:
+    {
+        char response[32] = {0};
+        sprintf(response, "+SIMCON:%d", g_simCon);
+        atCmdRespInfoText(cmd->engine, response);
+        RETURN_OK(cmd->engine);
+    }
+    break;
+    case AT_CMD_TEST:
+    {
+        char response[32] = {0};
+        sprintf(response, "+SIMCON:(0-2)");
+        atCmdRespInfoText(cmd->engine, response);
+        RETURN_OK(cmd->engine);
+    }
+    break;
+    default:
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+    }
+    break;
+    }
+}
+void atCmdHandleSIMCNT(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        uint32_t nEFID = 0;
+
+        if (cmd->param_count != 1)
+        {
+            OSI_LOGI(0, "param_count is: %d", cmd->param_count);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        bool paramok = true;
+        const char *pEFID = atParamHexRawText(cmd->params[0], 2, &paramok);
+        if (paramok == false)
+        {
+            OSI_LOGI(0, "param error");
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+        nEFID = ((*pEFID) << 8) + *(pEFID + 1);
+        nEFID = nEFID & 0xFFFF;
+        uint8_t nFileID = 0;
+        uint16_t nRetryCount = 0;
+        uint16_t nRealCount = 0;
+        nFileID = (uint8_t)CFW_GetStackSimFileID(nEFID, 0, nSim);
+        OSI_LOGI(0, "nEFID = %x, nFileID = %x\n", nEFID, nFileID);
+        nRetryCount = CFW_GetSimFileUpdateCount(nFileID, 0, nSim);
+        nRealCount = CFW_GetSimFileUpdateCount(nFileID, 1, nSim);
+        char response[32] = {0};
+        uint16_t out_nEFID = (uint16_t)nEFID;
+        if (nRetryCount != 0xFFFF && nRealCount != 0xFFFF)
+        {
+            sprintf(response, "+SIMCNT:%X,%d,%d", out_nEFID, nRetryCount, nRealCount);
+            atCmdRespInfoText(cmd->engine, response);
+            RETURN_OK(cmd->engine);
+        }
+        else
+        {
+            OSI_LOGI(0, "not support file");
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+    }
+    break;
+    case AT_CMD_TEST:
+    {
+        char response[32] = {0};
+        sprintf(response, "+SIMCNT=<EF ID>");
+        atCmdRespInfoText(cmd->engine, response);
+        RETURN_OK(cmd->engine);
+    }
+    break;
+    default:
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+    }
+    break;
+    }
+}
+static void CSVM_SetRspCB(atCommand_t *cmd, const osiEvent_t *event)
+{
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+
+    OSI_LOGI(0, "CSVM_SetRspCB cfw_event->nType: %x", cfw_event->nType);
+
+    if (cfw_event->nType == 0xF0)
+        RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
+
+    RETURN_OK(cmd->engine);
+}
+
+static void CSVM_GetRspCB(atCommand_t *cmd, const osiEvent_t *event)
+{
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+
+    OSI_LOGI(0, "CSVM_GetRspCB cfw_event->nType: %x", cfw_event->nType);
+
+    if (cfw_event->nType == 0xF0)
+        RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
+
+    CFW_SIM_INFO_VOICEMAIL *pVoicemail = (CFW_SIM_INFO_VOICEMAIL *)cfw_event->nParam1;
+    if (pVoicemail != NULL)
+    {
+        char rsp[64];
+        char number[32];
+        cfwBcdToDialString(pVoicemail->mailbox_number, pVoicemail->mailbox_number_len, number);
+        sprintf(rsp, "%s: %d,\"%s\"", cmd->desc->name, gAtSetting.csvm, number);
+        atCmdRespInfoText(cmd->engine, rsp);
+    }
+
+    RETURN_OK(cmd->engine);
+}
+
+void atCmdHandleCSVM(atCommand_t *cmd)
+{
+    if (cmd->type == AT_CMD_SET)
+    {
+        // AT+CSVM=<mode>[,<number>]
+        bool paramok = true;
+        uint8_t mode = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        if (!paramok || (cmd->param_count != 1 && cmd->param_count != 2))
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        gAtSetting.csvm = mode;
+        if (cmd->param_count == 1)
+            RETURN_OK(cmd->engine);
+
+        const char *number = atParamDefStr(cmd->params[1], "", &paramok);
+
+        CFW_SIM_INFO_VOICEMAIL updateVoiceMailInfo = {0};
+        memset(&updateVoiceMailInfo, 0, sizeof(CFW_SIM_INFO_VOICEMAIL));
+
+        int length = cfwDialStringToBcd(number, strlen(number), updateVoiceMailInfo.mailbox_number);
+        if (updateVoiceMailInfo.mailbox_number_len < 0)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        updateVoiceMailInfo.mailbox_number_len = length;
+
+        updateVoiceMailInfo.ccp_id = 0;
+        updateVoiceMailInfo.is_ext_exist = false;
+        updateVoiceMailInfo.ext_id = 0;
+        updateVoiceMailInfo.is_ccp_exist = false;
+        updateVoiceMailInfo.is_ton_npi_exist = false;
+
+        cmd->uti = cfwRequestUTI((osiEventCallback_t)CSVM_SetRspCB, cmd);
+        uint32_t ret = CFW_SimUpdateVoiceMailInfo(1, 0, &updateVoiceMailInfo, cmd->uti, atCmdGetSim(cmd->engine));
+        if (ret != ERR_SUCCESS)
+        {
+            cfwReleaseUTI(cmd->uti);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        RETURN_FOR_ASYNC();
+    }
+    else if (cmd->type == AT_CMD_READ)
+    {
+        cmd->uti = cfwRequestUTI((osiEventCallback_t)CSVM_GetRspCB, cmd);
+        CFW_SimReadVoiceMailInfo(1, 0, cmd->uti, atCmdGetSim(cmd->engine));
+        RETURN_FOR_ASYNC();
+    }
+    else if (cmd->type == AT_CMD_TEST)
+    {
+        char rsp[64];
+        sprintf(rsp, "%s: (0-1),", cmd->desc->name);
+        atCmdRespInfoText(cmd->engine, rsp);
+        RETURN_OK(cmd->engine);
+    }
+    else
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_NOT_SURPORT);
+}

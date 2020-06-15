@@ -8,7 +8,7 @@
 
 lwm2m_object_t *get_skel_object(lwm2m_context_t *contextP, uint16_t objid, uint16_t instid, bool *isNewObj);
 
-typedef lwm2m_object_t *(*obj_get_fuc)(void);
+typedef lwm2m_object_t *(*obj_get_fuc)(void *lwm2mH);
 
 typedef struct
 {
@@ -218,7 +218,7 @@ static int find_internal_object(uint16_t objid)
     return -1;
 }
 
-ipso_obj_t *lwm2m_get_ipso_obj(uint16_t objId, uint16_t resId, ipso_res_t **ipso_res, uint8_t ref)
+ipso_obj_t *lwm2m_get_ipso_obj(uint16_t objId, int16_t resId, ipso_res_t **ipso_res, uint8_t ref)
 {
     int max_size = sizeof(ipso_stdobj_table) / sizeof(ipso_stdobj_table[0]);
     ipso_obj_t *type_array = ipso_stdobj_table;
@@ -437,7 +437,21 @@ int lwm2m_registNewRes(uint16_t objId, uint8_t *resString, uint8_t ref)
                 }
                 else
                 {
-                    if (type_array[i].resArray[j].resId != resId)
+                    bool isHasRes = false;
+                    for (int temIndex = 0; temIndex < type_array[i].resCount; temIndex++)
+                    {
+                        if (type_array[i].resArray[temIndex].resId != resId)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            isHasRes = true;
+                            break;
+                        }
+                    }
+
+                    if (!isHasRes)
                     {
                         lwm2m_free(value);
                         return -1;
@@ -463,7 +477,7 @@ static lwm2m_object_t *get_internal_object(lwm2m_context_t *contextP, uint16_t o
     targetP = (lwm2m_object_t *)LWM2M_LIST_FIND(contextP->objectList, objid);
     if (targetP == NULL)
     {
-        targetP = internal_obj_table[index].func();
+        targetP = internal_obj_table[index].func(contextP);
         if (targetP == NULL)
             return NULL;
         *isNewObj = true;

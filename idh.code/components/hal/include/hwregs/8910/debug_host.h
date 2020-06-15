@@ -13,105 +13,117 @@
 #ifndef _DEBUG_HOST_H_
 #define _DEBUG_HOST_H_
 
-#ifdef CT_ASM
-#error "You are trying to use in an assembly code the normal H description of 'debug_host'."
-#endif
+// Auto generated (v1.0-22-ge2f5f70). Don't edit it manually!
 
-// =============================================================================
-//  MACROS
-// =============================================================================
-
-// =============================================================================
-//  TYPES
-// =============================================================================
-
-// ============================================================================
-// DEBUG_HOST_T
-// -----------------------------------------------------------------------------
-///
-// =============================================================================
 #if defined(REG_ADDRESS_FOR_GGE)
-#define REG_DEBUG_HOST_BASE 0x0517F000
+#define REG_DEBUG_HOST_BASE (0x0517f000)
 #else
-#define REG_DEBUG_HOST_BASE 0x5017F000
+#define REG_DEBUG_HOST_BASE (0x5017f000)
 #endif
 
 typedef volatile struct
 {
-    REG32 cmd;            //0x00000000
-    REG32 data_reg;       //0x00000004
-    REG32 event;          //0x00000008
-    REG32 mode;           //0x0000000C
-    REG32 h2p_status_reg; //0x00000010
-    REG32 p2h_status_reg; //0x00000014
-    REG32 irq;            //0x00000018
+    uint32_t cmd;            // 0x00000000
+    uint32_t data_reg;       // 0x00000004
+    uint32_t event;          // 0x00000008
+    uint32_t mode;           // 0x0000000c
+    uint32_t h2p_status_reg; // 0x00000010
+    uint32_t p2h_status_reg; // 0x00000014
+    uint32_t irq;            // 0x00000018
 } HWP_DEBUG_HOST_T;
 
 #define hwp_debugHost ((HWP_DEBUG_HOST_T *)REG_ACCESS_ADDRESS(REG_DEBUG_HOST_BASE))
 
-//cmd
+// cmd
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 addr : 29;   // [28:0], read only
-        REG32 size : 2;    // [30:29], read only
-        REG32 write_h : 1; // [31], read only
+        uint32_t addr : 29;   // [28:0], read only
+        uint32_t size : 2;    // [30:29], read only
+        uint32_t write_h : 1; // [31], read only
     } b;
 } REG_DEBUG_HOST_CMD_T;
 
-//event
+// event
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 event0_sema : 1; // [0]
-        REG32 event31_1 : 31;  // [31:1]
+        uint32_t event0_sema : 1; // [0]
+        uint32_t event31_1 : 31;  // [31:1]
     } b;
 } REG_DEBUG_HOST_EVENT_T;
 
-//mode
+// mode
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 force_on : 1;    // [0]
-        REG32 clk_host_on : 1; // [1], read only
-        REG32 __31_2 : 30;
+        uint32_t force_on : 1;    // [0]
+        uint32_t clk_host_on : 1; // [1], read only
+        uint32_t __31_2 : 30;     // [31:2]
     } b;
 } REG_DEBUG_HOST_MODE_T;
 
-//h2p_status_REG
+// h2p_status_reg
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 h2p_status : 8; // [7:0], read only
-        REG32 __15_8 : 8;
-        REG32 h2p_status_rst : 1; // [16]
-        REG32 __31_17 : 15;
+        uint32_t h2p_status : 8;     // [7:0], read only
+        uint32_t __15_8 : 8;         // [15:8]
+        uint32_t h2p_status_rst : 1; // [16]
+        uint32_t __31_17 : 15;       // [31:17]
     } b;
 } REG_DEBUG_HOST_H2P_STATUS_REG_T;
 
-//p2h_status_REG
+// p2h_status_reg
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 p2h_status : 8; // [7:0]
-        REG32 __31_8 : 24;
+        uint32_t p2h_status : 8; // [7:0]
+        uint32_t __31_8 : 24;    // [31:8]
     } b;
 } REG_DEBUG_HOST_P2H_STATUS_REG_T;
 
-//irq
+// irq
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xcpu_irq : 1; // [0], read only
-        REG32 bcpu_irq : 1; // [1], read only
-        REG32 __31_2 : 30;
+        uint32_t xcpu_irq : 1; // [0], read only
+        uint32_t bcpu_irq : 1; // [1], read only
+        uint32_t __31_2 : 30;  // [31:2]
     } b;
 } REG_DEBUG_HOST_IRQ_T;
 
-#endif
+// cmd
+#define DEBUG_HOST_ADDR(n) (((n)&0x1fffffff) << 0)
+#define DEBUG_HOST_SIZE(n) (((n)&0x3) << 29)
+#define DEBUG_HOST_WRITE_H (1 << 31)
+
+// data_reg
+#define DEBUG_HOST_DATA(n) (((n)&0xffffffff) << 0)
+
+// event
+#define DEBUG_HOST_EVENT0_SEMA (1 << 0)
+#define DEBUG_HOST_EVENT31_1(n) (((n)&0x7fffffff) << 1)
+
+// mode
+#define DEBUG_HOST_FORCE_ON (1 << 0)
+#define DEBUG_HOST_CLK_HOST_ON (1 << 1)
+
+// h2p_status_reg
+#define DEBUG_HOST_H2P_STATUS(n) (((n)&0xff) << 0)
+#define DEBUG_HOST_H2P_STATUS_RST (1 << 16)
+
+// p2h_status_reg
+#define DEBUG_HOST_P2H_STATUS(n) (((n)&0xff) << 0)
+
+// irq
+#define DEBUG_HOST_XCPU_IRQ (1 << 0)
+#define DEBUG_HOST_BCPU_IRQ (1 << 1)
+
+#endif // _DEBUG_HOST_H_

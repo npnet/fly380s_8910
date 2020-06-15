@@ -11,7 +11,7 @@
  */
 
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('D', 'G', 'R', 'M')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
+// #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
 #include "diag_runmode.h"
 #include "diag.h"
@@ -27,92 +27,127 @@ typedef uint32_t uint32;
 #include "drv_usb.h"
 #include "osi_log.h"
 #include "osi_sysnv.h"
+#include "osi_hdlc.h"
+
+#define CHECK_MODE_BUF_SIZE (24)
+#define CHECK_MODE_USB_READY_TIMEOUT (500)
+#define CHECK_MODE_COMMAND_TIMEOUT (200)
 
 typedef struct
 {
-    diagRm_t mode;
-    bool diagDeviceUSB;
-    osiSemaphore_t *sema;
-} rmCtx_t;
+    diagRunMode_t mode;
+    drvDebugPort_t *port;
+    osiHdlcDecode_t hdlc;
+    char decbuf[CHECK_MODE_BUF_SIZE];
+} diagRunModeContext_t;
 
-static bool _runModeHandle(const diagMsgHead_t *cmd, void *ctx)
+static void prvSendPacket(diagRunModeContext_t *d, const void *packet, unsigned size)
 {
-    uint32_t sc = osiEnterCritical();
-    uint8_t mode = DIAG_RM_NORMAL;
-    rmCtx_t *rc = (rmCtx_t *)ctx;
+    char buf[CHECK_MODE_BUF_SIZE];
+    int enc_size = osiHdlcEncodeLen(packet, size);
+    if (enc_size > CHECK_MODE_BUF_SIZE)
+        return;
 
-    diagUnregisterCmdHandle(MSG_RUNMODE);
-
-    if ((cmd->subtype & 0xF0) == 0x80)
-        mode = cmd->subtype & 0x0F;
-
-    // CALIB MODE
-    if (cmd->subtype == 0x90)
-        mode = DIAG_RM_CALIB;
-    // BBAT MODE
-    if (cmd->subtype == 0x95)
-        mode = DIAG_RM_BBAT;
-
-    rc->mode = mode;
-
-    if (rc->diagDeviceUSB)
-        diagOutputPacket(cmd, 8);
-
-    osiSemaphoreRelease(rc->sema);
-    osiExitCritical(sc);
-
-    return true;
+    enc_size = osiHdlcEncode(buf, packet, size);
+    OSI_LOGD(0, "diag run mode send: %d/%d", size, enc_size);
+    drvDebugPortSendPacket(d->port, buf, enc_size);
 }
 
-static bool _checkDiagDevice(rmCtx_t *rc, uint32_t timeout)
+static bool prvRxProcess(diagRunModeContext_t *d, unsigned timeout)
 {
-    if (diagDeviceType() == DIAG_DEVICE_UART)
-    {
-        rc->diagDeviceUSB = false;
-        return true;
-    }
-#ifdef CONFIG_DIAG_DEFAULT_USERIAL
-    else // usb serial
-    {
-        rc->diagDeviceUSB = true;
-        if (gSysnvUsbDetMode == USB_DETMODE_CHARGER &&
-            drvChargerGetType() == DRV_CHARGER_TYPE_NONE)
-            return false;
+    uint8_t buf[32];
+    osiElapsedTimer_t timer;
+    osiElapsedTimerStart(&timer);
 
-        if (!drvUsbSetWorkMode(DRV_USB_NPI_SERIAL))
-            return false;
-
-        drvUsbEnable(0);
-        int64_t start = osiUpTime();
-        while (osiUpTime() - start < timeout)
+    while (osiElapsedTime(&timer) < timeout)
+    {
+        int bytes = drvDebugPortRead(d->port, buf, 32);
+        while (bytes > 0)
         {
-            if (drvSerialCheckReadyByName(CONFIG_DIAG_DEFAULT_USERIAL))
+            OSI_LOGD(0, "diag run mode received: %d", bytes);
+            int pbytes = osiHdlcDecodePush(&d->hdlc, buf, bytes);
+            bytes -= pbytes;
+
+            osiHdlcDecodeState_t state = osiHdlcDecodeGetState(&d->hdlc);
+            if (state == OSI_HDLC_DEC_ST_PACKET)
             {
-                OSI_LOGI(0, "diag usb device connected in %u milliseconds", (unsigned)(osiUpTime() - start));
-                return true;
+                osiBuffer_t decpacket = osiHdlcDecodeFetchPacket(&d->hdlc);
+                diagMsgHead_t *cmd = (diagMsgHead_t *)decpacket.ptr;
+
+                OSI_LOGD(0, "diag run mode cmd: %d 0x%02x 0x%02x", cmd->len, cmd->type, cmd->subtype);
+                if (cmd->type == MSG_RUNMODE)
+                {
+                    uint8_t mode = DIAG_RM_NORMAL;
+                    if ((cmd->subtype & 0xF0) == 0x80)
+                        mode = cmd->subtype & 0x0F;
+
+                    // CALIB MODE
+                    if (cmd->subtype == 0x90)
+                        mode = DIAG_RM_CALIB;
+                    // BBAT MODE
+                    if (cmd->subtype == 0x95)
+                        mode = DIAG_RM_BBAT;
+
+                    d->mode = mode;
+
+                    if (drvDebugPortIsUsb(d->port))
+                        prvSendPacket(d, cmd, 8);
+                    return true;
+                }
             }
-            osiThreadSleep(2);
         }
+        osiThreadSleepUS(2000);
     }
+    return false;
+}
+
+static bool prvDeviceReady(diagRunModeContext_t *d, unsigned ms)
+{
+    if (!drvDebugPortIsUsb(d->port))
+        return true;
+
+#ifdef CONFIG_DIAG_DEFAULT_USERIAL
+    if (gSysnvUsbDetMode == USB_DETMODE_CHARGER &&
+        drvChargerGetType() == DRV_CHARGER_TYPE_NONE)
+        return false;
+
+    if (!drvUsbSetWorkMode(DRV_USB_NPI_SERIAL))
+        return false;
+
+    drvUsbEnable(0);
+
+    osiElapsedTimer_t timeout;
+    osiElapsedTimerStart(&timeout);
+    while (osiElapsedTime(&timeout) < ms)
+    {
+        if (drvDebugPortIsUsbHostOpened(d->port))
+            return true;
+
+        osiThreadSleepUS(2000);
+    }
+
+    drvUsbDisable();
 #endif
     return false;
 }
 
-diagRm_t diagRmCheck(uint32_t ms)
+diagRunMode_t diagRunModeCheck(drvDebugPort_t *port)
 {
-    rmCtx_t rc = {.mode = DIAG_RM_NORMAL};
-    rc.sema = osiSemaphoreCreate(1, 0);
-    if (rc.sema == NULL)
-        return DIAG_RM_NORMAL;
+    diagRunModeContext_t rc = {
+        .mode = DIAG_RM_NORMAL,
+        .port = port,
+    };
 
-    diagRegisterCmdHandle(MSG_RUNMODE, _runModeHandle, &rc);
-    if (!_checkDiagDevice(&rc, ms))
+    OSI_LOGI(0, "diag run mode check");
+    osiHdlcDecodeInit(&rc.hdlc, rc.decbuf, CHECK_MODE_BUF_SIZE, 0);
+
+    if (!prvDeviceReady(&rc, CHECK_MODE_USB_READY_TIMEOUT))
     {
-        OSI_LOGI(0, "diag device open fail");
-        goto done;
+        OSI_LOGI(0, "diag run mode: device not ready");
+        return rc.mode;
     }
 
-    if (!rc.diagDeviceUSB)
+    if (!drvDebugPortIsUsb(rc.port))
     {
         // send ping message if use uart diag channel
         diagMsgHead_t h;
@@ -120,29 +155,25 @@ diagRm_t diagRmCheck(uint32_t ms)
         h.len = 8;
         h.type = MSG_RUNMODE;
         h.subtype = 0x01;
-        diagOutputPacket(&h, 8);
+        prvSendPacket(&rc, &h, 8);
     }
 
-    osiSemaphoreTryAcquire(rc.sema, ms);
+    prvRxProcess(&rc, CHECK_MODE_COMMAND_TIMEOUT);
 
-done:
-    diagUnregisterCmdHandle(MSG_RUNMODE);
-    osiSemaphoreDelete(rc.sema);
-
-    OSI_LOGI(0, "diag device %d run mode: %d", rc.diagDeviceUSB, rc.mode);
 #ifdef CONFIG_DIAG_DEFAULT_USERIAL
-    if (diagDeviceType() == DIAG_DEVICE_USERIAL && rc.mode != DIAG_RM_NORMAL)
+    if (drvDebugPortIsUsb(rc.port))
     {
-        diagWaitWriteFinish(20);
-        drvUsbDisable();
-        osiThreadSleep(500);
-        drvUsbEnable(0);
-    }
-    else
-    {
-        drvUsbDisable();
+        if (rc.mode != DIAG_RM_NORMAL)
+        {
+            drvUsbDisable();
+            osiThreadSleepUS(500 * 1000);
+            drvUsbEnable(0);
+        }
+        else
+        {
+            drvUsbDisable();
+        }
     }
 #endif
-
     return rc.mode;
 }

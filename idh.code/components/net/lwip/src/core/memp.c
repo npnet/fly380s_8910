@@ -339,7 +339,7 @@ do_memp_malloc_pool_fn(const struct memp_desc *desc, const char* file, const int
     /* cast through u8_t* to get rid of alignment warnings */
     return ((u8_t*)memp + MEMP_SIZE);
   } else {
-    LWIP_DEBUGF(MEMP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("memp_malloc: out of memory in pool %s\n", desc->desc));
+    LWIP_DEBUGF(MEMP_DEBUG | LWIP_DBG_LEVEL_SERIOUS, (0x10007901, "memp_malloc: out of memory in pool\n"));
 #if MEMP_STATS
     desc->stats->err++;
 #endif

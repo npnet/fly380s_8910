@@ -13,180 +13,210 @@
 #ifndef _RDA2720M_WDG_H_
 #define _RDA2720M_WDG_H_
 
-#ifdef CT_ASM
-#error "You are trying to use in an assembly code the normal H description of 'rda2720m_wdg'."
-#endif
+// Auto generated (v1.0-22-ge2f5f70). Don't edit it manually!
 
-// =============================================================================
-//  MACROS
-// =============================================================================
-
-// =============================================================================
-//  TYPES
-// =============================================================================
-
-// ============================================================================
-// RDA2720M_WDG_T
-// -----------------------------------------------------------------------------
-///
-// =============================================================================
-#define REG_RDA2720M_WDG_BASE 0x50308040
+#define REG_RDA2720M_WDG_BASE (0x50308040)
 
 typedef volatile struct
 {
-    REG32 wdg_load_low;      //0x00000000
-    REG32 wdg_load_high;     //0x00000004
-    REG32 wdg_ctrl;          //0x00000008
-    REG32 wdg_int_clr;       //0x0000000C
-    REG32 wdg_int_raw;       //0x00000010
-    REG32 wdg_int_mask;      //0x00000014
-    REG32 wdg_cnt_low;       //0x00000018
-    REG32 wdg_cnt_high;      //0x0000001C
-    REG32 wdg_lock;          //0x00000020
-    REG32 wdg_cnt_rd_low;    //0x00000024
-    REG32 wdg_cnt_rd_high;   //0x00000028
-    REG32 wdg_irqvalue_low;  //0x0000002C
-    REG32 wdg_irqvalue_high; //0x00000030
+    uint32_t wdg_load_low;      // 0x00000000
+    uint32_t wdg_load_high;     // 0x00000004
+    uint32_t wdg_ctrl;          // 0x00000008
+    uint32_t wdg_int_clr;       // 0x0000000c
+    uint32_t wdg_int_raw;       // 0x00000010
+    uint32_t wdg_int_mask;      // 0x00000014
+    uint32_t wdg_cnt_low;       // 0x00000018
+    uint32_t wdg_cnt_high;      // 0x0000001c
+    uint32_t wdg_lock;          // 0x00000020
+    uint32_t wdg_cnt_rd_low;    // 0x00000024
+    uint32_t wdg_cnt_rd_high;   // 0x00000028
+    uint32_t wdg_irqvalue_low;  // 0x0000002c
+    uint32_t wdg_irqvalue_high; // 0x00000030
 } HWP_RDA2720M_WDG_T;
 
 #define hwp_rda2720mWdg ((HWP_RDA2720M_WDG_T *)REG_ACCESS_ADDRESS(REG_RDA2720M_WDG_BASE))
 
-//WDG_LOAD_LOW
+// wdg_load_low
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_load_low : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t wdg_load_low : 16; // [15:0]
+        uint32_t __31_16 : 16;      // [31:16]
     } b;
 } REG_RDA2720M_WDG_WDG_LOAD_LOW_T;
 
-//WDG_LOAD_HIGH
+// wdg_load_high
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_load_high : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t wdg_load_high : 16; // [15:0]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_WDG_WDG_LOAD_HIGH_T;
 
-//WDG_CTRL
+// wdg_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_irq_en : 1; // [0]
-        REG32 wdg_run : 1;    // [1]
-        REG32 wdg_new : 1;    // [2]
-        REG32 wdg_rst_en : 1; // [3]
-        REG32 __31_4 : 28;
+        uint32_t wdg_irq_en : 1; // [0]
+        uint32_t wdg_run : 1;    // [1]
+        uint32_t wdg_new : 1;    // [2]
+        uint32_t wdg_rst_en : 1; // [3]
+        uint32_t __31_4 : 28;    // [31:4]
     } b;
 } REG_RDA2720M_WDG_WDG_CTRL_T;
 
-//WDG_INT_CLR
+// wdg_int_clr
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_int_clr : 1; // [0]
-        REG32 __2_1 : 2;
-        REG32 wdg_rst_clr : 1; // [3]
-        REG32 __31_4 : 28;
+        uint32_t wdg_int_clr : 1; // [0]
+        uint32_t __2_1 : 2;       // [2:1]
+        uint32_t wdg_rst_clr : 1; // [3]
+        uint32_t __31_4 : 28;     // [31:4]
     } b;
 } REG_RDA2720M_WDG_WDG_INT_CLR_T;
 
-//WDG_INT_RAW
+// wdg_int_raw
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_int_raw : 1; // [0], read only
-        REG32 __2_1 : 2;
-        REG32 wdg_rst_raw : 1; // [3], read only
-        REG32 wdg_ld_busy : 1; // [4], read only
-        REG32 __31_5 : 27;
+        uint32_t wdg_int_raw : 1; // [0], read only
+        uint32_t __2_1 : 2;       // [2:1]
+        uint32_t wdg_rst_raw : 1; // [3], read only
+        uint32_t wdg_ld_busy : 1; // [4], read only
+        uint32_t __31_5 : 27;     // [31:5]
     } b;
 } REG_RDA2720M_WDG_WDG_INT_RAW_T;
 
-//WDG_INT_MASK
+// wdg_int_mask
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_int_mask : 1; // [0], read only
-        REG32 __31_1 : 31;
+        uint32_t wdg_int_mask : 1; // [0], read only
+        uint32_t __31_1 : 31;      // [31:1]
     } b;
 } REG_RDA2720M_WDG_WDG_INT_MASK_T;
 
-//WDG_CNT_LOW
+// wdg_cnt_low
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_cnt_low : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t wdg_cnt_low : 16; // [15:0], read only
+        uint32_t __31_16 : 16;     // [31:16]
     } b;
 } REG_RDA2720M_WDG_WDG_CNT_LOW_T;
 
-//WDG_CNT_HIGH
+// wdg_cnt_high
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_cnt_high : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t wdg_cnt_high : 16; // [15:0], read only
+        uint32_t __31_16 : 16;      // [31:16]
     } b;
 } REG_RDA2720M_WDG_WDG_CNT_HIGH_T;
 
-//WDG_LOCK
+// wdg_lock
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_lock : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t wdg_lock : 16; // [15:0]
+        uint32_t __31_16 : 16;  // [31:16]
     } b;
 } REG_RDA2720M_WDG_WDG_LOCK_T;
 
-//WDG_CNT_RD_LOW
+// wdg_cnt_rd_low
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_cnt_rd_low : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t wdg_cnt_rd_low : 16; // [15:0], read only
+        uint32_t __31_16 : 16;        // [31:16]
     } b;
 } REG_RDA2720M_WDG_WDG_CNT_RD_LOW_T;
 
-//WDG_CNT_RD_HIGH
+// wdg_cnt_rd_high
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_cnt_rd_high : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t wdg_cnt_rd_high : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_RDA2720M_WDG_WDG_CNT_RD_HIGH_T;
 
-//WDG_IRQVALUE_LOW
+// wdg_irqvalue_low
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_irqvalue_low : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t wdg_irqvalue_low : 16; // [15:0]
+        uint32_t __31_16 : 16;          // [31:16]
     } b;
 } REG_RDA2720M_WDG_WDG_IRQVALUE_LOW_T;
 
-//WDG_IRQVALUE_HIGH
+// wdg_irqvalue_high
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 wdg_irqvalue_high : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t wdg_irqvalue_high : 16; // [15:0]
+        uint32_t __31_16 : 16;           // [31:16]
     } b;
 } REG_RDA2720M_WDG_WDG_IRQVALUE_HIGH_T;
 
-#endif
+// wdg_load_low
+#define RDA2720M_WDG_WDG_LOAD_LOW(n) (((n)&0xffff) << 0)
+
+// wdg_load_high
+#define RDA2720M_WDG_WDG_LOAD_HIGH(n) (((n)&0xffff) << 0)
+
+// wdg_ctrl
+#define RDA2720M_WDG_WDG_IRQ_EN (1 << 0)
+#define RDA2720M_WDG_WDG_RUN (1 << 1)
+#define RDA2720M_WDG_WDG_NEW (1 << 2)
+#define RDA2720M_WDG_WDG_RST_EN (1 << 3)
+
+// wdg_int_clr
+#define RDA2720M_WDG_WDG_INT_CLR (1 << 0)
+#define RDA2720M_WDG_WDG_RST_CLR (1 << 3)
+
+// wdg_int_raw
+#define RDA2720M_WDG_WDG_INT_RAW (1 << 0)
+#define RDA2720M_WDG_WDG_RST_RAW (1 << 3)
+#define RDA2720M_WDG_WDG_LD_BUSY (1 << 4)
+
+// wdg_int_mask
+#define RDA2720M_WDG_WDG_INT_MASK (1 << 0)
+
+// wdg_cnt_low
+#define RDA2720M_WDG_WDG_CNT_LOW(n) (((n)&0xffff) << 0)
+
+// wdg_cnt_high
+#define RDA2720M_WDG_WDG_CNT_HIGH(n) (((n)&0xffff) << 0)
+
+// wdg_lock
+#define RDA2720M_WDG_WDG_LOCK(n) (((n)&0xffff) << 0)
+
+// wdg_cnt_rd_low
+#define RDA2720M_WDG_WDG_CNT_RD_LOW(n) (((n)&0xffff) << 0)
+
+// wdg_cnt_rd_high
+#define RDA2720M_WDG_WDG_CNT_RD_HIGH(n) (((n)&0xffff) << 0)
+
+// wdg_irqvalue_low
+#define RDA2720M_WDG_WDG_IRQVALUE_LOW(n) (((n)&0xffff) << 0)
+
+// wdg_irqvalue_high
+#define RDA2720M_WDG_WDG_IRQVALUE_HIGH(n) (((n)&0xffff) << 0)
+
+#endif // _RDA2720M_WDG_H_

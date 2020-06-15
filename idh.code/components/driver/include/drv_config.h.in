@@ -16,16 +16,6 @@
 // @AUTO_GENERATION_NOTICE@
 
 /**
- * whether to use IFC for debughost RX
- */
-#cmakedefine CONFIG_DEBUGHOST_RX_USE_IFC
-
-/**
- * debughost rx DMA size in bytes
- */
-#cmakedefine CONFIG_DEBUGHOST_RX_DMA_SIZE @CONFIG_DEBUGHOST_RX_DMA_SIZE@
-
-/**
  * debughost rx buffer size in bytes
  *
  * This is the buffer before parsing host packet format.
@@ -38,29 +28,9 @@
 #cmakedefine CONFIG_SUPPORT_BATTERY_CHARGER
 
 /**
- * whether external flash is supported
- */
-#cmakedefine CONFIG_SUPPORT_EXT_FLASH
-
-/**
  * host command engine packet size
  */
 #cmakedefine CONFIG_HOST_CMD_ENGINE_MAX_PACKET_SIZE @CONFIG_HOST_CMD_ENGINE_MAX_PACKET_SIZE@
-
-/**
- * whether to reuse uart at blue screen
- */
-#cmakedefine CONFIG_UART_BLUESCREEN_ENABLE
-
-/**
- * uart device to be reused at blue screen
- */
-#cmakedefine CONFIG_UART_BLUESCREEN @CONFIG_UART_BLUESCREEN@
-
-/**
- * uart baud rate to be reused at blue screen
- */
-#cmakedefine CONFIG_UART_BLUESCREEN_BAUD @CONFIG_UART_BLUESCREEN_BAUD@
 
 /**
  * uart TX baud rate at adaptive mode, before baud rate is detected
@@ -82,6 +52,11 @@
  * usb debounce time in milliseconds before enumarating
  */
 #cmakedefine CONFIG_USB_DETECT_DEBOUNCE_TIME @CONFIG_USB_DETECT_DEBOUNCE_TIME@
+
+/**
+ * udc features, lower 8 bits for config->bmAttributes, higher are software defined
+ */
+#cmakedefine CONFIG_USB_DEVICE_CONTROLLER_FEATURE @CONFIG_USB_DEVICE_CONTROLLER_FEATURE@
 #endif
 
 /**

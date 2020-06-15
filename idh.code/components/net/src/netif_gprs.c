@@ -36,24 +36,28 @@ extern void dns_clean_entries(void);
 static struct netif gprs_netif[MAX_SIM_ID][MAX_CID] = {0};
 struct netif *getGprsGobleNetIf(uint8_t nSim, uint8_t nCid)
 {
-    sys_arch_printf("gprs_netif[%d][%d] = %p", nSim, nCid, &gprs_netif[nSim][nCid]);
+    OSI_LOGI(0x10007537, "gprs_netif[%d][%d] = %p", nSim, nCid, &gprs_netif[nSim][nCid]);
     return &gprs_netif[nSim][nCid];
 }
 static void gprs_data_ipc_to_lwip(void *ctx)
 {
     struct netif *inp_netif = (struct netif *)ctx;
+    if (inp_netif == NULL)
+        return;
     struct pbuf *p, *q;
-    sys_arch_printf("gprs_data_ipc_to_lwip");
-    uint8_t pData[1600];
+    OSI_LOGI(0x10007538, "gprs_data_ipc_to_lwip");
+    uint8_t *pData = malloc(1600);
+    if (pData == NULL)
+        return;
     int len = 0;
     int readLen = 0;
     int offset = 0;
     do
     {
-        sys_arch_printf("drvPsIntfRead in");
+        OSI_LOGI(0x10007539, "drvPsIntfRead in");
         readLen = drvPsIntfRead(inp_netif->pspathIntf, pData, 1600);
         len = readLen;
-        sys_arch_printf("drvPsIntfRead out %d", len);
+        OSI_LOGI(0x1000753a, "drvPsIntfRead out %d", len);
         if (len > 0)
         {
             sys_arch_dump(pData, len);
@@ -86,13 +90,14 @@ static void gprs_data_ipc_to_lwip(void *ctx)
             }
         }
     } while (readLen > 0);
+    free(pData);
 }
 
 void lwip_pspathDataInput(void *ctx, drvPsIntf_t *p)
 {
-    sys_arch_printf("lwip_pspathDataInput osiThreadCallback in ");
+    OSI_LOGI(0x1000753b, "lwip_pspathDataInput osiThreadCallback in ");
     osiThreadCallback(netGetTaskID(), gprs_data_ipc_to_lwip, (void *)ctx);
-    sys_arch_printf("lwip_pspathDataInput osiThreadCallback out");
+    OSI_LOGI(0x1000753c, "lwip_pspathDataInput osiThreadCallback out");
 }
 
 static err_t data_output(struct netif *netif, struct pbuf *p,
@@ -102,7 +107,7 @@ static err_t data_output(struct netif *netif, struct pbuf *p,
     struct pbuf *q = NULL;
 
 #if 1
-    sys_arch_printf("data_output ---------tot_len=%d, flags=0x%x---------", p->tot_len, p->flags);
+    OSI_LOGI(0x1000753d, "data_output ---------tot_len=%d, flags=0x%x---------", p->tot_len, p->flags);
 
     uint8_t *pData = malloc(p->tot_len);
     if (pData == NULL)
@@ -118,7 +123,7 @@ static err_t data_output(struct netif *netif, struct pbuf *p,
 
     sys_arch_dump(pData, p->tot_len);
 
-    sys_arch_printf("drvPsIntfWrite--in---");
+    OSI_LOGI(0x1000753e, "drvPsIntfWrite--in---");
 
     extern bool ATGprsGetDPSDFlag(CFW_SIM_ID nSim);
 #define GET_SIM(sim_cid) (((sim_cid) >> 4) & 0xf)
@@ -126,7 +131,7 @@ static err_t data_output(struct netif *netif, struct pbuf *p,
     if (!ATGprsGetDPSDFlag(GET_SIM(netif->sim_cid)))
         drvPsIntfWrite((drvPsIntf_t *)netif->pspathIntf, pData, p->tot_len);
 
-    sys_arch_printf("drvPsIntfWrite--out---");
+    OSI_LOGI(0x1000753f, "drvPsIntfWrite--out---");
     netif->u32LwipULSize += p->tot_len;
     free(pData);
 #endif
@@ -134,7 +139,7 @@ static err_t data_output(struct netif *netif, struct pbuf *p,
 #if 0
     CFW_GPRS_DATA *pGprsData = NULL;
 
-    sys_arch_printf("data_output ---------tot_len=%d, flags=0x%x---------", p->tot_len, p->flags);
+    OSI_LOGI(0x1000753d, "data_output ---------tot_len=%d, flags=0x%x---------", p->tot_len, p->flags);
 
     pGprsData = malloc(sizeof(CFW_GPRS_DATA) + p->tot_len);
     if (pGprsData == NULL)
@@ -157,7 +162,7 @@ static err_t data_output(struct netif *netif, struct pbuf *p,
     free(pGprsData);
 #endif
 
-    sys_arch_printf("data_output--return in netif_gprs---");
+    OSI_LOGI(0x10007540, "data_output--return in netif_gprs---");
 
     return ERR_OK;
 }
@@ -198,9 +203,9 @@ static err_t netif_gprs_init(struct netif *netif)
             {
                 IP_ADDR4(&ip4_dns1, pdp_context.pPdpDns[0], pdp_context.pPdpDns[1], pdp_context.pPdpDns[2], pdp_context.pPdpDns[3]);
                 IP_ADDR4(&ip4_dns2, pdp_context.pPdpDns[21], pdp_context.pPdpDns[22], pdp_context.pPdpDns[23], pdp_context.pPdpDns[24]);
-                OSI_LOGI(0, "DNS size:%d  DNS1:%d.%d.%d.%d", pdp_context.nPdpDnsSize,
+                OSI_LOGI(0x10007541, "DNS size:%d  DNS1:%d.%d.%d.%d", pdp_context.nPdpDnsSize,
                          pdp_context.pPdpDns[0], pdp_context.pPdpDns[1], pdp_context.pPdpDns[2], pdp_context.pPdpDns[3]);
-                OSI_LOGI(0, "DNS2:%d.%d.%d.%d",
+                OSI_LOGI(0x10007542, "DNS2:%d.%d.%d.%d",
                          pdp_context.pPdpDns[21], pdp_context.pPdpDns[22], pdp_context.pPdpDns[23], pdp_context.pPdpDns[24]);
             }
         }
@@ -219,9 +224,9 @@ static err_t netif_gprs_init(struct netif *netif)
                 uint32_t addr5 = PP_HTONL(LWIP_MAKEU32(pdp_context.pPdpDns[29], pdp_context.pPdpDns[30], pdp_context.pPdpDns[31], pdp_context.pPdpDns[32]));
                 uint32_t addr6 = PP_HTONL(LWIP_MAKEU32(pdp_context.pPdpDns[33], pdp_context.pPdpDns[34], pdp_context.pPdpDns[35], pdp_context.pPdpDns[36]));
                 uint32_t addr7 = PP_HTONL(LWIP_MAKEU32(pdp_context.pPdpDns[37], pdp_context.pPdpDns[38], pdp_context.pPdpDns[39], pdp_context.pPdpDns[40]));
-                OSI_LOGI(0, "DNS size:%d  ipv6 DNS 12-15:%d.%d.%d.%d", pdp_context.nPdpDnsSize,
+                OSI_LOGI(0x10007543, "DNS size:%d  ipv6 DNS 12-15:%d.%d.%d.%d", pdp_context.nPdpDnsSize,
                          pdp_context.pPdpDns[12], pdp_context.pPdpDns[13], pdp_context.pPdpDns[14], pdp_context.pPdpDns[15]);
-                OSI_LOGI(0, " ipv6 DNS 33-36:%d.%d.%d.%d",
+                OSI_LOGI(0x10007544, " ipv6 DNS 33-36:%d.%d.%d.%d",
                          pdp_context.pPdpDns[33], pdp_context.pPdpDns[34], pdp_context.pPdpDns[35], pdp_context.pPdpDns[36]);
                 IP_ADDR6(&ip6_dns1, addr0, addr1, addr2, addr3);
                 IP_ADDR6(&ip6_dns2, addr4, addr5, addr6, addr7);
@@ -256,7 +261,7 @@ void TCPIP_netif_create(uint8_t nCid, uint8_t nSimId)
     netif = getGprsNetIf(nSimId, nCid);
     if (netif != NULL)
     {
-        sys_arch_printf("TCPIP_netif_create netif already created cid %d simid %d\n", nCid, nSimId);
+        OSI_LOGI(0x10007545, "TCPIP_netif_create netif already created cid %d simid %d\n", nCid, nSimId);
         return;
     }
 
@@ -266,7 +271,7 @@ void TCPIP_netif_create(uint8_t nCid, uint8_t nSimId)
 #endif
     //uint8_t lenth;
 
-    sys_arch_printf("TCPIP_netif_create cid %d simid %d\n", nCid, nSimId);
+    OSI_LOGI(0x10007546, "TCPIP_netif_create cid %d simid %d\n", nCid, nSimId);
 
     AT_Gprs_CidInfo *pCidInfo = &gAtCfwCtx.sim[nSimId].cid_info[nCid];
 
@@ -277,14 +282,14 @@ void TCPIP_netif_create(uint8_t nCid, uint8_t nSimId)
 
     CFW_GPRS_PDPCONT_INFO_V2 pdp_context;
     CFW_GprsGetPdpCxtV2(nCid, &pdp_context, nSimId);
-    sys_arch_printf("TCPIP_netif_create pdp_context.PdnType %d\n", pdp_context.PdnType);
+    OSI_LOGI(0x10007547, "TCPIP_netif_create pdp_context.PdnType %d\n", pdp_context.PdnType);
     if ((pdp_context.PdnType == CFW_GPRS_PDP_TYPE_IP) || (pdp_context.PdnType == CFW_GPRS_PDP_TYPE_IPV4V6) || (pdp_context.PdnType == CFW_GPRS_PDP_TYPE_X25) || (pdp_context.PdnType == CFW_GPRS_PDP_TYPE_PPP)) //add evade for nPdpType == 0, need delete later
     {
         //uint8_t ipv4[4] = {0};
         //CFW_GprsGetPdpIpv4Addr(nCid, &lenth, ipv4, nSimId);
         //IP4_ADDR(&ip4, ipv4[0], ipv4[1], ipv4[2], ipv4[3]);
         IP4_ADDR(&ip4, pdp_context.pPdpAddr[0], pdp_context.pPdpAddr[1], pdp_context.pPdpAddr[2], pdp_context.pPdpAddr[3]);
-        sys_arch_printf("TCPIP_netif_create IP4: %s", ip4addr_ntoa(&ip4));
+        OSI_LOGXI(OSI_LOGPAR_S, 0x10007548, "TCPIP_netif_create IP4: %s", ip4addr_ntoa(&ip4));
     }
     if (nSimId < MAX_SIM_ID && nCid < MAX_CID)
     {
@@ -327,9 +332,13 @@ void TCPIP_netif_create(uint8_t nCid, uint8_t nSimId)
         uint32_t addr2 = PP_HTONL(LWIP_MAKEU32(pdp_context.pPdpAddr[12], pdp_context.pPdpAddr[13], pdp_context.pPdpAddr[14], pdp_context.pPdpAddr[15]));
         uint32_t addr3 = PP_HTONL(LWIP_MAKEU32(pdp_context.pPdpAddr[16], pdp_context.pPdpAddr[17], pdp_context.pPdpAddr[18], pdp_context.pPdpAddr[19]));
         IP6_ADDR(&ip6, addr0, addr1, addr2, addr3);
+        if (ip6.addr[0] == 0x0)
+        {
+            ip6.addr[0] = PP_HTONL(0xfe800000ul);
+        }
         netif_ip6_addr_set(netif, 0, &ip6);
         netif_ip6_addr_set_state(netif, 0, IP6_ADDR_VALID);
-        sys_arch_printf("TCPIP_netif_create IP6: %s", ip6addr_ntoa(&ip6));
+        OSI_LOGXI(OSI_LOGPAR_S, 0x10007549, "TCPIP_netif_create IP6: %s", ip6addr_ntoa(&ip6));
     }
 #endif
     netif_set_up(netif);
@@ -337,7 +346,7 @@ void TCPIP_netif_create(uint8_t nCid, uint8_t nSimId)
 #if LWIP_TCPIP_CORE_LOCKING
     UNLOCK_TCPIP_CORE();
 #endif
-    sys_arch_printf("TCPIP_netif_create, netif->num: 0x%x\n", netif->num);
+    OSI_LOGI(0x1000754a, "TCPIP_netif_create, netif->num: 0x%x\n", netif->num);
 }
 
 void TCPIP_netif_destory(uint8_t nCid, uint8_t nSimId)
@@ -363,7 +372,7 @@ void TCPIP_netif_destory(uint8_t nCid, uint8_t nSimId)
         {
             free(netif);
         }
-        sys_arch_printf("TCPIP_netif_destory netif");
+        OSI_LOGI(0x1000754b, "TCPIP_netif_destory netif");
         tcp_debug_print_pcbs();
 #if LWIP_TCPIP_CORE_LOCKING
         UNLOCK_TCPIP_CORE();
@@ -371,17 +380,17 @@ void TCPIP_netif_destory(uint8_t nCid, uint8_t nSimId)
     }
     else
     {
-        sys_arch_printf("Error ########### CFW_GPRS_DEACTIVED can't find netif for CID=0x%x\n", SIM_CID(nSimId, nCid));
+        OSI_LOGI(0x1000754c, "Error ########### CFW_GPRS_DEACTIVED can't find netif for CID=0x%x\n", SIM_CID(nSimId, nCid));
     }
 }
 
 void BAL_ApsTaskTcpipProc(osiEvent_t *pEvent)
 {
-    sys_arch_printf("Enter BAL_ApsTaskTcpipProc");
-    sys_arch_printf("pEvent->id:%ld", pEvent->id);
-    sys_arch_printf("pEvent->param1:%lx", pEvent->param1);
-    sys_arch_printf("pEvent->param2:%lx", pEvent->param2);
-    sys_arch_printf("pEvent->param3:%lx", pEvent->param3);
+    OSI_LOGI(0x1000754d, "Enter BAL_ApsTaskTcpipProc");
+    OSI_LOGI(0x1000754e, "pEvent->id:%ld", pEvent->id);
+    OSI_LOGI(0x1000754f, "pEvent->param1:%lx", pEvent->param1);
+    OSI_LOGI(0x10007550, "pEvent->param2:%lx", pEvent->param2);
+    OSI_LOGI(0x10007551, "pEvent->param3:%lx", pEvent->param3);
 
     CFW_EVENT *cfw_event = (CFW_EVENT *)pEvent;
     if (pEvent->id == EV_CFW_GPRS_DATA_IND)
@@ -436,13 +445,13 @@ void BAL_ApsTaskTcpipProc(osiEvent_t *pEvent)
     }
     else if (pEvent->id == EV_CFW_GPRS_CTRL_RELEASE_IND)
     {
-        sys_arch_printf("EV_CFW_GPRS_CTRL_RELEASE_IND");
+        OSI_LOGI(0x08100094, "EV_CFW_GPRS_CTRL_RELEASE_IND");
         //do_send_stored_packet(pEvent->param1, pEvent->param2);  howie porting
     }
     else if (pEvent->id == EV_CFW_GPRS_ACT_RSP)
     {
 #if 0
-        sys_arch_printf("EV_CFW_GPRS_ACT_RSP \n");
+        OSI_LOGI(0x10007552, "EV_CFW_GPRS_ACT_RSP \n");
         struct netif *netif;
         uint8_t nCid, nSimId, T_cid, channelId;
         nCid = pEvent->param1;
@@ -460,8 +469,9 @@ void BAL_ApsTaskTcpipProc(osiEvent_t *pEvent)
             CFW_GprsGetPdpAddr(nCid, &lenth, addr, nSimId);
             Ip_Addr = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | addr[0];
 
-            sys_arch_printf("APS : active success cid = 0x%x\n", T_cid);
-            sys_arch_printf("IP: %d.%d.%d.%d",
+            
+            OSI_LOGI(0x081000fc, "APS : active success cid = 0x%x\n", T_cid);
+            OSI_LOGI(0x081000fd, "IP: %d.%d.%d.%d",
                             (uint16_t)(ntohl(Ip_Addr) >> 24) & 0xff,
                             (uint16_t)(ntohl(Ip_Addr) >> 16) & 0xff,
                             (uint16_t)(ntohl(Ip_Addr) >> 8) & 0xff,
@@ -476,7 +486,7 @@ void BAL_ApsTaskTcpipProc(osiEvent_t *pEvent)
             netif_add(netif, &ip, NULL, NULL, NULL, netif_gprs_init, tcpip_input);
             netif_set_up(netif);
             netif_set_link_up(netif);
-            sys_arch_printf("APS, netif->num: 0x%x\n", netif->num);
+            OSI_LOGI(0x081000fe, "APS, netif->num: 0x%x\n", netif->num);
         }
         else if (HIUINT8(pEvent->param3) == CFW_GPRS_DEACTIVED)
         {
@@ -490,14 +500,14 @@ void BAL_ApsTaskTcpipProc(osiEvent_t *pEvent)
             }
             else
             {
-                sys_arch_printf("Error ########### CFW_GPRS_DEACTIVED can't find netif for CID=0x%x\n", T_cid);
+                OSI_LOGI(0x1000754c, "Error ########### CFW_GPRS_DEACTIVED can't find netif for CID=0x%x\n", T_cid);
             }
         }
 #endif
     }
     else if (pEvent->id == EV_CFW_GPRS_ATT_RSP)
     {
-        sys_arch_printf("EV_CFW_GPRS_ATT_RSP \n");
+        OSI_LOGI(0x10007553, "EV_CFW_GPRS_ATT_RSP \n");
         if (cfw_event->nType == CFW_GPRS_DEACTIVED)
         {
             tcp_debug_print_pcbs();
@@ -509,8 +519,8 @@ void BAL_ApsTaskTcpipProc(osiEvent_t *pEvent)
         uint8_t nCid, nSimId;
         nCid = pEvent->param1;
         nSimId = cfw_event->nFlag;
-        sys_arch_printf("EV_CFW_GPRS_CXT_DEACTIVE_IND cid = 0x%x ,cause: 0x%x\n",
-                        SIM_CID(nSimId, nCid), (unsigned int)pEvent->param2);
+        OSI_LOGI(0x10007554, "EV_CFW_GPRS_CXT_DEACTIVE_IND cid = 0x%x ,cause: 0x%x\n",
+                 SIM_CID(nSimId, nCid), (unsigned int)pEvent->param2);
         netif = getGprsNetIf(nSimId, nCid);
         if (netif != NULL)
         {
@@ -523,7 +533,7 @@ void BAL_ApsTaskTcpipProc(osiEvent_t *pEvent)
         }
         else
         {
-            sys_arch_printf("EV_CFW_GPRS_CXT_DEACTIVE_IND can't find netif for CID=0x%x\n", SIM_CID(nSimId, nCid));
+            OSI_LOGI(0x10007555, "EV_CFW_GPRS_CXT_DEACTIVE_IND can't find netif for CID=0x%x\n", SIM_CID(nSimId, nCid));
         }
     }
 }

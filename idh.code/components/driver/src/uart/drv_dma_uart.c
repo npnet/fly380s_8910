@@ -10,7 +10,7 @@
  * without further testing or modification.
  */
 
-// #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
 #include "osi_log.h"
 #include "osi_api.h"
@@ -21,7 +21,6 @@
 #include "hwregs.h"
 #include "hal_chip.h"
 #include "drv_config.h"
-#include "drv_host_cmd.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -469,7 +468,14 @@ static bool _startConfig(drvUart_t *d)
 
     REG_ARM_UART_UART_DELAY_T uart_delay = {};
     uart_delay.b.toutcnt = UART_RX_TIMEOUT_CNT;
-    uart_delay.b.two_tx_delay = UART_TX_DELAY;
+    if (d->name == DRV_NAME_UART2)
+    {
+        uart_delay.b.two_tx_delay = 1;
+    }
+    else
+    {
+        uart_delay.b.two_tx_delay = UART_TX_DELAY;
+    }
     d->hwp->uart_delay = uart_delay.v;
 
     REG_ARM_UART_UART_RXTRIG_T uart_rxtrig = {};
@@ -607,7 +613,6 @@ static void drvUartISR(void *ctx)
                     {
                         evt |= DRV_UART_EVENT_RX_OVERFLOW;
                     }
-
                 }
             }
 
@@ -1132,143 +1137,3 @@ int drvUartWriteAvail(drvUart_t *d)
 
     return osiFifoSpace(&d->tx_fifo);
 }
-
-#ifdef CONFIG_UART_BLUESCREEN_ENABLE
-typedef struct
-{
-    HWP_ARM_UART_T *hwp;
-    drvHostCmdEngine_t *cmd;
-} drvUartBlueScreenContext_t;
-
-static drvUartBlueScreenContext_t gUartBlueScreenCtx;
-
-static int prvUartFifoRead(HWP_ARM_UART_T *hwp, void *data, unsigned size)
-{
-    REG_ARM_UART_UART_RXFIFO_STAT_T uart_rxfifo_stat = {hwp->uart_rxfifo_stat};
-    int bytes = uart_rxfifo_stat.b.rx_fifo_cnt;
-    if (bytes > size)
-        bytes = size;
-
-    uint8_t *data8 = (uint8_t *)data;
-    for (int n = 0; n < bytes; n++)
-        *data8++ = hwp->uart_rx;
-    return bytes;
-}
-
-static int prvUartFifoWrite(HWP_ARM_UART_T *hwp, void *data, unsigned size)
-{
-    REG_ARM_UART_UART_TXFIFO_STAT_T uart_txfifo_stat = {hwp->uart_txfifo_stat};
-    uint32_t tx_fifo_cnt = uart_txfifo_stat.b.tx_fifo_cnt;
-    int bytes = tx_fifo_cnt < UART_TXFIFO_SIZE
-                    ? UART_TXFIFO_SIZE - tx_fifo_cnt
-                    : 0;
-    if (bytes > size)
-        bytes = size;
-
-    const uint8_t *data8 = (const uint8_t *)data;
-    for (int n = 0; n < bytes; n++)
-        hwp->uart_tx = *data8++;
-    return bytes;
-}
-
-static void prvHostCmdOutput(void *ctx, uint8_t *packet, unsigned packet_len)
-{
-    drvUartBlueScreenContext_t *d = &gUartBlueScreenCtx;
-    while (packet_len > 0)
-    {
-        int bytes = prvUartFifoWrite(d->hwp, packet, packet_len);
-        if (bytes > 0)
-        {
-            packet += bytes;
-            packet_len -= bytes;
-        }
-    }
-}
-
-#if (CONFIG_UART_BLUESCREEN_BAUD == 921600)
-#define UART_BLUESCREEN_DIVIDER (0x60003)
-#endif
-
-void drvUartBlueScreenInit(void)
-{
-    drvUartBlueScreenContext_t *d = &gUartBlueScreenCtx;
-    if (d->hwp != NULL)
-        return;
-
-    d->cmd = drvHostCmdUartBlueScreenEngine();
-    drvHostCmdEngineInit(d->cmd);
-    drvHostCmdSetSender(d->cmd, prvHostCmdOutput, d);
-    drvHostCmdRegisterHander(d->cmd, HOST_FLOWID_SYSCMD, drvHostSyscmdHandler);
-    drvHostCmdRegisterHander(d->cmd, HOST_FLOWID_READWRITE2, drvHostReadWriteHandler);
-    drvHostCmdRegisterHander(d->cmd, HOST_FLOWID_READWRITE, drvHostReadWriteHandler);
-
-    REG_SYS_CTRL_CFG_CLK_UART_T clk_uart;
-    switch (CONFIG_UART_BLUESCREEN)
-    {
-    case DRV_NAME_UART1:
-        d->hwp = hwp_uart1;
-        REG_FIELD_CHANGE1(hwp_sysCtrl->cfg_clk_uart[1], clk_uart, uart_sel_pll, 0);
-        break;
-
-    case DRV_NAME_UART2:
-        d->hwp = hwp_uart2;
-        REG_FIELD_CHANGE1(hwp_sysCtrl->cfg_clk_uart[2], clk_uart, uart_sel_pll, 0);
-        break;
-
-    case DRV_NAME_UART3:
-        d->hwp = hwp_uart3;
-        REG_FIELD_CHANGE1(hwp_sysCtrl->cfg_clk_uart[3], clk_uart, uart_sel_pll, 0);
-        break;
-    }
-
-    REG_ARM_UART_UART_CONF_T uart_conf = {
-        .b.check = 0,    // DRV_UART_NO_PARITY
-        .b.parity = 0,   // DRV_UART_EVEN_PARITY
-        .b.stop_bit = 0, // DRV_UART_STOP_BITS_1
-        .b.st_check = 1,
-        .b.rx_ie = 0,
-        .b.tx_ie = 0,
-        .b.tout_ie = 0,
-        .b.hwfc = 0,
-        .b.rx_trig_hwfc = 0,
-        .b.tout_hwfc = 0,
-        .b.hdlc = 0,
-        .b.frm_stp = 1, // ??
-        .b.trail = 0,
-        .b.txrst = 1,
-        .b.rxrst = 1,
-        .b.at_parity_en = 0,
-        .b.at_parity_sel = 0,
-        .b.at_verify_2byte = 0,
-        .b.at_div_mode = 0,
-        .b.at_enable = 0,
-    };
-    d->hwp->uart_conf = uart_conf.v;
-
-    REG_ARM_UART_UART_DELAY_T uart_delay = {
-        .b.toutcnt = 40,
-        .b.two_tx_delay = 0,
-    };
-    d->hwp->uart_delay = uart_delay.v;
-
-    REG_ARM_UART_UART_RXTRIG_T uart_rxtrig = {.b.rx_trig = 64};
-    d->hwp->uart_rxtrig = uart_rxtrig.v;
-
-    REG_ARM_UART_UART_TXTRIG_T uart_txtrig = {.b.tx_trig = 0};
-    d->hwp->uart_txtrig = uart_txtrig.v;
-
-    d->hwp->uart_baud = UART_BLUESCREEN_DIVIDER;
-
-    REG_WAIT_FIELD_EQZ(uart_conf, d->hwp->uart_conf, txrst);
-    REG_WAIT_FIELD_EQZ(uart_conf, d->hwp->uart_conf, rxrst);
-}
-
-void drvUartBlueScreenPoll(void)
-{
-    drvUartBlueScreenContext_t *d = &gUartBlueScreenCtx;
-    uint8_t buf[32];
-    int bytes = prvUartFifoRead(d->hwp, buf, 32);
-    if (bytes > 0)
-        drvHostCmdPushData(d->cmd, buf, bytes);
-}
-#endif

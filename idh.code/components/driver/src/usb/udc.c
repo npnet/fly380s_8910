@@ -13,10 +13,11 @@
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('G', 'U', 'D', 'C')
 #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
-#include <drv_names.h>
 #include <osi_log.h>
 #include <osi_api.h>
 #include <usb/usb_device.h>
+#include "drv_config.h"
+#include "drv_names.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -27,39 +28,40 @@
 
 #include "usb_utils.h"
 
-struct udc_private
+typedef struct
 {
+    udc_t udc;
     udevDrv_t *driver;
     void *notify_param;
     udcNotifier_t notifier;
-};
+} udcPriv_t;
 
-typedef struct udc_private udcPriv_t;
+char gDummyUsbRxBuf[USB_DUMMY_RX_BUF_SIZE] OSI_CACHE_LINE_ALIGNED;
 
 static inline udcPriv_t *_getPriv(udc_t *udc)
 {
-    return (udcPriv_t *)((uint8_t *)udc + sizeof(*udc));
+    return (udcPriv_t *)udc;
 }
 
 udc_t *udcCreate(uint32_t name)
 {
-    size_t alloc_size = sizeof(udc_t) + sizeof(udcPriv_t);
-    udc_t *u = (udc_t *)calloc(1, alloc_size);
-    if (u == NULL)
+    udcPriv_t *p = calloc(1, sizeof(udcPriv_t));
+    if (p == NULL)
         return NULL;
 
+    p->udc.feature = CONFIG_USB_DEVICE_CONTROLLER_FEATURE;
     // platform
-    if (!udcPlatInit_rda(u))
+    if (!udcPlatInit_rda(&p->udc))
     {
         OSI_LOGE(0, "udc platform init failed");
-        free(u);
+        free(p);
         return NULL;
     }
 
     // controller
-    dwcUdcInit(u);
+    dwcUdcInit(&p->udc);
 
-    return u;
+    return &p->udc;
 }
 
 void udcDestroy(udc_t *udc)

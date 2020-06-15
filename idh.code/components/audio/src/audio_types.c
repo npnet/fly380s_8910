@@ -81,6 +81,9 @@ auStreamFormat_t auStreamFormatBySuffix(const char *fname)
     if (dot == NULL)
         return AUSTREAM_FORMAT_UNKNOWN;
 
+    if (strcasecmp(dot, ".pcm") == 0)
+        return AUSTREAM_FORMAT_PCM;
+
     if (strcasecmp(dot, ".wav") == 0)
         return AUSTREAM_FORMAT_WAVPCM;
 

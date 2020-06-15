@@ -139,6 +139,8 @@ message pbAtProfileCfg
     optional uint32 drx_mode = 55;
     optional uint32 mcuNotifySleepMode = 58;
     optional uint32 mcuNotifySleepDelayMs = 59;
+    optional uint32 csta = 60;
+    optional uint32 csvm = 61;
 }
 
 message pbAtSimAutoSaveCfg
@@ -152,6 +154,17 @@ message pbAtSimAutoSaveCfg
     optional uint32 cops_act = 7;
 }
 
+message pbAtTbDataStatisticsAutoSaveCfg
+{
+    optional string rx_bytes = 1;
+    optional string tx_bytes = 2;
+    optional string act_time = 3;
+    optional string up_time = 4;
+    optional uint64 total_rx_bytes = 5;
+    optional uint64 total_tx_bytes = 6;
+    optional uint64 total_act_time = 7;
+}
+
 message pbAtAutoSaveCfg
 {
     repeated pbAtSimAutoSaveCfg sim = 1;
@@ -161,4 +174,5 @@ message pbAtAutoSaveCfg
     optional uint32 bcchmode = 60;
     optional uint32 callmode = 61;
     optional uint32 smsmode = 62;
+    repeated pbAtTbDataStatisticsAutoSaveCfg tbDataStatistics = 63;
 }

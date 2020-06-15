@@ -13,551 +13,726 @@
 #ifndef _CP_PWRCTRL_H_
 #define _CP_PWRCTRL_H_
 
-#ifdef CT_ASM
-#error "You are trying to use in an assembly code the normal H description of 'cp_pwrctrl'."
-#endif
+// Auto generated (v1.0-22-ge2f5f70). Don't edit it manually!
 
-// =============================================================================
-//  MACROS
-// =============================================================================
-
-// =============================================================================
-//  TYPES
-// =============================================================================
-
-// ============================================================================
-// CP_PWRCTRL_T
-// -----------------------------------------------------------------------------
-///
-// =============================================================================
 #if defined(REG_ADDRESS_FOR_GGE)
-#define REG_PWRCTRL_BASE 0x050A0000
+#define REG_PWRCTRL_BASE (0x050a0000)
 #else
-#define REG_PWRCTRL_BASE 0x500A0000
+#define REG_PWRCTRL_BASE (0x500a0000)
 #endif
 
 typedef volatile struct
 {
-    REG32 pwr_hwen;              //0x00000000
-    REG32 ap_pwr_ctrl;           //0x00000004
-    REG32 zsp_pwr_ctrl;          //0x00000008
-    REG32 lte_pwr_ctrl;          //0x0000000C
-    REG32 gge_pwr_ctrl;          //0x00000010
-    REG32 rf_pwr_ctrl;           //0x00000014
-    REG32 btfm_pwr_ctrl;         //0x00000018
-    REG32 aon_lp_pwr_ctrl;       //0x0000001C
-    REG32 ap_pwr_stat;           //0x00000020
-    REG32 zsp_pwr_stat;          //0x00000024
-    REG32 lte_pwr_stat;          //0x00000028
-    REG32 gge_pwr_stat;          //0x0000002C
-    REG32 rf_pwr_stat;           //0x00000030
-    REG32 btfm_pwr_stat;         //0x00000034
-    REG32 aon_lp_pwr_stat;       //0x00000038
-    REG32 state_delay;           //0x0000003C
-    REG32 prepgc_delay;          //0x00000040
-    REG32 allpgc_delay;          //0x00000044
-    REG32 ddr_hold_ctrl;         //0x00000048
-    REG32 zsp_pd_poll;           //0x0000004C
-    REG32 zsp_pd_poll_set;       //0x00000050
-    REG32 zsp_pd_poll_clr;       //0x00000054
-    REG32 Reserved_00000058[14]; //0x00000058
-    REG32 wcn_lps;               //0x00000090
-    REG32 arm_slp_req_sw;        //0x00000094
-    REG32 arm_slp_ack;           //0x00000098
-    REG32 arm_slp_req_hwen;      //0x0000009C
-    REG32 zsp_slp_req_sw;        //0x000000A0
-    REG32 zsp_slp_ack;           //0x000000A4
-    REG32 zsp_slp_req_hwen;      //0x000000A8
-    REG32 ddr_slp_req_sw;        //0x000000AC
-    REG32 ddr_slp_ack;           //0x000000B0
-    REG32 ddr_slp_req_hwen;      //0x000000B4
-    REG32 timeout_flag;          //0x000000B8
-    REG32 power_state;           //0x000000BC
-    REG32 pwrctrl_mode;          //0x000000C0
-    REG32 pwrctrl_sw;            //0x000000C4
-    REG32 pwrctrl_sw_set;        //0x000000C8
-    REG32 pwrctrl_sw_clr;        //0x000000CC
-    REG32 pwrctrl_sw1;           //0x000000D0
-    REG32 pwrctrl_sw1_set;       //0x000000D4
-    REG32 pwrctrl_sw1_clr;       //0x000000D8
+    uint32_t pwr_hwen;         // 0x00000000
+    uint32_t ap_pwr_ctrl;      // 0x00000004
+    uint32_t zsp_pwr_ctrl;     // 0x00000008
+    uint32_t lte_pwr_ctrl;     // 0x0000000c
+    uint32_t gge_pwr_ctrl;     // 0x00000010
+    uint32_t rf_pwr_ctrl;      // 0x00000014
+    uint32_t btfm_pwr_ctrl;    // 0x00000018
+    uint32_t aon_lp_pwr_ctrl;  // 0x0000001c
+    uint32_t ap_pwr_stat;      // 0x00000020
+    uint32_t zsp_pwr_stat;     // 0x00000024
+    uint32_t lte_pwr_stat;     // 0x00000028
+    uint32_t gge_pwr_stat;     // 0x0000002c
+    uint32_t rf_pwr_stat;      // 0x00000030
+    uint32_t btfm_pwr_stat;    // 0x00000034
+    uint32_t aon_lp_pwr_stat;  // 0x00000038
+    uint32_t state_delay;      // 0x0000003c
+    uint32_t prepgc_delay;     // 0x00000040
+    uint32_t allpgc_delay;     // 0x00000044
+    uint32_t ddr_hold_ctrl;    // 0x00000048
+    uint32_t zsp_pd_poll;      // 0x0000004c
+    uint32_t zsp_pd_poll_set;  // 0x00000050
+    uint32_t zsp_pd_poll_clr;  // 0x00000054
+    uint32_t __88[14];         // 0x00000058
+    uint32_t wcn_lps;          // 0x00000090
+    uint32_t arm_slp_req_sw;   // 0x00000094
+    uint32_t arm_slp_ack;      // 0x00000098
+    uint32_t arm_slp_req_hwen; // 0x0000009c
+    uint32_t zsp_slp_req_sw;   // 0x000000a0
+    uint32_t zsp_slp_ack;      // 0x000000a4
+    uint32_t zsp_slp_req_hwen; // 0x000000a8
+    uint32_t ddr_slp_req_sw;   // 0x000000ac
+    uint32_t ddr_slp_ack;      // 0x000000b0
+    uint32_t ddr_slp_req_hwen; // 0x000000b4
+    uint32_t timeout_flag;     // 0x000000b8
+    uint32_t power_state;      // 0x000000bc
+    uint32_t pwrctrl_mode;     // 0x000000c0
+    uint32_t pwrctrl_sw;       // 0x000000c4
+    uint32_t pwrctrl_sw_set;   // 0x000000c8
+    uint32_t pwrctrl_sw_clr;   // 0x000000cc
+    uint32_t pwrctrl_sw1;      // 0x000000d0
+    uint32_t pwrctrl_sw1_set;  // 0x000000d4
+    uint32_t pwrctrl_sw1_clr;  // 0x000000d8
 } HWP_CP_PWRCTRL_T;
 
 #define hwp_pwrctrl ((HWP_CP_PWRCTRL_T *)REG_ACCESS_ADDRESS(REG_PWRCTRL_BASE))
 
-//PWR_HWEN
+// pwr_hwen
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ap_pwr_en : 1;     // [0]
-        REG32 zsp_pon_en : 1;    // [1]
-        REG32 lte_pon_en : 1;    // [2]
-        REG32 gge_pon_en : 1;    // [3]
-        REG32 rf_pon_en : 1;     // [4]
-        REG32 btfm_pon_en : 1;   // [5]
-        REG32 aon_lp_pon_en : 1; // [6]
-        REG32 __31_7 : 25;
+        uint32_t ap_pwr_en : 1;     // [0]
+        uint32_t zsp_pon_en : 1;    // [1]
+        uint32_t lte_pon_en : 1;    // [2]
+        uint32_t gge_pon_en : 1;    // [3]
+        uint32_t rf_pon_en : 1;     // [4]
+        uint32_t btfm_pon_en : 1;   // [5]
+        uint32_t aon_lp_pon_en : 1; // [6]
+        uint32_t __31_7 : 25;       // [31:7]
     } b;
 } REG_CP_PWRCTRL_PWR_HWEN_T;
 
-//AP_PWR_CTRL
+// ap_pwr_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ap_poff : 1; // [0]
-        REG32 ap_pon : 1;  // [1]
-        REG32 __31_2 : 30;
+        uint32_t ap_poff : 1; // [0]
+        uint32_t ap_pon : 1;  // [1]
+        uint32_t __31_2 : 30; // [31:2]
     } b;
 } REG_CP_PWRCTRL_AP_PWR_CTRL_T;
 
-//ZSP_PWR_CTRL
+// zsp_pwr_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 zsp_poff : 1; // [0]
-        REG32 zsp_pon : 1;  // [1]
-        REG32 __31_2 : 30;
+        uint32_t zsp_poff : 1; // [0]
+        uint32_t zsp_pon : 1;  // [1]
+        uint32_t __31_2 : 30;  // [31:2]
     } b;
 } REG_CP_PWRCTRL_ZSP_PWR_CTRL_T;
 
-//LTE_PWR_CTRL
+// lte_pwr_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 lte_poff : 1; // [0]
-        REG32 lte_pon : 1;  // [1]
-        REG32 __31_2 : 30;
+        uint32_t lte_poff : 1; // [0]
+        uint32_t lte_pon : 1;  // [1]
+        uint32_t __31_2 : 30;  // [31:2]
     } b;
 } REG_CP_PWRCTRL_LTE_PWR_CTRL_T;
 
-//GGE_PWR_CTRL
+// gge_pwr_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 gge_poff : 1; // [0]
-        REG32 gge_pon : 1;  // [1]
-        REG32 __31_2 : 30;
+        uint32_t gge_poff : 1; // [0]
+        uint32_t gge_pon : 1;  // [1]
+        uint32_t __31_2 : 30;  // [31:2]
     } b;
 } REG_CP_PWRCTRL_GGE_PWR_CTRL_T;
 
-//RF_PWR_CTRL
+// rf_pwr_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 rf_poff : 1; // [0]
-        REG32 rf_pon : 1;  // [1]
-        REG32 __31_2 : 30;
+        uint32_t rf_poff : 1; // [0]
+        uint32_t rf_pon : 1;  // [1]
+        uint32_t __31_2 : 30; // [31:2]
     } b;
 } REG_CP_PWRCTRL_RF_PWR_CTRL_T;
 
-//BTFM_PWR_CTRL
+// btfm_pwr_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 btfm_poff : 1; // [0]
-        REG32 btfm_pon : 1;  // [1]
-        REG32 __31_2 : 30;
+        uint32_t btfm_poff : 1; // [0]
+        uint32_t btfm_pon : 1;  // [1]
+        uint32_t __31_2 : 30;   // [31:2]
     } b;
 } REG_CP_PWRCTRL_BTFM_PWR_CTRL_T;
 
-//AON_LP_PWR_CTRL
+// aon_lp_pwr_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 aon_lp_poff : 1; // [0]
-        REG32 aon_lp_pon : 1;  // [1]
-        REG32 __31_2 : 30;
+        uint32_t aon_lp_poff : 1; // [0]
+        uint32_t aon_lp_pon : 1;  // [1]
+        uint32_t __31_2 : 30;     // [31:2]
     } b;
 } REG_CP_PWRCTRL_AON_LP_PWR_CTRL_T;
 
-//AP_PWR_STAT
+// ap_pwr_stat
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ap_pstat : 1;  // [0], read only
-        REG32 ap_stable : 1; // [1], read only
-        REG32 __31_2 : 30;
+        uint32_t ap_pstat : 1;  // [0], read only
+        uint32_t ap_stable : 1; // [1], read only
+        uint32_t __31_2 : 30;   // [31:2]
     } b;
 } REG_CP_PWRCTRL_AP_PWR_STAT_T;
 
-//ZSP_PWR_STAT
+// zsp_pwr_stat
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 zsp_pstat : 1;  // [0], read only
-        REG32 zsp_stable : 1; // [1], read only
-        REG32 __31_2 : 30;
+        uint32_t zsp_pstat : 1;  // [0], read only
+        uint32_t zsp_stable : 1; // [1], read only
+        uint32_t __31_2 : 30;    // [31:2]
     } b;
 } REG_CP_PWRCTRL_ZSP_PWR_STAT_T;
 
-//LTE_PWR_STAT
+// lte_pwr_stat
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 lte_pstat : 1;  // [0], read only
-        REG32 lte_stable : 1; // [1], read only
-        REG32 __31_2 : 30;
+        uint32_t lte_pstat : 1;  // [0], read only
+        uint32_t lte_stable : 1; // [1], read only
+        uint32_t __31_2 : 30;    // [31:2]
     } b;
 } REG_CP_PWRCTRL_LTE_PWR_STAT_T;
 
-//GGE_PWR_STAT
+// gge_pwr_stat
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 gge_pstat : 1;  // [0], read only
-        REG32 gge_stable : 1; // [1], read only
-        REG32 __31_2 : 30;
+        uint32_t gge_pstat : 1;  // [0], read only
+        uint32_t gge_stable : 1; // [1], read only
+        uint32_t __31_2 : 30;    // [31:2]
     } b;
 } REG_CP_PWRCTRL_GGE_PWR_STAT_T;
 
-//RF_PWR_STAT
+// rf_pwr_stat
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 rf_pstat : 1;  // [0], read only
-        REG32 rf_stable : 1; // [1], read only
-        REG32 __31_2 : 30;
+        uint32_t rf_pstat : 1;  // [0], read only
+        uint32_t rf_stable : 1; // [1], read only
+        uint32_t __31_2 : 30;   // [31:2]
     } b;
 } REG_CP_PWRCTRL_RF_PWR_STAT_T;
 
-//BTFM_PWR_STAT
+// btfm_pwr_stat
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 btfm_pstat : 1;  // [0], read only
-        REG32 btfm_stable : 1; // [1], read only
-        REG32 __31_2 : 30;
+        uint32_t btfm_pstat : 1;  // [0], read only
+        uint32_t btfm_stable : 1; // [1], read only
+        uint32_t __31_2 : 30;     // [31:2]
     } b;
 } REG_CP_PWRCTRL_BTFM_PWR_STAT_T;
 
-//AON_LP_PWR_STAT
+// aon_lp_pwr_stat
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 aon_lp_pstat : 1;  // [0], read only
-        REG32 aon_lp_stable : 1; // [1], read only
-        REG32 __31_2 : 30;
+        uint32_t aon_lp_pstat : 1;  // [0], read only
+        uint32_t aon_lp_stable : 1; // [1], read only
+        uint32_t __31_2 : 30;       // [31:2]
     } b;
 } REG_CP_PWRCTRL_AON_LP_PWR_STAT_T;
 
-//STATE_DELAY
+// state_delay
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 delay : 8; // [7:0]
-        REG32 __31_8 : 24;
+        uint32_t delay : 8;   // [7:0]
+        uint32_t __31_8 : 24; // [31:8]
     } b;
 } REG_CP_PWRCTRL_STATE_DELAY_T;
 
-//PREPGC_DELAY
+// prepgc_delay
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 delay : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t delay : 16;   // [15:0]
+        uint32_t __31_16 : 16; // [31:16]
     } b;
 } REG_CP_PWRCTRL_PREPGC_DELAY_T;
 
-//ALLPGC_DELAY
+// allpgc_delay
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 delay : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t delay : 16;   // [15:0]
+        uint32_t __31_16 : 16; // [31:16]
     } b;
 } REG_CP_PWRCTRL_ALLPGC_DELAY_T;
 
-//DDR_HOLD_CTRL
+// ddr_hold_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 hold_ctrl : 1; // [0]
-        REG32 __31_1 : 31;
+        uint32_t hold_ctrl : 1; // [0]
+        uint32_t __31_1 : 31;   // [31:1]
     } b;
 } REG_CP_PWRCTRL_DDR_HOLD_CTRL_T;
 
-//ZSP_PD_POLL
+// zsp_pd_poll
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ap_poll : 1;  // [0]
-        REG32 cp_poll : 1;  // [1]
-        REG32 zsp_poll : 1; // [2]
-        REG32 __31_3 : 29;
+        uint32_t ap_poll : 1;  // [0]
+        uint32_t cp_poll : 1;  // [1]
+        uint32_t zsp_poll : 1; // [2]
+        uint32_t __31_3 : 29;  // [31:3]
     } b;
 } REG_CP_PWRCTRL_ZSP_PD_POLL_T;
 
-//ZSP_PD_POLL_SET
+// zsp_pd_poll_set
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 zsppollset : 3; // [2:0], write set
-        REG32 __31_3 : 29;
+        uint32_t zsppollset : 3; // [2:0], write set
+        uint32_t __31_3 : 29;    // [31:3]
     } b;
 } REG_CP_PWRCTRL_ZSP_PD_POLL_SET_T;
 
-//ZSP_PD_POLL_CLR
+// zsp_pd_poll_clr
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 zsppollclr : 3; // [2:0], write clear
-        REG32 __31_3 : 29;
+        uint32_t zsppollclr : 3; // [2:0], write clear
+        uint32_t __31_3 : 29;    // [31:3]
     } b;
 } REG_CP_PWRCTRL_ZSP_PD_POLL_CLR_T;
 
-//WCN_LPS
+// wcn_lps
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 sys2wcn_wakeup : 1; // [0]
-        REG32 wcn2sys_wakeup : 1; // [1], read only
-        REG32 wcn2sys_osc_en : 1; // [2], read only
-        REG32 wcn2sys_sleep : 1;  // [3], read only
-        REG32 __31_4 : 28;
+        uint32_t sys2wcn_wakeup : 1; // [0]
+        uint32_t wcn2sys_wakeup : 1; // [1], read only
+        uint32_t wcn2sys_osc_en : 1; // [2], read only
+        uint32_t wcn2sys_sleep : 1;  // [3], read only
+        uint32_t __31_4 : 28;        // [31:4]
     } b;
 } REG_CP_PWRCTRL_WCN_LPS_T;
 
-//ARM_SLP_REQ_SW
+// arm_slp_req_sw
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 armslpreq : 1; // [0]
-        REG32 __31_1 : 31;
+        uint32_t armslpreq : 1; // [0]
+        uint32_t __31_1 : 31;   // [31:1]
     } b;
 } REG_CP_PWRCTRL_ARM_SLP_REQ_SW_T;
 
-//ARM_SLP_ACK
+// arm_slp_ack
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 armslpack : 1; // [0], read only
-        REG32 __31_1 : 31;
+        uint32_t armslpack : 1; // [0], read only
+        uint32_t __31_1 : 31;   // [31:1]
     } b;
 } REG_CP_PWRCTRL_ARM_SLP_ACK_T;
 
-//ARM_SLP_REQ_HWEN
+// arm_slp_req_hwen
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 armslpreq_hwen : 1; // [0]
-        REG32 __31_1 : 31;
+        uint32_t armslpreq_hwen : 1; // [0]
+        uint32_t __31_1 : 31;        // [31:1]
     } b;
 } REG_CP_PWRCTRL_ARM_SLP_REQ_HWEN_T;
 
-//ZSP_SLP_REQ_SW
+// zsp_slp_req_sw
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 zspslpreq : 1; // [0]
-        REG32 __31_1 : 31;
+        uint32_t zspslpreq : 1; // [0]
+        uint32_t __31_1 : 31;   // [31:1]
     } b;
 } REG_CP_PWRCTRL_ZSP_SLP_REQ_SW_T;
 
-//ZSP_SLP_ACK
+// zsp_slp_ack
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 zspslpack : 1; // [0], read only
-        REG32 __31_1 : 31;
+        uint32_t zspslpack : 1; // [0], read only
+        uint32_t __31_1 : 31;   // [31:1]
     } b;
 } REG_CP_PWRCTRL_ZSP_SLP_ACK_T;
 
-//ZSP_SLP_REQ_HWEN
+// zsp_slp_req_hwen
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 zspslpreq_hwen : 1; // [0]
-        REG32 __31_1 : 31;
+        uint32_t zspslpreq_hwen : 1; // [0]
+        uint32_t __31_1 : 31;        // [31:1]
     } b;
 } REG_CP_PWRCTRL_ZSP_SLP_REQ_HWEN_T;
 
-//DDR_SLP_REQ_SW
+// ddr_slp_req_sw
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ddrslpreq : 1; // [0]
-        REG32 __31_1 : 31;
+        uint32_t ddrslpreq : 1; // [0]
+        uint32_t __31_1 : 31;   // [31:1]
     } b;
 } REG_CP_PWRCTRL_DDR_SLP_REQ_SW_T;
 
-//DDR_SLP_ACK
+// ddr_slp_ack
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ddrslpack : 1; // [0], read only
-        REG32 __31_1 : 31;
+        uint32_t ddrslpack : 1; // [0], read only
+        uint32_t __31_1 : 31;   // [31:1]
     } b;
 } REG_CP_PWRCTRL_DDR_SLP_ACK_T;
 
-//DDR_SLP_REQ_HWEN
+// ddr_slp_req_hwen
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ddrslpreq_hwen : 1; // [0]
-        REG32 __31_1 : 31;
+        uint32_t ddrslpreq_hwen : 1; // [0]
+        uint32_t __31_1 : 31;        // [31:1]
     } b;
 } REG_CP_PWRCTRL_DDR_SLP_REQ_HWEN_T;
 
-//TIMEOUT_FLAG
+// timeout_flag
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 armbusslptimeout : 1; // [0]
-        REG32 zspbusslptimeout : 1; // [1]
-        REG32 ddrslptimeout : 1;    // [2]
-        REG32 __31_3 : 29;
+        uint32_t armbusslptimeout : 1; // [0]
+        uint32_t zspbusslptimeout : 1; // [1]
+        uint32_t ddrslptimeout : 1;    // [2]
+        uint32_t __31_3 : 29;          // [31:3]
     } b;
 } REG_CP_PWRCTRL_TIMEOUT_FLAG_T;
 
-//POWER_STATE
+// power_state
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 armpowerstate : 4;   // [3:0], read only
-        REG32 zsppowerstate : 4;   // [7:4], read only
-        REG32 ltepowerstate : 4;   // [11:8], read only
-        REG32 ggepowerstate : 4;   // [15:12], read only
-        REG32 rfpowerstate : 4;    // [19:16], read only
-        REG32 btfmpowerstate : 4;  // [23:20], read only
-        REG32 aonlppowerstate : 4; // [27:24], read only
-        REG32 corepowerstate : 4;  // [31:28], read only
+        uint32_t armpowerstate : 4;   // [3:0], read only
+        uint32_t zsppowerstate : 4;   // [7:4], read only
+        uint32_t ltepowerstate : 4;   // [11:8], read only
+        uint32_t ggepowerstate : 4;   // [15:12], read only
+        uint32_t rfpowerstate : 4;    // [19:16], read only
+        uint32_t btfmpowerstate : 4;  // [23:20], read only
+        uint32_t aonlppowerstate : 4; // [27:24], read only
+        uint32_t corepowerstate : 4;  // [31:28], read only
     } b;
 } REG_CP_PWRCTRL_POWER_STATE_T;
 
-//PWRCTRL_MODE
+// pwrctrl_mode
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 pwr_mode : 1; // [0]
-        REG32 __31_1 : 31;
+        uint32_t pwr_mode : 1; // [0]
+        uint32_t __31_1 : 31;  // [31:1]
     } b;
 } REG_CP_PWRCTRL_PWRCTRL_MODE_T;
 
-//PWRCTRL_SW
+// pwrctrl_sw
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ap_clk_ctrl : 1;       // [0]
-        REG32 ap_rst_ctrl : 1;       // [1]
-        REG32 ap_hold : 1;           // [2]
-        REG32 ap_pwr_ctrl_pre : 1;   // [3]
-        REG32 ap_pwr_ctrl : 1;       // [4]
-        REG32 zsp_clk_ctrl : 1;      // [5]
-        REG32 zsp_rst_ctrl : 1;      // [6]
-        REG32 zsp_hold : 1;          // [7]
-        REG32 zsp_pwr_ctrl_pre : 1;  // [8]
-        REG32 zsp_pwr_ctrl : 1;      // [9]
-        REG32 lte_clk_ctrl : 1;      // [10]
-        REG32 lte_rst_ctrl : 1;      // [11]
-        REG32 lte_hold : 1;          // [12]
-        REG32 lte_pwr_ctrl_pre : 1;  // [13]
-        REG32 lte_pwr_ctrl : 1;      // [14]
-        REG32 gge_clk_ctrl : 1;      // [15]
-        REG32 gge_rst_ctrl : 1;      // [16]
-        REG32 gge_hold : 1;          // [17]
-        REG32 gge_pwr_ctrl_pre : 1;  // [18]
-        REG32 gge_pwr_ctrl : 1;      // [19]
-        REG32 rf_clk_ctrl : 1;       // [20]
-        REG32 rf_rst_ctrl : 1;       // [21]
-        REG32 rf_hold : 1;           // [22]
-        REG32 rf_pwr_ctrl_pre : 1;   // [23]
-        REG32 rf_pwr_ctrl : 1;       // [24]
-        REG32 btfm_clk_ctrl : 1;     // [25]
-        REG32 btfm_rst_ctrl : 1;     // [26]
-        REG32 btfm_hold : 1;         // [27]
-        REG32 btfm_pwr_ctrl_pre : 1; // [28]
-        REG32 btfm_pwr_ctrl : 1;     // [29]
-        REG32 __31_30 : 2;
+        uint32_t ap_clk_ctrl : 1;       // [0]
+        uint32_t ap_rst_ctrl : 1;       // [1]
+        uint32_t ap_hold : 1;           // [2]
+        uint32_t ap_pwr_ctrl_pre : 1;   // [3]
+        uint32_t ap_pwr_ctrl : 1;       // [4]
+        uint32_t zsp_clk_ctrl : 1;      // [5]
+        uint32_t zsp_rst_ctrl : 1;      // [6]
+        uint32_t zsp_hold : 1;          // [7]
+        uint32_t zsp_pwr_ctrl_pre : 1;  // [8]
+        uint32_t zsp_pwr_ctrl : 1;      // [9]
+        uint32_t lte_clk_ctrl : 1;      // [10]
+        uint32_t lte_rst_ctrl : 1;      // [11]
+        uint32_t lte_hold : 1;          // [12]
+        uint32_t lte_pwr_ctrl_pre : 1;  // [13]
+        uint32_t lte_pwr_ctrl : 1;      // [14]
+        uint32_t gge_clk_ctrl : 1;      // [15]
+        uint32_t gge_rst_ctrl : 1;      // [16]
+        uint32_t gge_hold : 1;          // [17]
+        uint32_t gge_pwr_ctrl_pre : 1;  // [18]
+        uint32_t gge_pwr_ctrl : 1;      // [19]
+        uint32_t rf_clk_ctrl : 1;       // [20]
+        uint32_t rf_rst_ctrl : 1;       // [21]
+        uint32_t rf_hold : 1;           // [22]
+        uint32_t rf_pwr_ctrl_pre : 1;   // [23]
+        uint32_t rf_pwr_ctrl : 1;       // [24]
+        uint32_t btfm_clk_ctrl : 1;     // [25]
+        uint32_t btfm_rst_ctrl : 1;     // [26]
+        uint32_t btfm_hold : 1;         // [27]
+        uint32_t btfm_pwr_ctrl_pre : 1; // [28]
+        uint32_t btfm_pwr_ctrl : 1;     // [29]
+        uint32_t __31_30 : 2;           // [31:30]
     } b;
 } REG_CP_PWRCTRL_PWRCTRL_SW_T;
 
-//PWRCTRL_SW_SET
+// pwrctrl_sw_set
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 set : 30; // [29:0], write set
-        REG32 __31_30 : 2;
+        uint32_t set : 30;    // [29:0], write set
+        uint32_t __31_30 : 2; // [31:30]
     } b;
 } REG_CP_PWRCTRL_PWRCTRL_SW_SET_T;
 
-//PWRCTRL_SW_CLR
+// pwrctrl_sw_clr
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 clear : 30; // [29:0], write clear
-        REG32 __31_30 : 2;
+        uint32_t clear : 30;  // [29:0], write clear
+        uint32_t __31_30 : 2; // [31:30]
     } b;
 } REG_CP_PWRCTRL_PWRCTRL_SW_CLR_T;
 
-//PWRCTRL_SW1
+// pwrctrl_sw1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 aon_lp_clk_ctrl : 1;     // [0]
-        REG32 aon_lp_rst_ctrl : 1;     // [1]
-        REG32 aon_lp_hold : 1;         // [2]
-        REG32 aon_lp_pwr_ctrl_pre : 1; // [3]
-        REG32 aon_lp_pwr_ctrl : 1;     // [4]
-        REG32 __31_5 : 27;
+        uint32_t aon_lp_clk_ctrl : 1;     // [0]
+        uint32_t aon_lp_rst_ctrl : 1;     // [1]
+        uint32_t aon_lp_hold : 1;         // [2]
+        uint32_t aon_lp_pwr_ctrl_pre : 1; // [3]
+        uint32_t aon_lp_pwr_ctrl : 1;     // [4]
+        uint32_t __31_5 : 27;             // [31:5]
     } b;
 } REG_CP_PWRCTRL_PWRCTRL_SW1_T;
 
-//PWRCTRL_SW1_SET
+// pwrctrl_sw1_set
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 set : 5; // [4:0], write set
-        REG32 __31_5 : 27;
+        uint32_t set : 5;     // [4:0], write set
+        uint32_t __31_5 : 27; // [31:5]
     } b;
 } REG_CP_PWRCTRL_PWRCTRL_SW1_SET_T;
 
-//PWRCTRL_SW1_CLR
+// pwrctrl_sw1_clr
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 clear : 5; // [4:0], write clear
-        REG32 __31_5 : 27;
+        uint32_t clear : 5;   // [4:0], write clear
+        uint32_t __31_5 : 27; // [31:5]
     } b;
 } REG_CP_PWRCTRL_PWRCTRL_SW1_CLR_T;
 
-#endif
+// pwr_hwen
+#define CP_PWRCTRL_AP_PWR_EN (1 << 0)
+#define CP_PWRCTRL_ZSP_PON_EN (1 << 1)
+#define CP_PWRCTRL_LTE_PON_EN (1 << 2)
+#define CP_PWRCTRL_GGE_PON_EN (1 << 3)
+#define CP_PWRCTRL_RF_PON_EN (1 << 4)
+#define CP_PWRCTRL_BTFM_PON_EN (1 << 5)
+#define CP_PWRCTRL_AON_LP_PON_EN (1 << 6)
+
+// ap_pwr_ctrl
+#define CP_PWRCTRL_AP_POFF (1 << 0)
+#define CP_PWRCTRL_AP_PON (1 << 1)
+
+// zsp_pwr_ctrl
+#define CP_PWRCTRL_ZSP_POFF (1 << 0)
+#define CP_PWRCTRL_ZSP_PON (1 << 1)
+
+// lte_pwr_ctrl
+#define CP_PWRCTRL_LTE_POFF (1 << 0)
+#define CP_PWRCTRL_LTE_PON (1 << 1)
+
+// gge_pwr_ctrl
+#define CP_PWRCTRL_GGE_POFF (1 << 0)
+#define CP_PWRCTRL_GGE_PON (1 << 1)
+
+// rf_pwr_ctrl
+#define CP_PWRCTRL_RF_POFF (1 << 0)
+#define CP_PWRCTRL_RF_PON (1 << 1)
+
+// btfm_pwr_ctrl
+#define CP_PWRCTRL_BTFM_POFF (1 << 0)
+#define CP_PWRCTRL_BTFM_PON (1 << 1)
+
+// aon_lp_pwr_ctrl
+#define CP_PWRCTRL_AON_LP_POFF (1 << 0)
+#define CP_PWRCTRL_AON_LP_PON (1 << 1)
+
+// ap_pwr_stat
+#define CP_PWRCTRL_AP_PSTAT (1 << 0)
+#define CP_PWRCTRL_AP_STABLE (1 << 1)
+
+// zsp_pwr_stat
+#define CP_PWRCTRL_ZSP_PSTAT (1 << 0)
+#define CP_PWRCTRL_ZSP_STABLE (1 << 1)
+
+// lte_pwr_stat
+#define CP_PWRCTRL_LTE_PSTAT (1 << 0)
+#define CP_PWRCTRL_LTE_STABLE (1 << 1)
+
+// gge_pwr_stat
+#define CP_PWRCTRL_GGE_PSTAT (1 << 0)
+#define CP_PWRCTRL_GGE_STABLE (1 << 1)
+
+// rf_pwr_stat
+#define CP_PWRCTRL_RF_PSTAT (1 << 0)
+#define CP_PWRCTRL_RF_STABLE (1 << 1)
+
+// btfm_pwr_stat
+#define CP_PWRCTRL_BTFM_PSTAT (1 << 0)
+#define CP_PWRCTRL_BTFM_STABLE (1 << 1)
+
+// aon_lp_pwr_stat
+#define CP_PWRCTRL_AON_LP_PSTAT (1 << 0)
+#define CP_PWRCTRL_AON_LP_STABLE (1 << 1)
+
+// state_delay
+#define CP_PWRCTRL_STATE_DELAY_DELAY(n) (((n)&0xff) << 0)
+
+// prepgc_delay
+#define CP_PWRCTRL_PREPGC_DELAY_DELAY(n) (((n)&0xffff) << 0)
+
+// allpgc_delay
+#define CP_PWRCTRL_ALLPGC_DELAY_DELAY(n) (((n)&0xffff) << 0)
+
+// ddr_hold_ctrl
+#define CP_PWRCTRL_HOLD_CTRL (1 << 0)
+
+// zsp_pd_poll
+#define CP_PWRCTRL_AP_POLL (1 << 0)
+#define CP_PWRCTRL_CP_POLL (1 << 1)
+#define CP_PWRCTRL_ZSP_POLL (1 << 2)
+
+// zsp_pd_poll_set
+#define CP_PWRCTRL_ZSPPOLLSET(n) (((n)&0x7) << 0)
+
+// zsp_pd_poll_clr
+#define CP_PWRCTRL_ZSPPOLLCLR(n) (((n)&0x7) << 0)
+
+// wcn_lps
+#define CP_PWRCTRL_SYS2WCN_WAKEUP (1 << 0)
+#define CP_PWRCTRL_WCN2SYS_WAKEUP (1 << 1)
+#define CP_PWRCTRL_WCN2SYS_OSC_EN (1 << 2)
+#define CP_PWRCTRL_WCN2SYS_SLEEP (1 << 3)
+
+// arm_slp_req_sw
+#define CP_PWRCTRL_ARMSLPREQ (1 << 0)
+
+// arm_slp_ack
+#define CP_PWRCTRL_ARMSLPACK (1 << 0)
+
+// arm_slp_req_hwen
+#define CP_PWRCTRL_ARMSLPREQ_HWEN (1 << 0)
+
+// zsp_slp_req_sw
+#define CP_PWRCTRL_ZSPSLPREQ (1 << 0)
+
+// zsp_slp_ack
+#define CP_PWRCTRL_ZSPSLPACK (1 << 0)
+
+// zsp_slp_req_hwen
+#define CP_PWRCTRL_ZSPSLPREQ_HWEN (1 << 0)
+
+// ddr_slp_req_sw
+#define CP_PWRCTRL_DDRSLPREQ (1 << 0)
+
+// ddr_slp_ack
+#define CP_PWRCTRL_DDRSLPACK (1 << 0)
+
+// ddr_slp_req_hwen
+#define CP_PWRCTRL_DDRSLPREQ_HWEN (1 << 0)
+
+// timeout_flag
+#define CP_PWRCTRL_ARMBUSSLPTIMEOUT (1 << 0)
+#define CP_PWRCTRL_ZSPBUSSLPTIMEOUT (1 << 1)
+#define CP_PWRCTRL_DDRSLPTIMEOUT (1 << 2)
+
+// power_state
+#define CP_PWRCTRL_ARMPOWERSTATE(n) (((n)&0xf) << 0)
+#define CP_PWRCTRL_ZSPPOWERSTATE(n) (((n)&0xf) << 4)
+#define CP_PWRCTRL_LTEPOWERSTATE(n) (((n)&0xf) << 8)
+#define CP_PWRCTRL_GGEPOWERSTATE(n) (((n)&0xf) << 12)
+#define CP_PWRCTRL_RFPOWERSTATE(n) (((n)&0xf) << 16)
+#define CP_PWRCTRL_BTFMPOWERSTATE(n) (((n)&0xf) << 20)
+#define CP_PWRCTRL_AONLPPOWERSTATE(n) (((n)&0xf) << 24)
+#define CP_PWRCTRL_COREPOWERSTATE(n) (((n)&0xf) << 28)
+
+// pwrctrl_mode
+#define CP_PWRCTRL_PWR_MODE (1 << 0)
+
+// pwrctrl_sw
+#define CP_PWRCTRL_AP_CLK_CTRL (1 << 0)
+#define CP_PWRCTRL_AP_RST_CTRL (1 << 1)
+#define CP_PWRCTRL_AP_HOLD (1 << 2)
+#define CP_PWRCTRL_AP_PWR_CTRL_PRE (1 << 3)
+#define CP_PWRCTRL_AP_PWR_CTRL (1 << 4)
+#define CP_PWRCTRL_ZSP_CLK_CTRL (1 << 5)
+#define CP_PWRCTRL_ZSP_RST_CTRL (1 << 6)
+#define CP_PWRCTRL_ZSP_HOLD (1 << 7)
+#define CP_PWRCTRL_ZSP_PWR_CTRL_PRE (1 << 8)
+#define CP_PWRCTRL_ZSP_PWR_CTRL (1 << 9)
+#define CP_PWRCTRL_LTE_CLK_CTRL (1 << 10)
+#define CP_PWRCTRL_LTE_RST_CTRL (1 << 11)
+#define CP_PWRCTRL_LTE_HOLD (1 << 12)
+#define CP_PWRCTRL_LTE_PWR_CTRL_PRE (1 << 13)
+#define CP_PWRCTRL_LTE_PWR_CTRL (1 << 14)
+#define CP_PWRCTRL_GGE_CLK_CTRL (1 << 15)
+#define CP_PWRCTRL_GGE_RST_CTRL (1 << 16)
+#define CP_PWRCTRL_GGE_HOLD (1 << 17)
+#define CP_PWRCTRL_GGE_PWR_CTRL_PRE (1 << 18)
+#define CP_PWRCTRL_GGE_PWR_CTRL (1 << 19)
+#define CP_PWRCTRL_RF_CLK_CTRL (1 << 20)
+#define CP_PWRCTRL_RF_RST_CTRL (1 << 21)
+#define CP_PWRCTRL_RF_HOLD (1 << 22)
+#define CP_PWRCTRL_RF_PWR_CTRL_PRE (1 << 23)
+#define CP_PWRCTRL_RF_PWR_CTRL (1 << 24)
+#define CP_PWRCTRL_BTFM_CLK_CTRL (1 << 25)
+#define CP_PWRCTRL_BTFM_RST_CTRL (1 << 26)
+#define CP_PWRCTRL_BTFM_HOLD (1 << 27)
+#define CP_PWRCTRL_BTFM_PWR_CTRL_PRE (1 << 28)
+#define CP_PWRCTRL_BTFM_PWR_CTRL (1 << 29)
+
+// pwrctrl_sw_set
+#define CP_PWRCTRL_PWRCTRL_SW_SET_SET(n) (((n)&0x3fffffff) << 0)
+
+// pwrctrl_sw_clr
+#define CP_PWRCTRL_PWRCTRL_SW_CLR_CLEAR(n) (((n)&0x3fffffff) << 0)
+
+// pwrctrl_sw1
+#define CP_PWRCTRL_AON_LP_CLK_CTRL (1 << 0)
+#define CP_PWRCTRL_AON_LP_RST_CTRL (1 << 1)
+#define CP_PWRCTRL_AON_LP_HOLD (1 << 2)
+#define CP_PWRCTRL_AON_LP_PWR_CTRL_PRE (1 << 3)
+#define CP_PWRCTRL_AON_LP_PWR_CTRL (1 << 4)
+
+// pwrctrl_sw1_set
+#define CP_PWRCTRL_PWRCTRL_SW1_SET_SET(n) (((n)&0x1f) << 0)
+
+// pwrctrl_sw1_clr
+#define CP_PWRCTRL_PWRCTRL_SW1_CLR_CLEAR(n) (((n)&0x1f) << 0)
+
+#endif // _CP_PWRCTRL_H_

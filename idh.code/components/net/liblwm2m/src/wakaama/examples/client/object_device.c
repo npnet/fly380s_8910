@@ -538,10 +538,10 @@ static void free_object_device(lwm2m_object_t * objectP)
         objectP->instanceList = NULL;
     }
 
-    lwm2m_free(objectP);
+    //lwm2m_free(objectP);
 }
 
-lwm2m_object_t * get_object_device()
+lwm2m_object_t * get_object_device(void *lwm2mH)
 {
     /*
      * The get_object_device function create the object itself and return a pointer to the structure that represent it.

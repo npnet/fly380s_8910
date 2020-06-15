@@ -53,4 +53,8 @@ void AT_TCPIP_CmdFunc_PINGSTOP(atCommand_t *pParam);
 void AT_TCPIP_CmdFunc_CIPTKA(atCommand_t *pParam);
 void AT_TCPIP_CmdFunc_CIPRDTIMER(atCommand_t *pParam);
 
+void AT_TCPIP_CmdFunc_SSLSTART(atCommand_t *pParam);
+void AT_TCPIP_CmdFunc_SSLSEND(atCommand_t *pParam);
+void AT_TCPIP_CmdFunc_SSLCLOSE(atCommand_t *pParam);
+
 #endif

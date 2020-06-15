@@ -47,6 +47,7 @@ static bool osiSysnvDecode(void *buf, size_t size)
     PB_OPT_DEC_ASSIGN(gSysnvSimHotPlug, gSysnvSimHotPlug);
     PB_OPT_DEC_ASSIGN(gSysnvSimVoltTrigMode, gSysnvSimVoltTrigMode);
     PB_OPT_DEC_ASSIGN(gSysnvUsbDetMode, gSysnvUsbDetMode);
+    PB_OPT_DEC_ASSIGN(gSysnvNATCfg, gSysnvNATCfg);
     return true;
 }
 
@@ -65,6 +66,7 @@ static int osiSysnvEncode(void *buf, size_t size)
     PB_OPT_ENC_ASSIGN(gSysnvSimHotPlug, gSysnvSimHotPlug);
     PB_OPT_ENC_ASSIGN(gSysnvSimVoltTrigMode, gSysnvSimVoltTrigMode);
     PB_OPT_ENC_ASSIGN(gSysnvUsbDetMode, gSysnvUsbDetMode);
+    PB_OPT_ENC_ASSIGN(gSysnvNATCfg, gSysnvNATCfg);
     return pbEncodeToMem(fields, pbs, buf, size);
 }
 

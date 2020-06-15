@@ -86,7 +86,7 @@ coap_log_2(uint16_t value)
     result++;
   } while (value);
 
-  return result ? result - 1 : result;
+  return (result - 1);
 }
 /*-----------------------------------------------------------------------------------*/
 static
@@ -666,12 +666,14 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
       ); /*FIXME always prints 8 bytes */
   }
   
+#if 0
   if (latest_mid == coap_pkt->mid && memcmp(latest_token,coap_pkt->token,coap_pkt->token_len)==0)
   {
     PRINTF("ignore duplicated message:%d",coap_pkt->mid);
     return COAP_IGNORE;
   }
   else
+#endif
   {
       latest_mid = coap_pkt->mid;
       memcpy(latest_token,coap_pkt->token,coap_pkt->token_len);

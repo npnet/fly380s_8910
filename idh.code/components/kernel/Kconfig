@@ -20,19 +20,6 @@ config KERNEL_SYSNV_ENABLED
 
         When it is enabled, code size may be increased.
 
-config KERNEL_LOG_IN_CRITICAL
-    bool "Protect log in critical section"
-    default y if SOC_6760
-    default n
-    help
-        When enabled, log is protected in critical section. It will increase
-        interrupt delay. So, don't enable it is not necessary.
-
-        By default, there are 3 steps for one log: request buffer, fill log
-        data and notify buffer filled. When log data is large, fill log data
-        will take time. For example, the time to fill 32KB log data is
-        unacceptable to disable interrupt.
-
 config KERNEL_TICK_HZ
     int "Tick per second"
     default 50
@@ -191,33 +178,35 @@ endif
 
 choice
     prompt "Trace packet format"
-    default KERNEL_TRACE_BBC8 if SOC_8909
-    default KERNEL_TRACE_HOST98 if SOC_8955 || SOC_8910
-    default KERNEL_TRACE_HOST97
+    default KERNEL_HOST_TRACE
 
-config KERNEL_TRACE_HOST97
-    bool "Host packet, flow id 0x97"
+config KERNEL_HOST_TRACE
+    bool "Host packet"
 
-config KERNEL_TRACE_HOST98
-    bool "Host packet, flow id 0x98"
-
-config KERNEL_TRACE_BBC8
-    bool "0xbbbb packet, type 0xc8/c9"
+config KERNEL_DIAG_TRACE
+    bool "Host packet"
 
 endchoice
 
 config KERNEL_TRACE_BUF_SIZE
     hex "trace buffer size"
-    default 0x1000 if SOC_8955
-    default 0x8000
+    default 0x1000 if SOC_8955 || SOC_8811
+    default 0x2000
     help
         Trace will use multiple buffers. And this is the size of each buffer.
 
 config KERNEL_TRACE_BUF_COUNT
     int "trace buffer count"
-    default 2
+    default 2 if SOC_8955
+    default 4
     help
         Trace will use multiple buffers. And this is the buffer count.
+
+config KERNEL_TRACE_EXTERNAL_BUF_COUNT
+    int "external trace buffer count"
+    default 8
+    help
+        For each external buffer, there is only a small management overhead.
 
 config KERNEL_DISABLE_TRACEID
     bool "Disable trace ID"
@@ -239,5 +228,12 @@ config KERNEL_MEM_RECORD_COUNT
 
         It is helpful for debug memory issues. So, this feature can't be
         disabled, just the count can be configured.
+
+config KERNEL_BLUE_SCREEN_HANDLER_COUNT
+    int "blue screen handler maximum count"
+    default 8
+    help
+        Callbacks can be registered to be called when entering and during
+        blue screen mode. This is the maximum count.
 
 endmenu

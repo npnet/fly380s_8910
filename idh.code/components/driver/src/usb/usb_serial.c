@@ -108,6 +108,10 @@ static void prvRxDoneCb(usbEp_t *ep, usbXfer_t *xfer)
         if (priv->rx_fifo != NULL)
             osiBlockedFifoPutDone(priv->rx_fifo, xfer->actual);
 
+        // In case host doesn't send UCDC_SET_CONTROL_LINE_STATE,
+        // "open" should be set forcedly to enabled write.
+        priv->open = true;
+
         // In case someone is waiting rx avail
         osiSemaphoreRelease(priv->rx_avail_sem);
     }
@@ -200,6 +204,7 @@ static void prvTxTransBlockLocked_(usbSerialPriv_t *priv, const void *data, unsi
     drvSerialImpl_t *port = &priv->port;
     usbXfer_t *x = priv->tx_xfer;
     x->buf = (void *)data;
+    x->zlp = 1;
     x->length = size;
     x->param = priv;
     x->status = 0; // though it will set to -EINPROGRESS at queue
@@ -326,18 +331,6 @@ static bool prvWaitReadAvailLocked(usbSerialPriv_t *priv, unsigned timeout)
 
 static int prvSerialStartLocked(usbSerialPriv_t *priv)
 {
-    udc_t *udc = priv->cdc->func->controller;
-    int result = udcEpEnable(udc, priv->tx_ep);
-    if (result < 0)
-        return result;
-
-    result = udcEpEnable(udc, priv->rx_ep);
-    if (result < 0)
-    {
-        udcEpDisable(udc, priv->tx_ep);
-        return result;
-    }
-
     if (priv->rx_fifo)
         osiBlockedFifoReset(priv->rx_fifo);
     if (priv->tx_fifo)
@@ -352,16 +345,8 @@ static int prvSerialStartLocked(usbSerialPriv_t *priv)
 static void prvSerialStopLocked(usbSerialPriv_t *priv)
 {
     udc_t *udc = priv->cdc->func->controller;
-    if (priv->rx_ep)
-    {
-        udcEpDequeueAll(udc, priv->rx_ep);
-        udcEpDisable(udc, priv->rx_ep);
-    }
-    if (priv->tx_ep)
-    {
-        udcEpDequeueAll(udc, priv->tx_ep);
-        udcEpDisable(udc, priv->tx_ep);
-    }
+    udcEpDequeue(udc, priv->rx_ep, priv->rx_xfer);
+    udcEpDequeue(udc, priv->tx_ep, priv->tx_xfer);
 }
 
 static int prvOpen(drvSerialImpl_t *port)
@@ -483,7 +468,7 @@ static int prvWrite(drvSerialImpl_t *port, const void *data, size_t size)
     usbSerialPriv_t *priv = PORT_PRIV(port);
     if (SERIAL_RUNNING(priv) && priv->open && priv->tx_fifo != NULL)
     {
-        int send = osiBlockedFifoPut(priv->tx_fifo, data, size);
+        send = osiBlockedFifoPut(priv->tx_fifo, data, size);
         if (send > 0)
             prvTxPollLocked(priv);
     }
@@ -713,6 +698,25 @@ int usbSerialEnable(usbSerial_t *cdc)
     uint32_t critical = osiEnterCritical();
     priv->open = false;
     priv->ready = true;
+
+    udc_t *udc = priv->cdc->func->controller;
+    int result = udcEpEnable(udc, priv->tx_ep);
+    if (result < 0)
+    {
+        osiExitCritical(critical);
+        OSI_LOGE(0, "%x enable fail", priv->tx_ep->address);
+        return result;
+    }
+
+    result = udcEpEnable(udc, priv->rx_ep);
+    if (result < 0)
+    {
+        udcEpDisable(udc, priv->tx_ep);
+        osiExitCritical(critical);
+        OSI_LOGE(0, "%x enable fail", priv->rx_ep->address);
+        return result;
+    }
+
     if (priv->inited)
         prvSerialStartLocked(priv);
     osiExitCritical(critical);
@@ -737,6 +741,11 @@ void usbSerialDisable(usbSerial_t *cdc)
     priv->ready = false;
     priv->open = false;
     prvSerialStopLocked(priv);
+
+    udc_t *udc = priv->cdc->func->controller;
+    udcEpDisable(udc, priv->rx_ep);
+    udcEpDisable(udc, priv->tx_ep);
+
     osiExitCritical(critical);
 
     drvSerialImpl_t *port = &priv->port;
@@ -778,4 +787,18 @@ void usbSerialClose(usbSerial_t *cdc)
     osiExitCritical(critical);
     OSI_LOGI(0, "usb serial %4c close %x", PORT_NAME(&priv->port), priv->pending_event);
     prvNotifyPendingEvent(priv);
+}
+
+static const usbSerialDriverOps_t gUserialOps = {
+    .bind = usbSerialBind,
+    .unbind = usbSerialUnbind,
+    .enable = usbSerialEnable,
+    .disable = usbSerialDisable,
+    .open = usbSerialOpen,
+    .close = usbSerialClose,
+};
+
+const usbSerialDriverOps_t *usbSerialGetOps(void)
+{
+    return &gUserialOps;
 }

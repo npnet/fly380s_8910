@@ -20,7 +20,6 @@ extern "C" {
 #endif
 
 void bootStart(uint32_t param);
-void bootInitRunTime(void);
 
 #ifdef __cplusplus
 }

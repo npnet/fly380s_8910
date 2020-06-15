@@ -33,28 +33,23 @@
 Reset_Handler:
     CPSID   if
 
-    MRC     p15, 0, R0, c1, c0, 1   // Read CP15 Auxiliary Control register
-    ORR     R0, R0, #(0x1 << 18)    // Set BTDIS bit 18 to disable indrect BTAC
-    MCR     p15, 0, R0, C1, c0, 1   // Wriet value back to CP15 Auxiliary Control register
-    ISB
-
     // Reset SCTLR Settings
-    MRC     p15, 0, R0, c1, c0, 0   // Read CP15 System Control register
-    BIC     R0, R0, #(0x1 << 12)    // Clear I bit 12 to disable I Cache
-    BIC     R0, R0, #(0x1 <<  2)    // Clear C bit  2 to disable D Cache
-    BIC     R0, R0, #0x1            // Clear M bit  0 to disable MMU
-    BIC     R0, R0, #(0x1 << 11)    // Clear Z bit 11 to disable branch prediction
-    BIC     R0, R0, #(0x1 << 13)    // Clear V bit 13 to disable hivecs
-    MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register
+    MRC     p15, 0, R4, c1, c0, 0   // Read CP15 System Control register
+    BIC     R4, R4, #(0x1 << 12)    // Clear I bit 12 to disable I Cache
+    BIC     R4, R4, #(0x1 <<  2)    // Clear C bit  2 to disable D Cache
+    BIC     R4, R4, #0x1            // Clear M bit  0 to disable MMU
+    BIC     R4, R4, #(0x1 << 11)    // Clear Z bit 11 to disable branch prediction
+    BIC     R4, R4, #(0x1 << 13)    // Clear V bit 13 to disable hivecs
+    MCR     p15, 0, R4, c1, c0, 0   // Write value back to CP15 System Control register
     ISB
 
-    ORR     R0, R0, #(0x1 << 12)    // Set I bit 12 to enable I Cache
-    MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register
+    ORR     R4, R4, #(0x1 << 12)    // Set I bit 12 to enable I Cache
+    MCR     p15, 0, R4, c1, c0, 0   // Write value back to CP15 System Control register
     ISB
 
     // Set Vector Base Address Register (VBAR) to point to this application's vector table
-    LDR     R0, =Vectors
-    MCR     p15, 0, R0, c12, c0, 0
+    LDR     R4, =Vectors
+    MCR     p15, 0, R4, c12, c0, 0
 
     // Setup Stack for each exceptional mode
     CPS     #0x11
@@ -78,11 +73,6 @@ Reset_Handler:
     .type   WakeupPm1_Handler, %function
     .func
 WakeupPm1_Handler:
-    MRC     p15, 0, R0, c1, c0, 1   // Read CP15 Auxiliary Control register
-    ORR     R0, R0, #(0x1 << 18)    // Set BTDIS bit 18 to disable indrect BTAC
-    MCR     p15, 0, R0, C1, c0, 1   // Wriet value back to CP15 Auxiliary Control register
-    ISB
-
     MRC     p15, 0, R0, c1, c0, 0   // Read CP15 System Control register
     ORR     R0, R0, #(0x1 << 12)    // Set I bit 12 to enable I Cache
     MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register
@@ -113,11 +103,6 @@ WakeupPm1_Handler:
     .type   WakeupPm2_Handler, %function
     .func
 WakeupPm2_Handler:
-    MRC     p15, 0, R0, c1, c0, 1   // Read CP15 Auxiliary Control register
-    ORR     R0, R0, #(0x1 << 18)    // Set BTDIS bit 18 to disable indrect BTAC
-    MCR     p15, 0, R0, C1, c0, 1   // Wriet value back to CP15 Auxiliary Control register
-    ISB
-
     MRC     p15, 0, R0, c1, c0, 0   // Read CP15 System Control register
     ORR     R0, R0, #(0x1 << 12)    // Set I bit 12 to enable I Cache
     MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register

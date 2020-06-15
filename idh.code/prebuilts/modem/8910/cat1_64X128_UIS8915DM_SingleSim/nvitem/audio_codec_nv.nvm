@@ -65,7 +65,7 @@
     ITEM_CONTENT = 0x2
     ITEM_INDEX   = 5
     ITEM_PARENT  = 0
-    ITEM_DESC    = reserved
+    ITEM_DESC    = 1:I2C write 9bit data(NAU88C22),2:I2C write 8bit data(ES8374)
   END_ITEM
 
   BEGIN_ITEM
@@ -363,10 +363,10 @@
     ITEM_NAME    = freq
     ITEM_ID      = 634
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x2625A00
+    ITEM_CONTENT = 0xBEBC200
     ITEM_INDEX   = 35
     ITEM_PARENT  = 33
-    ITEM_DESC    = i2c system clock(Hz) 
+    ITEM_DESC    = system clock(Hz) 
   END_ITEM
 
   BEGIN_ITEM

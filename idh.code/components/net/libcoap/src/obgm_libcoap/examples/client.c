@@ -22,14 +22,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <osi_log.h>
 
 #include "coap.h"
 #include "coap_mbeddtls.h"
 #include "coap_list.h"
 #include "coap_async_api.h"
 
-#define exit(x) do{ sys_arch_printf("exit with %d\n",x);result = -1;goto exit;} while(0)
-
+#define exit(x) do{ OSI_LOGI(0,"exit with %d\n",x);result = -1;goto exit;} while(0)
 #define MAX_USER 128 /* Maximum length of a user name (i.e., PSK
                       * identity) in bytes. */
 #define MAX_KEY   64 /* Maximum length of a key (i.e., PSK) in bytes. */

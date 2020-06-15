@@ -79,12 +79,9 @@ typedef enum
     /// What ?
     VOIS_ERR_UNKNOWN,
 
-
     VOIS_ERR_QTY
 } VOIS_ERR_T;
 
-
 /// @} // End of the error group
-
 
 #endif // _HAL_ERROR_H_

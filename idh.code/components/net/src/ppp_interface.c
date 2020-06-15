@@ -24,10 +24,17 @@
 #include "drv_ps_path.h"
 #include "netif.h"
 #include "lwip/prot/ip.h"
-
+#if PPP_AUTHGPRS_SUPPORT
+#include "netif/ppp/chap-new.h"
+#include "netif/ppp/upap.h"
+#include "netif/ppp/ppp_impl.h"
+#endif
 #include "at_cfw.h"
 #include "netmain.h"
-
+#if IP_NAT
+#include "lwip/ip4_nat.h"
+#include "netutils.h"
+#endif
 #define DUMP_MAX_SIZE (256)
 #define DUMP_SIZE(size) ((size) > DUMP_MAX_SIZE ? DUMP_MAX_SIZE : (size))
 extern bool AT_GetOperatorDefaultApn(uint8_t pOperatorId[6], const char **pOperatorDefaltApn);
@@ -37,7 +44,25 @@ extern err_t ppp_netif_output_ip4(struct netif *netif, struct pbuf *pb, const ip
 #if LWIP_IPV6
 err_t ppp_netif_output_ip6(struct netif *netif, struct pbuf *pb, const ip6_addr_t *ipaddr);
 #endif
+extern void start_network_phase(ppp_pcb *pcb);
+
 static void _psIntfRead(void *ctx);
+
+#if IP_NAT
+extern u8_t ip4_wan_forward(struct pbuf *p, struct netif *inp);
+extern u8_t netif_num;
+typedef TAILQ_ENTRY(ppp_buf) ppp_buf_iter_t;
+typedef TAILQ_HEAD(ppp_buf_head, ppp_buf) ppp_buf_head_t;
+#define MAX_PPP_DL_LIT_PACK_NUM 256
+#define MAX_PPP_DL_BIG_PACK_NUM 128
+static int sPPPDLitPackNum = 0;
+static int sPPPDBigPackNum = 0;
+typedef struct ppp_buf
+{
+    ppp_buf_iter_t iter;
+    void *buf;
+} ppp_buf_t;
+#endif
 
 struct pppSession
 {
@@ -57,13 +82,258 @@ struct pppSession
     osiThread_t *dl_thread;
     int is_deleted;
     int cgact_activated;
+    int uti_attact;
+    int retrycnt_attact;
+#if IP_NAT
+    ppp_buf_head_t buffer_list;
+    ip4_nat_entry_t ppp_nat_entry;
+    osiTimer_t *dl_read_notify_timer;
+#endif
 };
 
-void ppp_ip_output(struct pbuf *p, pppSession_t *ctx)
+#if IP_NAT
+static void _ppp_read_notify_timeout(void *ctx)
 {
+    struct netif *nif = (struct netif *)ctx;
+    if (nif->state == NULL)
+    {
+        OSI_LOGI(0x0, "_ppp_lan_data_pull nif->state");
+        return;
+    }
+
+    ppp_pcb *pcb = (ppp_pcb *)nif->state;
+    if (pcb->ppp_session == NULL)
+    {
+        OSI_LOGI(0x0, "_ppp_lan_data_pull pcb->ppp_session");
+        return;
+    }
+
+    pppSession_t *pppSession = (pppSession_t *)pcb->ppp_session;
+    osiNotifyTrigger(pppSession->dl_read_notify);
+}
+
+static void _ppp_lan_data_pull(void *ctx)
+{
+    OSI_LOGI(0x0, "_ppp_lan_data_pull");
+    struct netif *nif = (struct netif *)ctx;
+    if (nif->state == NULL)
+        return;
+
+    ppp_pcb *pcb = (ppp_pcb *)nif->state;
+    if (pcb->ppp_session == NULL)
+        return;
+
+    pppSession_t *pppSession = (pppSession_t *)pcb->ppp_session;
+    if (pppSession->flowctrl_cb != NULL)
+    {
+        int flowcntrol = pppSession->flowctrl_cb(pppSession->flowctrl_cb_ctx);
+        if (flowcntrol > 1)
+        {
+            OSI_LOGI(0x0, "_ppp_lan_data_pull PPP dl read later by hard flow control");
+            //osiNotifyTrigger(pppSession->dl_read_notify);
+            osiTimerStart(pppSession->dl_read_notify_timer, 10);
+            return;
+        }
+    }
+
+    ppp_buf_t *ppp_buf;
+    while ((ppp_buf = TAILQ_FIRST(&(pppSession->buffer_list))) != NULL)
+    {
+        struct pbuf *p = ppp_buf->buf;
+#if LWIP_TCPIP_CORE_LOCKING
+        LOCK_TCPIP_CORE();
+#endif
+        TAILQ_REMOVE(&(pppSession->buffer_list), ppp_buf, iter);
+        if (p->tot_len < 160)
+        {
+            sPPPDLitPackNum--;
+            if (sPPPDLitPackNum < 0)
+                sPPPDLitPackNum = 0;
+        }
+        else
+        {
+            sPPPDBigPackNum--;
+            if (sPPPDBigPackNum < 0)
+                sPPPDBigPackNum = 0;
+        }
+#if LWIP_TCPIP_CORE_LOCKING
+        UNLOCK_TCPIP_CORE();
+#endif
+        free(ppp_buf);
+
+#if LWIP_IPV6
+        if (IP_HDR_GET_VERSION(p->payload) == 6)
+            ppp_netif_output_ip6(nif, p, NULL);
+        else
+#endif
+            ppp_netif_output_ip4(nif, p, NULL);
+        sys_arch_dump(p->payload, p->tot_len);
+        nif->u32PPPDLSize += p->tot_len;
+        pbuf_free(p);
+        if (pppSession->flowctrl_cb != NULL)
+        {
+            int flowcntrol = pppSession->flowctrl_cb(pppSession->flowctrl_cb_ctx);
+            if (flowcntrol > 0)
+            {
+                OSI_LOGI(0x1000562c, "PPP dl read later by flow control");
+                //osiNotifyTrigger(pppSession->dl_read_notify);
+                osiTimerStart(pppSession->dl_read_notify_timer, 10);
+                break;
+            }
+        }
+    }
+}
+
+err_t wan_to_ppp_lan_datainput(struct pbuf *p, struct netif *inp)
+{
+    OSI_LOGI(0x0, "wan_to_ppp_lan_datainput Lit %d Big %d", sPPPDLitPackNum, sPPPDBigPackNum);
+    ppp_pcb *pcb = (ppp_pcb *)inp->state;
+    if (pcb == NULL || pcb->ppp_session == NULL)
+    {
+        pbuf_free(p);
+        return -1;
+    }
+
+#if LWIP_TCPIP_CORE_LOCKING
+    LOCK_TCPIP_CORE();
+#endif
+    pppSession_t *pppSession = (pppSession_t *)pcb->ppp_session;
+    if (pppSession->nif == NULL || pppSession->dl_read_notify == NULL)
+    {
+        pbuf_free(p);
+#if LWIP_TCPIP_CORE_LOCKING
+        UNLOCK_TCPIP_CORE();
+#endif
+        return -1;
+    }
+    if (p->tot_len < 160 && sPPPDLitPackNum > MAX_PPP_DL_LIT_PACK_NUM)
+    {
+        OSI_LOGI(0x0, "wan_to_ppp_lan_datainput Lit buffer full, drop it");
+        pbuf_free(p);
+        osiNotifyTrigger(pppSession->dl_read_notify);
+#if LWIP_TCPIP_CORE_LOCKING
+        UNLOCK_TCPIP_CORE();
+#endif
+        return -1;
+    }
+
+    if (p->tot_len > 159 && sPPPDBigPackNum > MAX_PPP_DL_BIG_PACK_NUM)
+    {
+        OSI_LOGI(0x0, "wan_to_ppp_lan_datainput Big buffer full, drop it");
+        pbuf_free(p);
+        osiNotifyTrigger(pppSession->dl_read_notify);
+#if LWIP_TCPIP_CORE_LOCKING
+        UNLOCK_TCPIP_CORE();
+#endif
+        return -1;
+    }
+
+    ppp_buf_t *ppp_buf = (ppp_buf_t *)malloc(sizeof(ppp_buf_t));
+    ppp_buf->buf = p;
+    if (p->tot_len < 160)
+    {
+        sPPPDLitPackNum++;
+    }
+    else
+    {
+        sPPPDBigPackNum++;
+    }
+    TAILQ_INSERT_TAIL(&(pppSession->buffer_list), ppp_buf, iter);
+#if LWIP_TCPIP_CORE_LOCKING
+    UNLOCK_TCPIP_CORE();
+#endif
+    OSI_LOGI(0x0, "wan_to_ppp_lan_datainput osiNotifyTrigger");
+    osiNotifyTrigger(pppSession->dl_read_notify);
+    return 0;
+}
+
+static err_t nat_lan_ppp_data_output(struct netif *netif, struct pbuf *p,
+                                     ip_addr_t *ipaddr)
+{
+    if (p != NULL)
+    {
+        sys_arch_dump(p->payload, p->tot_len);
+#if LWIP_IPV6
+        if (IP_HDR_GET_VERSION(p->payload) == 6)
+        {
+            struct ip6_hdr *ip6hdr;
+            ip6hdr = (struct ip6_hdr *)p->payload;
+            u8_t nexth = IP6H_NEXTH(ip6hdr);
+            if (nexth == IP6_NEXTH_ICMP6)
+            {
+                struct icmp6_hdr *icmp6hdr;
+                uint8_t *ip6Data = p->payload;
+                icmp6hdr = (struct icmp6_hdr *)(ip6Data + 40);
+                OSI_LOGI(0x0, "nat_lan_ppp_data_output get IPV6 ICMP6");
+                if (icmp6hdr->type == ICMP6_TYPE_RS)
+                {
+                    //save IPV6 local addr to lan netif
+                    ip6_addr_t src_ip6 = {0};
+                    ip6_addr_copy_from_packed(src_ip6, ip6hdr->src);
+                    netif_ip6_addr_set(netif, 0, &src_ip6);
+                    OSI_LOGI(0x0, "nat_lan_ppp_data_output get IPV6 local addr");
+                }
+            }
+            //find Wan netif with same SimCid to send IPV6 packeage out
+            struct netif *Wannetif = netif_get_by_cid_type(netif->sim_cid, NETIF_LINK_MODE_NAT_WAN);
+            if (Wannetif)
+            {
+                OSI_LOGI(0x0, "nat_lan_ppp_data_output IPV6 to Wan netif");
+#if LWIP_TCPIP_CORE_LOCKING
+                LOCK_TCPIP_CORE();
+#endif
+                Wannetif->output_ip6(Wannetif, p, NULL);
+#if LWIP_TCPIP_CORE_LOCKING
+                UNLOCK_TCPIP_CORE();
+#endif
+            }
+        }
+        else
+#endif
+        {
+#if LWIP_TCPIP_CORE_LOCKING
+            LOCK_TCPIP_CORE();
+#endif
+            u8_t taken = ip4_wan_forward(p, netif);
+            if (taken == 0)
+                taken = ip4_nat_out(p);
+#if LWIP_TCPIP_CORE_LOCKING
+            UNLOCK_TCPIP_CORE();
+#endif
+            OSI_LOGI(0x0, "nat_lan_ppp_data_output %d", taken);
+        }
+        netif->u32PPPULSize += p->tot_len;
+    }
+
+    return ERR_OK;
+}
+
+static err_t netif_gprs_nat_lan_ppp_init(struct netif *netif)
+{
+    /* initialize the snmp variables and counters inside the struct netif
+   * ifSpeed: no assumption can be made!
+   */
+    netif->name[0] = 'P';
+    netif->name[1] = 'P';
+
+#if LWIP_IPV4
+    netif->output = (netif_output_fn)nat_lan_ppp_data_output;
+#endif
+#if LWIP_IPV6
+    netif->output_ip6 = (netif_output_ip6_fn)nat_lan_ppp_data_output;
+#endif
+    netif->mtu = GPRS_MTU;
+
+    return ERR_OK;
+}
+#endif
+
+void ppp_ip_output(struct pbuf *p, void *ctx)
+{
+    pppSession_t *ppp = (pppSession_t *)ctx;
     //OSI_LOGI(0x1000562a, "PPP ul ip output");
 
-    struct netif *nif = ctx->nif;
+    struct netif *nif = ppp->nif;
     if (p != NULL && nif != NULL)
     {
 #if LWIP_IPV6
@@ -99,7 +369,7 @@ static void _psIntfRead(void *ctx)
         int flowcntrol = pppSession->flowctrl_cb(pppSession->flowctrl_cb_ctx);
         if (flowcntrol > 1)
         {
-            OSI_LOGI(0, "PPP dl read later by hard flow control");
+            OSI_LOGI(0x100075c1, "PPP dl read later by hard flow control");
             osiNotifyTrigger(pppSession->dl_read_notify);
             return;
         }
@@ -245,10 +515,24 @@ static void _setPppAddress(pppSession_t *ppp)
         return;
     }
 
-    ip4_addr_t addr;
-    /* Set our address */
-    IP4_ADDR(&addr, 192, 168, 0, 1);
-    ppp_set_ipcp_ouraddr(ppp->pcb, &addr);
+#if IP_NAT
+    if (get_nat_enabled(ppp->sim, ppp->cid))
+    {
+        struct netif *wan_netif = netif_get_by_cid_type(nif->sim_cid, NETIF_LINK_MODE_NAT_WAN);
+        ip4_addr_t *addr = (ip4_addr_t *)netif_ip4_addr(wan_netif);
+        ppp_set_ipcp_ouraddr(ppp->pcb, addr);
+    }
+    else
+    {
+#endif
+        /* Set our address */
+        ip4_addr_t addr;
+        IP4_ADDR(&addr, 192, 168, 0, 1);
+        ppp_set_ipcp_ouraddr(ppp->pcb, &addr);
+#if IP_NAT
+    }
+#endif
+
     ppp->pcb->ipcp_wantoptions.accept_local = 1;
 
     /* Set peer(his) address */
@@ -270,45 +554,113 @@ static void _setPppAddress(pppSession_t *ppp)
              ppp->pcb->ipcp_wantoptions.hisaddr,
              ppp->pcb->ipcp_allowoptions.dnsaddr[0]);
 }
-#if PPP_AUTHGPRS_SUPPORT
+
+static void _pppAuthActRsp(pppSession_t *ppp, const osiEvent_t *event);
 static void _pppAuthActDone(pppSession_t *ppp, int _iActiavedbyPPP)
 {
     uint8_t simId = ppp->sim;
+    uint8_t cId = ppp->cid;
     uint8_t iCnt = 0;
-
-    struct netif *netif = getGprsNetIf(simId, ppp->cid);
-    while (netif == NULL || iCnt < 20)
+    ppp->cgact_activated = _iActiavedbyPPP;
+#if IP_NAT
+    if (get_nat_enabled(simId, cId))
     {
-        osiThreadSleep(5);
-        netif = getGprsNetIf(simId, ppp->cid);
-        iCnt++;
-    }
-    ppp->dl_read_notify = osiNotifyCreate(atEngineGetThreadId(), _psIntfRead, netif);
+        struct netif *wan_netif = getGprsWanNetIf(simId, cId);
+        struct netif *lan_netif = getGprsNetIf(simId, cId);
+        while ((wan_netif == NULL || lan_netif == NULL) && iCnt < 20)
+        {
+            osiThreadSleep(5);
+            wan_netif = getGprsWanNetIf(simId, cId);
+            lan_netif = getGprsNetIf(simId, cId);
+            iCnt++;
+        }
 
-    ppp->nif = netif;
-    if (ppp->nif == NULL)
-    {
-        OSI_LOGE(0x10005639, "PPP netif is NULL");
-        return;
-    }
-    if (ppp->nif->pspathIntf == NULL)
-    {
-        OSI_LOGE(0x1000563a, "PPP pspath interface is NULL");
-        return;
-    }
-    if (ppp->nif->link_mode != NETIF_LINK_MODE_LWIP)
-    {
-        OSI_LOGE(0, "_pppStart wrong mode");
-        return;
-    }
-    ppp->old_psintf_cb = drvPsIntfSetDataArriveCB(ppp->nif->pspathIntf, _psIntfCB);
-    ppp->old_output = ppp->nif->output;
-    ppp->nif->output = _psIntfWrite;
+        if (wan_netif == NULL)
+        {
+            OSI_LOGE(0x10005639, "PPP netif is NULL");
+            return;
+        }
+        ip4_addr_t *wan_ip4_addr = (ip4_addr_t *)netif_ip4_addr(wan_netif);
+        ip4_addr_t ip4;
+        ip4_addr_t ip4_gw;
+        if ((wan_ip4_addr->addr & 0xff000000UL) != 0xc0000000UL) //192.xxx.xxx.xxx
+        {
+            IP4_ADDR(&ip4, 192, 168, cId, 2 + netif_num);
+            IP4_ADDR(&ip4_gw, 192, 168, cId, 1);
+        }
+        else
+        {
+            IP4_ADDR(&ip4, 10, 0, cId, 2 + netif_num);
+            IP4_ADDR(&ip4_gw, 10, 0, cId, 1);
+        }
+        ip4_addr_t ip4_netMast;
+        IP4_ADDR(&ip4_netMast, 255, 255, 255, 0);
 
-    ppp->nif->state = ppp->pcb;
-    ppp->nif->is_ppp_mode = 1;
-    ppp->nif->link_mode = NETIF_LINK_MODE_PPP;
+        struct netif *netif = (struct netif *)calloc(1, sizeof(struct netif));
+        CFW_GPRS_PDPCONT_INFO_V2 pdp_context;
+        CFW_GprsGetPdpCxtV2(cId, &pdp_context, simId);
+        netif->sim_cid = simId << 4 | cId;
+        netif->is_ppp_mode = 1;
+        netif->link_mode = NETIF_LINK_MODE_NAT_PPP_LAN;
+        netif->pdnType = pdp_context.PdnType;
+        netif->is_used = 1;
 
+        netif_add(netif, &ip4, &ip4_netMast, &ip4_gw, NULL, netif_gprs_nat_lan_ppp_init, wan_to_ppp_lan_datainput);
+        netif_set_up(netif);
+        netif_set_link_up(netif);
+        ppp->dl_read_notify = osiNotifyCreate(ppp->dl_thread, _ppp_lan_data_pull, netif);
+        ppp->dl_read_notify_timer = osiTimerCreate(ppp->dl_thread, _ppp_read_notify_timeout, netif);
+        TAILQ_INIT(&(ppp->buffer_list));
+
+        ppp->ppp_nat_entry.in_if = netif;
+        ppp->ppp_nat_entry.out_if = wan_netif;
+
+        ip4_addr_copy(ppp->ppp_nat_entry.dest_net, *wan_ip4_addr);
+        IP4_ADDR(&(ppp->ppp_nat_entry.dest_netmask), 255, 255, 255, 255);
+
+        ip4_addr_copy(ppp->ppp_nat_entry.source_net, ip4);
+        IP4_ADDR(&(ppp->ppp_nat_entry.source_netmask), 255, 255, 255, 255);
+        ip4_nat_add(&(ppp->ppp_nat_entry));
+        ppp->nif = netif;
+        ppp->nif->state = ppp->pcb;
+    }
+    else
+    {
+#endif
+        struct netif *netif = getGprsNetIf(simId, cId);
+        while (netif == NULL && iCnt < 20)
+        {
+            osiThreadSleep(5);
+            netif = getGprsNetIf(simId, cId);
+            iCnt++;
+        }
+        ppp->nif = netif;
+        if (ppp->nif == NULL)
+        {
+            OSI_LOGE(0x10005639, "PPP netif is NULL");
+            return;
+        }
+        ppp->dl_read_notify = osiNotifyCreate(atEngineGetThreadId(), _psIntfRead, netif);
+        if (ppp->nif->pspathIntf == NULL)
+        {
+            OSI_LOGE(0x1000563a, "PPP pspath interface is NULL");
+            return;
+        }
+        if (ppp->nif->link_mode != NETIF_LINK_MODE_LWIP)
+        {
+            OSI_LOGE(0, "_pppStart wrong mode %d", ppp->nif->link_mode);
+            return;
+        }
+        ppp->old_psintf_cb = drvPsIntfSetDataArriveCB(ppp->nif->pspathIntf, _psIntfCB);
+        ppp->old_output = ppp->nif->output;
+        ppp->nif->output = _psIntfWrite;
+
+        ppp->nif->state = ppp->pcb;
+        ppp->nif->is_ppp_mode = 1;
+        ppp->nif->link_mode = NETIF_LINK_MODE_PPP;
+#if IP_NAT
+    }
+#endif
     OSI_LOGI(0, "set mtu");
     ppp_pcb *pcb = ppp->pcb;
     lcp_options *wo = &pcb->lcp_wantoptions;
@@ -344,36 +696,36 @@ static void _pppAuthActDone(pppSession_t *ppp, int _iActiavedbyPPP)
         netif_default = NULL;
         while (next_netif != NULL)
         {
-            if ((next_netif->name[0] != 'l') && (next_netif->name[1] != 'o') && (next_netif->link_mode == NETIF_LINK_MODE_LWIP))
+            if ((next_netif->name[0] != 'l') && (next_netif->name[1] != 'o'))
             {
-                netif_set_default(next_netif);
-                break;
+#if IP_NAT
+                if ((next_netif->link_mode == NETIF_LINK_MODE_LWIP) || (next_netif->link_mode == NETIF_LINK_MODE_NAT_LWIP_LAN))
+#else
+                if (next_netif->link_mode == NETIF_LINK_MODE_LWIP)
+#endif
+                {
+                    netif_set_default(next_netif);
+                    break;
+                }
             }
             next_netif = next_netif->next;
         }
     }
 #endif
-}
-
-static void _pppAuthActRsp(pppSession_t *ppp, const osiEvent_t *event)
-{
-    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
-
-    OSI_LOGI(0, "_pppAuthActRsp EV_CFW_GPRS_ACT_RSP");
-    if (cfw_event->nType != CFW_GPRS_ACTIVED)
+    _setPppAddress(ppp);
+#if PPP_AUTH_SUPPORT
+#if PPP_AUTHGPRS_SUPPORT
+    if (ppp->pcb->auth_type == 1) //pap
     {
-        return;
+        upap_sAuthRsp(ppp->pcb, CFW_GPRS_ACTIVED);
     }
-
-    //send event to netthread and wait for netif created
-    OSI_LOGI(0x10005667, "We got CFW_GPRS_ACTIVED");
-    osiEvent_t tcpip_event = *event;
-    tcpip_event.id = EV_TCPIP_CFW_GPRS_ACT;
-    CFW_EVENT *tcpip_cfw_event = (CFW_EVENT *)&tcpip_event;
-    tcpip_cfw_event->nUTI = 0;
-    osiEventSend(netGetTaskID(), (const osiEvent_t *)&tcpip_event);
-
-    _pppAuthActDone(ppp, 1);
+    else if (ppp->pcb->auth_type == 2) //chap
+    {
+        chap_SendAuthResponse(ppp->pcb, CFW_GPRS_ACTIVED);
+    }
+#endif
+#endif
+    start_network_phase(ppp->pcb);
 }
 
 static void _pppAuthActReq(pppSession_t *ppp)
@@ -431,6 +783,8 @@ static void _pppAuthActReq(pppSession_t *ppp)
         sPdpCont.nNSLPI = 0;
         CFW_GPRS_QOS Qos = {3, 4, 3, 4, 16};
         CFW_GprsSetReqQos(cid, &Qos, sim);
+#if PPP_AUTH_SUPPORT
+#if PPP_AUTHGPRS_SUPPORT
         OSI_LOGI(0, "ppp->pcb->auth_type: %d", ppp->pcb->auth_type);
         if (ppp->pcb->auth_type == 1)
         {
@@ -463,6 +817,8 @@ static void _pppAuthActReq(pppSession_t *ppp)
             dumplen = ppp->pcb->chap_challenge_len + ppp->pcb->len_response;
             OSI_LOGXI(OSI_LOGPAR_M, 0x0, "sPdpCont.pApnPwd : %*s", dumplen, sPdpCont.pApnPwd);
         }
+#endif
+#endif
         if (CFW_GprsSetPdpCxtV2(cid, &sPdpCont, sim) != 0)
         {
             return;
@@ -474,10 +830,51 @@ static void _pppAuthActReq(pppSession_t *ppp)
             cfwReleaseUTI(uti);
             return;
         }
-
+        ppp->uti_attact = uti;
         ppp->pcb->acted = 1;
         return;
     }
+    ppp->pcb->acted = 1;
+    _pppAuthActDone(ppp, 0);
+}
+
+static void _pppAuthActRsp(pppSession_t *ppp, const osiEvent_t *event)
+{
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    OSI_LOGI(0, "_pppAuthActRsp EV_CFW_GPRS_ACT_RSP");
+
+    ppp->uti_attact = 0;
+
+    if (((cfw_event->nParam2 == 0x6f) || (cfw_event->nParam2 == 0x27)) && (ppp->retrycnt_attact != 0))
+    {
+        ppp->retrycnt_attact--;
+        _pppAuthActReq(ppp);
+        return;
+    }
+
+    if (cfw_event->nType != CFW_GPRS_ACTIVED)
+    {
+#if PPP_AUTH_SUPPORT
+#if PPP_AUTHGPRS_SUPPORT
+        if (ppp->pcb->auth_type == 1) //pap
+        {
+            upap_sAuthRsp(ppp->pcb, 0);
+        }
+        else if (ppp->pcb->auth_type == 2) //chap
+        {
+            chap_SendAuthResponse(ppp->pcb, 0);
+        }
+#endif
+#endif
+        return;
+    }
+
+    //send event to netthread and wait for netif created
+    OSI_LOGI(0x10005667, "We got CFW_GPRS_ACTIVED");
+    osiEvent_t tcpip_event = *event;
+    tcpip_event.id = EV_TCPIP_CFW_GPRS_ACT;
+    osiEventSend(netGetTaskID(), (const osiEvent_t *)&tcpip_event);
+
     _pppAuthActDone(ppp, 1);
 }
 
@@ -488,9 +885,24 @@ static void _pppAuthAttRsp(pppSession_t *ppp, const osiEvent_t *event)
     OSI_LOGI(0, "_pppAuthAttRsp att_state %p", ppp);
     if (cfw_event->nType != CFW_GPRS_ATTACHED)
     {
+#if PPP_AUTH_SUPPORT
+#if PPP_AUTHGPRS_SUPPORT
+        if (ppp->pcb->auth_type == 1) //pap
+        {
+            upap_sAuthRsp(ppp->pcb, 0);
+        }
+        else if (ppp->pcb->auth_type == 2) //chap
+        {
+            chap_SendAuthResponse(ppp->pcb, 0);
+        }
+#endif
+#endif
         return;
     }
     OSI_LOGI(0, "_pppAuthAttRsp att_state %p", ppp);
+    ppp->uti_attact = 0;
+
+    ppp->retrycnt_attact = 3;
     _pppAuthActReq(ppp);
 }
 
@@ -514,31 +926,22 @@ void pppAuthDoActive(void *_ppp)
         {
             cfwReleaseUTI(uti);
         }
+        ppp->uti_attact = uti;
         return;
     }
-
+    ppp->retrycnt_attact = 3;
     _pppAuthActReq(ppp);
 }
-#endif
-#if 0
-void pppSetCmdEngine(pppSession_t *ppp, void *cmd)
-{
-	if(ppp == NULL || cmd == NULL)
-		goto LEAVE;
-	ppp->cmd = (atCommand_t *)cmd;
-LEAVE:
-	return;
-}
-#endif
+
 static void ppp_notify_phase_cb(ppp_pcb *pcb, u8_t phase, void *ctx)
 {
     pppSession_t *ppp = (pppSession_t *)ctx;
 
 #if PPP_IPV6_SUPPORT
-    OSI_LOGI(0x10005636, "PPP status phase:%d lcp_fsm:%d, lpcp_fsm:%d, ipv6cp_fsm:%d",
+    OSI_LOGI(0x0, "PPP status phase:%d lcp_fsm:%d, ipcp_fsm:%d, ipv6cp_fsm:%d",
              phase, pcb->lcp_fsm.state, pcb->ipcp_fsm.state, pcb->ipv6cp_fsm.state);
 #else
-    OSI_LOGI(0x10005637, "PPP status phase:%d lcp_fsm:%d, lpcp_fsm:%d",
+    OSI_LOGI(0x0, "PPP status phase:%d lcp_fsm:%d, ipcp_fsm:%d",
              phase, pcb->lcp_fsm.state, pcb->ipcp_fsm.state);
 #endif
 
@@ -582,51 +985,11 @@ static void ppp_notify_phase_cb(ppp_pcb *pcb, u8_t phase, void *ctx)
     case PPP_PHASE_RUNNING:
         //led_set(PPP_LED, LED_ON);
         break;
-#if PPP_AUTHGPRS_SUPPORT
     /* Session is on PPP_PHASE_AUTHENTICATE */
     case PPP_PHASE_CALLBACK:
-        sys_arch_printf("ppp_notify_phase_cb PPP_PHASE_CALLBACK\n");
-#if 0		
-        while ((CFW_GetGprsActState(ppp->cid, &act_state, ppp->sim) == 0) && retryCount++ <= 20)
-        {
-            sys_arch_printf("ppp_notify_phase_cb waiting for gprs act_state = %d actived:%d\n", act_state, retryCount);
-
-            if (act_state == CFW_GPRS_ACTIVED && getGprsNetIf(ppp->sim, ppp->cid) != NULL)
-            {
-                //if (ppp->nif != NULL)
-                //    _setPppAddress(ppp);
-
-                uint8_t sim = ppp->sim;
-                uint8_t cid = ppp->cid;
-
-                //save cid for deactive gprs
-                AT_Gprs_CidInfo *pinfo = &gAtCfwCtx.sim[sim].cid_info[cid];
-                OSI_LOGI(0, "_pppActReq sim = %d async->cid = %d", sim, cid);
-                pinfo->uCid = cid;
-                pinfo->uState = CFW_GPRS_ACTIVED;
-
-                //osiThreadSleep(100);
-
-                _pppAuthActDone(ppp, 1);
-
-                break;
-            }
-            else if ((act_state != CFW_GPRS_ACTIVED) && retryCount == 1)
-            {
-                //pppAuthDoActive(ppp);
-                sys_arch_printf("current Task ID %lu\n", (uint32_t)osiThreadCurrent());
-#if LWIP_TCPIP_CORE_LOCKING //提前解锁
-                UNLOCK_TCPIP_CORE();
-#endif
-                sys_timeout(500, pppAuthDoActive, ppp);
-            }
-            osiThreadSleep(1000);
-        }
-#else
+        OSI_LOGI(0, "ppp_notify_phase_cb PPP_PHASE_CALLBACK\n");
         pppAuthDoActive(ppp);
-#endif
         break;
-#endif
     default:
         break;
     }
@@ -635,33 +998,7 @@ static void ppp_notify_phase_cb(ppp_pcb *pcb, u8_t phase, void *ctx)
 static int _pppStart(pppSession_t *ppp)
 {
     OSI_LOGI(0x10005638, "PPP start ...");
-    //#ifndef PPP_AUTHGPRS_SUPPORT
-    if (ppp->cgact_activated >> 7 == 1)
-    {
-        uint8_t cid = ppp->cid;
-        uint8_t sim = ppp->sim;
 
-        ppp->nif = getGprsNetIf(sim, cid);
-        if (ppp->nif == NULL)
-        {
-            OSI_LOGE(0x10005639, "PPP netif is NULL");
-            return -1;
-        }
-        if (ppp->nif->pspathIntf == NULL)
-        {
-            OSI_LOGE(0x1000563a, "PPP pspath interface is NULL");
-            return -1;
-        }
-        if (ppp->nif->link_mode != NETIF_LINK_MODE_LWIP)
-        {
-            OSI_LOGE(0, "_pppStart wrong mode");
-            return -1;
-        }
-        ppp->old_psintf_cb = drvPsIntfSetDataArriveCB(ppp->nif->pspathIntf, _psIntfCB);
-        ppp->old_output = ppp->nif->output;
-        ppp->nif->output = _psIntfWrite;
-    }
-    //#endif
     ppp->pcb = pppos_create(ppp->nif, pppos_output_cb, pppos_linkstate_cb, (void *)ppp);
     if (ppp->pcb == NULL)
     {
@@ -670,35 +1007,9 @@ static int _pppStart(pppSession_t *ppp)
         return -1;
     }
     ppp->pcb->ppp_session = ppp;
-#if PPP_AUTHGPRS_SUPPORT
     ppp->pcb->cid_id = ppp->cid;
     ppp->pcb->sim_id = ppp->sim;
-#endif
-    //#ifndef PPP_AUTHGPRS_SUPPORT
-    if (ppp->cgact_activated >> 7 == 1)
-    {
-        ppp->nif->state = ppp->pcb;
-        ppp->nif->is_ppp_mode = 1;
-        ppp->nif->link_mode = NETIF_LINK_MODE_PPP;
-#if !LWIP_SINGLE_NETIF
-        if (netif_default == ppp->nif && netif_list != NULL)
-        {
-            struct netif *next_netif = netif_list;
-            netif_default = NULL;
-            while (next_netif != NULL)
-            {
-                if ((next_netif->name[0] != 'l') && (next_netif->name[1] != 'o') && (next_netif->link_mode == NETIF_LINK_MODE_LWIP))
-                {
-                    netif_set_default(next_netif);
-                    break;
-                }
-                next_netif = next_netif->next;
-            }
-        }
-#endif
-        _setPppAddress(ppp);
-    }
-    //#endif
+
     ppp_set_notify_phase_callback(ppp->pcb, ppp_notify_phase_cb);
 
 #if PAP_FOR_SIM_AUTH && PPP_AUTH_SUPPORT
@@ -729,16 +1040,7 @@ static int _pppStart(pppSession_t *ppp)
     OSI_LOGI(0x1000563c, "PPP start done");
     return 0;
 }
-#if 0
-static void _freeppppcb(void *ctx)
-{
-    if (ctx != NULL)
-    {
-        ppp_pcb *pcb = (ppp_pcb *)ctx;
-        ppp_free(pcb);
-    }
-}
-#endif
+
 static int _pppStop(pppSession_t *ppp)
 {
     if (ppp == NULL)
@@ -756,41 +1058,48 @@ static int _pppStop(pppSession_t *ppp)
         //osiThreadCallback(netGetTaskID(), _freeppppcb, (void *)ppp->pcb);
         ppp->pcb = NULL;
     }
-
-    if (ppp->nif != NULL && ppp->nif->is_used == 1)
+#if IP_NAT
+    if (get_nat_enabled(ppp->sim, ppp->cid) == false)
     {
-        if (ppp->nif->link_mode == NETIF_LINK_MODE_PPP)
+#endif
+        if (ppp->nif != NULL && ppp->nif->is_used == 1)
         {
-            drvPsIntfSetDataArriveCB(ppp->nif->pspathIntf, lwip_pspathDataInput);
-            ppp->nif->link_mode = NETIF_LINK_MODE_LWIP;
-        }
-        ppp->nif->output = ppp->old_output;
-        uint8_t addr[THE_PDP_ADDR_MAX_LEN];
-        uint8_t length;
-        CFW_GprsGetPdpAddr(ppp->cid, &length, addr, ppp->sim);
-        uint32_t ip_addr = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | addr[0];
-        OSI_LOGI(0x1000563e, "PPP restore netif ip address 0x%08x", ip_addr);
-
-        ip4_addr_t ip = {0};
-        ip.addr = ip_addr;
-        netif_set_addr(ppp->nif, &ip, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
-        netif_set_link_up(ppp->nif);
-        ppp->nif->is_ppp_mode = 0;
-#if !LWIP_SINGLE_NETIF
-        if (netif_default == NULL && netif_list != NULL)
-        {
-            struct netif *next_netif = netif_list;
-            netif_default = NULL;
-            while (next_netif != NULL)
+            if (ppp->nif->link_mode == NETIF_LINK_MODE_PPP)
             {
-                if ((next_netif->name[0] != 'l') && (next_netif->name[1] != 'o') && (next_netif->link_mode == NETIF_LINK_MODE_LWIP))
+                drvPsIntfSetDataArriveCB(ppp->nif->pspathIntf, lwip_pspathDataInput);
+                ppp->nif->link_mode = NETIF_LINK_MODE_LWIP;
+            }
+            if (ppp->old_output != NULL)
+                ppp->nif->output = ppp->old_output;
+            uint8_t addr[THE_PDP_ADDR_MAX_LEN];
+            uint8_t length;
+            CFW_GprsGetPdpAddr(ppp->cid, &length, addr, ppp->sim);
+            uint32_t ip_addr = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | addr[0];
+            OSI_LOGI(0x1000563e, "PPP restore netif ip address 0x%08x", ip_addr);
+
+            ip4_addr_t ip = {0};
+            ip.addr = ip_addr;
+            netif_set_addr(ppp->nif, &ip, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
+            netif_set_link_up(ppp->nif);
+            ppp->nif->is_ppp_mode = 0;
+#if !LWIP_SINGLE_NETIF
+            if (netif_default == NULL && netif_list != NULL)
+            {
+                struct netif *next_netif = netif_list;
+                netif_default = NULL;
+                while (next_netif != NULL)
                 {
-                    netif_set_default(next_netif);
-                    break;
+                    if ((next_netif->name[0] != 'l') && (next_netif->name[1] != 'o') && (next_netif->link_mode == NETIF_LINK_MODE_LWIP))
+                    {
+                        netif_set_default(next_netif);
+                        break;
+                    }
+                    next_netif = next_netif->next;
                 }
-                next_netif = next_netif->next;
             }
         }
+#endif
+#if IP_NAT
     }
 #endif
     ppp->output_cb = NULL;
@@ -847,14 +1156,29 @@ pppSession_t *pppSessionCreate(uint8_t cid, uint8_t sim, osiThread_t *dl_thread,
 #if LWIP_TCPIP_CORE_LOCKING
     LOCK_TCPIP_CORE();
 #endif
-
-    struct netif *netif = getGprsNetIf(sim, cid);
-    if (netif != NULL && netif->is_ppp_mode)
+    struct netif *netif = NULL;
+#if IP_NAT
+    if (get_nat_enabled(sim, cid))
     {
-        OSI_LOGE(0x10005641, "PPP create already in ppp mode");
-        goto LEAVE;
+        netif = getPPPNetIf(sim, cid);
+        if (netif != NULL)
+        {
+            OSI_LOGE(0x10005641, "PPP create already in ppp mode");
+            goto LEAVE;
+        }
     }
-
+    else
+    {
+#endif
+        netif = getGprsNetIf(sim, cid);
+        if (netif != NULL && netif->is_ppp_mode)
+        {
+            OSI_LOGE(0x10005641, "PPP create already in ppp mode");
+            goto LEAVE;
+        }
+#if IP_NAT
+    }
+#endif
     ppp = (pppSession_t *)calloc(1, sizeof(pppSession_t));
     if (ppp == NULL)
         goto LEAVE;
@@ -868,14 +1192,12 @@ pppSession_t *pppSessionCreate(uint8_t cid, uint8_t sim, osiThread_t *dl_thread,
     ppp->end_cb_ctx = end_cb_ctx;
     ppp->is_deleted = 1;
     ppp->cgact_activated = _iActiavedbyPPP;
+    ppp->uti_attact = 0xff;
     OSI_LOGE(0, "ppp->cgact_activated = %d", _iActiavedbyPPP);
     ppp->dl_thread = dl_thread;
-    //#ifndef PPP_AUTHGPRS_SUPPORT
-    if (_iActiavedbyPPP >> 7 == 1)
-        ppp->dl_read_notify = osiNotifyCreate(dl_thread, _psIntfRead, netif);
-    //#endif
     ppp->flowctrl_cb = flowctrl_cb;
     ppp->flowctrl_cb_ctx = flowctrl_cb_ctx;
+    ppp->nif = netif;
 
     int ret = _pppStart(ppp);
     if (ret != 0)
@@ -923,7 +1245,7 @@ static void _pppDeactiveRsp(pppSession_t *ppp, const osiEvent_t *event)
     OSI_LOGI(0x10005644, "PPP deactive response, nType/%d", cfw_event->nType);
     if (cfw_event->nType == CFW_GPRS_DEACTIVED)
     {
-        OSI_LOGI(0, "PPP delete by cid = %d sim = %d", event->param1, (uint8_t)event->param3);
+        OSI_LOGI(0x100075c3, "PPP delete by cid = %d sim = %d", event->param1, (uint8_t)event->param3);
         pppSessionDeleteByNetifDestoryed(event->param3, event->param1);
 
         osiEvent_t tcpip_event = *event;
@@ -947,9 +1269,44 @@ bool pppSessionDelete(pppSession_t *ppp)
         return true;
     }
 
+    //释放没有回复的uti
+    if (ppp->uti_attact != 0xff)
+    {
+        cfwReleaseUTI(ppp->uti_attact);
+    }
+
     ppp->is_deleted = 0;
     _pppStop(ppp);
-
+#if LWIP_TCPIP_CORE_LOCKING
+    LOCK_TCPIP_CORE();
+#endif
+    osiNotifyDelete(ppp->dl_read_notify);
+    ppp->dl_read_notify = NULL;
+#if IP_NAT
+    if (get_nat_enabled(ppp->sim, ppp->cid))
+    {
+        ip4_nat_remove(&(ppp->ppp_nat_entry));
+        struct netif *netif = ppp->nif;
+        ppp->nif = NULL;
+        if (netif != NULL)
+        {
+            netif_set_link_down(netif);
+            netif_remove(netif);
+            free(netif);
+            ppp_buf_t *ppp_buf;
+            while ((ppp_buf = TAILQ_FIRST(&(ppp->buffer_list))) != NULL)
+            {
+                struct pbuf *p = ppp_buf->buf;
+                TAILQ_REMOVE(&(ppp->buffer_list), ppp_buf, iter);
+                pbuf_free(p);
+                free(ppp_buf);
+            }
+            sPPPDLitPackNum = 0;
+            sPPPDBigPackNum = 0;
+            osiTimerDelete(ppp->dl_read_notify_timer);
+        }
+    }
+#endif
     //deactivate net if activated by PPP session
     OSI_LOGI(0x10005647, "PPP cgact_activated/%d cid/%d", ppp->cgact_activated, ppp->cid);
     if ((ppp->cgact_activated & 0x01) == 1 && ppp->cid != 0xFF)
@@ -968,9 +1325,10 @@ bool pppSessionDelete(pppSession_t *ppp)
         }
     }
 
-    osiNotifyDelete(ppp->dl_read_notify);
     free(ppp);
-
+#if LWIP_TCPIP_CORE_LOCKING
+    UNLOCK_TCPIP_CORE();
+#endif
     OSI_LOGI(0x10005649, "PPP delete done");
     return true;
 }

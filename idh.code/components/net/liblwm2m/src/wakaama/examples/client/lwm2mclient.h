@@ -34,24 +34,24 @@ extern int g_reboot;
 /*
  * object_device.c
  */
-lwm2m_object_t * get_object_device(void);
+lwm2m_object_t * get_object_device(void* lwm2mH);
 uint8_t device_change(lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 void display_device_object(lwm2m_object_t * objectP);
 /*
  * object_firmware.c
  */
-lwm2m_object_t * get_object_firmware(void);
+lwm2m_object_t * get_object_firmware(void * lwm2mH);
 void display_firmware_object(lwm2m_object_t * objectP);
 /*
  * object_location.c
  */
-lwm2m_object_t * get_object_location(void);
+lwm2m_object_t * get_object_location(void* lwm2mH);
 void display_location_object(lwm2m_object_t * objectP);
 /*
  * object_test.c
  */
 #define TEST_OBJECT_ID 31024
-lwm2m_object_t * get_test_object(void);
+lwm2m_object_t * get_test_object(void* lwm2mH);
 void display_test_object(lwm2m_object_t * objectP);
 /*
  * object_server.c
@@ -63,20 +63,20 @@ void copy_server_object(lwm2m_object_t * objectDest, lwm2m_object_t * objectSrc)
 /*
  * object_connectivity_moni.c
  */
-lwm2m_object_t * get_object_conn_m(void);
+lwm2m_object_t * get_object_conn_m(void* lwm2mH);
 uint8_t connectivity_moni_change(lwm2m_data_t * dataArray, lwm2m_object_t * objectP);
 
 /*
  * object_connectivity_stat.c
  */
-extern lwm2m_object_t * get_object_conn_s(void);
+extern lwm2m_object_t * get_object_conn_s(void* lwm2mH);
 extern void conn_s_updateTxStatistic(lwm2m_context_t * lwm2mH, uint16_t txDataByte, bool smsBased);
 extern void conn_s_updateRxStatistic(lwm2m_context_t * lwm2mH, uint16_t rxDataByte, bool smsBased);
 
 /*
  * object_access_control.c
  */
-lwm2m_object_t* acc_ctrl_create_object(void);
+lwm2m_object_t* acc_ctrl_create_object(void* lwm2mH);
 bool  acc_ctrl_obj_add_inst (lwm2m_object_t* accCtrlObjP, uint16_t instId,
                  uint16_t acObjectId, uint16_t acObjInstId, uint16_t acOwner);
 bool  acc_ctrl_oi_add_ac_val(lwm2m_object_t* accCtrlObjP, uint16_t instId,

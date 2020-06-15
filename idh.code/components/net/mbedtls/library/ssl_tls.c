@@ -8082,6 +8082,12 @@ int mbedtls_ssl_handshake( mbedtls_ssl_context *ssl )
 
     while( ssl->state != MBEDTLS_SSL_HANDSHAKE_OVER )
     {
+        if(ssl->isquit == 1){
+            MBEDTLS_SSL_DEBUG_MSG( 5, ( "<= handshake quit" ) );
+            ret = MBEDTLS_ERR_SSL_QUIT_FORCED;
+            break;
+        }
+
         ret = mbedtls_ssl_handshake_step( ssl );
 
         if( ret != 0 )

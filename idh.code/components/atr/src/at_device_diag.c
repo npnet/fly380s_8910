@@ -90,7 +90,7 @@ atDevice_t *atDeviceDiagCreate()
         return NULL;
 
     diagAtCfg_t cfg = {
-        .rxfifo_size = 1024,
+        .rxfifo_size = 5120,
         .notify = _dataComing,
         .context = atd,
     };

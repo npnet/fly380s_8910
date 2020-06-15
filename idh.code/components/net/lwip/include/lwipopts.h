@@ -43,9 +43,11 @@
 
 #ifdef LWIP_IPV6_ON
 #define LWIP_IPV6 1
+#define LWIP_IPV6_FRAG 1
 #else
 #ifdef LTE_NBIOT_SUPPORT
 #define LWIP_IPV6 1
+#define LWIP_IPV6_FRAG 1
 #else
 #define LWIP_IPV6 0
 #endif //LTE_NBIOT_SUPPORT
@@ -61,11 +63,47 @@
 #endif //LTE_NBIOT_SUPPORT
 #endif //LWIP_IPV4_ON
 
+#ifdef CONFIG_NET_NAT_SUPPORT
+#define IP_NAT 1
+#else
+#define IP_NAT 0
+#endif
+
 #ifdef CONFIG_NET_LWIP_DEBUG
 #define LWIP_DEBUG 1
+#define ALTCP_MBEDTLS_DEBUG 1
 #else
 #define LWIP_DEBUG 0
+#define ALTCP_MBEDTLS_DEBUG 0
 #endif
+#define ETHARP_DEBUG 0
+#define NETIF_DEBUG 0
+#define PBUF_DEBUG 0
+#define API_LIB_DEBUG 0
+#define API_MSG_DEBUG 0
+#define SOCKETS_DEBUG 0
+#define ICMP_DEBUG 0
+#define IGMP_DEBUG 0
+#define INET_DEBUG 0
+#define IP_DEBUG 0
+#define IP_REASS_DEBUG 0
+#define RAW_DEBUG 0
+#define MEM_DEBUG 0
+#define MEMP_DEBUG 0
+#define TCP_INPUT_DEBUG 0
+#define TCP_FR_DEBUG 0
+#define TCP_RTO_DEBUG 0
+#define TCP_CWND_DEBUG 0
+#define TCP_WND_DEBUG 0
+#define TCP_OUTPUT_DEBUG 0
+#define TCP_RST_DEBUG 0
+#define TCP_QLEN_DEBUG 0
+#define UDP_DEBUG 0
+#define TCPIP_DEBUG 0
+#define SLIP_DEBUG 0
+#define DHCP_DEBUG 0
+#define AUTOIP_DEBUG 0
+#define IP6_DEBUG 0
 
 #ifdef CONFIG_NET_LWIP_PPP_ON
 #define PPP_SUPPORT 1
@@ -96,7 +134,7 @@
 #endif
 
 #define LWIP_NETIF_LOOPBACK 1
-#define LWIP_HAVE_LOOPIF 0
+#define LWIP_HAVE_LOOPIF 1
 
 /** LWIP_ALTCP_TLS_MBEDTLS==1: use mbedTLS for TLS support for altcp API
  * mbedtls include directory must be reachable via include search path

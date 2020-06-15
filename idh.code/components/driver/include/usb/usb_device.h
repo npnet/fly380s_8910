@@ -41,7 +41,7 @@ typedef enum
     UDC_DISCONNECT,
 } udcEvent_t;
 
-typedef void (*udcNotifier_t) (void *param, udcEvent_t event);
+typedef void (*udcNotifier_t)(void *param, udcEvent_t event);
 
 /**
  * @brief USB device controller
@@ -60,8 +60,7 @@ typedef struct usb_dev_driver_s udevDrv_t;
  */
 typedef struct usb_ep
 {
-    union
-    {
+    union {
         struct
         {
             uint8_t num : 7;
@@ -87,24 +86,24 @@ typedef struct usb_string
  */
 typedef struct usb_xfer
 {
-    void *buf;          ///< transfer buffer
-    uint32_t length;    ///< transfer data length
-    uint32_t actual;    ///< actual transfered length, udc set it, caller only read
-    int status;         ///< transfer status, (0 - success; other negative - fail)
-    uint8_t zlp;        ///< may send zero packet or not, in transfer only
-    uint8_t uncached;   ///< address is uncached
-    void *param;        ///< caller context
-    void (*complete) (usbEp_t *ep, struct usb_xfer *xfer);  ///< transfer done callback
+    void *buf;                                            ///< transfer buffer
+    uint32_t length;                                      ///< transfer data length
+    uint32_t actual;                                      ///< actual transfered length, udc set it, caller only read
+    int status;                                           ///< transfer status, (0 - success; other negative - fail)
+    uint8_t zlp;                                          ///< may send zero packet or not, in transfer only
+    uint8_t uncached;                                     ///< address is uncached
+    void *param;                                          ///< caller context
+    void (*complete)(usbEp_t *ep, struct usb_xfer *xfer); ///< transfer done callback
 } usbXfer_t;
 
 typedef struct
 {
-    void (*setclk) (udc_t *udc, bool on);     ///< set controller clock
-    void (*setpower) (udc_t *udc, bool on);   ///< set controller power
-    void (*enable) (udc_t *udc);              ///< enable the usb controller
-    void (*disable) (udc_t *udc);             ///< disable the usb controller
-    void (*suspend) (udc_t *udc);             ///< suspend the usb controller
-    void (*resume) (udc_t *udc);              ///< resume the usb controller
+    void (*setclk)(udc_t *udc, bool on);   ///< set controller clock
+    void (*setpower)(udc_t *udc, bool on); ///< set controller power
+    void (*enable)(udc_t *udc);            ///< enable the usb controller
+    void (*disable)(udc_t *udc);           ///< disable the usb controller
+    void (*suspend)(udc_t *udc);           ///< suspend the usb controller
+    void (*resume)(udc_t *udc);            ///< resume the usb controller
 } udcPlatOps_t;
 
 /**
@@ -125,11 +124,25 @@ typedef struct
     void (*ep_stall)(udc_t *udc, usbEp_t *ep, bool halt);              ///< stall or clear stall for an endpoint
     usbXfer_t *(*xfer_alloc)(udc_t *udc);                              ///< allocate an usb xfer
     void (*xfer_free)(udc_t *udc, usbXfer_t *xfer);                    ///< free the usb xfer
+    // gdb mode
+    void (*gdb_poll)(udc_t *udc); ///< poll intr in gdb mode
 } udcOps_t;
+
+enum udc_feature
+{
+#define UDC_FEATURE_ATTRIBUTE_MASK 0xff
+    /// UC Attribute
+    UDC_FEATURE_REMOTE_WAKEUP = UC_REMOTE_WAKEUP,
+    UDC_FEATURE_SELF_POWERED = UC_SELF_POWERED,
+    UDC_FEATURE_BUS_POWERED = UC_BUS_POWERED,
+    /// Software defined
+    UDC_FEATURE_WAKEUP_ON_WRITE = (1 << 8),
+};
 
 struct udc_s
 {
     int speed;                     ///< controller speed, from controller
+    int feature;                   ///< controller feature defined in udc_feature
     udcPlatOps_t plat_ops;         ///< operates for specific platform
     udcOps_t ops;                  ///< controller operates
     unsigned long platform_priv;   ///< platform private data
@@ -153,6 +166,9 @@ struct usb_dev_driver_s
     udc_t *udc;
     udevDrvOps_t ops;
 };
+
+#define USB_DUMMY_RX_BUF_SIZE (512)
+extern char gDummyUsbRxBuf[USB_DUMMY_RX_BUF_SIZE];
 
 /**
  * @brief Create the usb device controller instance
@@ -303,7 +319,6 @@ void udcStart(udc_t *udc);
  */
 void udcStop(udc_t *udc);
 
-
 /**
  * @brief Enqueue an usb transfer
  *
@@ -443,6 +458,17 @@ static inline void udcEpStall(udc_t *udc, usbEp_t *ep, bool halt)
 {
     if (CHECK_UDC_OPS(udc, ep_stall) && ep != NULL)
         udc->ops.ep_stall(udc, ep, halt);
+}
+
+/**
+ * @brief Poll usb interrupt in gdb mode
+ *
+ * @param udc   the usb device controller
+ */
+static inline void udcGdbPollIntr(udc_t *udc)
+{
+    if (CHECK_UDC_OPS(udc, gdb_poll))
+        udc->ops.gdb_poll(udc);
 }
 
 /**

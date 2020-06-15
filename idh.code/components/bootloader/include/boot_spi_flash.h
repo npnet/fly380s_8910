@@ -27,21 +27,18 @@ extern "C" {
 typedef struct bootSpiFlash bootSpiFlash_t;
 
 /**
- * @brief open SPI flash
+ * \brief open SPI flash
  *
- * @return SPI flash instance
+ * When \p name is DRV_NAME_SPI_FLASH_EXT, even CONFIG_BOARD_WITH_EXT_FLASH
+ * isn't defined, this will initialize external flash.
+ *
+ * \param name SPI flash device name
+ * \return SPI flash instance
  */
-bootSpiFlash_t *bootSpiFlashOpen(void);
+bootSpiFlash_t *bootSpiFlashOpen(unsigned name);
 
 /**
- * @brief open external SPI flash
- *
- * @return external SPI flash instance
- */
-bootSpiFlash_t *bootSpiFlashExtOpen(void);
-
-/**
- * @brief prohibit flash erase/program for a certain range
+ * \brief prohibit flash erase/program for a certain range
  *
  * By default, flash erase/program is not prohibited. If it is known that
  * certain range will never be changed, this can be called. This range will
@@ -53,58 +50,58 @@ bootSpiFlash_t *bootSpiFlashExtOpen(void);
  * Inside, there is a flag for each block (64KB). So, the check unit is 64KB
  * block. Also, \p start will be aligned up, \p end will be aligned down.
  *
- * @param d         SPI flash instance
- * @param start     range start (inclusive)
- * @param end       range end (exclusive)
+ * \param d SPI flash instance
+ * \param start range start (inclusive)
+ * \param end range end (exclusive)
  */
 void bootSpiFlashSetRangeWriteProhibit(bootSpiFlash_t *d, uint32_t start, uint32_t end);
 
 /**
- * @brief clear range write prohibit flag
+ * \brief clear range write prohibit flag
  *
  * This is not recommended, just for completeness.
  *
- * @param d         SPI flash instance
- * @param start     range start (inclusive)
- * @param end       range end (exclusive)
+ * \param d SPI flash instance
+ * \param start range start (inclusive)
+ * \param end range end (exclusive)
  */
 void bootSpiFlashClearRangeWriteProhibit(bootSpiFlash_t *d, uint32_t start, uint32_t end);
 
 /**
- * @brief check whether flash offset offset is valid
+ * \brief check whether flash offset offset is valid
  *
- * @param d         SPI flash instance
- * @param offset    flash offset
- * @return
- *      - true if flash offset is valid
- *      - false if flash offset is invalid
+ * \param d SPI flash instance
+ * \param offset flash offset
+ * \return
+ * - true if flash offset is valid
+ * - false if flash offset is invalid
  */
 bool bootSpiFlashOffsetValid(bootSpiFlash_t *d, uint32_t offset);
 
 /**
- * @brief check whether the address is valid map address
+ * \brief check whether the address is valid map address
  *
- * @param d         SPI flash instance
- * @param address   address to be checked
- * @return
- *      - true if the address is valid map address
- *      - false if the address is not valid map address
+ * \param d SPI flash instance
+ * \param address address to be checked
+ * \return
+ * - true if the address is valid map address
+ * - false if the address is not valid map address
  */
 bool bootSpiFlashMapAddressValid(bootSpiFlash_t *d, const void *address);
 
 /**
- * @brief mapped address for flash offset
+ * \brief mapped address for flash offset
  *
  * The mapped address is the physical address.
  *
- * @param d         SPI flash instance
- * @param offset    flash offset
- * @return      pointer of the mapped address
+ * \param d SPI flash instance
+ * \param offset flash offset
+ * \return pointer of the mapped address
  */
 const void *bootSpiFlashMapAddress(bootSpiFlash_t *d, uint32_t offset);
 
 /**
- * @brief flash ID
+ * \brief flash ID
  *
  * The format of the ID:
  * [31:24] 0
@@ -112,105 +109,150 @@ const void *bootSpiFlashMapAddress(bootSpiFlash_t *d, uint32_t offset);
  * [15:8]
  * [7:0] manufacture ID
  *
- * @param d         SPI flash instance
- * @return      flash ID
+ * \param d SPI flash instance
+ * \return flash ID
  */
 uint32_t bootSpiFlashID(bootSpiFlash_t *d);
 
 /**
- * @brief flash capacity in bytes
+ * \brief flash capacity in bytes
  *
- * @param d         SPI flash instance
- * @return      capacity in bytes
+ * \param d SPI flash instance
+ * \return capacity in bytes
  */
 uint32_t bootSpiFlashCapacity(bootSpiFlash_t *d);
 
 /**
- * @brief wait erase or program in progress finish
+ * \brief wait erase or program in progress finish
  *
- * @param d         SPI flash instance
+ * \param d SPI flash instance
  */
 void bootSpiFlashWaitDone(bootSpiFlash_t *d);
 
 /**
- * @brief flash chip erase
+ * \brief whether erase or program in progress finish
+ *
+ * \param d SPI flash instance
+ * \return
+ *      - true if there are no pending erase or program
+ *      - false if not
+ */
+bool bootSpiFlashIsDone(bootSpiFlash_t *d);
+
+/**
+ * \brief flash chip erase
  *
  * This function will wait erase finish.
  *
- * @param d         SPI flash instance
- * @param wait_done whether to wait finish of chip erase
+ * \param d SPI flash instance
  */
 void bootSpiFlashChipErase(bootSpiFlash_t *d);
 
 /**
- * @brief erase block or sector of flash
+ * \brief erase block or sector of flash
  *
  * 64K/32K/4K erase will be chosen based on offset alignment and size.
  *
  * This function WON'T wait erase finish.
  *
- * @param d         SPI flash instance
- * @param offset    flash offset
- * @param size      flash erase size
- * @return
+ * \param d SPI flash instance
+ * \param offset flash offset
+ * \param size flash erase size
+ * \return
  *      - the actual erase size
  *      - -1 for invalid parameters
  */
 int bootSpiFlashEraseNoWait(bootSpiFlash_t *d, uint32_t offset, size_t size);
 
 /**
- * @brief write data to flash
+ * \brief write data to flash
  *
  * Flash write won't cross page boundary.
  *
  * This function WON'T wait erase finish.
  *
- * @param d         SPI flash instance
- * @param offset    flash offset
- * @param size      flash program size
- * @return
+ * \param d SPI flash instance
+ * \param offset flash offset
+ * \param size flash program size
+ * \return
  *      - the actual program size
  *      - -1 for invalid parameters
  */
 int bootSpiFlashWriteNoWait(bootSpiFlash_t *d, uint32_t offset, const void *data, size_t size);
 
 /**
- * @brief erase region of flash
+ * \brief erase region of flash
  *
  * This function will loop to erase the whole flash region, and wait erase
  * done.
  *
- * @param d         SPI flash instance
- * @param offset    flash offset
- * @param size      flash erase size
- * @return
- *      - false for invalid parameters
+ * \param d SPI flash instance
+ * \param offset flash offset
+ * \param size flash erase size
+ * \return
+ *      - true on success
+ *      - false on error, invalid parameters
  */
 bool bootSpiFlashErase(bootSpiFlash_t *d, uint32_t offset, size_t size);
 
 /**
- * @brief write all data to flash
+ * \brief write all data to flash
  *
  * This function will loop to write the whole flash region, and wait
  * program finish. Caller should ensure \a data is not located in the
  * same flash.
  *
- * @param d         SPI flash instance
- * @param offset    flash offset
- * @param data      data to be written
- * @param size      flash erase size
- * @return
- *      - false for invalid parameters
+ * \param d SPI flash instance
+ * \param offset flash offset
+ * \param data data to be written
+ * \param size flash erase size
+ * \return
+ *      - true on success
+ *      - false on error, invalid parameters
  */
 bool bootSpiFlashWrite(bootSpiFlash_t *d, uint32_t offset, const void *data, size_t size);
 
 /**
- * @brief read unique id number
+ * \brief read data from flash
  *
- * @param d         SPI flash instance pointer, must be valid
- * @param id        8 bytes id
+ * \param d SPI flash instance
+ * \param offset flash offset
+ * \param data memory for read
+ * \param size read size
+ * \return
+ *      - true on success
+ *      - false on error, invalid parameters
  */
-void bootSpiFlashReadUniqueId(bootSpiFlash_t *d, uint8_t id[8]);
+bool bootSpiFlashRead(bootSpiFlash_t *d, uint32_t offset, void *data, uint32_t size);
+
+/**
+ * \brief read data from flash, and check with provided data
+ *
+ * It is close to \p bootSpiFlashRead with \p memcmp. And it can return false
+ * earlier at mismatch. Also, it can save another extra buffer.
+ *
+ * \param d SPI flash instance
+ * \param offset flash offset
+ * \param data memory for read
+ * \param size read size
+ * \return
+ *      - true on success
+ *      - false on error, invalid parameters
+ */
+bool bootSpiFlashReadCheck(bootSpiFlash_t *d, uint32_t offset, const void *data, uint32_t size);
+
+/**
+ * \brief read unique id number
+ *
+ * The currently known largest uid length is 16 bytes.
+ *
+ * \param d SPI flash instance pointer, must be valid
+ * \param id unique id, enough to hold uid
+ * \return
+ *      - uid length
+ *      - -1 on error, invalid parameters or not support
+ */
+int bootSpiFlashReadUniqueId(bootSpiFlash_t *d, uint8_t *id);
 
 #ifdef __cplusplus
 }

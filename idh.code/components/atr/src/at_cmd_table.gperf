@@ -136,10 +136,16 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 //
 // SIM && PBK related commands
 //
++CSIM,          atCmdHandleCSIM, 0
++CCHO,          atCmdHandleCCHO, 0
++CCHC,          atCmdHandleCCHC, 0
++CGLA,          atCmdHandleCGLA, 0
 +CPIN2,         atCmdHandleCPIN2, 0         // Authentication(for Sim)
 ^CPINC,         atCmdHandleCPINC, 0         // Total times of Access the Sim Card
 +CRSML,         atCmdHandleCRSML, 0         // Read records of EF file on (U)SIM
 ^SIMOPERTIMES,  atCmdHandleSIMOperationTimes,   0       //Get the total number of SIM card operations.
++SIMCON,       atCmdHandleSIMCON,0
++SIMCNT,       atCmdHandleSIMCNT,0
 
 
 // Network service related commands
@@ -155,7 +161,7 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 +CPOL,          atCmdHandleCPOL, 0          // 7.19 Preferred PLMN list
 +CPLS,          atCmdHandleCPLS, 0          // 7.20 Selection of preferred PLMN list
 +CPWD,          atCmdHandleCPWD, 0          // 7.5 Change password
-// +COLP,       atCmdHandleCOLP, 0          // 7.8 Connected line identification presentation
++COLP,          atCmdHandleCOLP, 0          // 7.8 Connected line identification presentation
 +CCFC,          atCmdHandleCCFC, 0          // 7.11 Call forwarding number and conditions
 +CCED,          atCmdHandleCCED, 0
 +MJDC,          atCmdHandleMJDC, 0          //Detect the jamming.
@@ -243,6 +249,9 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 +TPING,         AT_TCPIP_CmdFunc_TPING, 0
 #endif
 ^NETIF,         AT_NET_CmdFunc_NetInfo, 0
++SSLSTART,        AT_TCPIP_CmdFunc_SSLSTART, 0
++SSLSEND,         AT_TCPIP_CmdFunc_SSLSEND, 0
++SSLCLOSE,        AT_TCPIP_CmdFunc_SSLCLOSE, 0
 
 //
 // Mobile Termination control and status commands
@@ -265,7 +274,8 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 +CGDEL,         atCmdHandleCGDEL, 0         // 10.1.29 Delete non-active PDP contexts
 +CGPADDR,       atCmdHandleCGPADDR, 0       // 10.1.14 Show PDP address(es)
 +CGDCONT,       atCmdHandleCGDCONT, 0       // 10.1.1 Define PDP context
-//+CFGIMSPDN,     atCmdHandleCFGIMSPDN, 0
++CFGIMSPDN,     atCmdHandleCFGIMSPDN, 0
+^PDNACTINFO,    atCmdHandlePDNACTINFO, 0    // RW PDN act or deact retry timer and retry maxcount
 +CGAUTH,        atCmdHandleCGAUTH, 0        // 10.1.31 Define PDP context authentication parameters
 #ifdef LTE_NBIOT_SUPPORT
 +CGDSCONT,      atCmdHandleCGDSCONT, 0      // 10.1.2 Define secondary PDP context
@@ -316,6 +326,8 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 
 #ifdef LTE_SUPPORT
 +SETLOCK,       atCmdHandleSETLOCK, 0
++SETSTSEN,      atCmdHandleSETSTSEN,   0
++SETRATEPRIOR,  atCmdHandleSETRATEPRIOR, 0
 #endif
 
 #ifdef CONFIG_CFW_DEBUG_IPFILTER
@@ -359,6 +371,7 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 
 +SNTP,          AT_CmdFunc_SNTP, 0
 
+#if defined(CONFIG_AT_FTP_SUPPORT) || defined(CONFIG_AT_NEWFTP_SUPPORT)
 ^FTPOPEN,       AT_FTP_CmdFunc_OPEN, 0
 ^FTPCLOSE,      AT_FTP_CmdFunc_CLOSE, 0
 ^FTPSIZE,       AT_FTP_CmdFunc_SIZE, 0
@@ -366,6 +379,7 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 ^FTPGETSET,     AT_FTP_CmdFunc_GETSET, 0
 ^FTPPUT,        AT_FTP_CmdFunc_PUT, 0
 ^FTPPUTSET,     AT_FTP_CmdFunc_PUTSET, 0
+#endif
 
 ^COAPGET,       AT_COAP_CmdFunc_GET, 0
 ^COAPPUT,       AT_COAP_CmdFunc_PUT, 0
@@ -374,10 +388,28 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 ^COAPDATA,      AT_COAP_CmdFunc_DATA, 0
 ^COAPREG,       AT_COAP_CmdFunc_DATAREG, 0
 
+#ifdef CONFIG_AT_LWIP_MQTT_SUPPORT
 +MQTTCONN,      AT_GPRS_CmdFunc_MQTTCONN, 0
 +MQTTDISCONN,   AT_GPRS_CmdFunc_MQTTDISCONN, 0
 +MQTTSUBUNSUB,  AT_GPRS_CmdFunc_MQTT_SUB_UNSUB, 0
 +MQTTPUB,       AT_GPRS_CmdFunc_MQTTPUB, 0
+#endif
+
+#ifdef CONFIG_AT_PAHO_MQTT_SUPPORT
++MQTTCONN,      AT_GPRS_CmdFunc_MQTTCONN, 0
++MQTTDISCONN,   AT_GPRS_CmdFunc_MQTTDISCONN, 0
++MQTTSUBUNSUB,  AT_GPRS_CmdFunc_MQTT_SUB_UNSUB, 0
++MQTTPUB,       AT_GPRS_CmdFunc_MQTTPUB, 0
+#endif
+
+#ifdef CONFIG_AT_ALIC_SUPPORT
++ALICAUTH,            AT_ALIC_CmdFunc_AUTH, 0
++ALICCONN,            AT_ALIC_CmdFunc_CONN, 0
++ALICPUB,              AT_ALIC_CmdFunc_PUB, 0
++ALICSUB,              AT_ALIC_CmdFunc_SUB, 0
++ALICUNSUB,          AT_ALIC_CmdFunc_UNSUB, 0
++ALICDISCONN,       AT_ALIC_CmdFunc_DISCONN, 0
+#endif
 
 #ifdef CONFIG_SOC_6760
 +SIGMOD,        atCmdHandleSIGMOD, 0        // signal mode
@@ -416,6 +448,17 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 #ifdef CONFIG_TWOLINE_WAKEUP_ENABLE
 +SLEEPDELAY,    atCmdHandleMcuNotifySleep, 0,    //mcu notify module should into deepsleep
 #endif
+
+#ifdef CONFIG_SRV_SIMLOCK_ENABLE
+^SPHUK,          atCmdHandleSimlockSPHUK, 0    //save the random number "HUK"
+^SPFACAUTHPUBKEY, atCmdHandleSimlockSPFACAUTHPUBKEY, 0    //check and save the RSA public key
+^SPIDENTIFYSTART, atCmdHandleSimlockSPIDENTIFYSTART, 0    //start authentication
+^SPIDENTIFYEND, atCmdHandleSimlockSPIDENTIFYEND, 0    //end authentication
+^SPDATAENCRYPT, atCmdHandleSimlockSPDATAENCRYPT, 0    //encrypt the original simlock keys
+^SPSIMLOCKDATAWRITE, atCmdHandleSimlockSimlockData, 0    //update the simlock data
+^SPSIMLOCKIMEI, atCmdHandleSimlockSPSIMLOCKIMEI, 0    // no handle this cmd just return ok.
+#endif
+
 #ifdef CONFIG_AT_EMMCDDRSIZE_SUPPORT
 +EMMCDDRSIZE,     atCmdHandleEmmcDDRSize, 0    // read flash size and exram size
 #endif
@@ -442,7 +485,7 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 #ifdef CONFIG_SOC_8910
 +MAI2SY,        atCmdHandleMAI2SY, 0        // Config external codec mode
 +PCMMODE,       atCmdHandlePCMMODE, 0       // Set PCM frame synchronization singal mode
-+CLAM,          atCmdHandleCLAM, 0          // Control playtone of call and sms
++CALM,          atCmdHandleCALM, 0          // Control playtone of call and sms
 #endif
 #endif
 
@@ -452,6 +495,7 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 
 #ifdef CONFIG_SOC_8910
 +TSTSETCS,      atCmdHandleTSTSETCS, 0      // Just use to test close CS domain
++SIMLOCKTEST,      atCmdHandleSimlockTest, 0      // Just use to test close CS domain
 #endif
 
 //command for lwm2m
@@ -474,6 +518,13 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 +MIPLCLEARSTATE,    AT_CmdFunc_MIPLCLEARSTATE, 0
 #endif
 
+#ifdef CONFIG_AT_OCEANCONNECT_SUPPORT
++NCDPOPEN,    AT_CmdFunc_NCDPOPEN, 0
++NCDPCLOSE,   AT_CmdFunc_NCDPCLOSE, 0
++NMGS,        AT_CmdFunc_NMGS, 0
++NMGR,        AT_CmdFunc_NMGR, 0
++NNMI,        AT_CmdFunc_NNMI, 0
+#endif
 #ifdef CONFIG_ATS_UPDATE_SUPPORT
 +UPDATE,            atCmdHandleUPDATE, 0            // Firmware update, data from AT
 #endif
@@ -547,9 +598,15 @@ $MYSYSMODE,     atCmdHandleMYSYSMODE, 0
 
 #ifdef CONFIG_SOC_8910
 +LOCKBCCH,        atCmdHandleMYBCCH, 0
-+SETBAND,        atCmdHandleMYBAND, 0
++SETBAND,         atCmdHandleMYBAND, 0
 +SETDTPORT,       atCmdHandleSETDTPORT, 0
 +RFTEMPERATURE,   atCmdHandleRFTEMPERATURE, 0
++SETLTEFRP,       atCmdHandleSETLTEFRP, 0
++SETRFFRP,        atCmdHandleSETRFFRP, 0
+#endif
+
+#ifdef CONFIG_SOC_8910
++SPBTCTRL,      atCmdHandleSPBTCTRL, 0      // BT control commands
 #endif
 
 #ifdef CONFIG_AT_SPBTTEST_SUPPORT
@@ -559,10 +616,48 @@ $MYSYSMODE,     atCmdHandleMYSYSMODE, 0
 #ifdef CONFIG_AT_SPBLETEST_SUPPORT
 +SPBLETEST,     AT_SPBLE_CmdFunc_TEST, 0
 #endif
+#ifdef CONFIG_AT_SPBLE_SUPPORT
++BLECOMM,       AT_SPBLE_CmdFunc_COMM, 0
++BLEADV,        AT_SPBLE_CmdFunc_ADV, 0
++BLESCAN,       AT_SPBLE_CmdFunc_SCAN, 0
+#endif
+#ifdef CONFIG_AT_BT_CLASSIC_SUPPORT
++BTONOFF,       AT_BTApp_CmdFunc_ONOFF, 0
++BTVISIBLE,     AT_BTApp_CmdFunc_VISIBLE, 0
++BTNAME,        AT_BTApp_CmdFunc_NAME, 0
++BTADDR,        AT_BTApp_CmdFunc_ADDR, 0
++BTINQ,         AT_BTApp_CmdFunc_INQ, 0
++BTPAIR,        AT_BTApp_CmdFunc_PAIR, 0
++BTPIN,         AT_BTApp_CmdFunc_PIN, 0
++BTLISTPD,      AT_BTApp_CmdFunc_LISTPD, 0
++BTREMOVEPD,    AT_BTApp_CmdFunc_REMOVEPD, 0
++BTCONNECT,     AT_BTApp_CmdFunc_CONNECT, 0
++BTSEND,        AT_BTApp_CmdFunc_SEND, 0
++BTREAD,        AT_BTApp_CmdFunc_READ, 0
+#endif
+
+
+#ifdef CONFIG_AT_WIFISCAN_SUPPORT
++WIFION,      atCmdHandleWifiOpen,   0
++WIFIOFF,     atCmdHandleWifiClose,  0
++WIFISCAN,      atCmdHandleWifiScan,   0
+#endif
 
 +SIMHOTSWAP,    atCmdHandleSIMHOTSWAP, 0      //set sim hot-plug function
 +GTSET,         atCmdHandleGTSET,      0      //set sim hot-plut trigger mode
 +NETMSG,        atCmdHandleNETMSG,     0      //Get netinfo
 +GTCCINFO,      atCmdHandleGTCCINFO,   0      //inqury GSM/LTE service cell and neighbor cell
+
+#ifdef CONFIG_SOC_8910
++NCESIM,        atCmdHandleNCESIM, 0          // close or open network card authentication
++NSTCFG,        atCmdHandleNSTCFG, 0
++NST,           atCmdHandleNST, 0
++SETCSPAGFLAG,  atCmdHandleSETCSPAGFLAG, 0    // Set flag of ingnoring CS paging
++CSVM,          atCmdHandleCSVM, 0
++CSTA,          atCmdHandleCSTA, 0
++T3302,         atCmdHandleT3302, 0
++CSSN,          atCmdHandleCSSN, 0            // Enables/disables the presentation of notification result codes from TA to TE.
++MMICG,         atCmdHandleMMICG, 0
+#endif
 
 %%

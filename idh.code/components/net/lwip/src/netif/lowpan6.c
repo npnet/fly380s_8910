@@ -507,7 +507,7 @@ lowpan6_frag(struct netif *netif, struct pbuf *p, const struct ieee_802154_addr 
 
     /* send the packet */
     MIB2_STATS_NETIF_ADD(netif, ifoutoctets, p_frag->tot_len);
-    LWIP_DEBUGF(LOWPAN6_DEBUG | LWIP_DBG_TRACE, ("lowpan6_send: sending packet %p\n", (void *)p));
+    LWIP_DEBUGF(LOWPAN6_DEBUG | LWIP_DBG_TRACE, (0x10007870, "lowpan6_send: sending packet %p\n", (void *)p));
     err = netif->linkoutput(netif, p_frag);
 
     while ((remaining_len > 0) && (err == ERR_OK)) {
@@ -539,7 +539,7 @@ lowpan6_frag(struct netif *netif, struct pbuf *p, const struct ieee_802154_addr 
 
       /* send the packet */
       MIB2_STATS_NETIF_ADD(netif, ifoutoctets, p_frag->tot_len);
-      LWIP_DEBUGF(LOWPAN6_DEBUG | LWIP_DBG_TRACE, ("lowpan6_send: sending packet %p\n", (void *)p));
+      LWIP_DEBUGF(LOWPAN6_DEBUG | LWIP_DBG_TRACE, (0x10007870, "lowpan6_send: sending packet %p\n", (void *)p));
       err = netif->linkoutput(netif, p_frag);
     }
   } else {
@@ -562,7 +562,7 @@ lowpan6_frag(struct netif *netif, struct pbuf *p, const struct ieee_802154_addr 
 
     /* send the packet */
     MIB2_STATS_NETIF_ADD(netif, ifoutoctets, p_frag->tot_len);
-    LWIP_DEBUGF(LOWPAN6_DEBUG | LWIP_DBG_TRACE, ("lowpan6_send: sending packet %p\n", (void *)p));
+    LWIP_DEBUGF(LOWPAN6_DEBUG | LWIP_DBG_TRACE, (0x10007870, "lowpan6_send: sending packet %p\n", (void *)p));
     err = netif->linkoutput(netif, p_frag);
   }
 

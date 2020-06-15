@@ -21,15 +21,15 @@ section_text = [".text", ".text.*", ".ram", "RESET", "VECTORS",
                 ".sramboottext", '.sramtext', '.ramtext', ".boot_sector_start",
                 ".boottext", ".irqtext", ".romtext", ".bootsramtext",
                 ".ram", ".start_entry", ".exception", ".tlb_exception",
-                ".tlbtext", ".syssram_L1_text",
-                ".init", ".sramTEXT"]
+                ".tlbtext", ".syssram_L1_text", ".nbsram_patch_text",
+                ".init", ".sramTEXT",".noinit"]
 section_ro = [".rodata", ".rodata.*",
               ".bootrodata", ".roresdata", ".robsdata", ".extra"]
 section_rw = [".data", ".data.*",
               ".rwkeep", ".bootsramdata", ".sramdata", ".sramucdata",
               ".srroucdata", ".ucdata"]
 section_zi = [".bss", ".bss.*", "COMMON", ".scommon", ".sdata", ".sdata.*",
-              ".sbss", ".sbss.*",
+              ".sbss", ".sbss.*", ".nbsram_globals",
               ".sramuninit", ".sramucuninit", ".dsp_iq_data", ".ramucbss",
               ".backup", ".bootsrambss", ".ucbss", ".srambss", ".sramucbss",
               ".ucbackup", ".xcv_reg_value", ".abb_reg_value", ".pmu_reg_value",
@@ -38,7 +38,7 @@ section_zi = [".bss", ".bss.*", "COMMON", ".scommon", ".sdata", ".sdata.*",
               ".fixptr", ".dbgfunc", ".sram_overlay", ".TTBL1", ".TTBL2"]
 section_ignore = [".ARM.exidx", ".ARM.attributes", ".comment", ".debug_*",
                   ".iplt", ".rel.iplt", ".igot.plt", '.reginfo', ".mdebug.*",
-                  ".pdr", '.rel.dyn']
+                  ".pdr", '.rel.dyn','.noinit']
 
 
 # check a name matches a list of patterns
@@ -133,8 +133,13 @@ def parse_map(fname):
 
 
 def sizelist(f):
-    sl = [f["text"], f["rodata"], f["data"], f["bss"],
-          f["text"] + f["rodata"], f["text"] + f["rodata"] + f["data"]]
+    sl = [f["text"],
+          f["rodata"],
+          f["data"],
+          f["bss"],
+          f["text"] + f["rodata"],
+          f["text"] + f["rodata"] + f["data"],
+          f["data"] + f["bss"]]
     ss = [str(s) for s in sl]
     return ",".join(ss)
 
@@ -172,7 +177,7 @@ name, it is needed to add the section name to this script.
         size = ent['size']
         stype_total[stype] += size
 
-    print("total: text,rodata,data,bss,code,flash")
+    print("total: text,rodata,data,bss,code,flash,ram")
     print("      ", sizelist(stype_total))
 
     lib_total = {}
@@ -187,7 +192,7 @@ name, it is needed to add the section name to this script.
 
     print("size by library to %s ..." % (opt.outlib))
     fh = open(opt.outlib, "w")
-    fh.write("library name,text,rodata,data,bss,code,flash\n")
+    fh.write("library name,text,rodata,data,bss,code,flash,ram\n")
     for n, l in lib_total.items():
         fh.write("%s,%s\n" % (n, sizelist(l)))
     fh.close()
@@ -206,7 +211,7 @@ name, it is needed to add the section name to this script.
 
     print("size by object to %s ..." % (opt.outobj))
     fh = open(opt.outobj, "w")
-    fh.write("object name,library name,text,rodata,data,bss,code,flash\n")
+    fh.write("object name,library name,text,rodata,data,bss,code,flash,ram\n")
     for n, l in obj_total.items():
         fh.write("%s,%s,%s\n" % (l['obj'], l["lib"], sizelist(l)))
     fh.close()

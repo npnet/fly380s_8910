@@ -8,6 +8,7 @@
 #include "sockets.h"
 #include "netutils.h"
 #include "netmain.h"
+#include "osi_log.h"
 extern void *g_hCosMmiAdpTask;
 extern void *g_hCosATTask;
 extern osiThread_t *netThreadID;
@@ -50,15 +51,33 @@ static void _dataIndNotify(void *ctx)
         return;
     uint32_t taskHandle = cfw_socket_map[socket].taskHandle;
     osiCallback_t func = cfw_socket_map[socket].func;
+    int32_t dataSize = lwip_getRecvAvailSize(socket);
+    if (dataSize <= 0)
+    {
+        OSI_LOGI(0, "_dataIndNotify dataSize:%ld retrn", dataSize);
+        return;
+    }
+    if (func == NULL)
+    {
+        osiEvent_t ev;
+        ev.id = EV_CFW_TCPIP_REV_DATA_IND;
+        ev.param1 = socket;
+        ev.param2 = dataSize;
+        ev.param3 = cfw_socket_map[socket].userParam;
+        OSI_LOGI(0, "_dataIndNotify Notify:%x,event:%d,nParam1:%d,nParam2:%d,nParam3:%d", (unsigned int)taskHandle, (int)ev.id, (int)ev.param1, (int)ev.param2, (int)ev.param3);
+        osiEventSend((osiThread_t *)taskHandle, &ev);
+    }
+    else
+    {
+        osiEvent_t *ev = malloc(sizeof(osiEvent_t));
+        ev->id = EV_CFW_TCPIP_REV_DATA_IND;
+        ev->param1 = socket;
+        ev->param2 = dataSize;
+        ev->param3 = cfw_socket_map[socket].userParam;
+        OSI_LOGI(0, "_dataIndNotify Notify:%x,event:%d,nParam1:%d,nParam2:%d,nParam3:%d", (unsigned int)taskHandle, (int)ev->id, (int)ev->param1, (int)ev->param2, (int)ev->param3);
 
-    osiEvent_t *ev = malloc(sizeof(osiEvent_t));
-    ev->id = EV_CFW_TCPIP_REV_DATA_IND;
-    ev->param1 = socket;
-    ev->param2 = lwip_getRecvAvailSize(socket);
-    ev->param3 = cfw_socket_map[socket].userParam;
-    sys_arch_printf("sys_post_event_to_APP Notify:%x,event:%d,nParam1:%d,nParam2:%d,nParam3:%d", (unsigned int)taskHandle, (int)ev->id, (int)ev->param1, (int)ev->param2, (int)ev->param3);
-
-    func((void *)ev);
+        osiThreadCallback((osiThread_t *)taskHandle, func, (void *)ev);
+    }
 }
 
 static uint32_t getRequestTaskHandle()
@@ -88,7 +107,7 @@ static void sys_post_event_to_APP(uint32_t nEventId, uint32_t nParam1, uint32_t 
     uint32_t taskHandle = cfw_socket_map[nParam1].taskHandle;
     osiCallback_t func = cfw_socket_map[nParam1].func;
 
-    sys_arch_printf("sys_post_event_to_APP:%x,event:%d,nParam1:%d,nParam2:%d,nParam3:%d", (unsigned int)taskHandle, (int)nEventId, (int)nParam1, (int)nParam2, (int)nParam3);
+    OSI_LOGI(0x100075ac, "sys_post_event_to_APP:%x,event:%d,nParam1:%d,nParam2:%d,nParam3:%d", (unsigned int)taskHandle, (int)nEventId, (int)nParam1, (int)nParam2, (int)nParam3);
 
     if (func == NULL)
     {
@@ -130,7 +149,7 @@ void sys_post_DNSevent_to_APP(uint32_t nEventId, uint32_t nParam1, uint32_t nPar
 #if LWIP_TCPIP_CORE_LOCKING
     LOCK_TCPIP_CORE();
 #endif
-    sys_arch_printf("sys_post_DNSevent_to_APP nEventId=%d,task=%x,func=0X%x", (int)nEventId, (unsigned int)hTask, (unsigned int)func);
+    OSI_LOGI(0x100075ad, "sys_post_DNSevent_to_APP nEventId=%d,task=%x,func=0X%x", (int)nEventId, (unsigned int)hTask, (unsigned int)func);
     if (func == NULL)
     {
         CFW_EVENT cfw_event = {
@@ -166,7 +185,7 @@ void sys_post_ICMPevent_to_APP(uint32_t nsocketId, uint32_t nParam1, uint32_t nP
     uint32_t nDLC = cfw_socket_map[nsocketId].userParam;
     uint32_t taskHandle = cfw_socket_map[nsocketId].taskHandle;
     osiCallback_t func = cfw_socket_map[nsocketId].func;
-    sys_arch_printf("sys_post_ICMPevent_to_APP:%x,func:%x,nParam1:%d,nParam2:%d,nsocketId:%d", (unsigned int)taskHandle, (unsigned int)func, (int)nParam1, (int)nParam2, (int)nsocketId);
+    OSI_LOGI(0x100075ae, "sys_post_ICMPevent_to_APP:%x,func:%x,nParam1:%d,nParam2:%d,nsocketId:%d", (unsigned int)taskHandle, (unsigned int)func, (int)nParam1, (int)nParam2, (int)nsocketId);
     if (func == NULL)
     {
         osiEvent_t ev;
@@ -199,14 +218,14 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
 {
     struct netconn *conn = (struct netconn *)arg;
 
-    sys_arch_printf("lwip_tcp_event conn=0x%p,lwip_event:%d,pcb:0x%p", conn, (int)lwip_event, pcb);
+    OSI_LOGI(0x100075af, "lwip_tcp_event conn=0x%p,lwip_event:%d,pcb:0x%p", conn, (int)lwip_event, pcb);
     if (conn != NULL && pcb == NULL)
     {
-        sys_arch_printf("lwip_tcp_event UDP event");
+        OSI_LOGI(0x100075b0, "lwip_tcp_event UDP event");
     }
     else
     {
-        sys_arch_printf("lwip_tcp_event pcb->is_for_socket=%d", pcb->is_for_socket);
+        OSI_LOGI(0x100075b1, "lwip_tcp_event pcb->is_for_socket=%d", pcb->is_for_socket);
         if (conn == NULL || !pcb->is_for_socket)
             return err;
     }
@@ -217,7 +236,7 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
 #if LWIP_TCPIP_CORE_LOCKING
     LOCK_TCPIP_CORE();
 #endif
-    sys_arch_printf("lwip_tcp_event sockedid=%d,socket_used=%d,acked_size=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used, (int)conn->acked_size);
+    OSI_LOGI(0x100075b2, "lwip_tcp_event sockedid=%d,socket_used=%d,acked_size=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used, (int)conn->acked_size);
     if (conn->socket <= 0 || cfw_socket_map[conn->socket].socket_used == 0 || cfw_socket_map[conn->socket].socket_used != (conn->socket))
     {
 #if LWIP_TCPIP_CORE_LOCKING
@@ -259,7 +278,7 @@ err_t lwip_tcp_event(void *arg, struct tcp_pcb *pcb,
         sys_post_event_to_APP(EV_CFW_TCPIP_ERR_IND, conn->socket, err, cfw_socket_map[conn->socket].userParam);
         break;
     default:
-        sys_arch_printf("lwip_tcp_event unprocessed event:%d", lwip_event);
+        OSI_LOGI(0x100075b3, "lwip_tcp_event unprocessed event:%d", lwip_event);
         break;
     }
 #if LWIP_TCPIP_CORE_LOCKING
@@ -273,11 +292,11 @@ void CFW_PostCloseRSP(struct netconn *conn)
 #if LWIP_TCPIP_CORE_LOCKING
     LOCK_TCPIP_CORE();
 #endif
-    sys_arch_printf("CFW_PostCloseRSP sockedid=%d, socket_used=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used);
+    OSI_LOGI(0x100075b4, "CFW_PostCloseRSP sockedid=%d, socket_used=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used);
     if (conn->socket <= 0 || cfw_socket_map[conn->socket].socket_used == 0 || cfw_socket_map[conn->socket].socket_used != (conn->socket))
     {
-        sys_arch_printf("CFW_PostCloseRSP can not send EV_CFW_TCPIP_SOCKET_CLOSE_RSP");
-        sys_arch_printf("CFW_PostCloseRSP sockedid=%d, socket_used=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used);
+        OSI_LOGI(0x100075b5, "CFW_PostCloseRSP can not send EV_CFW_TCPIP_SOCKET_CLOSE_RSP");
+        OSI_LOGI(0x100075b4, "CFW_PostCloseRSP sockedid=%d, socket_used=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used);
         if (conn->socket > 0 && conn->socket < MAX_SOCKET + LWIP_SOCKET_OFFSET)
         {
             cfw_socket_map[conn->socket].status = CFW_SOCKET_COLSED;
@@ -299,7 +318,7 @@ void CFW_PostConnectRSP(struct netconn *conn)
 #if LWIP_TCPIP_CORE_LOCKING
     LOCK_TCPIP_CORE();
 #endif
-    sys_arch_printf("CFW_PostConnectRSP sockedid=%d, socket_used=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used);
+    OSI_LOGI(0x100075b6, "CFW_PostConnectRSP sockedid=%d, socket_used=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used);
     if (conn->socket <= 0 || cfw_socket_map[conn->socket].socket_used == 0 || cfw_socket_map[conn->socket].socket_used != (conn->socket))
     {
 #if LWIP_TCPIP_CORE_LOCKING
@@ -319,13 +338,13 @@ void CFW_PostBearerLosingInd(struct netconn *conn)
 
     if (conn == NULL)
     {
-        sys_arch_printf("CFW_PostBearerLosingInd conn is NULL");
+        OSI_LOGI(0x100075b7, "CFW_PostBearerLosingInd conn is NULL");
         return;
     }
 #if LWIP_TCPIP_CORE_LOCKING
     LOCK_TCPIP_CORE();
 #endif
-    sys_arch_printf("CFW_PostBearerLosingInd sockedid=%d, socket_used=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used);
+    OSI_LOGI(0x100075b8, "CFW_PostBearerLosingInd sockedid=%d, socket_used=%d", (int)conn->socket, (int)cfw_socket_map[conn->socket].socket_used);
     if (conn->socket <= 0 || cfw_socket_map[conn->socket].socket_used == 0 || cfw_socket_map[conn->socket].socket_used != (conn->socket))
     {
 #if LWIP_TCPIP_CORE_LOCKING
@@ -354,6 +373,7 @@ uint16_t CFW_TcpipGetRecvAvailable(SOCKET nSocket)
 {
     int availsize = 0;
     int ret = lwip_ioctl(nSocket, FIONREAD, &availsize);
+    OSI_LOGI(0, "CFW_TcpipGetRecvAvailable recv_avail %d ret %d", availsize, ret);
     if (ret <= 0)
         return availsize;
     return ret;
@@ -436,19 +456,19 @@ int CFW_TcpipSocketClose(SOCKET nSocket)
     if (cfw_socket_map[nSocket].socket_used == nSocket)
         cfw_socket_map[nSocket].status = CFW_SOCKET_CLOSING;
     int ret = lwip_close(nSocket);
-    sys_arch_printf("CFW_TcpipSocketClose:lwip_close ,ret=%d", ret);
+    OSI_LOGI(0x100075b9, "CFW_TcpipSocketClose:lwip_close ,ret=%d", ret);
     if (ret == -1 && errno == EINPROGRESS)
         ret = 0;
-    sys_arch_printf("CFW_TcpipSocketClose ,ret=%d", ret);
+    OSI_LOGI(0x100075ba, "CFW_TcpipSocketClose ,ret=%d", ret);
     if (!ret && (cfw_socket_map[nSocket].socket_used <= 0 || cfw_socket_map[nSocket].socket_used > MAX_SOCKET))
     {
-        sys_arch_printf("invalid socket");
+        OSI_LOGI(0x100075bb, "invalid socket");
         return ret;
     }
 
     if (!ret)
     {
-        sys_arch_printf("CFW_TcpipSocketClose set socket_used to 0,ret=%d", ret);
+        OSI_LOGI(0x100075bc, "CFW_TcpipSocketClose set socket_used to 0,ret=%d", ret);
 #if LWIP_TCPIP_CORE_LOCKING
         LOCK_TCPIP_CORE();
 #endif
@@ -497,7 +517,7 @@ uint32_t CFW_TcpipSocketAccept(SOCKET nSocket, CFW_TCPIP_SOCKET_ADDR *addr, uint
 {
     if (nSocket > MAX_SOCKET + LWIP_SOCKET_OFFSET - 1)
     {
-        sys_arch_printf("CFW_TcpipSocketAccept nSocket error %d", nSocket);
+        OSI_LOGI(0x100075bd, "CFW_TcpipSocketAccept nSocket error %d", nSocket);
         return -1;
     }
     int socket = lwip_accept(nSocket, (struct sockaddr *)addr, (socklen_t *)addrlen);
@@ -630,7 +650,7 @@ void CFW_TcpipSocketDataNotify(SOCKET nSocket)
 {
     if (nSocket > MAX_SOCKET + LWIP_SOCKET_OFFSET - 1 || cfw_socket_map[nSocket].socket_used == 0)
     {
-        sys_arch_printf("CFW_TcpipSocketDataNotify nSocket error %d", nSocket);
+        OSI_LOGI(0x100075be, "CFW_TcpipSocketDataNotify nSocket error %d", nSocket);
         return;
     }
     if (cfw_socket_map[nSocket].socket_used == nSocket && cfw_socket_map[nSocket].dataIND_notify != NULL)
@@ -687,7 +707,7 @@ void CFW_SntpStop(CFW_SNTP_CONFIG *SntpConfig)
     osiThreadCallback(netGetTaskID(), (osiCallback_t)sntp_stop, NULL);
 }
 
-bool CFW_get_Netif_dataCount(uint16_t simID, uint16_t CID, uint16_t uType, uint16_t uDataType, uint32_t *loadsize)
+bool CFW_get_Netif_dataCountBySimCid(uint16_t simID, uint16_t CID, uint16_t uType, uint16_t uDataType, uint32_t *loadsize)
 {
     int iRet = false;
     struct netif *netif = NULL;
@@ -734,11 +754,65 @@ bool CFW_get_Netif_dataCount(uint16_t simID, uint16_t CID, uint16_t uType, uint1
         }
         break;
     default:
-        sys_arch_printf("unknown Data Type uDataType: %d\n", uDataType);
+        OSI_LOGI(0x100075bf, "unknown Data Type uDataType: %d\n", uDataType);
         break;
     }
     iRet = true;
-    sys_arch_printf("loadsize: %ld\n", *loadsize);
+    OSI_LOGI(0x100075c0, "loadsize: %ld\n", *loadsize);
+LEAVE:
+    return iRet;
+}
+
+bool CFW_get_Netif_dataCount(struct netif *netif, uint16_t uType, uint16_t uDataType, uint32_t *loadsize)
+{
+    int iRet = false;
+
+    if (loadsize == NULL)
+        goto LEAVE;
+    else
+        *loadsize = 0;
+
+    if (netif == NULL)
+        goto LEAVE;
+
+    switch (uDataType)
+    {
+    case LWIP_DATA:
+        if (uType == UPLOAD)
+        {
+            *loadsize = netif->u32LwipULSize;
+        }
+        else if (uType == DOWNLOAD)
+        {
+            *loadsize = netif->u32LwipDLSize;
+        }
+        break;
+    case PPP_DATA:
+        if (uType == UPLOAD)
+        {
+            *loadsize = netif->u32PPPULSize;
+        }
+        else if (uType == DOWNLOAD)
+        {
+            *loadsize = netif->u32PPPDLSize;
+        }
+        break;
+    case RNDIS_DATA:
+        if (uType == UPLOAD)
+        {
+            *loadsize = netif->u32RndisULSize;
+        }
+        else if (uType == DOWNLOAD)
+        {
+            *loadsize = netif->u32RndisDLSize;
+        }
+        break;
+    default:
+        OSI_LOGI(0x100075bf, "unknown Data Type uDataType: %d\n", uDataType);
+        break;
+    }
+    iRet = true;
+    OSI_LOGI(0x100075c0, "loadsize: %ld\n", *loadsize);
 LEAVE:
     return iRet;
 }

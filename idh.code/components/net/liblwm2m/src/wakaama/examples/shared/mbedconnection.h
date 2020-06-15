@@ -61,13 +61,18 @@ typedef struct _dtls_connection_t
     int securityInstId;
     lwm2m_context_t * lwm2mH;
     time_t lastSend; // last time a data was sent to the server (used for NAT timeouts)
-    mbedtls_ssl_context ssl;
-    mbedtls_net_context server_fd;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_ssl_config conf;
-    mbedtls_x509_crt cacert;
+    mbedtls_ssl_context* ssl;
+    mbedtls_net_context* server_fd;
+    mbedtls_entropy_context* entropy;
+    mbedtls_ctr_drbg_context* ctr_drbg;
+    mbedtls_ssl_config* conf;
+    mbedtls_x509_crt* cacert;
+    mbedtls_x509_crt* clicert;
+    mbedtls_pk_context* clikey;
+    int sock_id;
     int issecure;
+    mbedtls_ssl_session saved_session;
+    int send_firstData;
 } dtls_connection_t;
 
 int create_socket(const char * portStr, int ai_family);

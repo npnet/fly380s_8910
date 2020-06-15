@@ -59,6 +59,8 @@
 
 #include "netif/ppp/fsm.h"
 
+#include "osi_log.h"
+
 static void fsm_timeout (void *);
 static void fsm_rconfreq(fsm *f, u_char id, u_char *inp, int len);
 static void fsm_rconfack(fsm *f, int id, u_char *inp, int len);
@@ -77,8 +79,8 @@ static fsm * g_fsm_timeout_canceled_fsm = NULL;
  * Initialize fsm state.
  */
 void fsm_init(fsm *f) {
-	sys_arch_printf("fsm_init %p", f);
-	sys_arch_printf("f->state = %d",f->state);
+	OSI_LOGI(0x10007654, "fsm_init %p", f);
+	OSI_LOGI(0x10007655, "f->state = %d",f->state);
     ppp_pcb *pcb = f->pcb;
     f->state = PPP_FSM_INITIAL;
     f->flags = 0;
@@ -92,8 +94,8 @@ void fsm_init(fsm *f) {
  * fsm_lowerup - The lower layer is up.
  */
 void fsm_lowerup(fsm *f) {
-	sys_arch_printf("fsm_lowerup");
-	sys_arch_printf("f->state = %d",f->state);
+	OSI_LOGI(0x10007656, "fsm_lowerup");
+	OSI_LOGI(0x10007655, "f->state = %d",f->state);
     switch( f->state ){
     case PPP_FSM_INITIAL:
 	f->state = PPP_FSM_CLOSED;
@@ -110,7 +112,7 @@ void fsm_lowerup(fsm *f) {
 	break;
 
     default:
-	FSMDEBUG(("%s: Up event in state %d!", PROTO_NAME(f), f->state));
+	OSI_LOGXI(OSI_LOGPAR_SI, 0x10007657, "%s: Up event in state %d!", PROTO_NAME(f), f->state);
 	/* no break */
     }
 }
@@ -122,8 +124,8 @@ void fsm_lowerup(fsm *f) {
  * Cancel all timeouts and inform upper layers.
  */
 void fsm_lowerdown(fsm *f) {
-	sys_arch_printf("fsm_lowerdown");
-	sys_arch_printf("f->state = %d",f->state);
+	OSI_LOGI(0x10007658, "fsm_lowerdown");
+	OSI_LOGI(0x10007655, "f->state = %d",f->state);
     switch( f->state ){
     case PPP_FSM_CLOSED:
 	f->state = PPP_FSM_INITIAL;
@@ -160,7 +162,7 @@ void fsm_lowerdown(fsm *f) {
 	break;
 
     default:
-	FSMDEBUG(("%s: Down event in state %d!", PROTO_NAME(f), f->state));
+	OSI_LOGXI(OSI_LOGPAR_SI, 0x10007659, "%s: Down event in state %d!", PROTO_NAME(f), f->state);
 	/* no break */
     }
 }
@@ -170,8 +172,8 @@ void fsm_lowerdown(fsm *f) {
  * fsm_open - Link is allowed to come up.
  */
 void fsm_open(fsm *f) {
-	sys_arch_printf("fsm_open");
-	sys_arch_printf("f->state = %d",f->state);
+	OSI_LOGI(0x1000765a, "fsm_open");
+	OSI_LOGI(0x10007655, "f->state = %d",f->state);
     switch( f->state ){
     case PPP_FSM_INITIAL:
 	f->state = PPP_FSM_STARTING;
@@ -212,8 +214,8 @@ void fsm_open(fsm *f) {
  * send a terminate-request message as configured.
  */
 static void terminate_layer(fsm *f, int nextstate) {
-	sys_arch_printf("terminate_layer");
-	sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x1000765b, "terminate_layer");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     ppp_pcb *pcb = f->pcb;
 
     if( f->state != PPP_FSM_OPENED )
@@ -263,8 +265,8 @@ static void terminate_layer(fsm *f, int nextstate) {
  * the PPP_FSM_CLOSED state.
  */
 void fsm_close(fsm *f, const char *reason) {
-	sys_arch_printf("fsm_close");
-	sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x1000765c, "fsm_close");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     f->term_reason = reason;
     f->term_reason_len = (reason == NULL? 0: LWIP_MIN(strlen(reason), 0xFF) );
     switch( f->state ){
@@ -294,14 +296,14 @@ void fsm_close(fsm *f, const char *reason) {
  * fsm_timeout - Timeout expired.
  */
 static void fsm_timeout(void *arg) {
-	sys_arch_printf("fsm_timeout %p arg %p",fsm_timeout, arg);
+    OSI_LOGI(0x1000765d, "fsm_timeout %p arg %p",fsm_timeout, arg);
     fsm *f = (fsm *) arg;
-	sys_arch_printf("f->state = %d",f->state);
+	OSI_LOGI(0x10007655, "f->state = %d",f->state);
     ppp_pcb *pcb = f->pcb;
 
     if (g_fsm_timeout_canceled_fsm == f)
     {
-        sys_arch_printf("fsm_timeout called after timer canceled g_fsm_timeout_canceled_fsm %p",g_fsm_timeout_canceled_fsm);
+        OSI_LOGI(0,"fsm_timeout called after timer canceled g_fsm_timeout_canceled_fsm %p",g_fsm_timeout_canceled_fsm);
         g_fsm_timeout_canceled_fsm = NULL;
         return;
     }
@@ -353,7 +355,7 @@ static void fsm_timeout(void *arg) {
 	break;
 
     default:
-	FSMDEBUG(("%s: Timeout event in state %d!", PROTO_NAME(f), f->state));
+	OSI_LOGXI(OSI_LOGPAR_SI, 0x1000765e, "%s: Timeout event in state %d!", PROTO_NAME(f), f->state);
 	/* no break */
     }
 }
@@ -363,8 +365,8 @@ static void fsm_timeout(void *arg) {
  * fsm_input - Input packet.
  */
 void fsm_input(fsm *f, u_char *inpacket, int l) {
-	sys_arch_printf("fsm_input");
-	sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x1000765f, "fsm_input");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     u_char *inp;
     u_char code, id;
     int len;
@@ -375,24 +377,24 @@ void fsm_input(fsm *f, u_char *inpacket, int l) {
      */
     inp = inpacket;
     if (l < HEADERLEN) {
-	FSMDEBUG(("fsm_input(%x): Rcvd short header.", f->protocol));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000784a, "fsm_input(%x): Rcvd short header.", f->protocol));
 	return;
     }
     GETCHAR(code, inp);
     GETCHAR(id, inp);
     GETSHORT(len, inp);
     if (len < HEADERLEN) {
-	FSMDEBUG(("fsm_input(%x): Rcvd illegal length.", f->protocol));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000784b, "fsm_input(%x): Rcvd illegal length.", f->protocol));
 	return;
     }
     if (len > l) {
-	FSMDEBUG(("fsm_input(%x): Rcvd short packet.", f->protocol));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000784c, "fsm_input(%x): Rcvd short packet.", f->protocol));
 	return;
     }
     len -= HEADERLEN;		/* subtract header length */
 
     if( f->state == PPP_FSM_INITIAL || f->state == PPP_FSM_STARTING ){
-	FSMDEBUG(("fsm_input(%x): Rcvd packet in state %d.",
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000784d, "fsm_input(%x): Rcvd packet in state %d.",
 		  f->protocol, f->state));
 	return;
     }
@@ -439,8 +441,8 @@ void fsm_input(fsm *f, u_char *inpacket, int l) {
  * fsm_rconfreq - Receive Configure-Request.
  */
 static void fsm_rconfreq(fsm *f, u_char id, u_char *inp, int len) {
-sys_arch_printf("fsm_rconfreq");
-sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x10007660, "fsm_rconfreq");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     int code, reject_if_disagree;
 
     switch( f->state ){
@@ -510,8 +512,8 @@ sys_arch_printf("f->state = %d",f->state);
  * fsm_rconfack - Receive Configure-Ack.
  */
 static void fsm_rconfack(fsm *f, int id, u_char *inp, int len) {
-sys_arch_printf("fsm_rconfack");
-sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x10007661, "fsm_rconfack");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     ppp_pcb *pcb = f->pcb;
 
     if (id != f->reqid || f->seen_ack)		/* Expected id? */
@@ -572,8 +574,8 @@ sys_arch_printf("f->state = %d",f->state);
  * fsm_rconfnakrej - Receive Configure-Nak or Configure-Reject.
  */
 static void fsm_rconfnakrej(fsm *f, int code, int id, u_char *inp, int len) {
-sys_arch_printf("fsm_rconfnakrej");
-sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x10007662, "fsm_rconfnakrej");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     int ret;
     int treat_as_reject;
 
@@ -643,8 +645,8 @@ sys_arch_printf("f->state = %d",f->state);
  * fsm_rtermreq - Receive Terminate-Req.
  */
 static void fsm_rtermreq(fsm *f, int id, u_char *p, int len) {
-sys_arch_printf("fsm_rtermreq");
-sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x10007663, "fsm_rtermreq");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     //ppp_pcb *pcb = f->pcb;
 
     switch (f->state) {
@@ -681,8 +683,8 @@ sys_arch_printf("f->state = %d",f->state);
  * fsm_rtermack - Receive Terminate-Ack.
  */
 static void fsm_rtermack(fsm *f) {
-sys_arch_printf("fsm_rtermack");
-sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x10007664, "fsm_rtermack");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     switch (f->state) {
     case PPP_FSM_CLOSING:
 	#ifndef CONFIG_SOC_6760	
@@ -722,17 +724,17 @@ sys_arch_printf("f->state = %d",f->state);
  * fsm_rcoderej - Receive an Code-Reject.
  */
 static void fsm_rcoderej(fsm *f, u_char *inp, int len) {
-sys_arch_printf("fsm_rcoderej");
-sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x10007665, "fsm_rcoderej");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     u_char code, id;
 
     if (len < HEADERLEN) {
-	FSMDEBUG(("fsm_rcoderej: Rcvd short Code-Reject packet!"));
+	OSI_LOGI(0x10007666, "fsm_rcoderej: Rcvd short Code-Reject packet!");
 	return;
     }
     GETCHAR(code, inp);
     GETCHAR(id, inp);
-    ppp_warn("%s: Rcvd Code-Reject for code %d, id %d", PROTO_NAME(f), code, id);
+    OSI_LOGXI(OSI_LOGPAR_SII, 0x10007667, "%s: Rcvd Code-Reject for code %d, id %d", PROTO_NAME(f), code, id);
 
     if( f->state == PPP_FSM_ACKRCVD )
 	f->state = PPP_FSM_REQSENT;
@@ -745,8 +747,8 @@ sys_arch_printf("f->state = %d",f->state);
  * Treat this as a catastrophic error (RXJ-).
  */
 void fsm_protreject(fsm *f) {
-sys_arch_printf("fsm_protreject");
-sys_arch_printf("f->state = %d",f->state);
+    OSI_LOGI(0x10007668, "fsm_protreject");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
     switch( f->state ){
     case PPP_FSM_CLOSING:
 	#ifndef CONFIG_SOC_6760	
@@ -780,8 +782,7 @@ sys_arch_printf("f->state = %d",f->state);
 	break;
 
     default:
-	FSMDEBUG(("%s: Protocol-reject event in state %d!",
-		  PROTO_NAME(f), f->state));
+	OSI_LOGXI(OSI_LOGPAR_SI, 0x10007669, "%s: Protocol-reject event in state %d!", PROTO_NAME(f), f->state);
 	/* no break */
     }
 }
@@ -791,9 +792,9 @@ sys_arch_printf("f->state = %d",f->state);
  * fsm_sconfreq - Send a Configure-Request.
  */
 static void fsm_sconfreq(fsm *f, int retransmit) {
-sys_arch_printf("fsm_sconfreq");
-sys_arch_printf("f->state = %d",f->state);
-	ppp_pcb *pcb = f->pcb;
+    OSI_LOGI(0x1000766a, "fsm_sconfreq");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
+    ppp_pcb *pcb = f->pcb;
     struct pbuf *p;
     u_char *outp;
     int cilen;
@@ -842,7 +843,7 @@ sys_arch_printf("f->state = %d",f->state);
 	(*f->callbacks->addci)(f, outp, &cilen);
 	LWIP_ASSERT("cilen == p->len - HEADERLEN - PPP_HDRLEN", cilen == p->len - HEADERLEN - PPP_HDRLEN);
     }
-sys_arch_printf("ppp_write");
+    OSI_LOGI(0x1000766b, "ppp_write");
     ppp_write(pcb, p);
 
     /* start the retransmit timer */
@@ -866,9 +867,9 @@ sys_arch_printf("ppp_write");
  * Used for all packets sent to our peer by this module.
  */
 void fsm_sdata(fsm *f, u_char code, u_char id, const u_char *data, int datalen) {
-sys_arch_printf("fsm_sdata");
-sys_arch_printf("f->state = %d",f->state);
-	ppp_pcb *pcb = f->pcb;
+    OSI_LOGI(0x1000766c, "fsm_sdata");
+    OSI_LOGI(0x10007655, "f->state = %d",f->state);
+    ppp_pcb *pcb = f->pcb;
     struct pbuf *p;
     u_char *outp;
     int outlen;
@@ -893,7 +894,7 @@ sys_arch_printf("f->state = %d",f->state);
     PUTCHAR(code, outp);
     PUTCHAR(id, outp);
     PUTSHORT(outlen, outp);
-	sys_arch_printf("ppp_write");
+    OSI_LOGI(0x1000766b, "ppp_write");
     ppp_write(pcb, p);
 }
 

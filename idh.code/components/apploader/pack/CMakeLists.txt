@@ -18,7 +18,6 @@ set(CMAKE_CXX_COMPILER_FORCED 1)
 
 set(out_hex_dir ${CMAKE_CURRENT_BINARY_DIR}/hex)
 set(out_lib_dir ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set(out_rel_dir ${CMAKE_CURRENT_BINARY_DIR}/rel)
 set(out_inc_dir ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(tools_dir ${CMAKE_CURRENT_SOURCE_DIR}/tools)
 
@@ -60,36 +59,29 @@ endfunction()
 
 configure_file(${SOURCE_TOP_DIR}/components/lib/fdl1.img ${out_hex_dir}/fdl1.img COPYONLY)
 configure_file(${SOURCE_TOP_DIR}/components/lib/fdl2.img ${out_hex_dir}/fdl2.img COPYONLY)
-macro(pac_init_fdl cmd pac_config)
+macro(pac_init_fdl cmd)
     set(${cmd}
         cfg-init --pname UIX8910_MODEM --palias "APPIMG"
             --pversion "8910 MODULE" --version "BP_R1.0.0"
-            --flashtype 1 ${pac_config}
+            --flashtype 1
         cfg-host-fdl -a ${CONFIG_FDL1_IMAGE_START} -s ${CONFIG_FDL1_IMAGE_SIZE}
-            -p ${out_hex_dir}/fdl1.img ${pac_config}
+            -p ${out_hex_dir}/fdl1.img
         cfg-fdl2 -a ${CONFIG_FDL2_IMAGE_START} -s ${CONFIG_FDL2_IMAGE_SIZE}
-            -p ${out_hex_dir}/fdl2.img ${pac_config}
+            -p ${out_hex_dir}/fdl2.img
     )
 endmacro()
 
 if(CONFIG_APPIMG_LOAD_FLASH)
     set(target appimg_flash_delete)
-    set(pac_config ${out_hex_dir}/${target}.json)
     set(pac_file ${out_hex_dir}/${target}.pac)
-    pac_init_fdl(init_fdl ${pac_config})
-    execute_process(
-        COMMAND python3 ${pacgen_py} ${init_fdl}
-            cfg-erase-flash -i ERASE_APPIMG -a ${CONFIG_APPIMG_FLASH_ADDRESS}
-                -s ${CONFIG_APPIMG_FLASH_SIZE} ${pac_config}
-            dep-gen --base ${SOURCE_TOP_DIR} ${pac_config}
-        OUTPUT_VARIABLE pac_dep
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-    )
-
+    pac_init_fdl(init_fdl)
     add_custom_command(OUTPUT ${pac_file}
-        COMMAND python3 ${pacgen_py} pac-gen ${pac_config} ${pac_file}
-        DEPENDS ${pacgen_py} ${pac_config} ${pac_dep}
+        COMMAND python3 ${pacgen_py} ${init_fdl}
+            cfg-erase-flash -i ERASE_APPIMG
+                -a ${CONFIG_APPIMG_FLASH_ADDRESS}
+                -s ${CONFIG_APPIMG_FLASH_SIZE}
+            pac-gen ${pac_file}
+        DEPENDS ${pacgen_py}
         WORKING_DIRECTORY ${SOURCE_TOP_DIR}
     )
     add_custom_target(${target}_pacgen ALL DEPENDS ${pac_file})
@@ -97,21 +89,13 @@ endif()
 
 if(CONFIG_APPIMG_LOAD_FILE)
     set(target appimg_file_delete)
-    set(pac_config ${out_hex_dir}/${target}.json)
     set(pac_file ${out_hex_dir}/${target}.pac)
-    pac_init_fdl(init_fdl ${pac_config})
-    execute_process(
-        COMMAND python3 ${pacgen_py} ${init_fdl}
-            cfg-del-appimg -i DEL_APPIMG ${pac_config}
-            dep-gen --base ${SOURCE_TOP_DIR} ${pac_config}
-        OUTPUT_VARIABLE pac_dep
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-    )
-
+    pac_init_fdl(init_fdl)
     add_custom_command(OUTPUT ${pac_file}
-        COMMAND python3 ${pacgen_py} pac-gen ${pac_config} ${pac_file}
-        DEPENDS ${pacgen_py} ${pac_config} ${pac_dep}
+        COMMAND python3 ${pacgen_py} ${init_fdl}
+            cfg-del-appimg -i DEL_APPIMG
+            pac-gen ${pac_file}
+        DEPENDS ${pacgen_py}
         WORKING_DIRECTORY ${SOURCE_TOP_DIR}
     )
     add_custom_target(${target}_pacgen ALL DEPENDS ${pac_file})
@@ -122,22 +106,16 @@ if(CONFIG_APPIMG_LOAD_FLASH)
     add_appimg(${target} ${flash_ldscript}  hello_world.c)
     target_link_libraries(${target} PRIVATE ${libc_file_name} ${libm_file_name} ${libgcc_file_name})
 
-    set(pac_config ${out_hex_dir}/${target}.json)
     set(pac_file ${out_hex_dir}/${target}.pac)
-    pac_init_fdl(init_fdl ${pac_config})
-    execute_process(
-        COMMAND python3 ${pacgen_py} ${init_fdl}
-            cfg-image -i APPIMG -a ${CONFIG_APPIMG_FLASH_ADDRESS} -s ${CONFIG_APPIMG_FLASH_SIZE}
-                -p ${out_hex_dir}/${target}.img ${pac_config}
-            dep-gen --base ${SOURCE_TOP_DIR} ${pac_config}
-        OUTPUT_VARIABLE pac_dep
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-    )
-
+    set(target_img_file ${out_hex_dir}/${target}.img)
+    pac_init_fdl(init_fdl)
     add_custom_command(OUTPUT ${pac_file}
-        COMMAND python3 ${pacgen_py} pac-gen ${pac_config} ${pac_file}
-        DEPENDS ${pacgen_py} ${pac_config} ${pac_dep}
+        COMMAND python3 ${pacgen_py} ${init_fdl}
+            cfg-image -i APPIMG -a ${CONFIG_APPIMG_FLASH_ADDRESS}
+                -s ${CONFIG_APPIMG_FLASH_SIZE}
+                -p ${target_img_file}
+            pac-gen ${pac_file}
+        DEPENDS ${pacgen_py} ${target_img_file}
         WORKING_DIRECTORY ${SOURCE_TOP_DIR}
     )
     add_custom_target(${target}_pacgen ALL DEPENDS ${pac_file})
@@ -148,22 +126,15 @@ if(CONFIG_APPIMG_LOAD_FILE)
     add_appimg(${target} ${file_ldscript} hello_world.c)
     target_link_libraries(${target} PRIVATE ${libc_file_name} ${libm_file_name} ${libgcc_file_name})
 
-    set(pac_config ${out_hex_dir}/${target}.json)
     set(pac_file ${out_hex_dir}/${target}.pac)
-    pac_init_fdl(init_fdl ${pac_config})
-    execute_process(
-        COMMAND python3 ${pacgen_py} ${init_fdl}
-            cfg-pack-file -i APPIMG -p ${out_hex_dir}/${target}.img
-                -n ${CONFIG_APPIMG_LOAD_FILE_NAME} ${pac_config}
-            dep-gen --base ${SOURCE_TOP_DIR} ${pac_config}
-        OUTPUT_VARIABLE pac_dep
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-    )
-
+    set(target_img_file ${out_hex_dir}/${target}.img)
+    pac_init_fdl(init_fdl)
     add_custom_command(OUTPUT ${pac_file}
-        COMMAND python3 ${pacgen_py} pac-gen ${pac_config} ${pac_file}
-        DEPENDS ${pacgen_py} ${pac_config} ${pac_dep}
+        COMMAND python3 ${pacgen_py} ${init_fdl}
+            cfg-pack-file -i APPIMG -p ${target_img_file}
+                -n ${CONFIG_APPIMG_LOAD_FILE_NAME}
+            pac-gen ${pac_file}
+        DEPENDS ${pacgen_py} ${target_img_file}
         WORKING_DIRECTORY ${SOURCE_TOP_DIR}
     )
     add_custom_target(${target}_pacgen ALL DEPENDS ${pac_file})

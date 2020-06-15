@@ -23,4 +23,18 @@ config AT_SPBLETEST_SUPPORT
     help
         When enabled, CONFIG_AT_SPBLETEST_SUPPORT will be defined
 
+config AT_SPBLE_SUPPORT
+    bool "AT_SPBLE_SUPPORT enabled"
+    default n
+    select BLUEU_BT_ENABLE
+    help
+        When enabled, CONFIG_AT_SPBLE_SUPPORT will be defined
+
+config AT_BT_CLASSIC_SUPPORT
+    bool "AT_BT_CLASSIC_SUPPORT enabled"
+    default n
+    select BLUEU_BT_ENABLE
+    help
+        When enabled, CONFIG_AT_BT_CLASSIC_SUPPORT will be defined
+
 endmenu

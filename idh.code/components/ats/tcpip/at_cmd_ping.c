@@ -37,7 +37,7 @@ osiTimer_t *gPingtimer = NULL;
 osiTimer_t *gPingContinuetimer = NULL;
 static uint8_t gPingReplyed = 0;
 static bool gPingstatus = false;
-uint8_t g_isPingContinue = 0;
+
 static atCmdEngine_t *gEngine = NULL;
 
 void ping_timeout(void *param);
@@ -47,7 +47,7 @@ extern uint16_t inet_chksum(const void *dataptr, uint16_t len);
 bool ping_socket_is_invalid();
 int8_t AT_SendIP_ICMP_Ping(atCmdEngine_t *engine, uint32_t pingparam);
 void ping_result_statics(atCmdEngine_t *engine, char *response);
-static int8_t sendIP_ICMP_Ping(uint32_t pingparam);
+//static int8_t sendIP_ICMP_Ping(uint32_t pingparam);
 
 static void AT_PING_AsyncEventProcess(void *param)
 {
@@ -76,37 +76,17 @@ static void AT_PING_AsyncEventProcess(void *param)
         AT_PING_ECHO_NUM = 0;
         gPingstatus = false;
         gEngine = NULL;
+        free(osiEv);
         return;
     }
 
-    int8_t nRetValue;
+    //int8_t nRetValue;
     switch (osiEv->id)
     {
     case EV_CFW_TCPIP_SOCKET_CONNECT_RSP:
         break;
     case EV_CFW_TCPIP_SOCKET_CLOSE_RSP:
-        AT_PING_SOCKET = INVALID_SOCKET;
-        if (g_isPingContinue == 1)
-        {
-            if (ERR_SUCCESS != (nRetValue = sendIP_ICMP_Ping((uint32_t)engine)))
-            {
-                OSI_LOGI(0, "AT_PING_AsyncEventProcess: no pdp actived");
-                //atCmdRespInfoText(engine, "GENERAL ERROR");
-                if (false == osiTimerStart(gPingtimer, AT_PING_TIMEOUT * 1000))
-                {
-                    OSI_LOGI(0, "AT_TCPIP_CmdFunc_PING: start timer failed!");
-                    char response[200] = {0};
-                    ping_result_statics(engine, response);
-                    RETURN_CME_ERR(engine, ERR_AT_CME_EXE_FAIL);
-                }
-                return;
-            }
-        }
-        else
-        {
-            OSI_LOGI(0, "AT_PING_AsyncEventProcess: g_isPingContinue=%d,change gPingstatus to flase", g_isPingContinue);
-            gPingstatus = false;
-        }
+        OSI_LOGI(0, "RECEIVED EV_CFW_TCPIP_CLOSE_IND ...");
         break;
     case EV_CFW_TCPIP_BEARER_LOSING_IND:
     {
@@ -136,11 +116,6 @@ static void AT_PING_AsyncEventProcess(void *param)
         break;
     case EV_CFW_ICMP_DATA_IND:
     {
-        if (!gPingstatus)
-        {
-            OSI_LOGI(0, "drop EV_CFW_ICMP_DATA_IND");
-            break;
-        }
 
         char response[200] = {0};
         OSI_LOGI(0x100052a2, "pEvent->param1 = %d, pEvent->param2 = %d", osiEv->param1, osiEv->param2);
@@ -256,7 +231,10 @@ static void dnsReq_callback(void *param)
         }
         gPingtimer = osiTimerCreate(osiThreadCurrent(), ping_timeout, (void *)engine);
         if (gPingtimer == NULL)
+        {
+            free(ev);
             RETURN_CME_ERR(engine, ERR_AT_CME_EXE_FAIL);
+        }
 
         if (gPingContinuetimer != NULL)
         {
@@ -265,11 +243,29 @@ static void dnsReq_callback(void *param)
         }
         gPingContinuetimer = osiTimerCreate(osiThreadCurrent(), ping_continue_timeout, (void *)engine);
         if (gPingContinuetimer == NULL)
+        {
+            free(ev);
+            if (gPingtimer != NULL)
+            {
+                osiTimerDelete(gPingtimer);
+                gPingtimer = NULL;
+            }
             RETURN_CME_ERR(engine, ERR_AT_CME_EXE_FAIL);
+        }
 
         int8_t nRetValue = AT_SendIP_ICMP_Ping(engine, (uint32_t)engine);
         if (nRetValue != ERR_SUCCESS)
         {
+            if (gPingtimer != NULL)
+            {
+                osiTimerDelete(gPingtimer);
+                gPingtimer = NULL;
+            }
+            if (gPingContinuetimer != NULL)
+            {
+                osiTimerDelete(gPingContinuetimer);
+                gPingContinuetimer = NULL;
+            }
 
             OSI_LOGI(0, "dnsReq_callback: AT_SendIP_ICMP_Ping Return Failed!");
             atCmdRespCmeError(engine, ERR_AT_CME_EXE_FAIL);
@@ -372,7 +368,7 @@ void AT_TCPIP_CmdFunc_PING(atCommand_t *pParam)
         AT_PING_TIMEOUT = 5;
         AT_PING_MAX_DELAY = -1;
         AT_PING_MIN_DELAY = 0x7fffffff;
-        g_isPingContinue = 0;
+
         gEngine = pParam->engine;
 
         ip_addr_t IpAddr;
@@ -486,11 +482,27 @@ void AT_TCPIP_CmdFunc_PING(atCommand_t *pParam)
         }
         gPingContinuetimer = osiTimerCreate(osiThreadCurrent(), ping_continue_timeout, (void *)engine);
         if (gPingContinuetimer == NULL)
+        {
+            if (gPingtimer != NULL)
+            {
+                osiTimerDelete(gPingtimer);
+                gPingtimer = NULL;
+            }
             RETURN_CME_ERR(engine, ERR_AT_CME_EXE_FAIL);
+        }
 
         if (ERR_SUCCESS != (ret = AT_SendIP_ICMP_Ping(engine, (uint32_t)engine)))
         {
-
+            if (gPingtimer != NULL)
+            {
+                osiTimerDelete(gPingtimer);
+                gPingtimer = NULL;
+            }
+            if (gPingContinuetimer != NULL)
+            {
+                osiTimerDelete(gPingContinuetimer);
+                gPingContinuetimer = NULL;
+            }
             OSI_LOGI(0x10003fee, "AT_TCPIP_CmdFunc_PING: Cannot find IP address of this modem!", nDNS);
             RETURN_CME_ERR(engine, ERR_AT_CME_EXE_FAIL);
         }
@@ -514,13 +526,12 @@ void AT_TCPIP_CmdFunc_PING(atCommand_t *pParam)
 
     return;
 }
-static int8_t sendIP_ICMP_Ping(uint32_t pingparam)
+int8_t AT_SendIP_ICMP_Ping(atCmdEngine_t *engine, uint32_t pingparam)
 {
     uint8_t uCidState = 0;
     CFW_SIM_ID nSim = (CFW_SIM_ID)atCmdGetSim((atCmdEngine_t *)pingparam);
     int32_t iResult = -1;
     int uaCid = 0;
-    g_isPingContinue = 0;
     for (uaCid = AT_PDPCID_MIN; uaCid <= AT_PDPCID_MAX; uaCid++)
     {
         iResult = CFW_GetGprsActState(uaCid, &uCidState, nSim);
@@ -542,7 +553,12 @@ static int8_t sendIP_ICMP_Ping(uint32_t pingparam)
     }
     SOCKET socketfd = INVALID_SOCKET;
     int iResultBind = ERR_OK;
-
+    if (!ping_socket_is_invalid())
+    {
+        OSI_LOGI(0, "AT_SendIP_ICMP AT_PING_SOCKET is valid,AT_PING_SOCKET=%d", AT_PING_SOCKET);
+        CFW_TcpipSocketClose(AT_PING_SOCKET);
+        AT_PING_SOCKET = INVALID_SOCKET;
+    }
 #if LWIP_IPV6
     if (IP_IS_V4(&AT_PING_IP) || ip6_addr_isipv4mappedipv6(ip_2_ip6(&AT_PING_IP)))
     {
@@ -589,7 +605,8 @@ static int8_t sendIP_ICMP_Ping(uint32_t pingparam)
 #endif
     if (SOCKET_ERROR == iResultBind)
     {
-        CFW_TcpipSocketClose(socketfd);
+        if (socketfd > 0)
+            CFW_TcpipSocketClose(socketfd);
         socketfd = INVALID_SOCKET;
     }
     if (INVALID_SOCKET == socketfd)
@@ -657,23 +674,13 @@ static int8_t sendIP_ICMP_Ping(uint32_t pingparam)
     }
     //uint32_t nDLCI32 = nDLCI;
     //COS_StartCallbackTimer(CSW_AT_TASK_HANDLE, AT_PING_TIMEOUT * 1000, ping_timeout, (void *)nDLCI32);
+
     if (false == osiTimerStart(gPingtimer, AT_PING_TIMEOUT * 1000))
     {
         OSI_LOGI(0, "AT_TCPIP_CmdFunc_PING: start timer failed!");
         return -1;
     }
     return ERR_SUCCESS;
-}
-int8_t AT_SendIP_ICMP_Ping(atCmdEngine_t *engine, uint32_t pingparam)
-{
-    if (AT_PING_SOCKET != INVALID_SOCKET)
-    {
-        OSI_LOGI(0, "SendIP_ICMP_Ping:AT_PING_SOCKET=%d", AT_PING_SOCKET);
-        CFW_TcpipSocketClose(AT_PING_SOCKET);
-        g_isPingContinue = 1;
-        return 0;
-    }
-    return sendIP_ICMP_Ping(pingparam);
 }
 
 bool ping_socket_is_invalid()
@@ -683,15 +690,16 @@ bool ping_socket_is_invalid()
 
 void ping_result_statics(atCmdEngine_t *engine, char *response)
 {
-    g_isPingContinue = 0;
+
     char *pcIpAddr = ipaddr_ntoa(&AT_PING_IP);
-    if (AT_PING_SOCKET == INVALID_SOCKET)
-        gPingstatus = false;
-    else
+    if (!ping_socket_is_invalid())
     {
+        OSI_LOGI(0, "ping_result_statics/AT_PING_SOCKET is valid");
         CFW_TcpipSocketClose(AT_PING_SOCKET);
         AT_PING_SOCKET = INVALID_SOCKET;
     }
+    gPingstatus = false;
+
     sprintf(response, "\n\rPing statistics for %s", pcIpAddr);
     atCmdRespInfoText(engine, response);
     if (AT_PING_MIN_DELAY == 0x7fffffff)

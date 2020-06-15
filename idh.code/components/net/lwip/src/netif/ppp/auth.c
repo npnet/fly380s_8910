@@ -850,8 +850,12 @@ void link_established(ppp_pcb *pcb) {
     pcb->auth_done = 0;
 
     if (!auth)
+    {    
 #endif /* PPP_AUTH_SUPPORT */
-	network_phase(pcb);
+        new_phase(pcb, PPP_PHASE_CALLBACK);
+#if PPP_AUTH_SUPPORT
+    }
+#endif    
 }
 
 /*
@@ -1135,8 +1139,8 @@ void auth_peer_success(ppp_pcb *pcb, int protocol, int prot_flavor, const char *
      * If there is no more authentication still to be done,
      * proceed to the network (or callback) phase.
      */
-    if ((pcb->auth_pending &= ~bit) == 0)
-        network_phase(pcb);
+    if ((pcb->auth_pending &= ~bit) == 0 && pcb->acted == 0)
+        new_phase(pcb, PPP_PHASE_CALLBACK);
 }
 #endif /* PPP_SERVER */
 
@@ -1216,10 +1220,14 @@ void auth_withpeer_success(ppp_pcb *pcb, int protocol, int prot_flavor) {
      * proceed to the network (or callback) phase.
      */
     if ((pcb->auth_pending &= ~bit) == 0)
-	network_phase(pcb);
+	new_phase(pcb, PPP_PHASE_CALLBACK);
 }
 #endif /* PPP_AUTH_SUPPORT */
 
+void start_network_phase(ppp_pcb *pcb)
+{
+    network_phase(pcb);
+}
 
 /*
  * np_up - a network protocol has come up.

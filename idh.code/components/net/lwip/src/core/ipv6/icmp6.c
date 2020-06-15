@@ -56,7 +56,7 @@
 #include "lwip/stats.h"
 
 #include <string.h>
-
+#include <osi_log.h>
 #ifndef LWIP_ICMP6_DATASIZE
 #define LWIP_ICMP6_DATASIZE   8
 #endif
@@ -113,7 +113,7 @@ icmp6_input(struct pbuf *p, struct netif *inp)
     }
   }
 #endif /* CHECKSUM_CHECK_ICMP6 */
-  sys_arch_printf("icmp6_input icmp6hdr->type=%d",icmp6hdr->type);
+  OSI_LOGI(0x1000768d, "icmp6_input icmp6hdr->type=%d",icmp6hdr->type);
 
   switch (icmp6hdr->type) {
   case ICMP6_TYPE_NA: /* Neighbor advertisement */
@@ -209,7 +209,7 @@ icmp6_input(struct pbuf *p, struct netif *inp)
         memcpy(&nSocketId,((u8_t *)p->payload) + 12,4);
         if(nSocketId > LWIP_SOCKET_OFFSET + MEMP_NUM_NETCONN -1)
         {
-            LWIP_DEBUGF(ICMP_DEBUG, ("icmp_input: nSocketId invalid %"U32_F", drop this package\n", nSocketId));
+            LWIP_DEBUGF(ICMP_DEBUG, (0x100078b4, "icmp_input: nSocketId invalid %lu, drop this package\n", nSocketId));
             break;
         }
         sys_post_ICMPevent_to_APP(nSocketId, pTmp, ntohs(idur->id) << 16|ntohs(idur->seqno));
@@ -409,7 +409,7 @@ icmp6_send_response_with_addrs_and_netif(struct pbuf *p, u8_t code, u32_t data, 
   q = pbuf_alloc(PBUF_IP, sizeof(struct icmp6_hdr) + IP6_HLEN + LWIP_ICMP6_DATASIZE,
                  PBUF_RAM);
   if (q == NULL) {
-    LWIP_DEBUGF(ICMP_DEBUG, ("icmp_time_exceeded: failed to allocate pbuf for ICMPv6 packet.\n"));
+    LWIP_DEBUGF(ICMP_DEBUG, (0x100078b5, "icmp_time_exceeded: failed to allocate pbuf for ICMPv6 packet.\n"));
     ICMP6_STATS_INC(icmp6.memerr);
     return;
   }

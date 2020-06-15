@@ -788,10 +788,10 @@ snmp_get_node_instance_from_oid(const u32_t *oid, u8_t oid_len, struct snmp_node
 #ifdef LWIP_DEBUG
       if (result == SNMP_ERR_NOERROR) {
         if (((node_instance->access & SNMP_NODE_INSTANCE_ACCESS_READ) != 0) && (node_instance->get_value == NULL)) {
-          LWIP_DEBUGF(SNMP_DEBUG, ("SNMP inconsistent access: node is readable but no get_value function is specified\n"));
+          LWIP_DEBUGF(SNMP_DEBUG, (0x100076d8, "SNMP inconsistent access: node is readable but no get_value function is specified\n"));
         }
         if (((node_instance->access & SNMP_NODE_INSTANCE_ACCESS_WRITE) != 0) && (node_instance->set_value == NULL)) {
-          LWIP_DEBUGF(SNMP_DEBUG, ("SNMP inconsistent access: node is writable but no set_value and/or set_test function is specified\n"));
+          LWIP_DEBUGF(SNMP_DEBUG, (0x100076d9, "SNMP inconsistent access: node is writable but no set_value and/or set_test function is specified\n"));
         }
       }
 #endif
@@ -862,10 +862,10 @@ snmp_get_next_node_instance_from_oid(const u32_t *oid, u8_t oid_len, snmp_valida
       if (result == SNMP_ERR_NOERROR) {
 #ifdef LWIP_DEBUG
         if (((node_instance->access & SNMP_NODE_INSTANCE_ACCESS_READ) != 0) && (node_instance->get_value == NULL)) {
-          LWIP_DEBUGF(SNMP_DEBUG, ("SNMP inconsistent access: node is readable but no get_value function is specified\n"));
+          LWIP_DEBUGF(SNMP_DEBUG, (0x100076d8, "SNMP inconsistent access: node is readable but no get_value function is specified\n"));
         }
         if (((node_instance->access & SNMP_NODE_INSTANCE_ACCESS_WRITE) != 0) && (node_instance->set_value == NULL)) {
-          LWIP_DEBUGF(SNMP_DEBUG, ("SNMP inconsistent access: node is writable but no set_value function is specified\n"));
+          LWIP_DEBUGF(SNMP_DEBUG, (0x100076da, "SNMP inconsistent access: node is writable but no set_value function is specified\n"));
         }
 #endif
 

@@ -32,19 +32,8 @@ config PARTINFO_JSON_PATH
         There are no default value, each target should specify the
         partition information file.
 
-config MODEM_CONFIG_JSON_PATH
-    string "modem.img configuration json file path"
-    default ""
-    help
-        This contains information for generating modem.img.
-
 config PINMUX_CSV_PATH
     string "pinfunc defination csv file path"
-    default ""
-
-config PACKAGE_FILE_JSON_PATH
-    string "package raw file config path"
-    default "components/hal/config/8910/package_file_8910.json" if SOC_8910
     default ""
 
 config PWRKEY_POWERUP
@@ -54,6 +43,13 @@ config PWRKEY_POWERUP
 config WAKEUP_PIN_POWERUP
     bool "wakeup pin (psm_ext_int) power up enable"
     default n
+
+config SHUTDOWN_NORMAL_POWER_OFF
+    bool "shutdown normal power off"
+    default n
+    help
+        This is a normal power off mode in pmic 2720,
+        more power consupmtion than PSM mode.
 
 config KEYPAD_CSV_PATH
     string "keypad defination csv file path"

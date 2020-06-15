@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (C) 2019 RDA Technologies Limited and/or its affiliates("RDA").
 # All rights reserved.
 #
@@ -11,23 +12,26 @@
 
 set -e
 
-if which fakeroot >/dev/null 2>&1; then
-        FAKEROOT=$(which fakeroot)
-else
-        FAKEROOT=
-fi
-
 build_target() {
-        source tools/launch.sh $1
-        cout
-        cmake ../.. -G Ninja
-        ninja
-        croot
+    source tools/launch.sh $1
+    cout
+    cmake ../.. -G Ninja
+    ninja
+    croot
 }
 
-for TARGET in $(cd target; /bin/ls); do
+for TARGET in $(
+    cd target
+    /bin/ls
+); do
     if test -f target/$TARGET/target.config; then
-       build_target $TARGET 
+        case $TARGET in
+        8915DM_nbiot | EM610V2)
+            echo "$TARGET in known not work"
+            ;;
+        *)
+            build_target $TARGET
+            ;;
+        esac
     fi
 done
-

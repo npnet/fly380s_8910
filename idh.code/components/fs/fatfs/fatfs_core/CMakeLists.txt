@@ -10,17 +10,18 @@
 # without further testing or modification.
 
 set(target fatfs_core)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC
     src/ffunicode.c
     src/diskio.c
     src/ffsystem.c
-    src/ff.c)
+    src/ff.c
+)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_FS)
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE ml)
-target_include_targets(${target} PRIVATE kernel driver fatfs)
+target_include_targets(${target} PRIVATE kernel driver fs fatfs ml)
 
 relative_glob(srcs include/*.h src/*.c src/*.h)
 beautify_c_code(${target} ${srcs})
-

@@ -10,17 +10,14 @@
 # without further testing or modification.
 
 set(target libcoap)
+add_app_libraries($<TARGET_FILE:${target}>)
 
 add_library(${target} STATIC)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
-target_compile_definitions(${target} PRIVATE AT_COAP_SUPPORT=1)
-target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel driver calclib net lwip mbedtls cfw)
-target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 set_target_properties(${target} PROPERTIES OUTPUT_NAME coap)
-
-target_include_directories(${target} PRIVATE ../../aworker/include)
-target_include_directories(${target} PRIVATE ../external/platform/include)
+target_include_directories(${target} PUBLIC include)
+target_include_targets(${target} PRIVATE kernel driver calclib net lwip mbedtls cfw aworker)
+target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${target} PRIVATE src/obgm_libcoap)
 target_include_directories(${target} PRIVATE src/obgm_libcoap/include/coap)
 target_include_directories(${target} PRIVATE src/obgm_libcoap/examples)

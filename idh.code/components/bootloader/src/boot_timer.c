@@ -15,6 +15,7 @@
 #include "hwregs.h"
 #include <stdlib.h>
 
+#ifdef CONFIG_SOC_8910
 #define TIMER_IRQN HAL_SYSIRQ_NUM(SYS_IRQ_ID_TIMER_4_OS)
 #define TIMER_IRQ_PRIO SYS_IRQ_PRIO_TIMER_4_OS
 
@@ -67,3 +68,10 @@ void bootDisableTimer(void)
     gTimerCb.cb = NULL;
     gTimerCb.ctx = NULL;
 }
+#endif
+
+#ifdef CONFIG_SOC_8811
+void bootEnableTimer(bootTimerCallback_t cb, void *ctx, int period_ms)
+{
+}
+#endif

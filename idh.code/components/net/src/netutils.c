@@ -4,15 +4,43 @@
 #include "cfw.h"
 #include "cfw_errorcode.h"
 
+#include "osi_log.h"
+#if IP_NAT
+extern bool get_nat_enabled(uint8_t nSimId, uint8_t nCid);
+#endif
+
 struct netif *getGprsNetIf(uint8_t nSim, uint8_t nCid)
 {
-    return netif_get_by_cid(nSim << 4 | nCid);
+#if IP_NAT
+    if (get_nat_enabled(nSim, nCid))
+    {
+        return netif_get_by_cid_type(nSim << 4 | nCid, NETIF_LINK_MODE_NAT_LWIP_LAN);
+    }
+    else
+    {
+#endif
+        return netif_get_by_cid(nSim << 4 | nCid);
+#if IP_NAT
+    }
+#endif
 }
+
+#if IP_NAT
+struct netif *getPPPNetIf(uint8_t nSim, uint8_t nCid)
+{
+    return netif_get_by_cid_type(nSim << 4 | nCid, NETIF_LINK_MODE_NAT_PPP_LAN);
+}
+
+struct netif *getGprsWanNetIf(uint8_t nSim, uint8_t nCid)
+{
+    return netif_get_by_cid_type(nSim << 4 | nCid, NETIF_LINK_MODE_NAT_WAN);
+}
+#endif
 
 struct netif *getEtherNetIf(uint8_t nCid)
 {
     if (nCid != 0x11)
-        sys_arch_printf("getEtherNetIf nCid:%d is Error\n", nCid);
+        OSI_LOGI(0x10007530, "getEtherNetIf nCid:%d is Error\n", nCid);
     return netif_get_by_cid(0xf0 | nCid);
 }
 
@@ -67,14 +95,14 @@ bool getSimIccid(uint8_t simId, uint8_t *simiccid, uint8_t *len)
 {
     if (*len < 20)
     {
-        sys_arch_printf("getSimIccid params error:%d", *len);
+        OSI_LOGI(0x10007531, "getSimIccid params error:%d", *len);
         return false;
     }
     uint8_t *pICCID = CFW_GetICCID(simId);
     if (pICCID != NULL)
     {
         *len = Sulgsmbcd2asciiEx(pICCID, 10, simiccid);
-        sys_arch_printf("getSimIccid:%s, %d", simiccid, *len);
+        OSI_LOGXI(OSI_LOGPAR_SI, 0x10007532, "getSimIccid:%s, %d", simiccid, *len);
     }
     return true;
 }
@@ -83,12 +111,12 @@ bool getSimImei(uint8_t simId, uint8_t *imei, uint8_t *len)
 {
     if (*len < 16)
     {
-        sys_arch_printf("getSimImei params error:%d", *len);
+        OSI_LOGI(0x10007533, "getSimImei params error:%d", *len);
         return false;
     }
 
     CFW_EmodGetIMEI(imei, len, simId);
-    sys_arch_printf("getSimImei:%s, %d", imei, *len);
+    OSI_LOGXI(OSI_LOGPAR_SI, 0x10007534, "getSimImei:%s, %d", imei, *len);
     return true;
 }
 
@@ -114,11 +142,12 @@ bool getSimImsi(uint8_t simId, uint8_t *imsi, uint8_t *len)
     {
         if (*len < 16)
         {
-            sys_arch_printf("getSimImsi params error:%d", *len);
+            OSI_LOGI(0x10007535, "getSimImsi params error:%d", *len);
             return false;
         }
         cfwIMSItoASC(nPreIMSI, imsi, len);
-        sys_arch_printf("getSimImsi:%s ,%d", imsi, *len);
+        OSI_LOGXI(OSI_LOGPAR_SI, 0x10007536, "getSimImsi:%s ,%d", imsi, *len);
+
         return true;
     }
     return false;

@@ -86,6 +86,8 @@
 #include <signal.h>
 #include "lwm2m_api.h"
 
+#include "osi_log.h"
+
 #define MAX_PACKET_SIZE 1024
 #define DEFAULT_SERVER_IPV6 "[::1]"
 #define DEFAULT_SERVER_IPV4 "127.0.0.1"
@@ -112,9 +114,15 @@ typedef struct
     int addressFamily;
 } client_data_t;
 
+#if (defined WITH_TINYDTLS) || (defined WITH_MBEDDTLS)
+
+extern mbedtls_ssl_context * g_sslContext;
+#endif
+
 static int prv_quit(char * buffer,
                      void * user_data)
 {
+    fprintf(stderr, "lwm2m prv_quit !\n");
     lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
     lwm2mH->quit = 1;
     return 1;
@@ -133,7 +141,7 @@ int handle_value_changed(lwm2m_context_t * lwm2mH,
         if (object->writeFunc != NULL)
         {
             lwm2m_data_t * dataP;
-            int result;
+            int result = 0;;
 
             dataP = lwm2m_data_new(1);
             if (dataP == NULL)
@@ -175,7 +183,7 @@ int handle_value_changed(lwm2m_context_t * lwm2mH,
             
             if (uri->objectId <= LWM2M_CONN_STATS_OBJECT_ID)
                 result = object->writeFunc(uri->instanceId, 1, dataP, object);
-            else
+            else if (object->notifyFunc != NULL)
                 result = object->notifyFunc(uri->instanceId, 1, dataP, object);
             
             if (COAP_405_METHOD_NOT_ALLOWED == result)
@@ -298,6 +306,18 @@ exit:
 }
 #endif
 
+lwm2m_ret_t QuitHandshake(){
+#if(defined WITH_TINYDTLS) || (defined WITH_MBEDDTLS)
+
+    if(g_sslContext == NULL){
+        fprintf(stderr, "QuitHandshake g_sslContext == NULL\r\n");
+        return 0;
+    }
+    g_sslContext->isquit = 1; 
+#endif
+    return 0;
+}
+
 void lwm2m_close_connection(void * sessionH,
                             void * userData)
 {
@@ -315,10 +335,15 @@ void lwm2m_close_connection(void * sessionH,
     targetP = (connection_t *)sessionH;
 #endif
 
+    OSI_LOGI(0x100076ae, "M2M# lwm2m_close_connection targetP:%p", targetP);
+    OSI_LOGI(0x100076af, "M2M# lwm2m_close_connection app_data->connList:%p", app_data->connList);
+
     if (targetP == app_data->connList)
     {
         app_data->connList = targetP->next;
-        lwm2m_free(targetP);
+        //lwm2m_free(targetP);
+        targetP->next = NULL;
+        connection_free(targetP);
     }
     else
     {
@@ -331,12 +356,15 @@ void lwm2m_close_connection(void * sessionH,
         parentP = app_data->connList;
         while (parentP != NULL && parentP->next != targetP)
         {
+            OSI_LOGI(0x100076b0, "M2M# lwm2m_close_connection parentP:%p", parentP);
             parentP = parentP->next;
         }
         if (parentP != NULL)
         {
             parentP->next = targetP->next;
-            lwm2m_free(targetP);
+            targetP->next = NULL;
+            //lwm2m_free(targetP);
+            connection_free(targetP);
         }
     }
 }
@@ -603,8 +631,166 @@ syntax_error:
     fprintf(stdout, "Syntax error !\n");
     return -1;
 }
-
 extern int32_t getBatteryLevel();
+static int s_fota_num_retry = 0;
+static int s_last_fota_num = 0;
+static long s_fota_download_tv;
+extern lwm2m_fota_state_t g_fota_state;
+
+static long s_fota_download_start_time;
+static int s_long_time_download_index = 0;
+
+static int prv_download_fota(char * buffer,
+                       void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
+    int value[1];
+    lwm2m_parse_buffer(buffer,value,1,NULL);
+    uint16_t mid = lwm2mH->nextMID++;
+    uint8_t *uri = (uint8_t *)value[0];
+    coap_packet_t message;
+    coap_init_message(&message, COAP_TYPE_CON, COAP_GET, mid);
+    coap_set_header_uri_path(&message, (const char *)uri);
+    // generate a token
+    uint8_t temp_token[COAP_TOKEN_LEN];
+    time_t tv_sec = lwm2m_gettime();
+
+    // initialize first 6 bytes, leave the last 2 random
+    temp_token[0] = mid;
+    temp_token[1] = mid >> 8;
+    temp_token[2] = tv_sec;
+    temp_token[3] = tv_sec >> 8;
+    temp_token[4] = tv_sec >> 16;
+    temp_token[5] = tv_sec >> 24;
+    // use just the provided amount of bytes
+    coap_set_header_token(&message, temp_token, COAP_TOKEN_LEN);
+    size_t allocLen;
+
+    allocLen = coap_serialize_get_size(&message);
+    if (allocLen == 0) return -1;
+
+    if(lwm2mH->fota_upgrade_observed == NULL || lwm2mH->fota_upgrade_observed->watcherList == NULL)
+        return 2;
+    lwm2m_watcher_t * watcherP = lwm2mH->fota_upgrade_observed->watcherList;
+    if (watcherP == NULL || watcherP->active != true)
+        return 2;
+
+    LOG_ARG("prv_download_fota  block2Num %d long_time_index %d",lwm2mH->fota_context.block2Num,s_long_time_download_index);
+    if(s_last_fota_num != lwm2mH->fota_context.block2Num)
+    {
+        s_fota_num_retry = 0;
+    }else
+    {
+        s_fota_num_retry++;
+    }
+    s_last_fota_num = lwm2mH->fota_context.block2Num;
+    s_fota_download_tv = lwm2m_gettime();
+    if(s_long_time_download_index %20 < 15 || lwm2mH->fota_context.block2Num == 0)
+    {
+        memcpy(lwm2mH->fota_context.token ,temp_token, COAP_TOKEN_LEN);
+        if(lwm2mH->fota_context.uri == NULL)
+        {
+            lwm2mH->fota_context.uri = lwm2m_malloc(strlen((const char*)uri)+1);
+            strcpy((char*)(lwm2mH->fota_context.uri), (const char*)uri);
+        }
+        coap_set_header_content_type(&message,LWM2M_CONTENT_OPAQUE);
+        coap_set_header_block2(&message, lwm2mH->fota_context.block2Num, 0, REST_MAX_CHUNK_SIZE);
+        lwm2mH->sendflag = 0;
+        if(lwm2mH->fota_context.block2Num == 0)
+        {
+            s_fota_download_start_time = lwm2m_gettime();
+        }
+
+        LOG_ARG("message_send COAP_GET lwm2mH->fota_context.block2Num %d",lwm2mH->fota_context.block2Num);
+        message_send(lwm2mH, &message, watcherP->server->sessionH);
+    }
+    return 1;
+}
+
+static int prv_notify_fota(char * buffer,
+                       void * user_data)
+{
+    lwm2m_context_t * lwm2mH = (lwm2m_context_t *)user_data;
+    int value[2];
+    lwm2m_parse_buffer(buffer, value, 2, NULL);
+    uint32_t fota_state = (uint32_t)atoi((const char *)value[0]);
+    uint32_t fota_resulte = (uint32_t)atoi((const char *)value[1]);
+    coap_packet_t message;
+    LOG_ARG("prv_notify_fota %d %d",fota_state, fota_resulte);
+
+    if(fota_state == LWM2M_FOTA_STATE_IDLE)
+    {
+        switch (fota_resulte)
+        {
+            case LWM2M_FOTA_RESULT_CONNECTION_LOST:
+            {
+                lwm2mPostEvent(lwm2mH->ref, FOTA_DOWNLOADING_IND, 0, lwm2mH->fota_context.block2bufferSize, 0);
+                lwm2mPostEvent(lwm2mH->ref, FOTA_DOWNLOAD_FAILED_IND, 0, 0, 0);
+            }
+            break;
+            case LWM2M_FOTA_RESULT_INTEGRITY_FAILUER:
+            {
+                lwm2mPostEvent(lwm2mH->ref, FOTA_DOWNLOADING_IND, 0, lwm2mH->fota_context.block2bufferSize, 0);
+                lwm2mPostEvent(lwm2mH->ref, FOTA_DOWNLOAD_SUCCESS_IND, 0, 0, 0);
+                lwm2mPostEvent(lwm2mH->ref, FOTA_PACKAGE_CHECK_IND, 0, -1, 0);
+            }
+            break;
+            case LWM2M_FOTA_RESULT_SUCCESS:
+            {
+                lwm2mPostEvent(lwm2mH->ref, FOTA_UPGRADE_OK_IND, 0, 0, 0);
+            }
+            break;
+            default:
+            break;
+        }
+    }
+    else if(fota_state == LWM2M_FOTA_STATE_DOWNLOADING)
+    {
+        lwm2mPostEvent(lwm2mH->ref, FOTA_DOWNLOADING_IND, 0, lwm2mH->fota_context.block2bufferSize, 0);
+    }
+    else if(fota_state == LWM2M_FOTA_STATE_DOWNLOADED)
+    {
+        lwm2mPostEvent(lwm2mH->ref, FOTA_DOWNLOADING_IND, 0, lwm2mH->fota_context.block2bufferSize, 0);
+        lwm2mPostEvent(lwm2mH->ref, FOTA_DOWNLOAD_SUCCESS_IND, 0, 0, 0);
+        lwm2mPostEvent(lwm2mH->ref, FOTA_PACKAGE_CHECK_IND, 0, 1, 0);
+    }
+
+    lwm2m_observed_t * targetP = NULL;
+    lwm2m_watcher_t * watcherP = NULL;
+    for (targetP = lwm2mH->observedList ; targetP != NULL ; targetP = targetP->next)
+    {
+        if(targetP->uri.objectId == LWM2M_FIRMWARE_UPDATE_OBJECT_ID && targetP->uri.instanceId == 0 && targetP->uri.resourceId == 3)
+        {
+             watcherP = targetP->watcherList;
+             break;
+        }
+    }
+    LOG_ARG("prv_notify_fota watcherP %p",watcherP);
+    if(watcherP == NULL) return -1;
+    char send_buffer[10];
+    snprintf(send_buffer, 9,"%ld", fota_state);
+
+    coap_init_message(&message, COAP_TYPE_NON, COAP_205_CONTENT, 0);
+    coap_set_header_content_type(&message, watcherP->format);
+    coap_set_payload(&message, send_buffer, strlen(send_buffer));
+
+    watcherP->lastTime = lwm2m_gettime();
+    watcherP->lastMid = lwm2mH->nextMID++;
+    message.mid = watcherP->lastMid;
+
+    coap_set_header_token(&message, watcherP->token, watcherP->tokenLen);
+    coap_set_header_observe(&message, watcherP->counter++);
+    (void)message_send(lwm2mH, &message, watcherP->server->sessionH);
+    OSI_LOGI(0x100076b1, "prv_notify_fota");
+
+    if(fota_state == LWM2M_FOTA_STATE_UPDATING)
+    {
+        osiThreadSleep(1500);
+        notify_fota_state(LWM2M_FOTA_STATE_IDLE, LWM2M_FOTA_RESULT_SUCCESS, lwm2mH->ref);
+    }
+    return 1;
+}
+
 static void update_battery_level(lwm2m_context_t * context)
 {
     static time_t next_change_time = 0;
@@ -767,6 +953,7 @@ static int prv_display_backup(char * buffer,
 static void prv_backup_objects(lwm2m_context_t * context)
 {
     uint16_t i;
+    lwm2m_object_t * objectSrc = NULL;
 
     for (i = 0; i < BACKUP_OBJECT_COUNT; i++) {
         if (NULL != backupObjectArray[i]) {
@@ -788,8 +975,12 @@ static void prv_backup_objects(lwm2m_context_t * context)
     /*
      * Backup content of objects 0 (security) and 1 (server)
      */
-    copy_security_object(backupObjectArray[0], (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SECURITY_OBJECT_ID));
-    copy_server_object(backupObjectArray[1], (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SERVER_OBJECT_ID));
+    objectSrc = (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SECURITY_OBJECT_ID);
+    if(objectSrc != NULL)
+        copy_security_object(backupObjectArray[0], objectSrc);
+    objectSrc = (lwm2m_object_t *)LWM2M_LIST_FIND(context->objectList, LWM2M_SERVER_OBJECT_ID);
+    if(objectSrc != NULL)
+        copy_server_object(backupObjectArray[1], objectSrc);
 }
 #if 0
 static void prv_restore_objects(lwm2m_context_t * context)
@@ -882,6 +1073,7 @@ void clean_all_objects(lwm2m_context_t * context);
 int lwm2mclient_main(int argc, char *argv[])
 {
     int ref = -1;
+    int res = -1;
     uint8_t isquit = 0;
     int ipc_socket = -1;
     client_data_t data;
@@ -899,6 +1091,8 @@ int lwm2mclient_main(int argc, char *argv[])
     bool bootstrapRequested = false;
     bool serverPortChanged = false;
 
+    struct addrinfo hints;
+    struct addrinfo *servinfo = NULL;
     // for DM standard begin
     char *dmKey = NULL;
     char *dmAppKey = NULL;
@@ -912,9 +1106,7 @@ int lwm2mclient_main(int argc, char *argv[])
 #endif
 
     char * pskId = NULL;
-#if(defined WITH_TINYDTLS) || (defined WITH_MBEDDTLS)
     char * psk = NULL;
-#endif
     uint16_t pskLen = 0;
     char * pskBuffer = NULL;
 
@@ -948,6 +1140,9 @@ int lwm2mclient_main(int argc, char *argv[])
             {"rm", "Remove support of object 31024", NULL, prv_remove, NULL},
             {"quit", "Quit the client gracefully.", NULL, prv_quit, NULL},
             {"setflag", "Set the flag of sending data", NULL, prv_set_flag, NULL},
+            {"download_fota", "Down load coap URI data", NULL, prv_download_fota, NULL},
+            {"notify_fota", "Notify fota event", NULL, prv_notify_fota, NULL},
+
             {"^C", "Quit the client abruptly (without sending a de-register message).", NULL, NULL, NULL},
 
             COMMAND_END_LIST
@@ -1116,20 +1311,29 @@ int lwm2mclient_main(int argc, char *argv[])
     {
         server = (AF_INET == data.addressFamily ? DEFAULT_SERVER_IPV4 : DEFAULT_SERVER_IPV6);
     }
-
+    /*
+     * Invalid domain name check in advance to avoid enter the main func endless loop 
+     */
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = data.addressFamily;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = IPPROTO_UDP;
+    if (0 != getaddrinfo(server, serverPort, &hints, &servinfo) || servinfo == NULL)
+    {
+        fprintf(stderr, "getaddrinfo return failed %s %s\n",server, serverPort);
+        if(servinfo != NULL)
+            freeaddrinfo(servinfo);
+        return -1;
+    }
+    freeaddrinfo(servinfo);
+    servinfo = NULL;
     /*
      *This call an internal function that create an IPV6 socket on the port 5683.
      */
      
     uint8_t portstr[20]={0};
-    utils_intToText(atoi(localPort)+ref,portstr,strlen(localPort));
-    fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", portstr);
-    data.sock = create_socket((char *)portstr, data.addressFamily);
-    if (data.sock < 0)
-    {
-        fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
-        return -1;
-    }
+    res = utils_intToText(atoi(localPort)+ref,portstr,strlen(localPort));
+    if (res <= 0) return -1;
 
     /*
      * Now the main function fill an array with each object, this list will be later passed to liblwm2m.
@@ -1138,7 +1342,10 @@ int lwm2mclient_main(int argc, char *argv[])
 #if(defined WITH_TINYDTLS) || (defined WITH_MBEDDTLS)
     if (psk != NULL)
     {
-        pskLen = strlen(psk) / 2;
+        int i;
+        int len_tmp = 0;
+        len_tmp = strlen(psk) % 2;
+        pskLen = len_tmp ? (strlen(psk) / 2 + 1): (strlen(psk) / 2);
         pskBuffer = malloc(pskLen);
 
         if (NULL == pskBuffer)
@@ -1146,12 +1353,18 @@ int lwm2mclient_main(int argc, char *argv[])
             fprintf(stderr, "Failed to create PSK binary buffer\r\n");
             return -1;
         }
+        memset(pskBuffer, 0, pskLen);
         // Hex string to binary
         char *h = psk;
         char *b = pskBuffer;
         char xlate[] = "0123456789ABCDEF";
-
-        for ( ; *h; h += 2, ++b)
+        if(len_tmp == 1) {
+            char *l = strchr(xlate, toupper((unsigned char)(*h)));
+            *b = l - xlate;//((l - xlate) << 4);//
+            h++;
+            b++;
+        }
+        for ( i = 0; i < (pskLen - len_tmp); h += 2, ++b, i++)
         {
             char *l = strchr(xlate, toupper((unsigned char)(*h)));
             char *r = strchr(xlate, toupper((unsigned char)(*(h+1))));
@@ -1169,7 +1382,7 @@ int lwm2mclient_main(int argc, char *argv[])
 
     char serverUri[50];
     int serverId = 1;
-    lwm2m_object_t * objArray[4];
+    lwm2m_object_t * objArray[7] = {NULL};
 #if(defined WITH_TINYDTLS) || (defined WITH_MBEDDTLS)
     if (psk != NULL || pskId != NULL)
         sprintf (serverUri, "coaps://%s:%s", server, serverPort);
@@ -1178,6 +1391,18 @@ int lwm2mclient_main(int argc, char *argv[])
 #else
     sprintf (serverUri, "coap://%s:%s", server, serverPort);
 #endif
+    /*
+     * The liblwm2m library is now initialized with the functions that will be in
+     * charge of communication
+     */
+
+    lwm2mH = lwm2m_init(&data);
+    if (NULL == lwm2mH)
+    {
+        fprintf(stderr, "lwm2m_init() failed\r\n");
+        goto error_exit;
+    }
+
 #ifdef LWM2M_BOOTSTRAP
     objArray[0] = get_security_object(serverId, serverUri, pskId, pskBuffer, pskLen, bootstrapRequested);
 #else
@@ -1197,42 +1422,50 @@ int lwm2mclient_main(int argc, char *argv[])
         goto error_exit;
     }
     
-#if 0
-    objArray[2] = get_object_device();
+    objArray[2] = get_object_device(lwm2mH);
     if (NULL == objArray[2])
     {
         fprintf(stderr, "Failed to create Device object\r\n");
         goto error_exit;
     }
 
-    objArray[3] = get_object_firmware();
+    objArray[3] = get_object_firmware(lwm2mH);
     if (NULL == objArray[3])
     {
         fprintf(stderr, "Failed to create Firmware object\r\n");
         goto error_exit;
     }
-    objArray[4] = get_object_location();
+
+    objArray[4] = get_object_conn_m(lwm2mH);
+    if (NULL == objArray[4])
+    {
+        fprintf(stderr, "Failed to create connectivity monitoring object\r\n");
+        goto error_exit;
+    }
+
+#if 0
+    objArray[4] = get_object_location(lwm2mH);
     if (NULL == objArray[4])
     {
         fprintf(stderr, "Failed to create location object\r\n");
         return -1;
     }
 
-    objArray[5] = get_test_object();
+    objArray[5] = get_test_object(lwm2mH);
     if (NULL == objArray[5])
     {
         fprintf(stderr, "Failed to create test object\r\n");
         return -1;
     }
 
-    objArray[5] = get_object_conn_m();
+    objArray[5] = get_object_conn_m(lwm2mH);
     if (NULL == objArray[5])
     {
         fprintf(stderr, "Failed to create connectivity monitoring object\r\n");
         return -1;
     }
 
-    objArray[6] = get_object_conn_s();
+    objArray[6] = get_object_conn_s(lwm2mH);
     if (NULL == objArray[6])
     {
         fprintf(stderr, "Failed to create connectivity statistics object\r\n");
@@ -1240,7 +1473,7 @@ int lwm2mclient_main(int argc, char *argv[])
     }
 
     int instId = 0;
-    objArray[7] = acc_ctrl_create_object();
+    objArray[7] = acc_ctrl_create_object(lwm2mH);
     if (NULL == objArray[7])
     {
         fprintf(stderr, "Failed to create Access Control object\r\n");
@@ -1282,16 +1515,7 @@ int lwm2mclient_main(int argc, char *argv[])
         return -1;
     }
 #endif
-    /*
-     * The liblwm2m library is now initialized with the functions that will be in
-     * charge of communication
-     */
-    lwm2mH = lwm2m_init(&data);
-    if (NULL == lwm2mH)
-    {
-        fprintf(stderr, "lwm2m_init() failed\r\n");
-        goto error_exit;
-    }
+
     lwm2mH->ref = ref;
     lwm2mH->sendflag = sendFlag;
 #if(defined WITH_TINYDTLS) || (defined WITH_MBEDDTLS)
@@ -1302,7 +1526,7 @@ int lwm2mclient_main(int argc, char *argv[])
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -
      * the number of objects we will be passing through and the objects array
      */
-    result = lwm2m_configure(lwm2mH, name, NULL, NULL, 2, objArray);
+    result = lwm2m_configure(lwm2mH, name, NULL, NULL, 5, objArray);
     if (result != 0)
     {
         fprintf(stderr, "lwm2m_configure() failed: 0x%X\r\n", result);
@@ -1344,10 +1568,12 @@ int lwm2mclient_main(int argc, char *argv[])
     /*
      * We now enter in a while loop that will handle the communications from the server
      */
-    while (0 == lwm2mH->quit)
+    while (0 == lwm2m_configs[ref]->isquit)//lwm2mH->quit
     {
         struct timeval tv;
         fd_set readfds;
+        fd_set exceptfds;
+        int maxfd;
 
         if (g_reboot)
         {
@@ -1357,7 +1583,7 @@ int lwm2mclient_main(int argc, char *argv[])
 
             if (0 == reboot_time)
             {
-                reboot_time = tv_sec + 5;
+                reboot_time = tv_sec + 15;
             }
             if (reboot_time < tv_sec)
             {
@@ -1369,7 +1595,7 @@ int lwm2mclient_main(int argc, char *argv[])
             }
             else
             {
-                tv.tv_sec = reboot_time - tv_sec;
+                tv.tv_sec = 1;
             }
         }
         else if (batterylevelchanging) 
@@ -1381,11 +1607,63 @@ int lwm2mclient_main(int argc, char *argv[])
         {
             tv.tv_sec = timeout;
         }
+
+        if(g_fota_state == LWM2M_FOTA_STATE_DOWNLOADING)
+        {
+            long now = lwm2m_gettime();
+            LOG_ARG("LWM2M_FOTA_STATE_DOWNLOADING  now %d long_time_index %d start_time %d",now,s_long_time_download_index, s_fota_download_start_time);
+            if(s_fota_download_start_time != 0)
+            {
+                s_long_time_download_index = (now - s_fota_download_start_time)/10;
+            }
+
+            if(s_long_time_download_index %20 < 15)
+            {
+                if(now - s_fota_download_tv > 20)
+                {
+                    if(lwm2mH->fota_context.uri != NULL)
+                    {
+                        LOG_ARG("LWM2M_FOTA_STATE_DOWNLOADING s_fota_num_retry %d", s_fota_num_retry);
+                        lwm2m_start_fota_download(lwm2mH->fota_context.uri, lwm2mH->ref);
+                        s_fota_download_tv = lwm2m_gettime();
+                    }
+                }
+                if(s_fota_num_retry > 3)
+                {
+                    notify_fota_state(LWM2M_FOTA_STATE_IDLE, LWM2M_FOTA_RESULT_CONNECTION_LOST, lwm2mH->ref);
+                }
+            }
+            tv.tv_sec = 2;
+        }
         tv.tv_usec = 0;
 
         FD_ZERO(&readfds);
-        FD_SET(data.sock, &readfds);
+        FD_ZERO(&exceptfds);
         FD_SET(ipc_socket, &readfds);
+
+        if(data.sock > 0)
+        {
+            FD_SET(data.sock, &readfds);
+            FD_SET(data.sock, &exceptfds);
+        }
+        else
+        {
+            fprintf(stderr, "Trying to bind LWM2M Client to port %s\r\n", portstr);
+            data.sock = create_socket((const char *)portstr, data.addressFamily);
+            if (data.sock > 0)
+            {
+                fprintf(stderr, "opening data socket success: %d\r\n", data.sock);
+                FD_SET(data.sock, &readfds);
+                FD_SET(data.sock, &exceptfds);
+            }
+            else
+            {
+                fprintf(stderr, "opening data socket[%d] failed: %d\r\n", data.sock, errno);
+            }
+        }
+
+        maxfd = (data.sock > ipc_socket ? data.sock : ipc_socket);
+        maxfd = maxfd + 1;
 
         /*
          * This function does two things:
@@ -1401,12 +1679,24 @@ int lwm2mclient_main(int argc, char *argv[])
             fprintf(stdout, "STATE_INITIAL\r\n");
             break;
         case STATE_BOOTSTRAP_REQUIRED:
+            connection_free(data.connList);
+            data.connList = NULL;
+            lwm2m_delete_context_list(lwm2mH);
+            lwm2mH->state = STATE_INITIAL;
+            result = 0;
+
             fprintf(stdout, "STATE_BOOTSTRAP_REQUIRED\r\n");
             break;
         case STATE_BOOTSTRAPPING:
             fprintf(stdout, "STATE_BOOTSTRAPPING\r\n");
             break;
         case STATE_REGISTER_REQUIRED:
+            connection_free(data.connList);
+            data.connList = NULL;
+            lwm2m_delete_context_list(lwm2mH);
+            lwm2mH->state = STATE_INITIAL;
+            result = 0;
+
             fprintf(stdout, "STATE_REGISTER_REQUIRED\r\n");
             break;
         case STATE_REGISTERING:
@@ -1446,10 +1736,13 @@ int lwm2mclient_main(int argc, char *argv[])
          * This part will set up an interruption until an event happen on SDTIN or the socket until "tv" timed out (set
          * with the precedent function)
          */
-        result = select(FD_SETSIZE, &readfds, NULL, NULL, &tv);
-
+        fprintf(stderr, "lwm2m_select timeout:%lld",tv.tv_sec);
+        result = select(maxfd, &readfds, NULL, &exceptfds, &tv);
+        fprintf(stderr, "lwm2m_select result = %d",result);
         if (result < 0)
         {
+            osiThreadSleep(tv.tv_sec*1000);
+            
             if (errno != EINTR)
             {
               fprintf(stderr, "Error in select(): %d %s\r\n", errno, strerror(errno));
@@ -1460,6 +1753,26 @@ int lwm2mclient_main(int argc, char *argv[])
             uint8_t buffer[MAX_PACKET_SIZE];
             int numBytes = 0;
 
+            if (FD_ISSET(data.sock, &exceptfds))
+            {
+                fprintf(stderr,"Error set data.sock");
+
+                // close the invalid sock
+                close(data.sock);
+                data.sock = 0;
+
+                // reset the timeout for re-connection
+                timeout = 30;
+
+                // reset the lwm2m status to initial
+                connection_free(data.connList);
+                data.connList = NULL;
+                lwm2m_delete_context_list(lwm2mH);
+                lwm2mH->state = STATE_INITIAL;
+
+                // notify the app return to at
+                lwm2mPostEvent(lwm2mH->ref, SERVER_REGCMD_RESULT_IND, 0, 0, 0);
+            }
             /*
              * If an event happens on the socket
              */
@@ -1472,12 +1785,37 @@ int lwm2mclient_main(int argc, char *argv[])
 
                 /*
                  * We retrieve the data received
+                 
                  */
-                numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                  
+                 if (psk != NULL || pskId != NULL)
+                    numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, MSG_PEEK, (struct sockaddr *)&addr, &addrLen);
+                            
+                else 
+                    numBytes = recvfrom(data.sock, buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
 
                 if (0 > numBytes)
                 {
                     fprintf(stderr, "Error in recvfrom(): %d %s\r\n", errno, strerror(errno));
+
+                    if(errno == 9)
+                    {
+                        // close the invalid sock
+                        close(data.sock);
+                        data.sock = 0;
+
+                        // reset the timeout for re-connection
+                        timeout = 30;
+
+                        // reset the lwm2m status to initial
+                        connection_free(data.connList);
+                        data.connList = NULL;
+                        lwm2m_delete_context_list(lwm2mH);
+                        lwm2mH->state = STATE_INITIAL;
+
+                        // notify the app return to at
+                        lwm2mPostEvent(lwm2mH->ref, SERVER_REGCMD_RESULT_IND, 0, 0, 0);
+                    }
                 }
                 else if (0 < numBytes)
                 {
@@ -1543,12 +1881,16 @@ int lwm2mclient_main(int argc, char *argv[])
                         fprintf(stderr, "received bytes ignored!\r\n");
                     }
                 }
+                else
+                {
+                    fprintf(stderr, "0 in recvfrom()\r\n");
+                }
             }
 
             /*
              * If the event happened on the SDTIN
              */
-            else if (FD_ISSET(ipc_socket, &readfds))
+            if (FD_ISSET(ipc_socket, &readfds))
             {
                 numBytes = read(ipc_socket, buffer, MAX_PACKET_SIZE - 1);
 
@@ -1578,7 +1920,7 @@ int lwm2mclient_main(int argc, char *argv[])
             }
         }
     }
-    isquit = lwm2mH->quit;
+    isquit = lwm2m_configs[ref]->isquit;//lwm2mH->quit;
 
 error_exit:
 
@@ -1588,16 +1930,27 @@ error_exit:
 #if(defined WITH_TINYDTLS) || (defined WITH_MBEDDTLS)
     free(pskBuffer);
 #endif
+fprintf(stdout,"exit");
 
 #ifdef LWM2M_BOOTSTRAP
     close_backup_object();
 #endif
-    clean_all_objects(lwm2mH);
-    lwm2m_close(lwm2mH);
-    lwm2m_free(objArray[0]);
-    lwm2m_free(objArray[1]);
+    if(lwm2mH != NULL)
+    {
+        clean_all_objects(lwm2mH);
+        lwm2m_close(lwm2mH);
+    }
+    if(objArray[0])
+        lwm2m_free(objArray[0]);
+    if(objArray[1])
+        lwm2m_free(objArray[1]);
+    if(objArray[2])
+        lwm2m_free(objArray[2]);
+    if(objArray[3])
+        lwm2m_free(objArray[3]);
+    if(objArray[4])
+        lwm2m_free(objArray[4]);
     close(data.sock);
-    connection_free(data.connList);
 
 #ifdef MEMORY_TRACE
     if (isquit == 1)

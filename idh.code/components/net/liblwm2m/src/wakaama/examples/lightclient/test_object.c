@@ -336,7 +336,7 @@ static uint8_t prv_exec(uint16_t instanceId,
     }
 }
 
-lwm2m_object_t * get_test_object(void)
+lwm2m_object_t * get_test_object(void* lwm2mH)
 {
     lwm2m_object_t * testObj;
 

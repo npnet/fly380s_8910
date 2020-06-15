@@ -10,15 +10,13 @@
 # without further testing or modification.
 
 set(target aworker)
+add_app_libraries($<TARGET_FILE:${target}>)
 
-add_library(${target} STATIC)
+add_library(${target} STATIC src/async_worker.c)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel calclib)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_targets(${target} PRIVATE kernel calclib)
 
-set(AWORKERFILES src/async_worker.c)
-target_sources(${target} PRIVATE ${AWORKERFILES})
-
-relative_glob(srcs include/*.h src/*.c)
+relative_glob(srcs include/*.h src/*.[ch])
 beautify_c_code(${target} ${srcs})

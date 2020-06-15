@@ -25,11 +25,13 @@ static SensorOps_t SensorOpsApi = {
 };
 
 extern bool camGc032aReg(SensorOps_t *pSensorOpsCB);
+extern bool camGc0310Reg(SensorOps_t *pSensorOpsCB);
 
 static uint8_t g_cam_index = 0xff;
 bool (*pCamRegInit[])(SensorOps_t *) =
     {
         camGc032aReg,
+        camGc0310Reg,
 };
 
 static uint32_t prvCamGetCfgCount(void)
@@ -155,7 +157,9 @@ bool drvCamStopPreview(void)
 void drvCamPreviewQBUF(uint16_t *pFrameBuf)
 {
     OSI_LOGD(0, "cam: drvCamPreviewQBUF");
+    uint32_t critical = osiEnterCritical();
     ImageSensor.pSensorOpsApi->cameraPrevNotify();
+    osiExitCritical(critical);
 }
 
 uint16_t *drvCamPreviewDQBUF(void)
@@ -227,8 +231,11 @@ void drvCamGetSensorInfo(CAM_DEV_T *pCamDevice)
 bool drvCamInit(void)
 {
     OSI_LOGI(0, "cam: drvCamInit");
+    SensorOps_t *campoint = NULL;
     //find sensor
-    SensorOps_t *campoint = prvCamLoad();
+    if (ImageSensor.poweron_flag)
+        return true;
+    campoint = prvCamLoad();
     if (!campoint)
         return false;
     ImageSensor.pSensorOpsApi = campoint;

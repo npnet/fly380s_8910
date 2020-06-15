@@ -99,6 +99,12 @@ enum
     ZSP_VOICE_RECORD_FORMAT_DUMP = 3,
 };
 
+/**
+ * audio device work in three state,
+ * 1\voice call user state
+ * 2\other single user state,mutex
+ * 3\voice call user + other single user state
+ */
 typedef enum
 {
     AUDEV_CLK_USER_VOICE = (1 << 0),
@@ -136,12 +142,15 @@ typedef struct
 
     struct
     {
+        audevPlayType_t type;
         bool eos_error;
         uint8_t channel_count;
         unsigned sample_rate;
         unsigned total_bytes;
         audevPlayOps_t ops;
         void *ops_ctx;
+        HAL_AIF_STREAM_T stream;
+        AUD_LEVEL_T level;
     } play;
 
     struct
@@ -390,6 +399,9 @@ static bool prvSetPlayConfig(void)
 
     if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
         return false;
+
+    //update para in play
+    d->play.level.spkLevel = level.spkLevel;
 
     return true;
 }
@@ -870,13 +882,48 @@ bool audevSetOutput(audevOutput_t dev)
         return false;
 
     audevContext_t *d = &gAudevCtx;
+    if (d->cfg.outdev == dev)
+        return true;
+
     osiMutexLock(d->lock);
 
-    d->cfg.outdev = dev;
     if (d->clk_users & AUDEV_CLK_USER_VOICE)
+    {
+        d->cfg.outdev = dev;
         prvSetVoiceConfig();
-    else if (d->clk_users & AUDEV_CLK_USER_PLAY)
-        prvSetPlayConfig();
+    }
+    else if ((d->clk_users & AUDEV_CLK_USER_PLAY) && !(d->clk_users & AUDEV_CLK_USER_VOICE))
+    {
+        if (DM_AudStreamStop(prvOutputToSndItf(d->cfg.outdev)) != 0)
+        {
+            osiMutexUnlock(d->lock);
+            return false;
+        }
+        if (!prvWaitStatus(CODEC_STREAM_STOP_DONE))
+        {
+            osiMutexUnlock(d->lock);
+            return false;
+        }
+        d->cfg.outdev = dev;
+        if (DM_AudStreamStart(prvOutputToSndItf(d->cfg.outdev), &(d->play.stream), &(d->play.level)) != 0)
+        {
+            d->play.eos_error = true;
+            prvFinishTimeout(NULL);
+            osiMutexUnlock(d->lock);
+            return false;
+        }
+        if (!prvWaitStatus(CODEC_STREAM_START_DONE))
+        {
+            d->play.eos_error = true;
+            prvFinishTimeout(NULL);
+            osiMutexUnlock(d->lock);
+            return false;
+        }
+    }
+    else
+    {
+        d->cfg.outdev = dev;
+    }
 
     audevSetting_t cfg = d->cfg;
     osiMutexUnlock(d->lock);
@@ -1089,14 +1136,6 @@ bool audevStopVoice(void)
 
     osiMutexLock(d->lock);
 
-    //check if voice record is running,and stop it
-    if (((d->clk_users & AUDEV_CLK_USER_RECORD) != 0) &&
-        ((d->record.type == AUDEV_RECORD_TYPE_VOICE) ||
-         (d->record.type == AUDEV_RECORD_TYPE_VOICE_DUAL)))
-    {
-        d->record.ops.handle_event(d->record.ops_ctx, AUDEV_RECORD_EVENT_FINISH);
-    }
-
     if ((d->clk_users & AUDEV_CLK_USER_VOICE) == 0)
         goto success;
 
@@ -1123,7 +1162,15 @@ failed:
  */
 bool audevRestartVoice(void)
 {
-    return (DM_RestartAudioEx() == 0);
+    OSI_LOGI(0, "audio restart voice");
+
+    if (DM_RestartAudioEx() != 0)
+        return false;
+
+    if (!prvWaitStatus(CODEC_VOIS_START_DONE))
+        return false;
+
+    return true;
 }
 
 /**
@@ -1136,12 +1183,11 @@ bool audevPlayTone(audevTone_t tone, unsigned duration)
 
     osiMutexLock(d->lock);
 
-    bool in_tone = (d->clk_users & AUDEV_CLK_USER_TONE);
-    if ((d->clk_users & ~AUDEV_CLK_USER_TONE) != 0) // disable when any other users is working
+    if ((d->clk_users & ~AUDEV_CLK_USER_VOICE) != 0) // disable when any other users is working
         goto failed;
 
     prvEnableAudioClk(AUDEV_CLK_USER_TONE);
-    if (!in_tone && !prvSetVoiceConfig())
+    if (!prvSetVoiceConfig())
         goto failed_disable_clk;
 
     if (DM_PlayToneEx(prvToneToDmTone(tone), prvVolumeToToneAttenuatio(d->cfg.play_vol),
@@ -1237,7 +1283,7 @@ bool audevStartLoopbackTest(audevOutput_t outdev, audevInput_t indev, unsigned v
 
     osiMutexLock(d->lock);
 
-    if (d->clk_users != 0) // disable when any user is working
+    if ((d->clk_users & ~AUDEV_CLK_USER_VOICE) != 0) // disable when any other users is working
         goto failed;
 
     d->loopback.outdev = outdev;
@@ -1293,7 +1339,6 @@ bool audevStopLoopbackTest(void)
         goto failed;
 
     prvDisableAudioClk(AUDEV_CLK_USER_LOOPBACK);
-    osiMutexUnlock(d->lock);
 
 success:
     osiMutexUnlock(d->lock);
@@ -1326,8 +1371,8 @@ int audevPlayRemainTime(void)
 /**
  * Start play
  */
-bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
-                    const auFrame_t *frame)
+bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void *play_ctx,
+                      const auFrame_t *frame)
 {
     audevContext_t *d = &gAudevCtx;
     if (play_ops == NULL || play_ops->get_frame == NULL || play_ops->data_consumed == NULL)
@@ -1335,7 +1380,7 @@ bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
     if (frame == NULL)
         return false;
 
-    OSI_LOGI(0, "audio start play, sample/%d channels/%d rate/%d user/0x%x",
+    OSI_LOGI(0, "audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
              frame->sample_format, frame->channel_count,
              frame->sample_rate, d->clk_users);
 
@@ -1345,80 +1390,139 @@ bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
         return false;
 
     osiMutexLock(d->lock);
+    d->play.type = type;
+    if (type == AUDEV_PLAY_TYPE_LOCAL)
+    {
+        if ((d->clk_users & ~AUDEV_CLK_USER_VOICE) != 0) // disable when any other users is working
+            goto failed;
 
-    if (d->clk_users != 0) // disable when any user is working
-        goto failed;
+        d->play.channel_count = frame->channel_count;
+        d->play.sample_rate = frame->sample_rate;
+        d->play.total_bytes = 0;
+        d->play.eos_error = false;
+        d->play.ops = *play_ops;
+        d->play.ops_ctx = play_ctx;
 
-    d->play.channel_count = frame->channel_count;
-    d->play.sample_rate = frame->sample_rate;
-    d->play.total_bytes = 0;
-    d->play.eos_error = false;
-    d->play.ops = *play_ops;
-    d->play.ops_ctx = play_ctx;
+        // 1. half buffer size is determined by channel count and sample rate, for 20ms
+        // 2. half buffer size should be 32 bytes aligned
+        // 3. 2x half buffer can't exceed AUDIO_OUTPUT_BUF_SIZE
+        // 4. set a minimal value, based on 8000Hz mono
+        // 5. the unit of audOutPara.length is word (2 bytes)
+        unsigned half_buffer_bytes = (frame->channel_count * frame->sample_rate * 2 / 50);
+        half_buffer_bytes = OSI_ALIGN_UP(half_buffer_bytes, 32);
+        half_buffer_bytes = OSI_MIN(unsigned, AUDIO_OUTPUT_BUF_SIZE / 2, half_buffer_bytes);
+        half_buffer_bytes = OSI_MAX(unsigned, 320, half_buffer_bytes);
+        unsigned half_buffer_words = half_buffer_bytes / 2;
 
-    // 1. half buffer size is determined by channel count and sample rate, for 20ms
-    // 2. half buffer size should be 32 bytes aligned
-    // 3. 2x half buffer can't exceed AUDIO_OUTPUT_BUF_SIZE
-    // 4. set a minimal value, based on 8000Hz mono
-    // 5. the unit of audOutPara.length is word (2 bytes)
-    unsigned half_buffer_bytes = (frame->channel_count * frame->sample_rate * 2 / 50);
-    half_buffer_bytes = OSI_ALIGN_UP(half_buffer_bytes, 32);
-    half_buffer_bytes = OSI_MIN(unsigned, AUDIO_OUTPUT_BUF_SIZE / 2, half_buffer_bytes);
-    half_buffer_bytes = OSI_MAX(unsigned, 320, half_buffer_bytes);
-    unsigned half_buffer_words = half_buffer_bytes / 2;
+        HAL_AIF_STREAM_T stream = {
+            .startAddress = (UINT32 *)d->shmem->audOutput,
+            .length = half_buffer_bytes * 2,
+            .channelNb = (frame->channel_count == 1) ? HAL_AIF_MONO : HAL_AIF_STEREO,
+            .playSyncWithRecord = 0,
+            .sampleRate = frame->sample_rate,
+            .voiceQuality = false,
+            .halfHandler = NULL,
+            .endHandler = NULL,
+        };
+        AUD_LEVEL_T level = {
+            .spkLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute),
+            .micLevel = SND_MIC_MUTE,
+            .sideLevel = SND_SIDE_MUTE,
+            .toneLevel = SND_TONE_0DB,
+            .appMode = SND_APP_MODE_MUSIC,
+        };
 
-    HAL_AIF_STREAM_T stream = {
-        .startAddress = (UINT32 *)d->shmem->audOutput,
-        .length = half_buffer_bytes * 2,
-        .channelNb = (frame->channel_count == 1) ? HAL_AIF_MONO : HAL_AIF_STEREO,
-        .playSyncWithRecord = 0,
-        .sampleRate = frame->sample_rate,
-        .voiceQuality = false,
-        .halfHandler = NULL,
-        .endHandler = NULL,
-    };
-    AUD_LEVEL_T level = {
-        .spkLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute),
-        .micLevel = SND_MIC_MUTE,
-        .sideLevel = SND_SIDE_MUTE,
-        .toneLevel = SND_TONE_0DB,
-        .appMode = SND_APP_MODE_MUSIC,
-    };
+        d->shmem->audInPara.sbcOutFlag = 0;
+        d->shmem->audInPara.sampleRate = frame->sample_rate;
+        d->shmem->audOutPara.samplerate = frame->sample_rate;
+        d->shmem->audInPara.channelNb = stream.channelNb;
+        d->shmem->audOutPara.channelNb = stream.channelNb;
+        d->shmem->audInPara.bitsPerSample = sizeof(int16_t) * 8; // S16, in bits
+        d->shmem->musicMode = ZSP_MUSIC_MODE_PLAY_PCM;
+        d->shmem->audOutPara.length = half_buffer_words;
+        d->shmem->updateParaInd = 0;
+        d->shmem->audInPara.inLenth = AUDIO_INPUT_BUF_SIZE;
+        d->shmem->audInPara.fileEndFlag = 0;
+        d->shmem->audInPara.readOffset = 0;
+        d->shmem->audInPara.writeOffset = 0;
+        memset(d->shmem->audOutput, 0, AUDIO_OUTPUT_BUF_SIZE);
+        osiDCacheCleanAll();
 
-    d->shmem->audInPara.sbcOutFlag = 0;
-    d->shmem->audInPara.sampleRate = frame->sample_rate;
-    d->shmem->audOutPara.samplerate = frame->sample_rate;
-    d->shmem->audInPara.channelNb = stream.channelNb;
-    d->shmem->audOutPara.channelNb = stream.channelNb;
-    d->shmem->audInPara.bitsPerSample = sizeof(int16_t) * 8; // S16, in bits
-    d->shmem->musicMode = ZSP_MUSIC_MODE_PLAY_PCM;
-    d->shmem->audOutPara.length = half_buffer_words;
-    d->shmem->updateParaInd = 0;
-    d->shmem->audInPara.inLenth = AUDIO_INPUT_BUF_SIZE;
-    d->shmem->audInPara.fileEndFlag = 0;
-    d->shmem->audInPara.readOffset = 0;
-    d->shmem->audInPara.writeOffset = 0;
-    memset(d->shmem->audOutput, 0, AUDIO_OUTPUT_BUF_SIZE);
-    osiDCacheCleanAll();
+        prvEnableAudioClk(AUDEV_CLK_USER_PLAY);
 
-    prvEnableAudioClk(AUDEV_CLK_USER_PLAY);
+        if (DM_ZspMusicPlayStart() != 0)
+            goto failed_disable_clk;
 
-    if (DM_ZspMusicPlayStart() != 0)
-        goto failed_disable_clk;
+        if (!prvWaitStatus(ZSP_START_DONE))
+            goto failed_disable_clk;
 
-    if (!prvWaitStatus(ZSP_START_DONE))
-        goto failed_disable_clk;
+        aud_SetSharkingMode(0);
+        if (DM_AudStreamStart(prvOutputToSndItf(d->cfg.outdev), &stream, &level) != 0)
+            goto failed_disable_clk;
 
-    aud_SetSharkingMode(0);
-    if (DM_AudStreamStart(prvOutputToSndItf(d->cfg.outdev), &stream, &level) != 0)
-        goto failed_disable_clk;
+        if (!prvWaitStatus(CODEC_STREAM_START_DONE))
+            goto failed_disable_clk;
 
-    if (!prvWaitStatus(CODEC_STREAM_START_DONE))
-        goto failed_disable_clk;
+        //for reopen aif when audio output path change
+        memcpy(&(d->play.stream), &stream, sizeof(HAL_AIF_STREAM_T));
+        memcpy(&(d->play.level), &level, sizeof(AUD_LEVEL_T));
 
-    osiWorkEnqueue(d->ipc_work, d->wq);
-    osiMutexUnlock(d->lock);
-    return true;
+        osiWorkEnqueue(d->ipc_work, d->wq);
+        osiMutexUnlock(d->lock);
+        return true;
+    }
+    else if (type == AUDEV_PLAY_TYPE_VOICE)
+    {
+        if ((d->clk_users & AUDEV_CLK_USER_VOICE) == 0) // only available in voice call
+            goto failed;
+
+        d->play.channel_count = frame->channel_count;
+        d->play.sample_rate = frame->sample_rate;
+        d->play.total_bytes = 0;
+        d->play.eos_error = false;
+        d->play.ops = *play_ops;
+        d->play.ops_ctx = play_ctx;
+
+        // 1. half buffer size is determined by channel count and sample rate, for 20ms
+        // 2. half buffer size should be 32 bytes aligned
+        // 3. 2x half buffer can't exceed AUDIO_OUTPUT_BUF_SIZE
+        // 4. set a minimal value, based on 8000Hz mono
+        // 5. the unit of audOutPara.length is word (2 bytes)
+        unsigned half_buffer_bytes = (frame->channel_count * frame->sample_rate * 2 / 50);
+        half_buffer_bytes = OSI_ALIGN_UP(half_buffer_bytes, 32);
+        half_buffer_bytes = OSI_MIN(unsigned, AUDIO_OUTPUT_BUF_SIZE / 2, half_buffer_bytes);
+        half_buffer_bytes = OSI_MAX(unsigned, 320, half_buffer_bytes);
+        unsigned half_buffer_words = half_buffer_bytes / 2;
+
+        d->shmem->audInPara.sbcOutFlag = 0;
+        d->shmem->audInPara.sampleRate = frame->sample_rate;
+        d->shmem->audOutPara.samplerate = frame->sample_rate;
+        d->shmem->audInPara.channelNb = (frame->channel_count == 1) ? HAL_AIF_MONO : HAL_AIF_STEREO;
+        d->shmem->audOutPara.channelNb = (frame->channel_count == 1) ? HAL_AIF_MONO : HAL_AIF_STEREO;
+        d->shmem->audInPara.bitsPerSample = sizeof(int16_t) * 8; // S16, in bits
+        //d->shmem->musicMode = ZSP_MUSIC_MODE_PLAY_PCM;
+        d->shmem->audOutPara.length = half_buffer_words;
+        d->shmem->updateParaInd = 0;
+        d->shmem->audInPara.inLenth = AUDIO_INPUT_BUF_SIZE;
+        d->shmem->audInPara.fileEndFlag = 0;
+        d->shmem->audInPara.readOffset = 0;
+        d->shmem->audInPara.writeOffset = 0;
+        memset(d->shmem->audOutput, 0, AUDIO_OUTPUT_BUF_SIZE);
+        osiDCacheCleanAll();
+
+        prvEnableAudioClk(AUDEV_CLK_USER_PLAY);
+
+        if (hal_zspVoicePlayStart() != 0)
+        {
+            goto failed;
+        }
+        else
+        {
+            osiWorkEnqueue(d->ipc_work, d->wq);
+            osiMutexUnlock(d->lock);
+        }
+        return true;
+    }
 
 failed_disable_clk:
     prvDisableAudioClk(AUDEV_CLK_USER_PLAY);
@@ -1429,33 +1533,51 @@ failed:
 }
 
 /**
+ * Start play
+ */
+bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
+                    const auFrame_t *frame)
+{
+    return (audevStartPlayV2(AUDEV_PLAY_TYPE_LOCAL, play_ops, play_ctx, frame));
+}
+
+/**
  * Stop play
  */
-bool audevStopPlay(void)
+bool audevStopPlayV2(void)
 {
     audevContext_t *d = &gAudevCtx;
-    OSI_LOGI(0, "audio play stop, user/0x%x", d->clk_users);
+    OSI_LOGI(0, "audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
 
     osiMutexLock(d->lock);
+    if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
+    {
+        if ((d->clk_users & AUDEV_CLK_USER_PLAY) == 0)
+            goto success;
 
-    if ((d->clk_users & AUDEV_CLK_USER_PLAY) == 0)
-        goto success;
+        osiTimerStop(d->finish_timer);
 
-    osiTimerStop(d->finish_timer);
+        if (DM_AudStreamStop(prvOutputToSndItf(d->cfg.outdev)) != 0)
+            goto failed;
 
-    if (DM_AudStreamStop(prvOutputToSndItf(d->cfg.outdev)) != 0)
-        goto failed;
+        if (!prvWaitStatus(CODEC_STREAM_STOP_DONE))
+            goto failed;
 
-    if (!prvWaitStatus(CODEC_STREAM_STOP_DONE))
-        goto failed;
+        if (DM_ZspMusicPlayStop() != 0)
+            goto failed;
 
-    if (DM_ZspMusicPlayStop() != 0)
-        goto failed;
+        if (!prvWaitStatus(ZSP_STOP_DONE))
+            goto failed;
 
-    if (!prvWaitStatus(ZSP_STOP_DONE))
-        goto failed;
+        prvDisableAudioClk(AUDEV_CLK_USER_PLAY);
+    }
+    else
+    {
+        if (hal_zspVoicePlayStop() != 0)
+            goto failed;
 
-    prvDisableAudioClk(AUDEV_CLK_USER_PLAY);
+        prvDisableAudioClk(AUDEV_CLK_USER_PLAY);
+    }
 
 success:
     osiMutexUnlock(d->lock);
@@ -1465,6 +1587,14 @@ failed:
     osiMutexUnlock(d->lock);
     OSI_LOGE(0, "audio stop play failed");
     return false;
+}
+
+/**
+ * Stop play
+ */
+bool audevStopPlay(void)
+{
+    return (audevStopPlayV2());
 }
 
 /**
@@ -1484,7 +1614,9 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
 
     if (type == AUDEV_RECORD_TYPE_MIC)
     {
-        if (d->clk_users != 0) // disable when any user is working
+        if ((d->clk_users & AUDEV_CLK_USER_VOICE)) // not support in voice call
+            goto failed;
+        if ((d->clk_users & ~(AUDEV_CLK_USER_VOICE | AUDEV_CLK_USER_PLAYTEST)) != 0) // disable when any other users is working
             goto failed;
 
         HAL_AIF_STREAM_T stream = {
@@ -1559,6 +1691,8 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
     {
         if ((d->clk_users & AUDEV_CLK_USER_VOICE) == 0) // only available in voice call
             goto failed;
+        if ((d->clk_users & ~AUDEV_CLK_USER_VOICE) != 0) // disable when any other users is working
+            goto failed;
 
         unsigned out_channel_count;
         if (type == AUDEV_RECORD_TYPE_VOICE)
@@ -1599,7 +1733,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
     return true;
 
 failed_disable_clk:
-    prvDisableAudioClk(AUDEV_CLK_USER_LOOPBACK);
+    prvDisableAudioClk(AUDEV_CLK_USER_RECORD);
 failed:
     osiMutexUnlock(d->lock);
     OSI_LOGE(0, "audio start record failed");
@@ -1650,6 +1784,38 @@ success:
 failed:
     osiMutexUnlock(d->lock);
     OSI_LOGE(0, "audio stop record failed");
+    return false;
+}
+
+bool audevRestartVoiceRecord(void)
+{
+    audevContext_t *d = &gAudevCtx;
+    OSI_LOGI(0, "audio restart voice record, user/0x%x", d->clk_users);
+    osiMutexLock(d->lock);
+    if ((d->clk_users & AUDEV_CLK_USER_VOICE) == 0) // only available in voice call
+        goto failed;
+    if ((d->clk_users & AUDEV_CLK_USER_RECORD) == 0) // only available in voice call record
+        goto failed;
+
+    unsigned recformat = (d->record.type == AUDEV_RECORD_TYPE_VOICE)
+                             ? ZSP_VOICE_RECORD_FORMAT_PCM
+                             : ZSP_VOICE_RECORD_FORMAT_DUMP;
+
+    d->shmem->audInPara.sampleRate = d->cfg.sample_rate;
+    d->shmem->audInPara.readOffset = 0;
+    d->shmem->audInPara.writeOffset = 0;
+    d->shmem->audInPara.inLenth = AUDIO_INPUT_BUF_SIZE;
+    d->shmem->voiceRecFormat = recformat;
+
+    if (hal_zspVoiceRecordStart() != 0)
+        goto failed;
+
+    osiMutexUnlock(d->lock);
+    return true;
+
+failed:
+    osiMutexUnlock(d->lock);
+    OSI_LOGE(0, "audio restart voice record failed");
     return false;
 }
 
@@ -1719,4 +1885,12 @@ failed:
     osiMutexUnlock(d->lock);
     OSI_LOGE(0, "audio stop bbat play failed");
     return false;
+}
+
+void audSetLdoVB(uint32_t en)
+{
+    audevContext_t *d = &gAudevCtx;
+    osiMutexLock(d->lock);
+    aud_SetLdoVB(en);
+    osiMutexUnlock(d->lock);
 }

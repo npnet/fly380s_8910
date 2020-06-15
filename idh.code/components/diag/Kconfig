@@ -17,13 +17,25 @@ config DIAG_ENABLED
     default n
 
 if DIAG_ENABLED
-config DIAG_DATA_BUFF_SIZE
-    int "Data mode buffer size"
-    default 4096
+config DIAG_NORMAL_MODE_BUF_SIZE
+    hex "Diag pre-allocated buffer size"
+    default 0x1040 if SOC_8811
+    default 0x10040
     help
-        Buffer size for data mode. In PPP mode, it should be enough to hold the
-        packet before HDLC decoding. At buffer overflow, the content of the buffer
-        will be dropped silently.
+        Pre-allocated buffer. When diag engine is created, buffer of this
+        size will be allocated. When it is enough for diag packet, this
+        pre-allocated buffer will be used. Otherwise, dynamic memory will
+        be used. When dynamic memory allocation fails, diag will return
+        bad command.
+
+        When system memory is enough, it is recommended to configure the
+        size to ensure maximum nvitem read and write can work.
+
+config DIAG_CALIB_MODE_BUF_SIZE
+    hex "Diag allocated buffer size in calib mode"
+    default 0x10040
+    help
+        Diag buffer size in calibration mode.
 
 config DIAG_DEVICE_USRL_SUPPORT
     bool "usb diag device support"
@@ -71,6 +83,12 @@ config DIAG_DEFAULT_UART2
 config DIAG_DEFAULT_UART3
     bool "UART3"
 
+config DIAG_DEFAULT_UART4
+    bool "UART4"
+
+config DIAG_DEFAULT_UART5
+    bool "UART5"
+
 endchoice
 
 config DIAG_DEFAULT_UART
@@ -78,12 +96,19 @@ config DIAG_DEFAULT_UART
     default "DRV_NAME_UART1" if DIAG_DEFAULT_UART1
     default "DRV_NAME_UART2" if DIAG_DEFAULT_UART2
     default "DRV_NAME_UART3" if DIAG_DEFAULT_UART3
+    default "DRV_NAME_UART4" if DIAG_DEFAULT_UART4
+    default "DRV_NAME_UART5" if DIAG_DEFAULT_UART5
     default ""
 
 config DIAG_DEFAULT_UART_BAUD
     int "Baud rate of default UART"
     default 921600 if SOC_8910
     default 921600 if SOC_6760
+    default 921600 if SOC_8811
+
+config DIAG_DEBUG_SUPPORT
+    bool "Support Diag Port Debug"
+    default y
 
 endif
 endmenu

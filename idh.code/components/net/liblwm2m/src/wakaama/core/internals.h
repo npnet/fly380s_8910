@@ -72,6 +72,7 @@
     if ((URI) == NULL) lwm2m_printf("[%s:%d] NULL\r\n", __func__ , __LINE__);     \
     else                                                                            \
     {                                                                               \
+        lwm2m_printf("[%s:%d] /%d", __func__ , __LINE__ , (URI)->flag);       \
         lwm2m_printf("[%s:%d] /%d", __func__ , __LINE__ , (URI)->objectId);       \
         if (LWM2M_URI_IS_SET_INSTANCE(URI)) lwm2m_printf("/%d", (URI)->instanceId); \
         if (LWM2M_URI_IS_SET_RESOURCE(URI)) lwm2m_printf("/%d", (URI)->resourceId); \
@@ -321,6 +322,7 @@ int discover_serialize(lwm2m_context_t * contextP, lwm2m_uri_t * uriP, lwm2m_ser
 
 // defined in block1.c
 uint8_t coap_block1_handler(lwm2m_block1_data_t ** block1Data, uint16_t mid, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, uint8_t ** outputBuffer, size_t * outputLength);
+uint8_t lwm2m_fota_block2_handler(lwm2m_context_t * contextP,uint16_t mid, uint8_t * buffer, size_t length, uint16_t blockSize, uint32_t blockNum, bool blockMore, coap_packet_t * message);
 void free_block1_buffer(lwm2m_block1_data_t * block1Data);
 
 // defined in utils.c

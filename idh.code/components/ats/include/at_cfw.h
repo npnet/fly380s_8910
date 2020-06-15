@@ -223,6 +223,7 @@ typedef struct
         uint8_t cc_sounder;
         uint8_t sms_newsms;
         uint8_t sms_memfull; // [0] ME memfull, [1] SM memfull
+        uint8_t ussd;
         uint32_t edrx_value;
         uint32_t edrx_ptw;
         AT_FDN_PBK_LIST *fdn_list;
@@ -230,6 +231,7 @@ typedef struct
         CFW_TFT_SET tft_set[AT_PDPCID_MAX + 1];
         osiTimer_t *ring_timer;
         osiTimer_t *newsms_timer;
+        bool is_waiting_cnma;
     } sim[CONFIG_NUMBER_OF_SIM];
 } atCfwCtx_t;
 
@@ -257,6 +259,7 @@ void atCfwCcInit(void);
 void atCfwGprsInit(void);
 uint32_t atCfwSmsInit(uint16_t nUTI, uint8_t nSim);
 void AT_PBK_Init(uint8_t nSim);
+void AT_SS_Init(void);
 
 /**
  * whether cc is active (dialing or online) in any channel

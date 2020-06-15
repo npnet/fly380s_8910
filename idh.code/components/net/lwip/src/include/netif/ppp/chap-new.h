@@ -187,6 +187,8 @@ extern void chap_auth_with_peer(ppp_pcb *pcb, const char *our_name, int digest_c
 
 /* Represents the CHAP protocol to the main pppd code */
 extern const struct protent chap_protent;
-
+#if PPP_AUTHGPRS_SUPPORT
+void chap_SendAuthResponse(ppp_pcb *pcb, int ActStatus);
+#endif
 #endif /* CHAP_H */
 #endif /* PPP_SUPPORT && CHAP_SUPPORT */

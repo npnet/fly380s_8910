@@ -13,6 +13,7 @@
 #include "boot_debuguart.h"
 #include "hwregs.h"
 #include "osi_api.h"
+#include "osi_trace.h"
 
 // Timeout for TX fifo write. This timeout is to handle the case that
 // debughost TX is blocked, and avoid infinite wait. The timeout value
@@ -51,6 +52,8 @@ void bootDebuguartInit(void)
     ctrl.b.hst_txd_oen = DEBUG_UART_HST_TXD_OEN_V_ENABLE;
     ctrl.b.rx_break_length = 11;
     hwp_debugUart->ctrl = ctrl.v;
+
+    gTraceEnabled = true;
 }
 
 int bootDebuguartWrite(const void *data, size_t size)

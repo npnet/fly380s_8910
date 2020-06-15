@@ -505,7 +505,7 @@ netconn_recv_data(struct netconn *conn, void **new_buf, u8_t apiflags)
   LWIP_ERROR("netconn_recv: invalid conn",    (conn != NULL),    return ERR_ARG;);
   
   err = netconn_err(conn);
-  LWIP_DEBUGF(API_LIB_DEBUG, ("netconn_recv_data: pending error=%d\n", err));
+  LWIP_DEBUGF(API_LIB_DEBUG, (0x100076d0, "netconn_recv_data: pending error=%d\n", err));
 #if 0 //dont check pending error,because the recived data may not been readed. 
   if (err != ERR_OK) {
     /* return pending error */
@@ -567,7 +567,7 @@ netconn_recv_data(struct netconn *conn, void **new_buf, u8_t apiflags)
   /* Register event with callback */
   API_EVENT(conn, NETCONN_EVT_RCVMINUS, len);
 
-  LWIP_DEBUGF(API_LIB_DEBUG, ("netconn_recv_data: received %p, len=%"U16_F"\n", buf, len));
+  LWIP_DEBUGF(API_LIB_DEBUG, (0x100076d1, "netconn_recv_data: received %p, len=%hu\n", buf, len));
 
   *new_buf = buf;
   /* don't set conn->last_err: it's only ERR_OK, anyway */
@@ -837,7 +837,7 @@ netconn_send(struct netconn *conn, struct netbuf *buf)
 
   LWIP_ERROR("netconn_send: invalid conn",  (conn != NULL), return ERR_ARG;);
 
-  LWIP_DEBUGF(API_LIB_DEBUG, ("netconn_send: sending %"U16_F" bytes\n", buf->p->tot_len));
+  LWIP_DEBUGF(API_LIB_DEBUG, (0x100076d2, "netconn_send: sending %hu bytes\n", buf->p->tot_len));
 
   API_MSG_VAR_ALLOC(msg);
   API_MSG_VAR_REF(msg).conn = conn;
@@ -1141,7 +1141,7 @@ netconn_gethostbyname_ext(const char *name, ip_addr_t *addr, u16_t simcid, u32_t
     netif = netif_default;
   
   if(netif != NULL) {
-    LWIP_DEBUGF(SOCKETS_DEBUG, (" netconn_gethostbyname_ext netif->pdnType %d,netif= %p  \n", netif->pdnType, netif));
+    LWIP_DEBUGF(SOCKETS_DEBUG, (0x100076d3, " netconn_gethostbyname_ext netif->pdnType %d,netif= %p  \n", netif->pdnType, netif));
     if((netif->pdnType == CFW_GPRS_PDP_TYPE_IPV6) || (netif->pdnType == CFW_GPRS_PDP_TYPE_IPV4V6)) {
       API_VAR_REF(msg).dns_addrtype = NETCONN_DNS_IPV6_IPV4;
     }

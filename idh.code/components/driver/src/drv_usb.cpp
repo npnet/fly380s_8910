@@ -101,16 +101,21 @@ static void _chargerOff(DrvUsb *d)
     udcStop(d->mUdc);
 }
 
+static inline void _vbusDebounceStart(DrvUsb *d)
+{
+    if (d->mDebounceTimeMs == 0)
+        osiWorkEnqueue(d->mWorkChargerOn, d->mWorkQueue);
+    else
+        osiTimerStart(d->mTimerDebounce, d->mDebounceTimeMs);
+}
+
 static void _usbVbusIsr(void *ctx, bool plugged)
 {
     DrvUsb *d = (DrvUsb *)ctx;
     if (plugged)
     {
         d->changeState(DrvUsbState::DEBOUNCE);
-        if (d->mDebounceTimeMs == 0)
-            osiWorkEnqueue(d->mWorkChargerOn, d->mWorkQueue);
-        else
-            osiTimerStart(d->mTimerDebounce, d->mDebounceTimeMs);
+        _vbusDebounceStart(d);
     }
     else
     {
@@ -275,7 +280,7 @@ static bool _setSingleSerial(DrvUsb *d, drvUsbWorkMode_t mode)
         pid = USB_PID_NPI_SERIAL;
     }
 
-    auto f = createSerialFunc(name);
+    auto f = createDebugSerialFunc(name);
     if (!f)
         return false;
 
@@ -296,10 +301,10 @@ static bool _setSerials(DrvUsb *d)
 {
     copsFunc_t *funcs[8] = {
         createSerialFunc(DRV_NAME_USRL_COM0),
-        createSerialFunc(DRV_NAME_USRL_COM1),
-        createSerialFunc(DRV_NAME_USRL_COM2),
-        createSerialFunc(DRV_NAME_USRL_COM3),
-        createSerialFunc(DRV_NAME_USRL_COM4),
+        createDebugSerialFunc(DRV_NAME_USRL_COM1), // diag
+        createDebugSerialFunc(DRV_NAME_USRL_COM2), // mos log
+        createDebugSerialFunc(DRV_NAME_USRL_COM3), // modem log
+        createDebugSerialFunc(DRV_NAME_USRL_COM4), // ap log
         createSerialFunc(DRV_NAME_USRL_COM5),
         createSerialFunc(DRV_NAME_USRL_COM6),
         createSerialFunc(DRV_NAME_USRL_COM7),
@@ -332,10 +337,10 @@ static bool _setUetherAndSerials(DrvUsb *d, drvUsbWorkMode_t mode)
     copsFunc_t *funcs[9] = {
         mode == DRV_USB_RNDIS_AND_SERIALS ? createRndisFunc() : createEcmFunc(),
         createSerialFunc(DRV_NAME_USRL_COM0),
-        createSerialFunc(DRV_NAME_USRL_COM1),
-        createSerialFunc(DRV_NAME_USRL_COM2),
-        createSerialFunc(DRV_NAME_USRL_COM3),
-        createSerialFunc(DRV_NAME_USRL_COM4),
+        createDebugSerialFunc(DRV_NAME_USRL_COM1), // diag
+        createDebugSerialFunc(DRV_NAME_USRL_COM2), // mos log
+        createDebugSerialFunc(DRV_NAME_USRL_COM3), // modem log
+        createDebugSerialFunc(DRV_NAME_USRL_COM4), // ap log
         createSerialFunc(DRV_NAME_USRL_COM5),
         createSerialFunc(DRV_NAME_USRL_COM6),
         createSerialFunc(DRV_NAME_USRL_COM7),
@@ -427,13 +432,14 @@ void drvUsbEnable(uint32_t debounce)
     d->lock();
     d->mDebounceTimeMs = debounce;
     d->mEnable = true;
-    if (d->mState == DrvUsbState::VBUS_STABLE && d->mDetMode != USB_DETMODE_AON)
+    if (d->mDetMode != USB_DETMODE_AON)
     {
-        int64_t elapsed = osiUpTime() - d->mStableTime;
-        if (elapsed < d->mDebounceTimeMs)
+        osiTimerStop(d->mTimerDebounce);
+        OSI_ASSERT(d->mState <= DrvUsbState::VBUS_STABLE, "invalid usb state when enable");
+        if (d->mState != DrvUsbState::IDLE)
         {
             d->changeState(DrvUsbState::DEBOUNCE);
-            osiTimerStart(d->mTimerDebounce, d->mDebounceTimeMs - elapsed + 50);
+            _vbusDebounceStart(d);
         }
     }
 

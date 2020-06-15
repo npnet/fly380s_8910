@@ -408,7 +408,7 @@ static void acl_ctrl_free_object(lwm2m_object_t * objectP)
 /*
  * Create an empty multiple instance LWM2M Object: Access Control
  */
-lwm2m_object_t * acc_ctrl_create_object(void)
+lwm2m_object_t * acc_ctrl_create_object(void* lwm2mH)
 {
     /*
      * The acc_ctrl_create_object() function creates an empty object

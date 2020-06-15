@@ -16,6 +16,9 @@
 #include "cfw.h"
 #include "cfw_event.h"
 #include "cfw_errorcode.h"
+#include "osi_log.h"
+#include <string.h>
+#include <stdlib.h>
 
 extern bool gSimDropInd[CONFIG_NUMBER_OF_SIM];
 
@@ -102,5 +105,303 @@ unsigned malSimGetState(int sim, malSimState_t *state, unsigned *remaintries)
         *state = ctx.state;
         *remaintries = ctx.remainRetries;
     }
+    MAL_TRANS_RETURN_ERR(trans, ctx.errcode);
+}
+
+#define SIM_CHANNEL_MAX_NUM 7
+#define CFW_SIM_NUMBER CONFIG_NUMBER_OF_SIM
+
+#define SIM_CHANNEL_ACCESS_DEFAULT_TIMEOUT 60
+#define SIM_CHANNEL_ACCESS_TIMEOUT_ERROR (-1)
+uint16_t ascii2hex(const char *pInput, uint16_t length, uint8_t *pOutput);
+
+typedef struct
+{
+    uint8_t df[20];
+    uint16_t length;
+    unsigned errcode;
+    uint8_t channel_id;
+} openChannel_t;
+static void openChannelRspCB(malTransaction_t *trans, const osiEvent_t *event)
+{
+    openChannel_t *ctx = (openChannel_t *)malTransContext(trans);
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    uint8_t sim = cfw_event->nFlag;
+    if (cfw_event->nEventId == EV_CFW_SIM_MANAGE_CHANNEL_RSP)
+    {
+        if ((cfw_event->nType == 0) && (cfw_event->nParam2 == 1))
+        {
+            if (ctx->channel_id == 0) //open channel
+            {
+                ctx->channel_id = cfw_event->nParam1;
+                OSI_LOGI(0, "ctx->length = %d, ctx->channel_id = %d", ctx->length, ctx->channel_id);
+                OSI_LOGXI(OSI_LOGPAR_S, 0, "dfname = %s", ctx->df);
+                for (uint8_t i = 0; i < ctx->length; i++)
+                    OSI_LOGI(0, "%X", ctx->df[i]);
+                malStartUtiTrans(trans, openChannelRspCB);
+                uint32_t result = CFW_SimSelectApplication(ctx->df, ctx->length, ctx->channel_id, malTransUti(trans), sim);
+                if (result != 0)
+                {
+                    malStartUtiTrans(trans, openChannelRspCB);
+                    uint32_t result = CFW_SimManageChannel(CLOSE_CHANNEL_CMD, ctx->channel_id, malTransUti(trans), sim);
+                    if (result != 0)
+                    {
+                        ctx->errcode = -1;
+                        malAbortTrans(trans);
+                    }
+                }
+            }
+            else //close channel
+            {
+                ctx->errcode = -1;
+                malAbortTrans(trans);
+            }
+        }
+        else
+        {
+            ctx->errcode = -1;
+            malAbortTrans(trans);
+        }
+        return;
+    }
+    else if (cfw_event->nEventId == EV_CFW_SIM_SELECT_APPLICATION_RSP)
+    {
+        OSI_LOGI(0, "cfw_event->nType = %d, cfw_event->nParam2 = %d", cfw_event->nType, cfw_event->nParam2);
+        if ((cfw_event->nType == 0) && (cfw_event->nParam2 == 1))
+        {
+            ctx->errcode = 0;
+            malTransFinished(trans);
+        }
+        else
+        {
+            malStartUtiTrans(trans, openChannelRspCB);
+            uint32_t result = CFW_SimManageChannel(CLOSE_CHANNEL_CMD, ctx->channel_id, malTransUti(trans), sim);
+            if (result != 0)
+            {
+                malAbortTrans(trans);
+                return;
+            }
+        }
+        return;
+    }
+    return;
+}
+
+int sim_channel_open(uint8_t *dfname, uint8_t *channel_id, uint16_t timeout, uint8_t sim_id)
+{
+    if (dfname == NULL)
+        return -1;
+    uint8_t length = strlen((const char *)dfname);
+    if ((length < 10) || (length > 32))
+        return -1;
+
+    if (channel_id == NULL)
+        return -1;
+
+    if (sim_id > CFW_SIM_NUMBER - 1)
+        return -1;
+
+    openChannel_t ctx = {};
+    malTransaction_t *trans = malCreateTrans();
+    if (trans == NULL)
+    {
+        OSI_LOGI(0, "malCreateTrans failed!");
+        return -1;
+    }
+    ctx.length = ascii2hex((const char *)dfname, strlen((const char *)dfname), ctx.df);
+    if (ctx.length == 0)
+    {
+        OSI_LOGI(0, "dfname is illegal!");
+        return -1;
+    }
+
+    malSetTransContext(trans, &ctx, NULL);
+    malStartUtiTrans(trans, openChannelRspCB);
+
+    uint32_t result = CFW_SimManageChannel(OPEN_CHANNEL_CMD, 0, malTransUti(trans), sim_id);
+    if (result != 0)
+    {
+        malAbortTrans(trans);
+        OSI_LOGI(0, "malCreateTrans failed!");
+        return -1;
+    }
+
+    if (!malTransWait(trans, timeout))
+    {
+        malAbortTrans(trans);
+        MAL_TRANS_RETURN_ERR(trans, SIM_CHANNEL_ACCESS_TIMEOUT_ERROR);
+    }
+    OSI_LOGI(0, "ctx.errcode == %d, ctx.channel_id = %d", ctx.errcode, ctx.channel_id);
+
+    if (ctx.errcode == 0)
+    {
+        *channel_id = ctx.channel_id;
+    }
+    MAL_TRANS_RETURN_ERR(trans, ctx.errcode);
+}
+
+typedef struct
+{
+    unsigned errcode;
+    unsigned channel_id;
+} clolseChannel_t;
+static void closeChannelRspCB(malTransaction_t *trans, const osiEvent_t *event)
+{
+    //EV_CFW_SIM_MANAGE_CHANNEL_RSP
+    clolseChannel_t *ctx = (clolseChannel_t *)malTransContext(trans);
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+
+    if ((cfw_event->nType == 0) && (cfw_event->nParam2 == 1))
+    {
+        ctx->channel_id = cfw_event->nParam1;
+        ctx->errcode = 0;
+    }
+    else
+        ctx->errcode = -1;
+    malTransFinished(trans);
+}
+
+int sim_channel_close(uint8_t channel_id, uint16_t timeout, uint8_t sim_id)
+{
+    if (channel_id > SIM_CHANNEL_MAX_NUM)
+        return -1;
+
+    if (sim_id > CFW_SIM_NUMBER - 1)
+        return -1;
+
+    clolseChannel_t ctx = {};
+    malTransaction_t *trans = malCreateTrans();
+    if (trans == NULL)
+        return -1;
+    ctx.channel_id = channel_id;
+    ctx.errcode = 0;
+
+    malSetTransContext(trans, &ctx, NULL);
+    malStartUtiTrans(trans, closeChannelRspCB);
+
+    uint32_t result = CFW_SimManageChannel(CLOSE_CHANNEL_CMD, channel_id, malTransUti(trans), sim_id);
+    if (result != 0)
+    {
+        malAbortTrans(trans);
+        OSI_LOGI(0, "CFW_SimManageChannel failed!");
+        return -1;
+    }
+
+    if (!malTransWait(trans, timeout))
+    {
+        malAbortTrans(trans);
+        MAL_TRANS_RETURN_ERR(trans, SIM_CHANNEL_ACCESS_TIMEOUT_ERROR);
+    }
+
+    MAL_TRANS_RETURN_ERR(trans, ctx.errcode);
+}
+
+typedef struct
+{
+    unsigned errcode;
+    uint8_t *resp;
+    uint16_t respLen;
+} transmitChannel_t;
+static void transmitChannelRspCB(malTransaction_t *trans, const osiEvent_t *event)
+{
+    //EV_CFW_SIM_TPDU_COMMAND_RSP
+    transmitChannel_t *ctx = (transmitChannel_t *)malTransContext(trans);
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+
+    OSI_LOGI(0, "cfw_event->nEventId = %d", cfw_event->nEventId);
+    OSI_LOGI(0, "cfw_event->nParam1 = %X", cfw_event->nParam1);
+    OSI_LOGI(0, "cfw_event->nParam2 = %x", cfw_event->nParam2);
+    OSI_LOGI(0, "cfw_event->nType = %d", cfw_event->nType);
+
+    if (cfw_event->nType == 0)
+    {
+        uint16_t sw = 0;
+        uint16_t length = cfw_event->nParam2 & 0xFFFF;
+        OSI_LOGI(0, "length = %d, ctx->respLen = %d", length, ctx->respLen);
+        if (ctx->respLen < length + 2) //plus two bytes sw
+        {
+            OSI_LOGI(0, "ctx->respLen = %d(%d)", ctx->respLen, length + 2);
+            ctx->errcode = -1;
+            malAbortTrans(trans);
+            return;
+        }
+        if (cfw_event->nParam2 == 0)
+        {
+            sw = cfw_event->nParam1;
+            OSI_LOGI(0, "sw = %X", sw);
+        }
+        else
+        {
+            sw = cfw_event->nParam2 >> 16;
+            OSI_LOGI(0, "sw = %X(%d)", sw, length);
+            OSI_LOGI(0, "ctx->resp = %X(%X)", ctx->resp, (uint8_t *)cfw_event->nParam1);
+            memcpy(ctx->resp, (uint8_t *)cfw_event->nParam1, length);
+            free((uint8_t *)cfw_event->nParam1);
+        }
+
+        ctx->respLen = length + 2;
+        ctx->resp[length] = sw >> 8;
+        ctx->resp[length + 1] = sw & 0xFF;
+        OSI_LOGI(0, "ctx->respLen = %d(sw = 0x%X,%X)", ctx->respLen, ctx->resp[length], ctx->resp[length + 1]);
+        ctx->errcode = 0;
+        malTransFinished(trans);
+        return;
+    }
+    else
+    {
+        ctx->errcode = -1;
+        malAbortTrans(trans);
+        return;
+    }
+}
+
+int sim_channel_transmit(uint8_t channel_id, uint8_t *apdu, uint16_t apduLen,
+                         uint8_t *resp, uint16_t *respLen, uint16_t timeout, uint8_t sim_id)
+{
+    if (channel_id > SIM_CHANNEL_MAX_NUM)
+        return -1;
+
+    if (sim_id > CFW_SIM_NUMBER - 1)
+        return -1;
+#if 0
+    uint16_t length = (apduLen + 1) >> 1;
+    OSI_LOGI(0, "apdu length = %d(%d)", length, apduLen);
+    
+    uint8_t* cmd = malloc(length);
+    if(cmd == NULL)
+        return -1;
+    length = ascii2hex(apdu, apduLen, cmd);
+    if(length == 0)
+        return -1;
+    OSI_LOGI(0, "apdu hex length = %d", length);
+#else
+    uint8_t *cmd = apdu;
+    uint16_t length = apduLen;
+#endif
+    transmitChannel_t ctx = {};
+    ctx.resp = resp;
+    ctx.respLen = *respLen;
+
+    malTransaction_t *trans = malCreateTrans();
+    if (trans == NULL)
+        return -1;
+
+    malSetTransContext(trans, &ctx, NULL);
+    malStartUtiTrans(trans, transmitChannelRspCB);
+
+    uint32_t result = CFW_SimTPDUCommand(cmd, length, channel_id, malTransUti(trans), sim_id);
+    if (result != 0)
+    {
+        malAbortTrans(trans);
+        OSI_LOGI(0, "CFW_SimManageChannel failed!");
+        return -1;
+    }
+
+    if (!malTransWait(trans, timeout))
+    {
+        malAbortTrans(trans);
+        MAL_TRANS_RETURN_ERR(trans, SIM_CHANNEL_ACCESS_TIMEOUT_ERROR);
+    }
+    *respLen = ctx.respLen;
     MAL_TRANS_RETURN_ERR(trans, ctx.errcode);
 }

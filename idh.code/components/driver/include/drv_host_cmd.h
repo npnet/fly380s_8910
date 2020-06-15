@@ -13,211 +13,25 @@
 #ifndef _DRV_HOST_CMD_H_
 #define _DRV_HOST_CMD_H_
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
+#include "osi_api.h"
+#include "drv_debug_port.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-enum
-{
-    HOST_FLOWID_SYSCMD = 0xfd,
-    HOST_FLOWID_READWRITE2 = 0xfe,
-    HOST_FLOWID_READWRITE = 0xff,
-};
-
-enum
-{
-    HOST_SYSCMD_PING = 0x01,
-    HOST_SYSCMD_PANIC = 0x02,
-    HOST_SYSCMD_SHUTDOWN = 0x03,
-    HOST_SYSCMD_READ_SYSNV = 0x04,
-    HOST_SYSCMD_WRITE_SYSNV = 0x05,
-    HOST_SYSCMD_SAVE_CURR_SYSNV = 0x06,
-    HOST_SYSCMD_CLEAR_SYSNV = 0x07,
-    HOST_SYSCMD_HEAPINFO = 0x08,
-    HOST_SYSCMD_TIMERINFO = 0x09,
-    HOST_SYSCMD_PMSOURCEINFO = 0x0a,
-    HOST_SYSCMD_CLOCKINFO = 0x0b,
-    HOST_SYSCMD_FILEINFO = 0x0c,
-    HOST_SYSCMD_READFILE = 0x0d,
-    HOST_SYSCMD_WRITEFILE = 0x0e,
-    HOST_SYSCMD_DELFILE = 0x0f,
-    HOST_SYSCMD_LISTDIR = 0x10,
-    HOST_SYSCMD_MKDIR = 0x11,
-    HOST_SYSCMD_RMDIR = 0x12,
-    HOST_SYSCMD_MKPATH = 0x13,
-    HOST_SYSCMD_RMPATH = 0x14,
-    HOST_SYSCMD_RENAME = 0x15,
-    HOST_SYSCMD_APPIMG_FLASH_GET = 0x16,
-    HOST_SYSCMD_APPIMG_FLASH_SET = 0x17,
-    HOST_SYSCMD_APPIMG_FILE_GET = 0x18,
-    HOST_SYSCMD_APPIMG_FILE_SET = 0x19,
-    HOST_SYSCMD_INVALID = 0xff,
-};
+OSI_EXTERN_C_BEGIN
 
 /**
- * \brief opaque data structure of host command engine
+ * \brief opaque data struct for host command engine
  */
 typedef struct drvHostCmdEngine drvHostCmdEngine_t;
 
 /**
- * \brief host command handler function type
+ * \brief create host command engine
  *
- * In command handling, the memory of \p packet can be reused. It will
- * simplify memory management of command handling, and in most cases,
- * there are no extra memory needed. It is useful, especially in panic
- * mode.
- *
- * The size of \p packet is \p CONFIG_HOST_CMD_ENGINE_MAX_PACKET_SIZE.
- *
- * The host packet CRC is already checked, and it is not needed to check
- * it in command handler.
- *
- * \param cmd       the host command engine
- * \param packet    host command packet
- * \param packet_len    host command packet length
+ * \param port debug port
+ * \return
+ *      - host command engine
+ *      - NULL on error, out of memory
  */
-typedef void (*drvHostCmdHandler_t)(drvHostCmdEngine_t *cmd, uint8_t *packet, unsigned packet_len);
+drvHostCmdEngine_t *drvHostCmdEngineCreate(drvDebugPort_t *port);
 
-/**
- * \brief host command response output function type
- *
- * It will be called to send out host command response packet.
- *
- * \param ctx       registered output callback context
- * \param packet    response packet
- * \param packet_len    response packet length
- */
-typedef void (*drvHostCmdSender_t)(void *ctx, uint8_t *packet, unsigned packet_len);
-
-/**
- * \brief initialize host command engine
- *
- * \param cmd       the host command engine
- */
-void drvHostCmdEngineInit(drvHostCmdEngine_t *cmd);
-
-/**
- * \brief set host command engine send callback
- *
- * When \p sender is NULL, host command engine output is disabled.
- *
- * \param cmd       the host command engine
- * \param sender    output callback, NULL to disable output
- * \param sender_ctx    output callback context
- */
-void drvHostCmdSetSender(drvHostCmdEngine_t *cmd, drvHostCmdSender_t sender, void *sender_ctx);
-
-/**
- * \brief set host command handler for specified flow id
- *
- * When \p handler is NULL, the specified flow id won't be handled.
- * And the unknown command response will be sent.
- *
- * \param cmd       the host command engine
- * \param flow_id   flow id
- * \param handler   host command handler for the specified flow id
- */
-void drvHostCmdRegisterHander(drvHostCmdEngine_t *cmd, uint8_t flow_id, drvHostCmdHandler_t handler);
-
-/**
- * \brief push data to host command engine
- *
- * It will consume all pushed data. When there is complete host packet,
- * the registered handler will be called inside. The partial data,
- * incomplete packet will ba stored inside host command engine.
- *
- * \param cmd       the host command engine
- * \param data      data to be pushed into host command engine
- * \param size      data size
- */
-void drvHostCmdPushData(drvHostCmdEngine_t *cmd, const void *data, unsigned size);
-
-/**
- * \brief send out response packet
- *
- * It will be called by host command handler to send out response packet.
- * Inside, the registered \p sender will be called.
- *
- * Inside, the host packet frame length and CRC will be calculated and filled.
- * Host command handler is not needed to fill packet CRC.
- *
- * \param cmd       the host command engine
- * \param packet    reponse packet
- * \param packet_len    reponse packet length
- */
-void drvHostCmdSendResponse(drvHostCmdEngine_t *cmd, uint8_t *packet, unsigned packet_len);
-
-/**
- * \brief send out response packet with error code
- *
- * The first 5 bytes will be kept, and put 2 bytes error code.
- *
- * \param cmd       the host command engine
- * \param packet    reponse packet
- */
-void drvHostCmdSendResultCode(drvHostCmdEngine_t *cmd, uint8_t *packet, uint16_t code);
-
-/**
- * \brief host command handler for invalid command packet
- *
- * This is the default command handler for unknown or invalid command
- * packet.
- *
- * \param cmd       the host command engine
- * \param packet    host command packet
- * \param packet_len    host command packet length
- */
-void drvHostInvalidCmd(drvHostCmdEngine_t *cmd, uint8_t *packet, unsigned packet_len);
-
-/**
- * \brief read/write host command handler
- *
- * The command is compatible with debughost hardware read/write command,
- * with extensions:
- * - block read
- * - special address read/write, such ADI registers
- *
- * \param cmd       the host command engine
- * \param packet    host command packet
- * \param packet_len    host command packet length
- */
-void drvHostReadWriteHandler(drvHostCmdEngine_t *cmd, uint8_t *packet, unsigned packet_len);
-
-/**
- * \brief system command handler
- *
- * \param cmd       the host command engine
- * \param packet    host command packet
- * \param packet_len    host command packet length
- */
-void drvHostSyscmdHandler(drvHostCmdEngine_t *cmd, uint8_t *packet, unsigned packet_len);
-
-/**
- * \brief pre-defined host command engine for UART blue screen
- *
- * \return  the host command engine
- */
-drvHostCmdEngine_t *drvHostCmdUartBlueScreenEngine(void);
-
-/**
- * \brief pre-defined host command engine for debughost
- *
- * \return  the host command engine
- */
-drvHostCmdEngine_t *drvHostCmdDebughostEngine(void);
-
-/**
- * \brief pre-defined host command engine for usb
- *
- * \return  the host command engine
- */
-drvHostCmdEngine_t *drvHostCmdUsbEngine(void);
-
-#ifdef __cplusplus
-}
-#endif
+OSI_EXTERN_C_END
 #endif

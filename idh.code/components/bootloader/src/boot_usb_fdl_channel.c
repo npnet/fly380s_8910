@@ -65,13 +65,13 @@ static void _rxComp(bootUsbEp_t *ep, bootUsbXfer_t *xfer)
         if (len != xfer->actual)
         {
             OSI_LOGE(0, "usb fdl rx overflow, actual %u, saved %d", xfer->actual, len);
-            bootPanic();
+            osiPanic();
         }
     }
     else
     {
         OSI_LOGE(0, "usb fdl rx done not ok %d", xfer->status);
-        bootPanic();
+        osiPanic();
     }
     ch->rx_running = false;
 }
@@ -91,7 +91,7 @@ static bool _startRx(fdlUsbChannel_t *ch)
     {
         ch->rx_running = false;
         OSI_LOGE(0, "usb fdl start rx fail");
-        bootPanic();
+        osiPanic();
     }
     return r;
 }
@@ -108,7 +108,7 @@ static void _poll(fdlUsbChannel_t *ch)
     if (!r)
     {
         OSI_LOGE(0, "usb fdl rx poll fail");
-        bootPanic();
+        osiPanic();
     }
 }
 
@@ -132,7 +132,7 @@ static void _txComp(bootUsbEp_t *ep, bootUsbXfer_t *xfer)
     if (xfer->status != 0)
     {
         OSI_LOGE(0, "usb fdl tx done fail, %d", xfer->status);
-        bootPanic();
+        osiPanic();
     }
     ch->tx_running = false;
 }
@@ -165,7 +165,7 @@ static int _write(fdlChannel_t *ch_, const void *data, size_t size)
     if (ch->tx_running)
     {
         OSI_LOGE(0, "usb fdl write but tx busy");
-        bootPanic();
+        osiPanic();
         return -1;
     }
 
@@ -176,7 +176,7 @@ static int _write(fdlChannel_t *ch_, const void *data, size_t size)
         if (len < 0)
         {
             OSI_LOGE(0, "usb fdl tx start fail, sent %u", sent);
-            bootPanic();
+            osiPanic();
         }
         sent += len;
     }
@@ -209,7 +209,7 @@ static bool _initUsbInfo(fdlUsbChannel_t *ch)
     bootUsbEp_t *in_ep = bootUdcRomSerialInEp(udc);
     bootUsbEp_t *out_ep = bootUdcRomSerialOutEp(udc);
     if (!in_ep || !out_ep)
-        bootPanic();
+        osiPanic();
 
     bootUsbXfer_t *in_xfer = bootUdcXferAlloc(udc, in_ep);
     bootUsbXfer_t *out_xfer = bootUdcXferAlloc(udc, out_ep);

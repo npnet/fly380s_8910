@@ -44,7 +44,6 @@ typedef enum
     AUD_SPK_VOL_14,
     AUD_SPK_VOL_15,
 
-
     AUD_SPK_VOL_QTY = 0xFF000000
 } AUD_SPK_LEVEL_T;
 #endif
@@ -64,9 +63,6 @@ typedef enum
 
     AUD_MIC_VOL_QTY = 0xFF000000
 } AUD_MIC_LEVEL_T;
-
-
-
 
 // =============================================================================
 // AUD_SIDE_LEVEL_T
@@ -136,8 +132,6 @@ typedef enum
     AUD_TONE_VOL_QTY = 0xFF000000
 } AUD_TONE_ATTENUATION_T;
 
-
-
 // =============================================================================
 // AUD_TONE_TYPE_T
 // -----------------------------------------------------------------------------
@@ -191,7 +185,6 @@ typedef enum
     /// No tone is emitted
     AUD_NO_TONE
 } AUD_TONE_TYPE_T;
-
 
 // =============================================================================
 // AUD_ITF_T

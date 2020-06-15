@@ -63,7 +63,7 @@ static void _usbEnable_8910(udc_t *udc)
     ana_usb_reg1.b.usb_vref_vbit = 4;
     ana_usb_reg1.b.usb_v575m_sel_bit = 4;
     ana_usb_reg1.b.usb_v125m_sel_bit = 4;
-    ana_usb_reg1.b.usb_hs_lvlout_bit = 8;
+    ana_usb_reg1.b.usb_hs_lvlout_bit = 12;
     hwp_analogReg->usb_reg1 = ana_usb_reg1.v;
 
     hwp_analogReg->usb_digphy_ana1 = 0x3f800;
@@ -102,6 +102,11 @@ static void _usbEnable_8910(udc_t *udc)
     analog_usb_pll2.b.usb_pll_clk_960m_en = 1;
     hwp_analogReg->usb_pll2 = analog_usb_pll2.v;
 
+    // USB UTMI+ Dig regs
+    hwp_analogReg->usb_digphy_ana1 = 0x0;
+    hwp_analogReg->usb_digphy_ana2 = 0x0;
+    hwp_analogReg->usb_digphy_ana3 = (1 << 5) | (1 << 6);
+
     // USB PLL SDM Regs
     REG_ANALOG_REG_SDM_USBPLL_REG0_T sdm_usbpll_reg0 = {};
     sdm_usbpll_reg0.b.sdm_usbpll_pu = 1;
@@ -122,17 +127,28 @@ static void _usbEnable_8910(udc_t *udc)
     while (!REG_FIELD_GET(hwp_analogReg->usb_mon, usb_mon, usb_pll_lock))
     {
     }
-
-    // USB UTMI+ Dig regs
-    hwp_analogReg->usb_digphy_ana1 = 0x0;
-    hwp_analogReg->usb_digphy_ana2 = 0x0;
-    hwp_analogReg->usb_digphy_ana3 = (1 << 5) | (1 << 6);
 }
 
 static void _usbDisable_8910(udc_t *udc)
 {
-    hwp_analogReg->usb_reg2 = 0;
+    hwp_analogReg->usb_suspend = 0;
+
     hwp_analogReg->usb_digphy_ana1 = 0;
+    hwp_analogReg->usb_digphy_ana2 = 0;
+    hwp_analogReg->usb_digphy_ana3 = 0;
+    hwp_analogReg->usb_digphy_ana4 = 0;
+
+    REG_ANALOG_REG_SDM_USBPLL_REG0_T sdm_usbpll_reg0 = {.b.sdm_usbpll_sdm_clk_sel_rst = 1};
+    hwp_analogReg->sdm_usbpll_reg0 = sdm_usbpll_reg0.v;
+    hwp_analogReg->sdm_usbpll_reg2 = 0;
+
+    hwp_analogReg->usb_pll1 = 0;
+    hwp_analogReg->usb_pll2 = 0;
+
+    hwp_analogReg->usb_reg1 = 0;
+    hwp_analogReg->usb_reg2 = 0;
+    hwp_analogReg->usb_reg3 = 0;
+    hwp_analogReg->usb_reg4 = 0;
 }
 
 static void _setpower_8910(udc_t *udc, bool on)
@@ -149,6 +165,8 @@ static void _setpower_8910(udc_t *udc, bool on)
     }
     else
     {
+        osiDelayUS(300); // wait for power on
+
         osiSet32KSleepFlag(HAL_RESUME_SRC_USB_MON);
         osiPmWakeLock(p->pm_lock);
         _usbClkLock(p);
@@ -171,6 +189,7 @@ static void _resume_8910(udc_t *udc)
 
 static void _setclock_8910(udc_t *udc, bool on)
 {
+    uint32_t critical = osiEnterCritical();
     if (on)
     {
         REG_SYS_CTRL_SYS_AHB_RST_SET_T ahb_rst_set = {};
@@ -219,6 +238,7 @@ static void _setclock_8910(udc_t *udc, bool on)
         hwp_idle->pd_pll_sw_set = 0x10;
         hwp_idle->pd_pll_sel_set = 0x10;
     }
+    osiExitCritical(critical);
 }
 
 bool udcPlatInit_rda(udc_t *udc)

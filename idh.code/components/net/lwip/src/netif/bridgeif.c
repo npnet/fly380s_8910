@@ -178,7 +178,7 @@ bridgeif_fdb_update_src(void *fdb_ptr, struct eth_addr *src_addr, u8_t port_idx)
     bridgeif_dfdb_entry_t *e = &fdb->fdb[i];
     if (e->used && e->ts) {
       if (!memcmp(&e->addr, src_addr, sizeof(struct eth_addr))) {
-        LWIP_DEBUGF(BRIDGEIF_FDB_DEBUG, ("br: update src %02x:%02x:%02x:%02x:%02x:%02x (from %d) @ idx %d\n",
+        LWIP_DEBUGF(BRIDGEIF_FDB_DEBUG, (0x100077af, "br: update src %02x:%02x:%02x:%02x:%02x:%02x (from %d) @ idx %d\n",
           src_addr->addr[0], src_addr->addr[1], src_addr->addr[2], src_addr->addr[3], src_addr->addr[4], src_addr->addr[5],
           port_idx, i));
         BRIDGEIF_WRITE_PROTECT(lev);
@@ -197,7 +197,7 @@ bridgeif_fdb_update_src(void *fdb_ptr, struct eth_addr *src_addr, u8_t port_idx)
       BRIDGEIF_WRITE_PROTECT(lev);
       /* check again when protected */
       if (!e->used || !e->ts) {
-        LWIP_DEBUGF(BRIDGEIF_FDB_DEBUG, ("br: create src %02x:%02x:%02x:%02x:%02x:%02x (from %d) @ idx %d\n",
+        LWIP_DEBUGF(BRIDGEIF_FDB_DEBUG, (0x100077b0, "br: create src %02x:%02x:%02x:%02x:%02x:%02x (from %d) @ idx %d\n",
           src_addr->addr[0], src_addr->addr[1], src_addr->addr[2], src_addr->addr[3], src_addr->addr[4], src_addr->addr[5],
           port_idx, i));
         memcpy(&e->addr, src_addr, sizeof(struct eth_addr));
@@ -243,7 +243,7 @@ bridgeif_fdb_init(u16_t max_fdb_entries)
 {
   bridgeif_dfdb_t *fdb;
   mem_size_t alloc_len = sizeof(bridgeif_dfdb_t) + (max_fdb_entries*sizeof(bridgeif_dfdb_entry_t));
-  LWIP_DEBUGF(BRIDGEIF_DEBUG, ("bridgeif_fdb_init: allocating %d bytes for private FDB data\n", (int)alloc_len));
+  LWIP_DEBUGF(BRIDGEIF_DEBUG, (0x100077b1, "bridgeif_fdb_init: allocating %d bytes for private FDB data\n", (int)alloc_len));
   fdb = (bridgeif_dfdb_t*)mem_calloc(1, alloc_len);
   if (fdb == NULL) {
     return NULL;
@@ -432,7 +432,7 @@ bridgeif_send_to_port(bridgeif_private_t *br, struct pbuf *p, u8_t dstport_idx)
           /* prevent sending out to rx port */
           if (netif_get_index(portif) != p->if_idx) {
             if (netif_is_link_up(portif)) {
-              LWIP_DEBUGF(BRIDGEIF_FW_DEBUG, ("br -> flood(%p:%d) -> %d\n", (void*)p, p->if_idx, netif_get_index(portif)));
+              LWIP_DEBUGF(BRIDGEIF_FW_DEBUG, (0x100077b2, "br -> flood(%p:%d) -> %d\n", (void*)p, p->if_idx, netif_get_index(portif)));
               return portif->linkoutput(portif, p);
             }
           }
@@ -534,7 +534,7 @@ bridgeif_input(struct pbuf *p, struct netif *netif)
     bridgeif_send_to_ports(br, p, dstports);
     if (dstports & (1 << BRIDGEIF_MAX_PORTS)) {
       /* we pass the reference to ->input or have to free it */
-      LWIP_DEBUGF(BRIDGEIF_FW_DEBUG, ("br -> input(%p)\n", (void*)p));
+      LWIP_DEBUGF(BRIDGEIF_FW_DEBUG, (0x100077b3, "br -> input(%p)\n", (void*)p));
       if (br->netif->input(p, br->netif) != ERR_OK) {
         pbuf_free(p);
       }
@@ -548,7 +548,7 @@ bridgeif_input(struct pbuf *p, struct netif *netif)
     /* is this for one of the local ports? */
     if (bridgeif_is_local_mac(br, dst)) {
       /* yes, send to cpu port only */
-      LWIP_DEBUGF(BRIDGEIF_FW_DEBUG, ("br -> input(%p)\n", (void*)p));
+      LWIP_DEBUGF(BRIDGEIF_FW_DEBUG, (0x100077b3, "br -> input(%p)\n", (void*)p));
       return br->netif->input(p, br->netif);
     }
 
@@ -596,7 +596,7 @@ bridgeif_init(struct netif *netif)
   LWIP_ASSERT("netif != NULL", (netif != NULL));
 #if !BRIDGEIF_PORT_NETIFS_OUTPUT_DIRECT
   if (netif->input == tcpip_input) {
-    LWIP_DEBUGF(BRIDGEIF_DEBUG|LWIP_DBG_ON, ("bridgeif does not need tcpip_input, use netif_input/ethernet_input instead"));
+    LWIP_DEBUGF(BRIDGEIF_DEBUG|LWIP_DBG_ON, (0x100077b4, "bridgeif does not need tcpip_input, use netif_input/ethernet_input instead"));
   }
 #endif
 
@@ -610,10 +610,10 @@ bridgeif_init(struct netif *netif)
     init_data->max_ports <= BRIDGEIF_MAX_PORTS);
 
   alloc_len = sizeof(bridgeif_private_t) + (init_data->max_ports*sizeof(bridgeif_port_t) + (init_data->max_fdb_static_entries*sizeof(bridgeif_fdb_static_entry_t)));
-  LWIP_DEBUGF(BRIDGEIF_DEBUG, ("bridgeif_init: allocating %d bytes for private data\n", (int)alloc_len));
+  LWIP_DEBUGF(BRIDGEIF_DEBUG, (0x100077b5, "bridgeif_init: allocating %d bytes for private data\n", (int)alloc_len));
   br = (bridgeif_private_t*)mem_calloc(1, alloc_len);
   if (br == NULL) {
-    LWIP_DEBUGF(NETIF_DEBUG, ("bridgeif_init: out of memory\n"));
+    LWIP_DEBUGF(NETIF_DEBUG, (0x100077b6, "bridgeif_init: out of memory\n"));
     return ERR_MEM;
   }
   memcpy(&br->ethaddr, &init_data->ethaddr, sizeof(br->ethaddr));
@@ -628,7 +628,7 @@ bridgeif_init(struct netif *netif)
   br->max_fdbd_entries = init_data->max_fdb_dynamic_entries;
   br->fdbd = bridgeif_fdb_init(init_data->max_fdb_dynamic_entries);
   if (br->fdbd == NULL) {
-    LWIP_DEBUGF(NETIF_DEBUG, ("bridgeif_init: out of memory in fdb_init\n"));
+    LWIP_DEBUGF(NETIF_DEBUG, (0x100077b7, "bridgeif_init: out of memory in fdb_init\n"));
     mem_free(br);
     return ERR_MEM;
   }

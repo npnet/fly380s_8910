@@ -14,74 +14,125 @@ menu "bootloader"
 if SOC_8910
     config FDL1_IMAGE_START
         hex "FDL1 uimage SRAM start"
-        default 0x810000 if SOC_8910
+        default 0x838000
         help
             FDL1 uimage SRAM start (not the code start address).
 
     config FDL1_IMAGE_SIZE
         hex "FDL1 uimage SRAM size"
-        default 0x8000 if SOC_8910
+        default 0x8000
         help
             FDL1 uimage size (including uimage header).
 
     config FDL2_IMAGE_START
         hex "FDL2 uimage SRAM start"
-        default 0x818000 if SOC_8910
+        default 0x810000
         help
             FDL2 uimage SRAM start (not the code start address).
 
     config FDL2_IMAGE_SIZE
         hex "FDL2 uimage SRAM size"
-        default 0x10000 if SOC_8910
+        default 0x28000
         help
             FDL2 uimage size (including uimage header).
 
-    config BOOT_TTB_START
-        hex "boot TTB start"
-        default 0x828000
+    config BOOT2_IMAGE_START
+        hex "Bootloader stage2 SRAM start"
+        default 0x810000
         help
-            Location of TTB memory. It will be used when MMU is enabled.
-            To make life easier, it is reserved even MMU is not enabled.
+            Bootloader stage2 SRAM start (not the code start address).
+            Usually, it is the same as FDL2 to reuse SRAM.
 
-            Don't change it unless you know what you are doing.
-
-    config BOOT_TTB_SIZE
-        hex "boot TTB size"
-        default 0x4400
+    config BOOT2_IMAGE_SIZE
+        hex "Bootloader stage2 SRAM size"
+        default 0x28000
         help
-            Don't change it unless you know what you are doing.
+            Bootloader stage2 uimage size (including uimage header).
+            Usually, it is the same as FDL2 to reuse SRAM.
 
-    config BOOT_EXCEPTION_STACK_START
-        hex "boot exception stack start"
-        default 0x82c400
+    config BOOT_SYS_STACK_TOP
+        hex "Boot/boot2/FDL1/FDL2 SYS stack top"
+        default 0x810000
         help
-            Location of stack for all exception modes.
+            Boot/boot2/FDL1/FDL2 are running in SYS mode. This is the
+            stack top. All modes share the same stack.
 
-            Don't change it unless you know what you are doing.
-
-    config BOOT_SVC_STACK_SIZE
-        hex "boot SVC stack size"
-        default 0xa00
+    config BOOT_SYS_STACK_SIZE
+        hex "Boot/boot2/FDL1/FDL2 SYS stack size"
+        default 0x1000
         help
-            Stack size of supervisor mode.
+            Boot/boot2/FDL1/FDL2 are running in SYS mode. This is the
+            stack size. All modes share the same stack.
 
-            Don't change it unless you know what you are doing.
+    config BOOT_IRQ_STACK_TOP
+        hex "Boot/boot2/FDL1/FDL2 IRQ stack top"
+        default 0x80f000
+        help
+            Boot/boot2/FDL1/FDL2 IRQ stack top. All modes share the same
+            IRQ stack.
 
     config BOOT_IRQ_STACK_SIZE
-        hex "boot IRQ stack size"
-        default 0x200
+        hex "Boot/boot2/FDL1/FDL2 SVC stack size"
+        default 0x800
         help
-            Stack size of IRQ mode.
+            Boot/boot2/FDL1/FDL2 IRQ stack size. All modes share the same
+            IRQ stack.
 
-            Don't change it unless you know what you are doing.
+    config BOOT_BLUE_SCREEN_STACK_TOP
+        hex "Boot/boot2/FDL1/FDL2 blue screen stack size"
+        default 0x80e800
 
-    config BOOT_SRAM_HEAP_START
-        hex "boot SRAM heap start"
-        default 0x82d000
+    config BOOT_BLUE_SCREEN_STACK_SIZE
+        hex "Boot/boot2/FDL1/FDL2 blue screen stack size"
+        default 0x800
 
-    config BOOT_SRAM_HEAP_SIZE
-        hex "boot SRAM_heap size"
-        default 0x13000
+    config BOOT_SMPL_ENABLE
+        bool "enblae SMPL(Sudden Momentary Power Loss)"
+        default n
+        help
+            Enable SMPL. If it occurs that battery is dropped below UVLO
+            threshold, all supplies will be shutdown simultaneously.
+
+    config BOOT_SMPL_THRESHOLD
+        int "SMPL(Sudden Momentary Power Loss)"
+        default 7
+        help
+            The SMPL programmable timer.If the timer has expired by the
+            time system supply recovers the PMIC does not auto boot and
+            remains in power down state. When the system supply recovers
+            before the timer expired the PMIC will boot up automatically.
+            SMPL timer threshold value is three bits: 0: 0.25s; 1: 0.5s;
+            2: 0.75s; ... 7: 2s
+
+    config BOOT_PB_7S_RESET_ENABLE
+        bool "support pb 7s reset"
+        default n
+
+    config BOOT_UART1_PDL_ENABLE
+        bool "enable uart1 download"
+        default n
+        help
+            When enabled, bootloader will use PDL protocol to support
+            download. The baud rate is fixed to 921600, and only Limited
+            PDL commands are supported.
+
+endif
+
+if SOC_8811
+    config DUAL_BOOTLOADER_ENABLE
+        bool "enable dual bootloader"
+        default y
+        help
+            When enabled, there will exist two copies of bootloader at the
+            beginning of FLASH.
+
+            8811 should always enable dual bootloader.
+
+    config NORFDL_STACK_SIZE
+        hex "norfdl stack size"
+        default 0x800
+        help
+            Stack size of norfdl.
 endif
 
 config BOOT_TIMER_IRQ_ENABLE
@@ -99,17 +150,32 @@ if BOOT_TIMER_IRQ_ENABLE
         Bootloader timer period, in milliseconds.
 endif
 
+config FDL1_PACKET_MAX_LEN
+    hex "Maximum FDL1 packet length"
+    default 0x840
+    help
+        Maximum FDL1 packet length. It should match configuration in
+        ResearchDownload.
+
+config FDL_PACKET_MAX_LEN
+    hex "Maximum FDL packet length"
+    default 0x3000
+    help
+        Maximum FDL packet length. It should match configuration in
+        ResearchDownload.
+
 config NVBIN_FIXED_SIZE
     hex "NV bin fixed size"
     default 0x20000 if SOC_8910
+    default 0x14000 if SOC_8811
     help
         At nv backup, fixed size is needed for nv bin read and write.
         This size should be large enough to hold all fixed nv bin.
 
+if SOC_8910 || SOC_6760
 config FDL_UART_BAUD
     int "Baud rate of default FDL UART"
     default 921600 if SOC_8910
-    default 921600 if SOC_8811
     default 115200 if SOC_6760
 
 choice
@@ -133,4 +199,5 @@ config FDL_DEFAULT_UART
     default "DRV_NAME_UART3" if FDL_DEFAULT_UART3
     default ""
 
+endif
 endmenu

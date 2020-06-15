@@ -9,9 +9,11 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/net_config.h.in ${BINARY_TOP_DIR}/include/net_config.h)
+configure_file(include/net_config.h.in ${out_inc_dir}/net_config.h)
 
 set(target net)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_NET)
@@ -31,7 +33,8 @@ target_include_directories(${target} PRIVATE ../json/cJSON)
 target_include_directories(${target} PRIVATE libcoap/include)
 target_include_directories(${target} PRIVATE ../fs/include)
 
-target_link_libraries(${target} PRIVATE kernel driver calclib lwip atr cfw aworker json fs)
+target_include_targets(${target} PRIVATE kernel driver calclib lwip atr cfw json mbedtls)
+target_include_targets_if(CONFIG_NET_ALI_SDK_SUPPORT THEN ${target} PRIVATE ali_c_sdk)
 
 target_sources(${target} PRIVATE
 
@@ -43,6 +46,10 @@ target_sources(${target} PRIVATE
 	src/ppp_interface.c
 	src/lwip_mqtt_api.c
 	src/unicomIot.c
+	src/netif_nat_wan.c
+	src/netif_nat_lan_lwip.c
+	src/netdev_interface_nat_lan.c
+	src/mbedtls_sockets.c
 	)
 
 if(CONFIG_SOC_8910)
@@ -64,6 +71,9 @@ target_sources(${target} PRIVATE
 	src/cfw_sockets_api.c
 	src/ppp_interface.c
 	src/lwip_mqtt_api.c
+	src/netif_nat_wan.c
+	src/netif_nat_lan_lwip.c
+	src/ppp_interface_nat_lan.c
 	)
 endif()
 relative_glob(srcs include/*.h src/*.c src/*.h)
@@ -76,11 +86,11 @@ add_subdirectory_if_exist(json)
 add_subdirectory_if_exist(mbedtls)
 add_subdirectory_if_exist(libexpat)
 add_subdirectory_if_exist(edp)
-add_subdirectory_if_exist(mupnp)
-add_subdirectory_if_exist(liblwm2m)
 add_subdirectory_if_exist(http)
+add_subdirectory_if_exist(mupnp)
+add_subdirectory_if(CONFIG_NET_LWM2M_SUPPORT THEN liblwm2m)
+add_subdirectory_if(CONFIG_FTP_MODULE_SUPPORT THEN ftp)
 add_subdirectory_if_exist(aliotx)
-add_subdirectory_if_exist(cis_sdk)
-if(CONFIG_NET_ALI_SDK_SUPPORT)
-add_subdirectory_if_exist(ali_c_sdk)
-endif()
+add_subdirectory_if(CONFIG_NET_CIS_SDK_SUPPORT THEN cis_sdk)
+add_subdirectory_if(CONFIG_NET_PAHO_MQTT_SUPPORT THEN pahomqtt)
+add_subdirectory_if(CONFIG_NET_ALI_SDK_SUPPORT THEN ali_c_sdk)

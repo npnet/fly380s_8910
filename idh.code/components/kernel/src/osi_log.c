@@ -17,251 +17,322 @@
 #include "osi_internal.h"
 #include "osi_chip.h"
 #include "osi_trace.h"
+#include "osi_fifo.h"
 #include "hwregs.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
 #include <alloca.h>
 
-#define TRACE_PARCOUNT_MAX (16) // should larger than 8
-#define TRACE_STRLEN_MAX (256)
+#define LOG_RAMCODE OSI_SECTION_LINE(.ramtext.osi_log)
+
 #define TRACE_TDB_FLAG (1 << 31)
+#define FMT_INT_MAY_LL(cc) (cc == 'd' || cc == 'i' || cc == 'o' || cc == 'u' || cc == 'x' || cc == 'X')
+#define FMT_INT_NOT_LL(cc) (cc == 'c' || cc == 'p')
+#define FMT_DOUBLE(cc) (cc == 'e' || cc == 'E' || cc == 'f' || cc == 'F' || cc == 'g' || cc == 'G' || cc == 'a' || cc == 'A')
 
-#ifdef CONFIG_KERNEL_LOG_IN_CRITICAL
-#define LOG_PROTECT_ENTER uint32_t critical = osiEnterCritical()
-#define LOG_PROTECT_EXIT osiExitCritical(critical)
-#else
-#define LOG_PROTECT_ENTER
-#define LOG_PROTECT_EXIT
+/**
+ * buffer description for 32bits parameter
+ */
+#define PUT_PARAM32                          \
+    do                                       \
+    {                                        \
+        uint32_t val = va_arg(ap, uint32_t); \
+        bufs->ptr = (uintptr_t)bufdata;      \
+        bufs->size = 4;                      \
+        dlen += bufs->size;                  \
+        bufs++;                              \
+        *bufdata++ = val;                    \
+    } while (0)
+
+/**
+ * buffer description for 64bits parameter
+ */
+#define PUT_PARAM64                          \
+    do                                       \
+    {                                        \
+        uint64_t val = va_arg(ap, uint64_t); \
+        bufs->ptr = (uintptr_t)bufdata;      \
+        bufs->size = 8;                      \
+        dlen += bufs->size;                  \
+        bufs++;                              \
+        *bufdata++ = val & 0xffffffff;       \
+        *bufdata++ = val >> 32;              \
+    } while (0)
+
+/**
+ * buffer description for string parameter
+ */
+#define PUT_PARAMS                                  \
+    do                                              \
+    {                                               \
+        const char *str = va_arg(ap, const char *); \
+        if (str == NULL)                            \
+            str = gLogNullString;                   \
+        unsigned slen = strlen(str);                \
+        bufs->ptr = (uintptr_t)str;                 \
+        bufs->size = OSI_ALIGN_UP(slen + 1, 4);     \
+        dlen += bufs->size;                         \
+        bufs++;                                     \
+    } while (0)
+
+/**
+ * buffer description for dump parameter
+ */
+#define PUT_PARAMM                                        \
+    do                                                    \
+    {                                                     \
+        unsigned size = va_arg(ap, uint32_t);             \
+        const uint8_t *mem = va_arg(ap, const uint8_t *); \
+        bufs->ptr = (uintptr_t)bufdata;                   \
+        bufs->size = 6;                                   \
+        dlen += bufs->size;                               \
+        bufs++;                                           \
+        *bufdata++ = (unsigned)mem;                       \
+        *bufdata++ = size;                                \
+        bufs->ptr = (uintptr_t)mem;                       \
+        bufs->size = OSI_ALIGN_UP(size + 6, 4) - 6;       \
+        dlen += bufs->size;                               \
+        bufs++;                                           \
+    } while (0)
+
+/**
+ * Legacy SX trace control. It is defined in sx_api.h, and put the
+ * definition here to simplify module dependency.
+ */
+typedef struct
+{
+    uint32_t *fn_stamp;
+    uint16_t TraceBitMap[32];
+} sxs_IoCtx_t;
+
+/**
+ * Application trace (big) header
+ */
+typedef struct
+{
+#ifdef CONFIG_KERNEL_HOST_TRACE
+    osiHostPacketHeader_t host;
+    uint16_t sn;   ///< trace sequence
+    uint16_t tick; ///< tick of trace
+    uint32_t tag;  ///< application tag
 #endif
-
-static const char *gLogNullString = "(null)";
-bool gTraceEnabled = true;
-
-typedef struct osiTraceSxCtrl
-{
-    uint32_t spy_bitmap;
-    uint16_t id_bitmap[32];
-} osiTraceSxCtrl_t;
-
-uint32_t gTraceSequence = 0;
-osiTraceSxCtrl_t sxs_IoCtx;
-uint32_t v_tra_pubModuleControl;
-uint32_t v_tra_lteModuleControl;
-uint32_t v_tra_categoryControl;
-
-typedef struct
-{
-    osiHostPacketHeader_t host;
-#ifdef CONFIG_KERNEL_TRACE_BBC8
-    osiTraPacketHeader_t tra;
-#elif defined(CONFIG_KERNEL_TRACE_HOST98)
-    uint16_t sn;
-    uint16_t tick;
-    uint32_t tag;
-#elif defined(CONFIG_KERNEL_TRACE_HOST97)
-    uint32_t tag;
-    uint32_t tick;
+#ifdef CONFIG_KERNEL_DIAG_TRACE
+    osiDiagPacketHeader_t diag;
+    osiDiagLogHeader_t log;
+    uint32_t tag;  ///< application tag
+    uint32_t tick; ///< tick of trace
 #endif
-} osiTagPacketHeader_t;
+} osiTraceHeader_t;
 
+/**
+ * tra trace (big) header
+ */
 typedef struct
 {
+#ifdef CONFIG_KERNEL_HOST_TRACE
     osiHostPacketHeader_t host;
     osiTraPacketHeader_t tra;
-} osiHostTraPacketHeader_t;
+#endif
+#ifdef CONFIG_KERNEL_DIAG_TRACE
+    osiDiagPacketHeader_t diag;
+    osiDiagLogHeader_t log;
+    osiTraPacketHeader_t tra;
+#endif
+} osiTraHeader_t;
 
+/**
+ * SX trace (big) header
+ */
 typedef struct
 {
+#ifdef CONFIG_KERNEL_HOST_TRACE
     osiHostPacketHeader_t host;
-#ifdef CONFIG_KERNEL_TRACE_BBC8
-    osiTraPacketHeader_t tra;
-#else
     uint16_t sn;
     uint16_t tick;
     uint16_t id;
     uint16_t fn;
 #endif
-} osiSxPacketHeader_t;
+#ifdef CONFIG_KERNEL_DIAG_TRACE
+    osiDiagPacketHeader_t diag;
+    osiDiagLogHeader_t log;
+    uint16_t id;
+    uint16_t fn;
+    uint32_t tick;
+#endif
+} osiSxHeader_t;
 
 typedef struct
 {
-    uint8_t count;
-    uint8_t type[TRACE_PARCOUNT_MAX];
-    uint8_t slen[TRACE_PARCOUNT_MAX]; // data type shall match TRACE_STRLEN_MAX
-} traceParamInfo_t;
+    unsigned count;
+    unsigned bufsize;
+} osiTraceParamInfo_t;
 
-static inline uint32_t *_requestTagBuffer(unsigned tag, unsigned data_len)
+static const char *gLogNullString = "(null)";
+bool gTraceEnabled = false;
+uint32_t gTraceSequence;
+sxs_IoCtx_t sxs_IoCtx;
+uint32_t v_tra_pubModuleControl;
+uint32_t v_tra_lteModuleControl;
+uint32_t v_tra_categoryControl;
+
+/**
+ * GSM frame number
+ */
+uint32_t osiTraceGsmFrameNumber(void)
 {
-    uint32_t critical = osiEnterCritical();
-
-    gTraceSequence++;
-    uint32_t packet_len = data_len + sizeof(osiTagPacketHeader_t);
-    uint32_t *buf = osiTraceBufRequestLocked(packet_len);
-    if (buf != NULL)
-    {
-        osiTagPacketHeader_t *head = (osiTagPacketHeader_t *)buf;
-
-#ifdef CONFIG_KERNEL_TRACE_BBC8
-        osiFillHostHeader(&head->host, 0x96, packet_len - 4);
-        head->tra.sync = 0xBBBB;
-        head->tra.plat_id = 1;
-        head->tra.type = (tag & TRACE_TDB_FLAG) ? 0xC8 : 0xC9;
-        head->tra.sn = gTraceSequence;
-        head->tra.fn_wcdma = osiChipTraceTick();
-        head->tra.fn_gge = tag;
-        head->tra.fn_lte = osiTraceLteFrameNumber();
-#elif defined(CONFIG_KERNEL_TRACE_HOST98)
-        osiFillHostHeader(&head->host, 0x98, packet_len - 4);
-        head->tag = tag;
-        head->sn = gTraceSequence;
-        head->tick = osiChipTraceTick();
-#elif defined(CONFIG_KERNEL_TRACE_HOST97)
-        osiFillHostHeader(&head->host, 0x97, packet_len - 4);
-        head->tag = tag;
-        head->tick = osiChipTraceTick();
-#endif
-
-        buf = (uint32_t *)((char *)buf + sizeof(osiTagPacketHeader_t));
-    }
-    osiExitCritical(critical);
-    return buf;
+    return (sxs_IoCtx.fn_stamp == NULL) ? 0 : *(sxs_IoCtx.fn_stamp);
 }
 
-static inline uint32_t *_requestTraBuffer(uint8_t type, unsigned data_len)
-{
-    uint32_t critical = osiEnterCritical();
-
-    gTraceSequence++;
-    uint32_t packet_len = data_len + sizeof(osiHostTraPacketHeader_t);
-    uint32_t *buf = osiTraceBufRequestLocked(packet_len);
-    if (buf != NULL)
-    {
-        osiHostTraPacketHeader_t *head = (osiHostTraPacketHeader_t *)buf;
-
-        osiFillHostHeader(&head->host, 0x96, packet_len - 4);
-        head->tra.sync = 0xBBBB;
-        head->tra.plat_id = 1;
-        head->tra.type = type;
-        head->tra.sn = gTraceSequence;
-        head->tra.fn_wcdma = osiChipTraceTick();
-        head->tra.fn_gge = osiTraceGsmFrameNumber();
-        head->tra.fn_lte = osiTraceLteFrameNumber();
-
-        buf = (uint32_t *)((char *)buf + sizeof(osiHostTraPacketHeader_t));
-    }
-    osiExitCritical(critical);
-    return buf;
-}
-
-static inline uint32_t *_requestSxBuffer(unsigned data_len, unsigned id, bool use_id)
-{
-    uint32_t critical = osiEnterCritical();
-
-    gTraceSequence++;
-    uint32_t packet_len = data_len + sizeof(osiSxPacketHeader_t);
-    uint32_t *buf = osiTraceBufRequestLocked(packet_len);
-    if (buf != NULL)
-    {
-        osiSxPacketHeader_t *head = (osiSxPacketHeader_t *)buf;
-
-#ifdef CONFIG_KERNEL_TRACE_BBC8
-        osiFillHostHeader(&head->host, 0x96, packet_len - 4);
-        head->tra.sync = 0xBBBB;
-        head->tra.plat_id = 1;
-        head->tra.type = use_id ? 0xC8 : 0xC9;
-        head->tra.sn = gTraceSequence;
-        head->tra.fn_wcdma = osiChipTraceTick();
-        head->tra.fn_gge = 0xf0000000 | ((id & 0x1ff) << 16) | (osiTraceGsmFrameNumber() % (1326 * 32));
-        head->tra.fn_lte = osiTraceLteFrameNumber();
-#else
-        osiFillHostHeader(&head->host, 0x99, packet_len - 4);
-        head->id = (id & 0x1ff) | (use_id ? 0x8000 : 0);
-        head->fn = (osiTraceGsmFrameNumber() % (1326 * 32));
-        head->sn = gTraceSequence;
-        head->tick = osiChipTraceTick();
-#endif
-
-        buf = (uint32_t *)((char *)buf + sizeof(osiSxPacketHeader_t));
-    }
-    osiExitCritical(critical);
-    return buf;
-}
-
+/**
+ * LTE frame number
+ */
 OSI_WEAK uint32_t osiTraceLteFrameNumber(void)
 {
     return 0;
 }
 
-OSI_WEAK uint32_t osiTraceGsmFrameNumber(void)
+/**
+ * Fill application trace header
+ */
+static OSI_FORCE_INLINE void prvFillTraceHeader(osiTraceHeader_t *h, unsigned tag, unsigned tlen)
 {
-    return 0;
-}
-
-static inline uint32_t *_textCopy(uint32_t *buf, const char *str, uint32_t slen)
-{
-    uint32_t wcount = (slen + 1 + 3) / 4;
-#ifdef CONFIG_KERNEL_TRACE_BBC8
-    buf[wcount - 1] = 0x00202020;
-#else
-    buf[wcount - 1] = 0x00000000;
+#ifdef CONFIG_KERNEL_HOST_TRACE
+    h->host.sync = 0xad;
+    h->host.frame_len_msb = (tlen - 4) >> 8;
+    h->host.frame_len_lsb = (tlen - 4) & 0xff;
+    h->host.flowid = 0x98;
+    h->sn = gTraceSequence;
+    h->tag = tag;
+    h->tick = osiChipTraceTick();
 #endif
-    memcpy(buf, str, slen);
-    return buf + wcount;
+
+#ifdef CONFIG_KERNEL_DIAG_TRACE
+    h->diag.seq_num = gTraceSequence;
+    h->diag.len = tlen;
+    h->diag.type = 0x98;
+    h->diag.subtype = 0x00;
+    h->log.type = 0x9198;
+    h->log.length = tlen - OSI_OFFSETOF(osiTraceHeader_t, log);
+    h->tag = tag;
+    h->tick = osiChipTraceTick();
+#endif
 }
 
-static int _paramLen(uint32_t partype, traceParamInfo_t *pinfo, va_list ap)
+/**
+ * Fill tra trace header
+ */
+static OSI_FORCE_INLINE void prvFillTraHeader(osiTraHeader_t *h, uint8_t type, unsigned tlen)
 {
-    int request_len = 0;
-    int npar = 0;
+#ifdef CONFIG_KERNEL_HOST_TRACE
+    h->host.sync = 0xad;
+    h->host.frame_len_msb = (tlen - 4) >> 8;
+    h->host.frame_len_lsb = (tlen - 4) & 0xff;
+    h->host.flowid = 0x96;
+    h->tra.sync = 0xbbbb;
+    h->tra.plat_id = 1;
+    h->tra.type = type;
+    h->tra.sn = gTraceSequence;
+    h->tra.fn_wcdma = osiChipTraceTick();
+    h->tra.fn_gge = osiTraceGsmFrameNumber();
+    h->tra.fn_lte = osiTraceLteFrameNumber();
+#endif
 
-    for (npar = 0; partype != 0; npar++)
+#ifdef CONFIG_KERNEL_DIAG_TRACE
+    h->diag.seq_num = gTraceSequence;
+    h->diag.len = tlen;
+    h->diag.type = 0x98;
+    h->diag.subtype = 0x00;
+    h->log.type = 0x9196;
+    h->log.length = tlen - OSI_OFFSETOF(osiTraceHeader_t, log);
+    h->tra.sync = 0xbbbb;
+    h->tra.plat_id = 1;
+    h->tra.type = type;
+    h->tra.sn = gTraceSequence;
+    h->tra.fn_wcdma = osiChipTraceTick();
+    h->tra.fn_gge = osiTraceGsmFrameNumber();
+    h->tra.fn_lte = osiTraceLteFrameNumber();
+#endif
+}
+
+/**
+ * Fill SX trace header
+ */
+static OSI_FORCE_INLINE void prvFillSxHeader(osiSxHeader_t *h, uint16_t id, unsigned tlen)
+{
+#ifdef CONFIG_KERNEL_HOST_TRACE
+    h->host.sync = 0xad;
+    h->host.frame_len_msb = (tlen - 4) >> 8;
+    h->host.frame_len_lsb = (tlen - 4) & 0xff;
+    h->host.flowid = 0x99;
+    h->sn = gTraceSequence;
+    h->id = id;
+    h->fn = osiTraceGsmFrameNumber() % (1326 * 32);
+    h->tick = osiChipTraceTick();
+#endif
+
+#ifdef CONFIG_KERNEL_DIAG_TRACE
+    h->diag.seq_num = gTraceSequence;
+    h->diag.len = tlen;
+    h->diag.type = 0x98;
+    h->diag.subtype = 0x00;
+    h->log.type = 0x9199;
+    h->log.length = tlen - OSI_OFFSETOF(osiTraceHeader_t, log);
+    h->id = id;
+    h->fn = osiTraceGsmFrameNumber() % (1326 * 32);
+    h->tick = osiChipTraceTick();
+#endif
+}
+
+/**
+ * Get param count by partype, LOGPAR_M takes 2.
+ */
+static osiTraceParamInfo_t prvParamCount(unsigned partype)
+{
+    static unsigned parcount[] = {0, 1, 1, 1, 1, 2};
+    static unsigned parbufsize[] = {0, 4, 8, 8, 0, 8};
+    osiTraceParamInfo_t pari = {0, 0};
+    while (partype != 0)
     {
         uint8_t pt = (partype & 0xf);
         partype >>= 4;
 
-        pinfo->type[npar] = pt;
-        if (pt == __OSI_LOGPAR_D)
-        {
-            va_arg(ap, uint64_t);
-            request_len += 8;
-        }
-        else if (pt == __OSI_LOGPAR_F)
-        {
-            va_arg(ap, double);
-            request_len += 8;
-        }
-        else if (pt == __OSI_LOGPAR_S)
-        {
-            const char *str = va_arg(ap, const char *);
-            if (str == NULL)
-                str = gLogNullString;
-
-            uint32_t slen = strnlen(str, TRACE_STRLEN_MAX - 1);
-            pinfo->slen[npar] = slen;
-            request_len += OSI_ALIGN_UP(slen + 1, 4);
-        }
-        else if (pt == __OSI_LOGPAR_M)
-        {
-            uint32_t size = va_arg(ap, uint32_t);
-            va_arg(ap, const uint8_t *);
-            request_len += OSI_ALIGN_UP(6 + size, 4);
-        }
-        else
-        {
-            va_arg(ap, uint32_t);
-            request_len += 4;
-        }
+        pari.count += parcount[pt];
+        pari.bufsize += parbufsize[pt];
     }
-    pinfo->count = npar;
-    return request_len;
+    return pari;
 }
 
-static int _paramLenStr(const char *fmt, traceParamInfo_t *pinfo, va_list ap)
+/**
+ * Collect param buffers, return data length.
+ */
+static unsigned prvParamBuf(unsigned partype, osiBuffer_t *bufs, uint32_t *bufdata, va_list ap)
 {
-    int request_len = 0;
-    int npar = 0;
+    unsigned dlen = 0;
+    while (partype != 0)
+    {
+        uint8_t pt = (partype & 0xf);
+        partype >>= 4;
 
+        if (pt == __OSI_LOGPAR_D || pt == __OSI_LOGPAR_F)
+            PUT_PARAM64;
+        else if (pt == __OSI_LOGPAR_S)
+            PUT_PARAMS;
+        else if (pt == __OSI_LOGPAR_M)
+            PUT_PARAMM;
+        else
+            PUT_PARAM32;
+    }
+
+    return dlen;
+}
+
+/**
+ * Get param count by partype, LOGPAR_M takes 2.
+ */
+static osiTraceParamInfo_t prvStrParamCount(const char *fmt)
+{
+    osiTraceParamInfo_t pari = {0, 0};
     for (;;)
     {
         char c = *fmt++;
@@ -273,57 +344,37 @@ static int _paramLenStr(const char *fmt, traceParamInfo_t *pinfo, va_list ap)
         for (;;)
         {
             char cc = *fmt++;
-            if (cc == 'd' || cc == 'i' || cc == 'o' || cc == 'u' ||
-                cc == 'x' || cc == 'X')
+            if (FMT_INT_MAY_LL(cc))
             {
+                pari.count += 1;
                 if (fmt[-2] == 'l' && fmt[-3] == 'l')
-                {
-                    va_arg(ap, uint64_t);
-                    request_len += 8;
-                    pinfo->type[npar++] = __OSI_LOGPAR_D;
-                }
+                    pari.bufsize += 8;
                 else
-                {
-                    va_arg(ap, uint32_t);
-                    request_len += 4;
-                    pinfo->type[npar++] = __OSI_LOGPAR_I;
-                }
+                    pari.bufsize += 4;
                 break;
             }
-            else if (cc == 'c' || cc == 'p')
+            else if (FMT_INT_NOT_LL(cc))
             {
-                va_arg(ap, uint32_t);
-                request_len += 4;
-                pinfo->type[npar++] = __OSI_LOGPAR_I;
+                pari.count += 1;
+                pari.bufsize += 4;
                 break;
             }
-            else if (cc == 'e' || cc == 'E' || cc == 'f' || cc == 'F' ||
-                     cc == 'g' || cc == 'G' || cc == 'a' || cc == 'A')
+            else if (FMT_DOUBLE(cc))
             {
-                va_arg(ap, double);
-                request_len += 8;
-                pinfo->type[npar++] = __OSI_LOGPAR_F;
+                pari.count += 1;
+                pari.bufsize += 8;
                 break;
             }
             else if (cc == 's')
             {
                 if (fmt[-2] == '*')
                 {
-                    uint32_t size = va_arg(ap, uint32_t);
-                    va_arg(ap, const uint8_t *);
-                    request_len += OSI_ALIGN_UP(6 + size, 4);
-                    pinfo->type[npar++] = __OSI_LOGPAR_M;
+                    pari.count += 2;
+                    pari.bufsize += 8;
                 }
                 else
                 {
-                    const char *str = va_arg(ap, const char *);
-                    if (str == NULL)
-                        str = gLogNullString;
-
-                    uint32_t slen = strnlen(str, TRACE_STRLEN_MAX - 1);
-                    request_len += OSI_ALIGN_UP(slen + 1, 4);
-                    pinfo->slen[npar] = slen;
-                    pinfo->type[npar++] = __OSI_LOGPAR_S;
+                    pari.count += 1;
                 }
                 break;
             }
@@ -340,173 +391,252 @@ static int _paramLenStr(const char *fmt, traceParamInfo_t *pinfo, va_list ap)
                 continue;
             }
         }
+    }
+    return pari;
+}
 
-        if (npar >= TRACE_PARCOUNT_MAX)
+/**
+ * Collect param buffers, return data length.
+ */
+static unsigned prvStrParamBuf(const char *fmt, osiBuffer_t *bufs, uint32_t *bufdata, va_list ap)
+{
+    unsigned dlen = 0;
+    for (;;)
+    {
+        char c = *fmt++;
+        if (c == '\0')
             break;
+        if (c != '%')
+            continue;
+
+        for (;;)
+        {
+            char cc = *fmt++;
+            if (FMT_INT_MAY_LL(cc))
+            {
+                if (fmt[-2] == 'l' && fmt[-3] == 'l')
+                    PUT_PARAM64;
+                else
+                    PUT_PARAM32;
+                break;
+            }
+            else if (FMT_INT_NOT_LL(cc))
+            {
+                PUT_PARAM32;
+                break;
+            }
+            else if (FMT_DOUBLE(cc))
+            {
+                PUT_PARAM64;
+                break;
+            }
+            else if (cc == 's')
+            {
+                if (fmt[-2] == '*')
+                    PUT_PARAMM;
+                else
+                    PUT_PARAMS;
+                break;
+            }
+            else if (cc == '%')
+            {
+                break;
+            }
+            else if (cc == '\0')
+            {
+                break;
+            }
+            else
+            {
+                continue;
+            }
+        }
     }
-    pinfo->count = npar;
-    return request_len;
+    return dlen;
 }
 
-static uint32_t *_paramFill(uint32_t *buf, traceParamInfo_t *pinfo, va_list ap)
+/**
+ * Application basic trace
+ */
+LOG_RAMCODE static void prvTraceBasic(unsigned tag, unsigned nargs, const char *fmt, va_list ap)
 {
-    for (int npar = 0; npar < pinfo->count; npar++)
-    {
-        uint8_t pt = pinfo->type[npar];
-        if (pt == __OSI_LOGPAR_D)
-        {
-            uint64_t val = va_arg(ap, uint64_t);
-            *buf++ = val;
-            *buf++ = (val >> 32);
-        }
-        else if (pt == __OSI_LOGPAR_F)
-        {
-            double val = va_arg(ap, double);
-            uint32_t *pval = (uint32_t *)&val;
-            *buf++ = *pval++;
-            *buf++ = *pval++;
-        }
-        else if (pt == __OSI_LOGPAR_M)
-        {
-            uint32_t size = va_arg(ap, uint32_t);
-            const uint8_t *data = va_arg(ap, const uint8_t *);
-            *buf = (uint32_t)data;
-            *((uint16_t *)buf + 2) = size;
-            memcpy((uint8_t *)buf + 6, data, size);
-            buf += (6 + size + 3) / 4;
-        }
-        else if (pt == __OSI_LOGPAR_S)
-        {
-            const char *str = va_arg(ap, const char *);
-            if (str == NULL)
-                str = gLogNullString;
+    osiTraceHeader_t header;
+    unsigned fmt_len = strlen(fmt);
+    unsigned fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
+    unsigned dlen = nargs * 4;
+    unsigned tlen = sizeof(header) + fmt_len_aligned + dlen;
+    uint32_t *buf = (uint32_t *)alloca(dlen);
+    osiBuffer_t bufs[3] = {
+        {(uintptr_t)&header, sizeof(header)},
+        {(uintptr_t)fmt, fmt_len_aligned},
+        {(uintptr_t)buf, dlen},
+    };
 
-            buf = _textCopy(buf, str, pinfo->slen[npar]);
-        }
-        else
-        {
-            *buf++ = va_arg(ap, uint32_t);
-        }
-    }
-    return buf;
+    for (unsigned n = 0; n < nargs; n++)
+        *buf++ = va_arg(ap, uint32_t);
+
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraceHeader(&header, tag, tlen);
+    osiTraceBufPutMulti(bufs, 3, tlen);
+    osiExitCritical(critical);
 }
 
-void osiTraceBasic(unsigned tag, unsigned nargs, const char *fmt, ...)
+/**
+ * Application basic trace, with ID
+ */
+LOG_RAMCODE static void prvTraceIdBasic(unsigned tag, unsigned nargs, unsigned fmtid, va_list ap)
+{
+    unsigned dlen = 4 + 4 * nargs;
+    unsigned tlen = sizeof(osiTraceHeader_t) + dlen;
+    uint32_t *p = (uint32_t *)alloca(tlen);
+    uint32_t *buf = p + (sizeof(osiTraceHeader_t) / 4);
+    *buf++ = fmtid;
+    for (unsigned n = 0; n < nargs; n++)
+        *buf++ = va_arg(ap, uint32_t);
+
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraceHeader((osiTraceHeader_t *)p, tag | TRACE_TDB_FLAG, tlen);
+    osiTraceBufPut(p, tlen);
+    osiExitCritical(critical);
+}
+
+/**
+ * Application extended trace
+ */
+static void prvTraceEx(unsigned tag, unsigned partype, const char *fmt, va_list ap)
+{
+    osiTraceHeader_t header;
+    unsigned fmt_len = strlen(fmt);
+    unsigned fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
+    osiTraceParamInfo_t pari = prvParamCount(partype);
+    osiBuffer_t *bufs = (osiBuffer_t *)alloca((pari.count + 2) * sizeof(osiBuffer_t));
+    bufs[0].ptr = (uintptr_t)&header;
+    bufs[0].size = sizeof(header);
+    bufs[1].ptr = (uintptr_t)fmt;
+    bufs[1].size = fmt_len_aligned;
+    uint32_t *bufdata = (uint32_t *)alloca(pari.bufsize);
+    unsigned dlen = prvParamBuf(partype, &bufs[2], bufdata, ap);
+    unsigned tlen = sizeof(header) + fmt_len_aligned + dlen;
+
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraceHeader(&header, tag, tlen);
+    osiTraceBufPutMulti(bufs, pari.count + 2, tlen);
+    osiExitCritical(critical);
+}
+
+/**
+ * Application extended trace, with ID
+ */
+static void prvTraceIdEx(unsigned tag, unsigned partype, unsigned fmtid, va_list ap)
+{
+    osiTraceHeader_t header;
+    osiTraceParamInfo_t pari = prvParamCount(partype);
+    osiBuffer_t *bufs = alloca((pari.count + 2) * sizeof(osiBuffer_t));
+    bufs[0].ptr = (uintptr_t)&header;
+    bufs[0].size = sizeof(header);
+    bufs[1].ptr = (uintptr_t)&fmtid;
+    bufs[1].size = 4;
+    uint32_t *bufdata = alloca(pari.bufsize);
+    unsigned dlen = prvParamBuf(partype, &bufs[2], bufdata, ap);
+    unsigned tlen = sizeof(header) + 4 + dlen;
+
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraceHeader(&header, tag | TRACE_TDB_FLAG, tlen);
+    osiTraceBufPutMulti(bufs, pari.count + 2, tlen);
+    osiExitCritical(critical);
+}
+
+/**
+ * Application basic trace
+ */
+LOG_RAMCODE void osiTraceBasic(unsigned tag, unsigned nargs, const char *fmt, ...)
 {
     if (!gTraceEnabled)
         return;
 
-    uint32_t fmt_len = strnlen(fmt, TRACE_STRLEN_MAX - 1);
-    uint32_t fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
-    uint32_t request_len = fmt_len_aligned + 4 * nargs;
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestTagBuffer(tag, request_len);
-    if (buf != NULL)
-    {
-        buf = _textCopy(buf, fmt, fmt_len);
-
-        va_list ap;
-        va_start(ap, fmt);
-        for (uint32_t n = 0; n < nargs; n++)
-            *buf++ = va_arg(ap, uint32_t);
-        va_end(ap);
-
-        osiTraceBufFilled();
-    }
-    LOG_PROTECT_EXIT;
+    va_list ap;
+    va_start(ap, fmt);
+    prvTraceBasic(tag, nargs, fmt, ap);
+    va_end(ap);
 }
 
-void osiTraceIdBasic(unsigned tag, unsigned nargs, unsigned fmtid, ...)
+/**
+ * Application basic trace, with ID
+ */
+LOG_RAMCODE void osiTraceIdBasic(unsigned tag, unsigned nargs, unsigned fmtid, ...)
 {
     if (!gTraceEnabled)
         return;
 
-    uint32_t request_len = 4 + 4 * nargs;
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestTagBuffer(tag | TRACE_TDB_FLAG, request_len);
-    if (buf != NULL)
-    {
-        *buf++ = fmtid;
-
-        va_list ap;
-        va_start(ap, fmtid);
-        for (uint32_t n = 0; n < nargs; n++)
-            *buf++ = va_arg(ap, uint32_t);
-        va_end(ap);
-
-        osiTraceBufFilled();
-    }
-    LOG_PROTECT_EXIT;
+    va_list ap;
+    va_start(ap, fmtid);
+    prvTraceIdBasic(tag, nargs, fmtid, ap);
+    va_end(ap);
 }
 
+/**
+ * Application extended trace
+ */
 void osiTraceEx(unsigned tag, unsigned partype, const char *fmt, ...)
 {
     if (!gTraceEnabled)
         return;
 
-    va_list apl;
-    va_start(apl, fmt);
-    va_list apf;
-    va_copy(apf, apl);
-
-    traceParamInfo_t pinfo;
-    uint32_t fmt_len = strnlen(fmt, TRACE_STRLEN_MAX - 1);
-    uint32_t fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
-    uint32_t par_len = _paramLen(partype, &pinfo, apl);
-    uint32_t request_len = fmt_len_aligned + par_len;
-    va_end(apl);
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestTagBuffer(tag, request_len);
-    if (buf != NULL)
-    {
-        buf = _textCopy(buf, fmt, fmt_len);
-        buf = _paramFill(buf, &pinfo, apf);
-        va_end(apf);
-
-        osiTraceBufFilled();
-    }
-    else
-    {
-        va_end(apf);
-    }
-    LOG_PROTECT_EXIT;
+    va_list ap;
+    va_start(ap, fmt);
+    prvTraceEx(tag, partype, fmt, ap);
+    va_end(ap);
 }
 
+/**
+ * Application extended trace, with ID
+ */
 void osiTraceIdEx(unsigned tag, unsigned partype, unsigned fmtid, ...)
 {
     if (!gTraceEnabled)
         return;
 
-    va_list apl;
-    va_start(apl, fmtid);
-    va_list apf;
-    va_copy(apf, apl);
-
-    traceParamInfo_t pinfo;
-    uint32_t par_len = _paramLen(partype, &pinfo, apl);
-    uint32_t request_len = 4 + par_len;
-    va_end(apl);
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestTagBuffer(tag | TRACE_TDB_FLAG, request_len);
-    if (buf != NULL)
-    {
-        *buf++ = fmtid;
-        buf = _paramFill(buf, &pinfo, apf);
-        va_end(apf);
-
-        osiTraceBufFilled();
-    }
-    else
-    {
-        va_end(apf);
-    }
-    LOG_PROTECT_EXIT;
+    va_list ap;
+    va_start(ap, fmtid);
+    prvTraceIdEx(tag, partype, fmtid, ap);
+    va_end(ap);
 }
 
+/**
+ * Application trace printf
+ */
+void osiTraceVprintf(unsigned tag, const char *fmt, va_list ap)
+{
+    if (!gTraceEnabled)
+        return;
+
+    osiTraceHeader_t header;
+    unsigned fmt_len = strlen(fmt);
+    unsigned fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
+    osiTraceParamInfo_t pari = prvStrParamCount(fmt);
+    osiBuffer_t *bufs = alloca((pari.count + 2) * sizeof(osiBuffer_t));
+    bufs[0].ptr = (uintptr_t)&header;
+    bufs[0].size = sizeof(header);
+    bufs[1].ptr = (uintptr_t)fmt;
+    bufs[1].size = fmt_len_aligned;
+    uint32_t *bufdata = (uint32_t *)alloca(pari.bufsize);
+    unsigned dlen = prvStrParamBuf(fmt, &bufs[2], bufdata, ap);
+    unsigned tlen = sizeof(header) + fmt_len_aligned + dlen;
+
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraceHeader(&header, tag, tlen);
+    osiTraceBufPutMulti(bufs, pari.count + 2, tlen);
+    osiExitCritical(critical);
+}
+
+/**
+ * Application trace printf
+ */
 void osiTracePrintf(unsigned tag, const char *fmt, ...)
 {
     if (!gTraceEnabled)
@@ -518,69 +648,119 @@ void osiTracePrintf(unsigned tag, const char *fmt, ...)
     va_end(ap);
 }
 
-void osiTraceVprintf(unsigned tag, const char *fmt, va_list ap)
+/**
+ * tra basic trace
+ */
+LOG_RAMCODE static void prvTraBasic(unsigned nargs, const char *fmt, va_list ap)
 {
-    if (!gTraceEnabled)
-        return;
+    osiTraHeader_t header;
+    unsigned fmt_len = strlen(fmt);
+    unsigned fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
+    unsigned dlen = nargs * 4;
+    unsigned tlen = sizeof(header) + fmt_len_aligned + dlen;
+    uint32_t *buf = (uint32_t *)alloca(dlen);
+    osiBuffer_t bufs[3] = {
+        {(uintptr_t)&header, sizeof(header)},
+        {(uintptr_t)fmt, fmt_len_aligned},
+        {(uintptr_t)buf, dlen},
+    };
 
-    va_list apf;
-    va_copy(apf, ap);
+    for (uint32_t n = 0; n < nargs; n++)
+        *buf++ = va_arg(ap, uint32_t);
 
-    traceParamInfo_t pinfo;
-    uint32_t fmt_len = strnlen(fmt, TRACE_STRLEN_MAX - 1);
-    uint32_t fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
-    uint32_t par_len = _paramLenStr(fmt, &pinfo, ap);
-    uint32_t request_len = fmt_len_aligned + par_len;
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestTagBuffer(tag, request_len);
-    if (buf != NULL)
-    {
-        buf = _textCopy(buf, fmt, fmt_len);
-        buf = _paramFill(buf, &pinfo, apf);
-        va_end(apf);
-
-        osiTraceBufFilled();
-    }
-    else
-    {
-        va_end(apf);
-    }
-    LOG_PROTECT_EXIT;
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraHeader(&header, 0xc9, tlen);
+    osiTraceBufPutMulti(bufs, 3, tlen);
+    osiExitCritical(critical);
 }
 
-static void _traceTraBasic(unsigned nargs, const char *fmt, va_list ap)
+/**
+ * tra basic trace, with ID
+ */
+LOG_RAMCODE static void prvTraIdBasic(unsigned nargs, unsigned fmtid, va_list ap)
 {
-    uint32_t fmt_len = strnlen(fmt, TRACE_STRLEN_MAX - 1);
-    uint32_t fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
-    uint32_t request_len = fmt_len_aligned + 4 * nargs;
+    unsigned dlen = 4 + 4 * nargs;
+    unsigned tlen = sizeof(osiTraHeader_t) + dlen;
+    uint32_t *p = alloca(tlen);
+    uint32_t *buf = p + (sizeof(osiTraHeader_t) / 4);
+    *buf++ = fmtid;
+    for (uint32_t n = 0; n < nargs; n++)
+        *buf++ = va_arg(ap, uint32_t);
 
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestTraBuffer(0xC9, request_len);
-    if (buf != NULL)
-    {
-        buf = _textCopy(buf, fmt, fmt_len);
-
-        for (uint32_t n = 0; n < nargs; n++)
-            *buf++ = va_arg(ap, uint32_t);
-
-        osiTraceBufFilled();
-    }
-    LOG_PROTECT_EXIT;
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraHeader((osiTraHeader_t *)p, 0xc8, tlen);
+    osiTraceBufPut(p, tlen);
+    osiExitCritical(critical);
 }
 
-void osiTraceTraBasic(unsigned nargs, const char *fmt, ...)
+/**
+ * tra extended trace
+ */
+static void prvTraEx(unsigned partype, const char *fmt, va_list ap)
+{
+    osiTraHeader_t header;
+    uint32_t fmt_len = strlen(fmt);
+    uint32_t fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
+    osiTraceParamInfo_t pari = prvParamCount(partype);
+    osiBuffer_t *bufs = (osiBuffer_t *)alloca((pari.count + 2) * sizeof(osiBuffer_t));
+    bufs[0].ptr = (uintptr_t)&header;
+    bufs[0].size = sizeof(header);
+    bufs[1].ptr = (uintptr_t)fmt;
+    bufs[1].size = fmt_len_aligned;
+    uint32_t *bufdata = (uint32_t *)alloca(pari.bufsize);
+    uint32_t dlen = prvParamBuf(partype, &bufs[2], bufdata, ap);
+    unsigned tlen = sizeof(header) + fmt_len_aligned + dlen;
+
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraHeader(&header, 0xc9, tlen);
+    osiTraceBufPutMulti(bufs, pari.count + 2, tlen);
+    osiExitCritical(critical);
+}
+
+/**
+ * tra extended trace, with ID
+ */
+static void prvTraIdEx(unsigned partype, unsigned fmtid, va_list ap)
+{
+    osiTraHeader_t header;
+    osiTraceParamInfo_t pari = prvParamCount(partype);
+    osiBuffer_t *bufs = (osiBuffer_t *)alloca((pari.count + 2) * sizeof(osiBuffer_t));
+    bufs[0].ptr = (uintptr_t)&header;
+    bufs[0].size = sizeof(header);
+    bufs[1].ptr = (uintptr_t)&fmtid;
+    bufs[1].size = 4;
+    uint32_t *bufdata = (uint32_t *)alloca(pari.bufsize);
+    unsigned dlen = prvParamBuf(partype, &bufs[2], bufdata, ap);
+    unsigned tlen = sizeof(header) + 4 + dlen;
+
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraHeader(&header, 0xc8, tlen);
+    osiTraceBufPutMulti(bufs, pari.count + 2, tlen);
+    osiExitCritical(critical);
+}
+
+/**
+ * tra basic trace without module and category
+ */
+LOG_RAMCODE void osiTraceTraBasic(unsigned nargs, const char *fmt, ...)
 {
     if (!gTraceEnabled)
         return;
 
     va_list ap;
     va_start(ap, fmt);
-    _traceTraBasic(nargs, fmt, ap);
+    prvTraBasic(nargs, fmt, ap);
     va_end(ap);
 }
 
-void osiTracePubBasic(unsigned module, unsigned category, unsigned nargs, const char *fmt, ...)
+/**
+ * tra pub basic trace
+ */
+LOG_RAMCODE void osiTracePubBasic(unsigned module, unsigned category, unsigned nargs, const char *fmt, ...)
 {
     if (!gTraceEnabled ||
         !(module & v_tra_pubModuleControl) ||
@@ -589,11 +769,14 @@ void osiTracePubBasic(unsigned module, unsigned category, unsigned nargs, const 
 
     va_list ap;
     va_start(ap, fmt);
-    _traceTraBasic(nargs, fmt, ap);
+    prvTraBasic(nargs, fmt, ap);
     va_end(ap);
 }
 
-void osiTraceLteBasic(unsigned module, unsigned category, unsigned nargs, const char *fmt, ...)
+/**
+ * tra lte basic trace
+ */
+LOG_RAMCODE void osiTraceLteBasic(unsigned module, unsigned category, unsigned nargs, const char *fmt, ...)
 {
     if (!gTraceEnabled ||
         !(module & v_tra_lteModuleControl) ||
@@ -602,40 +785,28 @@ void osiTraceLteBasic(unsigned module, unsigned category, unsigned nargs, const 
 
     va_list ap;
     va_start(ap, fmt);
-    _traceTraBasic(nargs, fmt, ap);
+    prvTraBasic(nargs, fmt, ap);
     va_end(ap);
 }
 
-static void _traceTraIdBasic(unsigned nargs, unsigned fmtid, va_list ap)
-{
-    uint32_t request_len = 4 + 4 * nargs;
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestTraBuffer(0xC8, request_len);
-    if (buf != NULL)
-    {
-        *buf++ = fmtid;
-
-        for (uint32_t n = 0; n < nargs; n++)
-            *buf++ = va_arg(ap, uint32_t);
-
-        osiTraceBufFilled();
-    }
-    LOG_PROTECT_EXIT;
-}
-
-void osiTraceTraIdBasic(unsigned nargs, unsigned fmtid, ...)
+/**
+ * tra basic trace without module and category, with ID
+ */
+LOG_RAMCODE void osiTraceTraIdBasic(unsigned nargs, unsigned fmtid, ...)
 {
     if (!gTraceEnabled)
         return;
 
     va_list ap;
     va_start(ap, fmtid);
-    _traceTraIdBasic(nargs, fmtid, ap);
+    prvTraIdBasic(nargs, fmtid, ap);
     va_end(ap);
 }
 
-void osiTracePubIdBasic(unsigned module, unsigned category, unsigned nargs, unsigned fmtid, ...)
+/**
+ * tra pub basic trace, with ID
+ */
+LOG_RAMCODE void osiTracePubIdBasic(unsigned module, unsigned category, unsigned nargs, unsigned fmtid, ...)
 {
     if (!gTraceEnabled ||
         !(module & v_tra_pubModuleControl) ||
@@ -644,11 +815,14 @@ void osiTracePubIdBasic(unsigned module, unsigned category, unsigned nargs, unsi
 
     va_list ap;
     va_start(ap, fmtid);
-    _traceTraIdBasic(nargs, fmtid, ap);
+    prvTraIdBasic(nargs, fmtid, ap);
     va_end(ap);
 }
 
-void osiTraceLteIdBasic(unsigned module, unsigned category, unsigned nargs, unsigned fmtid, ...)
+/**
+ * tra lte basic trace, with ID
+ */
+LOG_RAMCODE void osiTraceLteIdBasic(unsigned module, unsigned category, unsigned nargs, unsigned fmtid, ...)
 {
     if (!gTraceEnabled ||
         !(module & v_tra_lteModuleControl) ||
@@ -657,38 +831,13 @@ void osiTraceLteIdBasic(unsigned module, unsigned category, unsigned nargs, unsi
 
     va_list ap;
     va_start(ap, fmtid);
-    _traceTraIdBasic(nargs, fmtid, ap);
+    prvTraIdBasic(nargs, fmtid, ap);
     va_end(ap);
 }
 
-static void _traceTraEx(unsigned partype, const char *fmt, va_list apl)
-{
-    va_list apf;
-    va_copy(apf, apl);
-
-    traceParamInfo_t pinfo;
-    uint32_t fmt_len = strnlen(fmt, TRACE_STRLEN_MAX - 1);
-    uint32_t fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
-    uint32_t par_len = _paramLen(partype, &pinfo, apl);
-    uint32_t request_len = fmt_len_aligned + par_len;
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestTraBuffer(0xC9, request_len);
-    if (buf != NULL)
-    {
-        buf = _textCopy(buf, fmt, fmt_len);
-        buf = _paramFill(buf, &pinfo, apf);
-        va_end(apf);
-
-        osiTraceBufFilled();
-    }
-    else
-    {
-        va_end(apf);
-    }
-    LOG_PROTECT_EXIT;
-}
-
+/**
+ * tra extended trace without module and category
+ */
 void osiTraceTraEx(unsigned partype, const char *fmt, ...)
 {
     if (!gTraceEnabled)
@@ -696,10 +845,13 @@ void osiTraceTraEx(unsigned partype, const char *fmt, ...)
 
     va_list apl;
     va_start(apl, fmt);
-    _traceTraEx(partype, fmt, apl);
+    prvTraEx(partype, fmt, apl);
     va_end(apl);
 }
 
+/**
+ * tra pub extended trace
+ */
 void osiTracePubEx(unsigned module, unsigned category, unsigned partype, const char *fmt, ...)
 {
     if (!gTraceEnabled ||
@@ -709,10 +861,13 @@ void osiTracePubEx(unsigned module, unsigned category, unsigned partype, const c
 
     va_list apl;
     va_start(apl, fmt);
-    _traceTraEx(partype, fmt, apl);
+    prvTraEx(partype, fmt, apl);
     va_end(apl);
 }
 
+/**
+ * tra lte extended trace
+ */
 void osiTraceLteEx(unsigned module, unsigned category, unsigned partype, const char *fmt, ...)
 {
     if (!gTraceEnabled ||
@@ -722,36 +877,13 @@ void osiTraceLteEx(unsigned module, unsigned category, unsigned partype, const c
 
     va_list apl;
     va_start(apl, fmt);
-    _traceTraEx(partype, fmt, apl);
+    prvTraEx(partype, fmt, apl);
     va_end(apl);
 }
 
-static void _traceTraIdEx(unsigned partype, unsigned fmtid, va_list apl)
-{
-    va_list apf;
-    va_copy(apf, apl);
-
-    traceParamInfo_t pinfo;
-    uint32_t par_len = _paramLen(partype, &pinfo, apl);
-    uint32_t request_len = 4 + par_len;
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestTraBuffer(0xC8, request_len);
-    if (buf != NULL)
-    {
-        *buf++ = fmtid;
-        buf = _paramFill(buf, &pinfo, apf);
-        va_end(apf);
-
-        osiTraceBufFilled();
-    }
-    else
-    {
-        va_end(apf);
-    }
-    LOG_PROTECT_EXIT;
-}
-
+/**
+ * tra extended trace without module and category, with ID
+ */
 void osiTraceTraIdEx(unsigned partype, unsigned fmtid, ...)
 {
     if (!gTraceEnabled)
@@ -759,10 +891,13 @@ void osiTraceTraIdEx(unsigned partype, unsigned fmtid, ...)
 
     va_list apl;
     va_start(apl, fmtid);
-    _traceTraIdEx(partype, fmtid, apl);
+    prvTraIdEx(partype, fmtid, apl);
     va_end(apl);
 }
 
+/**
+ * tra pub extended trace, with ID
+ */
 void osiTracePubIdEx(unsigned module, unsigned category, unsigned partype, unsigned fmtid, ...)
 {
     if (!gTraceEnabled ||
@@ -772,10 +907,13 @@ void osiTracePubIdEx(unsigned module, unsigned category, unsigned partype, unsig
 
     va_list apl;
     va_start(apl, fmtid);
-    _traceTraIdEx(partype, fmtid, apl);
+    prvTraIdEx(partype, fmtid, apl);
     va_end(apl);
 }
 
+/**
+ * tra lte extended trace, with ID
+ */
 void osiTraceLteIdEx(unsigned module, unsigned category, unsigned partype, unsigned fmtid, ...)
 {
     if (!gTraceEnabled ||
@@ -785,154 +923,195 @@ void osiTraceLteIdEx(unsigned module, unsigned category, unsigned partype, unsig
 
     va_list apl;
     va_start(apl, fmtid);
-    _traceTraIdEx(partype, fmtid, apl);
+    prvTraIdEx(partype, fmtid, apl);
     va_end(apl);
 }
 
-static inline bool _sxTraceEnabled(unsigned id)
+/**
+ * send tra trace packet data. bufs[0] is reserved for header.
+ */
+void osiTraceSendTraData(uint8_t type, osiBuffer_t *bufs, unsigned count, unsigned dlen)
+{
+    if (!gTraceEnabled)
+        return;
+
+    osiTraHeader_t header;
+    bufs[0].ptr = (uintptr_t)&header;
+    bufs[0].size = sizeof(header);
+    unsigned tlen = sizeof(header) + dlen;
+
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillTraHeader(&header, type, tlen);
+    osiTraceBufPutMulti(bufs, count, tlen);
+    osiExitCritical(critical);
+}
+
+/**
+ * Whether SX trace is enabled for (module, level)
+ */
+static inline bool prvSxTraceEnabled(unsigned id)
 {
     unsigned module = id & 0x1f;
     unsigned level = (id >> 5) & 0xf;
     unsigned out = id & (1 << 21);
-    return out || (sxs_IoCtx.id_bitmap[module] & (1 << level));
+    return out || (sxs_IoCtx.TraceBitMap[module] & (1 << level));
 }
 
-static void _traceSxIdBasic(unsigned id, unsigned nargs, unsigned fmtid, va_list ap)
+/**
+ * SX basic trace
+ */
+static void prvSxBasic(unsigned id, unsigned nargs, const char *fmt, va_list ap)
 {
-    uint32_t request_len = 4 + 4 * nargs;
+    osiSxHeader_t header;
+    unsigned fmt_len = strlen(fmt);
+    unsigned fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
+    unsigned dlen = nargs * 4;
+    unsigned tlen = sizeof(header) + fmt_len_aligned + dlen;
+    uint32_t *buf = (uint32_t *)alloca(dlen);
+    osiBuffer_t bufs[3] = {
+        {(uintptr_t)&header, sizeof(header)},
+        {(uintptr_t)fmt, fmt_len_aligned},
+        {(uintptr_t)buf, dlen},
+    };
 
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestSxBuffer(request_len, id, true);
-    if (buf != NULL)
-    {
-        *buf++ = fmtid;
+    for (uint32_t n = 0; n < nargs; n++)
+        *buf++ = va_arg(ap, uint32_t);
 
-        for (uint32_t n = 0; n < nargs; n++)
-            *buf++ = va_arg(ap, uint32_t);
-
-        osiTraceBufFilled();
-    }
-    LOG_PROTECT_EXIT;
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillSxHeader(&header, id & 0x1ff, tlen);
+    osiTraceBufPutMulti(bufs, 3, tlen);
+    osiExitCritical(critical);
 }
 
-void osiTraceSxIdBasic(unsigned id, unsigned nargs, unsigned fmtid, ...)
+/**
+ * SX basic trace, with ID
+ */
+static void prvSxIdBasic(unsigned id, unsigned nargs, unsigned fmtid, va_list ap)
 {
-    if (!gTraceEnabled || !_sxTraceEnabled(id))
-        return;
+    uint32_t dlen = 4 + 4 * nargs;
+    unsigned tlen = sizeof(osiSxHeader_t) + dlen;
+    uint32_t *p = alloca(tlen);
+    uint32_t *buf = p + (sizeof(osiSxHeader_t) / 4);
+    *buf++ = fmtid;
+    for (uint32_t n = 0; n < nargs; n++)
+        *buf++ = va_arg(ap, uint32_t);
 
-    va_list ap;
-    va_start(ap, fmtid);
-    _traceSxIdBasic(id, nargs, fmtid, ap);
-    va_end(ap);
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillSxHeader((osiSxHeader_t *)p, (id & 0x1ff) | 0x8000, tlen);
+    osiTraceBufPut(p, tlen);
+    osiExitCritical(critical);
 }
 
-static void _traceSxIdEx(unsigned id, unsigned partype, unsigned fmtid, va_list apl)
+/**
+ * SX extended trace
+ */
+static void prvSxEx(unsigned id, unsigned partype, const char *fmt, va_list ap)
 {
-    va_list apf;
-    va_copy(apf, apl);
+    osiSxHeader_t header;
+    unsigned fmt_len = strlen(fmt);
+    unsigned fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
+    osiTraceParamInfo_t pari = prvParamCount(partype);
+    osiBuffer_t *bufs = (osiBuffer_t *)alloca((pari.count + 2) * sizeof(osiBuffer_t));
+    bufs[0].ptr = (uintptr_t)&header;
+    bufs[0].size = sizeof(header);
+    bufs[1].ptr = (uintptr_t)fmt;
+    bufs[1].size = fmt_len_aligned;
+    uint32_t *bufdata = (uint32_t *)alloca(pari.bufsize);
+    unsigned dlen = prvParamBuf(partype, &bufs[2], bufdata, ap);
+    unsigned tlen = sizeof(header) + fmt_len_aligned + dlen;
 
-    traceParamInfo_t pinfo;
-    uint32_t par_len = _paramLen(partype, &pinfo, apl);
-    uint32_t request_len = 4 + par_len;
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestSxBuffer(request_len, id, true);
-    if (buf != NULL)
-    {
-        *buf++ = fmtid;
-        buf = _paramFill(buf, &pinfo, apf);
-        va_end(apf);
-
-        osiTraceBufFilled();
-    }
-    else
-    {
-        va_end(apf);
-    }
-    LOG_PROTECT_EXIT;
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillSxHeader(&header, id & 0x1ff, tlen);
+    osiTraceBufPutMulti(bufs, pari.count + 2, tlen);
+    osiExitCritical(critical);
 }
 
-void osiTraceSxIdEx(unsigned id, unsigned partype, unsigned fmtid, ...)
+/**
+ * SX extended trace, with ID
+ */
+static void prvSxIdEx(unsigned id, unsigned partype, unsigned fmtid, va_list ap)
 {
-    if (!gTraceEnabled || !_sxTraceEnabled(id))
-        return;
+    osiSxHeader_t header;
+    osiTraceParamInfo_t pari = prvParamCount(partype);
+    osiBuffer_t *bufs = (osiBuffer_t *)alloca((pari.count + 2) * sizeof(osiBuffer_t));
+    bufs[0].ptr = (uintptr_t)&header;
+    bufs[0].size = sizeof(header);
+    bufs[1].ptr = (uintptr_t)&fmtid;
+    bufs[1].size = 4;
+    uint32_t *bufdata = (uint32_t *)alloca(pari.bufsize);
+    unsigned dlen = prvParamBuf(partype, &bufs[2], bufdata, ap);
+    unsigned tlen = sizeof(header) + 4 + dlen;
 
-    va_list apl;
-    va_start(apl, fmtid);
-    _traceSxIdEx(id, partype, fmtid, apl);
-    va_end(apl);
+    unsigned critical = osiEnterCritical();
+    gTraceSequence++;
+    prvFillSxHeader(&header, (id & 0x1ff) | 0x8000, tlen);
+    osiTraceBufPutMulti(bufs, pari.count + 2, tlen);
+    osiExitCritical(critical);
 }
 
-static void _traceSxBasic(unsigned id, unsigned nargs, const char *fmt, va_list ap)
-{
-    uint32_t fmt_len = strnlen(fmt, TRACE_STRLEN_MAX - 1);
-    uint32_t fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
-    uint32_t request_len = fmt_len_aligned + 4 * nargs;
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestSxBuffer(request_len, id, false);
-    if (buf != NULL)
-    {
-        buf = _textCopy(buf, fmt, fmt_len);
-
-        for (uint32_t n = 0; n < nargs; n++)
-            *buf++ = va_arg(ap, uint32_t);
-
-        osiTraceBufFilled();
-    }
-    LOG_PROTECT_EXIT;
-}
-
+/**
+ * SX basic trace
+ */
 void osiTraceSxBasic(unsigned id, unsigned nargs, const char *fmt, ...)
 {
-    if (!gTraceEnabled || !_sxTraceEnabled(id))
+    if (!gTraceEnabled || !prvSxTraceEnabled(id))
         return;
 
     va_list ap;
     va_start(ap, fmt);
-    _traceSxBasic(id, nargs, fmt, ap);
+    prvSxBasic(id, nargs, fmt, ap);
     va_end(ap);
 }
 
-static void _traceSxEx(unsigned id, unsigned partype, const char *fmt, va_list apl)
+/**
+ * SX basic trace, with ID
+ */
+void osiTraceSxIdBasic(unsigned id, unsigned nargs, unsigned fmtid, ...)
 {
-    va_list apf;
-    va_copy(apf, apl);
+    if (!gTraceEnabled || !prvSxTraceEnabled(id))
+        return;
 
-    traceParamInfo_t pinfo;
-    uint32_t fmt_len = strnlen(fmt, TRACE_STRLEN_MAX - 1);
-    uint32_t fmt_len_aligned = OSI_ALIGN_UP(fmt_len + 1, 4);
-    uint32_t par_len = _paramLen(partype, &pinfo, apl);
-    uint32_t request_len = fmt_len_aligned + par_len;
-
-    LOG_PROTECT_ENTER;
-    uint32_t *buf = _requestSxBuffer(request_len, id, false);
-    if (buf != NULL)
-    {
-        buf = _textCopy(buf, fmt, fmt_len);
-        buf = _paramFill(buf, &pinfo, apf);
-        va_end(apf);
-
-        osiTraceBufFilled();
-    }
-    else
-    {
-        va_end(apf);
-    }
-    LOG_PROTECT_EXIT;
+    va_list ap;
+    va_start(ap, fmtid);
+    prvSxIdBasic(id, nargs, fmtid, ap);
+    va_end(ap);
 }
 
+/**
+ * SX extended trace
+ */
 void osiTraceSxEx(unsigned id, unsigned partype, const char *fmt, ...)
 {
-    if (!gTraceEnabled || !_sxTraceEnabled(id))
+    if (!gTraceEnabled || !prvSxTraceEnabled(id))
         return;
 
     va_list apl;
     va_start(apl, fmt);
-    _traceSxEx(id, partype, fmt, apl);
+    prvSxEx(id, partype, fmt, apl);
     va_end(apl);
 }
 
+/**
+ * SX extended trace, with ID
+ */
+void osiTraceSxIdEx(unsigned id, unsigned partype, unsigned fmtid, ...)
+{
+    if (!gTraceEnabled || !prvSxTraceEnabled(id))
+        return;
+
+    va_list apl;
+    va_start(apl, fmtid);
+    prvSxIdEx(id, partype, fmtid, apl);
+    va_end(apl);
+}
+
+/**
+ * SX trace, parsing id in runtime
+ */
 void osiTraceSxOutput(unsigned id, const char *fmt, va_list ap)
 {
     if (!gTraceEnabled)
@@ -944,37 +1123,58 @@ void osiTraceSxOutput(unsigned id, const char *fmt, va_list ap)
     unsigned partype = OSI_TSMAP_PARTYPE(nargs, tsmap);
 
     if (tdb && tsmap == 0)
-        _traceSxIdBasic(id, nargs, (unsigned)fmt, ap);
+        prvSxIdBasic(id, nargs, (unsigned)fmt, ap);
     else if (tdb && tsmap != 0)
-        _traceSxIdEx(id, partype, (unsigned)fmt, ap);
+        prvSxIdEx(id, partype, (unsigned)fmt, ap);
     else if (tsmap == 0)
-        _traceSxBasic(id, nargs, fmt, ap);
+        prvSxBasic(id, nargs, fmt, ap);
     else
-        _traceSxEx(id, partype, fmt, ap);
+        prvSxEx(id, partype, fmt, ap);
 }
 
-uint32_t *osiTraceTraBufRequest(uint32_t tra_len)
+/**
+ * Set pointer of GSM frame number, only for SX trace
+ */
+void sxs_SetFnStamp(uint32_t *fn_stamp)
 {
-    uint32_t critical = osiEnterCritical();
+    sxs_IoCtx.fn_stamp = fn_stamp;
+}
 
+/**
+ * Set SX trace level control
+ */
+void sxs_SetTraceLevel(uint8_t Id, uint16_t LevelBitMap)
+{
+    if ((Id & 0x1f) < 32)
+        sxs_IoCtx.TraceBitMap[Id & 0x1f] = LevelBitMap;
+}
+
+/**
+ * It is called in BT log, and should be redesigned.
+ */
+void osiTraceRawSend(uint8_t flowid, unsigned tag, const void *data, uint32_t len)
+{
+#ifdef CONFIG_KERNEL_HOST_TRACE
+    osiTraceHeader_t header;
+    osiBuffer_t bufs[2] = {
+        {(uintptr_t)&header, sizeof(header)},
+        {(uintptr_t)data, len},
+    };
+    unsigned tlen = sizeof(header) + len;
+
+    unsigned critical = osiEnterCritical();
     gTraceSequence++;
-    uint32_t packet_len = tra_len + sizeof(osiHostPacketHeader_t);
-    uint32_t *buf = osiTraceBufRequestLocked(packet_len);
-    if (buf != NULL)
-    {
-        osiHostTraPacketHeader_t *head = (osiHostTraPacketHeader_t *)buf;
-
-        osiFillHostHeader(&head->host, 0x96, packet_len - 4);
-        head->tra.sync = 0xBBBB;
-        head->tra.plat_id = 1;
-        head->tra.type = 0; // filled later
-        head->tra.sn = gTraceSequence;
-        head->tra.fn_wcdma = osiChipTraceTick();
-        head->tra.fn_gge = osiTraceGsmFrameNumber();
-        head->tra.fn_lte = osiTraceLteFrameNumber();
-
-        buf = (uint32_t *)((char *)buf + sizeof(osiHostPacketHeader_t));
-    }
+    prvFillTraceHeader(&header, tag, tlen);
+    header.host.flowid = flowid;
+    osiTraceBufPutMulti(bufs, 2, tlen);
     osiExitCritical(critical);
-    return buf;
+#endif
+}
+
+/**
+ * It is called in BT log, and should be redesigned.
+ */
+void SCI_TraceCapData(unsigned data_type, const void *src_ptr, uint32_t size)
+{
+    osiTraceRawSend(0x70, data_type, src_ptr, size);
 }

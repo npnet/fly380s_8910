@@ -127,21 +127,11 @@
 #cmakedefine CONFIG_FLASH_SIZE @CONFIG_FLASH_SIZE@
 
 /**
- * whether external NOR flash is used
- */
-#cmakedefine CONFIG_SUPPORT_EXT_FLASH
-
-/**
- * external NOR flash size
- */
-#cmakedefine CONFIG_EXT_FLASH_SIZE @CONFIG_EXT_FLASH_SIZE@
-
-/**
  * SRAM size
  *
  * - 8955/8909: system SRAM size
  * - 8811: total SRAM size
- * - 8910: it is not used
+ * - 8910: total SRAM size
  */
 #cmakedefine CONFIG_SRAM_SIZE @CONFIG_SRAM_SIZE@
 
@@ -191,115 +181,11 @@
 #cmakedefine CONFIG_ROM_LOAD_SIZE @CONFIG_ROM_LOAD_SIZE@
 
 /**
- * NOR flash offset of bootloader
- */
-#cmakedefine CONFIG_BOOT_FLASH_OFFSET @CONFIG_BOOT_FLASH_OFFSET@
-
-/**
- * bootloader reserved size on NOR flash
+ * whether dual bootloader is supported
  *
- * When dual bootloader is supported, this is the total reserved NOR flash
- * size for bootloader.
+ * Dual bootloader needs system ROM support.
  */
-#cmakedefine CONFIG_BOOT_FLASH_SIZE @CONFIG_BOOT_FLASH_SIZE@
-
-/**
- * NOR flash offset of application
- */
-#cmakedefine CONFIG_APP_FLASH_OFFSET @CONFIG_APP_FLASH_OFFSET@
-
-/**
- * reserved NOR flash size for application
- */
-#cmakedefine CONFIG_APP_FLASH_SIZE @CONFIG_APP_FLASH_SIZE@
-
-/**
- * NOR flash physical address of application
- */
-#cmakedefine CONFIG_APP_FLASH_ADDRESS @CONFIG_APP_FLASH_ADDRESS@
-
-/**
- * NOR flash offset of loadable app image
- */
-#cmakedefine CONFIG_APPIMG_FLASH_OFFSET @CONFIG_APPIMG_FLASH_OFFSET@
-
-/**
- * reserved NOR flash size for loadable app image
- */
-#cmakedefine CONFIG_APPIMG_FLASH_SIZE @CONFIG_APPIMG_FLASH_SIZE@
-
-/**
- * NOR flash offset of modem image file system
- *
- * The mount point of modem image file system is \p CONFIG_FS_MODEM_MOUNT_POINT.
- */
-#cmakedefine CONFIG_FS_MODEM_FLASH_OFFSET @CONFIG_FS_MODEM_FLASH_OFFSET@
-
-/**
- * reserved NOR flash size for modem image file system
- */
-#cmakedefine CONFIG_FS_MODEM_FLASH_SIZE @CONFIG_FS_MODEM_FLASH_SIZE@
-
-/**
- * NOR flash physical address of modem image file system
- */
-#cmakedefine CONFIG_FS_MODEM_FLASH_ADDRESS @CONFIG_FS_MODEM_FLASH_ADDRESS@
-
-/**
- * NOR flash offset of system file system
- *
- * The mount point of system file system is \p CONFIG_FS_SYS_MOUNT_POINT.
- */
-#cmakedefine CONFIG_FS_SYS_FLASH_OFFSET @CONFIG_FS_SYS_FLASH_OFFSET@
-
-/**
- * reserved NOR flash size for system file system
- */
-#cmakedefine CONFIG_FS_SYS_FLASH_SIZE @CONFIG_FS_SYS_FLASH_SIZE@
-
-/**
- * NOR flash offset of factory file system
- *
- * The mount point of factory file system is \p CONFIG_FS_FACTORY_MOUNT_POINT.
- */
-#cmakedefine CONFIG_FS_FACTORY_FLASH_OFFSET @CONFIG_FS_FACTORY_FLASH_OFFSET@
-
-/**
- * reserved NOR flash size for factory file system
- */
-#cmakedefine CONFIG_FS_FACTORY_FLASH_SIZE @CONFIG_FS_FACTORY_FLASH_SIZE@
-
-/**
- * NOR flash offset of calibration data
- *
- * It is only used for legacy platforms, calibration data are located on flash
- * as raw data, rather than stored in file system.
- */
-#cmakedefine CONFIG_CALIB_FLASH_OFFSET @CONFIG_CALIB_FLASH_OFFSET@
-
-/**
- * NOR flash offset of GSM calibration data
- *
- * It is only used for legacy platforms, calibration data are located on flash
- * as raw data, rather than stored in file system.
- */
-#cmakedefine CONFIG_CALIB_GSM_FLASH_OFFSET @CONFIG_CALIB_GSM_FLASH_OFFSET@
-
-/**
- * NOR flash offset of NB calibration data
- *
- * It is only used for legacy platforms, calibration data are located on flash
- * as raw data, rather than stored in file system.
- */
-#cmakedefine CONFIG_CALIB_NB_FLASH_OFFSET @CONFIG_CALIB_NB_FLASH_OFFSET@
-
-/**
- * NOR flash offset of factory data
- *
- * It is only used for legacy platforms, factory data are located on flash
- * as raw data, rather than stored in file system.
- */
-#cmakedefine CONFIG_FACTORY_FLASH_OFFSET @CONFIG_FACTORY_FLASH_OFFSET@
+#cmakedefine CONFIG_DUAL_BOOTLOADER_ENABLE
 
 /**
  * NOR flash address of bootloader
@@ -310,6 +196,24 @@
 #cmakedefine CONFIG_BOOT_FLASH_ADDRESS @CONFIG_BOOT_FLASH_ADDRESS@
 
 /**
+ * NOR flash address of boot1 in dual bootloader
+ */
+#cmakedefine CONFIG_BOOT1_FLASH_ADDRESS @CONFIG_BOOT1_FLASH_ADDRESS@
+
+/**
+ * NOR flash address of boot2 in dual bootloader
+ */
+#cmakedefine CONFIG_BOOT2_FLASH_ADDRESS @CONFIG_BOOT2_FLASH_ADDRESS@
+
+/**
+ * bootloader reserved size on NOR flash
+ *
+ * When dual bootloader is supported, this is the total reserved NOR flash
+ * size for bootloader.
+ */
+#cmakedefine CONFIG_BOOT_FLASH_SIZE @CONFIG_BOOT_FLASH_SIZE@
+
+/**
  * bootloader maximum size
  *
  * When dual bootloader is enabled, it is \p CONFIG_BOOT_FLASH_SIZE/2.
@@ -318,6 +222,104 @@
  * The image header size is included.
  */
 #cmakedefine CONFIG_BOOTLOADER_SIZE @CONFIG_BOOTLOADER_SIZE@
+
+/**
+ * NOR flash physical address of application
+ */
+#cmakedefine CONFIG_APP_FLASH_ADDRESS @CONFIG_APP_FLASH_ADDRESS@
+
+/**
+ * reserved NOR flash size for application
+ */
+#cmakedefine CONFIG_APP_FLASH_SIZE @CONFIG_APP_FLASH_SIZE@
+
+/**
+ * external NOR flash physical address of application
+ */
+#cmakedefine CONFIG_APP_FLASH2_ADDRESS @CONFIG_APP_FLASH2_ADDRESS@
+
+/**
+ * reserved external NOR flash size for application
+ */
+#cmakedefine CONFIG_APP_FLASH2_SIZE @CONFIG_APP_FLASH2_SIZE@
+
+/**
+ * NOR flash address of loadable app image
+ */
+#cmakedefine CONFIG_APPIMG_FLASH_ADDRESS @CONFIG_APPIMG_FLASH_ADDRESS@
+
+/**
+ * reserved NOR flash size for loadable app image
+ */
+#cmakedefine CONFIG_APPIMG_FLASH_SIZE @CONFIG_APPIMG_FLASH_SIZE@
+
+/**
+ * NOR flash address of system file system
+ *
+ * The mount point of system file system is \p CONFIG_FS_SYS_MOUNT_POINT.
+ */
+#cmakedefine CONFIG_FS_SYS_FLASH_ADDRESS @CONFIG_FS_SYS_FLASH_ADDRESS@
+
+/**
+ * reserved NOR flash size for system file system
+ */
+#cmakedefine CONFIG_FS_SYS_FLASH_SIZE @CONFIG_FS_SYS_FLASH_SIZE@
+
+/**
+ * NOR flash address of modem image file system
+ *
+ * The mount point of modem image file system is \p CONFIG_FS_MODEM_MOUNT_POINT.
+ */
+#cmakedefine CONFIG_FS_MODEM_FLASH_ADDRESS @CONFIG_FS_MODEM_FLASH_ADDRESS@
+
+/**
+ * reserved NOR flash size for modem image file system
+ */
+#cmakedefine CONFIG_FS_MODEM_FLASH_SIZE @CONFIG_FS_MODEM_FLASH_SIZE@
+
+/**
+ * NOR flash address of factory file system
+ *
+ * The mount point of factory file system is \p CONFIG_FS_FACTORY_MOUNT_POINT.
+ */
+#cmakedefine CONFIG_FS_FACTORY_FLASH_ADDRESS @CONFIG_FS_FACTORY_FLASH_ADDRESS@
+
+/**
+ * reserved NOR flash size for factory file system
+ */
+#cmakedefine CONFIG_FS_FACTORY_FLASH_SIZE @CONFIG_FS_FACTORY_FLASH_SIZE@
+
+/**
+ * NOR flash address of calibration data
+ *
+ * It is only used for legacy platforms, calibration data are located on flash
+ * as raw data, rather than stored in file system.
+ */
+#cmakedefine CONFIG_CALIB_FLASH_ADDRESS @CONFIG_CALIB_FLASH_ADDRESS@
+
+/**
+ * NOR flash address of GSM calibration data
+ *
+ * It is only used for legacy platforms, calibration data are located on flash
+ * as raw data, rather than stored in file system.
+ */
+#cmakedefine CONFIG_CALIB_GSM_FLASH_ADDRESS @CONFIG_CALIB_GSM_FLASH_ADDRESS@
+
+/**
+ * NOR flash address of NB calibration data
+ *
+ * It is only used for legacy platforms, calibration data are located on flash
+ * as raw data, rather than stored in file system.
+ */
+#cmakedefine CONFIG_CALIB_NB_FLASH_ADDRESS @CONFIG_CALIB_NB_FLASH_ADDRESS@
+
+/**
+ * NOR flash address of factory data
+ *
+ * It is only used for legacy platforms, factory data are located on flash
+ * as raw data, rather than stored in file system.
+ */
+#cmakedefine CONFIG_FACTORY_FLASH_ADDRESS @CONFIG_FACTORY_FLASH_ADDRESS@
 
 /**
  * mount point of modem image file system
@@ -417,6 +419,16 @@
 #cmakedefine CONFIG_APP_FILEIMG_RAM_SIZE @CONFIG_APP_FILEIMG_RAM_SIZE@
 
 /**
+ * PSRAM or DDR offset for BT firmware load addres
+ */
+#cmakedefine CONFIG_APP_BTFW_RAM_OFFSET @CONFIG_APP_BTFW_RAM_OFFSET@
+
+/**
+ * PSRAM or DDR size for BT firmware
+ */
+#cmakedefine CONFIG_APP_BTFW_RAM_SIZE @CONFIG_APP_BTFW_RAM_SIZE@
+
+/**
  * SRAM offset for application
  */
 #cmakedefine CONFIG_APP_SRAM_OFFSET @CONFIG_APP_SRAM_OFFSET@
@@ -497,7 +509,7 @@
 /**
  * NOR flash offset for BCPU (8955, 8909)
  */
-#cmakedefine CONFIG_BCPU_FLASH_OFFSET @CONFIG_BCPU_FLASH_OFFSET@
+#cmakedefine CONFIG_BCPU_FLASH_ADDRESS @CONFIG_BCPU_FLASH_ADDRESS@
 
 /**
  * RAM offset for BCPU (8955, 8909)
@@ -812,6 +824,26 @@
 /**
  * whether charger can power up after shutdown
  */
-#cmakedefine CONFIG_CHARGER_POWERUP @CONFIG_CHARGER_POWERUP@
+#cmakedefine CONFIG_CHARGER_POWERUP
+
+/**
+ * support normal shutdown power off mode in pmic 2720 platform
+ */
+#cmakedefine CONFIG_SHUTDOWN_NORMAL_POWER_OFF
+
+/**
+ * whether there is external flash on board
+ */
+#cmakedefine CONFIG_BOARD_WITH_EXT_FLASH
+
+/**
+ * whether application will split into external flash
+ */
+#cmakedefine CONFIG_APP_FLASH2_ENABLED
+
+/**
+ * whether there are file system on external flash
+ */
+#cmakedefine CONFIG_FS_EXT_ENABLED
 
 #endif

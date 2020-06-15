@@ -1896,6 +1896,11 @@ CIS_API st_object_t* prv_findObject(st_context_t* context, cis_oid_t objectid)
 	return targetP;
 }
 
+void* cis_findObject(void* context, cis_oid_t objectid)
+{
+       if(context == NULL) return NULL;
+	return prv_findObject((st_context_t*)context, objectid);
+}
 
 static void prv_deleteTransactionList(st_context_t* context)
 {

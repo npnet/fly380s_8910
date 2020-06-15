@@ -31,6 +31,7 @@ void diagNvmInit(void);
 void diagNvInit(void);
 void diagSysInit(void);
 void diagNvProductInit(void);
+void diagPsInit(void);
 
 #ifdef __cplusplus
 }

@@ -19,10 +19,10 @@
 #include "osi_api.h"
 #include "osi_compiler.h"
 #include "osi_profile.h"
+#include "osi_tick_unit.h"
 #include "osi_mem.h"
 #include "osi_log.h"
 #include "osi_trace.h"
-#include "drv_debughost.h"
 #include "hwregs.h"
 #include "hal_chip.h"
 #include "hal_mmu.h"
@@ -200,7 +200,7 @@ OSI_NO_RETURN void osiBootStart(uint32_t param)
     AP_WAKEUP_JUMP_MAGIC_REG = 0;
     _impure_ptr = _GLOBAL_REENT;
 
-    osiTraceEarlyInit();
+    osiTraceBufInit();
     osiProfileInit();
     osiPmInit();
     _heapInit();
@@ -209,6 +209,7 @@ OSI_NO_RETURN void osiBootStart(uint32_t param)
     halAdiBusInit();
 
     halPmuInit();
+    halPmuExtFlashPowerOn();
     osiKernelStart();
 }
 
@@ -340,7 +341,8 @@ uint32_t osiPmCpuSuspend(osiSuspendMode_t mode, int64_t sleep_ms)
     REG_CP_IDLE_IDL_OSW2_EN_T idl_osw2_en = {};
     if (sleep_ms != INT64_MAX)
     {
-        uint32_t ticks = sleep_ms * (32768 / 8) / (1000 / 8);
+        uint32_t ticks = OSI_MS_TO_TICK16K(sleep_ms);
+
         idl_osw2_en.b.osw2_en = 1;
         idl_osw2_en.b.osw2_time = (ticks >= 0x7fffffff) ? 0x7fffffff : ticks;
     }
@@ -380,7 +382,6 @@ uint32_t osiPmCpuSuspend(osiSuspendMode_t mode, int64_t sleep_ms)
     uint32_t source = _clearWakeSource(false);
     if (gCpuSuspendCtx.mode == OSI_SUSPEND_PM2)
     {
-        drvDhostInit();
         hwp_sysCtrl->cfg_misc_cfg |= (1 << 12); // ap_uart_out_sel
     }
     return source;
@@ -389,8 +390,11 @@ uint32_t osiPmCpuSuspend(osiSuspendMode_t mode, int64_t sleep_ms)
 uint64_t osiCpDeepSleepTime()
 {
     int64_t sleep_ms;
+    uint32_t tick;
+
     REG_CP_IDLE_IDL_OSW1_EN_T idl_osw1_en = {hwp_idle->idl_osw1_en};
-    sleep_ms = (idl_osw1_en.b.osw1_time * 1000) / 32768;
+    tick = idl_osw1_en.b.osw1_time;
+    sleep_ms = OSI_TICK16K_TO_MS(tick);
 
     return sleep_ms;
 }

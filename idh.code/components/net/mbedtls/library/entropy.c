@@ -36,6 +36,7 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/entropy_poll.h"
 #include "mbedtls/platform_util.h"
+#include "mbedtls/timing.h"
 
 #include <string.h>
 
@@ -61,6 +62,33 @@
 #endif
 
 #define ENTROPY_MAX_LOOP    256     /**< Maximum amount to loop before error */
+#if defined(CONFIG_MBEDTLS_REDUCE_MEMORY)
+
+int mbedtls_random_poll( void *data,
+                    unsigned char *output, size_t len, size_t *olen )
+{
+    *olen = 0;
+    unsigned char *dest = output;
+    int val;
+    size_t use_len;
+    size_t len_tmp = len;
+    srand((uint32_t)mbedtls_timing_hardclock());
+    while( len_tmp > 0 )
+    {
+        use_len = len_tmp;
+        if( use_len > sizeof(int) )
+            use_len = sizeof(int);
+
+        val = rand();
+        memcpy( dest, &val, use_len );
+        len_tmp -= use_len;
+        dest += use_len;
+    }
+    *olen = len;
+
+    return( 0 );
+}
+#endif
 
 void mbedtls_entropy_init( mbedtls_entropy_context *ctx )
 {
@@ -99,6 +127,11 @@ void mbedtls_entropy_init( mbedtls_entropy_context *ctx )
     mbedtls_entropy_add_source( ctx, mbedtls_hardclock_poll, NULL,
                                 MBEDTLS_ENTROPY_MIN_HARDCLOCK,
                                 MBEDTLS_ENTROPY_SOURCE_WEAK );
+#endif
+#if defined(CONFIG_MBEDTLS_REDUCE_MEMORY)
+    mbedtls_entropy_add_source( ctx, mbedtls_random_poll, NULL,
+                                32,
+                                MBEDTLS_ENTROPY_SOURCE_STRONG);
 #endif
 #if defined(MBEDTLS_HAVEGE_C)
     mbedtls_entropy_add_source( ctx, mbedtls_havege_poll, &ctx->havege_data,

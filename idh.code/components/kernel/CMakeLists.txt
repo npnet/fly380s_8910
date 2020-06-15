@@ -9,17 +9,19 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/kernel_config.h.in ${BINARY_TOP_DIR}/include/kernel_config.h)
+configure_file(include/kernel_config.h.in ${out_inc_dir}/kernel_config.h)
 
 set(target kernel)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_KERNEL)
 target_include_directories(${target} PUBLIC include)
-target_include_directories(${target} PRIVATE freertos/include chip/8910 src)
-target_link_libraries(${target} PRIVATE hal driver fs osi_lib service ${libc_file_name} ${libgcc_file_name})
-target_include_targets(${target} PRIVATE nanopb)
+target_include_directories(${target} PRIVATE freertos/include src)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_targets(${target} PRIVATE hal driver fs service nanopb)
+
 nanopbgen(src/osi_sysnv.proto)
 target_sources(${target} PRIVATE
     freertos/croutine.c
@@ -36,55 +38,36 @@ target_sources(${target} PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/osi_sysnv.pb.c
 )
 
-if(CONFIG_CPU_ARMV7A)
-    target_include_directories(${target} PRIVATE arch/armv7a)
-elseif(CONFIG_CPU_ARMV7M)
-    target_include_directories(${target} PRIVATE arch/armv7m)
-elseif((CONFIG_CPU_MIPS_XCPU) OR (CONFIG_CPU_MIPS_XCPU2))
-    target_include_directories(${target} PRIVATE arch/xcpu)
-endif()
+target_sources_if(CONFIG_SOC_8910 THEN ${target} PRIVATE
+    chip/8910/startup.S
+    chip/8910/vectors.S
+    chip/8910/osi_boot_8910.c
+    chip/8910/port.c
+    chip/8910/portASM.S
+    chip/8910/osi_chip_8910.c
+    src/osi_blue_screen.c
+    src/osi_freertos.c
+    src/osi_profile.c
+    src/osi_irq.c
+    src/osi_time.c
+    src/osi_sleep.c
+)
+set_if(chipdir CONFIG_SOC_8910 THEN chip chip/8910)
 
-target_include_directories(${target} PRIVATE chip)
-
-if(CONFIG_SOC_8910)
-    target_sources(${target} PRIVATE
-        chip/8910/startup.S
-        chip/8910/vectors.S
-        chip/8910/osi_boot_8910.c
-        chip/8910/port.c
-        chip/8910/portASM.S
-        chip/8910/osi_chip_8910.c
-        src/osi_blue_screen.c
-        src/osi_freertos.c
-        src/osi_profile.c
-        src/osi_irq.c
-        src/osi_time.c
-        src/osi_sleep.c
-    )
-endif()
-
-if((CONFIG_SOC_8955) OR (CONFIG_SOC_8909))
-    target_sources(${target} PRIVATE
-        arch/xcpu/start.S
-        arch/xcpu/exception.S
-        arch/xcpu/boot_start.c
-        src/osi_blue_screen.c
-        src/osi_profile.c
-        src/osi_freertos.c
-        src/osi_sleep.c
-        src/osi_time.c
-    )
-
-    if(CONFIG_SOC_8955)
-        target_sources(${target} PRIVATE chip/8955/osi_chip_8955.c)
-    endif()
-    if(CONFIG_SOC_8909)
-        target_sources(${target} PRIVATE chip/8909/osi_chip_8909.c)
-    endif()
-endif()
+target_include_directories(${target} PRIVATE ${chipdir})
+include(core.cmake)
 
 set(target osi_lib)
-add_library(${target} STATIC
+add_app_libraries($<TARGET_FILE:${target}>)
+
+add_library(${target} STATIC)
+set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
+target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_KERNEL)
+target_include_directories(${target} PUBLIC include)
+target_include_directories(${target} PRIVATE chip)
+target_include_targets(${target} PRIVATE hal driver)
+
+target_sources(${target} PRIVATE
     src/osi_mem_record.c
     src/osi_log.c
     src/osi_work.c
@@ -96,17 +79,9 @@ add_library(${target} STATIC
     src/osi_order_list.c
     src/osi_event_hub.c
     src/osi_mem_recycler.c
+    src/osi_trace.c
+    src/osi_hdlc.c
 )
-if(NOT CONFIG_SOC_6760)
-    target_sources(${target} PRIVATE src/osi_trace.c)
-endif()
-set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
-target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_KERNEL)
-target_include_directories(${target} PUBLIC include)
-target_include_directories(${target} PRIVATE chip)
-target_include_targets(${target} PRIVATE hal driver)
 
-include(core.cmake)
-
-relative_glob(srcs include/*.h src/*.c src/*.h chip/8910/osi*.c)
+relative_glob(srcs include/*.h src/*.c src/*.h chip/*/osi*.[ch])
 beautify_c_code(${target} ${srcs})

@@ -236,6 +236,7 @@ typedef enum osiShutdownMode
     OSI_SHUTDOWN_RESET = 0,               ///< normal reset
     OSI_SHUTDOWN_FORCE_DOWNLOAD = 0x5244, ///< 'RD' reset to force download mode
     OSI_SHUTDOWN_DOWNLOAD = 0x444e,       ///< 'DN' reset to download mode
+    OSI_SHUTDOWN_BL_DOWNLOAD = 0x4244,    ///< 'BD' reset to bootloader download mode
     OSI_SHUTDOWN_CALIB_MODE = 0x434c,     ///< 'CL' reset to calibration mode
     OSI_SHUTDOWN_NB_CALIB_MODE = 0x4e43,  ///< 'NC' reset to NB calibration mode
     OSI_SHUTDOWN_BBAT_MODE = 0x4241,      ///< 'BA' reset to BBAT mode
@@ -2370,9 +2371,19 @@ int osiPsmDataRestore(osiPsmDataOwner_t owner, void *buf, uint32_t size);
  * can't support debug event, and debug event output may be turned off
  * by compiling option.
  *
+ * It is possible that debughost may be blocked. And then debughost event
+ * sent will timeout.
+ *
+ * NOTE: Debug event output will take times. For example, when debug host
+ * baud rate is 921600, it may take up to 109us. And when debughost is
+ * blocked, it may take 200us for timeout.
+ *
  * \param event     word which will appear on trace tool
+ * \return
+ *      - true if the event is sent
+ *      - false if the event sent timeout
  */
-void osiDebugEvent(uint32_t event);
+bool osiDebugEvent(uint32_t event);
 
 /**
  * panic
@@ -2383,6 +2394,14 @@ void osiDebugEvent(uint32_t event);
  * and there are no compiling option to ignore it.
  */
 OSI_NO_RETURN void osiPanic(void);
+
+/**
+ * panic with specified address
+ *
+ * It is the same as \p osiPanic, except \p address is shown in log,
+ * rather than the return address of caller.
+ */
+OSI_NO_RETURN void osiPanicAt(void *address);
 
 /**
  * whether system is in panic mode
@@ -2397,6 +2416,29 @@ OSI_NO_RETURN void osiPanic(void);
  */
 bool osiIsPanic(void);
 
+/**
+ * register enter and polling callback at blue screen mode
+ *
+ * The maximum panic handler is pre-configured.
+ *
+ * \param enter         callback to be caled when entering panic mode
+ * \param poll          callback to be caled when during panic mode
+ * \param param         callback parameter
+ * \return
+ *      - true on success
+ *      - false on fail, invalid paramters or too many handlers
+ */
+bool osiRegisterBlueScreenHandler(osiCallback_t enter, osiCallback_t poll, void *param);
+
+/**
+ * optional assert
+ *
+ * It is a macro. When \p CONFIG_KERNEL_ASSERT_ENABLED is defined, it will
+ * panic when \p expect_true is not true. When \p CONFIG_KERNEL_ASSERT_ENABLED
+ * is not defined, it will be expanded as empty.
+ *
+ * \p info is just a remainder in source code. It won't be used.
+ */
 #ifdef CONFIG_KERNEL_ASSERT_ENABLED
 #define OSI_ASSERT(expect_true, info) OSI_DO_WHILE0(if (!(expect_true)) osiPanic();)
 #else

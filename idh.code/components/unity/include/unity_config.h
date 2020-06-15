@@ -109,7 +109,7 @@
  */
 /* #define UNITY_INCLUDE_64 */
 #define UNITY_INCLUDE_64
-
+#define UNITY_SUPPORT_64
 
 /* *************************** FLOATING POINT TYPES ****************************
  * In the embedded world, it's not uncommon for targets to have no support for

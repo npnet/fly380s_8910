@@ -34,6 +34,12 @@
 #endif
 #define unix
 #include "unistd.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "mbedtls_config.h"
+
 //#define SIZE_MAX INT_MAX
 
 
@@ -228,7 +234,7 @@
 //#define MBEDTLS_PLATFORM_EXIT_ALT
 //#define MBEDTLS_PLATFORM_TIME_ALT
 //#define MBEDTLS_PLATFORM_FPRINTF_ALT
-#define MBEDTLS_PLATFORM_PRINTF_ALT
+//#define MBEDTLS_PLATFORM_PRINTF_ALT
 #define MBEDTLS_PLATFORM_SNPRINTF_ALT
 //#define MBEDTLS_PLATFORM_NV_SEED_ALT
 //#define MBEDTLS_PLATFORM_SETUP_TEARDOWN_ALT
@@ -1311,7 +1317,7 @@
  *
  * Comment this macro to disable 1/n-1 record splitting.
  */
-#define MBEDTLS_SSL_CBC_RECORD_SPLITTING
+//#define MBEDTLS_SSL_CBC_RECORD_SPLITTING
 
 /**
  * \def MBEDTLS_SSL_RENEGOTIATION
@@ -1872,8 +1878,9 @@
  *
  * Module:  library/blowfish.c
  */
+ #ifndef CONFIG_MBEDTLS_LITE_CRYPTS
 #define MBEDTLS_BLOWFISH_C
-
+#endif
 /**
  * \def MBEDTLS_CAMELLIA_C
  *
@@ -2110,8 +2117,9 @@
  * \warning   DES is considered a weak cipher and its use constitutes a
  *            security risk. We recommend considering stronger ciphers instead.
  */
+ #ifndef CONFIG_MBEDTLS_LITE_CRYPTS
 #define MBEDTLS_DES_C
-
+#endif
 /**
  * \def MBEDTLS_DHM_C
  *
@@ -2258,7 +2266,10 @@
  *
  * Uncomment to enable the HAVEGE random generator.
  */
+#if !defined(CONFIG_MBEDTLS_REDUCE_MEMORY)
 #define MBEDTLS_HAVEGE_C
+#endif
+
 
 /**
  * \def MBEDTLS_HKDF_C
@@ -2604,8 +2615,9 @@
  * Caller:  library/md.c
  *
  */
+ #ifndef CONFIG_MBEDTLS_LITE_CRYPTS
 #define MBEDTLS_RIPEMD160_C
-
+#endif
 /**
  * \def MBEDTLS_RSA_C
  *

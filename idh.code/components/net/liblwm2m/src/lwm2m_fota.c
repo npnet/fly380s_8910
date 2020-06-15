@@ -22,7 +22,7 @@ int32_t getBatteryLevel()
 
     //CFW_EmodGetBatteryInfo(&pBatInfo);
     //return pBatInfo.nChargeInfo.nBcl;
-    return 0;
+    return 100;
 }
 
 int32_t getAvailableSize();

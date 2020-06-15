@@ -19,6 +19,9 @@ OSI_EXTERN_C_BEGIN
 
 int UnityMain(int argc, const char* argv[], void (*runAllTests)(void));
 
+#define TEST_PROVIDE_APP_START(fn)\
+    extern void fn(void);\
+    void osiAppStart(void) { fn(); }
 
 #define TEST_GROUP(group)\
     static const char* TEST_GROUP_##group = #group
