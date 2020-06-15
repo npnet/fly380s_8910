@@ -38,6 +38,7 @@ set(HAVE_INTRIN_H off)
 # configure_file(src/jconfigint.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/jconfigint.h)
 
 set(target libjpeg-turbo)
+
 add_library(${target} STATIC EXCLUDE_FROM_ALL
     src/jcapimin.c
     src/jcapistd.c
@@ -94,6 +95,6 @@ add_library(${target} STATIC EXCLUDE_FROM_ALL
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_JPEG_TURBO)
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel)
+target_include_targets(${target} PRIVATE kernel)
 # target_compile_options(${target} PRIVATE "-O3")
 set_target_properties(${target} PROPERTIES OUTPUT_NAME jpeg-turbo)

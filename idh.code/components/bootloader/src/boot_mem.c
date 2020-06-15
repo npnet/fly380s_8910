@@ -13,6 +13,7 @@
 #include "boot_mem.h"
 #include "boot_platform.h"
 #include "osi_log.h"
+#include "osi_api.h"
 
 // A simple memory management for bootloader
 //
@@ -146,7 +147,7 @@ void bootFree(void *ptr)
     else if (p >= gExtRamHeap.start && p < gExtRamHeap.end)
         _heap_free(&gExtRamHeap, p);
     else
-        bootPanic();
+        osiPanic();
 }
 
 void bootShowMemInfo(void)

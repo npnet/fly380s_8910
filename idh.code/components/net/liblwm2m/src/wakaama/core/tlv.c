@@ -89,7 +89,7 @@ static size_t prv_encodeInt(int64_t data,
         length = 4;
         utils_copyValue(data_buffer, &value, length);
     }
-    else if (data >= INT64_MIN && data <= INT64_MAX)
+    else // for converity cid 39376
     {
         length = 8;
         utils_copyValue(data_buffer, &data, length);

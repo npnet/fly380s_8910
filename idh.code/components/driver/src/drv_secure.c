@@ -244,8 +244,8 @@ static void prvAntiClone(void)
 
     prvAntiCloneEncryption(pbuf, ENCRYPT_LEN);
 
-    drvSpiFlashClearRangeWriteProhibit(flash, CONFIG_BOOT_FLASH_OFFSET,
-                                       CONFIG_BOOT_FLASH_OFFSET + CONFIG_BOOT_FLASH_SIZE);
+    drvSpiFlashClearRangeWriteProhibit(flash, HAL_FLASH_OFFSET(CONFIG_BOOT_FLASH_ADDRESS),
+                                       HAL_FLASH_OFFSET(CONFIG_BOOT_FLASH_ADDRESS) + CONFIG_BOOT_FLASH_SIZE);
 
     //uint32_t critical = osiEnterCritical();
     drvSpiFlashErase(flash, ENCRYPT_OFF, SECTOR_SIZE_4K);

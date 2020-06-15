@@ -10,47 +10,36 @@
  * without further testing or modification.
  */
 
-#include "hal_config.h"
+#include "link_defs.ld"
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
 ENTRY(Reset_Handler)
 EXTERN(Reset_Handler)
 
-#define SECT(name) {                            \
-    __##name##_start = .;                       \
-    name##_contents                             \
-    __##name##_end = .;                         \
-    . = ALIGN(0x20);                            \
-    __##name##_load_start = LOADADDR(.name);    \
-}
-
-#define DEF_RO .text .text.* .gnu.linkonce.t.* .rdata .rodata .rodata.* .gnu.linkonce.r.*
-#define DEF_RW .data .data.* .gnu.linkonce.d.*
-#define DEF_ZI .bss .bss.* COMMON .scommon .sbss .sbss.* .sbss2 .sbss2.* .gnu.linkonce.b.*
-
-#define FLASH_RAMTEXT           *libdriver.a:drv_spi_flash.*(DEF_RO) *libhal.a:hal_spi_flash.*(DEF_RO)
-
-#define sramboottext_contents   *(.sramboottext .sramboottext.*)
-#define sramtext_contents       *(VECTORS) FLASH_RAMTEXT \
+#define ttb_contents            *(.TTBL1) *(.TTBL2)
+#define entry_contents          *(RESET)
+#define sramboottext_contents   SORT(*)(.sramboottext .sramboottext.*)
+#define sramtext_contents       *(VECTORS) \
                                 *libkernel.a:portASM.*(DEF_RO) \
                                 *libkernel.a:port.*(DEF_RO) \
-                                *(.sramtext .sramtext.*)
+                                SORT(*)(.sramtext .sramtext.*)
 #define text_contents           *libkernel.a:boot_start.*(DEF_RO) \
                                 *libkernel.a:osi_debug.*(DEF_RO) \
                                 *libhal.a:hal_clock_init.*(DEF_RO) \
                                 *libhal.a:hal_mmu.*(DEF_RO)
-#define ramtext_contents        *(DEF_RO) *(.ramtext .ramtext.*)
-#define srambootdata_contents   *(.srambootdata .srambootdata.*)
-#define sramdata_contents       *(.sramdata .sramdata.*)
-#define data_contents           *(DEF_RW)
+#define ramtext_contents        SORT(*)(DEF_RO) \
+                                SORT(*)(.ramtext .ramtext.*)
+#define srambootdata_contents   SORT(*)(.srambootdata .srambootdata.*)
+#define sramdata_contents       SORT(*)(.sramdata .sramdata.*)
+#define data_contents           SORT(*)(DEF_RW)
 #define srambootbss_contents    *(.srambootbss .srambootbss.*)
 #define srambss_contents        *(.srambss .srambss.*)
 #define bss_contents            *(DEF_ZI)
 #define init_array_contents     KEEP(*(.init_array*))
 
 MEMORY {
-    flash(rx): ORIGIN = CONFIG_NOR_PHY_ADDRESS+CONFIG_APP_FLASH_OFFSET+CONFIG_UIMAGE_HEADER_SIZE,
+    flash(rx): ORIGIN = CONFIG_APP_FLASH_ADDRESS+CONFIG_UIMAGE_HEADER_SIZE,
                LENGTH = CONFIG_APP_FLASH_SIZE-CONFIG_UIMAGE_HEADER_SIZE
     ram(rwx):  ORIGIN = CONFIG_RAM_PHY_ADDRESS+CONFIG_APP_RAM_OFFSET,
                LENGTH = CONFIG_APP_RAM_SIZE
@@ -59,29 +48,27 @@ MEMORY {
 }
 
 SECTIONS {
-    .ttb : ALIGN(16384) {
-        *(.TTBL1)
-        *(.TTBL2)
-    } > ram
-
-    .entry : {
-        *(RESET)
-    } >flash
-
-    .sramboottext : SECT(sramboottext) >sram AT>flash
-    .sramtext : SECT(sramtext) >sram AT>flash
-    .init_array : SECT(init_array) > flash
-    .text : SECT(text) >flash
-    .ramtext : SECT(ramtext) >ram AT>flash
-    .srambootdata : SECT(srambootdata) >sram AT>flash
-    .sramdata : SECT(sramdata) > sram AT>flash
-    .data : SECT(data) > ram AT>flash
-    .srambootbss : SECT(srambootbss) >sram
-    .srambss : SECT(srambss) >sram
-    .bss  : SECT(bss) >ram
+    NOAT_SECT_ALIGNED(ttb, 16384) > ram
+    NOAT_SECT(entry) > flash
+    LOAD_SECT(sramboottext) >sram AT>flash
+    LOAD_SECT(sramtext) >sram AT>flash
+    LOAD_SECT(ramtext) >ram AT>flash
+    NOAT_SECT(init_array) > flash
+    NOAT_SECT(text) > flash
+    LOAD_SECT(sramdata) >sram AT>flash
+    LOAD_SECT(data) >ram AT>flash
+    NOLOAD_SECT(srambss) > sram
+    ANCHOR_SECT(lastsram) > sram
+    NOLOAD_SECT(bss) > ram
+    ANCHOR_SECT(lastram) > ram
+    ANCHOR_SECT(lastflash) > flash
 
     __flash_start = ORIGIN(flash);
-    __flash_end = __data_load_start + SIZEOF(.data);
+    __flash_end = ADDR(.lastflash);
+    __sram_start = ORIGIN(sram);
+    __sram_end = ADDR(.lastsram);
+    __ram_start = ORIGIN(ram);
+    __ram_end = ADDR(.lastram);
 
     __stack_top = ORIGIN(sram) + LENGTH(sram);
     __fiq_stack_top = __stack_top - CONFIG_FIQ_STACK_TOP;
@@ -92,13 +79,10 @@ SECTIONS {
     __sys_stack_top = __stack_top - CONFIG_SYS_STACK_TOP;
     __stack_bottom = __stack_top - CONFIG_STACK_BOTTOM;
 
-    __heap_start = __bss_end;
+    ASSERT(__stack_bottom > __sram_end, "SRAM overflow")
+
+    __heap_start = __ram_end;
     __heap_end = ORIGIN(ram) + LENGTH(ram);
 
-    .comment 0 : { *(.comment) }
-    /DISCARD/ : { *(.dynstr*) }
-    /DISCARD/ : { *(.dynamic*) }
-    /DISCARD/ : { *(.plt*) }
-    /DISCARD/ : { *(.interp*) }
-    /DISCARD/ : { *(.gnu*) }
+    IGNORE_DISCARD_SECTS
 }

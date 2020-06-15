@@ -57,6 +57,8 @@
 #define RES_O_SMCC                      10
 
 #define VALUE_NETWORK_BEARER_GSM    0   //GSM see 
+#define VALUE_NETWORK_BEARER_NBIOT  7
+
 #define VALUE_AVL_NETWORK_BEARER_1  0   //GSM
 #define VALUE_AVL_NETWORK_BEARER_2  21  //WLAN
 #define VALUE_AVL_NETWORK_BEARER_3  41  //Ethernet
@@ -158,7 +160,10 @@ static uint8_t prv_set_value(lwm2m_data_t * dataP,
         break;
 
     case RES_O_CELL_ID:
-        lwm2m_data_encode_int(connDataP->cellId, dataP);
+    {
+        unsigned int cellID = 0;//get_Cell_ID();
+        lwm2m_data_encode_int(cellID, dataP);
+    }
         return COAP_205_CONTENT ;
 
     case RES_O_SMNC:
@@ -230,10 +235,10 @@ static void free_object_conn_m(lwm2m_object_t * objectP)
 {
     lwm2m_free(objectP->userData);
     lwm2m_list_free(objectP->instanceList);
-    lwm2m_free(objectP);
+    //lwm2m_free(objectP);
 }
 
-lwm2m_object_t * get_object_conn_m(void)
+lwm2m_object_t * get_object_conn_m(void* lwm2mH)
 {
     /*
      * The get_object_conn_m() function create the object itself and return a pointer to the structure that represent it.

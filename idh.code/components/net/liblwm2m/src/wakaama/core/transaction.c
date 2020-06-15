@@ -152,8 +152,8 @@ lwm2m_transaction_t * transaction_new(void * sessionH,
     lwm2m_transaction_t * transacP;
     int result;
 
-    LOG_ARG("method: %d, altPath: \"%s\", mID: %d, token_len: %d",
-            method, altPath, mID, token_len);
+    //LOG_ARG("method: %d, altPath: \"%s\", mID: %d, token_len: %d",
+    //        method, altPath, mID, token_len);
     LOG_URI(uriP);
 
     // no transactions without peer
@@ -390,6 +390,7 @@ int transaction_send(lwm2m_context_t * contextP,
             }
             else
             {
+                LOG("tv_sec < 0,maxRetriesReached = true");
                 maxRetriesReached = true;
             }
         }
@@ -407,12 +408,15 @@ int transaction_send(lwm2m_context_t * contextP,
         }
         else
         {
+            LOG_ARG("retrans_counter= %d",transacP->retrans_counter);
+            LOG("maxRetriesReached = true");
             maxRetriesReached = true;
         }
     }
 
     if (transacP->ack_received || maxRetriesReached)
     {
+        LOG_ARG("transacP->ack_received=%d,maxRetriesReached=%d",transacP->ack_received,maxRetriesReached);
         if (transacP->callback)
         {
             transacP->callback(transacP, NULL);
@@ -453,7 +457,7 @@ void transaction_step(lwm2m_context_t * contextP,
             }
             else
             {
-                interval = 1;
+                interval = 3;
             }
 
             if (*timeoutP > interval)
@@ -463,7 +467,7 @@ void transaction_step(lwm2m_context_t * contextP,
         }
         else
         {
-            *timeoutP = 1;
+            *timeoutP = 3;
         }
 
         transacP = nextP;

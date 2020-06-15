@@ -9,23 +9,36 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/srv_config.h.in ${BINARY_TOP_DIR}/include/srv_config.h)
+configure_file(include/srv_config.h.in ${out_inc_dir}/srv_config.h)
 
 set(target service)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC
-    src/srv_usb_trace.c
     src/srv_wdt.c
     src/srv_dtr.c
-    src/srv_modem_log.c
-    src/srv_mos_log.c
-    src/srv_2line_wakeup.c
     src/srv_sim_detect.c
-    src/srv_rf_param.c
 )
+
+target_sources_if(CONFIG_SOC_8910 THEN ${target} PRIVATE
+    src/srv_2line_wakeup.c
+    src/srv_rf_param.c
+    src/srv_bt_trace.c
+    src/simlock/src/simlock.c
+    src/simlock/src/simlock_aescrypt.c
+    src/simlock/src/srv_simlock.c
+    src/simlock/src/simlock_storage.c
+    src/simlock/library/source/aes.c
+    src/simlock/library/source/bignum.c
+    src/simlock/library/source/rsa.c
+    src/simlock/library/source/sha1.c
+    src/simlock/library/source/sha2.c
+)
+
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_SRV)
-target_include_directories(${target} PUBLIC include)
-target_include_targets(${target} PRIVATE kernel driver hal fs)
+target_include_directories(${target} PUBLIC include src/simlock/include src/simlock/library/include)
+target_include_targets(${target} PRIVATE kernel driver hal fs calclib apploader nvm)
 
-relative_glob(srcs include/*.h src/*.c src/*.h)
+relative_glob(srcs include/*.h src/*.c src/*.h src/trace/*.h src/trace/*.c src/simlock/include/*.h src/simlock/src/*.c)
 beautify_c_code(${target} ${srcs})

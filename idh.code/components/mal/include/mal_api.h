@@ -65,5 +65,10 @@ void malInit(void);
  */
 unsigned malSimGetState(int sim, malSimState_t *state, unsigned *remaintries);
 
+int sim_channel_open(uint8_t *dfname, uint8_t *channel_id, uint16_t timeout, uint8_t sim_id);
+int sim_channel_transmit(uint8_t channel_id, uint8_t *apdu, uint16_t apduLen,
+                         uint8_t *resp, uint16_t *respLen, uint16_t timeout, uint8_t sim_id);
+int sim_channel_close(uint8_t channel_id, uint16_t timeout, uint8_t sim_id);
+
 OSI_EXTERN_C_END
 #endif

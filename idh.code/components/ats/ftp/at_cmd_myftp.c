@@ -10,8 +10,10 @@
  * without further testing or modification.
  */
 #include "ats_config.h"
+#include "atr_config.h"
+#include "hal_config.h"
 
-#ifdef CONFIG_AT_FTP_SUPPORT
+#if defined(CONFIG_SOC_6760) || (defined(CONFIG_ATS_SGCC_CATM_SUPPORT) && defined(CONFIG_SOC_8910))
 /*
 //#include <csw.h>
 //#include "sxs_io.h"

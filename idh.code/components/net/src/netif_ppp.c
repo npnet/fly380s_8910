@@ -97,7 +97,7 @@ static void cfwActRsp_CB(void *ctx, const osiEvent_t *event)
         return;
     }
 
-    sys_arch_printf("cfwActRsp_CB");
+    OSI_LOGI(0x10007581, "cfwActRsp_CB");
     CFW_EVENT CfwEv;
     uint8_t nSim;
     AT_CosEvent2CfwEvent(event, &CfwEv);
@@ -132,19 +132,19 @@ static void cfwActRsp_CB(void *ctx, const osiEvent_t *event)
     case EV_CFW_GPRS_ACT_RSP:
     {
         OSI_LOGI(0x10001662, "ppp_attact_rsp EV_CFW_GPRS_ACT_RSP nType: %d", CfwEv.nType);
-        sys_arch_printf("ppp_attact_rsp EV_CFW_GPRS_ACT_RSP nType: %d", CfwEv.nType);
+
         if (CFW_GPRS_ACTIVED == CfwEv.nType)
         {
             if (g_ppp_ctx[nDlc] != NULL)
             {
-                sys_arch_printf("set addr: nDlc = %d", nDlc);
+                OSI_LOGI(0x10007582, "set addr: nDlc = %d", nDlc);
                 g_ppp_ctx[nDlc]->gprsState = PPP_ACTIVED;
                 set_address(g_ppp_ctx[nDlc]);
             }
             else
             {
                 //Already fail, Treminating
-                sys_arch_printf("CFW_GPRS_DEACTIVED");
+                OSI_LOGI(0x10007583, "CFW_GPRS_DEACTIVED");
                 CFW_GprsAct(CFW_GPRS_DEACTIVED, nCid, Act_UTI, nSim);
                 cfwUtiCBDispatchRegister(gAtCfwCtx.resp_man, Act_UTI, cfwActRsp_CB, g_ppp_ctx[nDlc]);
             }
@@ -172,11 +172,11 @@ extern struct netif *getGprsNetIf(uint8_t nSim, uint8_t nCid);
 
 static u32_t output_cb(ppp_pcb *pcb, u8_t *data, u32_t len, void *ctx)
 {
-    sys_arch_printf("output_cb enter\n");
+    OSI_LOGI(0x10007584, "output_cb enter\n");
     //return uart_write(UART, data, len);
     ctx_cb_t *ctx_p = (ctx_cb_t *)ctx;
     sys_arch_dump(data, len);
-    sys_arch_printf("output_cb lcp_fsm:%d, lpcp_fsm:%d, gprs status:%d\n", pcb->lcp_fsm.state, pcb->ipcp_fsm.state, ctx_p->gprsState);
+    OSI_LOGI(0x10007585, "output_cb lcp_fsm:%d, lpcp_fsm:%d, gprs status:%d\n", pcb->lcp_fsm.state, pcb->ipcp_fsm.state, ctx_p->gprsState);
     atDataWrite(local_data_engine, data, len);
     //sys_arch_printf("output_cb uart_SendData ret =%d\n", len);
     return len;
@@ -184,7 +184,7 @@ static u32_t output_cb(ppp_pcb *pcb, u8_t *data, u32_t len, void *ctx)
 
 void AT_PppTerminateInd(atCmdEngine_t *engine)
 {
-    sys_arch_printf("AT_PppTerminateInd enter\n");
+    OSI_LOGI(0x10007586, "AT_PppTerminateInd enter\n");
     struct atDispatch *d = atCmdGetDispatch(engine);
     //sys_arch_printf("AT_PppTerminateInd nDLCI = %d,isPppActived=%d", PARA->engine->channel_id, isPppActived);
     isPppActived = 0;
@@ -193,13 +193,13 @@ void AT_PppTerminateInd(atCmdEngine_t *engine)
 
 void CFW_PppTermInd(atCmdEngine_t *engine)
 {
-    sys_arch_printf("CFW_PppTermInd enter\n");
+    OSI_LOGI(0x10007587, "CFW_PppTermInd enter\n");
     AT_PppTerminateInd(engine);
 }
 
 static void linkstate_cb(ppp_pcb *pcb, int err_code, void *ctx)
 {
-    sys_arch_printf("linkstate_cb enter\n");
+    OSI_LOGI(0x10007588, "linkstate_cb enter\n");
     ctx_cb_t *ctx_p = (ctx_cb_t *)ctx;
     //sys_arch_printf("linkstate_cb pcb=0x%x err_code=%d nDlc=%d\n", pcb, err_code, ctx_p->nDlc);
     if (err_code == 0)
@@ -218,7 +218,7 @@ static void linkstate_cb(ppp_pcb *pcb, int err_code, void *ctx)
 
 static void set_address(ctx_cb_t *ctx_p)
 {
-    sys_arch_printf("set_address enter\n");
+    OSI_LOGI(0x10007589, "set_address enter\n");
     struct netif *g_gprsIf = NULL;
     g_gprsIf = getGprsNetIf(ctx_p->nSimId, ctx_p->nCid);
     //sys_arch_printf("set_address g_gprsIf=0x%x\n", g_gprsIf);
@@ -248,12 +248,12 @@ static void set_address(ctx_cb_t *ctx_p)
 
 static void ppp_notify_phase_cb(ppp_pcb *pcb, u8_t phase, void *ctx)
 {
-    sys_arch_printf("ppp_notify_phase_cb enter\n");
+    OSI_LOGI(0x1000758a, "ppp_notify_phase_cb enter\n");
     ctx_cb_t *ctx_p = (ctx_cb_t *)ctx;
-    //sys_arch_printf("ppp_notify_phase_cb pcb=0x%x phase=%d,gprs status:%d", pcb, phase, ctx_p->gprsState);
-    sys_arch_printf("status lcp_fsm:%d, lpcp_fsm:%d\n", pcb->lcp_fsm.state, pcb->ipcp_fsm.state);
+    //OSI_LOGI(0, "ppp_notify_phase_cb pcb=0x%x phase=%d,gprs status:%d", pcb, phase, ctx_p->gprsState);
+    OSI_LOGI(0x1000758b, "status lcp_fsm:%d, lpcp_fsm:%d\n", pcb->lcp_fsm.state, pcb->ipcp_fsm.state);
 #if PPP_IPV6_SUPPORT
-    sys_arch_printf("status lcp_fsm:%d, ipv6cp_fsm:%d\n", pcb->lcp_fsm.state, pcb->ipv6cp_fsm.state);
+    OSI_LOGI(0x1000758c, "status lcp_fsm:%d, ipv6cp_fsm:%d\n", pcb->lcp_fsm.state, pcb->ipv6cp_fsm.state);
 #endif
     switch (phase)
     {
@@ -277,14 +277,14 @@ static void ppp_notify_phase_cb(ppp_pcb *pcb, u8_t phase, void *ctx)
                 struct netif *g_gprsIf = getGprsNetIf(ctx_p->nSimId, ctx_p->nCid);
                 while (ctx_p->gprsState > PPP_DETACHED && g_gprsIf == NULL && retryCount++ <= 20)
                 {
-                    sys_arch_printf("ppp_notify_phase_cb waiting for gprs actived:%d\n", retryCount);
+                    OSI_LOGI(0x1000758d, "ppp_notify_phase_cb waiting for gprs actived:%d\n", retryCount);
                     osiThreadSleep(500);
                     g_gprsIf = getGprsNetIf(ctx_p->nSimId, ctx_p->nCid);
                 }
                 //sys_arch_printf("ppp_notify_phase_cb g_gprsIf=0x%x\n", g_gprsIf);
                 if (g_gprsIf != NULL)
                 {
-                    sys_arch_printf("ppp_notify_phase_cb set_address\n");
+                    OSI_LOGI(0x1000758e, "ppp_notify_phase_cb set_address\n");
                     set_address(ctx_p);
                 }
             }
@@ -317,7 +317,7 @@ static void ppp_notify_phase_cb(ppp_pcb *pcb, u8_t phase, void *ctx)
 
 static int8_t do_active(uint8_t nUTI, uint8_t nSim, uint8_t nCid)
 {
-    sys_arch_printf("do_active enter\n");
+    OSI_LOGI(0x1000758f, "do_active enter\n");
     return CFW_GprsAct(CFW_GPRS_ACTIVED, nCid, nUTI, nSim);
 }
 #if 0
@@ -398,7 +398,7 @@ static void ppp_attact_rsp(osiEvent_t *pEvent)
 #endif
 static int ppp_GprsActive(uint16_t nDlc, uint8_t nSimID, uint8_t nCid)
 {
-    sys_arch_printf("ppp_GprsActive enter\n");
+    OSI_LOGI(0x10007590, "ppp_GprsActive enter\n");
     int iResult = 0;
     //uint8_t nSim = AT_SIM_ID(nDlc);
     uint8_t nSim = nSimID;
@@ -457,7 +457,7 @@ static int ppp_GprsActive(uint16_t nDlc, uint8_t nSimID, uint8_t nCid)
 
 void ppp_StartGprs(u8_t *usrname, u8_t *usrpwd, void *ctx)
 {
-    sys_arch_printf("ppp_StartGprs enter\n");
+    OSI_LOGI(0x10007591, "ppp_StartGprs enter\n");
     ctx_cb_t *ctx_p = (ctx_cb_t *)ctx;
     u16_t nDlc = ctx_p->nDlc;
     u8_t nSimId = ctx_p->nSimId;
@@ -518,11 +518,11 @@ ret:
 
 int startPppIf(atCommand_t *PARA, u8_t nSimId, u8_t nCid)
 {
-    sys_arch_printf("startPppIf enter\n");
+    OSI_LOGI(0x10007592, "startPppIf enter\n");
     struct netif *pppif;
     atDispatch_t *d = atCmdGetDispatch(PARA->engine);
     u8_t nDlc = atCmdGetChannel_id(d);
-    sys_arch_printf("startPppIf nDlc = %d\n", nDlc);
+    OSI_LOGI(0x10007593, "startPppIf nDlc = %d\n", nDlc);
     Att_UTI = cfwRequestUTI();
     Act_UTI = cfwRequestUTI();
 
@@ -586,16 +586,16 @@ int startPppIf(atCommand_t *PARA, u8_t nSimId, u8_t nCid)
 
 struct netif *getPppNetIf(uint8_t nDlc)
 {
-    sys_arch_printf("getPppNetIf enter\n");
+    OSI_LOGI(0x10007594, "getPppNetIf enter\n");
     if (g_ppp_ctx[nDlc] == NULL || g_ppp_ctx[nDlc]->nPppPcb == NULL)
         return NULL;
-    sys_arch_printf("getPppNetIf FINISH\n");
+    OSI_LOGI(0x10007595, "getPppNetIf FINISH\n");
     return g_ppp_ctx[nDlc]->nPppPcb->netif;
 }
 
 int CFW_PppSendData(uint8_t *pData, uint16_t nDataSize, uint8_t MuxId)
 {
-    sys_arch_printf("CFW_PppSendData enter MuxId = %d\n", MuxId);
+    OSI_LOGI(0x10007596, "CFW_PppSendData enter MuxId = %d\n", MuxId);
     if (NULL == g_ppp_ctx[MuxId])
     {
         return ERR_INVALID_HANDLE;
@@ -606,7 +606,7 @@ int CFW_PppSendData(uint8_t *pData, uint16_t nDataSize, uint8_t MuxId)
 }
 static void _pppactGprsActRsp(atCommand_t *cmd, const osiEvent_t *event)
 {
-    sys_arch_printf("enter _pppactGprsActRsp");
+   OSI_LOGI(0x10007597, "enter _pppactGprsActRsp");
     osiEvent_t *ev = (osiEvent_t *)malloc(sizeof(osiEvent_t));
     atDispatch_t *d = atCmdGetDispatch(cmd->engine);
     ev->id = EV_PPP_CFW_GPRS_ACT;
@@ -615,16 +615,16 @@ static void _pppactGprsActRsp(atCommand_t *cmd, const osiEvent_t *event)
     ev->param3 = atCmdGetChannel_id(d); //channel_id and ACT STATE may be active or deactive, it should be got form cmd
     //sys_arch_printf("finish _pppactGprsActRsp ev->param3 chanid = %d",ev->param3);
     osiEventSend(netGetTaskID(), ev);
-    sys_arch_printf("pre enter startPppIf");
+    OSI_LOGI(0x10007598, "pre enter startPppIf");
     osiThreadSleep(1000);
-    sys_arch_printf("enter startPppIf");
+    OSI_LOGI(0x10007599, "enter startPppIf");
     startPppIf(cmd, IN_Sim, IN_cid);
 }
 
 static void _pppattGprsAttRsp(atCommand_t *cmd, const osiEvent_t *event)
 {
-    sys_arch_printf("enter _pppattGprsAttRsp");
-    sys_arch_printf("enter event id = %ld p1 = %ld p2 = %ld p3 = %ld",
+    OSI_LOGI(0x1000759a, "enter _pppattGprsAttRsp");
+    OSI_LOGI(0x1000759b, "enter event id = %ld p1 = %ld p2 = %ld p3 = %ld",
                     event->id, event->param1, event->param2, event->param3);
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint ret;
@@ -640,14 +640,14 @@ static void _pppattGprsAttRsp(atCommand_t *cmd, const osiEvent_t *event)
 
 void GprsActCreateNetif(atCommand_t *PARA, uint8_t nSim, uint8_t nCid)
 {
-    sys_arch_printf("enter GprsActCreateNetif");
+    OSI_LOGI(0x1000759c, "enter GprsActCreateNetif");
     uint ret;
     uint16_t nUTI = cfwRequestUTI();
     IN_cid = nCid;
     IN_Sim = nSim;
-    sys_arch_printf("enter CFW_GprsAtt");
+    OSI_LOGI(0x1000759d, "enter CFW_GprsAtt");
     ret = CFW_AttDetach(CFW_GPRS_ATTACHED, nUTI, ATTACH_TYPE, nSim);
-    sys_arch_printf("finish CFW_GprsAtt ret = %d", ret);
+    OSI_LOGI(0x1000759e, "finish CFW_GprsAtt ret = %d", ret);
     if (ret != 0)
         RETURN_CME_CFW_ERR(cmd->engine, ret);
 
@@ -656,24 +656,24 @@ void GprsActCreateNetif(atCommand_t *PARA, uint8_t nSim, uint8_t nCid)
 // This function response "CONNECT" and change to data staues.
 void AT_PppProcess(atCommand_t *PARA, uint8_t nSim, uint8_t nCid)
 {
-    sys_arch_printf("enter AT_PppProcess");
+    OSI_LOGI(0x1000759f, "enter AT_PppProcess");
     //OSI_LOGI(0, "AT_PppProcess:%d,%d,%d,isPppActived=%d", nDLCI, nSim, nCid, isPppActived);
     atDispatch_t *d = atCmdGetDispatch(PARA->engine);
-    sys_arch_printf("enter atEngineModeSwitch");
+   OSI_LOGI(0x100075a0, "enter atEngineModeSwitch");
     atEngineModeSwitch(AT_MODE_SWITCH_DATA_START, d);
-    sys_arch_printf("finish atEngineModeSwitch");
+    OSI_LOGI(0x100075a1, "finish atEngineModeSwitch");
     isPppActived = 1;
     atDataEngine_t *engine = atDispatchGetDataEngine(d);
     local_data_engine = engine;
     atDataSetPPPMode(engine);
-    sys_arch_printf("finish atDataSetPPPMode");
+    OSI_LOGI(0x100075a2, "finish atDataSetPPPMode");
     GprsActCreateNetif(PARA, nSim, nCid);
 }
 
 void AT_PppClose(uint8_t nDLCI)
 {
     isPppActived = 0;
-    sys_arch_printf("AT_PppClose enter\n");
+    OSI_LOGI(0x100075a3, "AT_PppClose enter\n");
     if (g_ppp_ctx[nDLCI] != NULL)
     {
         isPppActived = 0;
@@ -684,7 +684,7 @@ void AT_PppClose(uint8_t nDLCI)
 
 void ppp_ip_output(struct pbuf *p, ctx_cb_t *ctx)
 {
-    sys_arch_printf("ppp_ip_output enter\n");
+    OSI_LOGI(0x100075a4, "ppp_ip_output enter\n");
     struct netif *gprs_netif = ctx->gprs_netif;
     if (p != NULL && gprs_netif != NULL)
     {
@@ -702,8 +702,8 @@ void ppp_ip_output(struct pbuf *p, ctx_cb_t *ctx)
 bool ppp_ip_input(struct pbuf *p, struct netif *gprs_netif, uint8_t nDLCI)
 {
     //int ret;
-    sys_arch_printf("ppp_ip_input enter\n");
-    sys_arch_printf("ppp_ip_input nDLCI = %d\n", nDLCI);
+    OSI_LOGI(0x100075a5, "ppp_ip_input enter\n");
+    OSI_LOGI(0x100075a6, "ppp_ip_input nDLCI = %d\n", nDLCI);
     struct netif *ppp_netif = getPppNetIf(nDLCI);
     if (ppp_netif == NULL || g_ppp_ctx[nDLCI]->gprs_netif != gprs_netif)
         return false;

@@ -2476,7 +2476,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
             uint8_t aid[18];
             uint8_t length = 18;
             CFW_GetUsimAID(aid, &length, nSim);
-            uint32_t retval = SimSelectApplicationReq(aid, length, nSim);
+            uint32_t retval = SimSelectApplicationReq(aid, length, 0, nSim);
             if (ERR_SUCCESS != retval)
             {
                 OSI_LOGI(0, "ReselectApplicationReq return 0x%x \n", retval);

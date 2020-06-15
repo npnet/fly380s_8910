@@ -19,11 +19,14 @@
 #include "boot_mem.h"
 #include "boot_adi_bus.h"
 #include "boot_spi_flash.h"
+#include "boot_bsl_cmd.h"
 #include "hal_chip.h"
 #include "hal_config.h"
 #include "hal_spi_flash.h"
 #include "cmsis_core.h"
 #include "osi_log.h"
+#include "osi_api.h"
+#include "drv_names.h"
 #include <sys/reent.h>
 #include <stdint.h>
 #include <string.h>
@@ -148,21 +151,22 @@ static void flashEraseWriteStart(fdlEngine_t *fdl, fdlPacket_t *pkt, bootSpiFlas
     uint32_t test_size = __ntohl(*ptr++);
     uint32_t sector_size = __ntohl(*ptr++);
     flashtest_time_t flash_time = {};
+    osiElapsedTimer_t elapsed;
 
     OSI_LOGI(0, "FLASH: offset 0x%x, size 0x%x  sector 0x%x...", offset, test_size, sector_size);
 
     if (!offset && !test_size)
     {
-        uint32_t erase_time = bootHWTick16K();
+        osiElapsedTimerStart(&elapsed);
         if (!_bootFlashChipErase(flash))
         {
             OSI_LOGE(0, "FLASH: erase whole flash fail");
             const char erase_string[] = "Erase whole flash fail";
             size_t er_len = strlen(erase_string);
             fdlEngineSendRespData(fdl, FLASH_TEST_ERR, erase_string, er_len);
-            bootPanic();
+            osiPanic();
         }
-        flash_time.erase = (bootHWTick16K() - erase_time) / 16;
+        flash_time.erase = osiElapsedTime(&elapsed);
         flash_time.write = 0;
         OSI_LOGI(0, "FLASH: erase whole flash time %d, use %d ms ...", ++test_cnt, flash_time.erase);
     }
@@ -178,31 +182,31 @@ static void flashEraseWriteStart(fdlEngine_t *fdl, fdlPacket_t *pkt, bootSpiFlas
             fdlEngineSendRespData(fdl, FLASH_TEST_ERR, cmd_string, cmd_len);
         }
 
-        uint32_t start_tick = bootHWTick16K();
         OSI_LOGI(0, "start test flash...");
 
         // erase flash test
+        osiElapsedTimerStart(&elapsed);
         if (!_bootFlashErase(flash, offset, test_size, sector_size))
         {
             OSI_LOGE(0, "FLASH: erase flash error");
             const char sector_string[] = "Erase sector flash fail";
             size_t sec_len = strlen(sector_string);
             fdlEngineSendRespData(fdl, FLASH_TEST_ERR, sector_string, sec_len);
-            bootPanic();
+            osiPanic();
         }
-        flash_time.erase = (bootHWTick16K() - start_tick) / 16;
+        flash_time.erase = osiElapsedTime(&elapsed);
 
         // write flash test
-        start_tick = bootHWTick16K();
+        osiElapsedTimerStart(&elapsed);
         if (!_bootFlashWrite(flash, offset, test_size))
         {
             OSI_LOGE(0, "FLASH: write flash error");
             const char wr_string[] = "Write sector flash fail";
             size_t wr_len = strlen(wr_string);
             fdlEngineSendRespData(fdl, FLASH_TEST_ERR, wr_string, wr_len);
-            bootPanic();
+            osiPanic();
         }
-        flash_time.write = (bootHWTick16K() - start_tick) / 16;
+        flash_time.write = osiElapsedTime(&elapsed);
 
         OSI_LOGI(0, "FLASH:time %d erase/write ~~~ %d ms / %d ms...", ++test_cnt, flash_time.erase, flash_time.write);
     }
@@ -213,7 +217,7 @@ static void flashEraseWriteStart(fdlEngine_t *fdl, fdlPacket_t *pkt, bootSpiFlas
 static void _process_flash(fdlEngine_t *fdl, fdlPacket_t *pkt, void *flash_)
 {
     if (fdl == NULL || pkt == NULL)
-        bootPanic();
+        osiPanic();
 
     bootSpiFlash_t *flash = (bootSpiFlash_t *)flash_;
     switch (pkt->type)
@@ -222,44 +226,49 @@ static void _process_flash(fdlEngine_t *fdl, fdlPacket_t *pkt, void *flash_)
         fdlEngineSendRespNoData(fdl, BSL_REP_ACK);
         break;
 
-    case BSL_ERASE_FLASH:
+    case BSL_CMD_ERASE_FLASH:
         flashEraseWriteStart(fdl, pkt, flash);
         break;
 
     default:
         OSI_LOGE(0, "FDL1, cmd not support yet %x", pkt->type);
-        bootPanic();
+        osiPanic();
         break;
     }
 }
 
 void bootStart(uint32_t param)
 {
+    OSI_CLEAR_SECTION(bss);
+
     halSpiFlashStatusCheck(0);
     halClockInit();
 
-    bootInitRunTime();
     __FPU_Enable();
     _impure_ptr = _GLOBAL_REENT;
 
     bootDebuguartInit();
     bootAdiBusInit();
-    bootHeapInit((uint32_t *)CONFIG_BOOT_SRAM_HEAP_START, CONFIG_BOOT_SRAM_HEAP_SIZE, 0, 0);
+
+    extern unsigned __sram_heap_start[];
+    extern unsigned __sram_heap_end[];
+    unsigned sram_heap_size = OSI_PTR_DIFF(__sram_heap_end, __sram_heap_start);
+    bootHeapInit((uint32_t *)__sram_heap_start, sram_heap_size, 0, 0);
 
     OSI_LOGI(0, "FLASH_TEST_RUN ......");
 
-    fdlChannel_t *ch = fdlOpenUart(CONFIG_FDL_UART_BAUD);
+    fdlChannel_t *ch = fdlOpenUart(CONFIG_FDL_DEFAULT_UART, CONFIG_FDL_UART_BAUD, true);
     if (ch == NULL)
     {
-        OSI_LOGE(0, "FDL1 fail, can't open uart pdl channel");
-        bootPanic();
+        OSI_LOGE(0, "FDL1 fail, can't open uart fdl channel");
+        osiPanic();
     }
 
-    fdlEngine_t *fdl = fdlEngineCreate(ch);
+    fdlEngine_t *fdl = fdlEngineCreate(ch, CONFIG_FDL_PACKET_MAX_LEN);
     if (fdl == NULL)
     {
         OSI_LOGE(0, "FDL1 fail, can not create fdl engine");
-        bootPanic();
+        osiPanic();
     }
     for (;;)
     {
@@ -271,7 +280,7 @@ void bootStart(uint32_t param)
                 if (!fdlEngineSendVersion(fdl))
                 {
                     OSI_LOGE(0, "FDL1 fail, fail to send version string");
-                    bootPanic();
+                    osiPanic();
                 }
                 break;
             }
@@ -279,10 +288,10 @@ void bootStart(uint32_t param)
     }
     _arrayValueInit();
 
-    bootSpiFlash_t *flash = bootSpiFlashOpen();
-    fdlEngineProcess(fdl, _process_flash, flash);
+    bootSpiFlash_t *flash = bootSpiFlashOpen(DRV_NAME_SPI_FLASH);
+    fdlEngineProcess(fdl, _process_flash, NULL, flash);
 
     // never return here
     fdlEngineDestroy(fdl);
-    bootPanic();
+    osiPanic();
 }

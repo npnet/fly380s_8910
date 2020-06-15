@@ -1,6 +1,5 @@
 #include "ats_config.h"
-//#ifdef AT_MQTT_SUPPORT
-#if 1
+#ifdef CONFIG_AT_LWIP_MQTT_SUPPORT
 #include "stdio.h"
 #include "cfw.h"
 #include "at_cfg.h"
@@ -45,6 +44,12 @@ static AT_MQTT_TM_PARAM s_mqtt_tm_param;
 extern void mbedtls_debug_set_threshold(int threshold);
 extern struct altcp_tls_config *
 altcp_tls_create_config_client2(char *altcp_ca_pem, char *altcp_cert_pem, char *altcp_key_pem);
+struct altcp_tls_config *
+altcp_tls_create_config_client_2wayauth(const u8_t *ca, size_t ca_len, const u8_t *privkey, size_t privkey_len,
+                                        const u8_t *privkey_pass, size_t privkey_pass_len,
+                                        const u8_t *cert, size_t cert_len);
+void altcp_tls_free_config(struct altcp_tls_config *conf);
+
 static void at_mqtt_stop_callback_timeout();
 
 static void mqtt_CommandNotResponse(atCommand_t *cmd)
@@ -54,10 +59,15 @@ static void mqtt_CommandNotResponse(atCommand_t *cmd)
 
 static void AT_MQTT_AsyncEventProcess(void *param)
 {
-    osiEvent_t *pEvent = (osiEvent_t *)param;
-    //bool resp = true;
-    uint32_t rc = pEvent->param1;
+    osiEvent_t *pEvent = NULL;
+    uint32_t rc = 0;
     bool stopTimer = false;
+
+    pEvent = (osiEvent_t *)param;
+    if (NULL == pEvent)
+        return;
+    rc = pEvent->param1;
+
     OSI_LOGI(0, "AT_MQTT_AsyncEventProcess() line[%d]:pEvent->nEventId=%d, rc=%d", __LINE__, pEvent->id, rc);
     switch (pEvent->id)
     {
@@ -146,7 +156,105 @@ static void at_mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connect
 }
 
 #if LWIP_ALTCP && LWIP_ALTCP_TLS
-static uint8_t *ca_crt = "-----BEGIN CERTIFICATE-----\n\
+#if 0
+static const char *ca_crt = "-----BEGIN CERTIFICATE-----\n\
+MIICvzCCAiigAwIBAgIJAOEH30RV037pMA0GCSqGSIb3DQEBCwUAMHYxCzAJBgNV\n\
+BAYTAkNOMRAwDgYDVQQIDAd0aWFuamluMQswCQYDVQQHDAJUSjEMMAoGA1UECgwD\n\
+UkRBMQwwCgYDVQQLDANSREExDDAKBgNVBAMMA1JEQTEeMBwGCSqGSIb3DQEJARYP\n\
+Y2FAcmRhbWljcm8uY29tMCAXDTE4MDkxOTA5MDYxM1oYDzIxMTgwODI2MDkwNjEz\n\
+WjB2MQswCQYDVQQGEwJDTjEQMA4GA1UECAwHdGlhbmppbjELMAkGA1UEBwwCVEox\n\
+DDAKBgNVBAoMA1JEQTEMMAoGA1UECwwDUkRBMQwwCgYDVQQDDANSREExHjAcBgkq\n\
+hkiG9w0BCQEWD2NhQHJkYW1pY3JvLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAw\n\
+gYkCgYEAviKxja+DM/W7JCwf3QK8mYmlF3a4YABgMEwAlW4S/ulZ50HGBBzEMHj7\n\
+Q0GANnTGSJFaSpbOkjA8TJ5fly/mLffz1GYcgkU2lCiiDckh1WXJOwZsivAogoML\n\
+0LmLTN7xHXzV2lN10U+fDM+v3AD1rEJlDVoZ5z4d7SwsSj7qW8kCAwEAAaNTMFEw\n\
+HQYDVR0OBBYEFG3UUGWA/6v3YQTZB+CDey0JJ4nXMB8GA1UdIwQYMBaAFG3UUGWA\n\
+/6v3YQTZB+CDey0JJ4nXMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQAD\n\
+gYEAGyeuyAqK8RgCSwoDJGj358cEURpC0FT/KuH+43XrkUHCJCMhH2zcaeOr6eBG\n\
+ws0bYutiSRLnxMb5LP1tha+xRBiruykIuNCWoK3z751rr1xQsjzkl0EV41UjIGoF\n\
+pPH8E14NwjLr9vPA68ZkfQmBI8H08yTRsqUJOLYLP/mLwIY=\n\
+-----END CERTIFICATE-----";
+
+static const char *client_crt = "Certificate:\n\
+    Data:\n\
+        Version: 3 (0x2)\n\
+        Serial Number: 36 (0x24)\n\
+    Signature Algorithm: sha256WithRSAEncryption\n\
+        Issuer: C=CN, ST=tianjin, L=TJ, O=RDA, OU=RDA, CN=RDA/emailAddress=ca@rdamicro.com\n\
+        Validity\n\
+            Not Before: Sep 19 00:00:00 2018 GMT\n\
+            Not After : Sep 19 00:00:00 2027 GMT\n\
+        Subject: C=CN, ST=tianjin, O=RDA, OU=RDA, CN=RDA/emailAddress=client@rdamicro.com\n\
+        Subject Public Key Info:\n\
+            Public Key Algorithm: rsaEncryption\n\
+                Public-Key: (1024 bit)\n\
+                Modulus:\n\
+                    00:d6:ba:00:f0:aa:5b:22:ff:42:0f:9c:86:53:be:\n\
+                    4f:5c:86:c4:53:15:f3:f0:22:36:a2:1c:0f:97:4b:\n\
+                    5c:35:28:cc:0b:e7:08:c8:87:7a:3d:f9:a5:5a:12:\n\
+                    44:7f:c4:8b:11:ce:94:fb:78:a7:8c:48:d7:75:0e:\n\
+                    8a:98:53:cf:87:1f:9b:d9:b5:f4:1e:22:e7:64:43:\n\
+                    da:04:86:2d:62:25:93:75:bf:cc:2a:89:07:db:69:\n\
+                    1c:6b:7f:e4:e1:42:44:63:48:c9:ac:ab:f5:f2:8c:\n\
+                    f1:c4:03:3c:b0:2e:c1:61:a7:44:12:76:98:3e:d9:\n\
+                    3d:97:9c:ee:46:bf:8a:99:4f\n\
+                Exponent: 65537 (0x10001)\n\
+        X509v3 extensions:\n\
+            X509v3 Basic Constraints:\n\ 
+                CA:FALSE\n\
+            Netscape Comment:\n\ 
+                OpenSSL Generated Certificate\n\
+            X509v3 Subject Key Identifier:\n\
+                A4:DF:A9:EC:82:49:AF:00:1C:98:E6:57:21:AF:CE:D5:24:35:0F:26\n\
+            X509v3 Authority Key Identifier:\n\ 
+                keyid:6D:D4:50:65:80:FF:AB:F7:61:04:D9:07:E0:83:7B:2D:09:27:89:D7\n\
+    \n\
+    Signature Algorithm: sha256WithRSAEncryption\n\
+         7e:ea:bb:db:93:f2:5e:5d:0d:d8:7e:16:ed:78:32:11:56:61:\n\
+         65:ab:f2:b8:63:bb:19:25:a8:64:27:33:49:a3:90:5c:59:75:\n\
+         e5:0e:1e:ae:65:57:40:ac:5b:97:98:8a:5e:2f:0a:a8:81:63:\n\
+         20:0b:eb:a1:79:20:f0:aa:09:20:c4:0c:b6:0e:a3:84:ec:29:\n\
+         3b:1d:8e:97:26:53:e5:a3:b8:83:3e:0c:11:34:ed:13:13:3e:\n\
+         24:a1:25:54:bd:3e:5d:3a:ff:85:7e:62:da:a8:14:5b:d5:16:\n\
+         f7:60:aa:49:9f:77:97:8d:d4:54:59:74:50:c4:0b:bc:ce:9f:\n\
+         ec:69\n\
+-----BEGIN CERTIFICATE-----\n\
+MIIC1DCCAj2gAwIBAgIBJDANBgkqhkiG9w0BAQsFADB2MQswCQYDVQQGEwJDTjEQ\n\
+MA4GA1UECAwHdGlhbmppbjELMAkGA1UEBwwCVEoxDDAKBgNVBAoMA1JEQTEMMAoG\n\
+A1UECwwDUkRBMQwwCgYDVQQDDANSREExHjAcBgkqhkiG9w0BCQEWD2NhQHJkYW1p\n\
+Y3JvLmNvbTAeFw0xODA5MTkwMDAwMDBaFw0yNzA5MTkwMDAwMDBaMG0xCzAJBgNV\n\
+BAYTAkNOMRAwDgYDVQQIDAd0aWFuamluMQwwCgYDVQQKDANSREExDDAKBgNVBAsM\n\
+A1JEQTEMMAoGA1UEAwwDUkRBMSIwIAYJKoZIhvcNAQkBFhNjbGllbnRAcmRhbWlj\n\
+cm8uY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDWugDwqlsi/0IPnIZT\n\
+vk9chsRTFfPwIjaiHA+XS1w1KMwL5wjIh3o9+aVaEkR/xIsRzpT7eKeMSNd1DoqY\n\
+U8+HH5vZtfQeIudkQ9oEhi1iJZN1v8wqiQfbaRxrf+ThQkRjSMmsq/XyjPHEAzyw\n\
+LsFhp0QSdpg+2T2XnO5Gv4qZTwIDAQABo3sweTAJBgNVHRMEAjAAMCwGCWCGSAGG\n\
++EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZpY2F0ZTAdBgNVHQ4EFgQU\n\
+pN+p7IJJrwAcmOZXIa/O1SQ1DyYwHwYDVR0jBBgwFoAUbdRQZYD/q/dhBNkH4IN7\n\
+LQknidcwDQYJKoZIhvcNAQELBQADgYEAfuq725PyXl0N2H4W7XgyEVZhZavyuGO7\n\
+GSWoZCczSaOQXFl15Q4ermVXQKxbl5iKXi8KqIFjIAvroXkg8KoJIMQMtg6jhOwp\n\
+Ox2OlyZT5aO4gz4METTtExM+JKElVL0+XTr/hX5i2qgUW9UW92CqSZ93l43UVFl0\n\
+UMQLvM6f7Gk=\n\
+-----END CERTIFICATE-----";
+
+static const char *priv_key = "-----BEGIN RSA PRIVATE KEY-----\n\
+MIICXgIBAAKBgQDWugDwqlsi/0IPnIZTvk9chsRTFfPwIjaiHA+XS1w1KMwL5wjI\n\
+h3o9+aVaEkR/xIsRzpT7eKeMSNd1DoqYU8+HH5vZtfQeIudkQ9oEhi1iJZN1v8wq\n\
+iQfbaRxrf+ThQkRjSMmsq/XyjPHEAzywLsFhp0QSdpg+2T2XnO5Gv4qZTwIDAQAB\n\
+AoGBAIFmGgbuQnm2pdLOmsyAlUbHGCyRwC1oENBkZKjiCzEl4sERe2OM8QfEF/dN\n\
+puXwRXZ3raRVs3KAuwaZur/NUfOa3kwGljnb859z5HcsWxb85ts+4TFP8AT2izjj\n\
+XGYHBZZhVhD7Fr4rXOaKbzBprjXTgSgtJ6JZaAtgrWhD7kUxAkEA+bNwBKaTXgBK\n\
+egN7NRfrL2bTFWKxY+Jse4NTflDaFDtUVrEqjpZlUCyGO5gPLkY4Zb7llgu28+E+\n\
+FZQMdh5VRQJBANwks93pDiUmmiyL4f+DP4Bvtc1fgK7NYEMey42/46LlNC9s7YBA\n\
+XXozLTdXtUJLliRy1VRK763OtocZ3kkfC4MCQHdNFCgkriQrX2oMX8FuPB/ZsOB2\n\
+1uoyNEKO7EVdu9QOxKzm2L5nfOBhZYDzlc02H5v9KRQXZMIAy/jjU1DcDUECQQCQ\n\
+0Bf95zwl1iHfIdl1wnm4XEPkqGk3E+S54n0Wbt8oncvZUrddAXo8U4Pv/uM+jAhl\n\
+S6DnhS/rTqqlbq/Zu/FPAkEAjl3zMwClAVUEcqwDzLV6Pw4vaOxDtO+cx+XL24K8\n\
+zIN9d8BuUWotkY5D/cnuDenQPMERtFJwRjEtiJKqqE3evg==\n\
+-----END RSA PRIVATE KEY-----";
+#endif
+#if 1
+static char *ca_crt = "-----BEGIN CERTIFICATE-----\n\
 MIIC8DCCAlmgAwIBAgIJAOD63PlXjJi8MA0GCSqGSIb3DQEBBQUAMIGQMQswCQYD\n\
 VQQGEwJHQjEXMBUGA1UECAwOVW5pdGVkIEtpbmdkb20xDjAMBgNVBAcMBURlcmJ5\n\
 MRIwEAYDVQQKDAlNb3NxdWl0dG8xCzAJBgNVBAsMAkNBMRYwFAYDVQQDDA1tb3Nx\n\
@@ -165,7 +273,7 @@ REyPOFdGdhBY2P1FNRy0MDr6xr+D2ZOwxs63dG1nnAnWZg7qwoLgpZ4fESPD3PkA\n\
 1ZgKJc2zbSQ9fCPxt2W3mdVav66c6fsb7els2W2Iz7gERJSX\n\
 -----END CERTIFICATE-----";
 
-static uint8_t *priv_key = "-----BEGIN RSA PRIVATE KEY-----\n\
+static char *priv_key = "-----BEGIN RSA PRIVATE KEY-----\n\
 MIIEowIBAAKCAQEAxXtfrKLZcwh7NvqhmS3ndFaKZ+cdRYFhdYT3cnjx4N+qUUxQ\n\
 GYz3tLvL/d2XPsi0gdkvYFxuyhcmSchR/EcBALfBuRCD0op9PzdcwZDPdTV6xFBw\n\
 BM+pEoNNodbfGnCajfZsU6PyIw3PUSNKirIVByiHUZG71Kx3bs95V7kqwUmrpYbw\n\
@@ -193,7 +301,7 @@ ATfgIxh3gUlQ1iFSOFKYA/b0R3C6OxJ6ni2BspRL/+8ZeNglkzyoQSYUZV/Zqa49\n\
 t7rTXkFLckXpLYAmpyoTinPvZ8gDgBFzXqFO1t5atyCiK6LxNe5T\n\
 -----END RSA PRIVATE KEY-----";
 
-static uint8_t *client_crt = "-----BEGIN CERTIFICATE-----\n\
+static char *client_crt = "-----BEGIN CERTIFICATE-----\n\
 MIIC4jCCAkugAwIBAgIBADANBgkqhkiG9w0BAQUFADCBkDELMAkGA1UEBhMCR0Ix\n\
 FzAVBgNVBAgMDlVuaXRlZCBLaW5nZG9tMQ4wDAYDVQQHDAVEZXJieTESMBAGA1UE\n\
 CgwJTW9zcXVpdHRvMQswCQYDVQQLDAJDQTEWMBQGA1UEAwwNbW9zcXVpdHRvLm9y\n\
@@ -211,6 +319,7 @@ HRMEAjAAMAsGA1UdDwQEAwIF4DANBgkqhkiG9w0BAQUFAAOBgQB009GFbDbkCirn\n\
 csQRsKfn8l9NLXV+gSIbZVONI3NyDn6aGluGmZaHLsbwyz7kvCJSEWZjQJ3MJQkF\n\
 siOUuUHHXlkY9pgH6gEJEy34Y1PKCg==\n\
 -----END CERTIFICATE-----";
+#endif
 #endif
 #if 0
 static void at_mqtt_timeout_handler(void* param) {
@@ -243,11 +352,12 @@ static void at_mqtt_stop_callback_timeout()
     OSI_LOGI(0, "at_mqtt_stop_callback_timeout() line[%d]", __LINE__);
     //at_StopCallbackTimer(at_mqtt_timeout_handler, &s_mqtt_tm_param);
 }
+struct mqtt_connect_client_info_t ci;
 
 int at_mqtt_connect(uint8_t *clientid, uint16_t aliveSeconds, const ip_addr_t *server_ip, uint16_t port,
                     uint8_t cleansession, uint8_t *username, uint8_t *password)
 {
-    struct mqtt_connect_client_info_t ci;
+
     err_t err;
 
     ci.client_id = (char *)clientid;
@@ -256,16 +366,19 @@ int at_mqtt_connect(uint8_t *clientid, uint16_t aliveSeconds, const ip_addr_t *s
     ci.client_user = (char *)username;
     ci.client_pass = (char *)password;
     ci.will_topic = NULL;
-    mbedtls_debug_set_threshold(3);
+    ci.tls_config = NULL;
 
 #if LWIP_ALTCP && LWIP_ALTCP_TLS
-    // Now we don't have TLS requirement,only remove it.
-    /* if (1883 != port && 6002 != port)
+
+    if (1883 != port && 6002 != port)
     {
         //ci.tls_config = altcp_tls_create_config_client(cacrt,strlen(cacrt));
-        ci.tls_config = altcp_tls_create_config_client2(ca_crt, client_crt, priv_key);
+        //ci.tls_config = altcp_tls_create_config_client2(ca_crt, client_crt, priv_key);
+        ci.tls_config = altcp_tls_create_config_client_2wayauth((const u8_t *)ca_crt, strlen((const char *)ca_crt) + 1, (const u8_t *)priv_key, strlen((const char *)priv_key) + 1,
+                                                                NULL, 0,
+                                                                (const u8_t *)client_crt, strlen((const char *)client_crt) + 1);
     }
-    else*/
+    else
     {
         ci.tls_config = NULL;
         OSI_LOGI(0, "at_mqtt_connect() line[%d]:The port is %d set the tls config to null.", __LINE__, port);
@@ -395,10 +508,20 @@ typedef struct _mqtt_dns_req_t
 
 static void dnsReq_callback(void *param)
 {
-    osiEvent_t *ev = (osiEvent_t *)param;
-    MQTT_REQ_T *callback_param = (MQTT_REQ_T *)ev->param3;
-    uint8_t *clientid = callback_param->clientid;
-    atCommand_t *atCmd = callback_param->pParam;
+    osiEvent_t *ev = NULL;
+    MQTT_REQ_T *callback_param = NULL;
+    uint8_t *clientid = NULL;
+    atCommand_t *atCmd = NULL;
+
+    ev = (osiEvent_t *)param;
+    if (NULL == ev)
+        return;
+    callback_param = (MQTT_REQ_T *)ev->param3;
+    if (NULL == callback_param)
+        return;
+
+    clientid = callback_param->clientid;
+    atCmd = callback_param->pParam;
 
     if (ev->id == EV_CFW_DNS_RESOLV_SUC_IND)
     {
@@ -670,7 +793,7 @@ void AT_GPRS_CmdFunc_MQTTPUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_GPRS_CmdFunc_MQTTPUB() line[%d]:Get param qos/dup/retain  fail", __LINE__);
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
-        if (at_mqtt_publish(topic, message, qos, dup, retain) == 0)
+        if (at_mqtt_publish(topic, message, dup, qos, retain) == 0)
         {
             //AT_SetAsyncTimerMux(pParam->engine, AT_MQTT_TIMEOUT);
             atCmdSetTimeoutHandler(pParam->engine, 60 * 1000, mqtt_CommandNotResponse);
@@ -789,9 +912,14 @@ void AT_GPRS_CmdFunc_MQTTDISCONN(atCommand_t *pParam)
             OSI_LOGI(0, "AT_GPRS_CmdFunc_MQTTDISCONN() line[%d]:MQTT not connected", __LINE__);
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
         }
-
+        if (ci.tls_config != NULL)
+        {
+            altcp_tls_free_config(ci.tls_config);
+            ci.tls_config = NULL;
+        }
         lwip_mqtt_disconnect(&at_static_client);
         CFW_MQTTPostEvent(AT_CMD_MQTT_DISCONN_RSP, 0x0);
+
         break;
     default:
         OSI_LOGI(0, "AT_GPRS_CmdFunc_MQTTDISCONN() line[%d]:ERROR", __LINE__);

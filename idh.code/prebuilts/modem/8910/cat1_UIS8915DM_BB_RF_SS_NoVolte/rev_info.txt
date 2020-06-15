@@ -3,9 +3,9 @@ shell_8910M_chip_cat1_UIS8915DM_BB_RF_SS_NoVolte
 
 ========svn info==========
 URL: http://shsvn05/svn/prj_src/modem_iot/branches/Integration/2020/uis8910dm_cp_v1.3_20a
-Last Changed Rev: 37729
+Last Changed Rev: 39157
 Repository Root: http://shsvn05/svn/prj_src
-Revision: 37741
+Revision: 39157
 
 ========nvitem info==========
 nvitem dir is Module/8915DM_cat1_BB_RF_nvitem

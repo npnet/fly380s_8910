@@ -24,6 +24,8 @@
 #include "semphr.h"
 #include <stdlib.h>
 #include <sys/time.h>
+#include <signal.h>
+#include <errno.h>
 
 #define OSI_THREAD_LOCAL_EVENTQUEUE_ID 0
 
@@ -739,6 +741,30 @@ void osiTickSetInitial(uint32_t ostick)
 void exit(int status)
 {
     osiPanic();
-    while (1)
-        ;
 }
+
+void abort(void)
+{
+    osiPanic();
+}
+
+void _assert(void)
+{
+    osiPanic();
+}
+
+typedef void (*sighandler_t)(int);
+sighandler_t signal(int signum, sighandler_t handler)
+{
+    errno = EINVAL;
+    return SIG_ERR;
+}
+
+int isatty(int fd)
+{
+    errno = EINVAL;
+    return 0;
+}
+
+pid_t getpid(void) { return 1; }
+pid_t getppid(void) { return 1; }

@@ -9,15 +9,7 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/rpc_config.h.in ${BINARY_TOP_DIR}/include/rpc_config.h)
+configure_file(include/rpc_config.h.in ${out_inc_dir}/rpc_config.h)
 
 set(target rpc)
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dummy.c "/* dummy */")
-add_library(${target} STATIC ${CMAKE_CURRENT_BINARY_DIR}/dummy.c)
-set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
-target_include_directories(${target} PUBLIC include)
-
 include(core.cmake)
-
-relative_glob(srcs include/*.h core/*.c core/*.h)
-beautify_c_code(${target} ${srcs})

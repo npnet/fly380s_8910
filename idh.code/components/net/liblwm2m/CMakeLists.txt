@@ -9,22 +9,21 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
+configure_file(include/liblwm2m_config.h.in ${out_inc_dir}/liblwm2m_config.h)
+
 set(target lwm2m)
+add_app_libraries($<TARGET_FILE:${target}>)
 
 add_library(${target} STATIC)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 #target_compile_definitions(${target} PRIVATE AT_MQTTSN_SUPPORT=1)
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel driver calclib net lwip libexpat mbedtls cfw)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_include_directories(${target} PRIVATE ../external/platform/include)
 target_include_directories(${target} PRIVATE src/wakaama/examples/shared)
 target_include_directories(${target} PRIVATE src/wakaama/examples/client)
 target_include_directories(${target} PRIVATE src/wakaama/core/er-coap-13)
 target_include_directories(${target} PRIVATE src/wakaama/core)
-#target_include_directories(${target} PRIVATE ../../posix/include)
-#target_include_directories(${target} PRIVATE ../lwip/src/include)
-#target_include_directories(${target} PRIVATE ../libexpat/include)
+target_include_targets(${target} PRIVATE kernel driver calclib net lwip libexpat mbedtls cfw fupdate fs)
 
 set(LIBLWM2M_DIR src)
 set(LIBLWM2M_WAKAAMA_CORE_DIR src/wakaama/core)

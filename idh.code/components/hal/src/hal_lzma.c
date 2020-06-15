@@ -20,7 +20,8 @@
 #include "osi_log.h"
 #include <string.h>
 
-#define ISRAM(n) ((uintptr_t)(n) >= CONFIG_RAM_PHY_ADDRESS && (uintptr_t)(n) < CONFIG_RAM_PHY_ADDRESS + CONFIG_RAM_SIZE)
+#define ISRAM(n) (OSI_IS_IN_REGION(unsigned, n, CONFIG_RAM_PHY_ADDRESS, CONFIG_RAM_SIZE) || \
+                  OSI_IS_IN_REGION(unsigned, n, CONFIG_SRAM_PHY_ADDRESS, CONFIG_SRAM_SIZE))
 
 typedef struct
 {

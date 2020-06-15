@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
+#include "liblwm2m_config.h"
 
 //zhangyi del for porting 20180709
 //#include "netutils.h"
@@ -99,6 +100,11 @@ typedef enum
     OBJ_OPERATE_RSP_IND,
     SERVER_REGCMD_RESULT_IND,
     SERVER_QUIT_IND,
+    FOTA_DOWNLOADING_IND,
+    FOTA_DOWNLOAD_FAILED_IND,
+    FOTA_DOWNLOAD_SUCCESS_IND,
+    FOTA_PACKAGE_CHECK_IND,
+    FOTA_UPGRADE_OK_IND
 } LWM2M_EVENT_IND_T;
 
 typedef enum
@@ -108,8 +114,14 @@ typedef enum
 } lwm2m_ret_t;
 
 #define MAX_INIT_OBJECTS 10
+
+#if defined(CONFIG_LWM2M_REDUCE_MEMORY)
+#define MAX_DYNAMIC_OBJECTS 5
+#define MAX_RESOURCE 10
+#else
 #define MAX_DYNAMIC_OBJECTS 20
 #define MAX_RESOURCE 50
+#endif
 
 typedef enum
 {
@@ -156,7 +168,8 @@ typedef struct
     uint8_t **argv;
     uint8_t argc;
     uint8_t isregisted;
-    uint8_t ipc_socket;
+    int8_t ipc_socket;
+    int8_t ipc_data_socket;
     uint32_t lifetime;
     uint32_t timeout;
     uint32_t this;
@@ -168,6 +181,8 @@ typedef struct
     bool pending_regcmd;
     bool use_dynamic_ipso;
     uint8_t nDLCI;
+    bool observer;
+    int isquit;
 } lwm2m_config_t;
 
 typedef struct
@@ -248,9 +263,13 @@ lwm2m_config_t *lwm2m_get_config(uint8_t configIndex);
 
 uint8_t lwm2m_get_ipcSocket(uint8_t configIndex);
 
+uint8_t lwm2m_get_ipcDataSocket(uint8_t configIndex);
+
 void lwm2m_parse_buffer(char *buffer, void *value, uint8_t count, void *delim);
 
 lwm2m_ret_t lwm2m_excute_cmd(uint8_t *data, uint32_t data_len, uint8_t ref);
+
+lwm2m_ret_t lwm2m_excute_data_cmd(uint8_t *data, uint32_t data_len, uint8_t ref);
 
 lwm2m_ret_t lwm2m_is_registed(uint8_t ref);
 
@@ -285,7 +304,7 @@ bool lwm2m_is_dynamic_ipso(int ref);
 
 lwm2m_ret_t lwm2m_set_dynamic_ipso(int ref);
 
-ipso_obj_t *lwm2m_get_ipso_obj(uint16_t objId, uint16_t resId, ipso_res_t **ipso_res, uint8_t ref);
+ipso_obj_t *lwm2m_get_ipso_obj(uint16_t objId, int16_t resId, ipso_res_t **ipso_res, uint8_t ref);
 
 uint8_t lwm2m_isObjSupport(uint16_t objId, uint8_t ref);
 
@@ -297,4 +316,12 @@ int lwm2m_registNewRes(uint16_t objId, uint8_t *resString, uint8_t ref);
 
 lwm2m_ret_t lwm2m_set_send_flag(int ref, int flag);
 
+lwm2m_ret_t lwm2m_get_observer(uint8_t ref);
+
+lwm2m_ret_t lwm2m_set_observer(uint8_t ref, bool observer);
+
+lwm2m_ret_t lwm2m_free_task(uint8_t ref);
+
+lwm2m_ret_t lwm2m_start_fota_download(const uint8_t *uri, uint8_t ref);
+lwm2m_ret_t lwm2m_notify_fota_state(uint32_t state, uint32_t resulte, uint8_t ref);
 #endif

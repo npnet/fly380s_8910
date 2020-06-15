@@ -30,6 +30,17 @@ extern "C" {
 typedef struct fdlChannel
 {
     /**
+     * whether baud rate is supported
+     *
+     * @param ch        the FDL channel
+     * @param baud      baud rate to be checked
+     * @return
+     *      - true on supported
+     *      - false on unsupported
+     */
+    bool (*baud_supported)(struct fdlChannel *ch, uint32_t baud);
+
+    /**
      * Set baud rate
      *
      * If the channel doesn't have baud rate, just return \a true.
@@ -110,7 +121,7 @@ typedef struct fdlChannel
  *
  * @return  UART FDL channel.
  */
-fdlChannel_t *fdlOpenUart(uint32_t baud);
+fdlChannel_t *fdlOpenUart(uint32_t name, uint32_t baud, bool reconfig);
 
 /**
  * @breif open USB Serial FDL channel

@@ -12,42 +12,27 @@
 
 #include "drv_spi_flash.h"
 #include "hal_spi_flash.h"
+#include "hal_spi_flash_defs.h"
 #include "hal_chip.h"
 #include "hwregs.h"
 #include "osi_api.h"
 #include "osi_profile.h"
 #include "osi_byte_buf.h"
+#ifdef CONFIG_CPU_ARM
+#include "cmsis_core.h"
+#endif
+#include <string.h>
 
-// After suspend command, and WIP is changed from 1 to 0, a short delay
-// is needed before read flash. This delay time isn't described in
-// datasheet. With experiments, 2us is enough.
-#define DELAY_AFTER_SUSPEND (5) // us
+#define FLASHRAM_CODE OSI_SECTION_LINE(.ramtext.flashdrv)
+#define FLASHRAM_API FLASHRAM_CODE OSI_NO_INLINE
+
+// From experiments, 2us is enough. However, it is better to follow datasheet
+#define DELAY_AFTER_SUSPEND (20) // us
 
 // From experiments, if the time from resume to suspend is too short,
 // the erase will take huge time to finish. Though in most cases there
 // doesn't exist soo many interrupt, it is needed to avoid worst case.
 #define MIN_ERASE_PROGRAM_TIME (100) // us
-
-#define SIZE_4K (4 * 1024)
-#define SIZE_32K (32 * 1024)
-#define SIZE_64K (64 * 1024)
-#define PAGE_SIZE (256)
-
-#define MID_WINBOND 0xEF
-#define MID_GD 0xC8
-#define MID(id) ((id)&0xff)
-
-#define IS_GD(id) (MID(id) == MID_GD)
-#define IS_WINBOND(id) (MID(id) == MID_WINBOND)
-
-#define STREG_WIP (1 << 0)
-#define STREG_WEL (1 << 1)
-#define STREG_QE (1 << 9)
-#define STREG_SUS2 (1 << 10)
-#define STREG_SUS1 (1 << 15)
-#define STREG_LB1 (1 << 11)
-#define STREG_LB2 (1 << 12)
-#define STREG_LB3 (1 << 13)
 
 enum
 {
@@ -61,304 +46,313 @@ enum
 struct drvSpiFlash
 {
     bool opened;
+    bool xip_protect;
+    unsigned name;
     uintptr_t hwp;
-    uint32_t id;
-    uint32_t capacity;
+    halSpiFlashProp_t prop;
     uintptr_t base_address;
-    osiMutex_t *lock;
+    osiMutex_t *lock;           // suspend will cause thread switch
     uint32_t block_prohibit[8]; // 16M/64K/32bit_per_word
 };
 
 #if defined(CONFIG_SOC_8910)
-
-#define FLASH_EXT_SUPPORT
-static drvSpiFlash_t gDrvSpiFlashCtx = {
-    .opened = false,
-    .hwp = (uintptr_t)hwp_spiFlash,
-    .base_address = 0x60000000,
+static drvSpiFlash_t gDrvSpiFlashCtx[] = {
+    {
+        .opened = false,
+        .xip_protect = true,
+        .name = DRV_NAME_SPI_FLASH,
+        .hwp = (uintptr_t)hwp_spiFlash,
+        .base_address = CONFIG_NOR_PHY_ADDRESS,
+    },
+    {
+        .opened = false,
+        .xip_protect = true,
+        .name = DRV_NAME_SPI_FLASH_EXT,
+        .hwp = (uintptr_t)hwp_spiFlash1,
+        .base_address = CONFIG_NOR_EXT_PHY_ADDRESS,
+    },
 };
-static drvSpiFlash_t gDrvSpiFlashExCtx = {
-    .opened = false,
-    .hwp = (uintptr_t)hwp_spiFlash1,
-    .base_address = 0x70000000,
-};
-
-static inline drvSpiFlash_t *prvFlashGetByName(uint32_t name)
-{
-    if (name == DRV_NAME_SPI_FLASH)
-        return &gDrvSpiFlashCtx;
-    if (name == DRV_NAME_SPI_FLASH_EXT)
-        return &gDrvSpiFlashExCtx;
-    return NULL;
-}
-
-static inline bool prvIsDataInFlash(const void *data)
-{
-    if (drvSpiFlashOffset(&gDrvSpiFlashCtx, data) != -1U ||
-        drvSpiFlashOffset(&gDrvSpiFlashExCtx, data) != -1U)
-        return true;
-    return false;
-}
-
-static bool prvMasterActive(void)
-{
-    return false;
-}
 #endif
 
 #ifdef CONFIG_SOC_8955
-
-#define PHYADDR_IN_FLASH(address) ((OSI_KSEG1(address) & ~0xffffff) == OSI_KSEG1(CONFIG_NOR_PHY_ADDRESS))
-static drvSpiFlash_t gDrvSpiFlashCtx = {
-    .opened = false,
-    .hwp = (uintptr_t)hwp_spiFlash,
-    .base_address = CONFIG_NOR_PHY_ADDRESS,
+static drvSpiFlash_t gDrvSpiFlashCtx[] = {
+    {
+        .opened = false,
+        .xip_protect = true,
+        .name = DRV_NAME_SPI_FLASH,
+        .hwp = (uintptr_t)hwp_spiFlash,
+        .base_address = CONFIG_NOR_PHY_ADDRESS,
+    },
 };
-
-static inline drvSpiFlash_t *prvFlashGetByName(uint32_t name)
-{
-    if (name == DRV_NAME_SPI_FLASH)
-        return &gDrvSpiFlashCtx;
-    return NULL;
-}
-
-static inline bool prvIsDataInFlash(const void *data)
-{
-    if (drvSpiFlashOffset(&gDrvSpiFlashCtx, data) != -1U)
-        return true;
-    return false;
-}
-
-static bool prvMasterActive(void)
-{
-    REG_DMA_STATUS_T dma_status = {hwp_dma->status};
-    if (dma_status.b.enable && !dma_status.b.int_done_status &&
-        PHYADDR_IN_FLASH(hwp_dma->src_addr))
-        return true;
-
-    for (int i = 0; i < SYS_IFC_STD_CHAN_NB; i++)
-    {
-        REG_SYS_IFC_STATUS_T status;
-        if (REG_FIELD_GET(hwp_sysIfc->std_ch[i].status, status, enable) &&
-            hwp_sysIfc->std_ch[i].tc != 0 &&
-            PHYADDR_IN_FLASH(hwp_sysIfc->std_ch[i].start_addr))
-            return true;
-    }
-
-    REG_GOUDA_GD_STATUS_T gouda_status = {hwp_gouda->gd_status};
-    if (gouda_status.b.ia_busy || gouda_status.b.lcd_busy)
-    {
-        REG_GOUDA_GD_OL_INPUT_FMT_T gd_ol_input_fmt;
-        REG_GOUDA_GD_VL_INPUT_FMT_T gd_vl_input_fmt;
-        for (int id = 0; id < OSI_ARRAY_SIZE(hwp_gouda->overlay_layer); id++)
-        {
-            if (PHYADDR_IN_FLASH(hwp_gouda->overlay_layer[id].gd_ol_rgb_src) &&
-                REG_FIELD_GET(hwp_gouda->overlay_layer[id].gd_ol_input_fmt, gd_ol_input_fmt, active))
-                return true;
-        }
-
-        if ((PHYADDR_IN_FLASH(hwp_gouda->gd_vl_y_src) ||
-             PHYADDR_IN_FLASH(hwp_gouda->gd_vl_u_src) ||
-             PHYADDR_IN_FLASH(hwp_gouda->gd_vl_v_src)) &&
-            REG_FIELD_GET(hwp_gouda->gd_vl_input_fmt, gd_vl_input_fmt, active))
-            return true;
-    }
-
-    return false;
-}
 #endif
 
 #ifdef CONFIG_SOC_8909
-
-#define PHYADDR_IN_FLASH(address) ((OSI_KSEG1(address) & ~0xffffff) == OSI_KSEG1(CONFIG_NOR_PHY_ADDRESS))
-static drvSpiFlash_t gDrvSpiFlashCtx = {
-    .opened = false,
-    .hwp = (uintptr_t)hwp_spiFlash,
-    .base_address = CONFIG_NOR_PHY_ADDRESS,
+static drvSpiFlash_t gDrvSpiFlashCtx[] = {
+    {
+        .opened = false,
+        .xip_protect = true,
+        .name = DRV_NAME_SPI_FLASH,
+        .hwp = (uintptr_t)hwp_spiFlash,
+        .base_address = CONFIG_NOR_PHY_ADDRESS,
+    },
+    {
+        .opened = false,
+        .xip_protect = true,
+        .name = DRV_NAME_SPI_FLASH_EXT,
+        .hwp = (uintptr_t)hwp_spiFlashExt,
+        .base_address = CONFIG_NOR_EXT_PHY_ADDRESS,
+    },
 };
+#endif
 
-static inline drvSpiFlash_t *prvFlashGetByName(uint32_t name)
+#ifdef CONFIG_SOC_8811
+static drvSpiFlash_t gDrvSpiFlashCtx[] = {
+    {
+        .opened = false,
+        .xip_protect = true,
+        .name = DRV_NAME_SPI_FLASH,
+        .hwp = (uintptr_t)hwp_spiFlash,
+        .base_address = CONFIG_NOR_PHY_ADDRESS,
+    },
+    {
+        .opened = false,
+        .xip_protect = true,
+        .name = DRV_NAME_SPI_FLASH_EXT,
+        .hwp = (uintptr_t)hwp_spiflashExt,
+        .base_address = CONFIG_NOR_EXT_PHY_ADDRESS,
+    },
+};
+#endif
+
+/**
+ * Find flash instance by name
+ */
+OSI_FORCE_INLINE static inline drvSpiFlash_t *prvFlashGetByName(uint32_t name)
 {
-    if (name == DRV_NAME_SPI_FLASH)
-        return &gDrvSpiFlashCtx;
+    for (unsigned n = 0; n < OSI_ARRAY_SIZE(gDrvSpiFlashCtx); n++)
+    {
+        if (gDrvSpiFlashCtx[n].name == name)
+            return &gDrvSpiFlashCtx[n];
+    }
     return NULL;
 }
 
-static inline bool prvIsDataInFlash(const void *data)
+/**
+ * Flash API protection acquire, it is different for XIP/NON-XIP
+ */
+OSI_FORCE_INLINE static uint32_t prvProtectAquire(drvSpiFlash_t *d)
 {
-    if (drvSpiFlashOffset(&gDrvSpiFlashCtx, data) != -1U)
-        return true;
-    return false;
+    osiMutexLock(d->lock);
+    return (d->xip_protect) ? osiEnterCritical() : 0;
 }
 
-static bool prvMasterActive(void)
+/**
+ * Flash API protection release, it is different for XIP/NON-XIP
+ */
+OSI_FORCE_INLINE static void prvProtectRelease(drvSpiFlash_t *d, uint32_t critical)
 {
-    REG_DMA_STATUS_T dma_status = {hwp_sysDma->status};
-    if (dma_status.b.enable && !dma_status.b.int_done_status &&
-        PHYADDR_IN_FLASH(hwp_sysDma->src_addr))
-        return true;
-
-    for (int i = 0; i < SYS_IFC_STD_CHAN_NB; i++)
-    {
-        REG_SYS_IFC_STATUS_T status;
-        if (REG_FIELD_GET(hwp_sysIfc->std_ch[i].status, status, enable) &&
-            hwp_sysIfc->std_ch[i].tc != 0 &&
-            PHYADDR_IN_FLASH(hwp_sysIfc->std_ch[i].start_addr))
-            return true;
-    }
-
-    REG_GOUDA_GD_STATUS_T gouda_status = {hwp_gouda->gd_status};
-    if (gouda_status.b.ia_busy || gouda_status.b.lcd_busy)
-    {
-        REG_GOUDA_GD_OL_INPUT_FMT_T gd_ol_input_fmt;
-        REG_GOUDA_GD_VL_INPUT_FMT_T gd_vl_input_fmt;
-        for (int id = 0; id < OSI_ARRAY_SIZE(hwp_gouda->overlay_layer); id++)
-        {
-            if (PHYADDR_IN_FLASH(hwp_gouda->overlay_layer[id].gd_ol_rgb_src) &&
-                REG_FIELD_GET(hwp_gouda->overlay_layer[id].gd_ol_input_fmt, gd_ol_input_fmt, active))
-                return true;
-        }
-
-        if ((PHYADDR_IN_FLASH(hwp_gouda->gd_vl_y_src) ||
-             PHYADDR_IN_FLASH(hwp_gouda->gd_vl_u_src) ||
-             PHYADDR_IN_FLASH(hwp_gouda->gd_vl_v_src)) &&
-            REG_FIELD_GET(hwp_gouda->gd_vl_input_fmt, gd_vl_input_fmt, active))
-            return true;
-    }
-
-    return false;
+    if (d->xip_protect)
+        osiExitCritical(critical);
+    osiMutexUnlock(d->lock);
 }
-#endif
 
-static inline bool prvIsWriteProhibit(drvSpiFlash_t *d, uint32_t address)
+/**
+ * Whether address is soft write protected
+ */
+OSI_FORCE_INLINE static bool prvIsWriteProhibit(drvSpiFlash_t *d, uint32_t address)
 {
     unsigned block = address / SIZE_64K; // 64KB block
     return osiBitmapIsSet(d->block_prohibit, block);
 }
 
-static uint32_t prvWaitMasterAndLock(void)
+/**
+ * Whether range is soft write protected
+ */
+FLASHRAM_CODE static bool prvIsRangeWriteProhibit(drvSpiFlash_t *d, uint32_t address, unsigned size)
 {
-    uint32_t flag = osiEnterCritical();
-    while (prvMasterActive())
+    uint32_t critical = osiEnterCritical();
+    for (unsigned n = 0; n < size; n += SIZE_64K)
     {
-        osiExitCritical(flag);
-        osiDelayUS(5);
-        flag = osiEnterCritical();
+        if (prvIsWriteProhibit(d, address + n))
+        {
+            osiExitCritical(critical);
+            return true;
+        }
     }
-    return flag;
+    osiExitCritical(critical);
+    return false;
 }
 
-static inline void prvDisableAhbRead(drvSpiFlash_t *d)
+/**
+ * Disable AHB read of flash controller
+ */
+OSI_FORCE_INLINE static void prvDisableAhbRead(drvSpiFlash_t *d)
 {
+#ifdef CONFIG_SOC_8910
+    // not use AHB_READ_DISABLE feature
+#elif defined(CONFIG_SOC_8811)
+    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->hwp;
+    REG_SPI_FLASH_AHB_FLASH_CTRL_T ahb_flash_ctrl;
+    REG_FIELD_CHANGE1(hwp->ahb_flash_ctrl, ahb_flash_ctrl,
+                      ahb_read, SPI_FLASH_AHB_READ_V_DISABLE);
+#else
+    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->hwp;
     REG_SPI_FLASH_SPI_CS_SIZE_T spi_cs_size;
-    REG_FIELD_CHANGE1(hwp_spiFlash->spi_cs_size, spi_cs_size,
+    REG_FIELD_CHANGE1(hwp->spi_cs_size, spi_cs_size,
                       ahb_read_disable, 1);
+#endif
 }
 
-static inline void prvEnableAhbRead(drvSpiFlash_t *d)
+/**
+ * Enable AHB read of flash controller
+ */
+OSI_FORCE_INLINE static void prvEnableAhbRead(drvSpiFlash_t *d)
 {
+#ifdef CONFIG_SOC_8910
+    // It is not clear whether there are "hidden" instruction prefetch
+    // during flash erase/program. If it happens, the prefetch instructions
+    // is not reliable, and invalidate I-Cache will be useful. And the
+    // performance impact is acceptable.
+    L1C_InvalidateICacheAll();
+#elif defined(CONFIG_SOC_8811)
+    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->hwp;
+    REG_SPI_FLASH_AHB_FLASH_CTRL_T ahb_flash_ctrl;
+    REG_FIELD_CHANGE1(hwp->ahb_flash_ctrl, ahb_flash_ctrl,
+                      ahb_read, SPI_FLASH_AHB_READ_V_ENABLE);
+#else
+    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->hwp;
     REG_SPI_FLASH_SPI_CS_SIZE_T spi_cs_size;
-    REG_FIELD_CHANGE1(hwp_spiFlash->spi_cs_size, spi_cs_size,
+    REG_FIELD_CHANGE1(hwp->spi_cs_size, spi_cs_size,
                       ahb_read_disable, 0);
+#endif
 }
 
-static void prvPageProgram(drvSpiFlash_t *d, uint32_t offset, const uint8_t *data, size_t size)
+/**
+ * Page program with XIP
+ */
+FLASHRAM_CODE static void prvPageProgram(
+    drvSpiFlash_t *d, uint32_t offset,
+    const uint8_t *data, size_t size)
 {
-    uint32_t flag = prvWaitMasterAndLock();
+    uint32_t critical = osiEnterCritical();
 
     osiProfileEnter(PROFCODE_FLASH_PROGRAM);
     prvDisableAhbRead(d);
 
-    halSpiFlashPrepareEraseProgram(d->hwp, d->id, offset, size);
+    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
     halSpiFlashPageProgram(d->hwp, offset, data, size);
-
-    // Wait minimal erase/program time
-    osiDelayUS(MIN_ERASE_PROGRAM_TIME);
+    osiDelayUS(MIN_ERASE_PROGRAM_TIME); // Wait a while
 
     for (;;)
     {
         if (halSpiFlashIsWipFinished(d->hwp))
         {
-            halSpiFlashFinishEraseProgram(d->hwp, d->id);
+            halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
             prvEnableAhbRead(d);
 
             osiProfileExit(PROFCODE_FLASH_PROGRAM);
-            osiExitCritical(flag);
+            osiExitCritical(critical);
             return;
         }
 
-        if (osiIrqPending())
+        if (d->prop.suspend_en && osiIrqPending())
         {
             halSpiFlashProgramSuspend(d->hwp);
 
-            // Wait a while after WIP is changed from 1 to 0.
+            osiDelayUS(DELAY_AFTER_SUSPEND); // Wait a while
             halSpiFlashWaitWipFinish(d->hwp);
-            osiDelayUS(DELAY_AFTER_SUSPEND);
             prvEnableAhbRead(d);
-
-            osiExitCritical(flag);
+            osiExitCritical(critical);
 
             osiDelayUS(5); // avoid CPU can't take interrupt
-            flag = prvWaitMasterAndLock();
+
+            critical = osiEnterCritical();
 
             prvDisableAhbRead(d);
             halSpiFlashProgramResume(d->hwp);
-
-            // Wait minimal erase/program time
-            osiDelayUS(MIN_ERASE_PROGRAM_TIME);
+            osiDelayUS(MIN_ERASE_PROGRAM_TIME); // Wait a while
         }
     }
 }
 
-static void prvErase(drvSpiFlash_t *d, uint32_t offset, size_t size)
+/**
+ * Erase with XIP
+ */
+FLASHRAM_CODE static void prvErase(drvSpiFlash_t *d, uint32_t offset, size_t size)
 {
-    uint32_t flag = prvWaitMasterAndLock();
+    uint32_t critical = osiEnterCritical();
 
     osiProfileEnter(PROFCODE_FLASH_ERASE);
     prvDisableAhbRead(d);
 
-    halSpiFlashPrepareEraseProgram(d->hwp, d->id, offset, size);
+    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
     halSpiFlashErase(d->hwp, offset, size);
-
-    // Wait minimal erase/program time
-    osiDelayUS(MIN_ERASE_PROGRAM_TIME);
+    osiDelayUS(MIN_ERASE_PROGRAM_TIME); // Wait a while
 
     for (;;)
     {
         if (halSpiFlashIsWipFinished(d->hwp))
         {
-            halSpiFlashFinishEraseProgram(d->hwp, d->id);
+            halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
             prvEnableAhbRead(d);
 
             osiProfileExit(PROFCODE_FLASH_ERASE);
-            osiExitCritical(flag);
+            osiExitCritical(critical);
             return;
         }
 
-        if (osiIrqPending())
+        if (d->prop.suspend_en && osiIrqPending())
         {
             halSpiFlashEraseSuspend(d->hwp);
 
-            // Wait a while after WIP is changed from 1 to 0.
+            osiDelayUS(DELAY_AFTER_SUSPEND); // Wait a while
             halSpiFlashWaitWipFinish(d->hwp);
-            osiDelayUS(DELAY_AFTER_SUSPEND);
             prvEnableAhbRead(d);
-
-            osiExitCritical(flag);
+            osiExitCritical(critical);
 
             osiDelayUS(5); // avoid CPU can't take interrupt
-            flag = prvWaitMasterAndLock();
+
+            critical = osiEnterCritical();
 
             prvDisableAhbRead(d);
             halSpiFlashEraseResume(d->hwp);
-
-            // Wait minimal erase/program time
-            osiDelayUS(MIN_ERASE_PROGRAM_TIME);
+            osiDelayUS(MIN_ERASE_PROGRAM_TIME); // Wait a while
         }
     }
 }
 
-drvSpiFlash_t *drvSpiFlashOpen(uint32_t name)
+/**
+ * Page program without XIP
+ */
+FLASHRAM_CODE static void prvEraseNoXipLocked(drvSpiFlash_t *d, uint32_t offset, size_t size)
+{
+    prvDisableAhbRead(d);
+    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
+    halSpiFlashErase(d->hwp, offset, size);
+    halSpiFlashWaitWipFinish(d->hwp);
+    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
+    prvEnableAhbRead(d);
+}
+
+/**
+ * Erase without XIP
+ */
+FLASHRAM_CODE static void prvPageProgramNoXipLocked(
+    drvSpiFlash_t *d, uint32_t offset,
+    const uint8_t *data, size_t size)
+{
+    prvDisableAhbRead(d);
+    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
+    halSpiFlashPageProgram(d->hwp, offset, data, size);
+    halSpiFlashWaitWipFinish(d->hwp);
+    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
+    prvEnableAhbRead(d);
+}
+
+/**
+ * Open flash driver
+ */
+FLASHRAM_API drvSpiFlash_t *drvSpiFlashOpen(uint32_t name)
 {
     drvSpiFlash_t *d = prvFlashGetByName(name);
     if (d == NULL)
@@ -369,8 +363,17 @@ drvSpiFlash_t *drvSpiFlashOpen(uint32_t name)
     if (!d->opened)
     {
         halSpiFlashStatusCheck(d->hwp);
-        d->id = halSpiFlashReadId(d->hwp);
-        d->capacity = (1 << ((d->id >> 16) & 0xff));
+        d->prop.mid = halSpiFlashReadId(d->hwp);
+        halSpiFlashPropsByMid(d->prop.mid, &d->prop);
+
+        // !!! THESE FLASH ARE UNDER TEST, THOUGH IT SEEMS TO WORK.
+        if (d->prop.type == HAL_SPI_FLASH_TYPE_XTX ||
+            d->prop.type == HAL_SPI_FLASH_TYPE_XMCA)
+        {
+            osiExitCritical(critical);
+            return NULL;
+        }
+
         d->opened = true;
         d->lock = osiMutexCreate();
     }
@@ -379,9 +382,24 @@ drvSpiFlash_t *drvSpiFlashOpen(uint32_t name)
     return d;
 }
 
+/**
+ * Set whether XIP protection is needed
+ */
+bool drvSpiFlashSetXipEnabled(drvSpiFlash_t *d, bool enable)
+{
+    if (d == NULL || d->name == DRV_NAME_SPI_FLASH)
+        return false;
+
+    d->xip_protect = enable;
+    return true;
+}
+
+/**
+ * Set range of soft write protection
+ */
 void drvSpiFlashSetRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32_t end)
 {
-    if (start > d->capacity || end > d->capacity)
+    if (start > d->prop.capacity || end > d->prop.capacity)
         return;
 
     unsigned block_start = OSI_ALIGN_UP(start, SIZE_64K) / SIZE_64K;
@@ -390,9 +408,12 @@ void drvSpiFlashSetRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32_t
         osiBitmapSet(d->block_prohibit, block);
 }
 
+/**
+ * Clear range of soft write protection
+ */
 void drvSpiFlashClearRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32_t end)
 {
-    if (start > d->capacity || end > d->capacity)
+    if (start > d->prop.capacity || end > d->prop.capacity)
         return;
 
     unsigned block_start = OSI_ALIGN_UP(start, SIZE_64K) / SIZE_64K;
@@ -401,219 +422,316 @@ void drvSpiFlashClearRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32
         osiBitmapClear(d->block_prohibit, block);
 }
 
+/**
+ * Get flash manufacture id
+ */
 uint32_t drvSpiFlashGetID(drvSpiFlash_t *d)
 {
-    return d->id;
+    return d->prop.mid;
 }
 
+/**
+ * Get flash capacity in bytes
+ */
 uint32_t drvSpiFlashCapacity(drvSpiFlash_t *d)
 {
-    return d->capacity;
+    return d->prop.capacity;
 }
 
-void drvSpiFlashWriteLock(drvSpiFlash_t *d)
-{
-    osiMutexLock(d->lock);
-}
-
-void drvSpiFlashUnlock(drvSpiFlash_t *d)
-{
-    osiMutexUnlock(d->lock);
-}
-
+/**
+ * Map flash address to CPU accessible address
+ */
 const void *drvSpiFlashMapAddress(drvSpiFlash_t *d, uint32_t offset)
 {
-    if (offset >= d->capacity)
+    if (offset >= d->prop.capacity)
         return NULL;
     return (const void *)REG_ACCESS_ADDRESS((uintptr_t)d->base_address + offset);
 }
 
-uint32_t drvSpiFlashOffset(drvSpiFlash_t *d, const void *address)
+/**
+ * Read data from flash
+ */
+bool drvSpiFlashRead(drvSpiFlash_t *d, uint32_t offset, void *data, uint32_t size)
 {
-    uintptr_t p = (uintptr_t)address;
-    if (p >= d->base_address && p < d->base_address + d->capacity)
-        return p - d->base_address;
-    return -1U;
+    if (size == 0)
+        return true;
+    if (d == NULL || data == NULL || offset + size > d->prop.capacity)
+        return false;
+
+    const void *fl = (const void *)REG_ACCESS_ADDRESS((uintptr_t)d->base_address + offset);
+    memcpy(data, fl, size);
+    return true;
 }
 
-bool drvSpiFlashWrite(drvSpiFlash_t *d, uint32_t offset, const void *data, size_t size)
+/**
+ * Read data from flash, and check with provided data
+ */
+bool drvSpiFlashReadCheck(drvSpiFlash_t *d, uint32_t offset, const void *data, uint32_t size)
+{
+    if (size == 0)
+        return true;
+    if (d == NULL || data == NULL || offset + size > d->prop.capacity)
+        return false;
+
+    const void *fl = (const void *)REG_ACCESS_ADDRESS((uintptr_t)d->base_address + offset);
+    return memcmp(data, fl, size) == 0;
+}
+
+/**
+ * Write to flash
+ */
+FLASHRAM_API bool drvSpiFlashWrite(drvSpiFlash_t *d, uint32_t offset, const void *data, size_t size)
 {
     uint32_t o_offset = offset;
     size_t o_size = size;
 
-    if (data == NULL || offset + size > d->capacity)
+    if (data == NULL || offset + size > d->prop.capacity)
         return false;
 
-    // input data can't located in FLASH
-    if (prvIsDataInFlash(data))
+    if (prvIsRangeWriteProhibit(d, offset, size))
         return false;
-
-    const uint8_t *p = (const uint8_t *)data;
-    bool result = true;
 
     osiMutexLock(d->lock); // exclusive write
-    while (size > 0)
+    if (d->xip_protect)
     {
-        uint32_t next_page = OSI_ALIGN_DOWN(offset + PAGE_SIZE, PAGE_SIZE);
-        uint32_t bsize = next_page - offset;
-        if (bsize > size)
-            bsize = size;
-
-        if (prvIsWriteProhibit(d, offset))
+        while (size > 0)
         {
-            result = false;
-            break;
+            uint32_t next_page = OSI_ALIGN_DOWN(offset + PAGE_SIZE, PAGE_SIZE);
+            uint32_t bsize = OSI_MIN(unsigned, next_page - offset, size);
+
+            prvPageProgram(d, offset, data, bsize);
+            data = (const char *)data + bsize;
+            offset += bsize;
+            size -= bsize;
         }
-
-        prvPageProgram(d, offset, p, bsize);
-        p += bsize;
-        offset += bsize;
-        size -= bsize;
     }
-    osiMutexUnlock(d->lock);
+    else
+    {
+        while (size > 0)
+        {
+            uint32_t next_page = OSI_ALIGN_DOWN(offset + PAGE_SIZE, PAGE_SIZE);
+            uint32_t bsize = OSI_MIN(unsigned, next_page - offset, size);
 
+            prvPageProgramNoXipLocked(d, offset, data, bsize);
+            data = (const char *)data + bsize;
+            offset += bsize;
+            size -= bsize;
+        }
+    }
+
+    osiMutexUnlock(d->lock);
     osiDCacheInvalidate(drvSpiFlashMapAddress(d, o_offset), o_size);
-    return result;
+    return true;
 }
 
-bool drvSpiFlashErase(drvSpiFlash_t *d, uint32_t offset, size_t size)
+/**
+ * Erase flash range
+ */
+FLASHRAM_API bool drvSpiFlashErase(drvSpiFlash_t *d, uint32_t offset, size_t size)
 {
     uint32_t o_offset = offset;
     size_t o_size = size;
 
-    if (offset + size > d->capacity ||
+    if (offset + size > d->prop.capacity ||
         !OSI_IS_ALIGNED(offset, SIZE_4K) ||
         !OSI_IS_ALIGNED(size, SIZE_4K))
         return false;
 
-    bool result = true;
+    if (prvIsRangeWriteProhibit(d, offset, size))
+        return false;
 
-    osiMutexLock(d->lock); // exclusive write
-    while (size > 0)
+    osiMutexLock(d->lock);
+    if (d->xip_protect)
     {
-        if (prvIsWriteProhibit(d, offset))
+        while (size > 0)
         {
-            result = false;
-            break;
-        }
-
-        if (OSI_IS_ALIGNED(offset, SIZE_64K) && size >= SIZE_64K)
-        {
-            prvErase(d, offset, SIZE_64K);
-            offset += SIZE_64K;
-            size -= SIZE_64K;
-        }
-        else if (OSI_IS_ALIGNED(offset, SIZE_32K) && size >= SIZE_32K)
-        {
-            prvErase(d, offset, SIZE_32K);
-            offset += SIZE_32K;
-            size -= SIZE_32K;
-        }
-        else
-        {
-            prvErase(d, offset, SIZE_4K);
-            offset += SIZE_4K;
-            size -= SIZE_4K;
+            if (OSI_IS_ALIGNED(offset, SIZE_64K) && size >= SIZE_64K)
+            {
+                prvErase(d, offset, SIZE_64K);
+                offset += SIZE_64K;
+                size -= SIZE_64K;
+            }
+            else if (OSI_IS_ALIGNED(offset, SIZE_32K) && size >= SIZE_32K)
+            {
+                prvErase(d, offset, SIZE_32K);
+                offset += SIZE_32K;
+                size -= SIZE_32K;
+            }
+            else
+            {
+                prvErase(d, offset, SIZE_4K);
+                offset += SIZE_4K;
+                size -= SIZE_4K;
+            }
         }
     }
-    osiMutexUnlock(d->lock);
+    else
+    {
+        while (size > 0)
+        {
+            if (OSI_IS_ALIGNED(offset, SIZE_64K) && size >= SIZE_64K)
+            {
+                prvEraseNoXipLocked(d, offset, SIZE_64K);
+                offset += SIZE_64K;
+                size -= SIZE_64K;
+            }
+            else if (OSI_IS_ALIGNED(offset, SIZE_32K) && size >= SIZE_32K)
+            {
+                prvEraseNoXipLocked(d, offset, SIZE_32K);
+                offset += SIZE_32K;
+                size -= SIZE_32K;
+            }
+            else
+            {
+                prvEraseNoXipLocked(d, offset, SIZE_4K);
+                offset += SIZE_4K;
+                size -= SIZE_4K;
+            }
+        }
+    }
 
+    osiMutexUnlock(d->lock);
     osiDCacheInvalidate(drvSpiFlashMapAddress(d, o_offset), o_size);
-    return result;
+    return true;
 }
 
-void drvSpiFlashChipErase(drvSpiFlash_t *d)
+/**
+ * Chip erase
+ */
+FLASHRAM_API bool drvSpiFlashChipErase(drvSpiFlash_t *d)
 {
-    osiMutexLock(d->lock);                  // exclusive write
-    uint32_t critical = osiEnterCritical(); // avoid read, and there are no suspend
+    if (d == NULL || prvIsRangeWriteProhibit(d, 0, d->prop.capacity))
+        return false;
 
-    halSpiFlashPrepareEraseProgram(d->hwp, d->id, 0, d->capacity);
+    uint32_t critical = prvProtectAquire(d);
+
+    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, 0, d->prop.capacity);
     halSpiFlashChipErase(d->hwp);
     halSpiFlashWaitWipFinish(d->hwp);
-    halSpiFlashFinishEraseProgram(d->hwp, d->id);
+    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
 
-    osiExitCritical(critical);
-    osiMutexUnlock(d->lock);
+    prvProtectRelease(d, critical);
+    return true;
 }
 
-uint16_t drvSpiFlashReadStatus(drvSpiFlash_t *d)
+/**
+ * Read flash status register
+ */
+FLASHRAM_API uint16_t drvSpiFlashReadSR(drvSpiFlash_t *d)
 {
-    uint32_t critical = osiEnterCritical();
-    uint16_t status = halSpiFlashReadStatus12(d->hwp);
-    osiExitCritical(critical);
-    return status;
-}
-
-void drvSpiFlashWriteStatus(drvSpiFlash_t *d, uint16_t status)
-{
-    osiMutexLock(d->lock);                  // exclusive write
-    uint32_t critical = osiEnterCritical(); // avoid read, and there are no suspend
-
-    halSpiFlashWriteEnable(d->hwp);
-    halSpiFlashWriteStatus12(d->hwp, status);
-    halSpiFlashWaitWipFinish(d->hwp);
-
-    osiExitCritical(critical);
-    osiMutexUnlock(d->lock);
-}
-
-void drvSpiFlashWriteVolatileStatus(drvSpiFlash_t *d, uint16_t status)
-{
-    osiMutexLock(d->lock);                  // exclusive write
-    uint32_t critical = osiEnterCritical(); // avoid read
-
-    halSpiFlashWriteVolatileStatusEnable(d->hwp);
-    halSpiFlashWriteStatus12(d->hwp, status);
-
-    osiExitCritical(critical);
-    osiMutexUnlock(d->lock);
-}
-
-void drvSpiFlashDeepPowerDown(drvSpiFlash_t *d)
-{
-    // it should be called with interrupt disabled
-    halSpiFlashDeepPowerDown(d->hwp);
-}
-
-void drvSpiFlashReleaseDeepPowerDown(drvSpiFlash_t *d)
-{
-    // it should be called with interrupt disabled
-    halSpiFlashReleaseDeepPowerDown(d->hwp);
-}
-
-void drvSpiFlashReadUniqueId(drvSpiFlash_t *d, uint8_t id[8])
-{
-    uint32_t critical = osiEnterCritical();
-    halSpiFlashReadUniqueId(d->hwp, id);
-    osiExitCritical(critical);
-}
-
-uint16_t drvSpiFlashReadCpId(drvSpiFlash_t *d)
-{
-    if (!IS_GD(d->id))
+    if (d == NULL)
         return 0;
 
-    uint32_t critical = osiEnterCritical();
+    uint32_t critical = prvProtectAquire(d);
+    uint16_t sr = d->prop.has_sr2 ? halSpiFlashReadSR12(d->hwp) : halSpiFlashReadSR1(d->hwp);
+    prvProtectRelease(d, critical);
+    return sr;
+}
+
+/**
+ * write flash status register
+ */
+FLASHRAM_API void drvSpiFlashWriteSR(drvSpiFlash_t *d, uint16_t sr)
+{
+    if (d == NULL)
+        return;
+
+    uint32_t critical = prvProtectAquire(d);
+    halSpiFlashWriteSRByProp(d->hwp, &d->prop, sr);
+    prvProtectRelease(d, critical);
+}
+
+/**
+ * Enter deep power down mode
+ */
+FLASHRAM_API void drvSpiFlashDeepPowerDown(drvSpiFlash_t *d)
+{
+    uint32_t critical = prvProtectAquire(d);
+    halSpiFlashDeepPowerDown(d->hwp);
+    prvProtectRelease(d, critical);
+}
+
+/**
+ * Release deep power down mode
+ */
+FLASHRAM_API void drvSpiFlashReleaseDeepPowerDown(drvSpiFlash_t *d)
+{
+    uint32_t critical = prvProtectAquire(d);
+    halSpiFlashReleaseDeepPowerDown(d->hwp);
+    prvProtectRelease(d, critical);
+}
+
+/**
+ * Read unique ID
+ */
+FLASHRAM_API int drvSpiFlashReadUniqueId(drvSpiFlash_t *d, uint8_t *id)
+{
+    if (d == NULL || id == NULL)
+        return -1;
+
+    int size = -1;
+    uint32_t critical = prvProtectAquire(d);
+    if (d->prop.uid_gd_en)
+    {
+        size = 8;
+        halSpiFlashReadUniqueId(d->hwp, id);
+    }
+    else if (d->prop.type == HAL_SPI_FLASH_TYPE_XMCA)
+    {
+        size = 12;
+        halSpiFlashReadSFDP(d->hwp, 0x80, id, 12);
+    }
+    else if (d->prop.type == HAL_SPI_FLASH_TYPE_XTX)
+    {
+        size = 16;
+        halSpiFlashReadSFDP(d->hwp, 0x194, id, 16);
+    }
+    prvProtectRelease(d, critical);
+    return size;
+}
+
+/**
+ * Read CPID
+ */
+FLASHRAM_API uint16_t drvSpiFlashReadCpId(drvSpiFlash_t *d)
+{
+    if (d == NULL || !d->prop.cpid_en)
+        return 0;
+
+    uint32_t critical = prvProtectAquire(d);
     uint16_t id = halSpiFlashReadCpId(d->hwp);
-    osiExitCritical(critical);
+    prvProtectRelease(d, critical);
     return id;
 }
 
-bool drvSpiFlashReadSecurityRegister(drvSpiFlash_t *d, uint8_t num, uint16_t address, void *data, uint32_t size)
+/**
+ * Read security registers
+ */
+FLASHRAM_API bool drvSpiFlashReadSecurityRegister(
+    drvSpiFlash_t *d, uint8_t num, uint16_t address,
+    void *data, uint32_t size)
 {
-    if (data == NULL || size == 0)
+    if (size == 0)
+        return true;
+    if (d == NULL || data == NULL)
         return false;
-    if (num < 1 || num > 3)
+    if (!d->prop.sreg_3_en && !d->prop.sreg_1_en)
+        return false;
+    if (address + size > d->prop.sreg_block_size)
+        return false;
+    if (d->prop.sreg_3_en && (num < 1 || num > 3))
+        return false;
+    if (d->prop.sreg_1_en && num != 0)
         return false;
 
-    uint32_t saddr = (num << 12) | address;
+    uint32_t saddr = d->prop.sreg_3_en ? ((num << 12) | address) : address;
     while (size > 0)
     {
         uint32_t read_size = OSI_MIN(uint32_t, size, 4);
 
-        uint32_t critical = osiEnterCritical();
+        uint32_t critical = prvProtectAquire(d);
         halSpiFlashReadSecurityRegister(d->hwp, saddr, data, read_size);
-        osiExitCritical(critical);
+        prvProtectRelease(d, critical);
 
         saddr += read_size;
         size -= read_size;
@@ -622,75 +740,113 @@ bool drvSpiFlashReadSecurityRegister(drvSpiFlash_t *d, uint8_t num, uint16_t add
     return true;
 }
 
-bool drvSpiFlashProgramSecurityRegister(drvSpiFlash_t *d, uint8_t num, uint16_t address, const void *data, uint32_t size)
+/**
+ * Read security registers
+ */
+FLASHRAM_API bool drvSpiFlashProgramSecurityRegister(
+    drvSpiFlash_t *d, uint8_t num, uint16_t address,
+    const void *data, uint32_t size)
 {
-    if (data == NULL || size == 0)
+    if (size == 0)
+        return true;
+    if (d == NULL || data == NULL)
         return false;
-    if (num < 1 || num > 3)
+    if (!d->prop.sreg_3_en && !d->prop.sreg_1_en)
         return false;
-    if (prvIsDataInFlash(data))
+    if (address + size > d->prop.sreg_block_size)
+        return false;
+    if (d->prop.sreg_3_en && (num < 1 || num > 3))
+        return false;
+    if (d->prop.sreg_1_en && num != 0)
         return false;
 
-    osiMutexLock(d->lock);                  // exclusive write
-    uint32_t critical = osiEnterCritical(); // avoid read, and there are no suspend
-
-    uint32_t saddr = (num << 12) | address;
+    uint32_t saddr = d->prop.sreg_3_en ? ((num << 12) | address) : address;
     while (size > 0)
     {
         unsigned block_size = OSI_MIN(unsigned, size, PAGE_SIZE);
 
+        uint32_t critical = prvProtectAquire(d); // avoid read, and there are no suspend
         halSpiFlashWriteEnable(d->hwp);
         halSpiFlashProgramSecurityRegister(d->hwp, saddr, data, block_size);
         halSpiFlashWaitWipFinish(d->hwp);
+        prvProtectRelease(d, critical);
 
         saddr += block_size;
         data = (char *)data + block_size;
         size -= block_size;
     }
 
-    osiExitCritical(critical);
-    osiMutexUnlock(d->lock);
     return true;
 }
 
-bool drvSpiFlashEraseSecurityRegister(drvSpiFlash_t *d, uint8_t num)
+/**
+ * Erase security register
+ */
+FLASHRAM_API bool drvSpiFlashEraseSecurityRegister(drvSpiFlash_t *d, uint8_t num)
 {
-    if (num < 1 || num > 3)
+    if (d == NULL)
+        return false;
+    if (!d->prop.sreg_3_en && !d->prop.sreg_1_en)
+        return false;
+    if (d->prop.sreg_3_en && (num < 1 || num > 3))
+        return false;
+    if (d->prop.sreg_1_en && num != 0)
         return false;
 
-    osiMutexLock(d->lock);                  // exclusive write
-    uint32_t critical = osiEnterCritical(); // avoid read, and there are no suspend
-
+    uint32_t saddr = d->prop.sreg_3_en ? (num << 12) : 0;
+    uint32_t critical = prvProtectAquire(d); // avoid read, and there are no suspend
     halSpiFlashWriteEnable(d->hwp);
-    halSpiFlashEraseSecurityRegister(d->hwp, num << 12);
+    halSpiFlashEraseSecurityRegister(d->hwp, saddr);
     halSpiFlashWaitWipFinish(d->hwp);
-
-    osiExitCritical(critical);
-    osiMutexUnlock(d->lock);
+    prvProtectRelease(d, critical);
     return true;
 }
 
-bool drvSpiFlashLockSecurityRegister(drvSpiFlash_t *d, uint8_t num)
+/**
+ * Lock security register
+ */
+FLASHRAM_API bool drvSpiFlashLockSecurityRegister(drvSpiFlash_t *d, uint8_t num)
 {
-    if (num < 1 || num > 3)
+    if (d == NULL)
+        return false;
+    if (!d->prop.sreg_3_en && !d->prop.sreg_1_en)
+        return false;
+    if (d->prop.sreg_3_en && (num < 1 || num > 3))
+        return false;
+    if (d->prop.sreg_1_en && num != 0)
         return false;
 
-    osiMutexLock(d->lock);                  // exclusive write
-    uint32_t critical = osiEnterCritical(); // avoid read, and there are no suspend
+    uint16_t mask = d->prop.sreg_1_en ? STREG_LB : (num == 1) ? STREG_LB1 : (num == 2) ? STREG_LB2 : STREG_LB3;
 
-    uint16_t status = halSpiFlashReadStatus12(d->hwp);
-    if (num == 1)
-        status |= STREG_LB1;
-    else if (num == 2)
-        status |= STREG_LB2;
-    else
-        status |= STREG_LB3;
-
-    halSpiFlashWriteEnable(d->hwp);
-    halSpiFlashWriteStatus12(d->hwp, status);
-    halSpiFlashWaitWipFinish(d->hwp);
-
-    osiExitCritical(critical);
-    osiMutexUnlock(d->lock);
+    uint32_t critical = prvProtectAquire(d);
+    uint32_t sr = halSpiFlashReadSR12(d->hwp);
+    halSpiFlashWriteSRByProp(d->hwp, &d->prop, sr | mask);
+    prvProtectRelease(d, critical);
     return true;
+}
+
+/**
+ * Read SFDP
+ */
+FLASHRAM_API bool drvSpiFlashReadSFDP(drvSpiFlash_t *d, unsigned address, void *data, unsigned size)
+{
+    if (size == 0)
+        return true;
+    if (d == NULL || data == NULL)
+        return false;
+    if (!d->prop.sfdp_en)
+        return false;
+
+    uint32_t critical = prvProtectAquire(d);
+    halSpiFlashReadSFDP(d->hwp, address, data, size);
+    prvProtectRelease(d, critical);
+    return true;
+}
+
+/**
+ * Get flash properties
+ */
+halSpiFlashProp_t *drvSpiFlashGetProp(drvSpiFlash_t *d)
+{
+    return &d->prop;
 }

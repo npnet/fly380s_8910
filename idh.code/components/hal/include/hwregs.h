@@ -43,6 +43,7 @@ extern "C" {
 #include "hwregs/8910/efuse_ctrl.h"
 #include "hwregs/8910/gpio.h"
 #include "hwregs/8910/i2c_master.h"
+#include "hwregs/8910/spi.h"
 #include "hwregs/8910/iomux.h"
 #include "hwregs/8910/keypad.h"
 #include "hwregs/8910/lpddr_phy.h"
@@ -72,6 +73,8 @@ extern "C" {
 #include "hwregs/8910/wcn_wlan.h"
 #include "hwregs/8910/wcn_bt_modem.h"
 #include "hwregs/8910/wcn_bt_link.h"
+#include "hwregs/8910/wcn_sys_ctrl.h"
+#include "hwregs/8910/aes.h"
 #elif defined(CONFIG_SOC_6760)
 #include "hwregs/6760/debug_host.h"
 #include "hwregs/6760/debug_uart.h"

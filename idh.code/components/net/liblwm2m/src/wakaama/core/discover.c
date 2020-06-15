@@ -246,7 +246,7 @@ static int prv_serializeLinkData(lwm2m_context_t * contextP,
             uriLen = 0;
         }
 
-        if (URI_MAX_STRING_LEN - uriLen < LINK_URI_SEPARATOR_SIZE) return -1;
+        //if (URI_MAX_STRING_LEN - uriLen < LINK_URI_SEPARATOR_SIZE) return -1;
         memcpy(uriStr + uriLen, LINK_URI_SEPARATOR, LINK_URI_SEPARATOR_SIZE);
         uriLen += LINK_URI_SEPARATOR_SIZE;
 

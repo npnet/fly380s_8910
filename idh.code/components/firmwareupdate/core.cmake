@@ -9,4 +9,11 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-target_sources(${target} PRIVATE core/${CONFIG_SOC}/fupdate_core.o)
+set(import_lib ${out_lib_dir}/libfupdate_core.a)
+configure_file(core/${CONFIG_SOC}/libfupdate_core.a ${import_lib} COPYONLY)
+add_app_libraries(${import_lib})
+add_library(${target} STATIC IMPORTED GLOBAL)
+set_target_properties(${target} PROPERTIES
+    IMPORTED_LOCATION ${import_lib}
+    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/include
+)

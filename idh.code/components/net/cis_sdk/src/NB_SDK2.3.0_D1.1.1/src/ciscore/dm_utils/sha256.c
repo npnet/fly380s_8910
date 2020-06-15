@@ -267,7 +267,7 @@ int dm_mbedtls_sha256_update_ret( mbedtls_sha256_context *ctx,
     {
         cis_memcpy( (void *) (ctx->buffer + left), input, fill );
 
-        if( ( ret = mbedtls_internal_sha256_process( ctx, (const char *)ctx->buffer ) ) != 0 )
+        if( ( ret = dm_mbedtls_internal_sha256_process( ctx, (const char *)ctx->buffer ) ) != 0 )
             return( ret );
 
         input += fill;
@@ -277,7 +277,7 @@ int dm_mbedtls_sha256_update_ret( mbedtls_sha256_context *ctx,
 
     while( ilen >= 64 )
     {
-        if( ( ret = mbedtls_internal_sha256_process( ctx, input ) ) != 0 )
+        if( ( ret = dm_mbedtls_internal_sha256_process( ctx, input ) ) != 0 )
             return( ret );
 
         input += 64;

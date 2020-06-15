@@ -22,6 +22,7 @@
 #include "nvm.h"
 #include "vfs.h"
 #include "fs_mount.h"
+#include "cfw.h"
 #ifndef CONFIG_SOC_6760
 #include "srv_dtr.h"
 #endif
@@ -44,6 +45,7 @@ static const osiValueStrMap_t gCharSetVSMap[] = {
     {cs_hex, "HEX"},
     {cs_gbk, "PCCP936"},
     {cs_ucs2, "UCS2"},
+    {cs_ira, "IRA"},
     {0, NULL},
 };
 
@@ -189,7 +191,7 @@ void atCmdHandleCEER(atCommand_t *cmd)
         }
         else
         {
-            atCmdRespInfoText(cmd->engine, "+CEER: 255");
+            atCmdRespInfoText(cmd->engine, "+CEER:No Error Call");
             atCmdRespOK(cmd->engine);
         }
     }
@@ -535,7 +537,7 @@ void atCmdHandleCSCS(atCommand_t *cmd)
 {
     if (cmd->type == AT_CMD_TEST)
     {
-        atCmdRespInfoText(cmd->engine, "+CSCS: (\"GSM\",\"HEX\",\"PCCP936\",\"UCS2\")");
+        atCmdRespInfoText(cmd->engine, "+CSCS: (\"GSM\",\"HEX\",\"PCCP936\",\"UCS2\",\"IRA\")");
         atCmdRespOK(cmd->engine);
     }
     else if (cmd->type == AT_CMD_SET)
@@ -863,7 +865,7 @@ void atCmdHandleCALA(atCommand_t *cmd)
             if ((strlen(alarmTime) != 8) && (strlen(alarmTime) != 11))
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_INVALID_DATE_OR_TIME);
             static const char *fmttime1 = "%02d:%02d:%02d";
-            static const char *fmttimez1 = "%02d:%02d:%02d%+03d";
+            static const char *fmttimez1 = "%02d:%02d:%02d%03d";
             int n = 0;
             uint32_t alarm_hour = 0, alarm_minute = 0, alarm_second = 0;
             if ((alarmTime[2] != ':') && (alarmTime[5] != ':'))
@@ -1504,6 +1506,7 @@ void atCmdHandleAndD(atCommand_t *cmd)
 void atCmdHandleAndW(atCommand_t *cmd)
 {
     atChannelSetting_t *chsetting = atCmdChannelSetting(cmd->engine);
+    uint8_t nSim = atCmdGetSim(cmd->engine);
 
     if (cmd->type == AT_CMD_EXE)
     {
@@ -1517,6 +1520,7 @@ void atCmdHandleAndW(atCommand_t *cmd)
         {
             drvRtcUpdateTime();
             atCfgAutoSave();
+            CFW_nvmWriteStatic(nSim);
             atCmdRespOK(cmd->engine);
         }
         else
@@ -1605,7 +1609,7 @@ void atCmdHandleCPAS(atCommand_t *cmd)
     }
     else if (cmd->type == AT_CMD_TEST)
     {
-        atCmdRespInfoText(cmd->engine, "+CPAS: (0,1,3,4)");
+        atCmdRespInfoText(cmd->engine, "+CPAS: (0,3,4)");
         atCmdRespOK(cmd->engine);
     }
     else
@@ -1686,7 +1690,80 @@ void atCmdHandleCIND(atCommand_t *cmd)
         atCmdRespCmeError(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
     }
 }
+bool utiImeiIsValidate(const char *Number, uint8_t Len)
+{
+    uint8_t i, iLength;
 
+    iLength = strlen(Number);
+    if (Len != iLength)
+    {
+        return false;
+    }
+    for (i = 0; i < iLength; i++)
+    {
+        if (!(Number[i] >= '0' && Number[i] <= '9'))
+        {
+            return false;
+        }
+    }
+
+    if (iLength == 14)
+    {
+        return true;
+    }
+    if (iLength == 15) //luhn algorithm
+    {
+        uint32_t sum = 0, v = 0;
+
+        for (i = 0; i < iLength; i++)
+        {
+            if ((i & 1) == 0)
+            {
+                sum += Number[i] - '0';
+            }
+            else
+            {
+                v = 2 * (Number[i] - '0');
+                sum += (v > 9) ? (v - 9) : v;
+            }
+        }
+        return ((sum % 10) == 0);
+    }
+    return false;
+}
+char utiAddImeiCheckSum(const char *Number, uint8_t Len)
+{
+    uint8_t i, iLength;
+
+    iLength = strlen(Number);
+    if (Len != iLength || iLength != 14)
+    {
+        return 0;
+    }
+    for (i = 0; i < iLength; i++)
+    {
+        if (!(Number[i] >= '0' && Number[i] <= '9'))
+        {
+            return 0;
+        }
+    }
+
+    uint32_t sum = 0, v = 0;
+    for (i = 0; i < iLength; i++)
+    {
+        if ((i & 1) == 0)
+        {
+            sum += Number[i] - '0';
+        }
+        else
+        {
+            v = 2 * (Number[i] - '0');
+            sum += (v > 9) ? (v - 9) : v;
+        }
+    }
+    sum = (sum * 9) % 10;
+    return (char)(sum + '0');
+}
 void atCmdHandleEGMR(atCommand_t *cmd)
 {
     uint8_t nSim = atCmdGetSim(cmd->engine);
@@ -1722,12 +1799,31 @@ void atCmdHandleEGMR(atCommand_t *cmd)
         else // command == 1
         {
             const char *imei = atParamStr(cmd->params[2], &paramok);
-            if (!paramok || cmd->param_count > 3 || strlen(imei) != 15)
+            uint8_t iLength = strlen(imei);
+
+            if (!paramok || cmd->param_count > 3 || ((iLength != 14) && (iLength != 15)))
+            {
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            }
+            if (!utiImeiIsValidate(imei, iLength))
+            {
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            }
 #ifndef CONFIG_SOC_6760
             fsRemountFactory(0);
 #endif
-            int nImeiLen = nvmWriteImei(nSim, (const nvmImei_t *)imei);
+            int nImeiLen = 0;
+            if (iLength == 14)
+            {
+                char iCheckSum[15] = {0};
+                memcpy(iCheckSum, imei, 14);
+                iCheckSum[14] = utiAddImeiCheckSum(imei, 14);
+                nImeiLen = nvmWriteImei(nSim, (nvmImei_t *)iCheckSum);
+            }
+            else
+            {
+                nImeiLen = nvmWriteImei(nSim, (const nvmImei_t *)imei);
+            }
 #ifndef CONFIG_SOC_6760
             fsRemountFactory(MS_RDONLY);
 #endif
@@ -1823,7 +1919,7 @@ void atCmdHandleCTZU(atCommand_t *cmd)
     {
         // +CTZU=[<onoff>]
         bool paramok = true;
-        uint8_t mode = atParamDefIntInRange(cmd->params[0], 0, 0, 2, &paramok);
+        uint8_t mode = atParamDefIntInRange(cmd->params[0], 0, 0, 1, &paramok);
         if (!paramok || cmd->param_count > 1)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
@@ -1832,7 +1928,7 @@ void atCmdHandleCTZU(atCommand_t *cmd)
     }
     else if (cmd->type == AT_CMD_TEST)
     {
-        atCmdRespInfoText(cmd->engine, "+CTZU:(0, 1, 2)");
+        atCmdRespInfoText(cmd->engine, "+CTZU:(0, 1)");
         atCmdRespOK(cmd->engine);
     }
     else if (cmd->type == AT_CMD_READ)
@@ -2396,6 +2492,162 @@ void atCmdHandleRFTEMPERATURE(atCommand_t *cmd)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
         }
 
+        atCmdRespOK(cmd->engine);
+    }
+    else
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_NOT_SURPORT);
+    }
+}
+
+#ifdef CONFIG_SOC_8910
+void atCmdHandleNCESIM(atCommand_t *cmd)
+{
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+    {
+        // AT+NCESIM=<flag>
+        bool paramok = true;
+
+        uint8_t flag = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        if (cmd->param_count != 1 || !paramok)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        if (CFW_NwSetnSecurityUsedFlag(flag, atCmdGetSim(cmd->engine)) != 0)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+        atCmdRespOK(cmd->engine);
+        break;
+    }
+    case AT_CMD_TEST:
+    {
+        char urcBuffer[30] = {0};
+        sprintf(urcBuffer, "%s: (0-1)", cmd->desc->name);
+        atCmdRespInfoText(cmd->engine, urcBuffer);
+        atCmdRespOK(cmd->engine);
+        break;
+    }
+    default:
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_NOT_SURPORT);
+    }
+    }
+}
+#endif
+/*
+************************************************************************************************
+*  possible input from ATM:      set LTE frequency range max power                                                              *
+*  AT+SETRFFRP=?        -->not support                                                         *
+*  AT+SETRFFRP?         -->not support                                                         *
+*  AT+SETRFFRP=<X1>,<X2>,<X3> -->set                                                      *
+    <X1>         freqlow:                                                             *                                                                               *
+    <X2>         freqhigh:
+*   <X3>         power£º 3~69, step=1dBm; 69 == 23dBm  46==0dBm¡£3 = -43dBm¡£
+ ***********************************************************************************************
+*/
+void atCmdHandleSETLTEFRP(atCommand_t *cmd)
+{
+    if (cmd->type == AT_CMD_SET)
+    {
+        bool paramok = true;
+        uint16_t iFreqLow = 0, iFreqHigh = 0, iPower = 0;
+        uint32_t iRet = 0;
+
+        if (3 != cmd->param_count)
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        iFreqLow = atParamUint(cmd->params[0], &paramok);
+        iFreqHigh = atParamUint(cmd->params[1], &paramok);
+        iPower = atParamUintInRange(cmd->params[2], 3, 69, &paramok);
+        if (!paramok || (iFreqLow > iFreqHigh))
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        iRet = CFW_SetLTEFreqPwrRange(iFreqLow, iFreqHigh, iPower);
+        if (iRet != 0)
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+        atCmdRespOK(cmd->engine);
+    }
+    else
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_NOT_SURPORT);
+    }
+}
+/*
+************************************************************************************************
+*  possible input from ATM:         set RF frequency range max power                                                           *
+*  AT+SETRFFRP=?        -->not support                                                         *
+*  AT+SETRFFRP?         -->not support                                                         *
+*  AT+SETRFFRP=<X1>,<X2>,<X3>,<X4> -->set                                                      *
+    <X1>         mode: 0=GSM, 1=LTE                                                            *
+*   mode = GSM£º                                                                               *
+    <X2>         band:0=850M£¬1=900M£¬2=1800M£¬3=1900M
+*   <X3>         powerlow£ºmaxpwr_pcl: max pwr pcl 850/900:5~19;1800/1900:0~15
+*   <X4>         powerhigh£ºminpwr_pcl: min pwr pcl 850/900:5~19;1800/1900:0~15
+*   mode = LTE£º
+*   <X2>         band: LTE BAND£¬
+                 if band == 28A£¬input value == 0x28A;if band == 28B£¬input value == 0x28B
+*   <X3> <X4>    powerlow,powerhigh:0~69, step=1dBm; 69-> 23dBm, 46->0dBm, 3->-43dBm, 0~2->-43dBm.
+ ***********************************************************************************************
+*/
+void atCmdHandleSETRFFRP(atCommand_t *cmd)
+{
+    if (cmd->type == AT_CMD_SET)
+    {
+        bool paramok = true;
+        uint16_t iMode = 0, iBand = 0, iPowerlow = 0, iPowerhigh = 0;
+        uint32_t iRet = 0;
+
+        if (4 != cmd->param_count)
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        iMode = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        if (!paramok)
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+        if (0 == iMode) //GSM
+        {
+            iBand = atParamUintInRange(cmd->params[1], 0, 3, &paramok);
+            if (!paramok)
+            {
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            }
+            if (iBand > 1)
+            {
+                iPowerlow = atParamUintInRange(cmd->params[2], 0, 15, &paramok);
+                iPowerhigh = atParamUintInRange(cmd->params[3], 0, 15, &paramok);
+            }
+            else
+            {
+                iPowerlow = atParamUintInRange(cmd->params[2], 5, 19, &paramok);
+                iPowerhigh = atParamUintInRange(cmd->params[3], 5, 19, &paramok);
+            }
+        }
+        else
+        {
+            iBand = atParamUint(cmd->params[1], &paramok);
+            iPowerlow = atParamUintInRange(cmd->params[2], 0, 69, &paramok);
+            iPowerhigh = atParamUintInRange(cmd->params[3], 0, 69, &paramok);
+        }
+        if ((!paramok) || (iPowerlow > iPowerhigh))
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+
+        iRet = CFW_SetRFFreqPwrRange(iMode, iBand, iPowerlow, iPowerhigh);
+        if (0 != iRet)
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
         atCmdRespOK(cmd->engine);
     }
     else

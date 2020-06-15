@@ -2,6 +2,7 @@
 #include <https_api.h>
 #include "http_api.h"
 #include "mbedtls/timing.h"
+#include "osi_log.h"
 
 #if defined(MUPNP_USE_OPENSSL)
 uint8_t *ca_pem = NULL;
@@ -16,7 +17,7 @@ static void csocket_debug(void *ctx, int level,
                           const char *str)
 {
     ((void)level);
-    sys_arch_printf("https mbedtls_ssl: %s", str);
+    OSI_LOGXI(OSI_LOGPAR_S, 0x100075cc, "https mbedtls_ssl: %s", str);
 }
 
 int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
@@ -25,7 +26,7 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
 #if defined(MUPNP_USE_OPENSSL)
     int ret;
 
-    sys_arch_printf("cg_socket_connect,begin");
+    OSI_LOGI(0x100075cd, "cg_socket_connect,begin");
 
     uint32_t flags;
     const char *pers = addr;
@@ -50,7 +51,7 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
     if ((ret = mbedtls_ctr_drbg_seed(&sock->ctr_drbg, mbedtls_entropy_func, &sock->entropy,
                                      (const unsigned char *)pers, strlen(pers))) != 0)
     {
-        sys_arch_printf("mbedtls_ctr_drbg_seed failed...,ret=%d\n", ret);
+        OSI_LOGI(0x100075ce, "mbedtls_ctr_drbg_seed failed...,ret=%d\n", ret);
         return ret;
     }
 
@@ -61,7 +62,7 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
     result = Https_setCrt(CG_HTTPS_CA_CRT, &ca_pem);
     if (!result || NULL == ca_pem)
     {
-        sys_arch_printf("caCrt set fail!");
+        OSI_LOGI(0x100075cf, "caCrt set fail!");
         //return -1;
     }
     //set clientCrt through read certificate from file
@@ -70,7 +71,7 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
     {
         free(ca_pem);
         ca_pem = NULL;
-        sys_arch_printf("clientCrt set fail!");
+        OSI_LOGI(0x100075d0, "clientCrt set fail!");
         //return -1;
     }
     //set caCrt through read certificate from file
@@ -81,7 +82,7 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
         ca_pem = NULL;
         free(cert_pem);
         cert_pem = NULL;
-        sys_arch_printf("client private key set fail!");
+        OSI_LOGI(0x100075d1, "client private key set fail!");
         //return -1;
     }
 
@@ -95,7 +96,7 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
         ca_pem = NULL;
         cert_pem = NULL;
         key_pem = NULL;
-        sys_arch_printf("mbedtls_x509_crt_parse ca_pem failed...,ret=0x%x\n", -ret);
+        OSI_LOGI(0x100075d2, "mbedtls_x509_crt_parse ca_pem failed...,ret=0x%x\n", -ret);
         //return ret;
     }
 
@@ -110,7 +111,7 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
         cert_pem = NULL;
         key_pem = NULL;
 
-        sys_arch_printf("mbedtls_x509_crt_parse cert_pem failed...,ret=0x%x\n", -ret);
+        OSI_LOGI(0x100075d3, "mbedtls_x509_crt_parse cert_pem failed...,ret=0x%x\n", -ret);
         //return ret;
     }
 
@@ -126,7 +127,7 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
         cert_pem = NULL;
         key_pem = NULL;
 
-        sys_arch_printf("mbedtls_pk_parse_key key_pem failed...,ret=0x%x\n", -ret);
+        OSI_LOGI(0x100075d4, "mbedtls_pk_parse_key key_pem failed...,ret=0x%x\n", -ret);
         //return ret;
     }
 #endif
@@ -134,24 +135,24 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
     {
         free(ca_pem);
         ca_pem = NULL;
-        sys_arch_printf("free ca_pem");
+        OSI_LOGI(0x100075d5, "free ca_pem");
     }
     if (cert_pem != NULL)
     {
         free(cert_pem);
         cert_pem = NULL;
-        sys_arch_printf("free cert_pem");
+        OSI_LOGI(0x100075d6, "free cert_pem");
     }
     if (key_pem != NULL)
     {
         free(key_pem);
         key_pem = NULL;
-        sys_arch_printf("free key_pem");
+        OSI_LOGI(0x100075d7, "free key_pem");
     }
     ret = mbedtls_ssl_conf_own_cert(&sock->conf, &sock->clicert, &sock->pkey);
     if (ret < 0)
     {
-        sys_arch_printf("mbedtls_ssl_conf_own_cert failed...,ret=0x%x\n", -ret);
+        OSI_LOGI(0x100075d8, "mbedtls_ssl_conf_own_cert failed...,ret=0x%x\n", -ret);
         return ret;
     }
 
@@ -161,18 +162,18 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
     if ((ret = mbedtls_net_connect(&sock->server_fd, addr,
                                    portStr, MBEDTLS_NET_PROTO_TCP)) != 0) //htons(port)
     {
-        sys_arch_printf("mbedtls_net_connect failed...,ret=0x%x\n", -ret);
+        OSI_LOGI(0x100075d9, "mbedtls_net_connect failed...,ret=0x%x\n", -ret);
         return ret;
     }
     mupnp_socket_setid(sock, (sock->server_fd).fd);
     mupnp_socket_setdirection(sock, MUPNP_NET_SOCKET_CLIENT);
-    sys_arch_printf("begin to mbedtls_ssl_config_defaults\n");
+    OSI_LOGI(0x100075da, "begin to mbedtls_ssl_config_defaults\n");
     if ((ret = mbedtls_ssl_config_defaults(&sock->conf,
                                            MBEDTLS_SSL_IS_CLIENT,
                                            MBEDTLS_SSL_TRANSPORT_STREAM,
                                            MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
     {
-        sys_arch_printf("mbedtls_ssl_config_defaults failed ret = %d\n", ret);
+        OSI_LOGI(0x100075db, "mbedtls_ssl_config_defaults failed ret = %d\n", ret);
         return ret;
     }
     /* OPTIONAL is not optimal for security,
@@ -189,7 +190,7 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
 
     if ((ret = mbedtls_ssl_setup(sock->ssl, &sock->conf)) != 0)
     {
-        sys_arch_printf("mbedtls_ssl_setup failed ret = %d\n", ret);
+        OSI_LOGI(0x100075dc, "mbedtls_ssl_setup failed ret = %d\n", ret);
         return ret;
     }
 
@@ -208,18 +209,18 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
     /* 
         * 4. Handshake 
         */
-    sys_arch_printf(" . Performing the SSL/TLS handshake...");
+    OSI_LOGI(0x100075de, " . Performing the SSL/TLS handshake...");
 
     while ((ret = mbedtls_ssl_handshake(sock->ssl)) != 0)
     {
         if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
         {
-            sys_arch_printf(" failed ! mbedtls_ssl_handshake returned %x\n\n", ret);
+            OSI_LOGI(0x100075df, " failed ! mbedtls_ssl_handshake returned %x\n\n", ret);
             return ret;
         }
     }
 
-    sys_arch_printf(" ok\n");
+    OSI_LOGI(0x100075e0, " ok\n");
 
     /* 
         * 5. Verify the server certificate 
@@ -231,14 +232,14 @@ int mupnp_mbedtlssocket_connect(mUpnpSocket *sock, const char *addr, int port)
     {
         char vrfy_buf[512];
 
-        sys_arch_printf(" mbedtls_ssl_get_verify_result failed\n");
+        OSI_LOGI(0x100075e1, " mbedtls_ssl_get_verify_result failed\n");
 
         mbedtls_x509_crt_verify_info(vrfy_buf, sizeof(vrfy_buf), " ! ", flags);
 
-        sys_arch_printf("%s\n", vrfy_buf);
+        OSI_LOGXI(OSI_LOGPAR_S, 0x07090005, "%s\n", vrfy_buf);
     }
     else
-        sys_arch_printf("mbedtls_ssl_get_verify_result ok\n");
+        OSI_LOGI(0x100075e2, "mbedtls_ssl_get_verify_result ok\n");
 
     return ret;
 #endif

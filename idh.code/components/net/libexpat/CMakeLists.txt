@@ -10,6 +10,7 @@
 # without further testing or modification.
 
 set(target libexpat)
+add_app_libraries($<TARGET_FILE:${target}>)
 
 add_library(${target} STATIC
     src/xmlparse.c
@@ -19,9 +20,6 @@ add_library(${target} STATIC
     src/xmltok_ns.c)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel driver calclib net lwip)
+target_include_targets(${target} PRIVATE kernel driver calclib net lwip)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 set_target_properties(${target} PROPERTIES OUTPUT_NAME expat)
-
-target_include_directories(${target} PRIVATE ../external/platform/include)
-target_include_directories(${target} PRIVATE ../external/platform/service/include)

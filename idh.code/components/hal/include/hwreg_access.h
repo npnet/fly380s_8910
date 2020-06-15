@@ -24,19 +24,61 @@ extern "C" {
 typedef uint32_t REG32;
 typedef uint16_t REG16;
 typedef uint8_t REG8;
+typedef uint8_t UINT8;
 
-#if defined(CONFIG_SOC_8910)
+#define REG_BIT(n) (1U << (n))
+#define REG_BIT0 (1U << 0)
+#define REG_BIT1 (1U << 1)
+#define REG_BIT2 (1U << 2)
+#define REG_BIT3 (1U << 3)
+#define REG_BIT4 (1U << 4)
+#define REG_BIT5 (1U << 5)
+#define REG_BIT6 (1U << 6)
+#define REG_BIT7 (1U << 7)
+#define REG_BIT8 (1U << 8)
+#define REG_BIT9 (1U << 9)
+#define REG_BIT10 (1U << 10)
+#define REG_BIT11 (1U << 11)
+#define REG_BIT12 (1U << 12)
+#define REG_BIT13 (1U << 13)
+#define REG_BIT14 (1U << 14)
+#define REG_BIT15 (1U << 15)
+#define REG_BIT16 (1U << 16)
+#define REG_BIT17 (1U << 17)
+#define REG_BIT18 (1U << 18)
+#define REG_BIT19 (1U << 19)
+#define REG_BIT20 (1U << 20)
+#define REG_BIT21 (1U << 21)
+#define REG_BIT22 (1U << 22)
+#define REG_BIT23 (1U << 23)
+#define REG_BIT24 (1U << 24)
+#define REG_BIT25 (1U << 25)
+#define REG_BIT26 (1U << 26)
+#define REG_BIT27 (1U << 27)
+#define REG_BIT28 (1U << 28)
+#define REG_BIT29 (1U << 29)
+#define REG_BIT30 (1U << 30)
+#define REG_BIT31 (1U << 31)
+
+#ifdef CONFIG_SOC_8910
 #define HAL_SYSIRQ_NUM(irq) ((irq) + 32)
 #define REG_ADDRESS_FOR_ARM
 #define REG_ACCESS_ADDRESS(addr) (addr)
-#elif defined(CONFIG_SOC_6760)
+#endif
+
+#ifdef CONFIG_SOC_6760
 #define HAL_SYSIRQ_NUM(irq) (irq)
 #define REG_ADDRESS_FOR_ARM
 #define REG_ACCESS_ADDRESS(addr) (addr)
-#elif defined(CONFIG_SOC_8955)
+#endif
+
+#ifdef CONFIG_SOC_8811
 #define HAL_SYSIRQ_NUM(irq) (irq)
-#define REG_ACCESS_ADDRESS(addr) ((addr) | 0xa0000000)
-#elif defined(CONFIG_SOC_8909)
+#define REG_ADDRESS_FOR_ARM
+#define REG_ACCESS_ADDRESS(addr) (addr)
+#endif
+
+#if defined(CONFIG_SOC_8955) || defined(CONFIG_SOC_8909)
 #define HAL_SYSIRQ_NUM(irq) (irq)
 #define REG_ACCESS_ADDRESS(addr) ((addr) | 0xa0000000)
 #endif
@@ -49,6 +91,9 @@ typedef uint8_t REG8;
 #define MEM_ACCESS_CACHED(addr) ((UINT32 *)OSI_KSEG0(addr))
 #define MEM_ACCESS_UNCACHED(addr) ((UINT32 *)OSI_KSEG1(addr))
 #endif
+
+// Range in [start, end]
+#define HWP_ADDRESS_RANGE(hwp) (uintptr_t)(hwp), (uintptr_t)(hwp) + sizeof(*(hwp)) - 1
 
 // hardware registers are defined as union. The template of union is
 //      union {

@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "lwip/opt.h"
 
 enum
 {
@@ -49,6 +50,9 @@ static const char kSysnvUsbModeHint[] = "0.Charger only; 1.RDA (8910 ROM) serial
                                         "2.Eight serials; 3.RNDIS and serials; "
                                         "4.SPRD U2S Diag; 5.ECM and serials";
 static const char kSysnvDiagDeviceHint[] = "1.diag device uart; 2.diag device usb serial";
+#if IP_NAT
+static const char kSysnvNatCfgHint[] = "0 disable; 16bit config nat cid; 101 =0000000100100101 sim 0 cid(1,3,6 enable)(2,4,5,7,8 disable) sim1 cid(1 enable)(2,3,4,5,6,7,8 disable)";
+#endif
 
 static const sysnvItem_t gAtSysnvMap[] = {
     {&gSysnvTraceEnabled, SYSNV_TYPE_BOOL, 0, 1, "ap_trace_en", kSysnvBoolHint},
@@ -59,6 +63,9 @@ static const sysnvItem_t gAtSysnvMap[] = {
     {&gSysnvDiagDevice, SYSNV_TYPE_INT, 1, 2, "diag_device", kSysnvDiagDeviceHint},
     {&gSysnvSimHotPlug, SYSNV_TYPE_BOOL, 0, 1, "sim_hotplug", kSysnvBoolHint},
     {&gSysnvSimVoltTrigMode, SYSNV_TYPE_BOOL, 0, 1, "sim_hotplug_vol_trigmode", kSysnvBoolHint},
+#if IP_NAT
+    {&gSysnvNATCfg, SYSNV_TYPE_INT, 0, 65535, "nat_cfg", kSysnvNatCfgHint},
+#endif
 };
 
 static const sysnvItem_t *prvNameGetItem(const char *name)

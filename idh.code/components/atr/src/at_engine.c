@@ -32,6 +32,7 @@
 #ifdef CONFIG_TWOLINE_WAKEUP_ENABLE
 #include "srv_2line_wakeup.h"
 #endif
+#include "tb.h"
 
 #define AT_ENGINE_THREAD_PRIORITY (OSI_PRIORITY_NORMAL)
 #define AT_ENGINE_STACK_SIZE (8192 * 4)
@@ -52,6 +53,11 @@ const bool gAtEchoCommandOnly = true;
 #else
 const bool gAtEchoCommandOnly = false;
 #endif
+#ifdef CONFIG_ATR_CMD_TPLUS_ENABLE
+const bool gAtCmdTplusEnable = true;
+#else
+const bool gAtCmdTplusEnable = false;
+#endif
 #ifdef CONFIG_ATR_URC_BUFF_ENABLE
 const bool gAtUrcBuffEnable = true;
 const unsigned gAtUrcBuffSize = CONFIG_ATR_URC_BUFF_SIZE;
@@ -65,6 +71,7 @@ const unsigned gAtCmdlineMax = CONFIG_ATR_CMDLINE_MAX;
 const unsigned gAtLfWaitMs = CONFIG_ATR_LF_WAIT_MS;
 const unsigned gAtCmuxOutBuffSize = CONFIG_ATR_CMUX_OUT_BUFF_SIZE;
 const unsigned gAtCmuxInBuffSize = CONFIG_ATR_CMUX_IN_BUFF_SIZE;
+const unsigned gAtCmuxSubMinInBuffSize = CONFIG_ATR_CMUX_SUBCHANNEL_MIN_IN_BUFF_SIZE;
 const unsigned gAtCmuxDlcNum = CONFIG_ATR_CMUX_DLC_NUM;
 const unsigned gAtDataBuffSize = CONFIG_ATR_DATA_BUFF_SIZE;
 const unsigned gAtPppEndCheckTimeout = CONFIG_ATR_PPP_END_CHECK_TIMEOUT;
@@ -87,6 +94,26 @@ void atCmdHandleAT(atCommand_t *cmd)
 {
     atCmdRespOK(cmd->engine);
 }
+
+#ifdef CONFIG_ATR_CMD_TPLUS_ENABLE
+/**
+ * Command handler for non-standard +++ in command mode
+ */
+void atCmdHandleTplus(atCommand_t *cmd)
+{
+    atCmdRespOKText(cmd->engine, "NO CARRIER");
+}
+#endif
+
+/**
+ * Command description for non-standard +++ in command mode
+ */
+const atCmdDesc_t gAtTplusCmdDesc = {
+    .name = "+++",
+#ifdef CONFIG_ATR_CMD_TPLUS_ENABLE
+    .handler = atCmdHandleTplus,
+#endif
+};
 
 #ifdef CONFIG_ATR_CMUX_SUPPORT
 void atCmdHandleCMUX(atCommand_t *cmd)
@@ -208,8 +235,8 @@ static OSI_UNUSED void _atDeviceUartInit()
     atDeviceUartConfig_t uart_cfg = {
         .name = CONFIG_ATR_DEFAULT_UART,
         .baud = gAtSetting.ipr,
-        .format = AT_DEVICE_FORMAT_8N1,
-        .parity = AT_DEVICE_PARITY_ODD,
+        .format = gAtSetting.icf_format, // AT_DEVICE_FORMAT_8N1,
+        .parity = gAtSetting.icf_parity, //AT_DEVICE_PARITY_ODD,
     };
     atDevice_t *uart = atDeviceUartCreate(&uart_cfg);
     atDispatch_t *dispatch = atDispatchCreate(uart);
@@ -329,7 +356,9 @@ static void atEngineTaskEntry(void *argument)
             OSI_LOGXI(OSI_LOGPAR(I, S, I, I, I), 0x1000527a, "AT get event: %d(%s)/0x%08x/0x%08x/0x%08x",
                       event.id, CFW_EventName(event.id),
                       event.param1, event.param2, event.param3);
-
+#ifdef CONFIG_ATR_TB_API_SUPPORT
+            tb_handle_cfw_event(&event);
+#endif
             if (osiEventDispatchRun(gAtEngine.id_man, &event))
             {
                 OSI_LOGW(0x1000527b, "AT RESPONSE EVENT HANDLED BY ID!");

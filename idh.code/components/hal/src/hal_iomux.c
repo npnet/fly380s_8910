@@ -129,13 +129,22 @@ void halIomuxInit(void)
     hwp_iomux->pad_keyin_2_cfg_reg = keyin2.v;
 #endif
 
-#if defined(CONFIG_BOARD_SUPPORT_SIM1_DETECT) && (CONFIG_BOARD_SIM1_DETECT_GPIO == 4)
-    REG_IOMUX_PAD_GPIO_4_CFG_REG_T gpio_4 = {};
-    gpio_4.b.pad_gpio_4_pull_frc = 1;
+#ifdef CONFIG_BOARD_SUPPORT_SIM1_DETECT
+#if (CONFIG_BOARD_SIM1_DETECT_GPIO == 4)
+    REG_IOMUX_PAD_GPIO_4_CFG_REG_T gpio_4 = {.b.pad_gpio_4_pull_frc = 1};
 #ifdef CONFIG_GPIO4_FORCE_PULL_UP
     gpio_4.b.pad_gpio_4_pull_up = 1;
 #endif
     hwp_iomux->pad_gpio_4_cfg_reg = gpio_4.v;
+#elif (CONFIG_BOARD_SIM1_DETECT_GPIO == 10)
+    REG_IOMUX_PAD_GPIO_10_CFG_REG_T gpio_10 = {.b.pad_gpio_10_pull_frc = 1};
+    hwp_iomux->pad_gpio_10_cfg_reg = gpio_10.v;
+#endif
+#endif
+
+#if defined(CONFIG_BOARD_SUPPORT_SIM2_DETECT) && (CONFIG_BOARD_SIM2_DETECT_GPIO == 11)
+    REG_IOMUX_PAD_GPIO_11_CFG_REG_T gpio_11 = {.b.pad_gpio_11_pull_frc = 1};
+    hwp_iomux->pad_gpio_11_cfg_reg = gpio_11.v;
 #endif
 
 #endif

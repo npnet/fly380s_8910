@@ -165,7 +165,7 @@ cyclic_timer(void *arg)
 {
   const struct lwip_cyclic_timer* cyclic = (const struct lwip_cyclic_timer*)arg;
 #if LWIP_DEBUG_TIMERNAMES
-  LWIP_DEBUGF(TIMERS_DEBUG, ("tcpip: %s()\n", cyclic->handler_name));
+  LWIP_DEBUGF(TIMERS_DEBUG, (0x10007925, "tcpip: ()\n"));
 #endif
   cyclic->handler();
   sys_timeout(cyclic->interval_ms, cyclic_timer, arg);
@@ -227,7 +227,7 @@ sys_timeout(u32_t msecs, sys_timeout_handler handler, void *arg)
   timeout->time = msecs + diff;
 #if LWIP_DEBUG_TIMERNAMES
   timeout->handler_name = handler_name;
-  LWIP_DEBUGF(TIMERS_DEBUG, ("sys_timeout: %p msecs=%"U32_F" handler=%s arg=%p\n",
+  LWIP_DEBUGF(TIMERS_DEBUG, (0x10007926, "sys_timeout: %p msecs=%lu handler=%s arg=%p\n",
     (void *)timeout, msecs, handler_name, (void *)arg));
 #endif /* LWIP_DEBUG_TIMERNAMES */
 
@@ -337,8 +337,7 @@ sys_check_timeouts(void)
         arg = tmptimeout->arg;
 #if LWIP_DEBUG_TIMERNAMES
         if (handler != NULL) {
-          LWIP_DEBUGF(TIMERS_DEBUG, ("sct calling h=%s arg=%p\n",
-            tmptimeout->handler_name, arg));
+          LWIP_DEBUGF(TIMERS_DEBUG, (0x10007927, "sct calling h= arg=%p\n", arg));
         }
 #endif /* LWIP_DEBUG_TIMERNAMES */
         memp_free(MEMP_SYS_TIMEOUT, tmptimeout);
@@ -453,7 +452,7 @@ cyclic_timer(void *arg)
 {
   const struct lwip_cyclic_timer* cyclic = (const struct lwip_cyclic_timer*)arg;
 #if LWIP_DEBUG_TIMERNAMES
-  LWIP_DEBUGF(TIMERS_DEBUG, ("tcpip: %s()\n", cyclic->handler_name));
+  LWIP_DEBUGF(TIMERS_DEBUG, (0x10007928, "tcpip: \n"));
 #endif
   if (cyclic->handler())
     sys_timeout(cyclic->interval_ms, cyclic_timer, arg);

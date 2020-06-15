@@ -80,6 +80,167 @@ static bool SMS_PDUBCDToASCII(uint8_t *pBCD, uint16_t *pLen, uint8_t *pStr);
 static bool AT_SMS_StatusMacroFlagToStringOrData(uint8_t *pStatusMacroFlagBuff, uint8_t nFormat);
 static bool AT_SMS_CheckPDUIsValid(uint8_t *pPDUData, uint8_t *nPDULen, bool bReadOrListMsgFlag);
 
+static int _paramHex2Num(uint8_t c)
+{
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'A' && c <= 'F')
+        return 0xa + (c - 'A');
+    if (c >= 'a' && c <= 'f')
+        return 0xa + (c - 'a');
+    return -1;
+}
+
+/**
+ * When cscs is UCS2, convert real number to ucs2 format
+ * 10086
+ * 31 30 30 38 36 -> 00 31 00 30 00 30 00 38 00 36 ->
+ * 30 30 33 31 30 30 33 30 30 30 33 30 30 30 33 38 30 30 33 36
+ */
+static char *generateUrcUcs2Data(char *src, uint16_t src_length)
+{
+    char *dest = NULL;
+    char *ucs2Data = NULL;
+    int ucs2Size = 0;
+    ucs2Data = mlConvertStr(src, src_length, ML_CP936, ML_UTF16BE, &ucs2Size);
+    if (ucs2Data != NULL)
+    {
+        uint16_t length = ucs2Size * 2;
+        dest = malloc(length + 4);
+        if (dest != NULL)
+        {
+            memset(dest, 0x00, length + 4);
+            char *temp_data = ucs2Data;
+            uint16_t n = 0;
+            for (uint16_t index = 0; index < ucs2Size; index++)
+            {
+                uint8_t num0 = temp_data[0] >> 4;
+                uint8_t num1 = temp_data[0] & 0x0f;
+
+                if (num0 <= 9)
+                    dest[n++] = num0 + '0';
+                else
+                    dest[n++] = num0 - 0xa + 'A';
+
+                if (num1 <= 9)
+                    dest[n++] = num1 + '0';
+                else
+                    dest[n++] = num1 - 0xa + 'A';
+                temp_data += 1;
+            }
+        }
+        free(ucs2Data);
+        return dest;
+    }
+    return NULL;
+}
+
+/*
+ * Convert cp936 ucs2 format number to real number
+ *
+ * cp936 ucs2 number 30 30 33 31 30 30 33 30 30 30 33 30 30 30 33 38 30 30 33 36
+ * real number 10086
+ */
+static char *_generateRealNumberForCmgsAndCmgwInUcs2(const char *da, uint8_t *daLength, uint32_t *errorCode)
+{
+    if (strlen(da) % 4 != 0)
+    {
+        *errorCode = ERR_AT_CMS_INVALID_PARA;
+        return NULL;
+    }
+
+    // convert cp936 data to ucs2 data
+    uint16_t length = strlen(da) / 2;
+    char *number = malloc(length);
+    if (number == NULL)
+    {
+        *errorCode = ERR_AT_CME_NO_MEMORY;
+        return NULL;
+    }
+    memset(number, 0x00, length);
+
+    uint16_t n;
+    uint16_t index;
+    const char *temp_data = da;
+    // check whether the number is valid
+    for (n = 0; n < length; n++)
+    {
+        if (_paramHex2Num(*temp_data++) < 0)
+        {
+            free(number);
+            *errorCode = ERR_AT_CMS_INVALID_TXT_PARAM;
+            return NULL;
+        }
+    }
+
+    const char *temp_data2 = da;
+    uint8_t num0;
+    uint8_t num1;
+    n = 0;
+    // generate real ucs2 data
+    for (index = 0; index < length; index++)
+    {
+        num0 = _paramHex2Num(temp_data2[0]);
+        num1 = _paramHex2Num(temp_data2[1]);
+        number[n++] = (num0 << 4) | num1;
+        temp_data2 += 2;
+    }
+
+    char *number2 = NULL;
+    int number_size;
+    // convert ucs2 data to cp936 data, generate real number
+    number2 = mlConvertStr(number, n, ML_UTF16BE, ML_CP936, &number_size);
+    free(number);
+
+    if (number2 == NULL)
+    {
+        *errorCode = ERR_AT_CMS_INVALID_TXT_PARAM;
+        return NULL;
+    }
+
+    number = number2;
+    *daLength = number_size;
+    *errorCode = 0;
+    return number;
+}
+
+/*
+ * Convert real SMS data to ucs2 format
+ */
+static char *_convertDataToUcs2(char *data, uint16_t size)
+{
+    uint16_t urcLength;
+    char *urc = NULL;
+    urcLength = size * 2;
+    urc = malloc(urcLength + 4);
+    if (urc != NULL)
+    {
+        memset(urc, 0x00, urcLength + 4);
+        uint16_t index = 0;
+        char *temp_data = data;
+        uint16_t n = 0;
+        for (; index < size; index++)
+        {
+            uint8_t num0 = temp_data[0] >> 4;
+            uint8_t num1 = temp_data[0] & 0x0f;
+
+            if (num0 <= 9)
+                urc[n++] = num0 + '0';
+            else
+                urc[n++] = num0 - 0xa + 'A';
+
+            if (num1 <= 9)
+                urc[n++] = num1 + '0';
+            else
+                urc[n++] = num1 - 0xa + 'A';
+            temp_data += 1;
+        }
+
+        return urc;
+    }
+    return mlConvertStr(data, size, ML_UTF16BE, ML_CP936, NULL);
+}
+
 /**
  * check the number inside PDU is prohibited by FDN feature
  */
@@ -187,18 +348,119 @@ static const char *_smsAtStatusStr(uint8_t status)
 
 static char *_smsNodeDataStr(uint8_t type, CFW_SMS_INFO_UNION *info, uint8_t nSim)
 {
+    OSI_LOGI(0, "_smsNodeDataStr type: %X", type);
     if (type == 1)
     {
         CFW_SMS_TXT_DELIVERED_WITH_HRD_INFO_V2 *pType1Data =
             (CFW_SMS_TXT_DELIVERED_WITH_HRD_INFO_V2 *)info;
 
         if (pType1Data->dcs == 2)
-            return mlConvertStr(pType1Data->data, pType1Data->length,
-                                ML_UTF16BE, ML_CP936, NULL);
+        {
+            if (gAtSetting.cscs == cs_ucs2)
+                return _convertDataToUcs2((char *)pType1Data->data, pType1Data->length);
+            else if (gAtSetting.cscs == cs_hex)
+            {
+                int hexSize = 0;
+                char *hexData = mlConvertStr(pType1Data->data, pType1Data->length,
+                                             ML_UTF16BE, ML_CP936, &hexSize);
+                if (hexData == NULL)
+                    return NULL;
+
+                char *urcHexData = (char *)malloc(hexSize * 2 + 2);
+                if (urcHexData == NULL)
+                {
+                    free(hexData);
+                    return NULL;
+                }
+
+                cfwBytesToHexStr(hexData, hexSize, urcHexData);
+                free(hexData);
+                return urcHexData;
+            }
+            else
+                return mlConvertStr(pType1Data->data, pType1Data->length,
+                                    ML_UTF16BE, ML_CP936, NULL);
+        }
         if (pType1Data->dcs == 0)
+        {
+            if (gAtSetting.cscs == cs_ucs2)
+            {
+                int ucs2Size = 0;
+                char *ucs2Data = mlConvertStr(pType1Data->data, pType1Data->length,
+                                              ML_GSM, ML_UTF16BE, &ucs2Size);
+                if (ucs2Data == NULL)
+                    return NULL;
+
+                char *urcUcs2Data = _convertDataToUcs2(ucs2Data, ucs2Size);
+                free(ucs2Data);
+
+                if (urcUcs2Data == NULL)
+                    return NULL;
+                else
+                    return urcUcs2Data;
+            }
+            else if (gAtSetting.cscs == cs_ira)
+            {
+                char *iraUrcStr = NULL;
+                iraUrcStr = malloc(pType1Data->length);
+                if (NULL != iraUrcStr)
+                {
+                    memset(iraUrcStr, 0x00, pType1Data->length);
+                    memcpy(iraUrcStr, pType1Data->data, pType1Data->length);
+                    return iraUrcStr;
+                }
+                else
+                    return NULL;
+            }
+            else if (gAtSetting.cscs == cs_hex)
+            {
+                int hexSize = 0;
+                char *hexData = mlConvertStr(pType1Data->data, pType1Data->length,
+                                             ML_GSM, ML_CP936, &hexSize);
+                if (hexData == NULL)
+                    return NULL;
+
+                char *urcHexData = (char *)malloc(hexSize * 2 + 2);
+                if (urcHexData == NULL)
+                {
+                    free(hexData);
+                    return NULL;
+                }
+
+                cfwBytesToHexStr(hexData, hexSize, urcHexData);
+                free(hexData);
+                return urcHexData;
+            }
             return mlConvertStr(pType1Data->data, pType1Data->length,
                                 ML_GSM, ML_CP936, NULL);
-        return strndup((char *)pType1Data->data, pType1Data->length);
+        }
+        // dcs=1
+        if (gAtSetting.cscs == cs_ucs2)
+        {
+            int ucs2Size = 0;
+            char *ucs2Data = mlConvertStr(pType1Data->data, pType1Data->length,
+                                          ML_CP936, ML_UTF16BE, &ucs2Size);
+            if (ucs2Data == NULL)
+                return strndup((char *)pType1Data->data, pType1Data->length);
+
+            char *urcUcs2Data = _convertDataToUcs2(ucs2Data, ucs2Size);
+            free(ucs2Data);
+            if (urcUcs2Data == NULL)
+                return NULL;
+            else
+                return urcUcs2Data;
+        }
+        else if (gAtSetting.cscs == cs_hex)
+        {
+            char *urcHexData = (char *)malloc(pType1Data->length * 2 + 2);
+            if (urcHexData == NULL)
+                return NULL;
+
+            cfwBytesToHexStr((char *)pType1Data->data, pType1Data->length, urcHexData);
+            return urcHexData;
+        }
+        else
+            return strndup((char *)pType1Data->data, pType1Data->length);
     }
     else if (type == 3)
     {
@@ -206,24 +468,224 @@ static char *_smsNodeDataStr(uint8_t type, CFW_SMS_INFO_UNION *info, uint8_t nSi
             (CFW_SMS_TXT_SUBMITTED_WITH_HRD_INFO_V2 *)info;
 
         if (pType3Data->dcs == 2)
-            return mlConvertStr(pType3Data->data, pType3Data->length,
-                                ML_UTF16BE, ML_CP936, NULL);
+        {
+            if (gAtSetting.cscs == cs_ucs2)
+                return _convertDataToUcs2((char *)pType3Data->data, pType3Data->length);
+            else if (gAtSetting.cscs == cs_hex)
+            {
+                int hexSize = 0;
+                char *hexData = mlConvertStr((char *)pType3Data->data, pType3Data->length,
+                                             ML_UTF16BE, ML_CP936, &hexSize);
+                if (hexData == NULL)
+                    return NULL;
+
+                char *urcHexData = (char *)malloc(hexSize * 2 + 2);
+                if (urcHexData == NULL)
+                {
+                    free(hexData);
+                    return NULL;
+                }
+
+                cfwBytesToHexStr(hexData, hexSize, urcHexData);
+                free(hexData);
+                return urcHexData;
+            }
+            else
+                return mlConvertStr(pType3Data->data, pType3Data->length,
+                                    ML_UTF16BE, ML_CP936, NULL);
+        }
         if (pType3Data->dcs == 0)
-            return mlConvertStr(pType3Data->data, pType3Data->length,
-                                ML_GSM, ML_CP936, NULL);
-        return strndup((char *)pType3Data->data, pType3Data->length);
+        {
+            if (gAtSetting.cscs == cs_ucs2)
+            {
+                int ucs2Size = 0;
+                char *ucs2Data = mlConvertStr(pType3Data->data, pType3Data->length,
+                                              ML_GSM, ML_UTF16BE, &ucs2Size);
+                if (ucs2Data == NULL)
+                    return NULL;
+                char *urcUcs2Data = _convertDataToUcs2(ucs2Data, ucs2Size);
+                free(ucs2Data);
+                if (urcUcs2Data == NULL)
+                    return NULL;
+                else
+                    return urcUcs2Data;
+            }
+            else if (gAtSetting.cscs == cs_ira)
+            {
+                char *iraUrcStr = NULL;
+                iraUrcStr = malloc(pType3Data->length);
+                if (NULL != iraUrcStr)
+                {
+                    memset(iraUrcStr, 0x00, pType3Data->length);
+                    memcpy(iraUrcStr, pType3Data->data, pType3Data->length);
+                    return iraUrcStr;
+                }
+                else
+                    return NULL;
+            }
+            else if (gAtSetting.cscs == cs_hex)
+            {
+                int hexSize = 0;
+                char *hexData = mlConvertStr(pType3Data->data, pType3Data->length,
+                                             ML_GSM, ML_CP936, &hexSize);
+                if (hexData == NULL)
+                    return NULL;
+
+                char *urcHexData = (char *)malloc(hexSize * 2 + 2);
+                if (urcHexData == NULL)
+                {
+                    free(hexData);
+                    return NULL;
+                }
+
+                cfwBytesToHexStr(hexData, hexSize, urcHexData);
+                free(hexData);
+                return urcHexData;
+            }
+            else
+                return mlConvertStr(pType3Data->data, pType3Data->length,
+                                    ML_GSM, ML_CP936, NULL);
+        }
+        if (gAtSetting.cscs == cs_ucs2)
+        {
+            int ucs2Size = 0;
+            char *ucs2Data = mlConvertStr(pType3Data->data, pType3Data->length,
+                                          ML_CP936, ML_UTF16BE, &ucs2Size);
+            if (ucs2Data == NULL)
+                return NULL;
+            char *urcUcs2Data = _convertDataToUcs2(ucs2Data, ucs2Size);
+            free(ucs2Data);
+            if (urcUcs2Data == NULL)
+                return NULL;
+            else
+                return urcUcs2Data;
+        }
+        else if (gAtSetting.cscs == cs_hex)
+        {
+            char *urcHexData = (char *)malloc(pType3Data->length * 2 + 2);
+            if (urcHexData == NULL)
+                return NULL;
+
+            cfwBytesToHexStr((char *)pType3Data->data, pType3Data->length, urcHexData);
+            return urcHexData;
+        }
+        else
+        {
+            return strndup((char *)pType3Data->data, pType3Data->length);
+        }
     }
     else if (type == 0x21)
     {
         CFW_SMS_TXT_HRD_IND_V2 *pTextWithHead = (CFW_SMS_TXT_HRD_IND_V2 *)info;
 
         if (pTextWithHead->dcs == 2)
-            return mlConvertStr(pTextWithHead->pData, pTextWithHead->nDataLen,
-                                ML_UTF16BE, ML_CP936, NULL);
+        {
+            if (gAtSetting.cscs == cs_ucs2)
+                return _convertDataToUcs2((char *)pTextWithHead->pData, pTextWithHead->nDataLen);
+            else if (gAtSetting.cscs == cs_hex)
+            {
+                int hexSize = 0;
+                char *hexData = mlConvertStr((char *)pTextWithHead->pData, pTextWithHead->nDataLen,
+                                             ML_UTF16BE, ML_CP936, &hexSize);
+                if (hexData == NULL)
+                    return NULL;
+
+                char *urcHexData = (char *)malloc(hexSize * 2 + 2);
+                if (urcHexData == NULL)
+                {
+                    free(hexData);
+                    return NULL;
+                }
+
+                cfwBytesToHexStr(hexData, hexSize, urcHexData);
+                free(hexData);
+                return urcHexData;
+            }
+            else
+            {
+                return mlConvertStr(pTextWithHead->pData, pTextWithHead->nDataLen,
+                                    ML_UTF16BE, ML_CP936, NULL);
+            }
+        }
         if (pTextWithHead->dcs == 0)
-            return mlConvertStr(pTextWithHead->pData, pTextWithHead->nDataLen,
-                                ML_GSM, ML_CP936, NULL);
-        return strndup((char *)pTextWithHead->pData, pTextWithHead->nDataLen);
+        {
+            if (gAtSetting.cscs == cs_ucs2)
+            {
+                int ucs2Size = 0;
+                char *ucs2Data = mlConvertStr(pTextWithHead->pData, pTextWithHead->nDataLen,
+                                              ML_GSM, ML_UTF16BE, &ucs2Size);
+                if (ucs2Data == NULL)
+                    return mlConvertStr(pTextWithHead->pData, pTextWithHead->nDataLen,
+                                        ML_GSM, ML_CP936, NULL);
+                char *urcUcs2Data = _convertDataToUcs2(ucs2Data, ucs2Size);
+                free(ucs2Data);
+                if (urcUcs2Data == NULL)
+                    return mlConvertStr(pTextWithHead->pData, pTextWithHead->nDataLen,
+                                        ML_GSM, ML_CP936, NULL);
+                return urcUcs2Data;
+            }
+            else if (gAtSetting.cscs == cs_ira)
+            {
+                char *iraUrcStr = NULL;
+                iraUrcStr = malloc(pTextWithHead->nDataLen);
+                if (NULL != iraUrcStr)
+                {
+                    memset(iraUrcStr, 0x00, pTextWithHead->nDataLen);
+                    memcpy(iraUrcStr, pTextWithHead->pData, pTextWithHead->nDataLen);
+                    return iraUrcStr;
+                }
+                else
+                    return NULL;
+            }
+            else if (gAtSetting.cscs == cs_hex)
+            {
+                int hexSize = 0;
+                char *hexData = mlConvertStr(pTextWithHead->pData, pTextWithHead->nDataLen,
+                                             ML_GSM, ML_CP936, &hexSize);
+                if (hexData == NULL)
+                    return NULL;
+
+                char *urcHexData = (char *)malloc(hexSize * 2 + 2);
+                if (urcHexData == NULL)
+                {
+                    free(hexData);
+                    return NULL;
+                }
+
+                cfwBytesToHexStr(hexData, hexSize, urcHexData);
+                free(hexData);
+                return urcHexData;
+            }
+            else
+                return mlConvertStr(pTextWithHead->pData, pTextWithHead->nDataLen,
+                                    ML_GSM, ML_CP936, NULL);
+        }
+        if (gAtSetting.cscs == cs_ucs2)
+        {
+            int ucs2Size = 0;
+            char *ucs2Data = mlConvertStr(pTextWithHead->pData, pTextWithHead->nDataLen,
+                                          ML_CP936, ML_UTF16BE, &ucs2Size);
+            if (ucs2Data == NULL)
+                return NULL;
+
+            char *urcUcs2Data = _convertDataToUcs2(ucs2Data, ucs2Size);
+            free(ucs2Data);
+            if (urcUcs2Data == NULL)
+                return NULL;
+
+            return urcUcs2Data;
+        }
+        else if (gAtSetting.cscs == cs_hex)
+        {
+            char *urcHexData = (char *)malloc(pTextWithHead->nDataLen * 2 + 2);
+            if (urcHexData == NULL)
+                return NULL;
+
+            cfwBytesToHexStr((char *)pTextWithHead->pData, pTextWithHead->nDataLen, urcHexData);
+            return urcHexData;
+        }
+        else
+            return strndup((char *)pTextWithHead->pData, pTextWithHead->nDataLen);
     }
     else if (type == 7)
     {
@@ -309,12 +771,15 @@ static void NewSms_TimerCB(void *ctx)
 {
     uint8_t nSim = (uint32_t)ctx;
     gAtSetting.sim[nSim].cnmi_mt = 0;
+    CFW_CfgSetNewSmsOptionMT(0, CFW_SMS_STORAGE_NS, nSim);
+
     gAtSetting.sim[nSim].cnmi_ds = 0;
 #ifdef CONFIG_SOC_8910
     CFW_SmsMtSmsPPAckReq(nSim);
 #endif
     osiTimerDelete(gAtCfwCtx.sim[nSim].newsms_timer);
     gAtCfwCtx.sim[nSim].newsms_timer = NULL;
+    gAtCfwCtx.sim[nSim].is_waiting_cnma = false;
 }
 
 static uint8_t _GetPduDcs(uint8_t *data)
@@ -328,15 +793,24 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     int nSim = cfw_event->nFlag;
     uint8_t nFormat = gAtSetting.sim[nSim].cmgf;
-    char rsp[128];
-
-    gAtCfwCtx.sim[nSim].newsms_timer = osiTimerCreate(atEngineGetThreadId(), NewSms_TimerCB, (void *)nSim);
-    osiTimerStart(gAtCfwCtx.sim[nSim].newsms_timer, 10);
+    char *rsp = NULL;
+    rsp = malloc(1024);
+    if (rsp == NULL)
+    {
+        OSI_LOGI(0, "_onEV_CFW_NEW_SMS_IND malloc error");
+        CFW_SmsMtSmsPPAckReq(nSim);
+        return;
+    }
+    memset(rsp, 0x00, 1024);
+    atMemFreeLater(rsp);
 
     /* get new message node and check it */
     CFW_NEW_SMS_NODE_EX *pNewMsgNode = (CFW_NEW_SMS_NODE_EX *)cfw_event->nParam1;
     if (NULL == pNewMsgNode || cfw_event->nType != 0)
+    {
+        CFW_SmsMtSmsPPAckReq(nSim);
         return;
+    }
 
     atMemFreeLater(pNewMsgNode);
     if (pNewMsgNode->node.nType == 0x20 ||
@@ -360,6 +834,7 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
         {
             OSI_LOGE(0, "NEW_SMS_IND: receive type/%d in format/%d",
                      pNewMsgNode->node.nType, nFormat);
+            CFW_SmsMtSmsPPAckReq(nSim);
             return;
         }
 
@@ -371,27 +846,40 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
         uint8_t dcs = _GetPduDcs(pPduData);
         uint8_t messageClass = dcs & 0x03;
         uint8_t nMt = gAtSetting.sim[nSim].cnmi_mt;
+        bool isClass0 = ((dcs & 0x10) == 0x10) && (messageClass == 0);
+        bool isClass1 = ((dcs & 0x10) == 0x10) && (messageClass == 1);
         bool isClass2 = ((dcs & 0x10) == 0x10) && (messageClass == 2);
         bool isClass3 = ((dcs & 0x10) == 0x10) && (messageClass == 3);
 
-        if (nMt == 1 || ((nMt == 2) && isClass2) || ((nMt == 3) && !isClass3)) /* dump report MT == 1 */
+        if (((nMt == 1) || ((nMt == 2) && isClass2) || ((nMt == 3) && !isClass3)) && !isClass0) /* dump report MT == 1 */
         {
             uint8_t nStorage = gAtSetting.sim[nSim].cpms_mem1;
             const char *stor = (nStorage == CFW_SMS_STORAGE_MT) ? "MT" : ((pNewMsgNode->node.nStorage == 1) ? "ME" : "SM");
             sprintf(rsp, "+CMTI: \"%s\",%u", stor, pNewMsgNode->node.nConcatCurrentIndex);
             atCmdRespSimUrcText(nSim, rsp);
         }
-        else if ((nMt == 2) || ((nMt == 3) && isClass3)) /* dump report MT == 2 */
+        else if (isClass0 || ((nMt == 2) || ((nMt == 3) && isClass3))) /* dump report MT == 2 */
         {
             /* check recv pdu and discard unused char */
             if (!(AT_SMS_CheckPDUIsValid((uint8_t *)pPduNodeInfo->pData,
                                          (uint8_t *)&(pPduNodeInfo->nDataSize), true)))
             {
                 OSI_LOGE(0, "NEW_SMS_IND: check pdu is invalid");
+                CFW_SmsMtSmsPPAckReq(nSim);
                 return;
             }
 
-            sprintf(rsp, "+CMT: ,%u", pPduNodeInfo->nDataSize - pPduNodeInfo->pData[0] - 1);
+            if (CFW_GetSmsSeviceMode() && ((nMt == 3 && isClass3) || (nMt == 2 && isClass3) || (nMt == 2 && isClass1)))
+            {
+                gAtCfwCtx.sim[nSim].is_waiting_cnma = true;
+                gAtCfwCtx.sim[nSim].newsms_timer = osiTimerCreate(atEngineGetThreadId(), NewSms_TimerCB, (void *)nSim);
+                osiTimerStart(gAtCfwCtx.sim[nSim].newsms_timer, 15 * 1000);
+            }
+
+            if (isClass0)
+                sprintf(rsp, "+CLASS0: ,%u", pPduNodeInfo->nDataSize - pPduNodeInfo->pData[0] - 1);
+            else
+                sprintf(rsp, "+CMT: ,%u", pPduNodeInfo->nDataSize - pPduNodeInfo->pData[0] - 1);
             atCmdRespSimUrcText(nSim, rsp);
 
             char *pdu_str = (char *)malloc(pPduNodeInfo->nDataSize * 2 + 1);
@@ -401,7 +889,12 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
                 atCmdRespSimUrcText(nSim, pdu_str);
                 free(pdu_str);
             }
+            if (CFW_GetSmsSeviceMode() && ((nMt == 3 && isClass3) || (nMt == 2 && isClass3) || (nMt == 2 && isClass1)))
+            {
+                break;
+            }
         }
+        CFW_SmsMtSmsPPAckReq(nSim);
         break;
     }
     case 0x21: // 1. Text Message Content with header
@@ -412,53 +905,91 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
         uint8_t dcs = pTextWithHead->real_dcs;
         uint8_t messageClass = dcs & 0x03;
         uint8_t nMt = gAtSetting.sim[nSim].cnmi_mt;
+        bool isClass0 = ((dcs & 0x10) == 0x10) && (messageClass == 0);
+        bool isClass1 = ((dcs & 0x10) == 0x10) && (messageClass == 1);
         bool isClass2 = ((dcs & 0x10) == 0x10) && (messageClass == 2);
         bool isClass3 = ((dcs & 0x10) == 0x10) && (messageClass == 3);
 
-        if (nMt == 1 || ((nMt == 2) && isClass2) || ((nMt == 3) && !isClass3)) /* dump report MT == 1 */
+        if (((nMt == 1) || ((nMt == 2) && isClass2) || ((nMt == 3) && !isClass3)) && !isClass0) /* dump report MT == 1 */
         {
             uint8_t nStorage = gAtSetting.sim[nSim].cpms_mem1;
             const char *stor = (nStorage == CFW_SMS_STORAGE_MT) ? "MT" : ((pNewMsgNode->node.nStorage == 1) ? "ME" : "SM");
             sprintf(rsp, "+CMTI: \"%s\",%u", stor, pNewMsgNode->node.nConcatCurrentIndex);
             atCmdRespSimUrcText(nSim, rsp);
         }
-        else if ((nMt == 2) || ((nMt == 3) && isClass3)) /* dump report MT == 2 */
+        else if (isClass0 || ((nMt == 2) || ((nMt == 3) && isClass3))) /* dump report MT == 2 */
         {
+            char *urcOaNumber = NULL;
             char oaNumber[TEL_NUMBER_MAX_LEN + 2];
             _smsNumberStr(pTextWithHead->oa, pTextWithHead->oa_size, pTextWithHead->tooa, oaNumber);
+            if (gAtSetting.cscs == cs_ucs2)
+                urcOaNumber = generateUrcUcs2Data(oaNumber, strlen(oaNumber));
 
+            char *urcScaNumber = NULL;
             char scaNumber[TEL_NUMBER_MAX_LEN + 2];
             _smsNumberStr(pTextWithHead->sca, pTextWithHead->sca_size, pTextWithHead->tosca, scaNumber);
+            if (gAtSetting.cscs == cs_ucs2)
+                urcScaNumber = generateUrcUcs2Data(scaNumber, strlen(scaNumber));
+
+            if (CFW_GetSmsSeviceMode() && ((nMt == 3 && isClass3) || (nMt == 2 && isClass3) || (nMt == 2 && isClass1)))
+            {
+                gAtCfwCtx.sim[nSim].newsms_timer = osiTimerCreate(atEngineGetThreadId(), NewSms_TimerCB, (void *)nSim);
+                osiTimerStart(gAtCfwCtx.sim[nSim].newsms_timer, 15 * 1000);
+                gAtCfwCtx.sim[nSim].is_waiting_cnma = true;
+            }
 
             uint8_t nDcs = _smsCfwDcsToOutDcs(pTextWithHead->dcs);
+            const char *format = NULL;
             if (gAtSetting.sim[nSim].csdh)
             {
-                sprintf(rsp, "+CMT: \"%s\",,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\",%u,%u,%u,%u,\"%s\",%u,%u",
-                        oaNumber, pTextWithHead->scts.uYear, pTextWithHead->scts.uMonth,
+                if (isClass0)
+                    format = "+CLASS0: \"%s\",,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\",%u,%u,%u,%u,\"%s\",%u,%u";
+                else
+                    format = "+CMT: \"%s\",,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\",%u,%u,%u,%u,\"%s\",%u,%u";
+                sprintf(rsp, format,
+                        urcOaNumber ? urcOaNumber : oaNumber, pTextWithHead->scts.uYear, pTextWithHead->scts.uMonth,
                         pTextWithHead->scts.uDay, pTextWithHead->scts.uHour, pTextWithHead->scts.uMinute,
                         pTextWithHead->scts.uSecond, pTextWithHead->scts.iZone, pTextWithHead->tooa,
                         pTextWithHead->fo, pTextWithHead->pid, nDcs,
-                        scaNumber, pTextWithHead->tosca, pTextWithHead->nDataLen);
+                        urcScaNumber ? urcScaNumber : scaNumber, pTextWithHead->tosca, pTextWithHead->nDataLen);
             }
             else
             {
-                sprintf(rsp, "+CMT: \"%s\",,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\"",
-                        oaNumber, pTextWithHead->scts.uYear, pTextWithHead->scts.uMonth,
+                if (isClass0)
+                    format = "+CLASS0: \"%s\",,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\"";
+                else
+                    format = "+CMT: \"%s\",,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\"";
+                sprintf(rsp, format,
+                        urcOaNumber ? urcOaNumber : oaNumber, pTextWithHead->scts.uYear, pTextWithHead->scts.uMonth,
                         pTextWithHead->scts.uDay, pTextWithHead->scts.uHour, pTextWithHead->scts.uMinute,
                         pTextWithHead->scts.uSecond, pTextWithHead->scts.iZone);
             }
 
+            if (urcOaNumber != NULL)
+                free(urcOaNumber);
+
+            if (urcScaNumber != NULL)
+                free(urcScaNumber);
+
             atCmdRespSimUrcText(nSim, rsp);
             char *data = _smsNodeDataStr(pNewMsgNode->node.nType, &pNewMsgNode->info, nSim);
+
             if (data != NULL)
             {
                 atCmdRespSimUrcText(nSim, data);
                 free(data);
             }
+
+            if (CFW_GetSmsSeviceMode() && ((nMt == 3 && isClass3) || (nMt == 2 && isClass3) || (nMt == 2 && isClass1)))
+            {
+                break;
+            }
         }
+        CFW_SmsMtSmsPPAckReq(nSim);
         break;
     }
     case 0x40: // PDU status report
+        CFW_SmsMtSmsPPAckReq(nSim);
         if (gAtSetting.sim[nSim].cnmi_ds == 1)
         {
             uint16_t nATBAckLen = 0;
@@ -481,6 +1012,7 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
         }
         break;
     case 0x41: // text status report
+        CFW_SmsMtSmsPPAckReq(nSim);
         if (gAtSetting.sim[nSim].cnmi_ds == 1)
         {
             CFW_SMS_TXT_STATUS_IND *pTextWithHeadSR = &(pNewMsgNode->info.uTxtStatusInd);
@@ -489,9 +1021,12 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
             _smsNumberStr(pTextWithHeadSR->ra, pTextWithHeadSR->ra_size,
                           pTextWithHeadSR->tora, raNumber);
 
-            char rsp[128];
+            char *urcScaNumber = NULL;
+            if (gAtSetting.cscs == cs_ucs2)
+                urcScaNumber = generateUrcUcs2Data(raNumber, strlen(raNumber));
+
             sprintf(rsp, "+CDS: %u,%u,\"%s\",%u,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\",\"%u/%02u/%02u,%02u:%02u:%02u%+03d\",%u",
-                    pTextWithHeadSR->fo, pTextWithHeadSR->mr, raNumber,
+                    pTextWithHeadSR->fo, pTextWithHeadSR->mr, urcScaNumber ? urcScaNumber : raNumber,
                     pTextWithHeadSR->tora, pTextWithHeadSR->scts.uYear, pTextWithHeadSR->scts.uMonth,
                     pTextWithHeadSR->scts.uDay, pTextWithHeadSR->scts.uHour, pTextWithHeadSR->scts.uMinute,
                     pTextWithHeadSR->scts.uSecond, pTextWithHeadSR->scts.iZone, pTextWithHeadSR->dt.uYear,
@@ -505,8 +1040,10 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
     case 0x30: // not implemented
     case 0x31: // not implemented
     default:
+        CFW_SmsMtSmsPPAckReq(nSim);
         break;
     }
+
 #ifdef CONFIG_SOC_8910
     if (gAtSetting.smsmode == 0)
     {
@@ -552,6 +1089,10 @@ static void _onEV_CFW_SMS_INFO_IND(const osiEvent_t *event)
             else
             {
             }
+
+            sprintf(rsp, "+CIEV: \"SMSFULL\",0");
+            atCmdRespSimUrcText(nSim, rsp);
+
             break;
 
         case 1: /* mem full and no message waiting for */
@@ -575,12 +1116,16 @@ static void _onEV_CFW_SMS_INFO_IND(const osiEvent_t *event)
             }
 
             /* report to CIEV or not  */
+            /*
             if (gAtSetting.cmer_ind)
             {
                 // sprintf(rsp, "+CIEV: %d,%lu", AT_IND_SMSFULL, cfw_event->nParam2);
                 sprintf(rsp, "+CIEV: \"SMSFULL\",%lu", cfw_event->nParam2 & 0xFF);
                 atCmdRespSimUrcText(nSim, rsp);
-            }
+            } */
+
+            sprintf(rsp, "+CIEV: \"SMSFULL\",1");
+            atCmdRespSimUrcText(nSim, rsp);
 
             break;
 
@@ -697,6 +1242,14 @@ uint32_t atCfwSmsInit(uint16_t nUTI, uint8_t nSim)
 
     if (0 != CFW_CfgSetNewSmsOption(nOption | CFW_SMS_ROUT_DETAIL_INFO,
                                     gAtSetting.sim[nSim].cpms_mem3, nSim))
+        return ERR_AT_CMS_MEM_FAIL;
+
+    nOption = 0;
+    uint8_t storage = CFW_SMS_STORAGE_NS;
+    if (CFW_CfgGetNewSmsOptionMT(&nOption, &storage, nSim) != 0)
+        return ERR_AT_CMS_MEM_FAIL;
+
+    if (CFW_CfgSetNewSmsOptionMT(gAtSetting.sim[nSim].cnmi_mt & 0x03, CFW_SMS_STORAGE_NS, nSim) != 0)
         return ERR_AT_CMS_MEM_FAIL;
 
     //===========================================
@@ -867,8 +1420,45 @@ static void CMSS_ReadRspCB(atCommand_t *cmd, const osiEvent_t *event)
             RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_SIM_CONDITION_NO_FULLFILLED);
         }
 
+        size_t send_size = pType1Data->length;
+        uint8_t *send_data = NULL;
+        CFW_SMS_PARAMETER sms_param;
+        if (CFW_CfgGetSmsParam(&sms_param, 0, nSim) != 0)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+        OSI_LOGI(0, "CMSS_ReadRspCB:dcs=%d", pType1Data->dcs);
+        if (sms_param.dcs == 8)
+        {
+            int unicode_size;
+            send_data = mlConvertStr(pType1Data->data, pType1Data->length, ML_CP936, ML_UTF16BE, &unicode_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+            atMemUndoFreeLater(send_data);
+            send_size = unicode_size;
+        }
+        else if (sms_param.dcs == 0)
+        {
+            int gsm_size;
+            send_data = mlConvertStr(pType1Data->data, pType1Data->length, ML_CP936, ML_GSM, &gsm_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+            send_size = gsm_size;
+        }
+        else if (sms_param.dcs == 4)
+        {
+            send_data = pType1Data->data;
+            send_size = pType1Data->length;
+        }
+        else
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_ME_FAIL);
+
+        OSI_LOGI(0, "CMSS_ReadRspCB: send_size=%d", send_size);
+        if (send_size > 420)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
         cmd->uti = cfwRequestUTI((osiEventCallback_t)CMSS_SendRspCB, cmd);
-        if (CFW_SmsSendMessage_V2(&number, pType1Data->data, pType1Data->length, cmd->uti, nSim) != 0)
+        if (CFW_SmsSendMessage_V2(&number, send_data, send_size, cmd->uti, nSim) != 0)
         {
             cfwReleaseUTI(cmd->uti);
             RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_UNKNOWN_ERROR);
@@ -910,7 +1500,6 @@ static void CMSS_ReadRspCB(atCommand_t *cmd, const osiEvent_t *event)
     }
     else if (pNode->nType == 7) /* PDU mode, pp msg */
     {
-#if 0
         uint16_t SmsDatalen = 0;
         uint8_t *SmsData = NULL;
         CFW_SMS_PDU_INFO_V2 *pType7Data = &pinfo->uPDUV2;
@@ -932,7 +1521,16 @@ static void CMSS_ReadRspCB(atCommand_t *cmd, const osiEvent_t *event)
             uint8_t oldDABcdlen = 0;
 
             nSCAlen = pType7Data->pData[0];
-            nDAlen = pType7Data->pData[nSCAlen + 1 + 2];
+            // READ and UNREAD data have no TP-PID
+            if (pType7Data->nStatus == CFW_SMS_STORED_STATUS_READ || pType7Data->nStatus == CFW_SMS_STORED_STATUS_UNREAD)
+            {
+                nDAlen = pType7Data->pData[nSCAlen + 2];
+            }
+            else
+            {
+                nDAlen = pType7Data->pData[nSCAlen + 1 + 2];
+            }
+
             oldDABcdlen = (nDAlen % 2 ? (nDAlen / 2) + 1 : (nDAlen / 2));
             SmsDatalen = pType7Data->nDataSize + async->number.nDialNumberSize - oldDABcdlen;
 
@@ -965,13 +1563,37 @@ static void CMSS_ReadRspCB(atCommand_t *cmd, const osiEvent_t *event)
         }
         else
         {
-            SmsDatalen = pType7Data->nDataSize;
-            SmsData = (uint8_t *)calloc(1, SmsDatalen);
-            if (SmsData == NULL)
+            CFW_SMS_PARAMETER Info = {0};
+            uint32_t nReturn = CFW_CfgGetDefaultSmsParam(&Info, nSim);
+            if (nReturn != 0)
                 RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
 
-            atMemFreeLater(SmsData);
-            memcpy(SmsData, pType7Data->pData, SmsDatalen);
+            if (pType7Data->nStatus == CFW_SMS_STORED_STATUS_READ || pType7Data->nStatus == CFW_SMS_STORED_STATUS_UNREAD)
+            {
+                uint8_t nSCAlen = pType7Data->pData[0];
+                uint8_t nDAlen = pType7Data->pData[nSCAlen + 2];
+                uint8_t oldDABcdlen = (nDAlen % 2 ? (nDAlen / 2) + 1 : (nDAlen / 2));
+                uint8_t dataLen = pType7Data->pData[nSCAlen + 1 + 2 + oldDABcdlen + 2 + 7 + 1];
+                SmsDatalen = nSCAlen + 1 + 2 + 2 + oldDABcdlen + 2 + 7 + 1 + dataLen;
+                SmsData = (uint8_t *)calloc(1, SmsDatalen);
+                if (SmsData == NULL)
+                    RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+                atMemFreeLater(SmsData);
+
+                memcpy(SmsData, pType7Data->pData, nSCAlen + 1); // sca data
+                memcpy(SmsData + nSCAlen + 1 + 1, &(pType7Data->pData[nSCAlen + 1]), 1 + 2 + oldDABcdlen + 2);
+                memcpy(SmsData + nSCAlen + 2 + 2 + oldDABcdlen + +2 + 1,
+                       &(pType7Data->pData[nSCAlen + 1 + 2 + oldDABcdlen + 2 + 7 + 1]), dataLen + 1);
+            }
+            else
+            {
+                SmsDatalen = pType7Data->nDataSize;
+                SmsData = (uint8_t *)calloc(1, SmsDatalen);
+                if (SmsData == NULL)
+                    RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+                atMemFreeLater(SmsData);
+                memcpy(SmsData, pType7Data->pData, SmsDatalen);
+            }
         }
 
         /* add sca for read data if have not SCA */
@@ -988,8 +1610,6 @@ static void CMSS_ReadRspCB(atCommand_t *cmd, const osiEvent_t *event)
             RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_UNKNOWN_ERROR);
         }
         RETURN_FOR_ASYNC();
-#endif
-        atCmdRespCmsError(cmd->engine, ERR_AT_CMS_OPER_NOT_SUPP);
     }
     else if (pNode->nType == 8) // PDU mode, CB msg
     {
@@ -1185,62 +1805,209 @@ static void CMGS_TextPromptCB(void *param, atCmdPromptEndMode_t end_mode, size_t
     if (CFW_CfgGetSmsParam(&sms_param, 0, nSim) != 0)
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
 
-    uint8_t *tempData = NULL;
-    tempData = malloc(2 * size);
-    if (tempData == NULL)
-    {
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
-    }
-    memset(tempData, 0x00, 2 * size);
-
-    size_t srcIndex = 0;
-    size_t destIndex = 0;
-    for (; srcIndex < size; srcIndex++)
-    {
-        if (async->data[srcIndex] == 0x00)
-        {
-            tempData[destIndex++] = 0x5C;
-            tempData[destIndex++] = 0x30;
-        }
-        else
-            tempData[destIndex++] = async->data[srcIndex];
-    }
-
-    memset(async->data, 0x00, SMS_MAX_SIZE);
-    free(async->data);
-    async->data = NULL;
-    async->data = tempData;
-    size = destIndex;
-
     OSI_LOGI(0, "AT CMGS send size/%d, dcs/%d", size, sms_param.dcs);
 
-    size_t send_size = size;
+    int send_size = size;
+    uint16_t index = 0;
+    uint16_t count = 0;
+    uint8_t *tempData = NULL;
     uint8_t *send_data = NULL;
+
     /* check the dcs value */
-    if (sms_param.dcs == 0) // GSM 7bit
+    if (sms_param.dcs == 0 || sms_param.dcs == 16) // GSM 7bit
     {
-        int gsm_size;
-        send_data = mlConvertStr(async->data, size, ML_CP936, ML_GSM, &gsm_size);
-        if (send_data == NULL)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+        if (gAtSetting.cscs == cs_ucs2)
+        {
+            // CP936->UCS2
+            // real value 34
+            // 30 30 33 33 30 30 33 34 -> 00 33 00 34
+            tempData = malloc(size / 2 + 2);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+            memset(tempData, 0x00, size / 2 + 2);
+            atMemFreeLater(tempData);
 
-        atMemFreeLater(send_data);
-        send_size = gsm_size;
-    }
-    else if (sms_param.dcs == 4) // 8 bit
-    {
-        send_data = async->data;
-        send_size = size;
-    }
-    else if (sms_param.dcs == 8) // UCS2, This for chinese message
-    {
-        int unicode_size;
-        send_data = mlConvertStr(async->data, size, ML_CP936, ML_UTF16BE, &unicode_size);
-        if (send_data == NULL)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                tempData[count++] = (num0 << 4) | num1;
+            }
 
-        atMemFreeLater(send_data);
-        send_size = unicode_size;
+            // UCS2->GSM
+            send_data = mlConvertStr(tempData, count, ML_UTF16BE, ML_GSM, &send_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+        }
+        else if (gAtSetting.cscs == cs_gsm)
+        {
+            tempData = malloc(2 * size);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+            memset(tempData, 0x00, 2 * size);
+            atMemFreeLater(tempData);
+
+            // The input \0 may be 00
+            for (index = 0; index < size; index++)
+            {
+                if (async->data[index] == 0x00)
+                {
+                    tempData[count++] = 0x5C;
+                    tempData[count++] = 0x30;
+                }
+                else
+                    tempData[count++] = async->data[index];
+            }
+
+            send_data = mlConvertStr(tempData, count, ML_CP936, ML_GSM, &send_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+        }
+        else if (gAtSetting.cscs == cs_hex)
+        {
+            if (!((size > 0) || ((size % 2) == 0)))
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+
+            tempData = malloc(size / 2);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+            memset(tempData, 0x00, size / 2);
+            atMemFreeLater(tempData);
+
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                tempData[count++] = (num0 << 4) | num1;
+            }
+
+            send_data = mlConvertStr(tempData, count, ML_CP936, ML_GSM, &send_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+        }
+        else // default IRA
+        {
+            send_data = async->data;
+            send_size = size;
+        }
+    }
+    else if (sms_param.dcs == 4 || sms_param.dcs == 20) // 8 bit
+    {
+        if (gAtSetting.cscs == cs_ucs2)
+        {
+            // CP936->UCS2
+            // real value 34
+            // 30 30 33 33 30 30 33 34 -> 00 33 00 34
+            tempData = malloc(size / 2 + 2);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+            memset(tempData, 0x00, size / 2 + 2);
+            atMemFreeLater(tempData);
+
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                tempData[count++] = (num0 << 4) | num1;
+            }
+
+            // UCS2->CP936
+            // 00 33 00 34 -> 33 34
+            send_data = mlConvertStr(tempData, count, ML_UTF16BE, ML_CP936, &send_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+        }
+        else if (gAtSetting.cscs == cs_hex)
+        {
+            if (!((size > 0) || ((size % 2) == 0)))
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+
+            send_data = malloc(size / 2);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+            memset(send_data, 0x00, size / 2);
+            atMemFreeLater(send_data);
+
+            send_size = 0;
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                send_data[send_size++] = (num0 << 4) | num1;
+            }
+        }
+        else
+        {
+            send_data = async->data;
+            send_size = size;
+        }
+    }
+    else if (sms_param.dcs == 8 || sms_param.dcs == 24) // UCS2, This for chinese message
+    {
+        if (gAtSetting.cscs == cs_ucs2)
+        {
+            // CP936->UCS2
+            // real value 34
+            // 30 30 33 33 30 30 33 34 -> 00 33 00 34
+            send_data = malloc(size / 2 + 2);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+            memset(send_data, 0x00, size / 2 + 2);
+            atMemFreeLater(send_data);
+
+            send_size = 0;
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                send_data[send_size++] = (num0 << 4) | num1;
+            }
+        }
+        else if (gAtSetting.cscs == cs_hex)
+        {
+            if (!((size > 0) || ((size % 2) == 0)))
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+
+            tempData = malloc(size / 2);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+            memset(tempData, 0x00, size / 2);
+            atMemFreeLater(tempData);
+
+            send_size = 0;
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                tempData[send_size++] = (num0 << 4) | num1;
+            }
+
+            int unicode_size;
+            send_data = mlConvertStr(tempData, send_size, ML_CP936, ML_UTF16BE, &unicode_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+            send_size = unicode_size;
+        }
+        else
+        {
+            int unicode_size;
+            send_data = mlConvertStr(async->data, size, ML_CP936, ML_UTF16BE, &unicode_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+            send_size = unicode_size;
+        }
     }
     else
     {
@@ -1274,38 +2041,71 @@ static void CMGS_TextCmdSet(atCommand_t *cmd)
     if (!paramok || cmd->param_count > 2)
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
 
+    char *number = NULL;
+    uint8_t da_len = strlen(da);
+    if (gAtSetting.cscs == cs_ucs2)
+    {
+        uint32_t errorCode;
+        number = _generateRealNumberForCmgsAndCmgwInUcs2(da, &da_len, &errorCode);
+        if (errorCode != 0)
+            RETURN_CMS_ERR(cmd->engine, errorCode);
+    }
+    else
+    {
+        number = malloc(da_len);
+        if (number == NULL)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+        memset(number, 0x00, da_len);
+        memcpy(number, da, da_len);
+    }
+
     cmgsAsyncContext_t *async = (cmgsAsyncContext_t *)malloc(sizeof(*async));
     if (async == NULL)
+    {
+        free(number);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+    }
 
     memset(async, 0, sizeof(*async));
     cmd->async_ctx = async;
     cmd->async_ctx_destroy = CMGS_AsyncCtxDestroy;
     async->data = (uint8_t *)malloc(SMS_MAX_SIZE);
     if (async->data == NULL)
+    {
+        free(number);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+    }
 
     bool bIsInternational = false;
-    size_t da_len = strlen(da);
-    if (!AT_SMS_IsValidPhoneNumber(da, da_len, &bIsInternational))
+    if (!AT_SMS_IsValidPhoneNumber(number, da_len, &bIsInternational))
+    {
+        free(number);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_CHAR);
+    }
 
+    char *tempNumber = number;
     if (bIsInternational)
     {
-        da++;
+        number++;
         da_len--;
     }
 
     if (da_len > 20)
+    {
+        free(number);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
+    }
 
     // can't fail due to it is checked.
-    async->number.nDialNumberSize = cfwDialStringToBcd(da, da_len, async->number.pDialNumber);
+    async->number.nDialNumberSize = cfwDialStringToBcd(number, da_len, async->number.pDialNumber);
 
     if (toda != CFW_TELNUMBER_TYPE_INTERNATIONAL &&
         toda != CFW_TELNUMBER_TYPE_NATIONAL &&
         toda != CFW_TELNUMBER_TYPE_UNKNOWN)
+    {
+        free(number);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+    }
 
     /* according to spec, we check dial number first */
     if (bIsInternational)
@@ -1331,6 +2131,7 @@ static void CMGS_TextCmdSet(atCommand_t *cmd)
     // display in the screen, and need input
     atCmdRespOutputPrompt(cmd->engine);
     atCmdSetPromptMode(cmd->engine, CMGS_TextPromptCB, cmd, async->data, SMS_MAX_SIZE);
+    free(tempNumber);
 }
 
 static void CMGS_PduPromptCB(void *param, atCmdPromptEndMode_t end_mode, size_t size)
@@ -1357,8 +2158,8 @@ static void CMGS_PduPromptCB(void *param, atCmdPromptEndMode_t end_mode, size_t 
     if (pdu_len < 0)
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PDU_CHAR);
 
-    // if (pdu_len != async->pdu_length + 1 + pdu_data[0])
-    //     RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
+    if (pdu_len != async->pdu_length + 1 + pdu_data[0])
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
 
     uint8_t *pdu_with_sca = (uint8_t *)calloc(1, pdu_len + 23);
     if (pdu_with_sca == NULL)
@@ -1527,7 +2328,7 @@ static void CMGC_PromptCB(void *param, atCmdPromptEndMode_t end_mode, size_t siz
     if (nFormat) // text mode procedure and send message
     {
         /* check the dcs value */
-        if (sms_param.dcs == 0)
+        if (sms_param.dcs == 0 || sms_param.dcs == 16)
         {
             if (size > 160)
                 RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
@@ -1540,7 +2341,7 @@ static void CMGC_PromptCB(void *param, atCmdPromptEndMode_t end_mode, size_t siz
             atMemFreeLater(send_data);
             send_size = gsm_size;
         }
-        else if (sms_param.dcs == 4)
+        else if (sms_param.dcs == 4 || sms_param.dcs == 20)
         {
             if (size > 140)
                 RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
@@ -1548,7 +2349,7 @@ static void CMGC_PromptCB(void *param, atCmdPromptEndMode_t end_mode, size_t siz
             send_data = async->data;
             send_size = size;
         }
-        else if (sms_param.dcs == 8) // This for chinese message
+        else if (sms_param.dcs == 8 || sms_param.dcs == 24) // This for chinese message
         {
             int unicode_size;
             send_data = mlConvertStr(async->data, size, ML_CP936, ML_UTF16BE, &unicode_size);
@@ -1715,33 +2516,207 @@ static void CMGW_TextPromptCB(void *param, atCmdPromptEndMode_t end_mode, size_t
 
     OSI_LOGI(0, "AT CMGW send size/%d, dcs/%d", size, sms_param.dcs);
 
-    size_t send_size = size;
+    int send_size = size;
+    uint16_t index = 0;
+    uint16_t count = 0;
+    uint8_t *tempData = NULL;
     uint8_t *send_data = NULL;
+
     /* check the dcs value */
-    if (sms_param.dcs == 0) // GSM 7bit
+    if (sms_param.dcs == 0 || sms_param.dcs == 16) // GSM 7bit
     {
-        int gsm_size;
-        send_data = mlConvertStr(async->data, size, ML_CP936, ML_GSM, &gsm_size);
-        if (send_data == NULL)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+        if (gAtSetting.cscs == cs_ucs2)
+        {
+            // CP936->UCS2
+            // real value 34
+            // 30 30 33 33 30 30 33 34 -> 00 33 00 34
+            tempData = malloc(size / 2 + 2);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+            memset(tempData, 0x00, size / 2 + 2);
+            atMemFreeLater(tempData);
 
-        atMemFreeLater(send_data);
-        send_size = gsm_size;
-    }
-    else if (sms_param.dcs == 4) // 8 bit
-    {
-        send_data = async->data;
-        send_size = size;
-    }
-    else if (sms_param.dcs == 8) // UCS2, This for chinese message
-    {
-        int unicode_size;
-        send_data = mlConvertStr(async->data, size, ML_CP936, ML_UTF16BE, &unicode_size);
-        if (send_data == NULL)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                tempData[count++] = (num0 << 4) | num1;
+            }
 
-        atMemFreeLater(send_data);
-        send_size = unicode_size;
+            // UCS2->GSM
+            send_data = mlConvertStr(tempData, count, ML_UTF16BE, ML_GSM, &send_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+        }
+        else if (gAtSetting.cscs == cs_gsm || gAtSetting.cscs == cs_gbk)
+        {
+            tempData = malloc(2 * size);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+            memset(tempData, 0x00, 2 * size);
+            atMemFreeLater(tempData);
+
+            // The input \0 may be 00
+            for (index = 0; index < size; index++)
+            {
+                if (async->data[index] == 0x00)
+                {
+                    tempData[count++] = 0x5C;
+                    tempData[count++] = 0x30;
+                }
+                else
+                    tempData[count++] = async->data[index];
+            }
+
+            send_data = mlConvertStr(tempData, count, ML_CP936, ML_GSM, &send_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+        }
+        else if (gAtSetting.cscs == cs_hex)
+        {
+            if (!((size > 0) || ((size % 2) == 0)))
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+
+            tempData = malloc(size / 2);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+            memset(tempData, 0x00, size / 2);
+            atMemFreeLater(tempData);
+
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                tempData[count++] = (num0 << 4) | num1;
+            }
+
+            send_data = mlConvertStr(tempData, count, ML_CP936, ML_GSM, &send_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+        }
+        else // default IRA
+        {
+            send_data = async->data;
+            send_size = size;
+        }
+    }
+    else if (sms_param.dcs == 4 || sms_param.dcs == 20) // 8 bit
+    {
+        if (gAtSetting.cscs == cs_ucs2)
+        {
+            // CP936->UCS2
+            // real value 34
+            // 30 30 33 33 30 30 33 34 -> 00 33 00 34
+            tempData = malloc(size / 2 + 2);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+            memset(tempData, 0x00, size / 2 + 2);
+            atMemFreeLater(tempData);
+
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                tempData[count++] = (num0 << 4) | num1;
+            }
+
+            // UCS2->CP936
+            // 00 33 00 34 -> 33 34
+            send_data = mlConvertStr(tempData, count, ML_UTF16BE, ML_CP936, &send_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+        }
+        else if (gAtSetting.cscs == cs_hex)
+        {
+            if (!((size > 0) || ((size % 2) == 0)))
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+
+            send_data = malloc(size / 2);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+            memset(send_data, 0x00, size / 2);
+            atMemFreeLater(send_data);
+
+            send_size = 0;
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                send_data[send_size++] = (num0 << 4) | num1;
+            }
+        }
+        else
+        {
+            send_data = async->data;
+            send_size = size;
+        }
+    }
+    else if (sms_param.dcs == 8 || sms_param.dcs == 24) // UCS2, This for chinese message
+    {
+        if (gAtSetting.cscs == cs_ucs2)
+        {
+            // CP936->UCS2
+            // real value 34
+            // 30 30 33 33 30 30 33 34 -> 00 33 00 34
+            send_data = malloc(size / 2 + 2);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+            memset(send_data, 0x00, size / 2 + 2);
+            atMemFreeLater(send_data);
+
+            send_size = 0;
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                send_data[send_size++] = (num0 << 4) | num1;
+            }
+        }
+        else if (gAtSetting.cscs == cs_hex)
+        {
+            if (!((size > 0) || ((size % 2) == 0)))
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+
+            tempData = malloc(size / 2);
+            if (tempData == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+            memset(tempData, 0x00, size / 2);
+            atMemFreeLater(tempData);
+
+            send_size = 0;
+            for (index = 0; index < size / 2; index++)
+            {
+                uint8_t num0 = _paramHex2Num(async->data[index * 2]);
+                uint8_t num1 = _paramHex2Num(async->data[index * 2 + 1]);
+                tempData[send_size++] = (num0 << 4) | num1;
+            }
+
+            int unicode_size;
+            send_data = mlConvertStr(tempData, send_size, ML_CP936, ML_UTF16BE, &unicode_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+            send_size = unicode_size;
+        }
+        else
+        {
+            int unicode_size;
+            send_data = mlConvertStr(async->data, size, ML_CP936, ML_UTF16BE, &unicode_size);
+            if (send_data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
+
+            atMemFreeLater(send_data);
+            send_size = unicode_size;
+        }
     }
     else
     {
@@ -1833,19 +2808,37 @@ static void CMGW_TextCmdSet(atCommand_t *cmd)
     if (async == NULL)
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
 
+    char *number = NULL;
+    uint8_t da_len = strlen(da);
+    if (gAtSetting.cscs == cs_ucs2)
+    {
+        uint32_t errorCode;
+        number = _generateRealNumberForCmgsAndCmgwInUcs2(da, &da_len, &errorCode);
+        if (errorCode != 0)
+            RETURN_CMS_ERR(cmd->engine, errorCode);
+    }
+    else
+    {
+        number = malloc(da_len);
+        if (number == NULL)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+        memset(number, 0x00, da_len);
+        memcpy(number, da, da_len);
+    }
+
     cmd->async_ctx = async;
     cmd->async_ctx_destroy = atCommandAsyncCtxFree;
     async->stat = stat_m->value;
     async->data = (uint8_t *)async + sizeof(*async);
 
     bool bIsInternational = false;
-    size_t da_len = strlen(da);
-    if (!AT_SMS_IsValidPhoneNumber(da, da_len, &bIsInternational))
+    if (!AT_SMS_IsValidPhoneNumber(number, da_len, &bIsInternational))
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_CHAR);
 
+    char *tempNumber = number;
     if (bIsInternational)
     {
-        da++;
+        number++;
         da_len--;
     }
 
@@ -1853,7 +2846,7 @@ static void CMGW_TextCmdSet(atCommand_t *cmd)
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
 
     // can't fail due to it is checked.
-    async->number.nDialNumberSize = cfwDialStringToBcd(da, da_len, async->number.pDialNumber);
+    async->number.nDialNumberSize = cfwDialStringToBcd(number, da_len, async->number.pDialNumber);
 
     if (toda != CFW_TELNUMBER_TYPE_INTERNATIONAL &&
         toda != CFW_TELNUMBER_TYPE_NATIONAL &&
@@ -1884,6 +2877,7 @@ static void CMGW_TextCmdSet(atCommand_t *cmd)
     // display in the screen, and need input
     atCmdRespOutputPrompt(cmd->engine);
     atCmdSetPromptMode(cmd->engine, CMGW_TextPromptCB, cmd, async->data, SMS_MAX_SIZE);
+    free(tempNumber);
 }
 
 static void CMGW_PduCmdSet(atCommand_t *cmd)
@@ -2143,7 +3137,7 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
     void *pListResult = (void *)cfw_event->nParam1;
     CFW_SMS_NODE_EX node;
     char number[TEL_NUMBER_MAX_LEN];
-    char *rsp = (char *)malloc(480);
+    char *rsp = (char *)malloc(1024);
     atMemFreeLater(rsp);
 
     for (int nNodeIndex = 0; nNodeIndex < (cfw_event->nParam2 >> 16); nNodeIndex++)
@@ -2187,7 +3181,25 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                 continue;
 
             number[number_size] = '\0';
-            const char *number_prefix = (pType1Data->tooa == CFW_TELNUMBER_TYPE_INTERNATIONAL) ? "+" : "";
+            const char *number_prefix = NULL;
+
+            char *urcOaNumber = NULL;
+            if (gAtSetting.cscs == cs_ucs2)
+            {
+                char oaNumber[TEL_NUMBER_MAX_LEN + 2] = {0};
+                if (pType1Data->tooa == CFW_TELNUMBER_TYPE_INTERNATIONAL)
+                {
+                    oaNumber[0] = '+';
+                    memcpy(oaNumber + 1, number, number_size);
+                }
+                else
+                    memcpy(oaNumber, number, number_size);
+
+                number_prefix = "";
+                urcOaNumber = generateUrcUcs2Data(oaNumber, strlen(oaNumber));
+            }
+            else
+                number_prefix = (pType1Data->tooa == CFW_TELNUMBER_TYPE_INTERNATIONAL) ? "+" : "";
 
             if (gAtSetting.sim[nSim].csdh == 1) /* CSDH=1 */
             {
@@ -2200,7 +3212,7 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                         node.node.nConcatCurrentIndex,
                         _smsStatusStr(status),
                         number_prefix,
-                        number,
+                        urcOaNumber ? urcOaNumber : number,
                         pType1Data->scts.uYear,
                         pType1Data->scts.uMonth,
                         pType1Data->scts.uDay,
@@ -2222,7 +3234,7 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                         node.node.nConcatCurrentIndex,
                         _smsStatusStr(status),
                         number_prefix,
-                        number,
+                        urcOaNumber ? urcOaNumber : number,
                         pType1Data->scts.uYear,
                         pType1Data->scts.uMonth,
                         pType1Data->scts.uDay,
@@ -2235,27 +3247,11 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
             atCmdRespInfoText(cmd->engine, rsp);
 
             /* Chinese message list */
-            if (pType1Data->dcs == 2)
-            {
-                char *local_data = mlConvertStr(pType1Data->data, pType1Data->length,
-                                                ML_UTF16BE, ML_CP936, NULL);
-                if (local_data != NULL)
-                    atCmdRespInfoText(cmd->engine, local_data);
-                free(local_data);
-            }
-            else if (pType1Data->dcs == 0)
-            {
-                char *local_data = mlConvertStr(pType1Data->data, pType1Data->length,
-                                                ML_GSM, ML_CP936, NULL);
-                if (local_data != NULL)
-                    atCmdRespInfoText(cmd->engine, local_data);
-                free(local_data);
-            }
-            else
-            {
-                if (pType1Data->length > 0)
-                    atCmdRespInfoNText(cmd->engine, (const char *)pType1Data->data, pType1Data->length);
-            }
+            char *data = _smsNodeDataStr(node.node.nType, &node.info, nSim);
+            if (data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_ME_FAIL);
+
+            atCmdRespInfoText(cmd->engine, data);
         }
         else if (node.node.nType == 3) // text mode, show param, state =sent/unsent msg
         {
@@ -2270,7 +3266,25 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                 continue;
 
             number[number_size] = '\0';
-            const char *number_prefix = (pType3Data->toda == CFW_TELNUMBER_TYPE_INTERNATIONAL) ? "+" : "";
+            const char *number_prefix = NULL;
+
+            char *urcOaNumber = NULL;
+            if (gAtSetting.cscs == cs_ucs2)
+            {
+                char oaNumber[TEL_NUMBER_MAX_LEN + 2] = {0};
+                if (pType3Data->toda == CFW_TELNUMBER_TYPE_INTERNATIONAL)
+                {
+                    oaNumber[0] = '+';
+                    memcpy(oaNumber + 1, number, number_size);
+                }
+                else
+                    memcpy(oaNumber, number, number_size);
+
+                number_prefix = "";
+                urcOaNumber = generateUrcUcs2Data(oaNumber, strlen(oaNumber));
+            }
+            else
+                number_prefix = (pType3Data->toda == CFW_TELNUMBER_TYPE_INTERNATIONAL) ? "+" : "";
 
             if (gAtSetting.sim[nSim].csdh == 1) // CSDH=1
             {
@@ -2278,7 +3292,7 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                         node.node.nConcatCurrentIndex,
                         _smsStatusStr(status),
                         number_prefix,
-                        number,
+                        urcOaNumber ? urcOaNumber : number,
                         pType3Data->toda,
                         pType3Data->length);
             }
@@ -2290,33 +3304,16 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                         node.node.nConcatCurrentIndex,
                         _smsStatusStr(status),
                         number_prefix,
-                        number);
+                        urcOaNumber ? urcOaNumber : number);
             }
 
             atCmdRespInfoText(cmd->engine, rsp);
 
-            if (pType3Data->dcs == 2) // [mod]2007.09.26 csw param ==2 for chinese sms
-            {
-                char *local_data = mlConvertStr(pType3Data->data, pType3Data->length,
-                                                ML_UTF16BE, ML_CP936, NULL);
+            char *data = _smsNodeDataStr(node.node.nType, &node.info, nSim);
+            if (data == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_ME_FAIL);
 
-                if (local_data != NULL)
-                    atCmdRespInfoText(cmd->engine, local_data);
-                free(local_data);
-            }
-            else if (pType3Data->dcs == 0)
-            {
-                char *local_data = mlConvertStr(pType3Data->data, pType3Data->length,
-                                                ML_GSM, ML_CP936, NULL);
-                if (local_data != NULL)
-                    atCmdRespInfoText(cmd->engine, local_data);
-                free(local_data);
-            }
-            else
-            {
-                if (pType3Data->length > 0)
-                    atCmdRespInfoNText(cmd->engine, (const char *)pType3Data->data, pType3Data->length);
-            }
+            atCmdRespInfoText(cmd->engine, data);
         }
         else if (node.node.nType == 7) // PDU mode, pp msg
         {
@@ -2546,53 +3543,30 @@ void atCmdHandleCSCA(atCommand_t *cmd)
 // 3.2.1 Select Message Service
 void atCmdHandleCSMS(atCommand_t *cmd)
 {
-    uint8_t service = 0;
+    char urc[50];
     if (AT_CMD_SET == cmd->type)
     {
         // +CSMS=<service>
         bool paramok = true;
-        service = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        uint8_t service = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
         if (!paramok || cmd->param_count > 1)
             RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
 
         CFW_SetSmsSeviceMode(service);
-
-        switch (service)
-        {
-        case 0:
-            atCmdRespInfoText(cmd->engine, "+CSMS: 1,1,1");
-            break;
-        case 1:
-            atCmdRespInfoText(cmd->engine, "+CSMS: 1,1,1");
-            break;
-        default:
-            atCmdRespInfoText(cmd->engine, "+CSMS: 1,1,1");
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
-            break;
-        }
+        sprintf(urc, "%s: %d,1,1,1", cmd->desc->name, service);
+        atCmdRespInfoText(cmd->engine, urc);
         atCmdRespOK(cmd->engine);
     }
     else if (AT_CMD_READ == cmd->type) // Read command
     {
-        service = CFW_GetSmsSeviceMode();
-        switch (service)
-        {
-        case 0:
-            atCmdRespInfoText(cmd->engine, "+CSMS: 0,1,1,1");
-            break;
-        case 1:
-            atCmdRespInfoText(cmd->engine, "+CSMS: 1,1,1,1");
-            break;
-        default:
-            atCmdRespInfoText(cmd->engine, "+CSMS: 0,1,1,1");
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
-            break;
-        }
+        sprintf(urc, "%s: %d,1,1,1", cmd->desc->name, CFW_GetSmsSeviceMode());
+        atCmdRespInfoText(cmd->engine, urc);
         atCmdRespOK(cmd->engine);
     }
     else if (AT_CMD_TEST == cmd->type)
     {
-        atCmdRespInfoText(cmd->engine, "+CSMS:(0,1)");
+        sprintf(urc, "%s: (0,1)", cmd->desc->name);
+        atCmdRespInfoText(cmd->engine, urc);
         atCmdRespOK(cmd->engine);
     }
     else
@@ -2807,7 +3781,13 @@ static void CMGR_ReadRspCB(atCommand_t *cmd, const osiEvent_t *event)
     /* just for debug */
     OSI_LOGI(0x10004838, "cmgr read msg resp: pNode->nType = %u", pNode->node.nType);
 
-    char rsp[128];
+    char *rsp = NULL;
+    rsp = malloc(1024);
+    if (rsp == NULL)
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+    memset(rsp, 0x00, 1024);
+    atMemFreeLater(rsp);
+
     if (pNode->node.nType == 1) // text mode,show param, state = unread/read msg
     {
         // if text mode (+CMGF=1), command successful and SMS-DELIVER:
@@ -2819,27 +3799,39 @@ static void CMGR_ReadRspCB(atCommand_t *cmd, const osiEvent_t *event)
 
         char oaNumber[TEL_NUMBER_MAX_LEN + 1];
         _smsNumberStr(pType1Data->oa, pType1Data->oa_size, pType1Data->tooa, oaNumber);
+        char *urcOaNumber = NULL;
+        if (gAtSetting.cscs == cs_ucs2)
+            urcOaNumber = generateUrcUcs2Data(oaNumber, strlen(oaNumber));
 
         char scaNumber[TEL_NUMBER_MAX_LEN + 1];
         _smsNumberStr(pType1Data->sca, pType1Data->sca_size, pType1Data->tosca, scaNumber);
+        char *urcScaNumber = NULL;
+        if (gAtSetting.cscs == cs_ucs2)
+            urcScaNumber = generateUrcUcs2Data(scaNumber, strlen(scaNumber));
 
         uint8_t nDcs = _smsCfwDcsToOutDcs(pType1Data->dcs);
         if (gAtSetting.sim[nSim].csdh == 1) /* CSDH=1 */
         {
             sprintf(rsp, "+CMGR: \"%s\",\"%s\",,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\",%u,%u,%u,%u,\"%s\",%u,%u",
-                    _smsAtStatusStr(nstatus), oaNumber, pType1Data->scts.uYear,
+                    _smsAtStatusStr(nstatus), urcOaNumber ? urcOaNumber : oaNumber, pType1Data->scts.uYear,
                     pType1Data->scts.uMonth, pType1Data->scts.uDay, pType1Data->scts.uHour,
                     pType1Data->scts.uMinute, pType1Data->scts.uSecond, pType1Data->scts.iZone,
                     pType1Data->tooa, pType1Data->fo, pType1Data->pid,
-                    nDcs, scaNumber, pType1Data->tosca, pType1Data->length);
+                    nDcs, urcScaNumber ? urcScaNumber : scaNumber, pType1Data->tosca, pType1Data->length);
         }
         else /* CSDH = 0 */
         {
             sprintf(rsp, "+CMGR: \"%s\",\"%s\",,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\"",
-                    _smsAtStatusStr(nstatus), oaNumber, pType1Data->scts.uYear,
+                    _smsAtStatusStr(nstatus), urcOaNumber ? urcOaNumber : oaNumber, pType1Data->scts.uYear,
                     pType1Data->scts.uMonth, pType1Data->scts.uDay, pType1Data->scts.uHour,
                     pType1Data->scts.uMinute, pType1Data->scts.uSecond, pType1Data->scts.iZone);
         }
+
+        if (urcOaNumber != NULL)
+            free(urcOaNumber);
+
+        if (urcScaNumber != NULL)
+            free(urcScaNumber);
 
         atCmdRespInfoText(cmd->engine, rsp);
 
@@ -3026,6 +4018,9 @@ void atCmdHandleCNMI(atCommand_t *cmd)
         if (CFW_CfgSetNewSmsOption(nOption, gAtSetting.sim[nSim].cpms_mem3, nSim) != 0)
             RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_CMD_CANNOT_ACT);
 
+        if (CFW_CfgSetNewSmsOptionMT(mt & 0x03, CFW_SMS_STORAGE_NS, nSim) != 0)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_CMD_CANNOT_ACT);
+
         CFW_SMS_PARAMETER sInfo;
         CFW_CfgGetDefaultSmsParam(&sInfo, nSim);
         sInfo.ssr = ds;
@@ -3078,15 +4073,16 @@ void atCmdHandleCSMP(atCommand_t *cmd)
     uint32_t nOperationRet = 0;
     uint8_t nSim = atCmdGetSim(cmd->engine);
     bool paramok = true;
-    static const uint32_t list[3] = {0, 4, 8};
+    static const uint32_t list[6] = {0, 4, 8, 16, 20, 24};
+    static const uint32_t fo_list[3] = {17, 49};
     switch (cmd->type)
     {
     case AT_CMD_SET:
     {
         nOperationRet = CFW_CfgGetSmsParam(&sInfo, 0, nSim);
-        uint8_t fo = atParamDefUintInRange(cmd->params[0], 17, 17, 17, &paramok);
-        uint8_t vp = atParamDefUintInRange(cmd->params[1], 167, 167, 167, &paramok);
-        uint8_t pid = atParamDefUintInRange(cmd->params[2], 0, 0, 0, &paramok);
+        uint8_t fo = atParamUintInList(cmd->params[0], fo_list, sizeof(fo_list) / sizeof(fo_list[0]), &paramok);
+        uint8_t vp = atParamUintInRange(cmd->params[1], 0, 255, &paramok);
+        uint8_t pid = atParamUintInRange(cmd->params[2], 0, 255, &paramok);
         uint8_t dcs = atParamUintInList(cmd->params[3], list, sizeof(list) / sizeof(list[0]), &paramok);
         if (cmd->param_count == 0 || cmd->param_count > 4 || !paramok || nOperationRet != 0)
             RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
@@ -3109,14 +4105,10 @@ void atCmdHandleCSMP(atCommand_t *cmd)
            ** default value of 'fo' is 17, we can get the value
            ** of CFW_SMS_PARAMETER
          */
-        uint8_t nSMSParamFo = 0;
         nOperationRet = CFW_CfgGetSmsParam(&sInfo, 0, nSim);
-
         if (0 == nOperationRet)
         {
-            nSMSParamFo = 17;
-            //sprintf(PromptInfoBuff, "+CSMP:%d", sInfo.dcs);
-            sprintf(PromptInfoBuff, "+CSMP:%d,%d,%d,%d", nSMSParamFo, sInfo.vp, sInfo.pid, sInfo.dcs);
+            sprintf(PromptInfoBuff, "+CSMP: %d,%d,%d,%d", sInfo.mti, sInfo.vp, sInfo.pid, sInfo.dcs);
             atCmdRespInfoText(cmd->engine, PromptInfoBuff);
             atCmdRespOK(cmd->engine);
         }
@@ -3140,33 +4132,69 @@ void atCmdHandleCNMA(atCommand_t *cmd)
 {
 #ifdef CONFIG_SOC_8910
     uint8_t nSim = atCmdGetSim(cmd->engine);
-    if (gAtCfwCtx.sim[nSim].newsms_timer != NULL)
-    {
-        osiTimerDelete(gAtCfwCtx.sim[nSim].newsms_timer);
-        gAtCfwCtx.sim[nSim].newsms_timer = NULL;
-    }
+
     switch (cmd->type)
     {
     case AT_CMD_EXE:
-        if (CFW_GetSmsSeviceMode() == 1)
+        if (!CFW_GetSmsSeviceMode() || !gAtCfwCtx.sim[nSim].is_waiting_cnma)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_OPER_NOT_ALLOWED);
+
+        if (gAtCfwCtx.sim[nSim].newsms_timer != NULL)
         {
-            if (CFW_SmsMtSmsPPAckReq(nSim) == 0)
-            {
-                atCmdRespOK(cmd->engine);
-            }
-            else
-            {
-                atCmdRespCmsError(cmd->engine, ERR_AT_CMS_OPER_NOT_ALLOWED);
-            }
+            osiTimerDelete(gAtCfwCtx.sim[nSim].newsms_timer);
+            gAtCfwCtx.sim[nSim].newsms_timer = NULL;
+            gAtCfwCtx.sim[nSim].is_waiting_cnma = false;
+        }
+
+        if (CFW_SmsMtSmsPPAckReq(nSim) == 0)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_OPER_NOT_ALLOWED);
+
+        atCmdRespOK(cmd->engine);
+        break;
+    case AT_CMD_SET:
+    {
+        if (!CFW_GetSmsSeviceMode() || (gAtSetting.sim[nSim].cmgf == 1) || !gAtCfwCtx.sim[nSim].is_waiting_cnma)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_OPER_NOT_ALLOWED);
+
+        bool paramok = true;
+        uint8_t n = atParamUintInRange(cmd->params[0], 0, 2, &paramok);
+        if ((cmd->param_count != 1 && cmd->param_count != 2) || !paramok)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        if (gAtCfwCtx.sim[nSim].newsms_timer != NULL)
+        {
+            osiTimerDelete(gAtCfwCtx.sim[nSim].newsms_timer);
+            gAtCfwCtx.sim[nSim].newsms_timer = NULL;
+            gAtCfwCtx.sim[nSim].is_waiting_cnma = false;
+        }
+
+        if (n == 0 || n == 1)
+        {
+            if (CFW_SmsMtSmsPPAckReq(nSim) != 0)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_OPER_NOT_ALLOWED);
         }
         else
         {
-            atCmdRespCmsError(cmd->engine, ERR_AT_CMS_OPER_NOT_ALLOWED);
+            if (CFW_SendMtSmsAckPPError(0xd3, nSim) != 0)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_OPER_NOT_ALLOWED);
         }
+
+        atCmdRespOK(cmd->engine);
         break;
+    }
+    case AT_CMD_TEST:
+        if (gAtSetting.sim[nSim].cmgf == 0) // PDU mode
+        {
+            char rsp[50];
+            sprintf(rsp, "%s: (0-2)", cmd->desc->name);
+            atCmdRespInfoText(cmd->engine, rsp);
+            atCmdRespOK(cmd->engine);
+            break;
+        }
+        else
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
     default:
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
-        break;
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
     }
 #else
     RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);

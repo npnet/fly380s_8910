@@ -37,10 +37,6 @@ struct drv_serial
 static drvSerial_t gSerials[SERIAL_COUNT] = {};
 static const uint32_t kSerialNames[SERIAL_COUNT] = {
     DRV_NAME_USRL_COM0,
-    DRV_NAME_USRL_COM1,
-    DRV_NAME_USRL_COM2,
-    DRV_NAME_USRL_COM3,
-    DRV_NAME_USRL_COM4,
     DRV_NAME_USRL_COM5,
     DRV_NAME_USRL_COM6,
     DRV_NAME_USRL_COM7,

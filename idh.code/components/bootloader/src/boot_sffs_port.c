@@ -14,25 +14,18 @@
 #include "boot_spi_flash.h"
 
 // osi mutex dummy functions
-struct osiMutex
-{
-};
 typedef struct osiMutex osiMutex_t;
 osiMutex_t *osiMutexCreate(void) { return (osiMutex_t *)1; }
 void osiMutexDelete(osiMutex_t *mutex) {}
 void osiMutexLock(osiMutex_t *mutex) {}
 void osiMutexUnlock(osiMutex_t *mutex) {}
-void osiPanic(void) { bootPanic(); }
 
 // drvFlash api
-typedef struct drvSpiFlash
-{
-    bootSpiFlash_t *flash;
-} drvSpiFlash_t;
+typedef struct drvSpiFlash drvSpiFlash_t;
 
 drvSpiFlash_t *drvSpiFlashOpen(uint32_t name)
 {
-    return (drvSpiFlash_t *)bootSpiFlashOpen();
+    return (drvSpiFlash_t *)bootSpiFlashOpen(name);
 }
 
 const void *drvSpiFlashMapAddress(drvSpiFlash_t *d, uint32_t offset)

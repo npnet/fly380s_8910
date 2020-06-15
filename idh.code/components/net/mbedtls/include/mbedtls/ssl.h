@@ -123,6 +123,7 @@
 #define MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS                 -0x6500  /**< The asynchronous operation is not completed yet. */
 #define MBEDTLS_ERR_SSL_EARLY_MESSAGE                     -0x6480  /**< Internal-only message signaling that a message arrived early. */
 #define MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS                -0x7000  /**< A cryptographic operation is in progress. Try again later. */
+#define MBEDTLS_ERR_SSL_QUIT_FORCED                   -0x5900
 
 /*
  * Various constants
@@ -233,7 +234,11 @@
  * peers are using it too!
  */
 #if !defined(MBEDTLS_SSL_MAX_CONTENT_LEN)
+#if defined(CONFIG_MBEDTLS_REDUCE_MEMORY)
+#define MBEDTLS_SSL_MAX_CONTENT_LEN         5*1024
+#else
 #define MBEDTLS_SSL_MAX_CONTENT_LEN         16384   /**< Size of the input / output buffer */
+#endif
 #endif
 
 #if !defined(MBEDTLS_SSL_IN_CONTENT_LEN)
@@ -1176,6 +1181,7 @@ struct mbedtls_ssl_context
     char own_verify_data[MBEDTLS_SSL_VERIFY_DATA_MAX_LEN]; /*!<  previous handshake verify data */
     char peer_verify_data[MBEDTLS_SSL_VERIFY_DATA_MAX_LEN]; /*!<  previous handshake verify data */
 #endif /* MBEDTLS_SSL_RENEGOTIATION */
+    int isquit;
 };
 
 #if defined(MBEDTLS_SSL_HW_RECORD_ACCEL)

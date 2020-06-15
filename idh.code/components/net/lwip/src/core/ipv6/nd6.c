@@ -62,7 +62,7 @@
 #include "lwip/stats.h"
 #include "lwip/dns.h"
 #include "lwip/timeouts.h"
-
+#include "osi_log.h"
 #include <string.h>
 
 #ifdef LWIP_HOOK_FILENAME
@@ -200,11 +200,12 @@ nd6_process_autoconfig_prefix(struct netif *netif,
   u32_t valid_life, pref_life;
   u8_t addr_state;
   s8_t i, free_idx;
-
+  OSI_LOGI(0x1000766d, "nd6_process_autoconfig_prefix");
   /* The caller already checks RFC 4862 Sec. 5.5.3 points (a) and (b). We do
    * the rest, starting with checks for (c) and (d) here. */
   valid_life = lwip_htonl(prefix_opt->valid_lifetime);
   pref_life = lwip_htonl(prefix_opt->preferred_lifetime);
+  OSI_LOGI(0x1000766e, "nd6_process_autoconfig_prefix valid_life %ld pref_life %ld prefix_length %d",valid_life,pref_life,prefix_opt->prefix_length);
   if (pref_life > valid_life || prefix_opt->prefix_length != 64) {
     return; /* silently ignore this prefix for autoconfiguration purposes */
   }
@@ -219,6 +220,7 @@ nd6_process_autoconfig_prefix(struct netif *netif,
    * and duplicate addresses. Skip address slot 0 (the link-local address). */
   for (i = 1; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
     addr_state = netif_ip6_addr_state(netif, i);
+    OSI_LOGI(0x1000766f, "nd6_process_autoconfig_prefix addr_state %x i %d",addr_state,i);
     if (!ip6_addr_isinvalid(addr_state) && !netif_ip6_addr_isstatic(netif, i) &&
         ip6_addr_netcmp(prefix_addr, netif_ip6_addr(netif, i))) {
       /* Update the valid lifetime, as per RFC 4862 Sec. 5.5.3 point (e).
@@ -237,6 +239,8 @@ nd6_process_autoconfig_prefix(struct netif *netif,
         netif_ip6_addr_set_state(netif, i, IP6_ADDR_PREFERRED);
       }
       netif_ip6_addr_set_pref_life(netif, i, pref_life);
+      OSI_LOGI(0x10007670, "nd6_process_autoconfig_prefix update set_pref_life %d  %ld",i,pref_life);
+
       return; /* there should be at most one matching address */
     }
   }
@@ -251,8 +255,10 @@ nd6_process_autoconfig_prefix(struct netif *netif,
    * creating addresses even if the link-local address is still in tentative
    * state though, and deal with the fallout of that upon DAD collision. */
   addr_state = netif_ip6_addr_state(netif, 0);
+  OSI_LOGI(0x10007671, "nd6_process_autoconfig_prefix addr_state %x ip6_autoconfig_enabled %d",addr_state,netif->ip6_autoconfig_enabled);
   if (!netif->ip6_autoconfig_enabled || valid_life == IP6_ADDR_LIFE_STATIC ||
       ip6_addr_isinvalid(addr_state) || ip6_addr_isduplicated(addr_state)) {
+     OSI_LOGI(0x10007672, "nd6_process_autoconfig_prefix addr_state error");
     return;
   }
 
@@ -267,14 +273,18 @@ nd6_process_autoconfig_prefix(struct netif *netif,
 
   free_idx = 0;
   for (i = 1; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+    OSI_LOGI(0x10007673, "nd6_process_autoconfig_prefix LWIP_IPV6_NUM_ADDRESSES i %d",i);
     if (!ip6_addr_isinvalid(netif_ip6_addr_state(netif, i))) {
+        OSI_LOGI(0x10007674, "nd6_process_autoconfig_prefix ip6_addr_isinvalid i %d",i);
       if (ip6_addr_cmp(&ip6addr, netif_ip6_addr(netif, i))) {
+        OSI_LOGI(0x10007675, "nd6_process_autoconfig_prefix ip6_addr_cmp error");
         return; /* formed address already exists */
       }
     } else if (free_idx == 0) {
       free_idx = i;
     }
   }
+  OSI_LOGI(0x10007676, "nd6_process_autoconfig_prefix free_idx  %d",free_idx);
   if (free_idx == 0) {
     return; /* no address slots available, try again on next advertisement */
   }
@@ -302,6 +312,7 @@ nd6_input(struct pbuf *p, struct netif *inp)
   ND6_STATS_INC(nd6.recv);
 
   msg_type = *((u8_t *)p->payload);
+  OSI_LOGI(0x10007677, "nd6_input msg_type=%d",msg_type);
   switch (msg_type) {
   case ICMP6_TYPE_NA: /* Neighbor Advertisement. */
   {
@@ -572,9 +583,10 @@ nd6_input(struct pbuf *p, struct netif *inp)
     /* There can be multiple RDNSS options per RA */
     u8_t rdnss_server_idx = 0;
 #endif /* LWIP_ND6_RDNSS_MAX_DNS_SERVERS */
-
+    OSI_LOGI(0x10007678, "nd6_input handle RA");
     /* Check that RA header fits in packet. */
     if (p->len < sizeof(struct ra_header)) {
+        OSI_LOGI(0x10007679, "nd6_input p->len %d error",p->len);
       /* @todo debug message */
       pbuf_free(p);
       ND6_STATS_INC(nd6.lenerr);
@@ -587,6 +599,9 @@ nd6_input(struct pbuf *p, struct netif *inp)
     /* Check a subset of the other RFC 4861 Sec. 6.1.2 requirements. */
     if (!ip6_addr_islinklocal(ip6_current_src_addr()) ||
         IP6H_HOPLIM(ip6_current_header()) != ND6_HOPLIM || ra_hdr->code != 0) {
+      OSI_LOGI(0x1000767a, "nd6_input islinklocal error");
+      OSI_LOGI(0x1000767b, "nd6_input islinklocal ra_hdr->code %d",ra_hdr->code);
+
       pbuf_free(p);
       ND6_STATS_INC(nd6.proterr);
       ND6_STATS_INC(nd6.drop);
@@ -597,7 +612,7 @@ nd6_input(struct pbuf *p, struct netif *inp)
 
     /* If we are sending RS messages, stop. */
 #if LWIP_IPV6_SEND_ROUTER_SOLICIT
-
+    OSI_LOGI(0x1000767c, "nd6_input inp->rs_count %d",inp->rs_count);
 #ifdef LTE_NBIOT_SUPPORT
     /*if dest addr isn't multicast addr, this RA must be responded to RS which be sent by UE initially.
     so it could be stopped sending the next RS packet, this may be reduce nbiot radio bearer consuming*/
@@ -616,11 +631,12 @@ nd6_input(struct pbuf *p, struct netif *inp)
 
     /* Get the matching default router entry. */
     i = nd6_get_router(ip6_current_src_addr(), inp);
+    OSI_LOGI(0x1000767d, "nd6_input nd6_get_router i %d",i);
     if (i < 0) {
       /* Create a new router entry. */
       i = nd6_new_router(ip6_current_src_addr(), inp);
     }
-
+    OSI_LOGI(0x1000767e, "nd6_input nd6_get_router1 i %d",i);
     if (i < 0) {
       /* Could not create a new router entry. */
       pbuf_free(p);
@@ -630,7 +646,7 @@ nd6_input(struct pbuf *p, struct netif *inp)
 
     /* Re-set invalidation timer. */
     default_router_list[i].invalidation_timer = lwip_htons(ra_hdr->router_lifetime);
-
+    OSI_LOGI(0x1000767f, "nd6_input nd6_get_router1 invalidation_timer %ld",default_router_list[i].invalidation_timer);
     /* Re-set default timer values. */
 #if LWIP_ND6_ALLOW_RA_UPDATES
 #ifndef LTE_NBIOT_SUPPORT
@@ -646,7 +662,7 @@ nd6_input(struct pbuf *p, struct netif *inp)
       reachable_time = lwip_htonl(ra_hdr->reachable_time);
     }
 #endif /* LWIP_ND6_ALLOW_RA_UPDATES */
-
+    OSI_LOGI(0x10007680, "nd6_input nd6_get_router retrans_timer %ld reachable_time %ld",retrans_timer, reachable_time);
     /* @todo set default hop limit... */
     /* ra_hdr->current_hop_limit;*/
 
@@ -655,7 +671,7 @@ nd6_input(struct pbuf *p, struct netif *inp)
 
     /* Offset to options. */
     offset = sizeof(struct ra_header);
-
+    OSI_LOGI(0x10007681, "nd6_input offset %d",offset);
     /* Process each option. */
     while ((p->tot_len - offset) >= 2) {
       u8_t option_type;
@@ -688,6 +704,7 @@ nd6_input(struct pbuf *p, struct netif *inp)
         option_len = pbuf_copy_partial(p, &nd6_ra_buffer, option_len, offset);
       }
       option_type = buffer[0];
+      OSI_LOGI(0x10007682, "nd6_input option_type %x",option_type);
       switch (option_type) {
       case ND6_OPTION_TYPE_SOURCE_LLADDR:
       {
@@ -722,7 +739,9 @@ nd6_input(struct pbuf *p, struct netif *inp)
       {
         struct prefix_option *prefix_opt;
         ip6_addr_t prefix_addr;
+        OSI_LOGI(0x10007683, "nd6_input ND6_OPTION_TYPE_PREFIX_INFO option_len %d",option_len);
         if (option_len < sizeof(struct prefix_option)) {
+          OSI_LOGI(0x10007684, "nd6_input ND6_OPTION_TYPE_PREFIX_INFO error");
           goto lenerr_drop_free_return;
         }
 
@@ -731,8 +750,10 @@ nd6_input(struct pbuf *p, struct netif *inp)
         /* Get a memory-aligned copy of the prefix. */
         ip6_addr_copy_from_packed(prefix_addr, prefix_opt->prefix);
         ip6_addr_assign_zone(&prefix_addr, IP6_UNICAST, inp);
-
+       OSI_LOGI(0x10007685, "nd6_input ip6_addr_islinklocal(&prefix_addr)");
         if (!ip6_addr_islinklocal(&prefix_addr)) {
+            OSI_LOGI(0x10007686, "nd6_input ip6_addr_islinklocal OK");
+            OSI_LOGI(0x10007687, "nd6_input prefix_opt->prefix_length %d",prefix_opt->prefix_length);
 #ifdef LTE_NBIOT_SUPPORT
           if(prefix_opt->prefix_length == 64) {
 #else
@@ -744,19 +765,23 @@ nd6_input(struct pbuf *p, struct netif *inp)
             s8_t prefix;
 
             valid_life = lwip_htonl(prefix_opt->valid_lifetime);
-
+            OSI_LOGI(0x10007688, "nd6_input valid_life %ld",valid_life);
             /* find cache entry for this prefix. */
             prefix = nd6_get_onlink_prefix(&prefix_addr, inp);
+            OSI_LOGI(0x10007689, "nd6_input prefix %d",prefix);
             if (prefix < 0 && valid_life > 0) {
               /* Create a new cache entry. */
               prefix = nd6_new_onlink_prefix(&prefix_addr, inp);
             }
+            OSI_LOGI(0x10007689, "nd6_input prefix %d",prefix);
             if (prefix >= 0) {
               prefix_list[prefix].invalidation_timer = valid_life;
             }
           }
+          OSI_LOGI(0x1000768a, "nd6_input prefix_opt->flags %x",prefix_opt->flags);
 #if LWIP_IPV6_AUTOCONFIG
           if (prefix_opt->flags & ND6_PREFIX_FLAG_AUTONOMOUS) {
+            OSI_LOGI(0x1000768b, "nd6_input prefix_opt->flags %x ND6_PREFIX_FLAG_AUTONOMOUS",prefix_opt->flags);
             /* Perform processing for autoconfiguration. */
             nd6_process_autoconfig_prefix(inp, prefix_opt, &prefix_addr);
           }
@@ -1119,7 +1144,7 @@ nd6_tmr(void)
           netif_ip6_addr_set_valid_life(netif, i, 0);
           netif_ip6_addr_set_pref_life(netif, i, 0);
           netif_ip6_addr_set_state(netif, i, IP6_ADDR_INVALID);
-          LWIP_DEBUGF(TIMERS_DEBUG, ("ip6 invalid"));
+          LWIP_DEBUGF(TIMERS_DEBUG, (0x1000788f, "ip6 invalid"));
         } else {
           if (!ip6_addr_life_isinfinite(life)) {
             life -= ND6_TMR_INTERVAL / 1000;
@@ -2194,12 +2219,12 @@ nd6_queue_packet(s8_t neighbor_index, struct pbuf *q)
         /* queue did not exist, first item in queue */
         neighbor_cache[neighbor_index].q = new_entry;
       }
-      LWIP_DEBUGF(LWIP_DBG_TRACE, ("ipv6: queued packet %p on neighbor entry %"S16_F"\n", (void *)p, (s16_t)neighbor_index));
+      LWIP_DEBUGF(LWIP_DBG_TRACE, (0x10007890, "ipv6: queued packet %p on neighbor entry %hd\n", (void *)p, (s16_t)neighbor_index));
       result = ERR_OK;
     } else {
       /* the pool MEMP_ND6_QUEUE is empty */
       pbuf_free(p);
-      LWIP_DEBUGF(LWIP_DBG_TRACE, ("ipv6: could not queue a copy of packet %p (out of memory)\n", (void *)p));
+      LWIP_DEBUGF(LWIP_DBG_TRACE, (0x10007891, "ipv6: could not queue a copy of packet %p (out of memory)\n", (void *)p));
       /* { result == ERR_MEM } through initialization */
     }
 #else /* LWIP_ND6_QUEUEING */
@@ -2208,11 +2233,11 @@ nd6_queue_packet(s8_t neighbor_index, struct pbuf *q)
       pbuf_free(neighbor_cache[neighbor_index].q);
     }
     neighbor_cache[neighbor_index].q = p;
-    LWIP_DEBUGF(LWIP_DBG_TRACE, ("ipv6: queued packet %p on neighbor entry %"S16_F"\n", (void *)p, (s16_t)neighbor_index));
+    LWIP_DEBUGF(LWIP_DBG_TRACE, (0x10007890, "ipv6: queued packet %p on neighbor entry %hd\n", (void *)p, (s16_t)neighbor_index));
     result = ERR_OK;
 #endif /* LWIP_ND6_QUEUEING */
   } else {
-    LWIP_DEBUGF(LWIP_DBG_TRACE, ("ipv6: could not queue a copy of packet %p (out of memory)\n", (void *)q));
+    LWIP_DEBUGF(LWIP_DBG_TRACE, (0x10007891, "ipv6: could not queue a copy of packet %p (out of memory)\n", (void *)q));
     /* { result == ERR_MEM } through initialization */
   }
 

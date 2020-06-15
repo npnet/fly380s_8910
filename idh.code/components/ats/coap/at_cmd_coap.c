@@ -361,7 +361,12 @@ void AT_COAP_CmdFunc_DATA(atCommand_t *pParam)
         break;
     }
     default:
+    {
+        osiMutexLock(g_pstMutex);
+        g_bCoapDoing = false;
+        osiMutexUnlock(g_pstMutex);
         RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_NOT_SURPORT);
+    }
     }
 
 ParamInvalid:

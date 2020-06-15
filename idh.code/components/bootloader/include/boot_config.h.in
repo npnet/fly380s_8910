@@ -42,6 +42,16 @@
 #cmakedefine CONFIG_BOOT_IMAGE_SIZE @CONFIG_BOOT_IMAGE_SIZE@
 
 /**
+ * BOOT2 (decompressed) image address
+ */
+#cmakedefine CONFIG_BOOT2_IMAGE_START @CONFIG_BOOT2_IMAGE_START@
+
+/**
+ * BOOT2 (decompressed) image size
+ */
+#cmakedefine CONFIG_BOOT2_IMAGE_SIZE @CONFIG_BOOT2_IMAGE_SIZE@
+
+/**
  * FDL1 image address in SRAM (8910)
  *
  * It should match system ROM.
@@ -64,34 +74,16 @@
 #cmakedefine CONFIG_FDL2_IMAGE_SIZE @CONFIG_FDL2_IMAGE_SIZE@
 
 /**
- * TTB start address (8910)
+ * NORFDL image address in SRAM (8811)
+ *
+ * It should match system ROM.
  */
-#cmakedefine CONFIG_BOOT_TTB_START @CONFIG_BOOT_TTB_START@
+#cmakedefine CONFIG_NORFDL_IMAGE_START @CONFIG_NORFDL_IMAGE_START@
 
 /**
- * TTB size (8910)
+ * NORFDL maximum image size (8811)
  */
-#cmakedefine CONFIG_BOOT_TTB_SIZE @CONFIG_BOOT_TTB_SIZE@
-
-/**
- * bootloader exception stack start address (8910)
- */
-#cmakedefine CONFIG_BOOT_EXCEPTION_STACK_START @CONFIG_BOOT_EXCEPTION_STACK_START@
-
-/**
- * bootloader exception stack size (8910)
- */
-#cmakedefine CONFIG_BOOT_EXCEPTION_STACK_SIZE @CONFIG_BOOT_EXCEPTION_STACK_SIZE@
-
-/**
- * heap start address for bootloader, fdl1 and fdl2 (8910)
- */
-#cmakedefine CONFIG_BOOT_SRAM_HEAP_START @CONFIG_BOOT_SRAM_HEAP_START@
-
-/**
- * heap size for bootloader, fdl1 and fdl2 (8910)
- */
-#cmakedefine CONFIG_BOOT_SRAM_HEAP_SIZE @CONFIG_BOOT_SRAM_HEAP_SIZE@
+#cmakedefine CONFIG_NORFDL_IMAGE_SIZE @CONFIG_NORFDL_IMAGE_SIZE@
 
 /**
  * bootloader SVC stack size (8910)
@@ -104,14 +96,29 @@
 #cmakedefine CONFIG_BOOT_IRQ_STACK_SIZE @CONFIG_BOOT_IRQ_STACK_SIZE@
 
 /**
- * bootloader SVC stack top address (8910)
+ * bootloader blue screen stack size (8910)
  */
-#cmakedefine CONFIG_BOOT_SVC_STACK_TOP @CONFIG_BOOT_SVC_STACK_TOP@
+#cmakedefine CONFIG_BOOT_BLUE_SCREEN_STACK_SIZE @CONFIG_BOOT_BLUE_SCREEN_STACK_SIZE@
+
+/**
+ * bootloader SYS stack top address (8910)
+ */
+#cmakedefine CONFIG_BOOT_SYS_STACK_TOP @CONFIG_BOOT_SYS_STACK_TOP@
 
 /**
  * bootloader IRQ stack top address (8910)
  */
 #cmakedefine CONFIG_BOOT_IRQ_STACK_TOP @CONFIG_BOOT_IRQ_STACK_TOP@
+
+/**
+ * bootloader blue screen stack top address (8910)
+ */
+#cmakedefine CONFIG_BOOT_BLUE_SCREEN_STACK_TOP @CONFIG_BOOT_BLUE_SCREEN_STACK_TOP@
+
+/**
+ * NORFDL stack size (8811)
+ */
+#cmakedefine CONFIG_NORFDL_STACK_SIZE @CONFIG_NORFDL_STACK_SIZE@
 
 /**
  * whether to enable timer interrupt in bootloader (8910)
@@ -122,6 +129,16 @@
  * bootloader timer interval in milliseconds (8910)
  */
 #cmakedefine CONFIG_BOOT_TIMER_PERIOD @CONFIG_BOOT_TIMER_PERIOD@
+
+/**
+ * maximum FDL packet length
+ */
+#cmakedefine CONFIG_FDL1_PACKET_MAX_LEN @CONFIG_FDL1_PACKET_MAX_LEN@
+
+/**
+ * maximum FDL packet length
+ */
+#cmakedefine CONFIG_FDL_PACKET_MAX_LEN @CONFIG_FDL_PACKET_MAX_LEN@
 
 /**
  * fixed nv bin maximum size in bytes (8910, 8811)
@@ -137,5 +154,25 @@
  * FDL1, FDL2 default uart baud rate (8910)
  */
 #cmakedefine CONFIG_FDL_UART_BAUD @CONFIG_FDL_UART_BAUD@
+
+/**
+ * Enable SMPL(Sudden Momentary Power Loss)(8910)
+ */
+#cmakedefine CONFIG_BOOT_SMPL_ENABLE
+
+/**
+ * Set SMPL thimer threshold (8910)
+ */
+#cmakedefine CONFIG_BOOT_SMPL_THRESHOLD @CONFIG_BOOT_SMPL_THRESHOLD@
+
+/**
+ * Enable pbint 7s reset (8910)
+ */
+#cmakedefine CONFIG_BOOT_PB_7S_RESET_ENABLE
+
+/**
+ * Enable UART download in bootloader through PDL protocol
+ */
+#cmakedefine CONFIG_BOOT_UART1_PDL_ENABLE
 
 #endif

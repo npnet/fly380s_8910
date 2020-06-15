@@ -23,15 +23,6 @@
 #cmakedefine CONFIG_KERNEL_SYSNV_ENABLED
 
 /**
- * whether to put log functions inside critical section
- *
- * It will introduce longer interrupt delay to put the whole log functions
- * inside critical section. At debug, or the log buffer is non-safe, this
- * can be defined.
- */
-#cmakedefine CONFIG_KERNEL_LOG_IN_CRITICAL
-
-/**
  * RTOS tick Hz
  */
 #cmakedefine CONFIG_KERNEL_TICK_HZ @CONFIG_KERNEL_TICK_HZ@
@@ -133,17 +124,12 @@
 /**
  * use host packet, flow id 0x97 for log
  */
-#cmakedefine CONFIG_KERNEL_TRACE_HOST97
+#cmakedefine CONFIG_KERNEL_HOST_TRACE
 
 /**
  * use host packet, flow id 0x98 for log
  */
-#cmakedefine CONFIG_KERNEL_TRACE_HOST98
-
-/**
- * use tra packet, type 0xc8/0xc9 for log
- */
-#cmakedefine CONFIG_KERNEL_TRACE_BBC8
+#cmakedefine CONFIG_KERNEL_DIAG_TRACE
 
 /**
  * disable traceid forcedly
@@ -161,8 +147,18 @@
 #cmakedefine CONFIG_KERNEL_TRACE_BUF_COUNT @CONFIG_KERNEL_TRACE_BUF_COUNT@
 
 /**
+ * external log buffer count
+ */
+#cmakedefine CONFIG_KERNEL_TRACE_EXTERNAL_BUF_COUNT @CONFIG_KERNEL_TRACE_EXTERNAL_BUF_COUNT@
+
+/**
  * count of memory allocate/free records
  */
 #cmakedefine CONFIG_KERNEL_MEM_RECORD_COUNT @CONFIG_KERNEL_MEM_RECORD_COUNT@
+
+/**
+ * Maximum blue screen handler count
+ */
+#cmakedefine CONFIG_KERNEL_BLUE_SCREEN_HANDLER_COUNT @CONFIG_KERNEL_BLUE_SCREEN_HANDLER_COUNT@
 
 #endif

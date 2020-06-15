@@ -13,14 +13,9 @@
 #ifndef _DRV_NAMES_H_
 #define _DRV_NAMES_H_
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include "osi_compiler.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+OSI_EXTERN_C_BEGIN
 
 #define DRV_NAME_INVALID 0
 
@@ -65,8 +60,9 @@ extern "C" {
 #define DRV_NAME_GPIO OSI_MAKE_TAG('G', 'P', 'I', 'O')          // GPIO
 #define DRV_NAME_AXI_DMA OSI_MAKE_TAG('A', 'D', 'M', 'A')       // ADMA
 
-#ifdef __cplusplus
-}
-#endif
+#define DRV_NAME_PREFIX_MASK OSI_MAKE_TAG('\xff', '\xff', '\xff', '\x00')
+#define DRV_NAME_IS_UART(name) (((name)&DRV_NAME_PREFIX_MASK) == OSI_MAKE_TAG('U', 'R', 'T', '\0'))
+#define DRV_NAME_IS_USRL(name) (((name)&DRV_NAME_PREFIX_MASK) == OSI_MAKE_TAG('U', 'S', 'L', '\0'))
 
+OSI_EXTERN_C_END
 #endif

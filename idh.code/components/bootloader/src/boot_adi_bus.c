@@ -70,7 +70,7 @@ uint32_t bootAdiBusRead(volatile uint32_t *reg)
     REG_WAIT_FIELD_EQZ(arm_rd_data, hwp_adiMst->arm_rd_data, arm_rd_cmd_busy);
 
     if (arm_rd_data.b.arm_rd_addr != (((uint32_t)reg & 0xffff) >> 2))
-        bootPanic();
+        osiPanic();
 
     return arm_rd_data.b.arm_rd_cmd;
 }

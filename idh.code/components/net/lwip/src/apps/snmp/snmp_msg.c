@@ -494,7 +494,7 @@ snmp_process_get_request(struct snmp_request *request)
   struct snmp_varbind vb;
   vb.value = request->value_buffer;
 
-  LWIP_DEBUGF(SNMP_DEBUG, ("SNMP get request\n"));
+  LWIP_DEBUGF(SNMP_DEBUG, (0x100076e6, "SNMP get request\n"));
 
   while (request->error_status == SNMP_ERR_NOERROR) {
     err = snmp_vb_enumerator_get_next(&request->inbound_varbind_enumerator, &vb);
@@ -530,7 +530,7 @@ snmp_process_getnext_request(struct snmp_request *request)
   struct snmp_varbind vb;
   vb.value = request->value_buffer;
 
-  LWIP_DEBUGF(SNMP_DEBUG, ("SNMP get-next request\n"));
+  LWIP_DEBUGF(SNMP_DEBUG, (0x100076e7, "SNMP get-next request\n"));
 
   while (request->error_status == SNMP_ERR_NOERROR) {
     err = snmp_vb_enumerator_get_next(&request->inbound_varbind_enumerator, &vb);
@@ -576,7 +576,7 @@ snmp_process_getbulk_request(struct snmp_request *request)
     repetitions = request->max_repetitions;
   }
 
-  LWIP_DEBUGF(SNMP_DEBUG, ("SNMP get-bulk request\n"));
+  LWIP_DEBUGF(SNMP_DEBUG, (0x100076e8, "SNMP get-bulk request\n"));
 
   /* process non repeaters and first repetition */
   while (request->error_status == SNMP_ERR_NOERROR) {
@@ -630,7 +630,7 @@ snmp_process_getbulk_request(struct snmp_request *request)
         /* no more varbinds in request */
         break;
       } else {
-        LWIP_DEBUGF(SNMP_DEBUG, ("Very strange, we cannot parse the varbind output that we created just before!"));
+        LWIP_DEBUGF(SNMP_DEBUG, (0x100076e9, "Very strange, we cannot parse the varbind output that we created just before!"));
         request->error_status = SNMP_ERR_GENERROR;
         request->error_index  = request->non_repeaters + repetition_varbind_enumerator.varbind_count;
       }
@@ -664,7 +664,7 @@ snmp_process_set_request(struct snmp_request *request)
   struct snmp_varbind vb;
   vb.value = request->value_buffer;
 
-  LWIP_DEBUGF(SNMP_DEBUG, ("SNMP set request\n"));
+  LWIP_DEBUGF(SNMP_DEBUG, (0x100076ea, "SNMP set request\n"));
 
   /* perform set test on all objects */
   while (request->error_status == SNMP_ERR_NOERROR) {
@@ -740,21 +740,21 @@ snmp_process_set_request(struct snmp_request *request)
 
 #define PARSE_EXEC(code, retValue) \
   if ((code) != ERR_OK) { \
-    LWIP_DEBUGF(SNMP_DEBUG, ("Malformed ASN.1 detected.\n")); \
+    LWIP_DEBUGF(SNMP_DEBUG, (0x100076eb, "Malformed ASN.1 detected.\n")); \
     snmp_stats.inasnparseerrs++; \
     return retValue; \
   }
 
 #define PARSE_ASSERT(cond, retValue) \
   if (!(cond)) { \
-    LWIP_DEBUGF(SNMP_DEBUG, ("SNMP parse assertion failed!: " # cond)); \
+    LWIP_DEBUGF(SNMP_DEBUG, (0x100076ec, "SNMP parse assertion failed!: " # cond)); \
     snmp_stats.inasnparseerrs++; \
     return retValue; \
   }
 
 #define BUILD_EXEC(code, retValue) \
   if ((code) != ERR_OK) { \
-    LWIP_DEBUGF(SNMP_DEBUG, ("SNMP error during creation of outbound frame!: " # code)); \
+    LWIP_DEBUGF(SNMP_DEBUG, (0x100076ed, "SNMP error during creation of outbound frame!: " # code)); \
     return retValue; \
   }
 
@@ -1185,7 +1185,7 @@ snmp_parse_inbound_frame(struct snmp_request *request)
       break;
     default:
       /* unsupported input PDU for this agent (no parse error) */
-      LWIP_DEBUGF(SNMP_DEBUG, ("Unknown/Invalid SNMP PDU type received: %d", tlv.type)); \
+      LWIP_DEBUGF(SNMP_DEBUG, (0x100076ee, "Unknown/Invalid SNMP PDU type received: %d", tlv.type)); \
       return ERR_ARG;
   }
   request->request_type = tlv.type & SNMP_ASN1_DATATYPE_MASK;
@@ -1661,7 +1661,7 @@ snmp_complete_outbound_frame(struct snmp_request *request)
 
     if (request->error_status >= SNMP_VARBIND_EXCEPTION_OFFSET) {
       /* should never occur because v2 frames store exceptions directly inside varbinds and not as frame error_status */
-      LWIP_DEBUGF(SNMP_DEBUG, ("snmp_complete_outbound_frame() > Found v2 request with varbind exception code stored as error status!\n"));
+      LWIP_DEBUGF(SNMP_DEBUG, (0x100076ef, "snmp_complete_outbound_frame() > Found v2 request with varbind exception code stored as error status!\n"));
       return ERR_ARG;
     }
   }

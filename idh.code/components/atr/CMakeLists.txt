@@ -9,7 +9,7 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/atr_config.h.in ${BINARY_TOP_DIR}/include/atr_config.h)
+configure_file(include/atr_config.h.in ${out_inc_dir}/atr_config.h)
 
 set(target at_cmd_table_gperf)
 set(gperf_in src/at_cmd_table.gperf)
@@ -26,7 +26,16 @@ add_custom_command(OUTPUT ${gperf_h}
 nanopbgen(src/at_setting.proto)
 
 set(target atr)
-add_library(${target} STATIC
+add_app_libraries($<TARGET_FILE:${target}>)
+
+add_library(${target} STATIC)
+set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
+target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_ATE)
+target_include_directories(${target} PUBLIC include)
+target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(${target} PRIVATE kernel driver calclib ats cfw net nanopb fs service diag)
+
+target_sources(${target} PRIVATE
     ${gperf_h}
     src/at_param.c
     src/at_parse.c
@@ -40,20 +49,8 @@ add_library(${target} STATIC
     src/at_setting_codec.c
     ${CMAKE_CURRENT_BINARY_DIR}/at_setting.pb.c
 )
-if(CONFIG_ATR_CREATE_USB_SERIAL)
-    target_sources(${target} PRIVATE src/at_device_userial.c)
-endif()
-
-set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
-target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_ATE)
-target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel driver calclib ats net cfw nanopb fs http mupnp mbedtls service)
-target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-
-if(CONFIG_ATR_CREATE_DIAG)
-    target_link_libraries(${target} PRIVATE diag)
-    target_sources(${target} PRIVATE src/at_device_diag.c)
-endif()
+target_sources_if(CONFIG_ATR_CREATE_USB_SERIAL THEN ${target} PRIVATE src/at_device_userial.c)
+target_sources_if(CONFIG_ATR_CREATE_DIAG THEN ${target} PRIVATE src/at_device_diag.c)
 
 include(core.cmake)
 

@@ -1,6 +1,8 @@
 #include "coap_async_api.h"
 #include "async_worker.h"
 #include "lwipopts.h"
+#include "osi_log.h"
+#include "osi_api.h"
 
 struct coap_client_t
 {
@@ -22,7 +24,7 @@ static AWORKER_RC coapAworkerRequestHandler(AWORKER_REQ *req)
     bool paramok = true;
     int nResult = -1;
 
-    sys_arch_printf("func:%s line:%d event:%d", __func__, __LINE__, (int)req->event);
+    OSI_LOGXI(OSI_LOGPAR_SII, 0, "func:%s line:%d event:%d", __func__, __LINE__, (int)req->event);
     coap_client_t *client = (coap_client_t *)req->param;
     char **argv = NULL;
     uint8_t argc = 0;
@@ -89,8 +91,9 @@ error:
 
 static void coapAworkerCallback(int result, uint32_t event, void *param)
 {
-    sys_arch_printf("coapAworkerCallback result:%d event:%d\n", (int)result, (int)event);
+    //OSI_LOGXI(OSI_LOGPAR_SII, 0x100075c4, "func:%s line:%d event:%d", __func__, __LINE__, (int)1);
     coap_client_t *client = (coap_client_t *)param;
+    OSI_LOGI(0, "coapAworkerCallback result:%d event:%d\n", (int)result, (int)event);
     client->status = COAP_STATUS_DONE;
     if (client->user_cb != NULL)
         client->user_cb(client, (coap_method_t)event, result == AWRC_SUCCESS);
@@ -187,7 +190,7 @@ bool coap_client_setParams(coap_client_t *client, uint8_t *cmdline_param)
         if (client->cmdline)
             free(client->cmdline);
         client->cmdline = cmdline;
-        sys_arch_printf("func:%s line:%d setParams param:%s,cmdline:%s", __func__, __LINE__, cmdline_param, client->cmdline);
+        OSI_LOGXI(OSI_LOGPAR_SISS, 0x100075c6, "func:%s line:%d setParams param:%s,cmdline:%s", __func__, __LINE__, cmdline_param, client->cmdline);
         return true;
     }
     return false;
@@ -215,7 +218,7 @@ bool coap_client_setPayload(coap_client_t *client, uint8_t *data, uint32_t data_
         client->payload_len = data_len;
         memcpy(client->payload, data, data_len);
         client->payload[data_len] = 0;
-        sys_arch_printf("coap_client_setPayload setPayload=%s", client->payload);
+        OSI_LOGXI(OSI_LOGPAR_S, 0x100075c7, "coap_client_setPayload setPayload=%s", client->payload);
 
         return true;
     }
@@ -245,7 +248,7 @@ bool coap_async_get(coap_client_t *client, uint8_t *url, uint8_t *cmdline)
         AWORKER_REQ *areq = createAworkerReq(COAP_GET, client, 0, client->user_task);
         if (areq == NULL)
         {
-            sys_arch_printf("coap_async_get create async request fail");
+            OSI_LOGI(0, "coap_async_get fail, create coap work queue");
             paramok = false;
         }
         aworker_param_putu32(areq, 0, &paramok);
@@ -268,7 +271,7 @@ bool coap_async_put(coap_client_t *client, uint8_t *url, uint8_t *cmdline, bool 
         AWORKER_REQ *areq = createAworkerReq(COAP_PUT, client, 0, client->user_task);
         if (areq == NULL)
         {
-            sys_arch_printf("coap_async_get create async request fail");
+            OSI_LOGI(0, "coap_async_put fail, create coap work queue");
             paramok = false;
         }
         aworker_param_putu32(areq, has_payload, &paramok);
@@ -291,7 +294,7 @@ bool coap_async_post(coap_client_t *client, uint8_t *url, uint8_t *cmdline, bool
         AWORKER_REQ *areq = createAworkerReq(COAP_POST, client, 0, client->user_task);
         if (areq == NULL)
         {
-            sys_arch_printf("coap_async_get create async request fail");
+            OSI_LOGI(0, "coap_async_post fail, create coap work queue");
             paramok = false;
         }
         aworker_param_putu32(areq, has_payload, &paramok);
@@ -314,7 +317,7 @@ bool coap_async_delete(coap_client_t *client, uint8_t *url, uint8_t *cmdline)
         AWORKER_REQ *areq = createAworkerReq(COAP_DELETE, client, 0, client->user_task);
         if (areq == NULL)
         {
-            sys_arch_printf("coap_async_get create async request fail");
+            OSI_LOGI(0, "coap_async_delete fail, create coap work queue");
             paramok = false;
         }
         aworker_post_req_delay(areq, 0, &paramok);

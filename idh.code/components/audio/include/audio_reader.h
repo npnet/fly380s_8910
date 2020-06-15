@@ -117,6 +117,20 @@ bool auReaderIsSeekable(auReader_t *d);
 int auReaderSeek(auReader_t *d, int offset, int whence);
 
 /**
+ * \brief audio reader drop data
+ *
+ * When audio reader supports seek, it is the same to seek forward.
+ * Otherwise, it will try to read-and-drop specified size.
+ *
+ * \param d         audio reader
+ * \param size      byte count to be dropped
+ * \return
+ *      - 0 on success.
+ *      - -1 on error.
+ */
+int auReaderDrop(auReader_t *d, unsigned size);
+
+/**
  * \brief whether the reader reaches end of file
  *
  * \param d         audio reader
@@ -193,6 +207,125 @@ auPipeReader_t *auPipeReaderCreate(struct osiPipe *pipe);
  * \param timeout   wait timeout
  */
 void auPipeReaderSetWait(auPipeReader_t *d, unsigned timeout);
+
+/**
+ * \brief helper to manage input buffer for audio reader
+ *
+ * The struct definition is just to make it easier to embed data struct.
+ * DON'T acess members directly.
+ */
+typedef struct
+{
+    uint8_t *buf;        ///< the real input buffer
+    unsigned size;       ///< byte count in the buffer
+    unsigned pos;        ///< read position in the buffer
+    unsigned file_pos;   ///< file position for the read position
+    unsigned data_start; ///< valid data start in file
+    unsigned data_end;   ///< valid data end in file
+} auReadBuf_t;
+
+/**
+ * \brief initialize read buffer
+ *
+ * \param d         read buffer
+ * \param buf       real input buffer pointer
+ */
+void auReadBufInit(auReadBuf_t *d, void *buf);
+
+/**
+ * \brief clear read buffer, and set file position
+ *
+ * \param d         read buffer
+ * \param file_pos  file position
+ */
+void auReadBufReset(auReadBuf_t *d, unsigned file_pos);
+
+/**
+ * \brief fetch from reader
+ *
+ * When needed, it will read from audio reader, and try to ensure
+ * valid data size is greater than \p size.
+ *
+ * \param d         read buffer
+ * \param reader    audio reader
+ * \param size      requested valid data size
+ * \return
+ *      - valid data size in read buffer
+ */
+unsigned auReadBufFetch(auReadBuf_t *d, auReader_t *reader, unsigned size);
+
+/**
+ * \brief skip bytes in reader buffer
+ *
+ * \p size may be larger than valid data size in read buffer. In this
+ * case, it will call \p auReaderDrop.
+ *
+ * \param d         read buffer
+ * \param reader    audio reader
+ * \param size      requested byte count to be skipped
+ */
+void auReadBufSkip(auReadBuf_t *d, auReader_t *reader, unsigned size);
+
+/**
+ * \brief valid data pointer
+ *
+ * \param d         read buffer
+ * \return
+ *      - valid data pointer
+ */
+static inline uint8_t *auReadBufData(auReadBuf_t *d) { return &d->buf[d->pos]; }
+
+/**
+ * \brief valid data size
+ *
+ * \param d         read buffer
+ * \return
+ *      - valid data size
+ */
+static inline unsigned auReadBufSize(auReadBuf_t *d) { return d->size - d->pos; }
+
+/**
+ * \brief file position
+ *
+ * \param d         read buffer
+ * \return
+ *      - file position
+ */
+static inline unsigned auReadBufFilePos(auReadBuf_t *d) { return d->file_pos; }
+
+/**
+ * \brief data start position in file
+ *
+ * \param d         read buffer
+ * \return
+ *      - data start position in file
+ */
+static inline unsigned auReadBufDataStart(auReadBuf_t *d) { return d->data_start; }
+
+/**
+ * \brief data end position in file
+ *
+ * \param d         read buffer
+ * \return
+ *      - data end position in file
+ */
+static inline unsigned auReadBufDataEnd(auReadBuf_t *d) { return d->data_end; }
+
+/**
+ * \brief set data start position in file
+ *
+ * \param d             read buffer
+ * \param data_start    data start position in file
+ */
+static inline void auReadBufSetDataStart(auReadBuf_t *d, unsigned data_start) { d->data_start = data_start; }
+
+/**
+ * \brief set data end position in file
+ *
+ * \param d             read buffer
+ * \param data_end      data end position in file
+ */
+static inline void auReadBufSetDataEnd(auReadBuf_t *d, unsigned data_end) { d->data_end = data_end; }
 
 OSI_EXTERN_C_END
 #endif

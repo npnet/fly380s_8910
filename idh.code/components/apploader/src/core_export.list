@@ -314,6 +314,12 @@ auPlayerStartPipe
 auPlayerStartReader
 auPlayerStop
 auPlayerWaitFinish
+auPlayerStartDecoderV2
+auPlayerStartFileV2
+auPlayerStartMemV2
+auPlayerStartPipeV2
+auPlayerStartReaderV2
+auPlayerGetType
 
 auRecorderCreate
 auRecorderDelete

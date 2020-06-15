@@ -23,4 +23,5 @@ message PB_SysNvm
     optional uint32 gSysnvSimHotPlug = 7;
     optional uint32 gSysnvSimVoltTrigMode = 8;
     optional uint32 gSysnvUsbDetMode = 9;
+    optional uint32 gSysnvNATCfg = 10;
 }

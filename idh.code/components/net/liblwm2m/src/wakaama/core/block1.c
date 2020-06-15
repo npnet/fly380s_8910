@@ -46,6 +46,7 @@
 #include <string.h>
 #include <stdio.h>
 
+extern uint32_t write_fota_upgrade_data(uint32_t block_num, uint8_t  block_more, uint8_t * data, uint16_t datalen);
 // the maximum payload transferred by block1 we accumulate per server
 #define MAX_BLOCK1_SIZE 4096
 
@@ -150,4 +151,94 @@ void free_block1_buffer(lwm2m_block1_data_t * block1Data)
         // free current element
         lwm2m_free(block1Data);
     }
+}
+extern lwm2m_fota_state_t g_fota_state;
+extern bool check_fota_file_sanity();
+uint8_t lwm2m_fota_block2_handler(lwm2m_context_t * contextP,
+    uint16_t mid,
+    uint8_t * buffer,
+    size_t length,
+    uint16_t blockSize,
+    uint32_t blockNum,
+    bool blockMore,
+    coap_packet_t * message)
+{
+    uint8_t coapError = NO_ERROR;
+    lwm2m_fota_t * fotaContext = &contextP->fota_context;
+    LOG_ARG("lwm2m_fota_block2_handler block2Num %d blockSize %d blockMore %d g_fota_state %d\r\n",blockNum,blockSize,blockMore,g_fota_state);
+    if(g_fota_state != LWM2M_FOTA_STATE_DOWNLOADING)
+        return COAP_IGNORE;
+    if(blockNum == 0)
+    {
+        uint8_t * token = NULL;
+        if(coap_get_header_token(message,(const uint8_t **)(&token)) == 0)
+        {
+            LOG("lwm2m_fota_block2_handler get token err\r\n");
+            return COAP_IGNORE;
+        }
+
+        if(memcmp(fotaContext->token, token, COAP_TOKEN_LEN)!=0)
+        {
+            LOG("lwm2m_fota_block2_handler token err\r\n");
+            return COAP_IGNORE;
+        }
+        coapError = write_fota_upgrade_data(blockNum, blockMore, buffer, length);
+        if(coapError != COAP_NO_ERROR){
+           LOG("lwm2m_fota_block2_handler write_fota_upgrade_data err\r\n");
+           notify_fota_state(LWM2M_FOTA_STATE_IDLE, LWM2M_FOTA_RESULT_NOT_ENOUGH_FLASH, contextP->ref);
+           return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        fotaContext->block2bufferSize = length;
+        fotaContext->lastmid = mid;
+        fotaContext->block2Num = ++blockNum;
+    }
+    else
+    {
+       if(fotaContext->lastmid != mid)
+       {
+            uint8_t * token = NULL;
+            if(coap_get_header_token(message,(const uint8_t **)&token) == 0)
+            {
+                LOG("lwm2m_fota_block2_handler get token err\r\n");
+                return COAP_IGNORE;
+            }
+
+            if(memcmp(fotaContext->token, token, COAP_TOKEN_LEN)!=0)
+            {
+                LOG("lwm2m_fota_block2_handler token err\r\n");
+                return COAP_IGNORE;
+            }
+            coapError = write_fota_upgrade_data(blockNum, blockMore, buffer, length);
+            if(coapError != COAP_NO_ERROR){
+               LOG("lwm2m_fota_block2_handler write_fota_upgrade_data err\r\n");
+               notify_fota_state(LWM2M_FOTA_STATE_IDLE, LWM2M_FOTA_RESULT_NOT_ENOUGH_FLASH, contextP->ref);
+               return COAP_500_INTERNAL_SERVER_ERROR;
+            }
+            fotaContext->block2bufferSize += length;
+            fotaContext->lastmid = mid;
+            fotaContext->block2Num = ++blockNum;
+       }
+    }
+
+    if(blockMore)
+    {
+        lwm2m_start_fota_download(fotaContext->uri, contextP->ref);
+        if(blockNum %10 == 1)
+        {
+            notify_fota_state(LWM2M_FOTA_STATE_DOWNLOADING, LWM2M_FOTA_RESULT_INIT, contextP->ref);
+        }
+    }else
+    {
+
+        LOG_ARG("lwm2m_fota_block2_handler fota download success size %d\r\n",fotaContext->block2bufferSize);
+        if(check_fota_file_sanity())
+        {
+            notify_fota_state(LWM2M_FOTA_STATE_DOWNLOADED, LWM2M_FOTA_RESULT_INIT, contextP->ref);
+        }else
+        {
+            notify_fota_state(LWM2M_FOTA_STATE_IDLE, LWM2M_FOTA_RESULT_INTEGRITY_FAILUER, contextP->ref);
+        }
+    }
+
+    return coapError;
 }

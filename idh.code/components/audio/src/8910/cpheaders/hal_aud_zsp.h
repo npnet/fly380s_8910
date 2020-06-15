@@ -4,123 +4,123 @@
 #define _HAL_ZSP_H_
 
 // Music input buffer size.
-#define AUDIO_INPUT_BUF_SIZE  (7*1024) // 7K Bytes
+#define AUDIO_INPUT_BUF_SIZE (7 * 1024) // 7K Bytes
 // Music output buffer size.
-#define AUDIO_OUTPUT_BUF_SIZE (9*1024) // 9K Bytes
+#define AUDIO_OUTPUT_BUF_SIZE (9 * 1024) // 9K Bytes
 // Number of music post processing IIR bands.
 #define EQ_MAX_BANDS 10
 // Number of audio call IIR bands.
 #define CALIB_AUDIO_CALL_IIR_BANDS (7)
 // MSBC buf between wcn and zsp
-#define MSBC_BUF_SIZE	30            // 30 Word
+#define MSBC_BUF_SIZE 30 // 30 Word
 // MSBC ring buf in zsp
-#define MSBC_TO_PCM_BUF_SIZE	(120) // 120 Word
-#define MSBC_TO_PCM_QUEUE_LEN	(16)
-#define MSBC_PCM_BUF_SIZE       (MSBC_TO_PCM_QUEUE_LEN*MSBC_TO_PCM_BUF_SIZE)
-#define MSBC_PCM_BUF_MASK       (MSBC_PCM_BUF_SIZE - 1)
+#define MSBC_TO_PCM_BUF_SIZE (120) // 120 Word
+#define MSBC_TO_PCM_QUEUE_LEN (16)
+#define MSBC_PCM_BUF_SIZE (MSBC_TO_PCM_QUEUE_LEN * MSBC_TO_PCM_BUF_SIZE)
+#define MSBC_PCM_BUF_MASK (MSBC_PCM_BUF_SIZE - 1)
 
 // BT Work Mode
-#define BT_WORK_MODE_NB    (0)
-#define BT_WORK_MODE_WB    (1)
+#define BT_WORK_MODE_NB (0)
+#define BT_WORK_MODE_WB (1)
 
 typedef enum
 {
-	NORMAL_VOICE_WB_REQ = 0x1111,   //0x1111
-	NORMAL_VOICE_NB_REQ,            //0x1112
+    NORMAL_VOICE_WB_REQ = 0x1111, //0x1111
+    NORMAL_VOICE_NB_REQ,          //0x1112
 
-	BT_VOICE_WB_REQ,                //0x1113
-	BT_VOICE_NB_REQ,                //0x1114
+    BT_VOICE_WB_REQ, //0x1113
+    BT_VOICE_NB_REQ, //0x1114
 
-	PLAY_MP3_INIT_REQ,              //0x1115
-	PLAY_AAC_INIT_REQ,              //0x1116
-	PLAY_WMA_INIT_REQ,              //0x1117
-	PLAY_AMR_INIT_REQ,              //0x1118
+    PLAY_MP3_INIT_REQ, //0x1115
+    PLAY_AAC_INIT_REQ, //0x1116
+    PLAY_WMA_INIT_REQ, //0x1117
+    PLAY_AMR_INIT_REQ, //0x1118
 
-	MUSIC_VIBRATE_START_REQ,        //0x1119
-	MUSIC_VIBRATE_STOP_REQ,         //0x111a
-	PLAY_WMA_PRO_REQ,               //0x111b
-	PLAY_AMR_PRO_REQ,               //0x111c
+    MUSIC_VIBRATE_START_REQ, //0x1119
+    MUSIC_VIBRATE_STOP_REQ,  //0x111a
+    PLAY_WMA_PRO_REQ,        //0x111b
+    PLAY_AMR_PRO_REQ,        //0x111c
 
-	MUSIC_POST_INIT_REQ,            //0x111d
-	MUSIC_POST_PRO_REQ,             //0x111e
+    MUSIC_POST_INIT_REQ, //0x111d
+    MUSIC_POST_PRO_REQ,  //0x111e
 
-	RECORD_AAC_INIT_REQ,            //0x111f
-	RECORD_AMR_INIT_REQ,            //0x1120
-	RECORD_WAV_INIT_REQ,            //0x1121
+    RECORD_AAC_INIT_REQ, //0x111f
+    RECORD_AMR_INIT_REQ, //0x1120
+    RECORD_WAV_INIT_REQ, //0x1121
 
-	RECORD_AAC_PRO_REQ,             //0x1122
-	RECORD_AMR_PRO_REQ,             //0x1123
-	RECORD_WAV_PRO_REQ,             //0x1124
+    RECORD_AAC_PRO_REQ, //0x1122
+    RECORD_AMR_PRO_REQ, //0x1123
+    RECORD_WAV_PRO_REQ, //0x1124
 
-    PLAY_FM_INIT_REQ,               //0x1125
+    PLAY_FM_INIT_REQ, //0x1125
 
-	VOICE_VIBRATE_START_REQ,        //0x1126
-	VOICE_VIBRATE_STOP_REQ,         //0x1127
+    VOICE_VIBRATE_START_REQ, //0x1126
+    VOICE_VIBRATE_STOP_REQ,  //0x1127
 
-	VOICE_RECORD_START_REQ,         //0x1128
-	VOICE_RECORD_STOP_REQ,          //0x1129
-	MUSIC_SBC_START_REQ,            //0x112a
-	MUSIC_SBC_STOP_REQ,             //0x112b
+    VOICE_RECORD_START_REQ, //0x1128
+    VOICE_RECORD_STOP_REQ,  //0x1129
+    MUSIC_SBC_START_REQ,    //0x112a
+    MUSIC_SBC_STOP_REQ,     //0x112b
 
-	BT_MUSIC_CON_REQ,               //0x112c
+    BT_MUSIC_CON_REQ, //0x112c
 
-	LOOPBACK_REQ,                   //0x112d
-	CLOSE_ALL_REQ,                  //0x112e
-	END_SHARECMD_REQ
+    LOOPBACK_REQ,  //0x112d
+    CLOSE_ALL_REQ, //0x112e
+    END_SHARECMD_REQ
 
 } HAL_ZSP_WAKEUP_ID_T;
 
 typedef enum
 {
-	NORMAL_VOICE_WB_IND = 0x2111,
-	NORMAL_VOICE_NB_IND, // 0x2112
+    NORMAL_VOICE_WB_IND = 0x2111,
+    NORMAL_VOICE_NB_IND, // 0x2112
 
-	BT_VOICE_WB_IND,     // 0x2113
-	BT_VOICE_NB_IND,     // 0x2114
+    BT_VOICE_WB_IND, // 0x2113
+    BT_VOICE_NB_IND, // 0x2114
 
-	PLAY_MP3_INIT_IND,   // 0x2115
-	PLAY_AAC_INIT_IND,   // 0x2116
-	PLAY_WMA_INIT_IND,   // 0x2117
-	PLAY_AMR_INIT_IND,   // 0x2118
+    PLAY_MP3_INIT_IND, // 0x2115
+    PLAY_AAC_INIT_IND, // 0x2116
+    PLAY_WMA_INIT_IND, // 0x2117
+    PLAY_AMR_INIT_IND, // 0x2118
 
-	PLAY_MP3_PRO_IND,    // 0x2119
-	PLAY_AAC_PRO_IND,    // 0x211a
-	PLAY_WMA_PRO_IND,    // 0x211b
-	PLAY_AMR_PRO_IND,    // 0x211c
+    PLAY_MP3_PRO_IND, // 0x2119
+    PLAY_AAC_PRO_IND, // 0x211a
+    PLAY_WMA_PRO_IND, // 0x211b
+    PLAY_AMR_PRO_IND, // 0x211c
 
-	MUSIC_POST_INIT_IND, // 0x211d
-	MUSIC_POST_PRO_IND,  // 0x211e
+    MUSIC_POST_INIT_IND, // 0x211d
+    MUSIC_POST_PRO_IND,  // 0x211e
 
-	RECORD_AAC_INIT_IND, // 0x211f
-	RECORD_AMR_INIT_IND, // 0x2120
-	RECORD_WAV_INIT_IND, // 0x2121
+    RECORD_AAC_INIT_IND, // 0x211f
+    RECORD_AMR_INIT_IND, // 0x2120
+    RECORD_WAV_INIT_IND, // 0x2121
 
-	RECORD_AAC_PRO_IND,  // 0x2122
-	RECORD_AMR_PRO_IND,  // 0x2123
-	RECORD_WAV_PRO_IND,  // 0x2124
+    RECORD_AAC_PRO_IND, // 0x2122
+    RECORD_AMR_PRO_IND, // 0x2123
+    RECORD_WAV_PRO_IND, // 0x2124
 
-	PLAY_FM_INIT_IND,    // 0x2125
+    PLAY_FM_INIT_IND, // 0x2125
 
-	CHANGE_VOICE_IND,    // 0x2126
-	DTMF_DECODE_IND,     // 0x2127
+    CHANGE_VOICE_IND, // 0x2126
+    DTMF_DECODE_IND,  // 0x2127
 
-	VOICE_RECORD_START_IND, // 0x2128
-	VOICE_RECORD_STOP_IND,  // 0x2129
-	MUSIC_SBC_START_IND,    // 0x212a
-	MUSIC_SBC_STOP_IND,     // 0x212b
+    VOICE_RECORD_START_IND, // 0x2128
+    VOICE_RECORD_STOP_IND,  // 0x2129
+    MUSIC_SBC_START_IND,    // 0x212a
+    MUSIC_SBC_STOP_IND,     // 0x212b
 
-	BT_MUSIC_CON_IND,       // 0x212c
+    BT_MUSIC_CON_IND, // 0x212c
 
-	LOOPBACK_IND,           // 0x212d
-	CLOSE_ALL_IND,          // 0x212e
-	END_SHARECMD_IND
-}HAL_ZSP2MCU_MB_ID_T;
+    LOOPBACK_IND,  // 0x212d
+    CLOSE_ALL_IND, // 0x212e
+    END_SHARECMD_IND
+} HAL_ZSP2MCU_MB_ID_T;
 
 typedef enum
 {
-	audIdle = 0xaabc,
-	audWork = 0x1abc,
-	audBusy = 0x2abc,
+    audIdle = 0xaabc,
+    audWork = 0x1abc,
+    audBusy = 0x2abc,
 } AUD_STATUS_E;
 
 typedef void (*HAL_ZSP_IRQ_HANDLER_T)(void);
@@ -309,88 +309,89 @@ typedef struct
 /// RDA VQE.
 ///
 // ===================================================================
-typedef struct{
-	//for AF
-	INT16 enable_af;
-	INT16 Mu;
-	INT16 MIN_LEAK;
-	INT16 Delta_ctrl;
-	INT16 delay;
+typedef struct
+{
+    //for AF
+    INT16 enable_af;
+    INT16 Mu;
+    INT16 MIN_LEAK;
+    INT16 Delta_ctrl;
+    INT16 delay;
 
-	//for VAD
-	INT16 amth;
-	INT16 sil2spe;
-	INT16 spe2sil;
+    //for VAD
+    INT16 amth;
+    INT16 sil2spe;
+    INT16 spe2sil;
 
-	//for RES
-	INT16 enable_res;
-	INT16 res_gain;
+    //for RES
+    INT16 enable_res;
+    INT16 res_gain;
 
-	//for DTD
-	INT16 enable_dtd;
-	INT16 up_coeff;
-	INT16 down_coeff;
-	INT16 confident_coeff;
-	INT16 lowest_coeff;
-	INT16 gamma;
-	INT16 DTD_protect_gain;
-	INT16 dtd_hangover_out_max;
-	INT16 dtd_hangover_out_max2;
-	INT16 ERLE_small_thr;
-	INT32 FPH_sum_thr;
+    //for DTD
+    INT16 enable_dtd;
+    INT16 up_coeff;
+    INT16 down_coeff;
+    INT16 confident_coeff;
+    INT16 lowest_coeff;
+    INT16 gamma;
+    INT16 DTD_protect_gain;
+    INT16 dtd_hangover_out_max;
+    INT16 dtd_hangover_out_max2;
+    INT16 ERLE_small_thr;
+    INT32 FPH_sum_thr;
 
-	//for NS
-	INT16 enable_ns;
-	INT16 Gmin;
-	INT16 Gmin_echo;
-	INT16 Gmin_noise;
-	INT16 alpha_ph;		//�������ڸ���ƽ����ϵ����Խ������Խ���ײ���
-	INT16 alpha_S1;		//֡��ƽ����ϵ����Խ����Сֵ���Ƶ�Խ��
+    //for NS
+    INT16 enable_ns;
+    INT16 Gmin;
+    INT16 Gmin_echo;
+    INT16 Gmin_noise;
+    INT16 alpha_ph; //�������ڸ���ƽ����ϵ����Խ������Խ���ײ���
+    INT16 alpha_S1; //֡��ƽ����ϵ����Խ����Сֵ���Ƶ�Խ��
 
-	//for NLP
-	INT16 enable_nlp;
-	INT16 clip_process_flag;
-	INT16 thd_process_flag;
-	INT16 Gain_clip_value;
-	INT16 clip_holdFrame;
-	INT16 HL_thr;
-	INT16 band1;
+    //for NLP
+    INT16 enable_nlp;
+    INT16 clip_process_flag;
+    INT16 thd_process_flag;
+    INT16 Gain_clip_value;
+    INT16 clip_holdFrame;
+    INT16 HL_thr;
+    INT16 band1;
 
-	// thd process
-	INT16 GainThr;
-	INT16 GainNbThr;
-	INT16 thd_holdFrame;
-	INT16 GainDetectRangeStart;
-	INT16 GainDetectRangeEnd;
-	INT16 HighBinsReduce;
-	INT16 HighBinsStart;
-	INT16 LowBinsReduce;
-	INT16 LowBinsStart;
-	INT16 HighBinsEnd;
+    // thd process
+    INT16 GainThr;
+    INT16 GainNbThr;
+    INT16 thd_holdFrame;
+    INT16 GainDetectRangeStart;
+    INT16 GainDetectRangeEnd;
+    INT16 HighBinsReduce;
+    INT16 HighBinsStart;
+    INT16 LowBinsReduce;
+    INT16 LowBinsStart;
+    INT16 HighBinsEnd;
 
-	//for CNG
-	INT16 enable_cng;
-	INT16 cng_thr_amp; //-36dB
-	INT16 cng_thr_amp_up;  //-30dB
-}AUD_RDA_AEC_T;
+    //for CNG
+    INT16 enable_cng;
+    INT16 cng_thr_amp;    //-36dB
+    INT16 cng_thr_amp_up; //-30dB
+} AUD_RDA_AEC_T;
 
-typedef struct{
+typedef struct
+{
 
-	//for NS
-	INT16 enable_ns;
-	INT16 Gmin;
-	INT16 Gmin_echo;
-	INT16 Gmin_noise;
-	INT16 alpha_ph;		//�������ڸ���ƽ����ϵ����Խ������Խ���ײ���
-	INT16 alpha_S1;		//֡��ƽ����ϵ����Խ����Сֵ���Ƶ�Խ��
-	//for CNG
-	INT16 enable_cng;
-	INT16 cng_thr_amp; //-36dB
-	INT16 cng_thr_amp_up;  //-30dB
-	INT16 reserved;
+    //for NS
+    INT16 enable_ns;
+    INT16 Gmin;
+    INT16 Gmin_echo;
+    INT16 Gmin_noise;
+    INT16 alpha_ph; //�������ڸ���ƽ����ϵ����Խ������Խ���ײ���
+    INT16 alpha_S1; //֡��ƽ����ϵ����Խ����Сֵ���Ƶ�Խ��
+    //for CNG
+    INT16 enable_cng;
+    INT16 cng_thr_amp;    //-36dB
+    INT16 cng_thr_amp_up; //-30dB
+    INT16 reserved;
 
-} AUD_RDA_RxNS_T;  //opened parameters
-
+} AUD_RDA_RxNS_T; //opened parameters
 
 typedef struct
 {
@@ -398,23 +399,22 @@ typedef struct
     INT16 targetLevelDbfs;   // default 3 (-3 dBOv)
     INT16 compressionGaindB; // default 9 dB
     INT16 limiterEnable;     // default kAgcTrue (on)
-	INT16 upperThr;
-	INT16 lowerThr;
-	INT16 decayValue;
-	INT16 capacitorSlowFactor;
-	INT16 capacitorFastFactor;
-	INT16 noiseCompressFactor;
-	INT16 noiseGateThr;
-	INT16 noiseStdShortTermFactor;
-} AUD_RDA_AGC_T;////
-
+    INT16 upperThr;
+    INT16 lowerThr;
+    INT16 decayValue;
+    INT16 capacitorSlowFactor;
+    INT16 capacitorFastFactor;
+    INT16 noiseCompressFactor;
+    INT16 noiseGateThr;
+    INT16 noiseStdShortTermFactor;
+} AUD_RDA_AGC_T; ////
 
 #define EQ_VOICE_MAX_BANDS 7
 
 typedef struct
 {
-	INT16 num[3];
-	INT16 den[3];
+    INT16 num[3];
+    INT16 den[3];
 
 } AUD_EQ_FilterCoefs_T;
 
@@ -430,18 +430,18 @@ typedef struct
 
 typedef struct
 {
-	INT16 freq;
-	INT16 type;
+    INT16 freq;
+    INT16 type;
     INT16 gain;
     INT16 qual;
 } AUD_EQ_iir_param_T;
 
 typedef struct
 {
-	INT16 eqEnable;
-	INT16 bands;
-	AUD_EQ_iir_param_T    param[EQ_VOICE_MAX_BANDS];
-	AUD_EQ_FilterCoefs_T coeffs[EQ_VOICE_MAX_BANDS];
+    INT16 eqEnable;
+    INT16 bands;
+    AUD_EQ_iir_param_T param[EQ_VOICE_MAX_BANDS];
+    AUD_EQ_FilterCoefs_T coeffs[EQ_VOICE_MAX_BANDS];
 } AUD_RDA_EQ_T;
 
 typedef struct
@@ -452,28 +452,26 @@ typedef struct
     INT16 scal_out;
 } AUD_RDA_DigGain_T;
 
-
 typedef struct
 {
-	INT16   SpeechMode;
-	INT16   aecEnable;
-	INT16   rxNsEnable;
-	INT16   reserved;
+    INT16 SpeechMode;
+    INT16 aecEnable;
+    INT16 rxNsEnable;
+    INT16 reserved;
 
-	AUD_RDA_DigGain_T DigtalGain;
-	AUD_RDA_AEC_T AECParams;
-	AUD_RDA_RxNS_T RxNSParams;
-	AUD_RDA_AGC_T TxAGCParams;
-	AUD_RDA_AGC_T RxAGCParams;
-	AUD_RDA_EQ_T  TxEQParams;
-	AUD_RDA_EQ_T  RxEQParams;
+    AUD_RDA_DigGain_T DigtalGain;
+    AUD_RDA_AEC_T AECParams;
+    AUD_RDA_RxNS_T RxNSParams;
+    AUD_RDA_AGC_T TxAGCParams;
+    AUD_RDA_AGC_T RxAGCParams;
+    AUD_RDA_EQ_T TxEQParams;
+    AUD_RDA_EQ_T RxEQParams;
 } AUD_RDA_VQE_PARAM_T;
 
 typedef struct
 {
-	AUD_RDA_VQE_PARAM_T   rdaVqe;
-}AUD_VQE_PARAM_T;
-
+    AUD_RDA_VQE_PARAM_T rdaVqe;
+} AUD_VQE_PARAM_T;
 
 // ===================================================================
 // AUD_MUSIC_DRC_PARAM_T
@@ -483,23 +481,23 @@ typedef struct
 // ===================================================================
 typedef struct
 {
-	INT16 alc_enable;
+    INT16 alc_enable;
 
-	INT16 thres;
-	INT16 width;
-	INT16 R;
-	INT16 R1;
-	INT16 R2;
-	INT16 limit;
-	INT16 M_drc;
-	INT16 alpha1;
-	INT16 alpha2;
-	INT16 noise_gate;
-	INT16 alpha_max;
-	INT16 Thr_dB;
-	INT16 mm_gain;
-	INT16 channel;
-	INT16 reserved;
+    INT16 thres;
+    INT16 width;
+    INT16 R;
+    INT16 R1;
+    INT16 R2;
+    INT16 limit;
+    INT16 M_drc;
+    INT16 alpha1;
+    INT16 alpha2;
+    INT16 noise_gate;
+    INT16 alpha_max;
+    INT16 Thr_dB;
+    INT16 mm_gain;
+    INT16 channel;
+    INT16 reserved;
 } AUD_MUSIC_DRC_T;
 
 // ===================================================================
@@ -524,15 +522,15 @@ typedef struct
 // ===================================================================
 typedef struct
 {
-	INT16 eqEnable;
-	INT16 bands;
-	AUD_EQ_iir_param_T bandInfo[EQ_MAX_BANDS];
+    INT16 eqEnable;
+    INT16 bands;
+    AUD_EQ_iir_param_T bandInfo[EQ_MAX_BANDS];
 } AUD_MUSIC_EQ_PARAM_T;
 
 typedef struct
 {
-	AUD_EQ_FilterCoefs_T coeffs[EQ_MAX_BANDS];
-	AUD_MUSIC_EQ_PARAM_T param;
+    AUD_EQ_FilterCoefs_T coeffs[EQ_MAX_BANDS];
+    AUD_MUSIC_EQ_PARAM_T param;
 } AUD_MUSIC_EQ_T;
 
 // ===================================================================
@@ -553,17 +551,17 @@ typedef struct
     UINT16 readOffset;
     UINT16 writeOffset;
     UINT16 fileEndFlag;
-    UINT16 inLenth;      //Input stream buffer length, 7K byte
-    UINT16 outLength;	 //Output stream buffer length, (1152*4*2)byte
+    UINT16 inLenth;   //Input stream buffer length, 7K byte
+    UINT16 outLength; //Output stream buffer length, (1152*4*2)byte
     UINT16 postProFlag;
-	UINT16 sbcOutFlag;
-	UINT16 musicVibFlag;
+    UINT16 sbcOutFlag;
+    UINT16 musicVibFlag;
 
-	// only for audio encode
-	UINT16 recFormat;
-	UINT16 channelNb;
-	UINT32 sampleRate;
-	UINT32 bitsPerSample;
+    // only for audio encode
+    UINT16 recFormat;
+    UINT16 channelNb;
+    UINT32 sampleRate;
+    UINT32 bitsPerSample;
 } AUDIO_INPUT_PARAM_T;
 
 // ===================================================================
@@ -581,10 +579,10 @@ typedef struct
     UINT32 consumedLen;  /* size of the consumed data since last frame */
     UINT32 streamStatus; /* stream status */
 
-	//other paras
-	UINT16 channelMode;
-	UINT16 layer;
-	UINT32 bitrate;
+    //other paras
+    UINT16 channelMode;
+    UINT16 layer;
+    UINT32 bitrate;
 } AUDIO_OUTPUT_PARAM_T;
 
 // ===================================================================
@@ -599,22 +597,22 @@ typedef struct
     UINT32 wcn2zsp_seq;
     UINT16 wcn2zsp_data[MSBC_BUF_SIZE];
 
-	UINT32 zsp2wcn_mutex;
+    UINT32 zsp2wcn_mutex;
     UINT32 zsp2wcn_seq;
     UINT16 zsp2wcn_data[MSBC_BUF_SIZE];
 
-	UINT16 reverd[512];
+    UINT16 reverd[512];
 
-	UINT16 ul_ridx;
-	UINT16 ul_widx;
-	UINT16 ul_pcm_queue[MSBC_TO_PCM_QUEUE_LEN*MSBC_TO_PCM_BUF_SIZE];
+    UINT16 ul_ridx;
+    UINT16 ul_widx;
+    UINT16 ul_pcm_queue[MSBC_TO_PCM_QUEUE_LEN * MSBC_TO_PCM_BUF_SIZE];
 
-	UINT16 dl_ridx;
-	UINT16 dl_widx;
-	UINT16 dl_pcm_queue[MSBC_TO_PCM_QUEUE_LEN*MSBC_TO_PCM_BUF_SIZE];
+    UINT16 dl_ridx;
+    UINT16 dl_widx;
+    UINT16 dl_pcm_queue[MSBC_TO_PCM_QUEUE_LEN * MSBC_TO_PCM_BUF_SIZE];
 
-	UINT16 ul_pcm_8k[160];
-	UINT16 dl_pcm_16k[320];
+    UINT16 ul_pcm_8k[160];
+    UINT16 dl_pcm_16k[320];
 } AUDIO_MSBC_BUF_T;
 
 // ===================================================================
@@ -625,11 +623,11 @@ typedef struct
 // ===================================================================
 typedef struct
 {
-	UINT16 tx_zsp2nxp_pcm[320];
-	UINT16 tx_nxp2zsp_pcm[320];
+    UINT16 tx_zsp2nxp_pcm[320];
+    UINT16 tx_nxp2zsp_pcm[320];
 
-	UINT16 rx_zsp2nxp_pcm[320];
-	UINT16 rx_nxp2zsp_pcm[320];
+    UINT16 rx_zsp2nxp_pcm[320];
+    UINT16 rx_nxp2zsp_pcm[320];
 } AUDIO_NXP_BUF_T;
 
 // ===================================================================
@@ -642,83 +640,73 @@ typedef struct
 //#define MUSIC_SUPPORT
 typedef struct
 {
-	/* ZSP Ctrl Info */
-	UINT16 audCurrStatus;
-	UINT16 updateParaInd;
-	UINT16 loopBackType;
-	UINT16 voiceRecFormat;
-	UINT16 volteFlag;
-	UINT16 musicMode;
-	UINT32 traceDataFlag;
-	UINT32 BTWorkMode;
+    /* ZSP Ctrl Info */
+    UINT16 audCurrStatus;
+    UINT16 updateParaInd;
+    UINT16 loopBackType;
+    UINT16 voiceRecFormat;
+    UINT16 volteFlag;
+    UINT16 musicMode;
+    UINT32 traceDataFlag;
+    UINT32 BTWorkMode;
 
 #ifdef SPEECH_SUPPORT
-	union
-	{
-		/* Speech Parameters */
-		HAL_SPEECH_ENC_OUT_T    txAMRBuffer;
-		HAL_VOLTE_ENC_OUT_T    txAMRVolte;
-	};
+    union {
+        /* Speech Parameters */
+        HAL_SPEECH_ENC_OUT_T txAMRBuffer;
+        HAL_VOLTE_ENC_OUT_T txAMRVolte;
+    };
 
-	union
-	{
-		/* Speech Parameters */
-		HAL_SPEECH_DEC_IN_T     rxAMRBuffer;
-		HAL_VOLTE_DEC_IN_T     rxAMRVolte;
-	};
+    union {
+        /* Speech Parameters */
+        HAL_SPEECH_DEC_IN_T rxAMRBuffer;
+        HAL_VOLTE_DEC_IN_T rxAMRVolte;
+    };
 #endif
 
+    union {
+        HAL_SPEECH_PCM_BUF_T txPcmBuffer;
+        HAL_VOLTE_PCM_BUF_T txPcmVolte;
+    };
 
-	union
-	{
-		HAL_SPEECH_PCM_BUF_T    txPcmBuffer;
-		HAL_VOLTE_PCM_BUF_T     txPcmVolte;
-	};
+    union {
+        HAL_SPEECH_PCM_BUF_T rxPcmBuffer;
+        HAL_VOLTE_PCM_BUF_T rxPcmVolte;
+    };
 
-	union
-	{
-		HAL_SPEECH_PCM_BUF_T    rxPcmBuffer;
-		HAL_VOLTE_PCM_BUF_T     rxPcmVolte;
-	};
-
-	/* VQE Parameters*/
-	AUD_VQE_PARAM_T     vePara;
+    /* VQE Parameters*/
+    AUD_VQE_PARAM_T vePara;
 
 #ifdef MUSIC_SUPPORT
-	/* Music Post Process Parameters */
-	AUD_MUSIC_DRC_T drcPara;
-	AUD_MUSIC_EQ_T eqPara;
-	/* Audio(mp3/aac/wma/bt/amr) */
-	AUDIO_INPUT_PARAM_T audInPara;
-	AUDIO_OUTPUT_PARAM_T audOutPara;
+    /* Music Post Process Parameters */
+    AUD_MUSIC_DRC_T drcPara;
+    AUD_MUSIC_EQ_T eqPara;
+    /* Audio(mp3/aac/wma/bt/amr) */
+    AUDIO_INPUT_PARAM_T audInPara;
+    AUDIO_OUTPUT_PARAM_T audOutPara;
 
-	union
-	{
-		INT16 audInput[AUDIO_INPUT_BUF_SIZE/2]; //CPU send audio data to decoded/code
-		AUDIO_NXP_BUF_T nxp_buf;
-	};
+    union {
+        INT16 audInput[AUDIO_INPUT_BUF_SIZE / 2]; //CPU send audio data to decoded/code
+        AUDIO_NXP_BUF_T nxp_buf;
+    };
 
-	union
-	{
-		INT16 audOutput[AUDIO_OUTPUT_BUF_SIZE/2];//zsp return the decode/code to CPU
-		AUDIO_MSBC_BUF_T msbc;
-	};
+    union {
+        INT16 audOutput[AUDIO_OUTPUT_BUF_SIZE / 2]; //zsp return the decode/code to CPU
+        AUDIO_MSBC_BUF_T msbc;
+    };
 #else //for speech record
-	union
-	{
-		INT16 audOutput[320];
-		AUDIO_MSBC_BUF_T msbc;
-	};
+    union {
+        INT16 audOutput[320];
+        AUDIO_MSBC_BUF_T msbc;
+    };
 #endif
 } AUD_ZSP_SHAREMEM_T;
 
 typedef struct
 {
-	UINT16 musicMode;
-	UINT16 sbcOutFlag;
-}AUD_AP2CP_PARA_T;
-
-
+    UINT16 musicMode;
+    UINT16 sbcOutFlag;
+} AUD_AP2CP_PARA_T;
 
 extern HAL_ERR_T hal_zspAudOpen(HAL_VOC_IRQ_HANDLER_T IrqHandler);
 extern VOID hal_zspAudClose(VOID);
@@ -732,10 +720,11 @@ extern HAL_ERR_T hal_zspVoiceRecordStart(void);
 extern HAL_ERR_T hal_zspVoiceRecordStop(void);
 extern HAL_ERR_T hal_zspVoiceVibrateStart(UINT32 time);
 extern HAL_ERR_T hal_zspVoiceVibrateStop(void);
+extern HAL_ERR_T hal_zspVoicePlayStart(void);
+extern HAL_ERR_T hal_zspVoicePlayStop(void);
 extern void hal_LpsAudioWkUpReq(void);
 
-
-extern AUD_ZSP_SHAREMEM_T* g_aud_sharemem;
+extern AUD_ZSP_SHAREMEM_T *g_aud_sharemem;
 extern HAL_VOC_IRQ_HANDLER_T g_zspIrqHandler;
 
 #endif

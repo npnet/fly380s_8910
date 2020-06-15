@@ -13,349 +13,438 @@
 #ifndef _RDA2720M_EIC_H_
 #define _RDA2720M_EIC_H_
 
-#ifdef CT_ASM
-#error "You are trying to use in an assembly code the normal H description of 'rda2720m_eic'."
-#endif
+// Auto generated (v1.0-22-ge2f5f70). Don't edit it manually!
 
-// =============================================================================
-//  MACROS
-// =============================================================================
-
-// =============================================================================
-//  TYPES
-// =============================================================================
-
-// ============================================================================
-// RDA2720M_EIC_T
-// -----------------------------------------------------------------------------
-///
-// =============================================================================
-#define REG_RDA2720M_EIC_BASE 0x50308280
+#define REG_RDA2720M_EIC_BASE (0x50308280)
 
 typedef volatile struct
 {
-    REG32 eicdata;   //0x00000000
-    REG32 eicdmsk;   //0x00000004
-    REG32 reserved1; //0x00000008
-    REG32 reserved2; //0x0000000C
-    REG32 reserved3; //0x00000010
-    REG32 eiciev;    //0x00000014
-    REG32 eicie;     //0x00000018
-    REG32 eicris;    //0x0000001C
-    REG32 eicmis;    //0x00000020
-    REG32 eicic;     //0x00000024
-    REG32 eictrig;   //0x00000028
-    REG32 reserved4; //0x0000002C
-    REG32 reserved5; //0x00000030
-    REG32 reserved6; //0x00000034
-    REG32 reserved7; //0x00000038
-    REG32 reserved8; //0x0000003C
-    REG32 eic0ctrl;  //0x00000040
-    REG32 eic1ctrl;  //0x00000044
-    REG32 eic2ctrl;  //0x00000048
-    REG32 eic3ctrl;  //0x0000004C
-    REG32 eic4ctrl;  //0x00000050
-    REG32 eic5ctrl;  //0x00000054
-    REG32 eic6ctrl;  //0x00000058
-    REG32 eic7ctrl;  //0x0000005C
-    REG32 eic8ctrl;  //0x00000060
-    REG32 eic9ctrl;  //0x00000064
-    REG32 eic10ctrl; //0x00000068
-    REG32 eic11ctrl; //0x0000006C
-    REG32 eic12ctrl; //0x00000070
-    REG32 eic13ctrl; //0x00000074
-    REG32 eic14ctrl; //0x00000078
-    REG32 eic15ctrl; //0x0000007C
+    uint32_t eicdata;   // 0x00000000
+    uint32_t eicdmsk;   // 0x00000004
+    uint32_t reserved1; // 0x00000008
+    uint32_t reserved2; // 0x0000000c
+    uint32_t reserved3; // 0x00000010
+    uint32_t eiciev;    // 0x00000014
+    uint32_t eicie;     // 0x00000018
+    uint32_t eicris;    // 0x0000001c
+    uint32_t eicmis;    // 0x00000020
+    uint32_t eicic;     // 0x00000024
+    uint32_t eictrig;   // 0x00000028
+    uint32_t reserved4; // 0x0000002c
+    uint32_t reserved5; // 0x00000030
+    uint32_t reserved6; // 0x00000034
+    uint32_t reserved7; // 0x00000038
+    uint32_t reserved8; // 0x0000003c
+    uint32_t eic0ctrl;  // 0x00000040
+    uint32_t eic1ctrl;  // 0x00000044
+    uint32_t eic2ctrl;  // 0x00000048
+    uint32_t eic3ctrl;  // 0x0000004c
+    uint32_t eic4ctrl;  // 0x00000050
+    uint32_t eic5ctrl;  // 0x00000054
+    uint32_t eic6ctrl;  // 0x00000058
+    uint32_t eic7ctrl;  // 0x0000005c
+    uint32_t eic8ctrl;  // 0x00000060
+    uint32_t eic9ctrl;  // 0x00000064
+    uint32_t eic10ctrl; // 0x00000068
+    uint32_t eic11ctrl; // 0x0000006c
+    uint32_t eic12ctrl; // 0x00000070
+    uint32_t eic13ctrl; // 0x00000074
+    uint32_t eic14ctrl; // 0x00000078
+    uint32_t eic15ctrl; // 0x0000007c
 } HWP_RDA2720M_EIC_T;
 
 #define hwp_rda2720mEic ((HWP_RDA2720M_EIC_T *)REG_ACCESS_ADDRESS(REG_RDA2720M_EIC_BASE))
 
-//EICDATA
+// eicdata
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 eicdata : 13; // [12:0], read only
-        REG32 __31_13 : 19;
+        uint32_t eicdata : 13; // [12:0], read only
+        uint32_t __31_13 : 19; // [31:13]
     } b;
 } REG_RDA2720M_EIC_EICDATA_T;
 
-//EICDMSK
+// eicdmsk
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 eicdmsk : 13; // [12:0]
-        REG32 __31_13 : 19;
+        uint32_t eicdmsk : 13; // [12:0]
+        uint32_t __31_13 : 19; // [31:13]
     } b;
 } REG_RDA2720M_EIC_EICDMSK_T;
 
-//EICIEV
+// eiciev
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 eiciev : 13; // [12:0]
-        REG32 __31_13 : 19;
+        uint32_t eiciev : 13;  // [12:0]
+        uint32_t __31_13 : 19; // [31:13]
     } b;
 } REG_RDA2720M_EIC_EICIEV_T;
 
-//EICIE
+// eicie
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 eicie : 13; // [12:0]
-        REG32 __31_13 : 19;
+        uint32_t eicie : 13;   // [12:0]
+        uint32_t __31_13 : 19; // [31:13]
     } b;
 } REG_RDA2720M_EIC_EICIE_T;
 
-//EICRIS
+// eicris
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 eicris : 13; // [12:0], read only
-        REG32 __31_13 : 19;
+        uint32_t eicris : 13;  // [12:0], read only
+        uint32_t __31_13 : 19; // [31:13]
     } b;
 } REG_RDA2720M_EIC_EICRIS_T;
 
-//EICMIS
+// eicmis
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 eicmis : 13; // [12:0], read only
-        REG32 __31_13 : 19;
+        uint32_t eicmis : 13;  // [12:0], read only
+        uint32_t __31_13 : 19; // [31:13]
     } b;
 } REG_RDA2720M_EIC_EICMIS_T;
 
-//EICIC
+// eicic
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 eicic : 13; // [12:0]
-        REG32 __31_13 : 19;
+        uint32_t eicic : 13;   // [12:0]
+        uint32_t __31_13 : 19; // [31:13]
     } b;
 } REG_RDA2720M_EIC_EICIC_T;
 
-//EICTRIG
+// eictrig
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 eictrig : 13; // [12:0]
-        REG32 __31_13 : 19;
+        uint32_t eictrig : 13; // [12:0]
+        uint32_t __31_13 : 19; // [31:13]
     } b;
 } REG_RDA2720M_EIC_EICTRIG_T;
 
-//EIC0CTRL
+// eic0ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC0CTRL_T;
 
-//EIC1CTRL
+// eic1ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC1CTRL_T;
 
-//EIC2CTRL
+// eic2ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC2CTRL_T;
 
-//EIC3CTRL
+// eic3ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC3CTRL_T;
 
-//EIC4CTRL
+// eic4ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC4CTRL_T;
 
-//EIC5CTRL
+// eic5ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC5CTRL_T;
 
-//EIC6CTRL
+// eic6ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC6CTRL_T;
 
-//EIC7CTRL
+// eic7ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC7CTRL_T;
 
-//EIC8CTRL
+// eic8ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC8CTRL_T;
 
-//EIC9CTRL
+// eic9ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC9CTRL_T;
 
-//EIC10CTRL
+// eic10ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC10CTRL_T;
 
-//EIC11CTRL
+// eic11ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC11CTRL_T;
 
-//EIC12CTRL
+// eic12ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC12CTRL_T;
 
-//EIC13CTRL
+// eic13ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC13CTRL_T;
 
-//EIC14CTRL
+// eic14ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC14CTRL_T;
 
-//EIC15CTRL
+// eic15ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dbnc_cnt : 12; // [11:0]
-        REG32 __13_12 : 2;
-        REG32 dbnc_en : 1;        // [14]
-        REG32 force_clk_dbnc : 1; // [15]
-        REG32 __31_16 : 16;
+        uint32_t dbnc_cnt : 12;      // [11:0]
+        uint32_t __13_12 : 2;        // [13:12]
+        uint32_t dbnc_en : 1;        // [14]
+        uint32_t force_clk_dbnc : 1; // [15]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_RDA2720M_EIC_EIC15CTRL_T;
 
-#endif
+// eicdata
+#define RDA2720M_EIC_EICDATA(n) (((n)&0x1fff) << 0)
+
+// eicdmsk
+#define RDA2720M_EIC_EICDMSK(n) (((n)&0x1fff) << 0)
+
+// eiciev
+#define RDA2720M_EIC_EICIEV(n) (((n)&0x1fff) << 0)
+
+// eicie
+#define RDA2720M_EIC_EICIE(n) (((n)&0x1fff) << 0)
+
+// eicris
+#define RDA2720M_EIC_EICRIS(n) (((n)&0x1fff) << 0)
+
+// eicmis
+#define RDA2720M_EIC_EICMIS(n) (((n)&0x1fff) << 0)
+
+// eicic
+#define RDA2720M_EIC_EICIC(n) (((n)&0x1fff) << 0)
+
+// eictrig
+#define RDA2720M_EIC_EICTRIG(n) (((n)&0x1fff) << 0)
+
+// eic0ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic1ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic2ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic3ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic4ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic5ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic6ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic7ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic8ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic9ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic10ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic11ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic12ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic13ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic14ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+// eic15ctrl
+#define RDA2720M_EIC_DBNC_CNT(n) (((n)&0xfff) << 0)
+#define RDA2720M_EIC_DBNC_EN (1 << 14)
+#define RDA2720M_EIC_FORCE_CLK_DBNC (1 << 15)
+
+#endif // _RDA2720M_EIC_H_

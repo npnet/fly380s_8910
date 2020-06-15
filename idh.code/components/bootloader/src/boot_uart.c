@@ -14,10 +14,10 @@
 #include "boot_platform.h"
 #include "boot_fdl_channel.h"
 #include "hwregs.h"
+#include "hal_chip.h"
 #include "osi_api.h"
+#include "drv_names.h"
 #include <stdlib.h>
-
-#define PDL_UART BOOT_UART2
 
 #define UART_BAUD_BASE_CLK (26000000)
 #define UART_RX_TIMEOUT_CNT (4 * 10)
@@ -31,8 +31,8 @@
 
 struct bootUart
 {
+    uint32_t name;
     HWP_ARM_UART_T *hwp;
-    uint32_t baud;
 };
 
 typedef struct
@@ -41,40 +41,7 @@ typedef struct
     bootUart_t *uart;
 } fdlUartChannel_t;
 
-static void _setBaud(bootUart_t *d)
-{
-    unsigned delta_min = -1U;
-    unsigned nset_chosen = 1; // make compiler happy
-    unsigned div_chosen = 1;  // make compiler happy
-
-    for (int nset = 16; nset >= 6; nset--)
-    {
-        unsigned div = (UART_BAUD_BASE_CLK + nset * d->baud / 2) / (nset * d->baud);
-        if (div <= 1 || div >= (1 << 16))
-            continue;
-
-        unsigned real_baud = UART_BAUD_BASE_CLK / (nset * div);
-        unsigned delta = (real_baud > d->baud)
-                             ? real_baud - d->baud
-                             : d->baud - real_baud;
-        if (delta < delta_min)
-        {
-            delta_min = delta;
-            nset_chosen = nset;
-            div_chosen = div;
-        }
-    }
-
-    if (delta_min == -1U)
-        bootPanic();
-
-    REG_ARM_UART_UART_BAUD_T uart_baud = {};
-    uart_baud.b.baud_div = div_chosen - 1;
-    uart_baud.b.baud_const = nset_chosen - 1;
-    d->hwp->uart_baud = uart_baud.v;
-}
-
-static void _startConfig(bootUart_t *d)
+static void prvStartConfig(bootUart_t *d)
 {
     REG_ARM_UART_UART_CONF_T uart_conf = {};
     uart_conf.b.check = 0;    // DRV_UART_NO_PARITY
@@ -122,17 +89,18 @@ static void _startConfig(bootUart_t *d)
     d->hwp->uart_status = d->hwp->uart_status;
 }
 
-bootUart_t *bootUartOpen(bootUartID_t uart, uint32_t baud)
+bootUart_t *bootUartOpen(uint32_t name, uint32_t baud, bool reconfig)
 {
     bootUart_t *d = (bootUart_t *)malloc(sizeof(bootUart_t));
     if (d == NULL)
-        bootPanic();
+        osiPanic();
 
-    if (uart == BOOT_UART1)
+    d->name = name;
+    if (name == DRV_NAME_UART1)
         d->hwp = hwp_uart1;
-    else if (uart == BOOT_UART2)
+    else if (name == DRV_NAME_UART2)
         d->hwp = hwp_uart2;
-    else if (uart == BOOT_UART3)
+    else if (name == DRV_NAME_UART3)
         d->hwp = hwp_uart3;
     else
     {
@@ -140,19 +108,40 @@ bootUart_t *bootUartOpen(bootUartID_t uart, uint32_t baud)
         return NULL;
     }
 
-    d->baud = baud;
-    _setBaud(d);
-    _startConfig(d);
+    if (reconfig)
+    {
+        if (!bootUartSetBaud(d, baud))
+        {
+            free(d);
+            return NULL;
+        }
+        prvStartConfig(d);
+    }
+    else if (d->hwp->uart_baud == 0x30006)
+    {
+        // When not reconfig, buad rate is 921600,
+        // in order to compatible with old ROM version,
+        // set up 0x60003 configuration instead of 0x30006
+        d->hwp->uart_baud = 0x60003;
+    }
     return d;
+}
+
+bool bootUartBaudSupported(bootUart_t *d, uint32_t baud)
+{
+    return (baud == 921600);
 }
 
 bool bootUartSetBaud(bootUart_t *d, uint32_t baud)
 {
-    if (baud == d->baud)
-        return true;
+    if (!bootUartBaudSupported(d, baud))
+        return false;
 
-    d->baud = baud;
-    _setBaud(d);
+    unsigned divider = halCalcDivider20(UART_BAUD_BASE_CLK, baud);
+    if (divider == 0)
+        return false;
+
+    d->hwp->uart_baud = divider;
     return true;
 }
 
@@ -189,6 +178,12 @@ int bootUartWrite(bootUart_t *d, const void *data, size_t size)
     for (int n = 0; n < bytes; n++)
         d->hwp->uart_tx = *data8++;
     return bytes;
+}
+
+static bool prvUartBaudSupported(fdlChannel_t *ch, uint32_t baud)
+{
+    fdlUartChannel_t *p = (fdlUartChannel_t *)ch;
+    return bootUartBaudSupported(p->uart, baud);
 }
 
 static bool prvUartSetBaud(fdlChannel_t *ch, uint32_t baud)
@@ -239,12 +234,13 @@ static void prvUartDestroy(fdlChannel_t *ch)
     free(p);
 }
 
-fdlChannel_t *fdlOpenUart(uint32_t baud)
+fdlChannel_t *fdlOpenUart(uint32_t name, uint32_t baud, bool reconfig)
 {
-    fdlUartChannel_t *ch = (fdlUartChannel_t *)malloc(sizeof(fdlUartChannel_t));
+    fdlUartChannel_t *ch = (fdlUartChannel_t *)calloc(1, sizeof(fdlUartChannel_t));
     if (ch == NULL)
-        bootPanic();
+        osiPanic();
 
+    ch->ops.baud_supported = prvUartBaudSupported;
     ch->ops.set_baud = prvUartSetBaud;
     ch->ops.avail = prvUartAvail;
     ch->ops.read = prvUartRead;
@@ -253,6 +249,6 @@ fdlChannel_t *fdlOpenUart(uint32_t baud)
     ch->ops.flush = prvUartFlush;
     ch->ops.destroy = prvUartDestroy;
     ch->ops.connected = prvUartConnected;
-    ch->uart = bootUartOpen(PDL_UART, baud);
+    ch->uart = bootUartOpen(name, baud, reconfig);
     return (fdlChannel_t *)ch;
 }

@@ -83,7 +83,6 @@ void CFW_nvSetCiotUpciot(uint8_t upciot);
 void CFW_nvSetCiotErwopdn(uint8_t erwopdn);
 void CFW_nvSetCiotSmsWoCombAtt(uint8_t sms_wo_comb_att);
 void CFW_nvSetCiotApnRateCtrl(uint8_t apn_rate_control);
-void CFW_nvmWriteStatic(CFW_SIM_ID nSimID);
 uint8_t CFW_nvGetCiotNonip(void);
 uint8_t CFW_nvGetCiotCpciot(void);
 uint8_t CFW_nvGetCiotUpciot(void);

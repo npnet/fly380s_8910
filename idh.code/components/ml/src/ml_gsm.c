@@ -65,6 +65,7 @@ static int _readChar(const void *in, unsigned size, unsigned *val)
 
     if (ch1 != ESCAPE_CHAR)
     {
+        // *val = ch1;
         *val = gsmBasic[ch1];
         return 1;
     }
@@ -102,10 +103,12 @@ static int _writeChar(void *out, unsigned size, unsigned val)
         if (val == gsmBasic[n])
         {
             if (pout != NULL && size >= 1)
+                // *pout++ = val;
                 *pout++ = n;
             return 1;
         }
     }
+
     for (int n = 0; n < OSI_ARRAY_SIZE(gsmExt); n++)
     {
         if (val == gsmExt[n].to)
@@ -118,6 +121,15 @@ static int _writeChar(void *out, unsigned size, unsigned val)
             return 2;
         }
     }
+
+#if 0
+    if (val < 0x80)
+    {
+        *pout++ = val;
+        return 1;
+    }
+#endif
+
     return -1;
 }
 

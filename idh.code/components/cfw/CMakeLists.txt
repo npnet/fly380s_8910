@@ -11,28 +11,27 @@
 
 set(LTE_SUPPORT ${CONFIG_LTE_SUPPORT})
 set(LTE_NBIOT_SUPPORT ${CONFIG_LTE_NBIOT_SUPPORT})
-configure_file(include/cfw_config.h.in ${BINARY_TOP_DIR}/include/cfw_config.h)
+configure_file(include/cfw_config.h.in ${out_inc_dir}/cfw_config.h)
 
-if((CONFIG_SOC_6760) OR (CONFIG_SOC_8910))
-    configure_file(include/modem_config_ext.h.in ${BINARY_TOP_DIR}/include/modem_config.h)
+if(CONFIG_SOC_8910)
+    configure_file(include/modem_config_ext.h.in ${out_inc_dir}/modem_config.h)
 endif()
 
 set(target cfw)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC
     src/cfw_chset.c
     src/cfw_dispatch.c
-    src/cfw_event_names.c)
+    src/cfw_event_names.c
+)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_CFW)
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel hal rpc atr net fs)
+target_include_targets(${target} PRIVATE kernel hal rpc atr net fs)
 
 include(core.cmake)
 
-if(CONFIG_SOC_6760)
-    target_include_directories(${target} PRIVATE ../diag/include)
-endif()
-
-relative_glob(srcs include/*.h src/*.c src/*.h core/*/*.h core/*/*/*.c core/*/*/*.h)
+relative_glob(srcs include/*.h src/*.[ch] core/*/*.[ch] core/*/*/*.[ch])
 list(FILTER srcs EXCLUDE REGEX ".*/stack_header/*")
 beautify_c_code(${target} ${srcs})

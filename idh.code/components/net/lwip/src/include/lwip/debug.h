@@ -39,6 +39,7 @@
 
 #include "lwip/arch.h"
 #include "lwip/opt.h"
+#include "osi_log.h"
 
 /**
  * @defgroup debugging_levels LWIP_DBG_MIN_LEVEL and LWIP_DBG_TYPES_ON values
@@ -142,7 +143,7 @@
 #endif
 
 #ifdef LWIP_DEBUG
-#define LWIP_DEBUGF(debug, message) do { LWIP_PLATFORM_DIAG(message);} while(0)
+#define LWIP_DEBUGF(debug, message) do { OSI_LOGI message;} while(0)
 
 #else  /* LWIP_DEBUG */
 #define LWIP_DEBUGF(debug, message)

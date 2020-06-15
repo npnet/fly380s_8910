@@ -348,6 +348,22 @@ bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
                     const auFrame_t *frame);
 
 /**
+ * \brief start PCM output
+ *
+ * Only stream information in \p frame will be used.
+ *
+ * \param type          audio playing type
+ * \param play_ops      operations will be called by audio device
+ * \param play_ctx      operation context
+ * \param frame         audio frame, only stream information will be used
+ * \return
+ *      - true on success
+ *      - false on failed
+ */
+bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void *play_ctx,
+                      const auFrame_t *frame);
+
+/**
  * \brief stop PCM output
  *
  * \return
@@ -388,6 +404,15 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
  *      - false on failed
  */
 bool audevStopRecord(void);
+
+/**
+ * \brief restart voice call
+ *
+ * \return
+ *		- true on success
+ *		- false on failed
+ */
+bool audevRestartVoiceRecord(void);
 
 /**
  * \brief start audio loopback test
@@ -439,6 +464,11 @@ bool audevStartPlayTest(audevOutput_t outdev, const osiBufSize32_t *buf);
  *      - false on failed
  */
 bool audevStopPlayTest(void);
+
+/**
+ * Close mic and speaker
+ */
+void audSetLdoVB(uint32_t en);
 
 OSI_EXTERN_C_END
 #endif

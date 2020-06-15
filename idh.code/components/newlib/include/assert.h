@@ -13,8 +13,7 @@ extern "C" {
 #ifdef NDEBUG           /* required by ANSI standard */
 # define assert(__e) ((void)0)
 #else
-__attribute__((__noreturn__)) void osiPanic(void);
-# define assert(__e) ((__e) ? (void)0 : osiPanic())
+# define assert(__e) ((__e) ? (void)0 : _assert ())
 
 # ifndef __ASSERT_FUNC
   /* Use g++'s demangled names in C++.  */
@@ -36,10 +35,11 @@ __attribute__((__noreturn__)) void osiPanic(void);
 # endif /* !__ASSERT_FUNC */
 #endif /* !NDEBUG */
 
-void _EXFUN(__assert, (const char *, int, const char *)
-	    _ATTRIBUTE ((__noreturn__)));
-void _EXFUN(__assert_func, (const char *, int, const char *, const char *)
-	    _ATTRIBUTE ((__noreturn__)));
+void _assert (void) _ATTRIBUTE ((__noreturn__));
+void __assert (const char *, int, const char *)
+	    _ATTRIBUTE ((__noreturn__));
+void __assert_func (const char *, int, const char *, const char *)
+	    _ATTRIBUTE ((__noreturn__));
 
 #if __STDC_VERSION__ >= 201112L && !defined __cplusplus
 # define static_assert _Static_assert

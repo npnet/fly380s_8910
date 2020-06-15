@@ -114,6 +114,21 @@ void auPlayerSetEventCallback(auPlayer_t *d, auPlayerEventCallback_t cb, void *c
 bool auPlayerStartDecoder(auPlayer_t *d, auDecoder_t *decoder);
 
 /**
+ * \brief start audio player
+ *
+ * Before calling this, \p decoder should be ready for decoding audio
+ * frame.
+ *
+ * \param d             audio player instance
+ * \param type          audio playing type
+ * \param decoder       decoder for the audio player
+ * \return
+ *      - true on success
+ *      - false on failed
+ */
+bool auPlayerStartDecoderV2(auPlayer_t *d, audevPlayType_t type, auDecoder_t *decoder);
+
+/**
  * \brief start file play
  *
  * For simplicity, the stream format shall be explicitly specified.
@@ -128,6 +143,23 @@ bool auPlayerStartDecoder(auPlayer_t *d, auDecoder_t *decoder);
 bool auPlayerStartFile(auPlayer_t *d, auStreamFormat_t format,
                        const auDecoderParamSet_t *params,
                        const char *fname);
+
+/**
+ * \brief start file play
+ *
+ * For simplicity, the stream format shall be explicitly specified.
+ *
+ * \param d             the audio player
+ * \param type          audio playing type
+ * \param format        stream format
+ * \param fname         file name to be played
+ * \return
+ *      - true on player start success
+ *      - false on failed
+ */
+bool auPlayerStartFileV2(auPlayer_t *d, audevPlayType_t type, auStreamFormat_t format,
+                         const auDecoderParamSet_t *params,
+                         const char *fname);
 
 /**
  * \brief start memory play
@@ -148,6 +180,25 @@ bool auPlayerStartMem(auPlayer_t *d, auStreamFormat_t format,
                       const void *buf, unsigned size);
 
 /**
+ * \brief start memory play
+ *
+ * Before player start, the whole stream should be located in memory. And
+ * the content shouldn't be changed during playback.
+ *
+ * \param d             the audio player
+ * \param type          audio playing type
+ * \param format        stream format
+ * \param mem           memory to be played
+ * \param size          memory size
+ * \return
+ *      - true on player start success
+ *      - false on failed
+ */
+bool auPlayerStartMemV2(auPlayer_t *d, audevPlayType_t type, auStreamFormat_t format,
+                        const auDecoderParamSet_t *params,
+                        const void *buf, unsigned size);
+
+/**
  * \brief start pipe play
  *
  * \param d             the audio player
@@ -160,6 +211,21 @@ bool auPlayerStartMem(auPlayer_t *d, auStreamFormat_t format,
 bool auPlayerStartPipe(auPlayer_t *d, auStreamFormat_t format,
                        const auDecoderParamSet_t *params,
                        struct osiPipe *pipe);
+
+/**
+ * \brief start pipe play
+ *
+ * \param d             the audio player
+ * \param type          audio playing type
+ * \param format        stream format
+ * \param pipe          the pipe to be read from
+ * \return
+ *      - true on player start success
+ *      - false on failed
+ */
+bool auPlayerStartPipeV2(auPlayer_t *d, audevPlayType_t type, auStreamFormat_t format,
+                         const auDecoderParamSet_t *params,
+                         struct osiPipe *pipe);
 
 /**
  * \brief start play from an external audio reader
@@ -180,6 +246,27 @@ bool auPlayerStartPipe(auPlayer_t *d, auStreamFormat_t format,
 bool auPlayerStartReader(auPlayer_t *d, auStreamFormat_t format,
                          const auDecoderParamSet_t *params,
                          struct auReader *reader);
+
+/**
+ * \brief start play from an external audio reader
+ *
+ * It is used for playback from neither file, nor memory. The procedure to
+ * get stream data is implemented externally.
+ *
+ * Player will just use \p reader, and the life-cycle should be handled
+ * eternally.
+ *
+ * \param d             the audio player
+ * \param type          audio playing type
+ * \param format        stream format
+ * \param reader        audio stream reader
+ * \return
+ *      - true on player start success
+ *      - false on failed
+ */
+bool auPlayerStartReaderV2(auPlayer_t *d, audevPlayType_t type, auStreamFormat_t format,
+                           const auDecoderParamSet_t *params,
+                           struct auReader *reader);
 
 /**
  * \brief playback pause
@@ -245,6 +332,17 @@ bool auPlayerWaitFinish(auPlayer_t *d, unsigned timeout);
  *      - 0 on error
  */
 unsigned auPlayerPlayTime(auPlayer_t *d);
+
+/**
+ * \brief get audio player playing type
+ *
+ * When audio player is not started, return \p AUDEV_PLAY_TYPE_NONE.
+ *
+ * \param d             audio player instance
+ * \return
+ *      - playing type
+ */
+audevPlayType_t auPlayerGetType(auPlayer_t *d);
 
 /**
  * \brief check whether player is running

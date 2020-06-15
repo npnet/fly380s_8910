@@ -267,7 +267,7 @@ ethernetif_input(struct netif *netif)
   if (p != NULL) {
     /* pass all packets to ethernet_input, which decides what packets it supports */
     if (netif->input(p, netif) != ERR_OK) {
-      LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+      LWIP_DEBUGF(NETIF_DEBUG, (0x100077a8, "ethernetif_input: IP input error\n"));
       pbuf_free(p);
       p = NULL;
     }
@@ -295,7 +295,7 @@ ethernetif_init(struct netif *netif)
 
   ethernetif = mem_malloc(sizeof(struct ethernetif));
   if (ethernetif == NULL) {
-    LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_init: out of memory\n"));
+    LWIP_DEBUGF(NETIF_DEBUG, (0x100077a9, "ethernetif_init: out of memory\n"));
     return ERR_MEM;
   }
 

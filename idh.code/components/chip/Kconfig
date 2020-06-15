@@ -55,47 +55,11 @@ config CHIP_8910_NOR16M8M_DDR32M
     imply FLASH_16M
     imply RAM_32M
 
-config CHIP_6760_FPGA
-    bool "6760, FPGA"
-    imply SOC_6760
-    imply NOR_FLASH
-    imply USE_PSRAM
-    imply FLASH_4M
-    imply RAM_4M
-    imply RUN_ON_FPGA
-
-config CHIP_8955L
-    bool "8955L, NOR flash 4M, PSRAM 4M"
-    imply SOC_8955
-    imply NOR_FLASH
-    imply USE_PSRAM
-    imply FLASH_4M
-    imply RAM_4M
-
-config CHIP_8908A
-    bool "8908A, NOR flash 4M, PSRAM 4M, NB single mode"
-    imply SOC_8909
-    imply NOR_FLASH
-    imply USE_PSRAM
-    imply FLASH_4M
-    imply RAM_4M
-
-config CHIP_8909B
-    bool "8908B, NOR flash 8M, PSRAM 4M, NB/2G dual mode"
-    imply SOC_8909
-    imply NOR_FLASH
-    imply USE_PSRAM
-    imply FLASH_8M
-    imply RAM_4M
-
 endchoice
 
 config SOC
     string
-    default "8955" if SOC_8955
-    default "8909" if SOC_8909
     default "8910" if SOC_8910
-    default "6760" if SOC_6760
 
 config RUN_ON_FPGA
     bool
@@ -124,9 +88,13 @@ config CPU_ARMV7A
     bool
 config CPU_ARMV7M
     bool
+config CPU_ARMV8M
+    bool
 config CPU_ARM_CA5
     bool
 config CPU_ARM_CM4F
+    bool
+config CPU_ARM_CM33F
     bool
 config CPU_MIPS
     bool
@@ -156,6 +124,8 @@ config RAM_32M
     bool
 config RAM_64M
     bool
+config FLASH_2M
+    bool
 config FLASH_4M
     bool
 config FLASH_8M
@@ -164,6 +134,7 @@ config FLASH_16M
     bool
 config FLASH_SIZE
     hex
+    default 0x200000 if FLASH_2M
     default 0x400000 if FLASH_4M
     default 0x800000 if FLASH_8M
     default 0x1000000 if FLASH_16M
@@ -303,6 +274,13 @@ if SOC_8910
         help
             It will be located from the end of reserved RAM for application
             image from FLASH.
+
+    config APP_BTFW_RAM_SIZE
+        hex "Reserved RAM size for BT controller"
+        default 0x0 if !BT_NEED_FIRMWARE
+        default 0x40000
+        help
+            Reserved RAM for BT firmware.
 endif
 endmenu
 
@@ -359,5 +337,11 @@ config BOARD_KPLED_USED_FOR_RF_SWITCH
     default n
     help
         Then board set Kpled used for rf switch.
+
+config BOARD_WITH_EXT_FLASH
+    bool "external flash on board"
+    default n
+    help
+        Whether there are external flash on board.
 
 endmenu

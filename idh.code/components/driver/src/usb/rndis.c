@@ -504,6 +504,8 @@ static int gen_ndis_set_resp(struct rndis_params *params, uint32_t OID,
         if (*params->filter)
         {
             params->state = RNDIS_DATA_INITIALIZED;
+            if (params->ether)
+                drvEtherEnable(params->ether->eth);
             //netif_carrier_on(params->dev);
             //if (netif_running(params->dev))
             //	netif_wake_queue(params->dev);
@@ -775,6 +777,8 @@ int rndis_msg_parser(struct rndis_params *params, uint8_t *buf)
     case RNDIS_MSG_HALT:
         OSI_LOGI(0, "RNDIS_MSG_HALT\n");
         params->state = RNDIS_UNINITIALIZED;
+        if (params->ether)
+            drvEtherDisable(params->ether->eth);
         return 0;
 
     case RNDIS_MSG_QUERY:
@@ -860,16 +864,14 @@ void rndis_deregister(struct rndis_params *params)
 int rndis_set_param_dev(struct rndis_params *params, rndisData_t *ether, uint16_t *cdc_filter)
 {
     OSI_LOGD(0, "rndis_set_param_dev");
+    if (ether == NULL || params == NULL || cdc_filter == NULL)
+        return -1;
+
     uint32_t critical = osiEnterCritical();
-    if (ether && params)
-    {
-        params->ether = ether;
-        params->filter = cdc_filter;
-        osiExitCritical(critical);
-        return 0;
-    }
+    params->ether = ether;
+    params->filter = cdc_filter;
     osiExitCritical(critical);
-    return -1;
+    return 0;
 }
 
 int rndis_set_param_vendor(struct rndis_params *params, uint32_t vendorID, const char *vendorDescr)

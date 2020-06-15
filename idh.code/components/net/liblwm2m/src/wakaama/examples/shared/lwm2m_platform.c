@@ -22,6 +22,7 @@
 #include <sys/time.h>
 #include "osi_api.h"
 #include "internals.h"
+#include "osi_log.h"
 
 #ifndef LWM2M_MEMORY_TRACE
 
@@ -34,7 +35,9 @@ void * lwm2m_malloc(size_t s)
     //COS_GET_RA(&nCallerAdd);
 
     ret = malloc(s);
-    
+    if(ret == NULL){
+        LOG("malloc failed");
+        return NULL;}
     memset(ret,0,s);
     
     //zhangyi del for porting 20180710
@@ -81,14 +84,12 @@ time_t lwm2m_gettime(void)
 
 void lwm2m_printf(const char * format, ...)
 {
-    //zhangyi del for porting 20180709
-    //char uart_buf[256];
-	//va_list ap;
+    char uart_buf[256];
+    va_list ap;
 
-	//va_start (ap, format);
-	//vsnprintf(uart_buf, sizeof(uart_buf), format, ap);
-	//va_end (ap);
+    va_start (ap, format);
+    vsnprintf(uart_buf, sizeof(uart_buf), format, ap);
+    va_end (ap);
 
-    //SXS_TRACE(_SXR | TNB_ARG(0) | TLEVEL(11), uart_buf);
-    return ;
+    OSI_LOGI(0x0, uart_buf);
 }

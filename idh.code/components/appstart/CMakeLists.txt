@@ -9,40 +9,31 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/app_config.h.in ${BINARY_TOP_DIR}/include/app_config.h)
-
+configure_file(include/app_config.h.in ${out_inc_dir}/app_config.h)
 add_definitions(-DBUILD_IDENTIFY=\"${BUILD_TARGET}-${BUILD_RELEASE_TYPE}-${BUILD_REVISION}-${BUILD_AUTO_REVISION}\")
 
+set(target appstart)
+
 if(CONFIG_SOC_8910)
-    if(CONFIG_APP_RUN_ON_FLASH)
-        set(ldscript ${SOURCE_TOP_DIR}/components/hal/ldscripts/flashrun.ld)
-    else()
-        set(ldscript ${SOURCE_TOP_DIR}/components/hal/ldscripts/ddrrun.ld)
-    endif()
-
-    set(srcs src/app_start.c src/app_keypad.c)
-
-    set(target ${BUILD_TARGET})
-    add_uimage(${target} ${ldscript} ${srcs})
+    add_library(${target} STATIC src/app_start.c src/app_keypad.c)
     target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_APPSTART)
-    target_link_group(${target} PRIVATE
-        atr ats diag nvm kernel osi_lib driver ml bdev fs fsmount net hal mal cfw http fupdate
-        service apploader audio tts lvgl
-        ${libc_file_name} ${libgcc_file_name}
+    set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
+    target_include_targets(${target} PRIVATE
+        atr ats diag nvm kernel driver ml bdev fs fsmount
+        net hal mal cfw http fupdate service apploader
+        audio tts
     )
-endif()
+    target_include_targets_if(CONFIG_SPRD_BT_ENABLE THEN ${target} PRIVATE sprd_bt)
+    target_include_targets_if(CONFIG_BLUEU_BT_ENABLE THEN ${target} PRIVATE blueu)
 
-if((CONFIG_SOC_8955) OR (CONFIG_SOC_8909))
-    set(ldscript ${SOURCE_TOP_DIR}/components/hal/ldscripts/xcpu_flashrun.ld)
-    set(target ${BUILD_TARGET})
-    add_flash_lod(${target} ${ldscript} src/app_start_xcpu.c)
-    target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_APPSTART)
-    target_link_group(${target} PRIVATE
-        atr ats diag nvm kernel osi_lib driver ml fs fsmount net hal mal cfw http nvm
-        ${modem_libs} ${sysrom_elf} ${libc_file_name} ${libgcc_file_name}
+    set_if(ldscript CONFIG_APP_RUN_ON_FLASH
+        THEN ${SOURCE_TOP_DIR}/components/hal/ldscripts/flashrun.ld
+        OTHERWISE ${SOURCE_TOP_DIR}/components/hal/ldscripts/ddrrun.ld
     )
-    add_dependencies(${target}_ldscript ${BUILD_TARGET}_bcpu sysrom_for_xcpu)
-    target_include_directories(${target}_ldscript PRIVATE ${out_hex_dir})
+
+    set_if(flash2_opt CONFIG_APP_FLASH2_ENABLED THEN WITH_FLASH2)
+    add_uimage(${BUILD_TARGET} ${ldscript} ${dummy_cxx_file} ${flash2_opt})
+    target_link_libraries(${BUILD_TARGET} PRIVATE all_libs ${target} all_libs)
 endif()
 
 relative_glob(srcs include/*.h src/*.c src/*.h)

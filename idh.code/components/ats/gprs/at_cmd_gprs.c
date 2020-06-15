@@ -33,6 +33,10 @@
 #include "drv_ps_path.h"
 #include "lwip/netif.h"
 #include "atr_config.h"
+#include "netutils.h"
+
+#include "cfw.h"
+#include "cfw_errorcode.h"
 
 #ifdef CONFIG_AT_DM_LWM2M_SUPPORT
 #include "at_cmd_dm_lwm2m.h"
@@ -58,6 +62,7 @@ const OPER_DEFAULT_APN_INFO OperatorDefaultApnInfo[] =
 
 uint32_t CFW_GetDefaultApn(OPER_DEFAULT_APN_INFO_V2 nDefaultApn[AT_DEFAULT_APN_MAX_NUM])
 {
+    memset(&nDefaultApn[0], 0, sizeof(OPER_DEFAULT_APN_INFO_V2) * AT_DEFAULT_APN_MAX_NUM);
     for (int i = 0; i < OSI_ARRAY_SIZE(OperatorDefaultApnInfo); i++)
     {
         memcpy(nDefaultApn[i].OperatorId, OperatorDefaultApnInfo[i].OperatorId, 6);
@@ -114,6 +119,20 @@ COPY_APN_INFO:
     memcpy(apn->password, mobileNetworkApns[mid].password, strlen(mobileNetworkApns[mid].password));
     return 0;
 }
+
+#if LWIP_IPV6
+const ip6_addr_t *AT_GprsGetPdpIpv6Address(uint8_t nCid, uint8_t nSim)
+{
+    const ip6_addr_t *ip6 = NULL;
+    struct netif *inp = getGprsNetIf(nSim, nCid);
+    if (inp)
+    {
+        ip6 = ip6_try_to_select_source_address(inp);
+        ip6_addr_debug_print(SOCKETS_DEBUG, ip6);
+    }
+    return ip6;
+}
+#endif
 
 uint8_t AT_GprsGetActivePdpCount(uint8_t nSim)
 {
@@ -563,7 +582,7 @@ uint8_t AT_Cereg_respond(char *respond, CFW_NW_STATUS_INFO *sStatus, uint8_t sta
     case 2:
     CeregLabel2:
         respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\",%d",
-                           stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                           stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                            sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
                            AT_Gprs_Mapping_Act_From_PsType(sStatus->PsType));
         break;
@@ -572,7 +591,7 @@ uint8_t AT_Cereg_respond(char *respond, CFW_NW_STATUS_INFO *sStatus, uint8_t sta
         if ((stat == 0) || (stat == 3) || (stat == 4))
         {
             respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\",%d,%d,%d",
-                               stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                               stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
                                AT_Gprs_Mapping_Act_From_PsType(sStatus->PsType), sStatus->cause_type, sStatus->reject_cause);
         }
@@ -587,7 +606,7 @@ uint8_t AT_Cereg_respond(char *respond, CFW_NW_STATUS_INFO *sStatus, uint8_t sta
         {
 
             respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,,,\"%c%c%c%c%c%c%c%c\",\"%c%c%c%c%c%c%c%c\"",
-                               stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                               stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
                                AT_Gprs_Mapping_Act_From_PsType(sStatus->PsType),
                                activeTime[0], activeTime[1], activeTime[2], activeTime[3],
@@ -599,7 +618,7 @@ uint8_t AT_Cereg_respond(char *respond, CFW_NW_STATUS_INFO *sStatus, uint8_t sta
         {
 
             respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,,,\"%c%c%c%c%c%c%c%c\"",
-                               stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                               stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
                                AT_Gprs_Mapping_Act_From_PsType(sStatus->PsType),
                                activeTime[0], activeTime[1], activeTime[2], activeTime[3],
@@ -609,7 +628,7 @@ uint8_t AT_Cereg_respond(char *respond, CFW_NW_STATUS_INFO *sStatus, uint8_t sta
         {
 
             respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,,,,\"%c%c%c%c%c%c%c%c\"",
-                               stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                               stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
                                AT_Gprs_Mapping_Act_From_PsType(sStatus->PsType),
                                periodicTau[0], periodicTau[1], periodicTau[2], periodicTau[3],
@@ -627,7 +646,7 @@ uint8_t AT_Cereg_respond(char *respond, CFW_NW_STATUS_INFO *sStatus, uint8_t sta
             {
 
                 respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,%d,%d,\"%c%c%c%c%c%c%c%c\",\"%c%c%c%c%c%c%c%c\"",
-                                   stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                                   stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                    sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
                                    AT_Gprs_Mapping_Act_From_PsType(sStatus->PsType), sStatus->cause_type, sStatus->reject_cause,
                                    activeTime[0], activeTime[1], activeTime[2], activeTime[3],
@@ -639,7 +658,7 @@ uint8_t AT_Cereg_respond(char *respond, CFW_NW_STATUS_INFO *sStatus, uint8_t sta
             {
 
                 respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,%d,%d,\"%c%c%c%c%c%c%c%c\"",
-                                   stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                                   stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                    sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
                                    AT_Gprs_Mapping_Act_From_PsType(sStatus->PsType), sStatus->cause_type, sStatus->reject_cause,
                                    activeTime[0], activeTime[1], activeTime[2], activeTime[3],
@@ -649,7 +668,7 @@ uint8_t AT_Cereg_respond(char *respond, CFW_NW_STATUS_INFO *sStatus, uint8_t sta
             {
 
                 respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,%d,%d,,\"%c%c%c%c%c%c%c%c\"",
-                                   stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                                   stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                    sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
                                    AT_Gprs_Mapping_Act_From_PsType(sStatus->PsType), sStatus->cause_type, sStatus->reject_cause,
                                    periodicTau[0], periodicTau[1], periodicTau[2], periodicTau[3],
@@ -853,6 +872,12 @@ static void _onEV_CFW_GPRS_CXT_DEACTIVE_IND(const osiEvent_t *event)
     nCid = event->param1;
     nSimId = cfw_event->nFlag;
     OSI_LOGI(0x0, "We got EV_CFW_GPRS_CXT_DEACTIVE_IND cid %d simid %d", nCid, nSimId);
+#ifdef LTE_NBIOT_SUPPORT
+    if (nCid >= 1 && nCid <= 7 && gAtCfwCtx.sim[nSimId].cid_info[nCid].uPCid == IMS_PDP_CID)
+    {
+        gAtCfwCtx.sim[nSimId].cid_info[nCid].uPCid = 0;
+    }
+#endif
 #if 0
     if (nCid >= 1 && nCid <= 7)
     {
@@ -947,7 +972,8 @@ static void _onEV_CFW_GPRS_STATUS_IND(const osiEvent_t *event)
     OSI_LOGI(0x100041ea, "We got 111 EV_CFW_GPRS_STATUS_IND, cereg:%d, cgreg: %d", gAtSetting.sim[nSim].cereg, gAtSetting.sim[nSim].cgreg);
 #if defined(LTE_NBIOT_SUPPORT) || defined(LTE_SUPPORT)
     CFW_NW_STATUS_INFO sStatus;
-    if (CFW_NWGetStackRat(nSim) == 4) //nbiot&lte branch
+    OSI_LOGI(0, "cfw_event.nParam2: %x", cfw_event.nParam2);
+    if (CFW_NWGetStackRat(nSim) == 4 || cfw_event.nParam2 == 0xFFFFFFF4) //nbiot&lte branch
     {
         uint32_t ret = CFW_GprsGetstatus(&sStatus, nSim);
         if (ret == ERR_SUCCESS)
@@ -967,8 +993,8 @@ static void _onEV_CFW_GPRS_STATUS_IND(const osiEvent_t *event)
     else
 #endif
     {
-        if (gAtSetting.sim[nSim].cgreg != 0 &&
-            PsStatus != gAtCfwCtx.sim[nSim].cgreg_val)
+        if ((gAtSetting.sim[nSim].cgreg != 0 && PsStatus != gAtCfwCtx.sim[nSim].cgreg_val) ||
+            cfw_event.nParam2 == 0xFFFFFFF2)
         {
             char rsp[32];
             sprintf(rsp, "+CGREG: %d", PsStatus);
@@ -1055,6 +1081,7 @@ void atCfwGprsInit(void)
         AT_Gprs_CidInfo *g_staAtGprsCidInfo_nv = gAtSetting.g_staAtGprsCidInfo[nSim];
         for (uint8_t cid = AT_PDPCID_MIN; cid <= AT_PDPCID_MAX; cid++)
         {
+            pdp_cont.nAuthProt = g_staAtGprsCidInfo_nv[cid].nAuthProt;
             if (g_staAtGprsCidInfo_nv[cid].uCid != 0)
             {
                 OSI_LOGI(0, "in atCfwGprsInit function seting pdp CONTEXT cid:%d", cid);
@@ -1358,7 +1385,7 @@ void atCmdHandleCGDCONT(atCommand_t *cmd)
         //   (void)imcn;
 
         pdp_cont.nApnSize = strlen(apn);
-        if (pdp_cont.nApnSize >= THE_APN_MAX_LEN)
+        if (pdp_cont.nApnSize > THE_APN_MAX_LEN)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         memcpy(pdp_cont.pApn, apn, pdp_cont.nApnSize);
         uint8_t pdp_addr_len = strlen(pdp_addr);
@@ -1410,7 +1437,7 @@ void atCmdHandleCGDCONT(atCommand_t *cmd)
     }
     else if (cmd->type == AT_CMD_READ)
     {
-        char rsp[120];
+        char rsp[220];
         uint8_t pdpType = 0;
         uint8_t nTmpApn[THE_APN_MAX_LEN + 1] = {
             0,
@@ -1424,76 +1451,76 @@ void atCmdHandleCGDCONT(atCommand_t *cmd)
             CFW_GprsGetDefaultPdnInfo(&PdnInfo, nSim);
             char *prsp2 = &rsp[0];
             const osiValueStrMap_t *pdp_type_vs2 = osiVsmapFindByVal(gPdpTypeVSMap, PdnInfo.nPdpType);
-            if (pdp_type_vs2 == NULL)
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-
-            prsp2 += sprintf(prsp2, "+CGDCONT: 0,\"%s\"", pdp_type_vs2->str);
-            if (PdnInfo.APNLen == 0)
-                prsp2 += sprintf(prsp2, ",\"\"");
-            else
+            if (pdp_type_vs2 != NULL)
             {
-                uint8_t i = 0;
-                for (i = 0; i < PdnInfo.APNLen; i++)
+                prsp2 += sprintf(prsp2, "+CGDCONT: 0,\"%s\"", pdp_type_vs2->str);
+                if (PdnInfo.APNLen == 0)
+                    prsp2 += sprintf(prsp2, ",\"\"");
+                else
                 {
-                    if (PdnInfo.AccessPointName[i] == 0x2E) //find first "."
+                    uint8_t i = 0;
+                    for (i = 0; i < PdnInfo.APNLen; i++)
                     {
-                        PdnInfo.APNLen = i;
-                        break;
+                        if (PdnInfo.AccessPointName[i] == 0x2E) //find first "."
+                        {
+                            PdnInfo.APNLen = i;
+                            break;
+                        }
+                    }
+                    memcpy(nTmpApn, PdnInfo.AccessPointName, PdnInfo.APNLen);
+                    prsp2 += sprintf(prsp2, ",\"%s\"", nTmpApn);
+                }
+                char str[80] = {};
+                //_pdpAddressToStr(&pdp_cont, addr_str);
+                ip4_addr_t ip4 = {0};
+#if LWIP_IPV6
+                ip6_addr_t ip6 = {0};
+#endif
+                char str_ipv4[20];
+                char str_ipv6[40];
+
+                if ((PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IP) || (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IPV4V6) || (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_X25) ||
+                    (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_PPP)) //add evade for nPdpType == 0, need delete later
+                {
+                    if (PdnInfo.PDPAddLen == 0)
+                        sprintf(str, "IPV4:0.0.0.0");
+                    else
+                    {
+                        IP4_ADDR(&ip4, PdnInfo.PDPAddress[0], PdnInfo.PDPAddress[1], PdnInfo.PDPAddress[2], PdnInfo.PDPAddress[3]);
+                        sprintf(str, ip4addr_ntoa(&ip4));
+                        sprintf(str_ipv4, ip4addr_ntoa(&ip4));
                     }
                 }
-                memcpy(nTmpApn, PdnInfo.AccessPointName, PdnInfo.APNLen);
-                prsp2 += sprintf(prsp2, ",\"%s\"", nTmpApn);
-            }
-            char str[80] = {};
-            //_pdpAddressToStr(&pdp_cont, addr_str);
-            ip4_addr_t ip4 = {0};
-#if LWIP_IPV6
-            ip6_addr_t ip6 = {0};
-#endif
-            char str_ipv4[20];
-            char str_ipv6[40];
-
-            if ((PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IP) || (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IPV4V6) || (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_X25) ||
-                (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_PPP)) //add evade for nPdpType == 0, need delete later
-            {
-                if (PdnInfo.PDPAddLen == 0)
-                    sprintf(str, "IPV4:0.0.0.0");
-                else
-                {
-                    IP4_ADDR(&ip4, PdnInfo.PDPAddress[0], PdnInfo.PDPAddress[1], PdnInfo.PDPAddress[2], PdnInfo.PDPAddress[3]);
-                    sprintf(str, ip4addr_ntoa(&ip4));
-                    sprintf(str_ipv4, ip4addr_ntoa(&ip4));
-                }
-            }
 
 #if LWIP_IPV6
-            if (((PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IPV6) || (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IPV4V6)))
-            {
-                if (PdnInfo.PDPAddLen == 0)
-                    sprintf(str, "IPV6:  ::");
-                else
+                if (((PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IPV6) || (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IPV4V6)))
                 {
-                    uint32_t addr0 = PP_HTONL(LWIP_MAKEU32(PdnInfo.PDPAddress[4], PdnInfo.PDPAddress[5], PdnInfo.PDPAddress[6], PdnInfo.PDPAddress[7]));
-                    uint32_t addr1 = PP_HTONL(LWIP_MAKEU32(PdnInfo.PDPAddress[8], PdnInfo.PDPAddress[9], PdnInfo.PDPAddress[10], PdnInfo.PDPAddress[11]));
-                    uint32_t addr2 = PP_HTONL(LWIP_MAKEU32(PdnInfo.PDPAddress[12], PdnInfo.PDPAddress[13], PdnInfo.PDPAddress[14], PdnInfo.PDPAddress[15]));
-                    uint32_t addr3 = PP_HTONL(LWIP_MAKEU32(PdnInfo.PDPAddress[16], PdnInfo.PDPAddress[17], PdnInfo.PDPAddress[18], PdnInfo.PDPAddress[19]));
-                    IP6_ADDR(&ip6, addr0, addr1, addr2, addr3);
-                    sprintf(str, ip6addr_ntoa(&ip6));
-                    sprintf(str_ipv6, ip6addr_ntoa(&ip6));
+                    if (PdnInfo.PDPAddLen == 0)
+                        sprintf(str, "IPV6:  ::");
+                    else
+                    {
+                        uint32_t addr0 = PP_HTONL(LWIP_MAKEU32(PdnInfo.PDPAddress[4], PdnInfo.PDPAddress[5], PdnInfo.PDPAddress[6], PdnInfo.PDPAddress[7]));
+                        uint32_t addr1 = PP_HTONL(LWIP_MAKEU32(PdnInfo.PDPAddress[8], PdnInfo.PDPAddress[9], PdnInfo.PDPAddress[10], PdnInfo.PDPAddress[11]));
+                        uint32_t addr2 = PP_HTONL(LWIP_MAKEU32(PdnInfo.PDPAddress[12], PdnInfo.PDPAddress[13], PdnInfo.PDPAddress[14], PdnInfo.PDPAddress[15]));
+                        uint32_t addr3 = PP_HTONL(LWIP_MAKEU32(PdnInfo.PDPAddress[16], PdnInfo.PDPAddress[17], PdnInfo.PDPAddress[18], PdnInfo.PDPAddress[19]));
+                        IP6_ADDR(&ip6, addr0, addr1, addr2, addr3);
+                        sprintf(str, ip6addr_ntoa(&ip6));
+                        sprintf(str_ipv6, ip6addr_ntoa(&ip6));
+                    }
                 }
-            }
 #endif
-            if (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IPV4V6)
-            {
-                if (PdnInfo.PDPAddLen == 0)
-                    sprintf(str, "IPV4:0.0.0.0    IPV6:  ::");
-                else
+                if (PdnInfo.nPdpType == CFW_GPRS_PDP_TYPE_IPV4V6)
                 {
-                    sprintf(str, "IPV4:%s    IPV6:%s", str_ipv4, str_ipv6);
+                    if (PdnInfo.PDPAddLen == 0)
+                        sprintf(str, "IPV4:0.0.0.0    IPV6:  ::");
+                    else
+                    {
+                        sprintf(str, "IPV4:%s    IPV6:%s", str_ipv4, str_ipv6);
+                    }
                 }
+                prsp2 += sprintf(prsp2, ",\"%s\"", str);
+                atCmdRespInfoText(cmd->engine, rsp);
             }
-            prsp2 += sprintf(prsp2, ",\"%s\"", str);
-            atCmdRespInfoText(cmd->engine, rsp);
         }
         for (uint8_t cid = AT_PDPCID_MIN; cid <= AT_PDPCID_MAX; cid++)
         {
@@ -1597,7 +1624,7 @@ void atCmdHandleCFGIMSPDN(atCommand_t *cmd)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
         pdp_cont.nApnSize = strlen(apn);
-        if (pdp_cont.nApnSize >= THE_APN_MAX_LEN)
+        if (pdp_cont.nApnSize > THE_APN_MAX_LEN)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         memcpy(pdp_cont.pApn, apn, pdp_cont.nApnSize);
         if (_pdpAddressFromStr(pdp_cont.nPdpType, pdp_addr) != 0)
@@ -1793,7 +1820,15 @@ void atCmdHandleCGDSCONT(atCommand_t *cmd)
 
         if (cmd->param_count == 1) //if uParamCount == 1, sPdpCont has been clear. otherwise it hold context from uP_Cid
         {
-            memset(&sPdpCont, 0, sizeof(CFW_GPRS_PDPCONT_INFO));
+            AT_Gprs_CidInfo *pinfo = &gAtCfwCtx.sim[nSim].cid_info[uCid];
+            if (pinfo->uCid == 0)
+            {
+                RETURN_OK(cmd->engine);
+            }
+            else
+            {
+                memset(&sPdpCont, 0, sizeof(CFW_GPRS_PDPCONT_INFO));
+            }
         }
 
         if (CFW_GprsSetPdpCxtV2(uCid, &sPdpCont, nSim) != 0)
@@ -1906,20 +1941,23 @@ void atCmdHandleCGCONTRDP(atCommand_t *cmd)
 {
     CFW_GPRS_PDPCONT_INFO_V2 sPdpCont = {};
     CFW_GPRS_DYNAMIC_APN_INFO sDyncApn = {};
+    CFW_GPRS_DYNAMIC_IP_INFO sDyncIP = {};
     memset(&sPdpCont, 0, sizeof(CFW_GPRS_PDPCONT_INFO_V2));
     memset(&sDyncApn, 0, sizeof(CFW_GPRS_DYNAMIC_APN_INFO));
+    memset(&sDyncIP, 0, sizeof(CFW_GPRS_DYNAMIC_IP_INFO));
     uint8_t nSim = atCmdGetSim(cmd->engine);
     uint8_t len = 0;
 
     if (AT_CMD_SET == cmd->type)
     {
         bool paramok = true;
-        char pResp[150] = {0};
+        char pResp[512] = {0};
+        uint8_t nActState = 0;
         uint8_t Cid = atParamUintInRange(cmd->params[0], AT_PDPCID_MIN, AT_PDPCID_MAX, &paramok);
         if (!paramok || cmd->param_count != 1)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
-        if (!CFW_GprsGetPdpCxtV2(Cid, &sPdpCont, nSim))
+        CFW_GetGprsActState(Cid, &nActState, nSim);
+        if ((!CFW_GprsGetPdpCxtV2(Cid, &sPdpCont, nSim)) && (nActState == CFW_GPRS_ACTIVED))
         {
             if (!CFW_GprsGetDynamicAPN(Cid, &sDyncApn, nSim) && (sDyncApn.nApnSize > 0) && (sDyncApn.pApn))
 #ifdef CONFIG_SOC_8910
@@ -1933,20 +1971,44 @@ void atCmdHandleCGCONTRDP(atCommand_t *cmd)
 #else
                 len += sprintf(pResp + len, "+CGCONTRDP: %d,5,,", Cid);
 #endif
-            if (0 == sPdpCont.nPdpAddrSize)
-            {
-                len += sprintf(pResp + len, "\"0.0.0.0.0.0.0.0\"");
-            }
-            else
+            if (!CFW_GprsGetDynamicIP(Cid, &sDyncIP, nSim) && (sDyncIP.nPdpAddrSize > 0) && (sDyncIP.pPdpAddr))
             {
                 len += sprintf(pResp + len, "\"");
-                for (uint8_t uCnt = 0; uCnt < sPdpCont.nPdpAddrSize; uCnt++)
+#if LWIP_IPV6
+                if (sDyncIP.nPdpAddrSize == 16)
                 {
-                    len += sprintf(pResp + len, "%d.", (sPdpCont.pPdpAddr[uCnt] >> 4) * 16 + ((sPdpCont.pPdpAddr[uCnt]) & 0x0F));
+                    const ip6_addr_t *ip6 = AT_GprsGetPdpIpv6Address(Cid, nSim);
+                    sDyncIP.pPdpAddr[0] = (ip6->addr[0] & 0XFF);
+                    sDyncIP.pPdpAddr[1] = (ip6->addr[0] >> 8) & 0XFF;
+                    sDyncIP.pPdpAddr[2] = (ip6->addr[0] >> 16) & 0XFF;
+                    sDyncIP.pPdpAddr[3] = (ip6->addr[0] >> 24) & 0XFF;
+                    sDyncIP.pPdpAddr[4] = (ip6->addr[1] & 0XFF);
+                    sDyncIP.pPdpAddr[5] = (ip6->addr[1] >> 8) & 0XFF;
+                    sDyncIP.pPdpAddr[6] = (ip6->addr[1] >> 16) & 0XFF;
+                    sDyncIP.pPdpAddr[7] = (ip6->addr[1] >> 24) & 0XFF;
                 }
-                // if()
-                len += sprintf(pResp + len, "0.0.0.0");
-                len += sprintf(pResp + len, "\"");
+                else if (sDyncIP.nPdpAddrSize == 20)
+                {
+                    const ip6_addr_t *ip6 = AT_GprsGetPdpIpv6Address(Cid, nSim);
+                    sDyncIP.pPdpAddr[4] = (ip6->addr[0] & 0XFF);
+                    sDyncIP.pPdpAddr[5] = (ip6->addr[0] >> 8) & 0XFF;
+                    sDyncIP.pPdpAddr[6] = (ip6->addr[0] >> 16) & 0XFF;
+                    sDyncIP.pPdpAddr[7] = (ip6->addr[0] >> 24) & 0XFF;
+                    sDyncIP.pPdpAddr[8] = (ip6->addr[1] & 0XFF);
+                    sDyncIP.pPdpAddr[9] = (ip6->addr[1] >> 8) & 0XFF;
+                    sDyncIP.pPdpAddr[10] = (ip6->addr[1] >> 16) & 0XFF;
+                    sDyncIP.pPdpAddr[11] = (ip6->addr[1] >> 24) & 0XFF;
+                }
+#endif
+                for (uint8_t uCnt = 0; uCnt < sDyncIP.nPdpAddrSize; uCnt++)
+                {
+                    len += sprintf(pResp + len, "%d.", (sDyncIP.pPdpAddr[uCnt] >> 4) * 16 + ((sDyncIP.pPdpAddr[uCnt]) & 0x0F));
+                }
+                for (uint8_t uCnt = 0; uCnt < sDyncIP.nPdpAddrSize; uCnt++)
+                {
+                    len += sprintf(pResp + len, "0.");
+                }
+                len += sprintf(pResp + len - 1, "\"");
             }
         }
         if (len > 0)
@@ -1955,14 +2017,18 @@ void atCmdHandleCGCONTRDP(atCommand_t *cmd)
     }
     else if (AT_CMD_EXE == cmd->type)
     {
-        char pResp[150] = {0};
+        char pResp[512] = {0};
+        uint8_t nActState = 0;
         for (int Cid = AT_PDPCID_MIN; Cid <= AT_PDPCID_MAX; Cid++)
         {
             memset(pResp, 0, sizeof(pResp));
             len = 0;
-            if (!CFW_GprsGetPdpCxtV2(Cid, &sPdpCont, nSim))
+            CFW_GetGprsActState(Cid, &nActState, nSim);
+            if ((!CFW_GprsGetPdpCxtV2(Cid, &sPdpCont, nSim)) && (nActState == CFW_GPRS_ACTIVED))
             {
-                if (!CFW_GprsGetDynamicAPN(Cid, &sDyncApn, nSim) && (sDyncApn.nApnSize > 0) && (sDyncApn.pApn))
+                uint8_t nActState = 0;
+                CFW_GetGprsActState(Cid, &nActState, nSim);
+                if (!CFW_GprsGetDynamicAPN(Cid, &sDyncApn, nSim) && (sDyncApn.nApnSize > 0) && (sDyncApn.pApn) && (nActState == CFW_GPRS_ACTIVED))
 #ifdef CONFIG_SOC_8910
                     len += sprintf(pResp + len, "+CGCONTRDP: %d,%d,\"%s\",", Cid, CFW_GprsGetNsapi(Cid, nSim), sDyncApn.pApn);
 #else
@@ -1974,20 +2040,45 @@ void atCmdHandleCGCONTRDP(atCommand_t *cmd)
 #else
                     len += sprintf(pResp + len, "+CGCONTRDP: %d,5,,", Cid);
 #endif
-                if (0 == sPdpCont.nPdpAddrSize)
-                {
-                    len += sprintf(pResp + len, "\"0.0.0.0.0.0.0.0\"");
-                }
-                else
+                if (!CFW_GprsGetDynamicIP(Cid, &sDyncIP, nSim) && (sDyncIP.nPdpAddrSize > 0) && (sDyncIP.pPdpAddr))
                 {
                     len += sprintf(pResp + len, "\"");
-                    for (uint8_t uCnt = 0; uCnt < sPdpCont.nPdpAddrSize; uCnt++)
+#if LWIP_IPV6
+                    if (sDyncIP.nPdpAddrSize == 16)
                     {
-                        len += sprintf(pResp + len, "%d.", (sPdpCont.pPdpAddr[uCnt] >> 4) * 16 + ((sPdpCont.pPdpAddr[uCnt]) & 0x0F));
+                        const ip6_addr_t *ip6 = AT_GprsGetPdpIpv6Address(Cid, nSim);
+                        sDyncIP.pPdpAddr[0] = (ip6->addr[0] & 0XFF);
+                        sDyncIP.pPdpAddr[1] = (ip6->addr[0] >> 8) & 0XFF;
+                        sDyncIP.pPdpAddr[2] = (ip6->addr[0] >> 16) & 0XFF;
+                        sDyncIP.pPdpAddr[3] = (ip6->addr[0] >> 24) & 0XFF;
+                        sDyncIP.pPdpAddr[4] = (ip6->addr[1] & 0XFF);
+                        sDyncIP.pPdpAddr[5] = (ip6->addr[1] >> 8) & 0XFF;
+                        sDyncIP.pPdpAddr[6] = (ip6->addr[1] >> 16) & 0XFF;
+                        sDyncIP.pPdpAddr[7] = (ip6->addr[1] >> 24) & 0XFF;
+                    }
+                    else if (sDyncIP.nPdpAddrSize == 20)
+                    {
+                        const ip6_addr_t *ip6 = AT_GprsGetPdpIpv6Address(Cid, nSim);
+                        sDyncIP.pPdpAddr[4] = (ip6->addr[0] & 0XFF);
+                        sDyncIP.pPdpAddr[5] = (ip6->addr[0] >> 8) & 0XFF;
+                        sDyncIP.pPdpAddr[6] = (ip6->addr[0] >> 16) & 0XFF;
+                        sDyncIP.pPdpAddr[7] = (ip6->addr[0] >> 24) & 0XFF;
+                        sDyncIP.pPdpAddr[8] = (ip6->addr[1] & 0XFF);
+                        sDyncIP.pPdpAddr[9] = (ip6->addr[1] >> 8) & 0XFF;
+                        sDyncIP.pPdpAddr[10] = (ip6->addr[1] >> 16) & 0XFF;
+                        sDyncIP.pPdpAddr[11] = (ip6->addr[1] >> 24) & 0XFF;
+                    }
+#endif
+                    for (uint8_t uCnt = 0; uCnt < sDyncIP.nPdpAddrSize; uCnt++)
+                    {
+                        len += sprintf(pResp + len, "%d.", (sDyncIP.pPdpAddr[uCnt] >> 4) * 16 + ((sDyncIP.pPdpAddr[uCnt]) & 0x0F));
                     }
                     // if()
-                    len += sprintf(pResp + len, "0.0.0.0");
-                    len += sprintf(pResp + len, "\"");
+                    for (uint8_t uCnt = 0; uCnt < sDyncIP.nPdpAddrSize; uCnt++)
+                    {
+                        len += sprintf(pResp + len, "0.");
+                    }
+                    len += sprintf(pResp + len - 1, "\"");
                 }
             }
             if (len > 0)
@@ -3555,7 +3646,6 @@ void atCmdHandleCGQMIN(atCommand_t *cmd)
     int32_t iResult;
     uint8_t uCid = 0;
     CFW_GPRS_QOS sQos = {0, 0, 0, 0, 0};
-    uint8_t uState = CFW_GPRS_DEACTIVED;
     uint8_t nSim = atCmdGetSim(cmd->engine);
 
     char *rsp = (char *)malloc(64);
@@ -3577,11 +3667,6 @@ void atCmdHandleCGQMIN(atCommand_t *cmd)
         if (!paramok)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         OSI_LOGI(0, "CGDSCONT set cid is: %d", uCid);
-        CFW_GetGprsActState(uCid, &uState, nSim);
-        if (uState != CFW_GPRS_ACTIVED)
-        {
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-        }
         sQos.nPrecedence = atParamDefUintInRange(cmd->params[1], 0, 0, 3, &paramok);
         if (!paramok)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
@@ -3963,10 +4048,12 @@ void atCmdHandleCGACT(atCommand_t *cmd)
             for (int n = 0; n < cid_count; n++)
             {
                 AT_Gprs_CidInfo *pinfo = &gAtCfwCtx.sim[nSim].cid_info[cids[n]];
+                if (ERR_SUCCESS != CFW_GprsGetPdpCxtV2(cids[n], &pPdpCont, nSim))
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+                else
+                    pinfo->uCid = cids[n];
                 OSI_LOGI(0, "pinfo->uCid %d :%d", n, pinfo->uCid);
                 if (0 == pinfo->uCid)
-                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-                if (ERR_SUCCESS != CFW_GprsGetPdpCxtV2(pinfo->uCid, &pPdpCont, nSim))
                     RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
             }
         }
@@ -4158,6 +4245,89 @@ void atCmdHandleCGACT(atCommand_t *cmd)
     {
         atCmdRespCmeError(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
     }
+}
+
+void atCmdHandlePDNACTINFO(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    CFW_PDN_TIMER_MAXCOUNT_INFO pdnTimerAndMaxCount;
+    memset(&pdnTimerAndMaxCount, 0, sizeof(CFW_PDN_TIMER_MAXCOUNT_INFO));
+    uint8_t nCurrentRat = CFW_NWGetRat(nSim);
+    if (AT_CMD_SET == cmd->type)
+    {
+        //AT^PDNACTINFO=<operwr>,<pdnmode>[,<retrytimer>[,<retrymaxcount>]]
+        bool paramok = true;
+        uint8_t operwr = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        uint8_t pdnmode = atParamUintInRange(cmd->params[1], 0, 1, &paramok);
+        if (!paramok)
+            RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
+        OSI_LOGI(0, "PDNACTINFO:operwr=%d pdnmode=%d nCurrentRat=%d", operwr, pdnmode, nCurrentRat);
+        if (operwr) // write param
+        {
+            if (cmd->param_count > 4)
+            {
+                OSI_LOGI(0, "PDNACTINFO: Write Command param count > 4. error");
+                RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
+            }
+            if (pdnmode) //active pdn
+            {
+                if (nCurrentRat == 2) //T3380
+                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 30, 5, 30, &paramok);
+                else //T3482
+                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 8, 5, 8, &paramok);
+                pdnTimerAndMaxCount.nMaxCount = atParamDefUintInRange(cmd->params[3], 4, 2, 4, &paramok);
+                if (!paramok)
+                    RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
+                OSI_LOGI(0, "PDNACTINFO:nTimeValue=%d nMaxCount=%d", pdnTimerAndMaxCount.nTimeValue, pdnTimerAndMaxCount.nMaxCount);
+                if (CFW_SetPdnActTimerAndMaxCount(pdnTimerAndMaxCount, nCurrentRat, nSim) != 0)
+                    RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
+            }
+            else //deactive pdn
+            {
+                if (nCurrentRat == 2) //T3390
+                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 8, 2, 8, &paramok);
+                else //T3492
+                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 8, 2, 6, &paramok);
+                pdnTimerAndMaxCount.nMaxCount = atParamDefUintInRange(cmd->params[3], 4, 2, 4, &paramok);
+                if (!paramok)
+                    RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
+                OSI_LOGI(0, "PDNACTINFO:nTimeValue=%d nMaxCount=%d", pdnTimerAndMaxCount.nTimeValue, pdnTimerAndMaxCount.nMaxCount);
+                if (CFW_SetPdnDeactTimerAndMaxCount(pdnTimerAndMaxCount, nCurrentRat, nSim) != 0)
+                    RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
+            }
+        }
+        else //read param
+        {
+            if (cmd->param_count > 2)
+            {
+                OSI_LOGI(0, "PDNACTINFO: Read Command param count > 2. error");
+                RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
+            }
+            char rspStr[30] = {0};
+            if (pdnmode)
+            {
+                if (CFW_GetPdnActTimerAndMaxCount(&pdnTimerAndMaxCount, nCurrentRat, nSim) != 0)
+                    RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
+                sprintf(rspStr, "^PDNACTINFO: %d, %d", pdnTimerAndMaxCount.nTimeValue, pdnTimerAndMaxCount.nMaxCount);
+                atCmdRespInfoText(cmd->engine, rspStr);
+            }
+            else
+            {
+                if (CFW_GetPdnDeactTimerAndMaxCount(&pdnTimerAndMaxCount, nCurrentRat, nSim) != 0)
+                    RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
+                sprintf(rspStr, "^PDNACTINFO: %d, %d", pdnTimerAndMaxCount.nTimeValue, pdnTimerAndMaxCount.nMaxCount);
+                atCmdRespInfoText(cmd->engine, rspStr);
+            }
+        }
+        RETURN_OK(cmd->engine);
+    }
+    else if (AT_CMD_TEST == cmd->type)
+    {
+        atCmdRespInfoText(cmd->engine, "^PDNACTINFO:(0-1),(0-1),(act:5-30 deact:2-8),(2-4)");
+        RETURN_OK(cmd->engine);
+    }
+    else
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
 }
 
 #ifdef GCF_TEST
@@ -4552,160 +4722,7 @@ static void _pppEnd(void *param, uint8_t err_code)
     }
     osiThreadCallback(atEngineGetThreadId(), _pppDelete, param);
 }
-#if !PPP_AUTHGPRS_SUPPORT
-static void _pppActDone(atCommand_t *cmd, int _iActiavedbyPPP)
-{
-    cgdataContext_t *async = (cgdataContext_t *)cmd->async_ctx;
-    atDispatch_t *ch = atCmdGetDispatch(cmd->engine);
-    uint8_t simId = atCmdGetSim(cmd->engine);
-    pppSession_t *ppp = pppSessionCreate(async->cid, simId, atEngineGetThreadId(),
-                                         _pppDataToAt, ch,
-                                         _pppEnd, ch,
-                                         _pppAtFlowControl, ch,
-                                         _iActiavedbyPPP);
 
-    if (ppp == NULL)
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-
-    atDispatchSetModeSwitchHandler(ch, pppAtModeSwitchHandler);
-    atEngineModeSwitch(AT_MODE_SWITCH_DATA_START, ch);
-    atDataEngine_t *dengine = atDispatchGetDataEngine(ch);
-    atDataSetPPPMode(dengine, ppp);
-}
-
-static void _pppActRsp(atCommand_t *cmd, const osiEvent_t *event)
-{
-    // EV_CFW_GPRS_ACT_RSP
-    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
-
-    cgdataContext_t *async = (cgdataContext_t *)cmd->async_ctx;
-    uint8_t sim = atCmdGetSim(cmd->engine);
-
-    if (cfw_event->nType != CFW_GPRS_ACTIVED)
-        AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED));
-
-    //send event to netthread and wait for netif created
-
-    OSI_LOGI(0x10005667, "We got CFW_GPRS_ACTIVED");
-    osiEvent_t tcpip_event = *event;
-    tcpip_event.id = EV_TCPIP_CFW_GPRS_ACT;
-    CFW_EVENT *tcpip_cfw_event = (CFW_EVENT *)&tcpip_event;
-    tcpip_cfw_event->nUTI = 0;
-    osiEventSend(netGetTaskID(), (const osiEvent_t *)&tcpip_event);
-
-    //save cid for deactive gprs
-    AT_Gprs_CidInfo *pinfo = &gAtCfwCtx.sim[sim].cid_info[async->cid];
-    OSI_LOGI(0, "_pppActReq sim = %d async->cid = %d", sim, async->cid);
-    pinfo->uCid = async->cid;
-    pinfo->uState = CFW_GPRS_ACTIVED;
-
-    osiThreadSleep(100);
-
-    _pppActDone(cmd, 1 | 0x80);
-}
-
-static void _pppActReq(atCommand_t *cmd)
-{
-    cgdataContext_t *async = (cgdataContext_t *)cmd->async_ctx;
-
-    uint8_t act_state = 0;
-    uint8_t sim = atCmdGetSim(cmd->engine);
-    uint32_t ret;
-
-    CFW_GetGprsActState(async->cid, &act_state, sim);
-    if (act_state != CFW_GPRS_ACTIVED)
-    {
-        uint8_t oper_id[6];
-        uint8_t mode;
-        CFW_GPRS_PDPCONT_INFO_V2 sPdpCont;
-        CFW_GPRS_PDPCONT_INFO_V2 sPdpContSet;
-        memset(&sPdpContSet, 0x00, sizeof(CFW_GPRS_PDPCONT_INFO_V2));
-        memset(&sPdpCont, 0x00, sizeof(CFW_GPRS_PDPCONT_INFO_V2));
-        ret = CFW_GprsGetPdpCxtV2(async->cid, &sPdpCont, sim);
-        if (ret != ERR_SUCCESS)
-        {
-            if (CFW_GprsSetPdpCxtV2(async->cid, &sPdpContSet, sim) != 0)
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-        }
-        CFW_GprsGetPdpCxtV2(async->cid, &sPdpCont, sim);
-        if (sPdpCont.nApnSize == 0)
-        {
-            if (CFW_NwGetCurrentOperator(oper_id, &mode, sim) != 0)
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-            const char *defaultApnInfo = NULL;
-            if (AT_GetOperatorDefaultApn(oper_id, &defaultApnInfo))
-            {
-                sPdpCont.nApnSize = strlen(defaultApnInfo);
-                OSI_LOGXI(OSI_LOGPAR_S, 0x00000000, "sPdpCont.defaultApnInfo %s", defaultApnInfo);
-                OSI_LOGI(0, "sPdpCont.nApnSize: %d", sPdpCont.nApnSize);
-                if (sPdpCont.nApnSize >= THE_APN_MAX_LEN)
-                {
-                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-                }
-                memcpy(sPdpCont.pApn, defaultApnInfo, sPdpCont.nApnSize);
-            }
-        }
-        if (sPdpCont.nPdpType == 0)
-        {
-            sPdpCont.nPdpType = CFW_GPRS_PDP_TYPE_IPV4V6; /* Default IPV4 */
-        }
-        sPdpCont.nDComp = 0;
-        sPdpCont.nHComp = 0;
-        sPdpCont.nNSLPI = 0;
-        CFW_GPRS_QOS Qos = {3, 4, 3, 4, 16};
-        CFW_GprsSetReqQos(async->cid, &Qos, sim);
-        if (CFW_GprsSetPdpCxtV2(async->cid, &sPdpCont, sim) != 0)
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-
-        cmd->uti = cfwRequestUTI((osiEventCallback_t)_pppActRsp, cmd);
-        if ((ret = CFW_GprsAct(CFW_GPRS_ACTIVED, async->cid, cmd->uti, sim)) != 0)
-        {
-            cfwReleaseUTI(cmd->uti);
-            RETURN_CME_CFW_ERR(cmd->engine, ret);
-        }
-        RETURN_FOR_ASYNC();
-    }
-    _pppActDone(cmd, 0 | 0x80);
-}
-
-static void _pppAttRsp(atCommand_t *cmd, const osiEvent_t *event)
-{
-    // EV_CFW_GPRS_ATT_RSP
-    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
-
-    if (cfw_event->nType != CFW_GPRS_ATTACHED)
-        RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
-
-    _pppActReq(cmd);
-}
-
-void atEnterPPPState(atCommand_t *cmd, uint8_t cid)
-{
-    OSI_LOGXI(OSI_LOGPAR_IS, 0, "enter PPP mode cid/%d by %s", cid, cmd->desc->name);
-    uint8_t sim = atCmdGetSim(cmd->engine);
-    uint32_t ret;
-
-    cgdataContext_t *async = (cgdataContext_t *)malloc(sizeof(cgdataContext_t));
-    async->cid = cid;
-    cmd->async_ctx = async;
-    cmd->async_ctx_destroy = atCommandAsyncCtxFree;
-
-    uint8_t att_state = 0;
-    CFW_GetGprsAttState(&att_state, sim);
-    if (att_state != CFW_GPRS_ATTACHED)
-    {
-        cmd->uti = cfwRequestUTI((osiEventCallback_t)_pppAttRsp, cmd);
-        if ((ret = CFW_GprsAtt(CFW_GPRS_ATTACHED, cmd->uti, sim)) != 0)
-        {
-            cfwReleaseUTI(cmd->uti);
-            RETURN_CME_CFW_ERR(cmd->engine, ret);
-        }
-        RETURN_FOR_ASYNC();
-    }
-
-    _pppActReq(cmd);
-}
-#else
 void atEnterPPPState(atCommand_t *cmd, uint8_t cid)
 {
     //cgdataContext_t *async = (cgdataContext_t *)cmd->async_ctx;
@@ -4738,7 +4755,7 @@ void atEnterPPPState(atCommand_t *cmd, uint8_t cid)
     atDataEngine_t *dengine = atDispatchGetDataEngine(ch);
     atDataSetPPPMode(dengine, ppp);
 }
-#endif
+
 void atCmdHandleCGDATA(atCommand_t *cmd)
 {
     // #ifdef PORTING_ON_GOING
@@ -5013,7 +5030,7 @@ void atCmdHandleCGANS(atCommand_t *cmd)
     }
     else if (AT_CMD_TEST == cmd->type)
     {
-        atCmdRespInfoText(cmd->engine, "+CGANS: (0,1) (\"PPP,IP,IPV6,IPV4V6\")");
+        atCmdRespInfoText(cmd->engine, "+CGANS: (0,1),(\"PPP,IP,IPV6,IPV4V6\")");
         RETURN_OK(cmd->engine);
     }
     else
@@ -5133,7 +5150,7 @@ void atCmdHandleCGREG(atCommand_t *cmd)
         {
             sprintf(rsp, "+CGREG: %d,%d,\"%02X%02X\",\"%02X%02X\"",
                     gAtSetting.sim[nSim].cgreg, sStatus.nStatus,
-                    sStatus.nAreaCode[0], sStatus.nAreaCode[1],
+                    sStatus.nAreaCode[3], sStatus.nAreaCode[4],
                     sStatus.nCellId[0], sStatus.nCellId[1]);
         }
         else
@@ -7383,7 +7400,7 @@ void atCmdHandleCPSMS(atCommand_t *cmd)
     }
 }
 
-uint8_t g_edrx_type = 5;
+uint8_t g_edrx_type = 4;
 void atCmdHandleCEDRXS(atCommand_t *cmd)
 {
     const char *aucBitStr = NULL;
@@ -7439,13 +7456,13 @@ void atCmdHandleCEDRXS(atCommand_t *cmd)
                     nvWriten |= 0x02;
                     edrxValue = 0;
                 }
-                g_edrx_type = 5;
+                g_edrx_type = 4;
                 break;
             }
         }
         if (cmd->param_count >= 2)
         {
-            actType = atParamUintInRange(cmd->params[1], 4, 5, &paramok);
+            actType = atParamUintInRange(cmd->params[1], 4, 4, &paramok);
             OSI_LOGI(0, "actType: %d, paramok:%d", actType, paramok);
             if (!paramok)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
@@ -7484,7 +7501,7 @@ void atCmdHandleCEDRXS(atCommand_t *cmd)
         }
         else
         {
-            g_edrx_type = 5;
+            g_edrx_type = 4;
         }
         if (nvWriten & 0x01)
         {
@@ -7517,7 +7534,7 @@ void atCmdHandleCEDRXS(atCommand_t *cmd)
     }
     else if (AT_CMD_TEST == cmd->type)
     {
-        const char *respInfo = "+CEDRXS: mode=[0-3], AcT-type=[4-5], Requested_eDRX_value=\"4bitString eg.0100 \"";
+        const char *respInfo = "+CEDRXS: mode=[0-3], AcT-type=[4], Requested_eDRX_value=\"4bitString eg.0100 \"";
         atCmdRespInfoText(cmd->engine, respInfo);
         RETURN_OK(cmd->engine);
     }
@@ -8205,11 +8222,12 @@ uint16_t Cereg_MemCompare(const void *buf1, const void *buf2, uint16_t count)
             break;
     return (uint16_t)res;
 }
-
+extern uint8_t Mapping_Creg_From_PsType(uint8_t pstype);
 uint8_t _ceregRespond(CFW_NW_STATUS_INFO *sStatus, uint8_t stat, bool reportN, atCommand_t *cmd)
 {
     uint8_t ret = 1;
     uint8_t nSim = atCmdGetSim(cmd->engine);
+    uint8_t nCurrRat = CFW_NWGetStackRat(nSim);
     uint8_t reg = gAtSetting.sim[nSim].cereg;
     uint8_t activeTime[8];
     uint8_t periodicTau[8];
@@ -8264,9 +8282,9 @@ uint8_t _ceregRespond(CFW_NW_STATUS_INFO *sStatus, uint8_t stat, bool reportN, a
         }
         if ((reportN == true) || ((reportN == false) && (nwInfoChange == true)))
         {
-            respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\",7",
-                               stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
-                               sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3]);
+            respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\",%d",
+                               stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
+                               sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3], Mapping_Creg_From_PsType(nCurrRat));
         }
         else
             ret = 0;
@@ -8284,9 +8302,10 @@ uint8_t _ceregRespond(CFW_NW_STATUS_INFO *sStatus, uint8_t stat, bool reportN, a
 
             if ((reportN == true) || ((reportN == false) && (nwInfoChange == true)))
             {
-                respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\",7,%d,%d",
-                                   stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\",%d,%d,%d",
+                                   stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                    sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
+                                   Mapping_Creg_From_PsType(nCurrRat),
                                    sStatus->cause_type, sStatus->reject_cause);
             }
             else
@@ -8310,9 +8329,10 @@ uint8_t _ceregRespond(CFW_NW_STATUS_INFO *sStatus, uint8_t stat, bool reportN, a
 
             if ((reportN == true) || ((reportN == false) && (nwInfoChange == true)))
             {
-                respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", 7,,,\"%c%c%c%c%c%c%c%c\",\"%c%c%c%c%c%c%c%c\"",
-                                   stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,,,\"%c%c%c%c%c%c%c%c\",\"%c%c%c%c%c%c%c%c\"",
+                                   stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                    sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
+                                   Mapping_Creg_From_PsType(nCurrRat),
                                    activeTime[0], activeTime[1], activeTime[2], activeTime[3],
                                    activeTime[4], activeTime[5], activeTime[6], activeTime[7],
                                    periodicTau[0], periodicTau[1], periodicTau[2], periodicTau[3],
@@ -8325,9 +8345,10 @@ uint8_t _ceregRespond(CFW_NW_STATUS_INFO *sStatus, uint8_t stat, bool reportN, a
         {
             if ((reportN == true) || ((reportN == false) && (nwInfoChange == true)))
             {
-                respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", 7,,,\"%c%c%c%c%c%c%c%c\"",
-                                   stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\",%d,,,\"%c%c%c%c%c%c%c%c\"",
+                                   stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                    sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
+                                   Mapping_Creg_From_PsType(nCurrRat),
                                    activeTime[0], activeTime[1], activeTime[2], activeTime[3],
                                    activeTime[4], activeTime[5], activeTime[6], activeTime[7]);
             }
@@ -8338,9 +8359,10 @@ uint8_t _ceregRespond(CFW_NW_STATUS_INFO *sStatus, uint8_t stat, bool reportN, a
         {
             if ((reportN == true) || ((reportN == false) && (nwInfoChange == true)))
             {
-                respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", 7,,,,\"%c%c%c%c%c%c%c%c\"",
-                                   stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,,,,\"%c%c%c%c%c%c%c%c\"",
+                                   stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                    sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
+                                   Mapping_Creg_From_PsType(nCurrRat),
                                    periodicTau[0], periodicTau[1], periodicTau[2], periodicTau[3],
                                    periodicTau[4], periodicTau[5], periodicTau[6], periodicTau[7]);
             }
@@ -8366,9 +8388,10 @@ uint8_t _ceregRespond(CFW_NW_STATUS_INFO *sStatus, uint8_t stat, bool reportN, a
             {
                 if ((reportN == true) || ((reportN == false) && (nwInfoChange == true)))
                 {
-                    respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", 7,%d,%d,\"%c%c%c%c%c%c%c%c\",\"%c%c%c%c%c%c%c%c\"",
-                                       stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                    respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,%d,%d,\"%c%c%c%c%c%c%c%c\",\"%c%c%c%c%c%c%c%c\"",
+                                       stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                        sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
+                                       Mapping_Creg_From_PsType(nCurrRat),
                                        sStatus->cause_type, sStatus->reject_cause,
                                        activeTime[0], activeTime[1], activeTime[2], activeTime[3],
                                        activeTime[4], activeTime[5], activeTime[6], activeTime[7],
@@ -8382,9 +8405,10 @@ uint8_t _ceregRespond(CFW_NW_STATUS_INFO *sStatus, uint8_t stat, bool reportN, a
             {
                 if ((reportN == true) || ((reportN == false) && (nwInfoChange == true)))
                 {
-                    respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", 7,%d,%d,\"%c%c%c%c%c%c%c%c\"",
-                                       stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                    respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,%d,%d,\"%c%c%c%c%c%c%c%c\"",
+                                       stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                        sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
+                                       Mapping_Creg_From_PsType(nCurrRat),
                                        sStatus->cause_type, sStatus->reject_cause,
                                        activeTime[0], activeTime[1], activeTime[2], activeTime[3],
                                        activeTime[4], activeTime[5], activeTime[6], activeTime[7]);
@@ -8394,9 +8418,10 @@ uint8_t _ceregRespond(CFW_NW_STATUS_INFO *sStatus, uint8_t stat, bool reportN, a
             {
                 if ((reportN == true) || ((reportN == false) && (nwInfoChange == true)))
                 {
-                    respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", 7,%d,%d,,\"%c%c%c%c%c%c%c%c\"",
-                                       stat, sStatus->nAreaCode[0], sStatus->nAreaCode[1],
+                    respond += sprintf(respond, "%d,\"%02x%02x\",\"%02x%02x%02x%02x\", %d,%d,%d,,\"%c%c%c%c%c%c%c%c\"",
+                                       stat, sStatus->nAreaCode[3], sStatus->nAreaCode[4],
                                        sStatus->nCellId[0], sStatus->nCellId[1], sStatus->nCellId[2], sStatus->nCellId[3],
+                                       Mapping_Creg_From_PsType(nCurrRat),
                                        sStatus->cause_type, sStatus->reject_cause,
                                        periodicTau[0], periodicTau[1], periodicTau[2], periodicTau[3],
                                        periodicTau[4], periodicTau[5], periodicTau[6], periodicTau[7]);
@@ -9055,7 +9080,7 @@ void atCmdHandleRRTMPARAM(atCommand_t *cmd)
                 if (nEnable && (cmd->param_count == 4))
                 {
                     nValue1 = atParamUintInRange(cmd->params[2], 1, 65535, &paramok);
-                    nValue2 = atParamUintInRange(cmd->params[3], 0, 511, &paramok);
+                    nValue2 = atParamUintInRange(cmd->params[3], 0, 503, &paramok);
                     if (!paramok)
                     {
                         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
@@ -9272,7 +9297,7 @@ void atCmdHandleRRTMPARAM(atCommand_t *cmd)
                 if (nEnable && (cmd->param_count == 4))
                 {
                     nValue1 = atParamUintInRange(cmd->params[2], 1, 65535, &paramok);
-                    nValue2 = atParamUintInRange(cmd->params[3], 0, 511, &paramok);
+                    nValue2 = atParamUintInRange(cmd->params[3], 0, 503, &paramok);
                     if (!paramok)
                     {
                         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
@@ -9581,7 +9606,7 @@ void atCmdHandleCFGDFTPDN(atCommand_t *cmd)
     const char *apn = NULL;
     const char *Username = NULL;
     const char *Password = NULL;
-    char AtRet[200] = {0}; /* max 20 charactors per cid */
+    char AtRet[300] = {0}; /* max 20 charactors per cid */
     CFW_SIM_ID nSim = atCmdGetSim(cmd->engine);
 
     OSI_LOGI(0, "atCmdHandleCFGDFTPDN");
@@ -9745,6 +9770,7 @@ void atCmdHandleCFGDFTPDN(atCommand_t *cmd)
         }
         atCfgAutoSave();
         CFW_GprsSendCtxCfg_V2(&nDftPdn, nSim);
+
         RETURN_OK(cmd->engine);
     }
     else if (AT_CMD_READ == cmd->type)
@@ -9759,7 +9785,7 @@ void atCmdHandleCFGDFTPDN(atCommand_t *cmd)
     }
     else if (AT_CMD_TEST == cmd->type)
     {
-        sprintf(AtRet, "+CFGDFTPDN: pdptype=[1,2,3],nAuthProt=[0,1,2],\"apn\",\"Username\",\"Password\"");
+        sprintf(AtRet, "+CFGDFTPDN: pdptype=[1,2,3], nAuthProt=[0,1,2], \"apn\", \"Username\", \"Password\"");
         atCmdRespInfoText(cmd->engine, AtRet);
         RETURN_OK(cmd->engine);
     }
@@ -9827,6 +9853,46 @@ void atCmdHandleDiscardPSData(atCommand_t *cmd)
     else
     {
         OSI_LOGI(0, "not supported!");
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
+    }
+}
+
+void atCmdHandleSETCSPAGFLAG(atCommand_t *cmd)
+{
+    char urcBuffer[32] = {0};
+
+    if (AT_CMD_SET == cmd->type)
+    {
+        // AT+SETCSPAGFLAG=<flag>
+        bool paramok = true;
+
+        bool nEnable = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        if (!paramok || cmd->param_count != 1)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        if (CFW_SetCSPagingFlag(nEnable) != 0)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+        RETURN_OK(cmd->engine);
+    }
+    else if (AT_CMD_READ == cmd->type)
+    {
+        uint8_t flag = 0;
+        if ((CFW_GetCSPagingFlag(&flag) != 0) || flag > 1)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+        sprintf(urcBuffer, "+SETCSPAGFLAG: %d", flag);
+        atCmdRespInfoText(cmd->engine, urcBuffer);
+        RETURN_OK(cmd->engine);
+    }
+    else if (AT_CMD_TEST == cmd->type)
+    {
+        sprintf(urcBuffer, "+SETCSPAGFLAG: (0-1)");
+        atCmdRespInfoText(cmd->engine, urcBuffer);
+        RETURN_OK(cmd->engine);
+    }
+    else
+    {
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
     }
 }

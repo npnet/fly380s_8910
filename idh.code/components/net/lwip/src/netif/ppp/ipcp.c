@@ -41,6 +41,7 @@
  */
 
 #include "netif/ppp/ppp_opts.h"
+#include "osi_log.h"
 #if PPP_SUPPORT && PPP_IPV4_SUPPORT /* don't build if not configured for use in lwipopts.h */
 
 /*
@@ -348,7 +349,7 @@ static int
 setvjslots(argv)
     char **argv;
 {
-sys_arch_printf("setvjslots");
+OSI_LOGI(0x1000761b, "setvjslots");
 	int value;
 
     if (!int_option(*argv, &value))
@@ -371,7 +372,7 @@ static int
 setdnsaddr(argv)
     char **argv;
 {
-sys_arch_printf("setdnsaddr");
+OSI_LOGI(0x1000761c, "setdnsaddr");
 	u32_t dns;
     struct hostent *hp;
 
@@ -408,7 +409,7 @@ static int
 setwinsaddr(argv)
     char **argv;
 {
-sys_arch_printf("setwinsaddr");
+OSI_LOGI(0x1000761d, "setwinsaddr");
 	u32_t wins;
     struct hostent *hp;
 
@@ -448,7 +449,7 @@ setipaddr(arg, argv, doit)
     char **argv;
     int doit;
 {
-sys_arch_printf("setipaddr");
+OSI_LOGI(0x1000761e, "setipaddr");
 	struct hostent *hp;
     char *colon;
     u32_t local, remote;
@@ -516,7 +517,7 @@ printipaddr(opt, printer, arg)
     void (*printer) (void *, char *, ...);
     void *arg;
 {
-sys_arch_printf("printipaddr");
+OSI_LOGI(0x1000761f, "printipaddr");
 	ipcp_options *wo = &ipcp_wantoptions[0];
 
 	if (wo->ouraddr != 0)
@@ -533,7 +534,7 @@ static int
 setnetmask(argv)
     char **argv;
 {
-sys_arch_printf("setnetmask");
+OSI_LOGI(0x10007620, "setnetmask");
 	u32_t mask;
     int n;
     char *p;
@@ -563,7 +564,7 @@ parse_dotted_ip(p, vp)
     char *p;
     u32_t *vp;
 {
-sys_arch_printf("parse_dotted_ip");
+OSI_LOGI(0x10007621, "parse_dotted_ip");
 	int n;
     u32_t v, b;
     char *endp, *p0 = p;
@@ -597,7 +598,7 @@ sys_arch_printf("parse_dotted_ip");
  * ipcp_init - Initialize IPCP.
  */
 static void ipcp_init(ppp_pcb *pcb) {
-sys_arch_printf("ipcp_init");
+OSI_LOGI(0x10007622, "ipcp_init");
 	fsm *f = &pcb->ipcp_fsm;
 
     ipcp_options *wo = &pcb->ipcp_wantoptions;
@@ -660,7 +661,7 @@ sys_arch_printf("ipcp_init");
  * ipcp_open - IPCP is allowed to come up.
  */
 static void ipcp_open(ppp_pcb *pcb) {
-sys_arch_printf("ipcp_open");
+OSI_LOGI(0x10007623, "ipcp_open");
 	fsm *f = &pcb->ipcp_fsm;
     fsm_open(f);
     pcb->ipcp_is_open = 1;
@@ -671,7 +672,7 @@ sys_arch_printf("ipcp_open");
  * ipcp_close - Take IPCP down.
  */
 static void ipcp_close(ppp_pcb *pcb, const char *reason) {
-sys_arch_printf("ipcp_close");
+OSI_LOGI(0x10007624, "ipcp_close");
 	fsm *f = &pcb->ipcp_fsm;
     fsm_close(f, reason);
 }
@@ -681,7 +682,7 @@ sys_arch_printf("ipcp_close");
  * ipcp_lowerup - The lower layer is up.
  */
 static void ipcp_lowerup(ppp_pcb *pcb) {
-sys_arch_printf("ipcp_lowerup");
+OSI_LOGI(0x10007625, "ipcp_lowerup");
 	fsm *f = &pcb->ipcp_fsm;
     fsm_lowerup(f);
 }
@@ -691,7 +692,7 @@ sys_arch_printf("ipcp_lowerup");
  * ipcp_lowerdown - The lower layer is down.
  */
 static void ipcp_lowerdown(ppp_pcb *pcb) {
-sys_arch_printf("ipcp_lowerdown");
+OSI_LOGI(0x10007626, "ipcp_lowerdown");
 	fsm *f = &pcb->ipcp_fsm;
     fsm_lowerdown(f);
 }
@@ -701,7 +702,7 @@ sys_arch_printf("ipcp_lowerdown");
  * ipcp_input - Input IPCP packet.
  */
 static void ipcp_input(ppp_pcb *pcb, u_char *p, int len) {
-sys_arch_printf("ipcp_input");
+OSI_LOGI(0x10007627, "ipcp_input");
 	fsm *f = &pcb->ipcp_fsm;
     fsm_input(f, p, len);
 }
@@ -713,7 +714,7 @@ sys_arch_printf("ipcp_input");
  * Pretend the lower layer went down, so we shut up.
  */
 static void ipcp_protrej(ppp_pcb *pcb) {
-sys_arch_printf("ipcp_protrej");
+OSI_LOGI(0x10007628, "ipcp_protrej");
 	fsm *f = &pcb->ipcp_fsm;
     fsm_lowerdown(f);
 }
@@ -724,7 +725,7 @@ sys_arch_printf("ipcp_protrej");
  * Called by fsm_sconfreq, Send Configure Request.
  */
 static void ipcp_resetci(fsm *f) {
-sys_arch_printf("ipcp_resetci");
+OSI_LOGI(0x10007629, "ipcp_resetci");
 	ppp_pcb *pcb = f->pcb;
     ipcp_options *wo = &pcb->ipcp_wantoptions;
     ipcp_options *go = &pcb->ipcp_gotoptions;
@@ -759,7 +760,7 @@ sys_arch_printf("ipcp_resetci");
  * Called by fsm_sconfreq, Send Configure Request.
  */
 static int ipcp_cilen(fsm *f) {
-sys_arch_printf("ipcp_cilen");
+OSI_LOGI(0x1000762a, "ipcp_cilen");
 	ppp_pcb *pcb = f->pcb;
     ipcp_options *go = &pcb->ipcp_gotoptions;
 #if VJ_SUPPORT
@@ -820,7 +821,7 @@ sys_arch_printf("ipcp_cilen");
  * Called by fsm_sconfreq, Send Configure Request.
  */
 static void ipcp_addci(fsm *f, u_char *ucp, int *lenp) {
-sys_arch_printf("ipcp_addci");
+OSI_LOGI(0x1000762b, "ipcp_addci");
 	ppp_pcb *pcb = f->pcb;
     ipcp_options *go = &pcb->ipcp_gotoptions;
     int len = *lenp;
@@ -936,7 +937,7 @@ sys_arch_printf("ipcp_addci");
  *	1 - Ack was good.
  */
 static int ipcp_ackci(fsm *f, u_char *p, int len) {
-sys_arch_printf("ipcp_ackci");
+OSI_LOGI(0x1000762c, "ipcp_ackci");
 	ppp_pcb *pcb = f->pcb;
     ipcp_options *go = &pcb->ipcp_gotoptions;
     u_short cilen, citype;
@@ -1077,7 +1078,7 @@ sys_arch_printf("ipcp_ackci");
     return (1);
 
 bad:
-    IPCPDEBUG(("ipcp_ackci: received bad Ack!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c5, "ipcp_ackci: received bad Ack!"));
     return (0);
 }
 
@@ -1092,7 +1093,7 @@ bad:
  *	1 - Nak was good.
  */
 static int ipcp_nakci(fsm *f, u_char *p, int len, int treat_as_reject) {
-sys_arch_printf("ipcp_nakci");
+OSI_LOGI(0x1000762d, "ipcp_nakci");
 	ppp_pcb *pcb = f->pcb;
     ipcp_options *go = &pcb->ipcp_gotoptions;
     u_char citype, cilen, *next;
@@ -1348,7 +1349,7 @@ sys_arch_printf("ipcp_nakci");
     return 1;
 
 bad:
-    IPCPDEBUG(("ipcp_nakci: received bad Nak!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c6, "ipcp_nakci: received bad Nak!"));
     return 0;
 }
 
@@ -1358,7 +1359,7 @@ bad:
  * Callback from fsm_rconfnakrej.
  */
 static int ipcp_rejci(fsm *f, u_char *p, int len) {
-sys_arch_printf("ipcp_rejci");
+OSI_LOGI(0x1000762e, "ipcp_rejci");
 	ppp_pcb *pcb = f->pcb;
     ipcp_options *go = &pcb->ipcp_gotoptions;
     u_char cilen;
@@ -1507,7 +1508,7 @@ sys_arch_printf("ipcp_rejci");
     return 1;
 
 bad:
-    IPCPDEBUG(("ipcp_rejci: received bad Reject!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c7, "ipcp_rejci: received bad Reject!"));
     return 0;
 }
 
@@ -1524,7 +1525,7 @@ bad:
  * len = Length of requested CIs
  */
 static int ipcp_reqci(fsm *f, u_char *inp, int *len, int reject_if_disagree) {
-sys_arch_printf("ipcp_reqci");
+OSI_LOGI(0x1000762f, "ipcp_reqci");
 	ppp_pcb *pcb = f->pcb;
     ipcp_options *wo = &pcb->ipcp_wantoptions;
     ipcp_options *ho = &pcb->ipcp_hisoptions;
@@ -1562,7 +1563,7 @@ sys_arch_printf("ipcp_reqci");
 	if (l < 2 ||			/* Not enough data for CI header or */
 	    p[1] < 2 ||			/*  CI length too small or */
 	    p[1] > l) {			/*  CI length too big? */
-	    IPCPDEBUG(("ipcp_reqci: bad CI length!"));
+	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c8, "ipcp_reqci: bad CI length!"));
 	    orc = CONFREJ;		/* Reject bad CI */
 	    cilen = l;			/* Reject till end of packet */
 	    l = 0;			/* Don't loop again */
@@ -1811,7 +1812,7 @@ endswitch:
     }
 
     *len = ucp - inp;			/* Compute output length */
-    IPCPDEBUG(("ipcp: returning Configure-%s", CODENAME(rc)));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c9, "ipcp: returning Configure-%d", rc));
     return (rc);			/* Return final code */
 }
 
@@ -1858,7 +1859,7 @@ static int
 ip_demand_conf(u)
     int u;
 {
-sys_arch_printf("ip_demand_conf");
+OSI_LOGI(0x10007630, "ip_demand_conf");
 	ppp_pcb *pcb = &ppp_pcb_list[u];
     ipcp_options *wo = &ipcp_wantoptions[u];
 
@@ -1905,14 +1906,14 @@ sys_arch_printf("ip_demand_conf");
  * Configure the IP network interface appropriately and bring it up.
  */
 static void ipcp_up(fsm *f) {
-sys_arch_printf("ipcp_up");
+OSI_LOGI(0x10007631, "ipcp_up");
 	ppp_pcb *pcb = f->pcb;
     u32_t mask;
     ipcp_options *ho = &pcb->ipcp_hisoptions;
     ipcp_options *go = &pcb->ipcp_gotoptions;
     ipcp_options *wo = &pcb->ipcp_wantoptions;
 
-    IPCPDEBUG(("ipcp: up"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077ca, "ipcp: up"));
 
     /*
      * We must have a non-zero IP address for both ends of the link.
@@ -2139,12 +2140,12 @@ sys_arch_printf("ipcp_up");
  * and delete routes through it.
  */
 static void ipcp_down(fsm *f) {
-sys_arch_printf("ipcp_down");
+OSI_LOGI(0x10007632, "ipcp_down");
 	ppp_pcb *pcb = f->pcb;
     ipcp_options *ho = &pcb->ipcp_hisoptions;
     ipcp_options *go = &pcb->ipcp_gotoptions;
 
-    IPCPDEBUG(("ipcp: down"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077cb, "ipcp: down"));
 #if PPP_STATS_SUPPORT
     /* XXX a bit IPv4-centric here, we only need to get the stats
      * before the interface is marked down. */
@@ -2202,7 +2203,7 @@ sys_arch_printf("ipcp_down");
  */
 static void ipcp_clear_addrs(ppp_pcb *pcb, u32_t ouraddr, u32_t hisaddr, u8_t replacedefaultroute) {
     LWIP_UNUSED_ARG(replacedefaultroute);
-sys_arch_printf("ipcp_clear_addrs");
+OSI_LOGI(0x10007633, "ipcp_clear_addrs");
 #if 0 /* UNUSED - PROXY ARP */
     if (pcb->proxy_arp_set) {
 	cifproxyarp(pcb, hisaddr);
@@ -2231,7 +2232,7 @@ sys_arch_printf("ipcp_clear_addrs");
  * ipcp_finished - possibly shut down the lower layers.
  */
 static void ipcp_finished(fsm *f) {
-sys_arch_printf("setvjslots");
+OSI_LOGI(0x1000761b, "setvjslots");
 	ppp_pcb *pcb = f->pcb;
 	if (pcb->ipcp_is_open) {
 		pcb->ipcp_is_open = 0;
@@ -2263,7 +2264,7 @@ static const char* const ipcp_codenames[] = {
 
 static int ipcp_printpkt(const u_char *p, int plen,
 		void (*printer) (void *, const char *, ...), void *arg) {
-		sys_arch_printf("ipcp_printpkt");
+		OSI_LOGI(0x10007634, "ipcp_printpkt");
     int code, id, len, olen;
     const u_char *pstart, *optend;
 #if VJ_SUPPORT
@@ -2420,7 +2421,7 @@ ip_active_pkt(pkt, len)
     u_char *pkt;
     int len;
 {
-sys_arch_printf("ip_active_pkt");
+OSI_LOGI(0x10007635, "ip_active_pkt");
 	u_char *tcp;
     int hlen;
 

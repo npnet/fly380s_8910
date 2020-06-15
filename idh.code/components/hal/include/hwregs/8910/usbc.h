@@ -13,4283 +13,6732 @@
 #ifndef _USBC_H_
 #define _USBC_H_
 
-#ifdef CT_ASM
-#error "You are trying to use in an assembly code the normal H description of 'usbc'."
-#endif
+// Auto generated (v1.0-22-ge2f5f70). Don't edit it manually!
 
-// =============================================================================
-//  MACROS
-// =============================================================================
-
-// =============================================================================
-//  TYPES
-// =============================================================================
-
-// ============================================================================
-// USBC_T
-// -----------------------------------------------------------------------------
-///
-// =============================================================================
-#define REG_USBC_BASE 0x09040000
+#define REG_USBC_BASE (0x09040000)
 
 typedef volatile struct
 {
-    REG32 gotgctl;                //0x00000000
-    REG32 gotgint;                //0x00000004
-    REG32 gahbcfg;                //0x00000008
-    REG32 gusbcfg;                //0x0000000C
-    REG32 grstctl;                //0x00000010
-    REG32 gintsts;                //0x00000014
-    REG32 gintmsk;                //0x00000018
-    REG32 grxstsr;                //0x0000001C
-    REG32 grxstsp;                //0x00000020
-    REG32 grxfsiz;                //0x00000024
-    REG32 gnptxfsiz;              //0x00000028
-    REG32 gnptxsts;               //0x0000002C
-    REG32 Reserved_00000030[2];   //0x00000030
-    REG32 ggpio;                  //0x00000038
-    REG32 guid;                   //0x0000003C
-    REG32 gsnpsid;                //0x00000040
-    REG32 ghwcfg1;                //0x00000044
-    REG32 ghwcfg2;                //0x00000048
-    REG32 ghwcfg3;                //0x0000004C
-    REG32 ghwcfg4;                //0x00000050
-    REG32 Reserved_00000054;      //0x00000054
-    REG32 gpwrdn;                 //0x00000058
-    REG32 gdfifocfg;              //0x0000005C
-    REG32 gadpctl;                //0x00000060
-    REG32 Reserved_00000064[39];  //0x00000064
-    REG32 hptxfsiz;               //0x00000100
-    REG32 dieptxf1;               //0x00000104
-    REG32 dieptxf2;               //0x00000108
-    REG32 dieptxf3;               //0x0000010C
-    REG32 dieptxf4;               //0x00000110
-    REG32 dieptxf5;               //0x00000114
-    REG32 dieptxf6;               //0x00000118
-    REG32 dieptxf7;               //0x0000011C
-    REG32 dieptxf8;               //0x00000120
-    REG32 Reserved_00000124[183]; //0x00000124
-    REG32 hcfg;                   //0x00000400
-    REG32 hfir;                   //0x00000404
-    REG32 hfnum;                  //0x00000408
-    REG32 Reserved_0000040C;      //0x0000040C
-    REG32 hptxsts;                //0x00000410
-    REG32 haint;                  //0x00000414
-    REG32 haintmsk;               //0x00000418
-    REG32 hflbaddr;               //0x0000041C
-    REG32 Reserved_00000420[8];   //0x00000420
-    REG32 hprt;                   //0x00000440
-    REG32 Reserved_00000444[47];  //0x00000444
-    REG32 hcchar0;                //0x00000500
-    REG32 hcsplt0;                //0x00000504
-    REG32 hcint0;                 //0x00000508
-    REG32 hcintmsk0;              //0x0000050C
-    REG32 hctsiz0;                //0x00000510
-    REG32 hcdma0;                 //0x00000514
-    REG32 Reserved_00000518;      //0x00000518
-    REG32 hcdmab0;                //0x0000051C
-    REG32 hcchar1;                //0x00000520
-    REG32 hcsplt1;                //0x00000524
-    REG32 hcint1;                 //0x00000528
-    REG32 hcintmsk1;              //0x0000052C
-    REG32 hctsiz1;                //0x00000530
-    REG32 hcdma1;                 //0x00000534
-    REG32 Reserved_00000538;      //0x00000538
-    REG32 hcdmab1;                //0x0000053C
-    REG32 hcchar2;                //0x00000540
-    REG32 hcsplt2;                //0x00000544
-    REG32 hcint2;                 //0x00000548
-    REG32 hcintmsk2;              //0x0000054C
-    REG32 hctsiz2;                //0x00000550
-    REG32 hcdma2;                 //0x00000554
-    REG32 Reserved_00000558;      //0x00000558
-    REG32 hcdmab2;                //0x0000055C
-    REG32 hcchar3;                //0x00000560
-    REG32 hcsplt3;                //0x00000564
-    REG32 hcint3;                 //0x00000568
-    REG32 hcintmsk3;              //0x0000056C
-    REG32 hctsiz3;                //0x00000570
-    REG32 hcdma3;                 //0x00000574
-    REG32 Reserved_00000578;      //0x00000578
-    REG32 hcdmab3;                //0x0000057C
-    REG32 hcchar4;                //0x00000580
-    REG32 hcsplt4;                //0x00000584
-    REG32 hcint4;                 //0x00000588
-    REG32 hcintmsk4;              //0x0000058C
-    REG32 hctsiz4;                //0x00000590
-    REG32 hcdma4;                 //0x00000594
-    REG32 Reserved_00000598;      //0x00000598
-    REG32 hcdmab4;                //0x0000059C
-    REG32 hcchar5;                //0x000005A0
-    REG32 hcsplt5;                //0x000005A4
-    REG32 hcint5;                 //0x000005A8
-    REG32 hcintmsk5;              //0x000005AC
-    REG32 hctsiz5;                //0x000005B0
-    REG32 hcdma5;                 //0x000005B4
-    REG32 Reserved_000005B8;      //0x000005B8
-    REG32 hcdmab5;                //0x000005BC
-    REG32 hcchar6;                //0x000005C0
-    REG32 hcsplt6;                //0x000005C4
-    REG32 hcint6;                 //0x000005C8
-    REG32 hcintmsk6;              //0x000005CC
-    REG32 hctsiz6;                //0x000005D0
-    REG32 hcdma6;                 //0x000005D4
-    REG32 Reserved_000005D8;      //0x000005D8
-    REG32 hcdmab6;                //0x000005DC
-    REG32 hcchar7;                //0x000005E0
-    REG32 hcsplt7;                //0x000005E4
-    REG32 hcint7;                 //0x000005E8
-    REG32 hcintmsk7;              //0x000005EC
-    REG32 hctsiz7;                //0x000005F0
-    REG32 hcdma7;                 //0x000005F4
-    REG32 Reserved_000005F8;      //0x000005F8
-    REG32 hcdmab7;                //0x000005FC
-    REG32 hcchar8;                //0x00000600
-    REG32 hcsplt8;                //0x00000604
-    REG32 hcint8;                 //0x00000608
-    REG32 hcintmsk8;              //0x0000060C
-    REG32 hctsiz8;                //0x00000610
-    REG32 hcdma8;                 //0x00000614
-    REG32 Reserved_00000618;      //0x00000618
-    REG32 hcdmab8;                //0x0000061C
-    REG32 hcchar9;                //0x00000620
-    REG32 hcsplt9;                //0x00000624
-    REG32 hcint9;                 //0x00000628
-    REG32 hcintmsk9;              //0x0000062C
-    REG32 hctsiz9;                //0x00000630
-    REG32 hcdma9;                 //0x00000634
-    REG32 Reserved_00000638;      //0x00000638
-    REG32 hcdmab9;                //0x0000063C
-    REG32 hcchar10;               //0x00000640
-    REG32 hcsplt10;               //0x00000644
-    REG32 hcint10;                //0x00000648
-    REG32 hcintmsk10;             //0x0000064C
-    REG32 hctsiz10;               //0x00000650
-    REG32 hcdma10;                //0x00000654
-    REG32 Reserved_00000658;      //0x00000658
-    REG32 hcdmab10;               //0x0000065C
-    REG32 hcchar11;               //0x00000660
-    REG32 hcsplt11;               //0x00000664
-    REG32 hcint11;                //0x00000668
-    REG32 hcintmsk11;             //0x0000066C
-    REG32 hctsiz11;               //0x00000670
-    REG32 hcdma11;                //0x00000674
-    REG32 Reserved_00000678;      //0x00000678
-    REG32 hcdmab11;               //0x0000067C
-    REG32 hcchar12;               //0x00000680
-    REG32 hcsplt12;               //0x00000684
-    REG32 hcint12;                //0x00000688
-    REG32 hcintmsk12;             //0x0000068C
-    REG32 hctsiz12;               //0x00000690
-    REG32 hcdma12;                //0x00000694
-    REG32 Reserved_00000698;      //0x00000698
-    REG32 hcdmab12;               //0x0000069C
-    REG32 hcchar13;               //0x000006A0
-    REG32 hcsplt13;               //0x000006A4
-    REG32 hcint13;                //0x000006A8
-    REG32 hcintmsk13;             //0x000006AC
-    REG32 hctsiz13;               //0x000006B0
-    REG32 hcdma13;                //0x000006B4
-    REG32 Reserved_000006B8;      //0x000006B8
-    REG32 hcdmab13;               //0x000006BC
-    REG32 hcchar14;               //0x000006C0
-    REG32 hcsplt14;               //0x000006C4
-    REG32 hcint14;                //0x000006C8
-    REG32 hcintmsk14;             //0x000006CC
-    REG32 hctsiz14;               //0x000006D0
-    REG32 hcdma14;                //0x000006D4
-    REG32 Reserved_000006D8;      //0x000006D8
-    REG32 hcdmab14;               //0x000006DC
-    REG32 hcchar15;               //0x000006E0
-    REG32 hcsplt15;               //0x000006E4
-    REG32 hcint15;                //0x000006E8
-    REG32 hcintmsk15;             //0x000006EC
-    REG32 hctsiz15;               //0x000006F0
-    REG32 hcdma15;                //0x000006F4
-    REG32 Reserved_000006F8;      //0x000006F8
-    REG32 hcdmab15;               //0x000006FC
-    REG32 Reserved_00000700[64];  //0x00000700
-    REG32 dcfg;                   //0x00000800
-    REG32 dctl;                   //0x00000804
-    REG32 dsts;                   //0x00000808
-    REG32 Reserved_0000080C;      //0x0000080C
-    REG32 diepmsk;                //0x00000810
-    REG32 doepmsk;                //0x00000814
-    REG32 daint;                  //0x00000818
-    REG32 daintmsk;               //0x0000081C
-    REG32 Reserved_00000820[2];   //0x00000820
-    REG32 dvbusdis;               //0x00000828
-    REG32 dvbuspulse;             //0x0000082C
-    REG32 dthrctl;                //0x00000830
-    REG32 diepempmsk;             //0x00000834
-    REG32 Reserved_00000838[50];  //0x00000838
-    REG32 diepctl0;               //0x00000900
-    REG32 Reserved_00000904;      //0x00000904
-    REG32 diepint0;               //0x00000908
-    REG32 Reserved_0000090C;      //0x0000090C
-    REG32 dieptsiz0;              //0x00000910
-    REG32 diepdma0;               //0x00000914
-    REG32 dtxfsts0;               //0x00000918
-    REG32 diepdmab0;              //0x0000091C
-    REG32 diepctl1;               //0x00000920
-    REG32 Reserved_00000924;      //0x00000924
-    REG32 diepint1;               //0x00000928
-    REG32 Reserved_0000092C;      //0x0000092C
-    REG32 dieptsiz1;              //0x00000930
-    REG32 diepdma1;               //0x00000934
-    REG32 dtxfsts1;               //0x00000938
-    REG32 diepdmab1;              //0x0000093C
-    REG32 diepctl2;               //0x00000940
-    REG32 Reserved_00000944;      //0x00000944
-    REG32 diepint2;               //0x00000948
-    REG32 Reserved_0000094C;      //0x0000094C
-    REG32 dieptsiz2;              //0x00000950
-    REG32 diepdma2;               //0x00000954
-    REG32 dtxfsts2;               //0x00000958
-    REG32 diepdmab2;              //0x0000095C
-    REG32 diepctl3;               //0x00000960
-    REG32 Reserved_00000964;      //0x00000964
-    REG32 diepint3;               //0x00000968
-    REG32 Reserved_0000096C;      //0x0000096C
-    REG32 dieptsiz3;              //0x00000970
-    REG32 diepdma3;               //0x00000974
-    REG32 dtxfsts3;               //0x00000978
-    REG32 diepdmab3;              //0x0000097C
-    REG32 diepctl4;               //0x00000980
-    REG32 Reserved_00000984;      //0x00000984
-    REG32 diepint4;               //0x00000988
-    REG32 Reserved_0000098C;      //0x0000098C
-    REG32 dieptsiz4;              //0x00000990
-    REG32 diepdma4;               //0x00000994
-    REG32 dtxfsts4;               //0x00000998
-    REG32 diepdmab4;              //0x0000099C
-    REG32 diepctl5;               //0x000009A0
-    REG32 Reserved_000009A4;      //0x000009A4
-    REG32 diepint5;               //0x000009A8
-    REG32 Reserved_000009AC;      //0x000009AC
-    REG32 dieptsiz5;              //0x000009B0
-    REG32 diepdma5;               //0x000009B4
-    REG32 dtxfsts5;               //0x000009B8
-    REG32 diepdmab5;              //0x000009BC
-    REG32 diepctl6;               //0x000009C0
-    REG32 Reserved_000009C4;      //0x000009C4
-    REG32 diepint6;               //0x000009C8
-    REG32 Reserved_000009CC;      //0x000009CC
-    REG32 dieptsiz6;              //0x000009D0
-    REG32 diepdma6;               //0x000009D4
-    REG32 dtxfsts6;               //0x000009D8
-    REG32 diepdmab6;              //0x000009DC
-    REG32 diepctl7;               //0x000009E0
-    REG32 Reserved_000009E4;      //0x000009E4
-    REG32 diepint7;               //0x000009E8
-    REG32 Reserved_000009EC;      //0x000009EC
-    REG32 dieptsiz7;              //0x000009F0
-    REG32 diepdma7;               //0x000009F4
-    REG32 dtxfsts7;               //0x000009F8
-    REG32 diepdmab7;              //0x000009FC
-    REG32 diepctl8;               //0x00000A00
-    REG32 Reserved_00000A04;      //0x00000A04
-    REG32 diepint8;               //0x00000A08
-    REG32 Reserved_00000A0C;      //0x00000A0C
-    REG32 dieptsiz8;              //0x00000A10
-    REG32 diepdma8;               //0x00000A14
-    REG32 dtxfsts8;               //0x00000A18
-    REG32 diepdmab8;              //0x00000A1C
-    REG32 diepctl9;               //0x00000A20
-    REG32 Reserved_00000A24;      //0x00000A24
-    REG32 diepint9;               //0x00000A28
-    REG32 Reserved_00000A2C;      //0x00000A2C
-    REG32 dieptsiz9;              //0x00000A30
-    REG32 diepdma9;               //0x00000A34
-    REG32 dtxfsts9;               //0x00000A38
-    REG32 diepdmab9;              //0x00000A3C
-    REG32 diepctl10;              //0x00000A40
-    REG32 Reserved_00000A44;      //0x00000A44
-    REG32 diepint10;              //0x00000A48
-    REG32 Reserved_00000A4C;      //0x00000A4C
-    REG32 dieptsiz10;             //0x00000A50
-    REG32 diepdma10;              //0x00000A54
-    REG32 dtxfsts10;              //0x00000A58
-    REG32 diepdmab10;             //0x00000A5C
-    REG32 diepctl11;              //0x00000A60
-    REG32 Reserved_00000A64;      //0x00000A64
-    REG32 diepint11;              //0x00000A68
-    REG32 Reserved_00000A6C;      //0x00000A6C
-    REG32 dieptsiz11;             //0x00000A70
-    REG32 diepdma11;              //0x00000A74
-    REG32 dtxfsts11;              //0x00000A78
-    REG32 diepdmab11;             //0x00000A7C
-    REG32 diepctl12;              //0x00000A80
-    REG32 Reserved_00000A84;      //0x00000A84
-    REG32 diepint12;              //0x00000A88
-    REG32 Reserved_00000A8C;      //0x00000A8C
-    REG32 dieptsiz12;             //0x00000A90
-    REG32 diepdma12;              //0x00000A94
-    REG32 dtxfsts12;              //0x00000A98
-    REG32 diepdmab12;             //0x00000A9C
-    REG32 Reserved_00000AA0[24];  //0x00000AA0
-    REG32 doepctl0;               //0x00000B00
-    REG32 Reserved_00000B04;      //0x00000B04
-    REG32 doepint0;               //0x00000B08
-    REG32 Reserved_00000B0C;      //0x00000B0C
-    REG32 doeptsiz0;              //0x00000B10
-    REG32 doepdma0;               //0x00000B14
-    REG32 Reserved_00000B18;      //0x00000B18
-    REG32 doepdmab0;              //0x00000B1C
-    REG32 doepctl1;               //0x00000B20
-    REG32 Reserved_00000B24;      //0x00000B24
-    REG32 doepint1;               //0x00000B28
-    REG32 Reserved_00000B2C;      //0x00000B2C
-    REG32 doeptsiz1;              //0x00000B30
-    REG32 doepdma1;               //0x00000B34
-    REG32 Reserved_00000B38;      //0x00000B38
-    REG32 doepdmab1;              //0x00000B3C
-    REG32 doepctl2;               //0x00000B40
-    REG32 Reserved_00000B44;      //0x00000B44
-    REG32 doepint2;               //0x00000B48
-    REG32 Reserved_00000B4C;      //0x00000B4C
-    REG32 doeptsiz2;              //0x00000B50
-    REG32 doepdma2;               //0x00000B54
-    REG32 Reserved_00000B58;      //0x00000B58
-    REG32 doepdmab2;              //0x00000B5C
-    REG32 doepctl3;               //0x00000B60
-    REG32 Reserved_00000B64;      //0x00000B64
-    REG32 doepint3;               //0x00000B68
-    REG32 Reserved_00000B6C;      //0x00000B6C
-    REG32 doeptsiz3;              //0x00000B70
-    REG32 doepdma3;               //0x00000B74
-    REG32 Reserved_00000B78;      //0x00000B78
-    REG32 doepdmab3;              //0x00000B7C
-    REG32 doepctl4;               //0x00000B80
-    REG32 Reserved_00000B84;      //0x00000B84
-    REG32 doepint4;               //0x00000B88
-    REG32 Reserved_00000B8C;      //0x00000B8C
-    REG32 doeptsiz4;              //0x00000B90
-    REG32 doepdma4;               //0x00000B94
-    REG32 Reserved_00000B98;      //0x00000B98
-    REG32 doepdmab4;              //0x00000B9C
-    REG32 doepctl5;               //0x00000BA0
-    REG32 Reserved_00000BA4;      //0x00000BA4
-    REG32 doepint5;               //0x00000BA8
-    REG32 Reserved_00000BAC;      //0x00000BAC
-    REG32 doeptsiz5;              //0x00000BB0
-    REG32 doepdma5;               //0x00000BB4
-    REG32 Reserved_00000BB8;      //0x00000BB8
-    REG32 doepdmab5;              //0x00000BBC
-    REG32 doepctl6;               //0x00000BC0
-    REG32 Reserved_00000BC4;      //0x00000BC4
-    REG32 doepint6;               //0x00000BC8
-    REG32 Reserved_00000BCC;      //0x00000BCC
-    REG32 doeptsiz6;              //0x00000BD0
-    REG32 doepdma6;               //0x00000BD4
-    REG32 Reserved_00000BD8;      //0x00000BD8
-    REG32 doepdmab6;              //0x00000BDC
-    REG32 doepctl7;               //0x00000BE0
-    REG32 Reserved_00000BE4;      //0x00000BE4
-    REG32 doepint7;               //0x00000BE8
-    REG32 Reserved_00000BEC;      //0x00000BEC
-    REG32 doeptsiz7;              //0x00000BF0
-    REG32 doepdma7;               //0x00000BF4
-    REG32 Reserved_00000BF8;      //0x00000BF8
-    REG32 doepdmab7;              //0x00000BFC
-    REG32 doepctl8;               //0x00000C00
-    REG32 Reserved_00000C04;      //0x00000C04
-    REG32 doepint8;               //0x00000C08
-    REG32 Reserved_00000C0C;      //0x00000C0C
-    REG32 doeptsiz8;              //0x00000C10
-    REG32 doepdma8;               //0x00000C14
-    REG32 Reserved_00000C18;      //0x00000C18
-    REG32 doepdmab8;              //0x00000C1C
-    REG32 doepctl9;               //0x00000C20
-    REG32 Reserved_00000C24;      //0x00000C24
-    REG32 doepint9;               //0x00000C28
-    REG32 Reserved_00000C2C;      //0x00000C2C
-    REG32 doeptsiz9;              //0x00000C30
-    REG32 doepdma9;               //0x00000C34
-    REG32 Reserved_00000C38;      //0x00000C38
-    REG32 doepdmab9;              //0x00000C3C
-    REG32 doepctl10;              //0x00000C40
-    REG32 Reserved_00000C44;      //0x00000C44
-    REG32 doepint10;              //0x00000C48
-    REG32 Reserved_00000C4C;      //0x00000C4C
-    REG32 doeptsiz10;             //0x00000C50
-    REG32 doepdma10;              //0x00000C54
-    REG32 Reserved_00000C58;      //0x00000C58
-    REG32 doepdmab10;             //0x00000C5C
-    REG32 doepctl11;              //0x00000C60
-    REG32 Reserved_00000C64;      //0x00000C64
-    REG32 doepint11;              //0x00000C68
-    REG32 Reserved_00000C6C;      //0x00000C6C
-    REG32 doeptsiz11;             //0x00000C70
-    REG32 doepdma11;              //0x00000C74
-    REG32 Reserved_00000C78;      //0x00000C78
-    REG32 doepdmab11;             //0x00000C7C
-    REG32 doepctl12;              //0x00000C80
-    REG32 Reserved_00000C84;      //0x00000C84
-    REG32 doepint12;              //0x00000C88
-    REG32 Reserved_00000C8C;      //0x00000C8C
-    REG32 doeptsiz12;             //0x00000C90
-    REG32 doepdma12;              //0x00000C94
-    REG32 Reserved_00000C98;      //0x00000C98
-    REG32 doepdmab12;             //0x00000C9C
-    REG32 Reserved_00000CA0[88];  //0x00000CA0
-    REG32 pcgcctl;                //0x00000E00
+    uint32_t gotgctl;    // 0x00000000
+    uint32_t gotgint;    // 0x00000004
+    uint32_t gahbcfg;    // 0x00000008
+    uint32_t gusbcfg;    // 0x0000000c
+    uint32_t grstctl;    // 0x00000010
+    uint32_t gintsts;    // 0x00000014
+    uint32_t gintmsk;    // 0x00000018
+    uint32_t grxstsr;    // 0x0000001c
+    uint32_t grxstsp;    // 0x00000020
+    uint32_t grxfsiz;    // 0x00000024
+    uint32_t gnptxfsiz;  // 0x00000028
+    uint32_t gnptxsts;   // 0x0000002c
+    uint32_t __48[2];    // 0x00000030
+    uint32_t ggpio;      // 0x00000038
+    uint32_t guid;       // 0x0000003c
+    uint32_t gsnpsid;    // 0x00000040
+    uint32_t ghwcfg1;    // 0x00000044
+    uint32_t ghwcfg2;    // 0x00000048
+    uint32_t ghwcfg3;    // 0x0000004c
+    uint32_t ghwcfg4;    // 0x00000050
+    uint32_t __84[1];    // 0x00000054
+    uint32_t gpwrdn;     // 0x00000058
+    uint32_t gdfifocfg;  // 0x0000005c
+    uint32_t gadpctl;    // 0x00000060
+    uint32_t __100[39];  // 0x00000064
+    uint32_t hptxfsiz;   // 0x00000100
+    uint32_t dieptxf1;   // 0x00000104
+    uint32_t dieptxf2;   // 0x00000108
+    uint32_t dieptxf3;   // 0x0000010c
+    uint32_t dieptxf4;   // 0x00000110
+    uint32_t dieptxf5;   // 0x00000114
+    uint32_t dieptxf6;   // 0x00000118
+    uint32_t dieptxf7;   // 0x0000011c
+    uint32_t dieptxf8;   // 0x00000120
+    uint32_t __292[183]; // 0x00000124
+    uint32_t hcfg;       // 0x00000400
+    uint32_t hfir;       // 0x00000404
+    uint32_t hfnum;      // 0x00000408
+    uint32_t __1036[1];  // 0x0000040c
+    uint32_t hptxsts;    // 0x00000410
+    uint32_t haint;      // 0x00000414
+    uint32_t haintmsk;   // 0x00000418
+    uint32_t hflbaddr;   // 0x0000041c
+    uint32_t __1056[8];  // 0x00000420
+    uint32_t hprt;       // 0x00000440
+    uint32_t __1092[47]; // 0x00000444
+    uint32_t hcchar0;    // 0x00000500
+    uint32_t hcsplt0;    // 0x00000504
+    uint32_t hcint0;     // 0x00000508
+    uint32_t hcintmsk0;  // 0x0000050c
+    uint32_t hctsiz0;    // 0x00000510
+    uint32_t hcdma0;     // 0x00000514
+    uint32_t __1304[1];  // 0x00000518
+    uint32_t hcdmab0;    // 0x0000051c
+    uint32_t hcchar1;    // 0x00000520
+    uint32_t hcsplt1;    // 0x00000524
+    uint32_t hcint1;     // 0x00000528
+    uint32_t hcintmsk1;  // 0x0000052c
+    uint32_t hctsiz1;    // 0x00000530
+    uint32_t hcdma1;     // 0x00000534
+    uint32_t __1336[1];  // 0x00000538
+    uint32_t hcdmab1;    // 0x0000053c
+    uint32_t hcchar2;    // 0x00000540
+    uint32_t hcsplt2;    // 0x00000544
+    uint32_t hcint2;     // 0x00000548
+    uint32_t hcintmsk2;  // 0x0000054c
+    uint32_t hctsiz2;    // 0x00000550
+    uint32_t hcdma2;     // 0x00000554
+    uint32_t __1368[1];  // 0x00000558
+    uint32_t hcdmab2;    // 0x0000055c
+    uint32_t hcchar3;    // 0x00000560
+    uint32_t hcsplt3;    // 0x00000564
+    uint32_t hcint3;     // 0x00000568
+    uint32_t hcintmsk3;  // 0x0000056c
+    uint32_t hctsiz3;    // 0x00000570
+    uint32_t hcdma3;     // 0x00000574
+    uint32_t __1400[1];  // 0x00000578
+    uint32_t hcdmab3;    // 0x0000057c
+    uint32_t hcchar4;    // 0x00000580
+    uint32_t hcsplt4;    // 0x00000584
+    uint32_t hcint4;     // 0x00000588
+    uint32_t hcintmsk4;  // 0x0000058c
+    uint32_t hctsiz4;    // 0x00000590
+    uint32_t hcdma4;     // 0x00000594
+    uint32_t __1432[1];  // 0x00000598
+    uint32_t hcdmab4;    // 0x0000059c
+    uint32_t hcchar5;    // 0x000005a0
+    uint32_t hcsplt5;    // 0x000005a4
+    uint32_t hcint5;     // 0x000005a8
+    uint32_t hcintmsk5;  // 0x000005ac
+    uint32_t hctsiz5;    // 0x000005b0
+    uint32_t hcdma5;     // 0x000005b4
+    uint32_t __1464[1];  // 0x000005b8
+    uint32_t hcdmab5;    // 0x000005bc
+    uint32_t hcchar6;    // 0x000005c0
+    uint32_t hcsplt6;    // 0x000005c4
+    uint32_t hcint6;     // 0x000005c8
+    uint32_t hcintmsk6;  // 0x000005cc
+    uint32_t hctsiz6;    // 0x000005d0
+    uint32_t hcdma6;     // 0x000005d4
+    uint32_t __1496[1];  // 0x000005d8
+    uint32_t hcdmab6;    // 0x000005dc
+    uint32_t hcchar7;    // 0x000005e0
+    uint32_t hcsplt7;    // 0x000005e4
+    uint32_t hcint7;     // 0x000005e8
+    uint32_t hcintmsk7;  // 0x000005ec
+    uint32_t hctsiz7;    // 0x000005f0
+    uint32_t hcdma7;     // 0x000005f4
+    uint32_t __1528[1];  // 0x000005f8
+    uint32_t hcdmab7;    // 0x000005fc
+    uint32_t hcchar8;    // 0x00000600
+    uint32_t hcsplt8;    // 0x00000604
+    uint32_t hcint8;     // 0x00000608
+    uint32_t hcintmsk8;  // 0x0000060c
+    uint32_t hctsiz8;    // 0x00000610
+    uint32_t hcdma8;     // 0x00000614
+    uint32_t __1560[1];  // 0x00000618
+    uint32_t hcdmab8;    // 0x0000061c
+    uint32_t hcchar9;    // 0x00000620
+    uint32_t hcsplt9;    // 0x00000624
+    uint32_t hcint9;     // 0x00000628
+    uint32_t hcintmsk9;  // 0x0000062c
+    uint32_t hctsiz9;    // 0x00000630
+    uint32_t hcdma9;     // 0x00000634
+    uint32_t __1592[1];  // 0x00000638
+    uint32_t hcdmab9;    // 0x0000063c
+    uint32_t hcchar10;   // 0x00000640
+    uint32_t hcsplt10;   // 0x00000644
+    uint32_t hcint10;    // 0x00000648
+    uint32_t hcintmsk10; // 0x0000064c
+    uint32_t hctsiz10;   // 0x00000650
+    uint32_t hcdma10;    // 0x00000654
+    uint32_t __1624[1];  // 0x00000658
+    uint32_t hcdmab10;   // 0x0000065c
+    uint32_t hcchar11;   // 0x00000660
+    uint32_t hcsplt11;   // 0x00000664
+    uint32_t hcint11;    // 0x00000668
+    uint32_t hcintmsk11; // 0x0000066c
+    uint32_t hctsiz11;   // 0x00000670
+    uint32_t hcdma11;    // 0x00000674
+    uint32_t __1656[1];  // 0x00000678
+    uint32_t hcdmab11;   // 0x0000067c
+    uint32_t hcchar12;   // 0x00000680
+    uint32_t hcsplt12;   // 0x00000684
+    uint32_t hcint12;    // 0x00000688
+    uint32_t hcintmsk12; // 0x0000068c
+    uint32_t hctsiz12;   // 0x00000690
+    uint32_t hcdma12;    // 0x00000694
+    uint32_t __1688[1];  // 0x00000698
+    uint32_t hcdmab12;   // 0x0000069c
+    uint32_t hcchar13;   // 0x000006a0
+    uint32_t hcsplt13;   // 0x000006a4
+    uint32_t hcint13;    // 0x000006a8
+    uint32_t hcintmsk13; // 0x000006ac
+    uint32_t hctsiz13;   // 0x000006b0
+    uint32_t hcdma13;    // 0x000006b4
+    uint32_t __1720[1];  // 0x000006b8
+    uint32_t hcdmab13;   // 0x000006bc
+    uint32_t hcchar14;   // 0x000006c0
+    uint32_t hcsplt14;   // 0x000006c4
+    uint32_t hcint14;    // 0x000006c8
+    uint32_t hcintmsk14; // 0x000006cc
+    uint32_t hctsiz14;   // 0x000006d0
+    uint32_t hcdma14;    // 0x000006d4
+    uint32_t __1752[1];  // 0x000006d8
+    uint32_t hcdmab14;   // 0x000006dc
+    uint32_t hcchar15;   // 0x000006e0
+    uint32_t hcsplt15;   // 0x000006e4
+    uint32_t hcint15;    // 0x000006e8
+    uint32_t hcintmsk15; // 0x000006ec
+    uint32_t hctsiz15;   // 0x000006f0
+    uint32_t hcdma15;    // 0x000006f4
+    uint32_t __1784[1];  // 0x000006f8
+    uint32_t hcdmab15;   // 0x000006fc
+    uint32_t __1792[64]; // 0x00000700
+    uint32_t dcfg;       // 0x00000800
+    uint32_t dctl;       // 0x00000804
+    uint32_t dsts;       // 0x00000808
+    uint32_t __2060[1];  // 0x0000080c
+    uint32_t diepmsk;    // 0x00000810
+    uint32_t doepmsk;    // 0x00000814
+    uint32_t daint;      // 0x00000818
+    uint32_t daintmsk;   // 0x0000081c
+    uint32_t __2080[2];  // 0x00000820
+    uint32_t dvbusdis;   // 0x00000828
+    uint32_t dvbuspulse; // 0x0000082c
+    uint32_t dthrctl;    // 0x00000830
+    uint32_t diepempmsk; // 0x00000834
+    uint32_t __2104[50]; // 0x00000838
+    uint32_t diepctl0;   // 0x00000900
+    uint32_t __2308[1];  // 0x00000904
+    uint32_t diepint0;   // 0x00000908
+    uint32_t __2316[1];  // 0x0000090c
+    uint32_t dieptsiz0;  // 0x00000910
+    uint32_t diepdma0;   // 0x00000914
+    uint32_t dtxfsts0;   // 0x00000918
+    uint32_t diepdmab0;  // 0x0000091c
+    uint32_t diepctl1;   // 0x00000920
+    uint32_t __2340[1];  // 0x00000924
+    uint32_t diepint1;   // 0x00000928
+    uint32_t __2348[1];  // 0x0000092c
+    uint32_t dieptsiz1;  // 0x00000930
+    uint32_t diepdma1;   // 0x00000934
+    uint32_t dtxfsts1;   // 0x00000938
+    uint32_t diepdmab1;  // 0x0000093c
+    uint32_t diepctl2;   // 0x00000940
+    uint32_t __2372[1];  // 0x00000944
+    uint32_t diepint2;   // 0x00000948
+    uint32_t __2380[1];  // 0x0000094c
+    uint32_t dieptsiz2;  // 0x00000950
+    uint32_t diepdma2;   // 0x00000954
+    uint32_t dtxfsts2;   // 0x00000958
+    uint32_t diepdmab2;  // 0x0000095c
+    uint32_t diepctl3;   // 0x00000960
+    uint32_t __2404[1];  // 0x00000964
+    uint32_t diepint3;   // 0x00000968
+    uint32_t __2412[1];  // 0x0000096c
+    uint32_t dieptsiz3;  // 0x00000970
+    uint32_t diepdma3;   // 0x00000974
+    uint32_t dtxfsts3;   // 0x00000978
+    uint32_t diepdmab3;  // 0x0000097c
+    uint32_t diepctl4;   // 0x00000980
+    uint32_t __2436[1];  // 0x00000984
+    uint32_t diepint4;   // 0x00000988
+    uint32_t __2444[1];  // 0x0000098c
+    uint32_t dieptsiz4;  // 0x00000990
+    uint32_t diepdma4;   // 0x00000994
+    uint32_t dtxfsts4;   // 0x00000998
+    uint32_t diepdmab4;  // 0x0000099c
+    uint32_t diepctl5;   // 0x000009a0
+    uint32_t __2468[1];  // 0x000009a4
+    uint32_t diepint5;   // 0x000009a8
+    uint32_t __2476[1];  // 0x000009ac
+    uint32_t dieptsiz5;  // 0x000009b0
+    uint32_t diepdma5;   // 0x000009b4
+    uint32_t dtxfsts5;   // 0x000009b8
+    uint32_t diepdmab5;  // 0x000009bc
+    uint32_t diepctl6;   // 0x000009c0
+    uint32_t __2500[1];  // 0x000009c4
+    uint32_t diepint6;   // 0x000009c8
+    uint32_t __2508[1];  // 0x000009cc
+    uint32_t dieptsiz6;  // 0x000009d0
+    uint32_t diepdma6;   // 0x000009d4
+    uint32_t dtxfsts6;   // 0x000009d8
+    uint32_t diepdmab6;  // 0x000009dc
+    uint32_t diepctl7;   // 0x000009e0
+    uint32_t __2532[1];  // 0x000009e4
+    uint32_t diepint7;   // 0x000009e8
+    uint32_t __2540[1];  // 0x000009ec
+    uint32_t dieptsiz7;  // 0x000009f0
+    uint32_t diepdma7;   // 0x000009f4
+    uint32_t dtxfsts7;   // 0x000009f8
+    uint32_t diepdmab7;  // 0x000009fc
+    uint32_t diepctl8;   // 0x00000a00
+    uint32_t __2564[1];  // 0x00000a04
+    uint32_t diepint8;   // 0x00000a08
+    uint32_t __2572[1];  // 0x00000a0c
+    uint32_t dieptsiz8;  // 0x00000a10
+    uint32_t diepdma8;   // 0x00000a14
+    uint32_t dtxfsts8;   // 0x00000a18
+    uint32_t diepdmab8;  // 0x00000a1c
+    uint32_t diepctl9;   // 0x00000a20
+    uint32_t __2596[1];  // 0x00000a24
+    uint32_t diepint9;   // 0x00000a28
+    uint32_t __2604[1];  // 0x00000a2c
+    uint32_t dieptsiz9;  // 0x00000a30
+    uint32_t diepdma9;   // 0x00000a34
+    uint32_t dtxfsts9;   // 0x00000a38
+    uint32_t diepdmab9;  // 0x00000a3c
+    uint32_t diepctl10;  // 0x00000a40
+    uint32_t __2628[1];  // 0x00000a44
+    uint32_t diepint10;  // 0x00000a48
+    uint32_t __2636[1];  // 0x00000a4c
+    uint32_t dieptsiz10; // 0x00000a50
+    uint32_t diepdma10;  // 0x00000a54
+    uint32_t dtxfsts10;  // 0x00000a58
+    uint32_t diepdmab10; // 0x00000a5c
+    uint32_t diepctl11;  // 0x00000a60
+    uint32_t __2660[1];  // 0x00000a64
+    uint32_t diepint11;  // 0x00000a68
+    uint32_t __2668[1];  // 0x00000a6c
+    uint32_t dieptsiz11; // 0x00000a70
+    uint32_t diepdma11;  // 0x00000a74
+    uint32_t dtxfsts11;  // 0x00000a78
+    uint32_t diepdmab11; // 0x00000a7c
+    uint32_t diepctl12;  // 0x00000a80
+    uint32_t __2692[1];  // 0x00000a84
+    uint32_t diepint12;  // 0x00000a88
+    uint32_t __2700[1];  // 0x00000a8c
+    uint32_t dieptsiz12; // 0x00000a90
+    uint32_t diepdma12;  // 0x00000a94
+    uint32_t dtxfsts12;  // 0x00000a98
+    uint32_t diepdmab12; // 0x00000a9c
+    uint32_t __2720[24]; // 0x00000aa0
+    uint32_t doepctl0;   // 0x00000b00
+    uint32_t __2820[1];  // 0x00000b04
+    uint32_t doepint0;   // 0x00000b08
+    uint32_t __2828[1];  // 0x00000b0c
+    uint32_t doeptsiz0;  // 0x00000b10
+    uint32_t doepdma0;   // 0x00000b14
+    uint32_t __2840[1];  // 0x00000b18
+    uint32_t doepdmab0;  // 0x00000b1c
+    uint32_t doepctl1;   // 0x00000b20
+    uint32_t __2852[1];  // 0x00000b24
+    uint32_t doepint1;   // 0x00000b28
+    uint32_t __2860[1];  // 0x00000b2c
+    uint32_t doeptsiz1;  // 0x00000b30
+    uint32_t doepdma1;   // 0x00000b34
+    uint32_t __2872[1];  // 0x00000b38
+    uint32_t doepdmab1;  // 0x00000b3c
+    uint32_t doepctl2;   // 0x00000b40
+    uint32_t __2884[1];  // 0x00000b44
+    uint32_t doepint2;   // 0x00000b48
+    uint32_t __2892[1];  // 0x00000b4c
+    uint32_t doeptsiz2;  // 0x00000b50
+    uint32_t doepdma2;   // 0x00000b54
+    uint32_t __2904[1];  // 0x00000b58
+    uint32_t doepdmab2;  // 0x00000b5c
+    uint32_t doepctl3;   // 0x00000b60
+    uint32_t __2916[1];  // 0x00000b64
+    uint32_t doepint3;   // 0x00000b68
+    uint32_t __2924[1];  // 0x00000b6c
+    uint32_t doeptsiz3;  // 0x00000b70
+    uint32_t doepdma3;   // 0x00000b74
+    uint32_t __2936[1];  // 0x00000b78
+    uint32_t doepdmab3;  // 0x00000b7c
+    uint32_t doepctl4;   // 0x00000b80
+    uint32_t __2948[1];  // 0x00000b84
+    uint32_t doepint4;   // 0x00000b88
+    uint32_t __2956[1];  // 0x00000b8c
+    uint32_t doeptsiz4;  // 0x00000b90
+    uint32_t doepdma4;   // 0x00000b94
+    uint32_t __2968[1];  // 0x00000b98
+    uint32_t doepdmab4;  // 0x00000b9c
+    uint32_t doepctl5;   // 0x00000ba0
+    uint32_t __2980[1];  // 0x00000ba4
+    uint32_t doepint5;   // 0x00000ba8
+    uint32_t __2988[1];  // 0x00000bac
+    uint32_t doeptsiz5;  // 0x00000bb0
+    uint32_t doepdma5;   // 0x00000bb4
+    uint32_t __3000[1];  // 0x00000bb8
+    uint32_t doepdmab5;  // 0x00000bbc
+    uint32_t doepctl6;   // 0x00000bc0
+    uint32_t __3012[1];  // 0x00000bc4
+    uint32_t doepint6;   // 0x00000bc8
+    uint32_t __3020[1];  // 0x00000bcc
+    uint32_t doeptsiz6;  // 0x00000bd0
+    uint32_t doepdma6;   // 0x00000bd4
+    uint32_t __3032[1];  // 0x00000bd8
+    uint32_t doepdmab6;  // 0x00000bdc
+    uint32_t doepctl7;   // 0x00000be0
+    uint32_t __3044[1];  // 0x00000be4
+    uint32_t doepint7;   // 0x00000be8
+    uint32_t __3052[1];  // 0x00000bec
+    uint32_t doeptsiz7;  // 0x00000bf0
+    uint32_t doepdma7;   // 0x00000bf4
+    uint32_t __3064[1];  // 0x00000bf8
+    uint32_t doepdmab7;  // 0x00000bfc
+    uint32_t doepctl8;   // 0x00000c00
+    uint32_t __3076[1];  // 0x00000c04
+    uint32_t doepint8;   // 0x00000c08
+    uint32_t __3084[1];  // 0x00000c0c
+    uint32_t doeptsiz8;  // 0x00000c10
+    uint32_t doepdma8;   // 0x00000c14
+    uint32_t __3096[1];  // 0x00000c18
+    uint32_t doepdmab8;  // 0x00000c1c
+    uint32_t doepctl9;   // 0x00000c20
+    uint32_t __3108[1];  // 0x00000c24
+    uint32_t doepint9;   // 0x00000c28
+    uint32_t __3116[1];  // 0x00000c2c
+    uint32_t doeptsiz9;  // 0x00000c30
+    uint32_t doepdma9;   // 0x00000c34
+    uint32_t __3128[1];  // 0x00000c38
+    uint32_t doepdmab9;  // 0x00000c3c
+    uint32_t doepctl10;  // 0x00000c40
+    uint32_t __3140[1];  // 0x00000c44
+    uint32_t doepint10;  // 0x00000c48
+    uint32_t __3148[1];  // 0x00000c4c
+    uint32_t doeptsiz10; // 0x00000c50
+    uint32_t doepdma10;  // 0x00000c54
+    uint32_t __3160[1];  // 0x00000c58
+    uint32_t doepdmab10; // 0x00000c5c
+    uint32_t doepctl11;  // 0x00000c60
+    uint32_t __3172[1];  // 0x00000c64
+    uint32_t doepint11;  // 0x00000c68
+    uint32_t __3180[1];  // 0x00000c6c
+    uint32_t doeptsiz11; // 0x00000c70
+    uint32_t doepdma11;  // 0x00000c74
+    uint32_t __3192[1];  // 0x00000c78
+    uint32_t doepdmab11; // 0x00000c7c
+    uint32_t doepctl12;  // 0x00000c80
+    uint32_t __3204[1];  // 0x00000c84
+    uint32_t doepint12;  // 0x00000c88
+    uint32_t __3212[1];  // 0x00000c8c
+    uint32_t doeptsiz12; // 0x00000c90
+    uint32_t doepdma12;  // 0x00000c94
+    uint32_t __3224[1];  // 0x00000c98
+    uint32_t doepdmab12; // 0x00000c9c
+    uint32_t __3232[88]; // 0x00000ca0
+    uint32_t pcgcctl;    // 0x00000e00
 } HWP_USBC_T;
 
 #define hwp_usbc ((HWP_USBC_T *)REG_ACCESS_ADDRESS(REG_USBC_BASE))
 
-//GOTGCTL
+// gotgctl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 sesreqscs : 1;    // [0], read only
-        REG32 sesreq : 1;       // [1]
-        REG32 vbvalidoven : 1;  // [2]
-        REG32 vbvalidovval : 1; // [3]
-        REG32 avalidoven : 1;   // [4]
-        REG32 avalidovval : 1;  // [5]
-        REG32 bvalidoven : 1;   // [6]
-        REG32 bvalidovval : 1;  // [7]
-        REG32 hstnegscs : 1;    // [8], read only
-        REG32 hnpreq : 1;       // [9]
-        REG32 hstsethnpen : 1;  // [10]
-        REG32 devhnpen : 1;     // [11]
-        REG32 ehen : 1;         // [12]
-        REG32 __14_13 : 2;
-        REG32 dbncefltrbypass : 1; // [15]
-        REG32 conidsts : 1;        // [16], read only
-        REG32 dbnctime : 1;        // [17], read only
-        REG32 asesvld : 1;         // [18]
-        REG32 bsesvld : 1;         // [19], read only
-        REG32 otgver : 1;          // [20]
-        REG32 curmod : 1;          // [21], read only
-        REG32 __31_22 : 10;
+        uint32_t sesreqscs : 1;       // [0], read only
+        uint32_t sesreq : 1;          // [1]
+        uint32_t vbvalidoven : 1;     // [2]
+        uint32_t vbvalidovval : 1;    // [3]
+        uint32_t avalidoven : 1;      // [4]
+        uint32_t avalidovval : 1;     // [5]
+        uint32_t bvalidoven : 1;      // [6]
+        uint32_t bvalidovval : 1;     // [7]
+        uint32_t hstnegscs : 1;       // [8], read only
+        uint32_t hnpreq : 1;          // [9]
+        uint32_t hstsethnpen : 1;     // [10]
+        uint32_t devhnpen : 1;        // [11]
+        uint32_t ehen : 1;            // [12]
+        uint32_t __14_13 : 2;         // [14:13]
+        uint32_t dbncefltrbypass : 1; // [15]
+        uint32_t conidsts : 1;        // [16], read only
+        uint32_t dbnctime : 1;        // [17], read only
+        uint32_t asesvld : 1;         // [18]
+        uint32_t bsesvld : 1;         // [19], read only
+        uint32_t otgver : 1;          // [20]
+        uint32_t curmod : 1;          // [21], read only
+        uint32_t __31_22 : 10;        // [31:22]
     } b;
 } REG_USBC_GOTGCTL_T;
 
-//GOTGINT
+// gotgint
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 __1_0 : 2;
-        REG32 sesenddet : 1; // [2], write clear
-        REG32 __7_3 : 5;
-        REG32 sesreqsucstschng : 1; // [8], write clear
-        REG32 hstnegsucstschng : 1; // [9], write clear
-        REG32 __16_10 : 7;
-        REG32 hstnegdet : 1;   // [17], write clear
-        REG32 adevtoutchg : 1; // [18], write clear
-        REG32 dbncedone : 1;   // [19], write clear
-        REG32 __31_20 : 12;
+        uint32_t __1_0 : 2;            // [1:0]
+        uint32_t sesenddet : 1;        // [2], write clear
+        uint32_t __7_3 : 5;            // [7:3]
+        uint32_t sesreqsucstschng : 1; // [8], write clear
+        uint32_t hstnegsucstschng : 1; // [9], write clear
+        uint32_t __16_10 : 7;          // [16:10]
+        uint32_t hstnegdet : 1;        // [17], write clear
+        uint32_t adevtoutchg : 1;      // [18], write clear
+        uint32_t dbncedone : 1;        // [19], write clear
+        uint32_t __31_20 : 12;         // [31:20]
     } b;
 } REG_USBC_GOTGINT_T;
 
-//GAHBCFG
+// gahbcfg
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 glblintrmsk : 1; // [0]
-        REG32 hbstlen : 4;     // [4:1]
-        REG32 dmaen : 1;       // [5]
-        REG32 __6_6 : 1;
-        REG32 nptxfemplvl : 1; // [7]
-        REG32 ptxfemplvl : 1;  // [8]
-        REG32 __20_9 : 12;
-        REG32 remmemsupp : 1;       // [21]
-        REG32 notialldmawrit : 1;   // [22]
-        REG32 ahbsingle : 1;        // [23]
-        REG32 invdescendianess : 1; // [24]
-        REG32 __31_25 : 7;
+        uint32_t glblintrmsk : 1;      // [0]
+        uint32_t hbstlen : 4;          // [4:1]
+        uint32_t dmaen : 1;            // [5]
+        uint32_t __6_6 : 1;            // [6]
+        uint32_t nptxfemplvl : 1;      // [7]
+        uint32_t ptxfemplvl : 1;       // [8]
+        uint32_t __20_9 : 12;          // [20:9]
+        uint32_t remmemsupp : 1;       // [21]
+        uint32_t notialldmawrit : 1;   // [22]
+        uint32_t ahbsingle : 1;        // [23]
+        uint32_t invdescendianess : 1; // [24]
+        uint32_t __31_25 : 7;          // [31:25]
     } b;
 } REG_USBC_GAHBCFG_T;
 
-//GUSBCFG
+// gusbcfg
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 toutcal : 3;       // [2:0]
-        REG32 phyif : 1;         // [3], read only
-        REG32 ulpi_utmi_sel : 1; // [4]
-        REG32 fsintf : 1;        // [5]
-        REG32 physel : 1;        // [6]
-        REG32 __7_7 : 1;
-        REG32 srpcap : 1;    // [8]
-        REG32 hnpcap : 1;    // [9]
-        REG32 usbtrdtim : 4; // [13:10]
-        REG32 __14_14 : 1;
-        REG32 phylpwrclksel : 1; // [15]
-        REG32 __21_16 : 6;
-        REG32 termseldlpulse : 1; // [22]
-        REG32 __25_23 : 3;
-        REG32 ic_usbcap : 1; // [26], read only
-        REG32 __27_27 : 1;
-        REG32 txenddelay : 1;   // [28]
-        REG32 forcehstmode : 1; // [29]
-        REG32 forcedevmode : 1; // [30]
-        REG32 corrupttxpkt : 1; // [31]
+        uint32_t toutcal : 3;        // [2:0]
+        uint32_t phyif : 1;          // [3], read only
+        uint32_t ulpi_utmi_sel : 1;  // [4]
+        uint32_t fsintf : 1;         // [5]
+        uint32_t physel : 1;         // [6]
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t srpcap : 1;         // [8]
+        uint32_t hnpcap : 1;         // [9]
+        uint32_t usbtrdtim : 4;      // [13:10]
+        uint32_t __14_14 : 1;        // [14]
+        uint32_t phylpwrclksel : 1;  // [15]
+        uint32_t __21_16 : 6;        // [21:16]
+        uint32_t termseldlpulse : 1; // [22]
+        uint32_t __25_23 : 3;        // [25:23]
+        uint32_t ic_usbcap : 1;      // [26], read only
+        uint32_t __27_27 : 1;        // [27]
+        uint32_t txenddelay : 1;     // [28]
+        uint32_t forcehstmode : 1;   // [29]
+        uint32_t forcedevmode : 1;   // [30]
+        uint32_t corrupttxpkt : 1;   // [31]
     } b;
 } REG_USBC_GUSBCFG_T;
 
-//GRSTCTL
+// grstctl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 csftrst : 1;     // [0]
-        REG32 piufssftrst : 1; // [1]
-        REG32 frmcntrrst : 1;  // [2]
-        REG32 __3_3 : 1;
-        REG32 rxfflsh : 1; // [4]
-        REG32 txfflsh : 1; // [5]
-        REG32 txfnum : 5;  // [10:6]
-        REG32 __29_11 : 19;
-        REG32 dmareq : 1;  // [30], read only
-        REG32 ahbidle : 1; // [31], read only
+        uint32_t csftrst : 1;     // [0]
+        uint32_t piufssftrst : 1; // [1]
+        uint32_t frmcntrrst : 1;  // [2]
+        uint32_t __3_3 : 1;       // [3]
+        uint32_t rxfflsh : 1;     // [4]
+        uint32_t txfflsh : 1;     // [5]
+        uint32_t txfnum : 5;      // [10:6]
+        uint32_t __29_11 : 19;    // [29:11]
+        uint32_t dmareq : 1;      // [30], read only
+        uint32_t ahbidle : 1;     // [31], read only
     } b;
 } REG_USBC_GRSTCTL_T;
 
-//GINTSTS
+// gintsts
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 curmod : 1;     // [0], read only
-        REG32 modemis : 1;    // [1], write clear
-        REG32 otgint : 1;     // [2]
-        REG32 sof : 1;        // [3]
-        REG32 rxflvl : 1;     // [4], read only
-        REG32 nptxfemp : 1;   // [5], read only
-        REG32 ginnakeff : 1;  // [6], read only
-        REG32 goutnakeff : 1; // [7], read only
-        REG32 __9_8 : 2;
-        REG32 erlysusp : 1;   // [10], write clear
-        REG32 usbsusp : 1;    // [11], write clear
-        REG32 usbrst : 1;     // [12], write clear
-        REG32 enumdone : 1;   // [13], write clear
-        REG32 isooutdrop : 1; // [14], write clear
-        REG32 eopf : 1;       // [15], write clear
-        REG32 __16_16 : 1;
-        REG32 epmis : 1;       // [17], write clear
-        REG32 iepint : 1;      // [18], read only
-        REG32 oepint : 1;      // [19], read only
-        REG32 incompisoin : 1; // [20], write clear
-        REG32 incomplp : 1;    // [21], write clear
-        REG32 fetsusp : 1;     // [22], write clear
-        REG32 resetdet : 1;    // [23], write clear
-        REG32 prtint : 1;      // [24], read only
-        REG32 hchint : 1;      // [25], read only
-        REG32 ptxfemp : 1;     // [26]
-        REG32 __27_27 : 1;
-        REG32 conidstschng : 1; // [28]
-        REG32 disconnint : 1;   // [29], write clear
-        REG32 sessreqint : 1;   // [30], write clear
-        REG32 wkupint : 1;      // [31], write clear
+        uint32_t curmod : 1;       // [0], read only
+        uint32_t modemis : 1;      // [1], write clear
+        uint32_t otgint : 1;       // [2]
+        uint32_t sof : 1;          // [3]
+        uint32_t rxflvl : 1;       // [4], read only
+        uint32_t nptxfemp : 1;     // [5], read only
+        uint32_t ginnakeff : 1;    // [6], read only
+        uint32_t goutnakeff : 1;   // [7], read only
+        uint32_t __9_8 : 2;        // [9:8]
+        uint32_t erlysusp : 1;     // [10], write clear
+        uint32_t usbsusp : 1;      // [11], write clear
+        uint32_t usbrst : 1;       // [12], write clear
+        uint32_t enumdone : 1;     // [13], write clear
+        uint32_t isooutdrop : 1;   // [14], write clear
+        uint32_t eopf : 1;         // [15], write clear
+        uint32_t __16_16 : 1;      // [16]
+        uint32_t epmis : 1;        // [17], write clear
+        uint32_t iepint : 1;       // [18], read only
+        uint32_t oepint : 1;       // [19], read only
+        uint32_t incompisoin : 1;  // [20], write clear
+        uint32_t incomplp : 1;     // [21], write clear
+        uint32_t fetsusp : 1;      // [22], write clear
+        uint32_t resetdet : 1;     // [23], write clear
+        uint32_t prtint : 1;       // [24], read only
+        uint32_t hchint : 1;       // [25], read only
+        uint32_t ptxfemp : 1;      // [26]
+        uint32_t __27_27 : 1;      // [27]
+        uint32_t conidstschng : 1; // [28]
+        uint32_t disconnint : 1;   // [29], write clear
+        uint32_t sessreqint : 1;   // [30], write clear
+        uint32_t wkupint : 1;      // [31], write clear
     } b;
 } REG_USBC_GINTSTS_T;
 
-//GINTMSK
+// gintmsk
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 __0_0 : 1;
-        REG32 modemismsk : 1;    // [1]
-        REG32 otgintmsk : 1;     // [2]
-        REG32 sofmsk : 1;        // [3]
-        REG32 rxflvlmsk : 1;     // [4]
-        REG32 nptxfempmsk : 1;   // [5]
-        REG32 ginnakeffmsk : 1;  // [6]
-        REG32 goutnakeffmsk : 1; // [7]
-        REG32 __9_8 : 2;
-        REG32 erlysuspmsk : 1;   // [10]
-        REG32 usbsuspmsk : 1;    // [11]
-        REG32 usbrstmsk : 1;     // [12]
-        REG32 enumdonemsk : 1;   // [13]
-        REG32 isooutdropmsk : 1; // [14]
-        REG32 eopfmsk : 1;       // [15]
-        REG32 __16_16 : 1;
-        REG32 epmismsk : 1;  // [17]
-        REG32 iepintmsk : 1; // [18]
-        REG32 oepintmsk : 1; // [19]
-        REG32 __20_20 : 1;
-        REG32 incomplpmsk : 1; // [21]
-        REG32 fetsuspmsk : 1;  // [22]
-        REG32 resetdetmsk : 1; // [23]
-        REG32 prtintmsk : 1;   // [24]
-        REG32 hchintmsk : 1;   // [25]
-        REG32 ptxfempmsk : 1;  // [26]
-        REG32 __27_27 : 1;
-        REG32 conidstschngmsk : 1; // [28]
-        REG32 disconnintmsk : 1;   // [29]
-        REG32 sessreqintmsk : 1;   // [30]
-        REG32 wkupintmsk : 1;      // [31]
+        uint32_t __0_0 : 1;           // [0]
+        uint32_t modemismsk : 1;      // [1]
+        uint32_t otgintmsk : 1;       // [2]
+        uint32_t sofmsk : 1;          // [3]
+        uint32_t rxflvlmsk : 1;       // [4]
+        uint32_t nptxfempmsk : 1;     // [5]
+        uint32_t ginnakeffmsk : 1;    // [6]
+        uint32_t goutnakeffmsk : 1;   // [7]
+        uint32_t __9_8 : 2;           // [9:8]
+        uint32_t erlysuspmsk : 1;     // [10]
+        uint32_t usbsuspmsk : 1;      // [11]
+        uint32_t usbrstmsk : 1;       // [12]
+        uint32_t enumdonemsk : 1;     // [13]
+        uint32_t isooutdropmsk : 1;   // [14]
+        uint32_t eopfmsk : 1;         // [15]
+        uint32_t __16_16 : 1;         // [16]
+        uint32_t epmismsk : 1;        // [17]
+        uint32_t iepintmsk : 1;       // [18]
+        uint32_t oepintmsk : 1;       // [19]
+        uint32_t __20_20 : 1;         // [20]
+        uint32_t incomplpmsk : 1;     // [21]
+        uint32_t fetsuspmsk : 1;      // [22]
+        uint32_t resetdetmsk : 1;     // [23]
+        uint32_t prtintmsk : 1;       // [24]
+        uint32_t hchintmsk : 1;       // [25]
+        uint32_t ptxfempmsk : 1;      // [26]
+        uint32_t __27_27 : 1;         // [27]
+        uint32_t conidstschngmsk : 1; // [28]
+        uint32_t disconnintmsk : 1;   // [29]
+        uint32_t sessreqintmsk : 1;   // [30]
+        uint32_t wkupintmsk : 1;      // [31]
     } b;
 } REG_USBC_GINTMSK_T;
 
-//GRXSTSR
+// grxstsr
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 chnum : 4;  // [3:0]
-        REG32 bcnt : 11;  // [14:4], read only
-        REG32 dpid : 2;   // [16:15], read only
-        REG32 pktsts : 4; // [20:17]
-        REG32 fn : 4;     // [24:21], read only
-        REG32 __31_25 : 7;
+        uint32_t chnum : 4;   // [3:0]
+        uint32_t bcnt : 11;   // [14:4], read only
+        uint32_t dpid : 2;    // [16:15], read only
+        uint32_t pktsts : 4;  // [20:17]
+        uint32_t fn : 4;      // [24:21], read only
+        uint32_t __31_25 : 7; // [31:25]
     } b;
 } REG_USBC_GRXSTSR_T;
 
-//GRXSTSP
+// grxstsp
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 chnum : 4;  // [3:0]
-        REG32 bcnt : 11;  // [14:4], read only
-        REG32 dpid : 2;   // [16:15], read only
-        REG32 pktsts : 4; // [20:17]
-        REG32 fn : 4;     // [24:21], read only
-        REG32 __31_25 : 7;
+        uint32_t chnum : 4;   // [3:0]
+        uint32_t bcnt : 11;   // [14:4], read only
+        uint32_t dpid : 2;    // [16:15], read only
+        uint32_t pktsts : 4;  // [20:17]
+        uint32_t fn : 4;      // [24:21], read only
+        uint32_t __31_25 : 7; // [31:25]
     } b;
 } REG_USBC_GRXSTSP_T;
 
-//GRXFSIZ
+// grxfsiz
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 rxfdep : 12; // [11:0]
-        REG32 __31_12 : 20;
+        uint32_t rxfdep : 12;  // [11:0]
+        uint32_t __31_12 : 20; // [31:12]
     } b;
 } REG_USBC_GRXFSIZ_T;
 
-//GNPTXFSIZ
+// gnptxfsiz
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 nptxfstaddr : 12; // [11:0]
-        REG32 __15_12 : 4;
-        REG32 nptxfdep : 12; // [27:16]
-        REG32 __31_28 : 4;
+        uint32_t nptxfstaddr : 12; // [11:0]
+        uint32_t __15_12 : 4;      // [15:12]
+        uint32_t nptxfdep : 12;    // [27:16]
+        uint32_t __31_28 : 4;      // [31:28]
     } b;
 } REG_USBC_GNPTXFSIZ_T;
 
-//GNPTXSTS
+// gnptxsts
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 nptxfspcavail : 16; // [15:0], read only
-        REG32 nptxqspcavail : 8;  // [23:16], read only
-        REG32 nptxqtop : 7;       // [30:24], read only
-        REG32 __31_31 : 1;
+        uint32_t nptxfspcavail : 16; // [15:0], read only
+        uint32_t nptxqspcavail : 8;  // [23:16], read only
+        uint32_t nptxqtop : 7;       // [30:24], read only
+        uint32_t __31_31 : 1;        // [31]
     } b;
 } REG_USBC_GNPTXSTS_T;
 
-//GGPIO
+// ggpio
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 gpi : 16; // [15:0], read only
-        REG32 gpo : 16; // [31:16]
+        uint32_t gpi : 16; // [15:0], read only
+        uint32_t gpo : 16; // [31:16]
     } b;
 } REG_USBC_GGPIO_T;
 
-//GHWCFG2
+// ghwcfg2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 otgmode : 3;         // [2:0], read only
-        REG32 otgarch : 2;         // [4:3], read only
-        REG32 singpnt : 1;         // [5], read only
-        REG32 hsphytype : 2;       // [7:6], read only
-        REG32 fsphytype : 2;       // [9:8], read only
-        REG32 numdeveps : 4;       // [13:10], read only
-        REG32 numhstchnl : 4;      // [17:14], read only
-        REG32 periosupport : 1;    // [18], read only
-        REG32 dynfifosizing : 1;   // [19], read only
-        REG32 multiprocintrpt : 1; // [20], read only
-        REG32 __21_21 : 1;
-        REG32 nptxqdepth : 2; // [23:22], read only
-        REG32 ptxqdepth : 2;  // [25:24], read only
-        REG32 tknqdepth : 5;  // [30:26], read only
-        REG32 __31_31 : 1;
+        uint32_t otgmode : 3;         // [2:0], read only
+        uint32_t otgarch : 2;         // [4:3], read only
+        uint32_t singpnt : 1;         // [5], read only
+        uint32_t hsphytype : 2;       // [7:6], read only
+        uint32_t fsphytype : 2;       // [9:8], read only
+        uint32_t numdeveps : 4;       // [13:10], read only
+        uint32_t numhstchnl : 4;      // [17:14], read only
+        uint32_t periosupport : 1;    // [18], read only
+        uint32_t dynfifosizing : 1;   // [19], read only
+        uint32_t multiprocintrpt : 1; // [20], read only
+        uint32_t __21_21 : 1;         // [21]
+        uint32_t nptxqdepth : 2;      // [23:22], read only
+        uint32_t ptxqdepth : 2;       // [25:24], read only
+        uint32_t tknqdepth : 5;       // [30:26], read only
+        uint32_t __31_31 : 1;         // [31]
     } b;
 } REG_USBC_GHWCFG2_T;
 
-//GHWCFG3
+// ghwcfg3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersizewidth : 4; // [3:0], read only
-        REG32 pktsizewidth : 3;  // [6:4], read only
-        REG32 otgen : 1;         // [7], read only
-        REG32 i2cintsel : 1;     // [8], read only
-        REG32 vndctlsupt : 1;    // [9], read only
-        REG32 optfeature : 1;    // [10], read only
-        REG32 rsttype : 1;       // [11], read only
-        REG32 adpsupport : 1;    // [12], read only
-        REG32 hsicmode : 1;      // [13], read only
-        REG32 bcsupport : 1;     // [14], read only
-        REG32 lpmmode : 1;       // [15], read only
-        REG32 dfifodepth : 16;   // [31:16], read only
+        uint32_t xfersizewidth : 4; // [3:0], read only
+        uint32_t pktsizewidth : 3;  // [6:4], read only
+        uint32_t otgen : 1;         // [7], read only
+        uint32_t i2cintsel : 1;     // [8], read only
+        uint32_t vndctlsupt : 1;    // [9], read only
+        uint32_t optfeature : 1;    // [10], read only
+        uint32_t rsttype : 1;       // [11], read only
+        uint32_t adpsupport : 1;    // [12], read only
+        uint32_t hsicmode : 1;      // [13], read only
+        uint32_t bcsupport : 1;     // [14], read only
+        uint32_t lpmmode : 1;       // [15], read only
+        uint32_t dfifodepth : 16;   // [31:16], read only
     } b;
 } REG_USBC_GHWCFG3_T;
 
-//GHWCFG4
+// ghwcfg4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 numdevperioeps : 4;      // [3:0], read only
-        REG32 partialpwrdn : 1;        // [4], read only
-        REG32 ahbfreq : 1;             // [5], read only
-        REG32 hibernation : 1;         // [6], read only
-        REG32 extendedhibernation : 1; // [7], read only
-        REG32 __11_8 : 4;
-        REG32 acgsupt : 1;         // [12], read only
-        REG32 enhancedlpmsupt : 1; // [13], read only
-        REG32 phydatawidth : 2;    // [15:14], read only
-        REG32 numctleps : 4;       // [19:16], read only
-        REG32 iddgfltr : 1;        // [20], read only
-        REG32 vbusvalidfltr : 1;   // [21], read only
-        REG32 avalidfltr : 1;      // [22], read only
-        REG32 bvalidfltr : 1;      // [23], read only
-        REG32 sessendfltr : 1;     // [24], read only
-        REG32 dedfifomode : 1;     // [25], read only
-        REG32 ineps : 4;           // [29:26], read only
-        REG32 descdmaenabled : 1;  // [30], read only
-        REG32 descdma : 1;         // [31], read only
+        uint32_t numdevperioeps : 4;      // [3:0], read only
+        uint32_t partialpwrdn : 1;        // [4], read only
+        uint32_t ahbfreq : 1;             // [5], read only
+        uint32_t hibernation : 1;         // [6], read only
+        uint32_t extendedhibernation : 1; // [7], read only
+        uint32_t __11_8 : 4;              // [11:8]
+        uint32_t acgsupt : 1;             // [12], read only
+        uint32_t enhancedlpmsupt : 1;     // [13], read only
+        uint32_t phydatawidth : 2;        // [15:14], read only
+        uint32_t numctleps : 4;           // [19:16], read only
+        uint32_t iddgfltr : 1;            // [20], read only
+        uint32_t vbusvalidfltr : 1;       // [21], read only
+        uint32_t avalidfltr : 1;          // [22], read only
+        uint32_t bvalidfltr : 1;          // [23], read only
+        uint32_t sessendfltr : 1;         // [24], read only
+        uint32_t dedfifomode : 1;         // [25], read only
+        uint32_t ineps : 4;               // [29:26], read only
+        uint32_t descdmaenabled : 1;      // [30], read only
+        uint32_t descdma : 1;             // [31], read only
     } b;
 } REG_USBC_GHWCFG4_T;
 
-//GPWRDN
+// gpwrdn
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 pmuintsel : 1; // [0]
-        REG32 pmuactv : 1;   // [1]
-        REG32 __2_2 : 1;
-        REG32 pwrdnclmp : 1;   // [3]
-        REG32 pwrdnrst_n : 1;  // [4]
-        REG32 pwrdnswtch : 1;  // [5]
-        REG32 disablevbus : 1; // [6]
-        REG32 __14_7 : 8;
-        REG32 srpdetect : 1;     // [15], write clear
-        REG32 srpdetectmsk : 1;  // [16]
-        REG32 stschngint : 1;    // [17], write clear
-        REG32 stschngintmsk : 1; // [18]
-        REG32 linestate : 2;     // [20:19], read only
-        REG32 iddig : 1;         // [21], read only
-        REG32 bsessvld : 1;      // [22], read only
-        REG32 adpint : 1;        // [23], write clear
-        REG32 __31_24 : 8;
+        uint32_t pmuintsel : 1;     // [0]
+        uint32_t pmuactv : 1;       // [1]
+        uint32_t __2_2 : 1;         // [2]
+        uint32_t pwrdnclmp : 1;     // [3]
+        uint32_t pwrdnrst_n : 1;    // [4]
+        uint32_t pwrdnswtch : 1;    // [5]
+        uint32_t disablevbus : 1;   // [6]
+        uint32_t __14_7 : 8;        // [14:7]
+        uint32_t srpdetect : 1;     // [15], write clear
+        uint32_t srpdetectmsk : 1;  // [16]
+        uint32_t stschngint : 1;    // [17], write clear
+        uint32_t stschngintmsk : 1; // [18]
+        uint32_t linestate : 2;     // [20:19], read only
+        uint32_t iddig : 1;         // [21], read only
+        uint32_t bsessvld : 1;      // [22], read only
+        uint32_t adpint : 1;        // [23], write clear
+        uint32_t __31_24 : 8;       // [31:24]
     } b;
 } REG_USBC_GPWRDN_T;
 
-//GDFIFOCFG
+// gdfifocfg
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 gdfifocfg : 16;      // [15:0]
-        REG32 epinfobaseaddr : 16; // [31:16]
+        uint32_t gdfifocfg : 16;      // [15:0]
+        uint32_t epinfobaseaddr : 16; // [31:16]
     } b;
 } REG_USBC_GDFIFOCFG_T;
 
-//GADPCTL
+// gadpctl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prbdschg : 2;     // [1:0]
-        REG32 prbdelta : 2;     // [3:2]
-        REG32 prbper : 2;       // [5:4]
-        REG32 rtim : 11;        // [16:6], read only
-        REG32 enaprb : 1;       // [17]
-        REG32 enasns : 1;       // [18]
-        REG32 adpres : 1;       // [19]
-        REG32 adpen : 1;        // [20]
-        REG32 adpprbint : 1;    // [21], write clear
-        REG32 adpsnsint : 1;    // [22], write clear
-        REG32 adptoutint : 1;   // [23], write clear
-        REG32 adpprbintmsk : 1; // [24]
-        REG32 adpsnsintmsk : 1; // [25]
-        REG32 adptoutmsk : 1;   // [26]
-        REG32 ar : 2;           // [28:27]
-        REG32 __31_29 : 3;
+        uint32_t prbdschg : 2;     // [1:0]
+        uint32_t prbdelta : 2;     // [3:2]
+        uint32_t prbper : 2;       // [5:4]
+        uint32_t rtim : 11;        // [16:6], read only
+        uint32_t enaprb : 1;       // [17]
+        uint32_t enasns : 1;       // [18]
+        uint32_t adpres : 1;       // [19]
+        uint32_t adpen : 1;        // [20]
+        uint32_t adpprbint : 1;    // [21], write clear
+        uint32_t adpsnsint : 1;    // [22], write clear
+        uint32_t adptoutint : 1;   // [23], write clear
+        uint32_t adpprbintmsk : 1; // [24]
+        uint32_t adpsnsintmsk : 1; // [25]
+        uint32_t adptoutmsk : 1;   // [26]
+        uint32_t ar : 2;           // [28:27]
+        uint32_t __31_29 : 3;      // [31:29]
     } b;
 } REG_USBC_GADPCTL_T;
 
-//HPTXFSIZ
+// hptxfsiz
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ptxfstaddr : 13; // [12:0]
-        REG32 __15_13 : 3;
-        REG32 ptxfsize : 12; // [27:16]
-        REG32 __31_28 : 4;
+        uint32_t ptxfstaddr : 13; // [12:0]
+        uint32_t __15_13 : 3;     // [15:13]
+        uint32_t ptxfsize : 12;   // [27:16]
+        uint32_t __31_28 : 4;     // [31:28]
     } b;
 } REG_USBC_HPTXFSIZ_T;
 
-//DIEPTXF1
+// dieptxf1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepntxfstaddr : 12; // [11:0]
-        REG32 __15_12 : 4;
-        REG32 inepntxfdep : 10; // [25:16]
-        REG32 __31_26 : 6;
+        uint32_t inepntxfstaddr : 12; // [11:0]
+        uint32_t __15_12 : 4;         // [15:12]
+        uint32_t inepntxfdep : 10;    // [25:16]
+        uint32_t __31_26 : 6;         // [31:26]
     } b;
 } REG_USBC_DIEPTXF1_T;
 
-//DIEPTXF2
+// dieptxf2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepntxfstaddr : 13; // [12:0]
-        REG32 __15_13 : 3;
-        REG32 inepntxfdep : 10; // [25:16]
-        REG32 __31_26 : 6;
+        uint32_t inepntxfstaddr : 13; // [12:0]
+        uint32_t __15_13 : 3;         // [15:13]
+        uint32_t inepntxfdep : 10;    // [25:16]
+        uint32_t __31_26 : 6;         // [31:26]
     } b;
 } REG_USBC_DIEPTXF2_T;
 
-//DIEPTXF3
+// dieptxf3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepntxfstaddr : 13; // [12:0]
-        REG32 __15_13 : 3;
-        REG32 inepntxfdep : 9; // [24:16]
-        REG32 __31_25 : 7;
+        uint32_t inepntxfstaddr : 13; // [12:0]
+        uint32_t __15_13 : 3;         // [15:13]
+        uint32_t inepntxfdep : 9;     // [24:16]
+        uint32_t __31_25 : 7;         // [31:25]
     } b;
 } REG_USBC_DIEPTXF3_T;
 
-//DIEPTXF4
+// dieptxf4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepntxfstaddr : 13; // [12:0]
-        REG32 __15_13 : 3;
-        REG32 inepntxfdep : 9; // [24:16]
-        REG32 __31_25 : 7;
+        uint32_t inepntxfstaddr : 13; // [12:0]
+        uint32_t __15_13 : 3;         // [15:13]
+        uint32_t inepntxfdep : 9;     // [24:16]
+        uint32_t __31_25 : 7;         // [31:25]
     } b;
 } REG_USBC_DIEPTXF4_T;
 
-//DIEPTXF5
+// dieptxf5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepntxfstaddr : 13; // [12:0]
-        REG32 __15_13 : 3;
-        REG32 inepntxfdep : 9; // [24:16]
-        REG32 __31_25 : 7;
+        uint32_t inepntxfstaddr : 13; // [12:0]
+        uint32_t __15_13 : 3;         // [15:13]
+        uint32_t inepntxfdep : 9;     // [24:16]
+        uint32_t __31_25 : 7;         // [31:25]
     } b;
 } REG_USBC_DIEPTXF5_T;
 
-//DIEPTXF6
+// dieptxf6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepntxfstaddr : 13; // [12:0]
-        REG32 __15_13 : 3;
-        REG32 inepntxfdep : 9; // [24:16]
-        REG32 __31_25 : 7;
+        uint32_t inepntxfstaddr : 13; // [12:0]
+        uint32_t __15_13 : 3;         // [15:13]
+        uint32_t inepntxfdep : 9;     // [24:16]
+        uint32_t __31_25 : 7;         // [31:25]
     } b;
 } REG_USBC_DIEPTXF6_T;
 
-//DIEPTXF7
+// dieptxf7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepntxfstaddr : 13; // [12:0]
-        REG32 __15_13 : 3;
-        REG32 inepntxfdep : 9; // [24:16]
-        REG32 __31_25 : 7;
+        uint32_t inepntxfstaddr : 13; // [12:0]
+        uint32_t __15_13 : 3;         // [15:13]
+        uint32_t inepntxfdep : 9;     // [24:16]
+        uint32_t __31_25 : 7;         // [31:25]
     } b;
 } REG_USBC_DIEPTXF7_T;
 
-//DIEPTXF8
+// dieptxf8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepntxfstaddr : 13; // [12:0]
-        REG32 __15_13 : 3;
-        REG32 inepntxfdep : 9; // [24:16]
-        REG32 __31_25 : 7;
+        uint32_t inepntxfstaddr : 13; // [12:0]
+        uint32_t __15_13 : 3;         // [15:13]
+        uint32_t inepntxfdep : 9;     // [24:16]
+        uint32_t __31_25 : 7;         // [31:25]
     } b;
 } REG_USBC_DIEPTXF8_T;
 
-//HCFG
+// hcfg
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 fslspclksel : 2; // [1:0]
-        REG32 fslssupp : 1;    // [2]
-        REG32 __6_3 : 4;
-        REG32 ena32khzs : 1; // [7]
-        REG32 resvalid : 8;  // [15:8]
-        REG32 __22_16 : 7;
-        REG32 descdma : 1;     // [23]
-        REG32 frlisten : 2;    // [25:24]
-        REG32 perschedena : 1; // [26]
-        REG32 __30_27 : 4;
-        REG32 modechtimen : 1; // [31]
+        uint32_t fslspclksel : 2; // [1:0]
+        uint32_t fslssupp : 1;    // [2]
+        uint32_t __6_3 : 4;       // [6:3]
+        uint32_t ena32khzs : 1;   // [7]
+        uint32_t resvalid : 8;    // [15:8]
+        uint32_t __22_16 : 7;     // [22:16]
+        uint32_t descdma : 1;     // [23]
+        uint32_t frlisten : 2;    // [25:24]
+        uint32_t perschedena : 1; // [26]
+        uint32_t __30_27 : 4;     // [30:27]
+        uint32_t modechtimen : 1; // [31]
     } b;
 } REG_USBC_HCFG_T;
 
-//HFIR
+// hfir
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 frint : 16;      // [15:0]
-        REG32 hfirrldctrl : 1; // [16]
-        REG32 __31_17 : 15;
+        uint32_t frint : 16;      // [15:0]
+        uint32_t hfirrldctrl : 1; // [16]
+        uint32_t __31_17 : 15;    // [31:17]
     } b;
 } REG_USBC_HFIR_T;
 
-//HFNUM
+// hfnum
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 frnum : 16; // [15:0], read only
-        REG32 frrem : 16; // [31:16], read only
+        uint32_t frnum : 16; // [15:0], read only
+        uint32_t frrem : 16; // [31:16], read only
     } b;
 } REG_USBC_HFNUM_T;
 
-//HPTXSTS
+// hptxsts
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ptxfspcavail : 16; // [15:0], read only
-        REG32 ptxqspcavail : 8;  // [23:16], read only
-        REG32 ptxqtop : 8;       // [31:24], read only
+        uint32_t ptxfspcavail : 16; // [15:0], read only
+        uint32_t ptxqspcavail : 8;  // [23:16], read only
+        uint32_t ptxqtop : 8;       // [31:24], read only
     } b;
 } REG_USBC_HPTXSTS_T;
 
-//HAINT
+// haint
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 haint : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t haint : 16;   // [15:0], read only
+        uint32_t __31_16 : 16; // [31:16]
     } b;
 } REG_USBC_HAINT_T;
 
-//HAINTMSK
+// haintmsk
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 haintmsk : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t haintmsk : 16; // [15:0]
+        uint32_t __31_16 : 16;  // [31:16]
     } b;
 } REG_USBC_HAINTMSK_T;
 
-//HPRT
+// hprt
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtconnsts : 1;     // [0], read only
-        REG32 prtconndet : 1;     // [1], write clear
-        REG32 prtena : 1;         // [2], write clear
-        REG32 prtenchng : 1;      // [3], write clear
-        REG32 prtovrcurract : 1;  // [4], read only
-        REG32 prtovrcurrchng : 1; // [5], write clear
-        REG32 prtres : 1;         // [6]
-        REG32 prtsusp : 1;        // [7]
-        REG32 prtrst : 1;         // [8]
-        REG32 __9_9 : 1;
-        REG32 prtlnsts : 2;  // [11:10], read only
-        REG32 prtpwr : 1;    // [12]
-        REG32 prttstctl : 4; // [16:13]
-        REG32 prtspd : 2;    // [18:17], read only
-        REG32 __31_19 : 13;
+        uint32_t prtconnsts : 1;     // [0], read only
+        uint32_t prtconndet : 1;     // [1], write clear
+        uint32_t prtena : 1;         // [2], write clear
+        uint32_t prtenchng : 1;      // [3], write clear
+        uint32_t prtovrcurract : 1;  // [4], read only
+        uint32_t prtovrcurrchng : 1; // [5], write clear
+        uint32_t prtres : 1;         // [6]
+        uint32_t prtsusp : 1;        // [7]
+        uint32_t prtrst : 1;         // [8]
+        uint32_t __9_9 : 1;          // [9]
+        uint32_t prtlnsts : 2;       // [11:10], read only
+        uint32_t prtpwr : 1;         // [12]
+        uint32_t prttstctl : 4;      // [16:13]
+        uint32_t prtspd : 2;         // [18:17], read only
+        uint32_t __31_19 : 13;       // [31:19]
     } b;
 } REG_USBC_HPRT_T;
 
-//HCCHAR0
+// hcchar0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR0_T;
 
-//HCSPLT0
+// hcsplt0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT0_T;
 
-//HCINT0
+// hcint0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT0_T;
 
-//HCINTMSK0
+// hcintmsk0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK0_T;
 
-//HCTSIZ0
+// hctsiz0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ0_T;
 
-//HCCHAR1
+// hcchar1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR1_T;
 
-//HCSPLT1
+// hcsplt1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT1_T;
 
-//HCINT1
+// hcint1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT1_T;
 
-//HCINTMSK1
+// hcintmsk1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK1_T;
 
-//HCTSIZ1
+// hctsiz1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ1_T;
 
-//HCCHAR2
+// hcchar2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR2_T;
 
-//HCSPLT2
+// hcsplt2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT2_T;
 
-//HCINT2
+// hcint2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT2_T;
 
-//HCINTMSK2
+// hcintmsk2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK2_T;
 
-//HCTSIZ2
+// hctsiz2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ2_T;
 
-//HCCHAR3
+// hcchar3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR3_T;
 
-//HCSPLT3
+// hcsplt3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT3_T;
 
-//HCINT3
+// hcint3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT3_T;
 
-//HCINTMSK3
+// hcintmsk3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK3_T;
 
-//HCTSIZ3
+// hctsiz3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ3_T;
 
-//HCCHAR4
+// hcchar4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR4_T;
 
-//HCSPLT4
+// hcsplt4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT4_T;
 
-//HCINT4
+// hcint4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT4_T;
 
-//HCINTMSK4
+// hcintmsk4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK4_T;
 
-//HCTSIZ4
+// hctsiz4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ4_T;
 
-//HCCHAR5
+// hcchar5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR5_T;
 
-//HCSPLT5
+// hcsplt5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT5_T;
 
-//HCINT5
+// hcint5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT5_T;
 
-//HCINTMSK5
+// hcintmsk5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK5_T;
 
-//HCTSIZ5
+// hctsiz5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ5_T;
 
-//HCCHAR6
+// hcchar6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR6_T;
 
-//HCSPLT6
+// hcsplt6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT6_T;
 
-//HCINT6
+// hcint6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT6_T;
 
-//HCINTMSK6
+// hcintmsk6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK6_T;
 
-//HCTSIZ6
+// hctsiz6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ6_T;
 
-//HCCHAR7
+// hcchar7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR7_T;
 
-//HCSPLT7
+// hcsplt7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT7_T;
 
-//HCINT7
+// hcint7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT7_T;
 
-//HCINTMSK7
+// hcintmsk7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK7_T;
 
-//HCTSIZ7
+// hctsiz7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ7_T;
 
-//HCCHAR8
+// hcchar8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR8_T;
 
-//HCSPLT8
+// hcsplt8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT8_T;
 
-//HCINT8
+// hcint8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT8_T;
 
-//HCINTMSK8
+// hcintmsk8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK8_T;
 
-//HCTSIZ8
+// hctsiz8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ8_T;
 
-//HCCHAR9
+// hcchar9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR9_T;
 
-//HCSPLT9
+// hcsplt9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT9_T;
 
-//HCINT9
+// hcint9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT9_T;
 
-//HCINTMSK9
+// hcintmsk9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK9_T;
 
-//HCTSIZ9
+// hctsiz9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ9_T;
 
-//HCCHAR10
+// hcchar10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR10_T;
 
-//HCSPLT10
+// hcsplt10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT10_T;
 
-//HCINT10
+// hcint10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT10_T;
 
-//HCINTMSK10
+// hcintmsk10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK10_T;
 
-//HCTSIZ10
+// hctsiz10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ10_T;
 
-//HCCHAR11
+// hcchar11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR11_T;
 
-//HCSPLT11
+// hcsplt11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT11_T;
 
-//HCINT11
+// hcint11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT11_T;
 
-//HCINTMSK11
+// hcintmsk11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK11_T;
 
-//HCTSIZ11
+// hctsiz11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ11_T;
 
-//HCCHAR12
+// hcchar12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR12_T;
 
-//HCSPLT12
+// hcsplt12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT12_T;
 
-//HCINT12
+// hcint12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT12_T;
 
-//HCINTMSK12
+// hcintmsk12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK12_T;
 
-//HCTSIZ12
+// hctsiz12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ12_T;
 
-//HCCHAR13
+// hcchar13
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR13_T;
 
-//HCSPLT13
+// hcsplt13
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT13_T;
 
-//HCINT13
+// hcint13
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT13_T;
 
-//HCINTMSK13
+// hcintmsk13
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK13_T;
 
-//HCTSIZ13
+// hctsiz13
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ13_T;
 
-//HCCHAR14
+// hcchar14
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR14_T;
 
-//HCSPLT14
+// hcsplt14
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT14_T;
 
-//HCINT14
+// hcint14
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT14_T;
 
-//HCINTMSK14
+// hcintmsk14
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK14_T;
 
-//HCTSIZ14
+// hctsiz14
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ14_T;
 
-//HCCHAR15
+// hcchar15
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11;  // [10:0]
-        REG32 epnum : 4; // [14:11]
-        REG32 epdir : 1; // [15]
-        REG32 __16_16 : 1;
-        REG32 lspddev : 1; // [17]
-        REG32 eptype : 2;  // [19:18]
-        REG32 ec : 2;      // [21:20]
-        REG32 devaddr : 7; // [28:22]
-        REG32 oddfrm : 1;  // [29]
-        REG32 chdis : 1;   // [30]
-        REG32 chena : 1;   // [31]
+        uint32_t mps : 11;    // [10:0]
+        uint32_t epnum : 4;   // [14:11]
+        uint32_t epdir : 1;   // [15]
+        uint32_t __16_16 : 1; // [16]
+        uint32_t lspddev : 1; // [17]
+        uint32_t eptype : 2;  // [19:18]
+        uint32_t ec : 2;      // [21:20]
+        uint32_t devaddr : 7; // [28:22]
+        uint32_t oddfrm : 1;  // [29]
+        uint32_t chdis : 1;   // [30]
+        uint32_t chena : 1;   // [31]
     } b;
 } REG_USBC_HCCHAR15_T;
 
-//HCSPLT15
+// hcsplt15
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 prtaddr : 7;  // [6:0]
-        REG32 hubaddr : 7;  // [13:7]
-        REG32 xactpos : 2;  // [15:14]
-        REG32 compsplt : 1; // [16]
-        REG32 __30_17 : 14;
-        REG32 spltena : 1; // [31]
+        uint32_t prtaddr : 7;  // [6:0]
+        uint32_t hubaddr : 7;  // [13:7]
+        uint32_t xactpos : 2;  // [15:14]
+        uint32_t compsplt : 1; // [16]
+        uint32_t __30_17 : 14; // [30:17]
+        uint32_t spltena : 1;  // [31]
     } b;
 } REG_USBC_HCSPLT15_T;
 
-//HCINT15
+// hcint15
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;         // [0], write clear
-        REG32 chhltd : 1;            // [1], write clear
-        REG32 ahberr : 1;            // [2], write clear
-        REG32 stall : 1;             // [3], write clear
-        REG32 nak : 1;               // [4], write clear
-        REG32 ack : 1;               // [5], write clear
-        REG32 nyet : 1;              // [6], write clear
-        REG32 xacterr : 1;           // [7], write clear
-        REG32 bblerr : 1;            // [8], write clear
-        REG32 frmovrun : 1;          // [9], write clear
-        REG32 datatglerr : 1;        // [10], write clear
-        REG32 bnaintr : 1;           // [11], write clear
-        REG32 xcs_xact_err : 1;      // [12], write clear
-        REG32 desc_lst_rollintr : 1; // [13], write clear
-        REG32 __31_14 : 18;
+        uint32_t xfercompl : 1;         // [0], write clear
+        uint32_t chhltd : 1;            // [1], write clear
+        uint32_t ahberr : 1;            // [2], write clear
+        uint32_t stall : 1;             // [3], write clear
+        uint32_t nak : 1;               // [4], write clear
+        uint32_t ack : 1;               // [5], write clear
+        uint32_t nyet : 1;              // [6], write clear
+        uint32_t xacterr : 1;           // [7], write clear
+        uint32_t bblerr : 1;            // [8], write clear
+        uint32_t frmovrun : 1;          // [9], write clear
+        uint32_t datatglerr : 1;        // [10], write clear
+        uint32_t bnaintr : 1;           // [11], write clear
+        uint32_t xcs_xact_err : 1;      // [12], write clear
+        uint32_t desc_lst_rollintr : 1; // [13], write clear
+        uint32_t __31_14 : 18;          // [31:14]
     } b;
 } REG_USBC_HCINT15_T;
 
-//HCINTMSK15
+// hcintmsk15
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1; // [0]
-        REG32 chhltdmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;    // [2]
-        REG32 __10_3 : 8;
-        REG32 bnaintrmsk : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 desc_lst_rollintrmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;         // [0]
+        uint32_t chhltdmsk : 1;            // [1]
+        uint32_t ahberrmsk : 1;            // [2]
+        uint32_t __10_3 : 8;               // [10:3]
+        uint32_t bnaintrmsk : 1;           // [11]
+        uint32_t __12_12 : 1;              // [12]
+        uint32_t desc_lst_rollintrmsk : 1; // [13]
+        uint32_t __31_14 : 18;             // [31:14]
     } b;
 } REG_USBC_HCINTMSK15_T;
 
-//HCTSIZ15
+// hctsiz15
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 pid : 2;       // [30:29]
-        REG32 dopng : 1;     // [31]
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t pid : 2;       // [30:29]
+        uint32_t dopng : 1;     // [31]
     } b;
 } REG_USBC_HCTSIZ15_T;
 
-//DCFG
+// dcfg
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 devspd : 2;        // [1:0]
-        REG32 nzstsouthshk : 1;  // [2]
-        REG32 ena32khzsusp : 1;  // [3]
-        REG32 devaddr : 7;       // [10:4]
-        REG32 perfrint : 2;      // [12:11]
-        REG32 endevoutnak : 1;   // [13]
-        REG32 xcvrdly : 1;       // [14]
-        REG32 erraticintmsk : 1; // [15]
-        REG32 __22_16 : 7;
-        REG32 descdma : 1;     // [23]
-        REG32 perschintvl : 2; // [25:24]
-        REG32 resvalid : 6;    // [31:26]
+        uint32_t devspd : 2;        // [1:0]
+        uint32_t nzstsouthshk : 1;  // [2]
+        uint32_t ena32khzsusp : 1;  // [3]
+        uint32_t devaddr : 7;       // [10:4]
+        uint32_t perfrint : 2;      // [12:11]
+        uint32_t endevoutnak : 1;   // [13]
+        uint32_t xcvrdly : 1;       // [14]
+        uint32_t erraticintmsk : 1; // [15]
+        uint32_t __22_16 : 7;       // [22:16]
+        uint32_t descdma : 1;       // [23]
+        uint32_t perschintvl : 2;   // [25:24]
+        uint32_t resvalid : 6;      // [31:26]
     } b;
 } REG_USBC_DCFG_T;
 
-//DCTL
+// dctl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 rmtwkupsig : 1;   // [0]
-        REG32 sftdiscon : 1;    // [1]
-        REG32 gnpinnaksts : 1;  // [2], read only
-        REG32 goutnaksts : 1;   // [3], read only
-        REG32 tstctl : 3;       // [6:4]
-        REG32 sgnpinnak : 1;    // [7]
-        REG32 cgnpinnak : 1;    // [8]
-        REG32 sgoutnak : 1;     // [9]
-        REG32 cgoutnak : 1;     // [10]
-        REG32 pwronprgdone : 1; // [11]
-        REG32 __12_12 : 1;
-        REG32 gmc : 2;         // [14:13]
-        REG32 ignrfrmnum : 1;  // [15]
-        REG32 nakonbble : 1;   // [16]
-        REG32 encontonbna : 1; // [17]
-        REG32 __31_18 : 14;
+        uint32_t rmtwkupsig : 1;   // [0]
+        uint32_t sftdiscon : 1;    // [1]
+        uint32_t gnpinnaksts : 1;  // [2], read only
+        uint32_t goutnaksts : 1;   // [3], read only
+        uint32_t tstctl : 3;       // [6:4]
+        uint32_t sgnpinnak : 1;    // [7]
+        uint32_t cgnpinnak : 1;    // [8]
+        uint32_t sgoutnak : 1;     // [9]
+        uint32_t cgoutnak : 1;     // [10]
+        uint32_t pwronprgdone : 1; // [11]
+        uint32_t __12_12 : 1;      // [12]
+        uint32_t gmc : 2;          // [14:13]
+        uint32_t ignrfrmnum : 1;   // [15]
+        uint32_t nakonbble : 1;    // [16]
+        uint32_t encontonbna : 1;  // [17]
+        uint32_t __31_18 : 14;     // [31:18]
     } b;
 } REG_USBC_DCTL_T;
 
-//DSTS
+// dsts
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 suspsts : 1;   // [0], read only
-        REG32 enumspd : 2;   // [2:1], read only
-        REG32 errticerr : 1; // [3], read only
-        REG32 __7_4 : 4;
-        REG32 soffn : 14;   // [21:8]
-        REG32 devlnsts : 2; // [23:22], read only
-        REG32 __31_24 : 8;
+        uint32_t suspsts : 1;   // [0], read only
+        uint32_t enumspd : 2;   // [2:1], read only
+        uint32_t errticerr : 1; // [3], read only
+        uint32_t __7_4 : 4;     // [7:4]
+        uint32_t soffn : 14;    // [21:8]
+        uint32_t devlnsts : 2;  // [23:22], read only
+        uint32_t __31_24 : 8;   // [31:24]
     } b;
 } REG_USBC_DSTS_T;
 
-//DIEPMSK
+// diepmsk
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1;   // [0]
-        REG32 epdisbldmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;      // [2]
-        REG32 timeoutmsk : 1;     // [3]
-        REG32 intkntxfempmsk : 1; // [4]
-        REG32 intknepmismsk : 1;  // [5]
-        REG32 inepnakeffmsk : 1;  // [6]
-        REG32 __7_7 : 1;
-        REG32 txfifoundrnmsk : 1; // [8]
-        REG32 bnainintrmsk : 1;   // [9]
-        REG32 __12_10 : 3;
-        REG32 nakmsk : 1; // [13]
-        REG32 __31_14 : 18;
+        uint32_t xfercomplmsk : 1;   // [0]
+        uint32_t epdisbldmsk : 1;    // [1]
+        uint32_t ahberrmsk : 1;      // [2]
+        uint32_t timeoutmsk : 1;     // [3]
+        uint32_t intkntxfempmsk : 1; // [4]
+        uint32_t intknepmismsk : 1;  // [5]
+        uint32_t inepnakeffmsk : 1;  // [6]
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t txfifoundrnmsk : 1; // [8]
+        uint32_t bnainintrmsk : 1;   // [9]
+        uint32_t __12_10 : 3;        // [12:10]
+        uint32_t nakmsk : 1;         // [13]
+        uint32_t __31_14 : 18;       // [31:14]
     } b;
 } REG_USBC_DIEPMSK_T;
 
-//DOEPMSK
+// doepmsk
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercomplmsk : 1;   // [0]
-        REG32 epdisbldmsk : 1;    // [1]
-        REG32 ahberrmsk : 1;      // [2]
-        REG32 setupmsk : 1;       // [3]
-        REG32 outtknepdismsk : 1; // [4]
-        REG32 stsphsercvdmsk : 1; // [5]
-        REG32 back2backsetup : 1; // [6]
-        REG32 __7_7 : 1;
-        REG32 outpkterrmsk : 1;  // [8]
-        REG32 bnaoutintrmsk : 1; // [9]
-        REG32 __11_10 : 2;
-        REG32 bbleerrmsk : 1; // [12]
-        REG32 nakmsk : 1;     // [13]
-        REG32 nyetmsk : 1;    // [14]
-        REG32 __31_15 : 17;
+        uint32_t xfercomplmsk : 1;   // [0]
+        uint32_t epdisbldmsk : 1;    // [1]
+        uint32_t ahberrmsk : 1;      // [2]
+        uint32_t setupmsk : 1;       // [3]
+        uint32_t outtknepdismsk : 1; // [4]
+        uint32_t stsphsercvdmsk : 1; // [5]
+        uint32_t back2backsetup : 1; // [6]
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterrmsk : 1;   // [8]
+        uint32_t bnaoutintrmsk : 1;  // [9]
+        uint32_t __11_10 : 2;        // [11:10]
+        uint32_t bbleerrmsk : 1;     // [12]
+        uint32_t nakmsk : 1;         // [13]
+        uint32_t nyetmsk : 1;        // [14]
+        uint32_t __31_15 : 17;       // [31:15]
     } b;
 } REG_USBC_DOEPMSK_T;
 
-//DAINT
+// daint
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepint0 : 1;  // [0], read only
-        REG32 inepint1 : 1;  // [1], read only
-        REG32 inepint2 : 1;  // [2], read only
-        REG32 inepint3 : 1;  // [3], read only
-        REG32 inepint4 : 1;  // [4], read only
-        REG32 inepint5 : 1;  // [5], read only
-        REG32 inepint6 : 1;  // [6], read only
-        REG32 inepint7 : 1;  // [7], read only
-        REG32 inepint8 : 1;  // [8], read only
-        REG32 inepint9 : 1;  // [9], read only
-        REG32 inepint10 : 1; // [10], read only
-        REG32 inepint11 : 1; // [11], read only
-        REG32 inepint12 : 1; // [12], read only
-        REG32 __15_13 : 3;
-        REG32 outepint0 : 1;  // [16], read only
-        REG32 outepint1 : 1;  // [17], read only
-        REG32 outepint2 : 1;  // [18], read only
-        REG32 outepint3 : 1;  // [19], read only
-        REG32 outepint4 : 1;  // [20], read only
-        REG32 outepint5 : 1;  // [21], read only
-        REG32 outepint6 : 1;  // [22], read only
-        REG32 outepint7 : 1;  // [23], read only
-        REG32 outepint8 : 1;  // [24], read only
-        REG32 outepint9 : 1;  // [25], read only
-        REG32 outepint10 : 1; // [26], read only
-        REG32 outepint11 : 1; // [27], read only
-        REG32 outepint12 : 1; // [28], read only
-        REG32 __31_29 : 3;
+        uint32_t inepint0 : 1;   // [0], read only
+        uint32_t inepint1 : 1;   // [1], read only
+        uint32_t inepint2 : 1;   // [2], read only
+        uint32_t inepint3 : 1;   // [3], read only
+        uint32_t inepint4 : 1;   // [4], read only
+        uint32_t inepint5 : 1;   // [5], read only
+        uint32_t inepint6 : 1;   // [6], read only
+        uint32_t inepint7 : 1;   // [7], read only
+        uint32_t inepint8 : 1;   // [8], read only
+        uint32_t inepint9 : 1;   // [9], read only
+        uint32_t inepint10 : 1;  // [10], read only
+        uint32_t inepint11 : 1;  // [11], read only
+        uint32_t inepint12 : 1;  // [12], read only
+        uint32_t __15_13 : 3;    // [15:13]
+        uint32_t outepint0 : 1;  // [16], read only
+        uint32_t outepint1 : 1;  // [17], read only
+        uint32_t outepint2 : 1;  // [18], read only
+        uint32_t outepint3 : 1;  // [19], read only
+        uint32_t outepint4 : 1;  // [20], read only
+        uint32_t outepint5 : 1;  // [21], read only
+        uint32_t outepint6 : 1;  // [22], read only
+        uint32_t outepint7 : 1;  // [23], read only
+        uint32_t outepint8 : 1;  // [24], read only
+        uint32_t outepint9 : 1;  // [25], read only
+        uint32_t outepint10 : 1; // [26], read only
+        uint32_t outepint11 : 1; // [27], read only
+        uint32_t outepint12 : 1; // [28], read only
+        uint32_t __31_29 : 3;    // [31:29]
     } b;
 } REG_USBC_DAINT_T;
 
-//DAINTMSK
+// daintmsk
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 inepmsk0 : 1;  // [0]
-        REG32 inepmsk1 : 1;  // [1]
-        REG32 inepmsk2 : 1;  // [2]
-        REG32 inepmsk3 : 1;  // [3]
-        REG32 inepmsk4 : 1;  // [4]
-        REG32 inepmsk5 : 1;  // [5]
-        REG32 inepmsk6 : 1;  // [6]
-        REG32 inepmsk7 : 1;  // [7]
-        REG32 inepmsk8 : 1;  // [8]
-        REG32 inepmsk9 : 1;  // [9]
-        REG32 inepmsk10 : 1; // [10]
-        REG32 inepmsk11 : 1; // [11]
-        REG32 inepmsk12 : 1; // [12]
-        REG32 __15_13 : 3;
-        REG32 outepmsk0 : 1;  // [16]
-        REG32 outepmsk1 : 1;  // [17]
-        REG32 outepmsk2 : 1;  // [18]
-        REG32 outepmsk3 : 1;  // [19]
-        REG32 outepmsk4 : 1;  // [20]
-        REG32 outepmsk5 : 1;  // [21]
-        REG32 outepmsk6 : 1;  // [22]
-        REG32 outepmsk7 : 1;  // [23]
-        REG32 outepmsk8 : 1;  // [24]
-        REG32 outepmsk9 : 1;  // [25]
-        REG32 outepmsk10 : 1; // [26]
-        REG32 outepmsk11 : 1; // [27]
-        REG32 outepmsk12 : 1; // [28]
-        REG32 __31_29 : 3;
+        uint32_t inepmsk0 : 1;   // [0]
+        uint32_t inepmsk1 : 1;   // [1]
+        uint32_t inepmsk2 : 1;   // [2]
+        uint32_t inepmsk3 : 1;   // [3]
+        uint32_t inepmsk4 : 1;   // [4]
+        uint32_t inepmsk5 : 1;   // [5]
+        uint32_t inepmsk6 : 1;   // [6]
+        uint32_t inepmsk7 : 1;   // [7]
+        uint32_t inepmsk8 : 1;   // [8]
+        uint32_t inepmsk9 : 1;   // [9]
+        uint32_t inepmsk10 : 1;  // [10]
+        uint32_t inepmsk11 : 1;  // [11]
+        uint32_t inepmsk12 : 1;  // [12]
+        uint32_t __15_13 : 3;    // [15:13]
+        uint32_t outepmsk0 : 1;  // [16]
+        uint32_t outepmsk1 : 1;  // [17]
+        uint32_t outepmsk2 : 1;  // [18]
+        uint32_t outepmsk3 : 1;  // [19]
+        uint32_t outepmsk4 : 1;  // [20]
+        uint32_t outepmsk5 : 1;  // [21]
+        uint32_t outepmsk6 : 1;  // [22]
+        uint32_t outepmsk7 : 1;  // [23]
+        uint32_t outepmsk8 : 1;  // [24]
+        uint32_t outepmsk9 : 1;  // [25]
+        uint32_t outepmsk10 : 1; // [26]
+        uint32_t outepmsk11 : 1; // [27]
+        uint32_t outepmsk12 : 1; // [28]
+        uint32_t __31_29 : 3;    // [31:29]
     } b;
 } REG_USBC_DAINTMSK_T;
 
-//DVBUSDIS
+// dvbusdis
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dvbusdis : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t dvbusdis : 16; // [15:0]
+        uint32_t __31_16 : 16;  // [31:16]
     } b;
 } REG_USBC_DVBUSDIS_T;
 
-//DVBUSPULSE
+// dvbuspulse
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 dvbuspulse : 12; // [11:0]
-        REG32 __31_12 : 20;
+        uint32_t dvbuspulse : 12; // [11:0]
+        uint32_t __31_12 : 20;    // [31:12]
     } b;
 } REG_USBC_DVBUSPULSE_T;
 
-//DTHRCTL
+// dthrctl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 nonisothren : 1; // [0]
-        REG32 isothren : 1;    // [1]
-        REG32 txthrlen : 9;    // [10:2]
-        REG32 ahbthrratio : 2; // [12:11]
-        REG32 __15_13 : 3;
-        REG32 rxthren : 1;  // [16]
-        REG32 rxthrlen : 9; // [25:17]
-        REG32 __26_26 : 1;
-        REG32 arbprken : 1; // [27]
-        REG32 __31_28 : 4;
+        uint32_t nonisothren : 1; // [0]
+        uint32_t isothren : 1;    // [1]
+        uint32_t txthrlen : 9;    // [10:2]
+        uint32_t ahbthrratio : 2; // [12:11]
+        uint32_t __15_13 : 3;     // [15:13]
+        uint32_t rxthren : 1;     // [16]
+        uint32_t rxthrlen : 9;    // [25:17]
+        uint32_t __26_26 : 1;     // [26]
+        uint32_t arbprken : 1;    // [27]
+        uint32_t __31_28 : 4;     // [31:28]
     } b;
 } REG_USBC_DTHRCTL_T;
 
-//DIEPEMPMSK
+// diepempmsk
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfempmsk : 16; // [15:0]
-        REG32 __31_16 : 16;
+        uint32_t ineptxfempmsk : 16; // [15:0]
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DIEPEMPMSK_T;
 
-//DIEPCTL0
+// diepctl0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 2; // [1:0]
-        REG32 __14_2 : 13;
-        REG32 usbactep : 1; // [15], read only
-        REG32 __16_16 : 1;
-        REG32 naksts : 1; // [17], read only
-        REG32 eptype : 2; // [19:18], read only
-        REG32 __20_20 : 1;
-        REG32 stall : 1;  // [21]
-        REG32 txfnum : 4; // [25:22]
-        REG32 cnak : 1;   // [26]
-        REG32 snak : 1;   // [27]
-        REG32 __29_28 : 2;
-        REG32 epdis : 1; // [30]
-        REG32 epena : 1; // [31]
+        uint32_t mps : 2;      // [1:0]
+        uint32_t __14_2 : 13;  // [14:2]
+        uint32_t usbactep : 1; // [15], read only
+        uint32_t __16_16 : 1;  // [16]
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18], read only
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t __29_28 : 2;  // [29:28]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL0_T;
 
-//DIEPINT0
+// diepint0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT0_T;
 
-//DIEPTSIZ0
+// dieptsiz0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 7; // [6:0]
-        REG32 __18_7 : 12;
-        REG32 pktcnt : 2; // [20:19]
-        REG32 __31_21 : 11;
+        uint32_t xfersize : 7; // [6:0]
+        uint32_t __18_7 : 12;  // [18:7]
+        uint32_t pktcnt : 2;   // [20:19]
+        uint32_t __31_21 : 11; // [31:21]
     } b;
 } REG_USBC_DIEPTSIZ0_T;
 
-//DTXFSTS0
+// dtxfsts0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS0_T;
 
-//DIEPCTL1
+// diepctl1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL1_T;
 
-//DIEPINT1
+// diepint1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT1_T;
 
-//DIEPTSIZ1
+// dieptsiz1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ1_T;
 
-//DTXFSTS1
+// dtxfsts1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS1_T;
 
-//DIEPCTL2
+// diepctl2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL2_T;
 
-//DIEPINT2
+// diepint2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT2_T;
 
-//DIEPTSIZ2
+// dieptsiz2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ2_T;
 
-//DTXFSTS2
+// dtxfsts2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS2_T;
 
-//DIEPCTL3
+// diepctl3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL3_T;
 
-//DIEPINT3
+// diepint3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT3_T;
 
-//DIEPTSIZ3
+// dieptsiz3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ3_T;
 
-//DTXFSTS3
+// dtxfsts3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS3_T;
 
-//DIEPCTL4
+// diepctl4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL4_T;
 
-//DIEPINT4
+// diepint4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT4_T;
 
-//DIEPTSIZ4
+// dieptsiz4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ4_T;
 
-//DTXFSTS4
+// dtxfsts4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS4_T;
 
-//DIEPCTL5
+// diepctl5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL5_T;
 
-//DIEPINT5
+// diepint5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT5_T;
 
-//DIEPTSIZ5
+// dieptsiz5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ5_T;
 
-//DTXFSTS5
+// dtxfsts5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS5_T;
 
-//DIEPCTL6
+// diepctl6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL6_T;
 
-//DIEPINT6
+// diepint6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT6_T;
 
-//DIEPTSIZ6
+// dieptsiz6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ6_T;
 
-//DTXFSTS6
+// dtxfsts6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS6_T;
 
-//DIEPCTL7
+// diepctl7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL7_T;
 
-//DIEPINT7
+// diepint7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT7_T;
 
-//DIEPTSIZ7
+// dieptsiz7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ7_T;
 
-//DTXFSTS7
+// dtxfsts7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS7_T;
 
-//DIEPCTL8
+// diepctl8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL8_T;
 
-//DIEPINT8
+// diepint8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT8_T;
 
-//DIEPTSIZ8
+// dieptsiz8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ8_T;
 
-//DTXFSTS8
+// dtxfsts8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS8_T;
 
-//DIEPCTL9
+// diepctl9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL9_T;
 
-//DIEPINT9
+// diepint9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT9_T;
 
-//DIEPTSIZ9
+// dieptsiz9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ9_T;
 
-//DTXFSTS9
+// dtxfsts9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS9_T;
 
-//DIEPCTL10
+// diepctl10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL10_T;
 
-//DIEPINT10
+// diepint10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT10_T;
 
-//DIEPTSIZ10
+// dieptsiz10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ10_T;
 
-//DTXFSTS10
+// dtxfsts10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS10_T;
 
-//DIEPCTL11
+// diepctl11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL11_T;
 
-//DIEPINT11
+// diepint11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT11_T;
 
-//DIEPTSIZ11
+// dieptsiz11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ11_T;
 
-//DTXFSTS11
+// dtxfsts11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS11_T;
 
-//DIEPCTL12
+// diepctl12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 __20_20 : 1;
-        REG32 stall : 1;    // [21]
-        REG32 txfnum : 4;   // [25:22]
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t __20_20 : 1;  // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t txfnum : 4;   // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DIEPCTL12_T;
 
-//DIEPINT12
+// diepint12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;   // [0], write clear
-        REG32 epdisbld : 1;    // [1], write clear
-        REG32 ahberr : 1;      // [2], write clear
-        REG32 timeout : 1;     // [3], write clear
-        REG32 intkntxfemp : 1; // [4], write clear
-        REG32 intknepmis : 1;  // [5], write clear
-        REG32 inepnakeff : 1;  // [6], write clear
-        REG32 txfemp : 1;      // [7], read only
-        REG32 txfifoundrn : 1; // [8], write clear
-        REG32 bnaintr : 1;     // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;  // [11], write clear
-        REG32 bbleerr : 1;    // [12], write clear
-        REG32 nakintrpt : 1;  // [13], write clear
-        REG32 nyetintrpt : 1; // [14], write clear
-        REG32 __31_15 : 17;
+        uint32_t xfercompl : 1;   // [0], write clear
+        uint32_t epdisbld : 1;    // [1], write clear
+        uint32_t ahberr : 1;      // [2], write clear
+        uint32_t timeout : 1;     // [3], write clear
+        uint32_t intkntxfemp : 1; // [4], write clear
+        uint32_t intknepmis : 1;  // [5], write clear
+        uint32_t inepnakeff : 1;  // [6], write clear
+        uint32_t txfemp : 1;      // [7], read only
+        uint32_t txfifoundrn : 1; // [8], write clear
+        uint32_t bnaintr : 1;     // [9], write clear
+        uint32_t __10_10 : 1;     // [10]
+        uint32_t pktdrpsts : 1;   // [11], write clear
+        uint32_t bbleerr : 1;     // [12], write clear
+        uint32_t nakintrpt : 1;   // [13], write clear
+        uint32_t nyetintrpt : 1;  // [14], write clear
+        uint32_t __31_15 : 17;    // [31:15]
     } b;
 } REG_USBC_DIEPINT12_T;
 
-//DIEPTSIZ12
+// dieptsiz12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 mc : 2;        // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t mc : 2;        // [30:29]
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DIEPTSIZ12_T;
 
-//DTXFSTS12
+// dtxfsts12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 ineptxfspcavail : 16; // [15:0], read only
-        REG32 __31_16 : 16;
+        uint32_t ineptxfspcavail : 16; // [15:0], read only
+        uint32_t __31_16 : 16;         // [31:16]
     } b;
 } REG_USBC_DTXFSTS12_T;
 
-//DOEPCTL0
+// doepctl0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 2; // [1:0], read only
-        REG32 __14_2 : 13;
-        REG32 usbactep : 1; // [15], read only
-        REG32 __16_16 : 1;
-        REG32 naksts : 1; // [17], read only
-        REG32 eptype : 2; // [19:18], read only
-        REG32 snp : 1;    // [20]
-        REG32 stall : 1;  // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1; // [26]
-        REG32 snak : 1; // [27]
-        REG32 __29_28 : 2;
-        REG32 epdis : 1; // [30], read only
-        REG32 epena : 1; // [31]
+        uint32_t mps : 2;      // [1:0], read only
+        uint32_t __14_2 : 13;  // [14:2]
+        uint32_t usbactep : 1; // [15], read only
+        uint32_t __16_16 : 1;  // [16]
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18], read only
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t __29_28 : 2;  // [29:28]
+        uint32_t epdis : 1;    // [30], read only
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL0_T;
 
-//DOEPINT0
+// doepint0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT0_T;
 
-//DOEPTSIZ0
+// doeptsiz0
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 7; // [6:0]
-        REG32 __18_7 : 12;
-        REG32 pktcnt : 1; // [19]
-        REG32 __28_20 : 9;
-        REG32 supcnt : 2; // [30:29]
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 7; // [6:0]
+        uint32_t __18_7 : 12;  // [18:7]
+        uint32_t pktcnt : 1;   // [19]
+        uint32_t __28_20 : 9;  // [28:20]
+        uint32_t supcnt : 2;   // [30:29]
+        uint32_t __31_31 : 1;  // [31]
     } b;
 } REG_USBC_DOEPTSIZ0_T;
 
-//DOEPCTL1
+// doepctl1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL1_T;
 
-//DOEPINT1
+// doepint1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT1_T;
 
-//DOEPTSIZ1
+// doeptsiz1
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ1_T;
 
-//DOEPCTL2
+// doepctl2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL2_T;
 
-//DOEPINT2
+// doepint2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT2_T;
 
-//DOEPTSIZ2
+// doeptsiz2
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ2_T;
 
-//DOEPCTL3
+// doepctl3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL3_T;
 
-//DOEPINT3
+// doepint3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT3_T;
 
-//DOEPTSIZ3
+// doeptsiz3
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ3_T;
 
-//DOEPCTL4
+// doepctl4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL4_T;
 
-//DOEPINT4
+// doepint4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT4_T;
 
-//DOEPTSIZ4
+// doeptsiz4
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ4_T;
 
-//DOEPCTL5
+// doepctl5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL5_T;
 
-//DOEPINT5
+// doepint5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT5_T;
 
-//DOEPTSIZ5
+// doeptsiz5
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ5_T;
 
-//DOEPCTL6
+// doepctl6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL6_T;
 
-//DOEPINT6
+// doepint6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT6_T;
 
-//DOEPTSIZ6
+// doeptsiz6
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ6_T;
 
-//DOEPCTL7
+// doepctl7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL7_T;
 
-//DOEPINT7
+// doepint7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT7_T;
 
-//DOEPTSIZ7
+// doeptsiz7
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ7_T;
 
-//DOEPCTL8
+// doepctl8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL8_T;
 
-//DOEPINT8
+// doepint8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT8_T;
 
-//DOEPTSIZ8
+// doeptsiz8
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ8_T;
 
-//DOEPCTL9
+// doepctl9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL9_T;
 
-//DOEPINT9
+// doepint9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT9_T;
 
-//DOEPTSIZ9
+// doeptsiz9
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ9_T;
 
-//DOEPCTL10
+// doepctl10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL10_T;
 
-//DOEPINT10
+// doepint10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT10_T;
 
-//DOEPTSIZ10
+// doeptsiz10
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ10_T;
 
-//DOEPCTL11
+// doepctl11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL11_T;
 
-//DOEPINT11
+// doepint11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT11_T;
 
-//DOEPTSIZ11
+// doeptsiz11
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ11_T;
 
-//DOEPCTL12
+// doepctl12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 mps : 11; // [10:0]
-        REG32 __14_11 : 4;
-        REG32 usbactep : 1; // [15]
-        REG32 dpid : 1;     // [16], read only
-        REG32 naksts : 1;   // [17], read only
-        REG32 eptype : 2;   // [19:18]
-        REG32 snp : 1;      // [20]
-        REG32 stall : 1;    // [21]
-        REG32 __25_22 : 4;
-        REG32 cnak : 1;     // [26]
-        REG32 snak : 1;     // [27]
-        REG32 setd0pid : 1; // [28]
-        REG32 setd1pid : 1; // [29]
-        REG32 epdis : 1;    // [30]
-        REG32 epena : 1;    // [31]
+        uint32_t mps : 11;     // [10:0]
+        uint32_t __14_11 : 4;  // [14:11]
+        uint32_t usbactep : 1; // [15]
+        uint32_t dpid : 1;     // [16], read only
+        uint32_t naksts : 1;   // [17], read only
+        uint32_t eptype : 2;   // [19:18]
+        uint32_t snp : 1;      // [20]
+        uint32_t stall : 1;    // [21]
+        uint32_t __25_22 : 4;  // [25:22]
+        uint32_t cnak : 1;     // [26]
+        uint32_t snak : 1;     // [27]
+        uint32_t setd0pid : 1; // [28]
+        uint32_t setd1pid : 1; // [29]
+        uint32_t epdis : 1;    // [30]
+        uint32_t epena : 1;    // [31]
     } b;
 } REG_USBC_DOEPCTL12_T;
 
-//DOEPINT12
+// doepint12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfercompl : 1;      // [0], write clear
-        REG32 epdisbld : 1;       // [1], write clear
-        REG32 ahberr : 1;         // [2], write clear
-        REG32 setup : 1;          // [3], write clear
-        REG32 outtknepdis : 1;    // [4], write clear
-        REG32 stsphsercvd : 1;    // [5], write clear
-        REG32 back2backsetup : 1; // [6], write clear
-        REG32 __7_7 : 1;
-        REG32 outpkterr : 1; // [8], write clear
-        REG32 bnaintr : 1;   // [9], write clear
-        REG32 __10_10 : 1;
-        REG32 pktdrpsts : 1;   // [11], write clear
-        REG32 bbleerr : 1;     // [12], write clear
-        REG32 nakintrpt : 1;   // [13], write clear
-        REG32 nyetintrpt : 1;  // [14], write clear
-        REG32 stuppktrcvd : 1; // [15], write clear
-        REG32 __31_16 : 16;
+        uint32_t xfercompl : 1;      // [0], write clear
+        uint32_t epdisbld : 1;       // [1], write clear
+        uint32_t ahberr : 1;         // [2], write clear
+        uint32_t setup : 1;          // [3], write clear
+        uint32_t outtknepdis : 1;    // [4], write clear
+        uint32_t stsphsercvd : 1;    // [5], write clear
+        uint32_t back2backsetup : 1; // [6], write clear
+        uint32_t __7_7 : 1;          // [7]
+        uint32_t outpkterr : 1;      // [8], write clear
+        uint32_t bnaintr : 1;        // [9], write clear
+        uint32_t __10_10 : 1;        // [10]
+        uint32_t pktdrpsts : 1;      // [11], write clear
+        uint32_t bbleerr : 1;        // [12], write clear
+        uint32_t nakintrpt : 1;      // [13], write clear
+        uint32_t nyetintrpt : 1;     // [14], write clear
+        uint32_t stuppktrcvd : 1;    // [15], write clear
+        uint32_t __31_16 : 16;       // [31:16]
     } b;
 } REG_USBC_DOEPINT12_T;
 
-//DOEPTSIZ12
+// doeptsiz12
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 xfersize : 19; // [18:0]
-        REG32 pktcnt : 10;   // [28:19]
-        REG32 rxdpid : 2;    // [30:29], read only
-        REG32 __31_31 : 1;
+        uint32_t xfersize : 19; // [18:0]
+        uint32_t pktcnt : 10;   // [28:19]
+        uint32_t rxdpid : 2;    // [30:29], read only
+        uint32_t __31_31 : 1;   // [31]
     } b;
 } REG_USBC_DOEPTSIZ12_T;
 
-//PCGCCTL
+// pcgcctl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 stoppclk : 1; // [0]
-        REG32 __2_1 : 2;
-        REG32 rstpdwnmodule : 1; // [3]
-        REG32 __5_4 : 2;
-        REG32 physleep : 1;    // [6], read only
-        REG32 l1suspended : 1; // [7], read only
-        REG32 __31_8 : 24;
+        uint32_t stoppclk : 1;      // [0]
+        uint32_t __2_1 : 2;         // [2:1]
+        uint32_t rstpdwnmodule : 1; // [3]
+        uint32_t __5_4 : 2;         // [5:4]
+        uint32_t physleep : 1;      // [6], read only
+        uint32_t l1suspended : 1;   // [7], read only
+        uint32_t __31_8 : 24;       // [31:8]
     } b;
 } REG_USBC_PCGCCTL_T;
 
-#endif
+// gotgctl
+#define USBC_SESREQSCS (1 << 0)
+#define USBC_SESREQ (1 << 1)
+#define USBC_VBVALIDOVEN (1 << 2)
+#define USBC_VBVALIDOVVAL (1 << 3)
+#define USBC_AVALIDOVEN (1 << 4)
+#define USBC_AVALIDOVVAL (1 << 5)
+#define USBC_BVALIDOVEN (1 << 6)
+#define USBC_BVALIDOVVAL (1 << 7)
+#define USBC_HSTNEGSCS (1 << 8)
+#define USBC_HNPREQ (1 << 9)
+#define USBC_HSTSETHNPEN (1 << 10)
+#define USBC_DEVHNPEN (1 << 11)
+#define USBC_EHEN (1 << 12)
+#define USBC_DBNCEFLTRBYPASS (1 << 15)
+#define USBC_CONIDSTS (1 << 16)
+#define USBC_DBNCTIME (1 << 17)
+#define USBC_ASESVLD (1 << 18)
+#define USBC_BSESVLD (1 << 19)
+#define USBC_OTGVER (1 << 20)
+#define USBC_GOTGCTL_CURMOD (1 << 21)
+
+// gotgint
+#define USBC_SESENDDET (1 << 2)
+#define USBC_SESREQSUCSTSCHNG (1 << 8)
+#define USBC_HSTNEGSUCSTSCHNG (1 << 9)
+#define USBC_HSTNEGDET (1 << 17)
+#define USBC_ADEVTOUTCHG (1 << 18)
+#define USBC_DBNCEDONE (1 << 19)
+
+// gahbcfg
+#define USBC_GLBLINTRMSK (1 << 0)
+#define USBC_HBSTLEN(n) (((n)&0xf) << 1)
+#define USBC_DMAEN (1 << 5)
+#define USBC_NPTXFEMPLVL (1 << 7)
+#define USBC_PTXFEMPLVL (1 << 8)
+#define USBC_REMMEMSUPP (1 << 21)
+#define USBC_NOTIALLDMAWRIT (1 << 22)
+#define USBC_AHBSINGLE (1 << 23)
+#define USBC_INVDESCENDIANESS (1 << 24)
+
+// gusbcfg
+#define USBC_TOUTCAL(n) (((n)&0x7) << 0)
+#define USBC_PHYIF (1 << 3)
+#define USBC_ULPI_UTMI_SEL (1 << 4)
+#define USBC_FSINTF (1 << 5)
+#define USBC_PHYSEL (1 << 6)
+#define USBC_SRPCAP (1 << 8)
+#define USBC_HNPCAP (1 << 9)
+#define USBC_USBTRDTIM(n) (((n)&0xf) << 10)
+#define USBC_PHYLPWRCLKSEL (1 << 15)
+#define USBC_TERMSELDLPULSE (1 << 22)
+#define USBC_IC_USBCAP (1 << 26)
+#define USBC_TXENDDELAY (1 << 28)
+#define USBC_FORCEHSTMODE (1 << 29)
+#define USBC_FORCEDEVMODE (1 << 30)
+#define USBC_CORRUPTTXPKT (1 << 31)
+
+// grstctl
+#define USBC_CSFTRST (1 << 0)
+#define USBC_PIUFSSFTRST (1 << 1)
+#define USBC_FRMCNTRRST (1 << 2)
+#define USBC_RXFFLSH (1 << 4)
+#define USBC_TXFFLSH (1 << 5)
+#define USBC_GRSTCTL_TXFNUM(n) (((n)&0x1f) << 6)
+#define USBC_DMAREQ (1 << 30)
+#define USBC_AHBIDLE (1 << 31)
+
+// gintsts
+#define USBC_GINTSTS_CURMOD (1 << 0)
+#define USBC_MODEMIS (1 << 1)
+#define USBC_OTGINT (1 << 2)
+#define USBC_SOF (1 << 3)
+#define USBC_RXFLVL (1 << 4)
+#define USBC_NPTXFEMP (1 << 5)
+#define USBC_GINNAKEFF (1 << 6)
+#define USBC_GOUTNAKEFF (1 << 7)
+#define USBC_ERLYSUSP (1 << 10)
+#define USBC_USBSUSP (1 << 11)
+#define USBC_USBRST (1 << 12)
+#define USBC_ENUMDONE (1 << 13)
+#define USBC_ISOOUTDROP (1 << 14)
+#define USBC_EOPF (1 << 15)
+#define USBC_EPMIS (1 << 17)
+#define USBC_IEPINT (1 << 18)
+#define USBC_OEPINT (1 << 19)
+#define USBC_INCOMPISOIN (1 << 20)
+#define USBC_INCOMPLP (1 << 21)
+#define USBC_FETSUSP (1 << 22)
+#define USBC_RESETDET (1 << 23)
+#define USBC_PRTINT (1 << 24)
+#define USBC_HCHINT (1 << 25)
+#define USBC_PTXFEMP (1 << 26)
+#define USBC_CONIDSTSCHNG (1 << 28)
+#define USBC_DISCONNINT (1 << 29)
+#define USBC_SESSREQINT (1 << 30)
+#define USBC_WKUPINT (1 << 31)
+
+// gintmsk
+#define USBC_MODEMISMSK (1 << 1)
+#define USBC_OTGINTMSK (1 << 2)
+#define USBC_SOFMSK (1 << 3)
+#define USBC_RXFLVLMSK (1 << 4)
+#define USBC_NPTXFEMPMSK (1 << 5)
+#define USBC_GINNAKEFFMSK (1 << 6)
+#define USBC_GOUTNAKEFFMSK (1 << 7)
+#define USBC_ERLYSUSPMSK (1 << 10)
+#define USBC_USBSUSPMSK (1 << 11)
+#define USBC_USBRSTMSK (1 << 12)
+#define USBC_ENUMDONEMSK (1 << 13)
+#define USBC_ISOOUTDROPMSK (1 << 14)
+#define USBC_EOPFMSK (1 << 15)
+#define USBC_EPMISMSK (1 << 17)
+#define USBC_IEPINTMSK (1 << 18)
+#define USBC_OEPINTMSK (1 << 19)
+#define USBC_INCOMPLPMSK (1 << 21)
+#define USBC_FETSUSPMSK (1 << 22)
+#define USBC_RESETDETMSK (1 << 23)
+#define USBC_PRTINTMSK (1 << 24)
+#define USBC_HCHINTMSK (1 << 25)
+#define USBC_PTXFEMPMSK (1 << 26)
+#define USBC_CONIDSTSCHNGMSK (1 << 28)
+#define USBC_DISCONNINTMSK (1 << 29)
+#define USBC_SESSREQINTMSK (1 << 30)
+#define USBC_WKUPINTMSK (1 << 31)
+
+// grxstsr
+#define USBC_CHNUM(n) (((n)&0xf) << 0)
+#define USBC_BCNT(n) (((n)&0x7ff) << 4)
+#define USBC_GRXSTSR_DPID(n) (((n)&0x3) << 15)
+#define USBC_PKTSTS(n) (((n)&0xf) << 17)
+#define USBC_FN(n) (((n)&0xf) << 21)
+
+// grxstsp
+#define USBC_CHNUM(n) (((n)&0xf) << 0)
+#define USBC_BCNT(n) (((n)&0x7ff) << 4)
+#define USBC_GRXSTSP_DPID(n) (((n)&0x3) << 15)
+#define USBC_PKTSTS(n) (((n)&0xf) << 17)
+#define USBC_FN(n) (((n)&0xf) << 21)
+
+// grxfsiz
+#define USBC_RXFDEP(n) (((n)&0xfff) << 0)
+
+// gnptxfsiz
+#define USBC_NPTXFSTADDR(n) (((n)&0xfff) << 0)
+#define USBC_NPTXFDEP(n) (((n)&0xfff) << 16)
+
+// gnptxsts
+#define USBC_NPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+#define USBC_NPTXQSPCAVAIL(n) (((n)&0xff) << 16)
+#define USBC_NPTXQTOP(n) (((n)&0x7f) << 24)
+
+// ggpio
+#define USBC_GPI(n) (((n)&0xffff) << 0)
+#define USBC_GPO(n) (((n)&0xffff) << 16)
+
+// guid
+#define USBC_GUID(n) (((n)&0xffffffff) << 0)
+
+// gsnpsid
+#define USBC_SYNOPSYSID(n) (((n)&0xffffffff) << 0)
+
+// ghwcfg1
+#define USBC_GHWCFG1_EPDIR(n) (((n)&0xffffffff) << 0)
+
+// ghwcfg2
+#define USBC_OTGMODE(n) (((n)&0x7) << 0)
+#define USBC_OTGARCH(n) (((n)&0x3) << 3)
+#define USBC_SINGPNT (1 << 5)
+#define USBC_HSPHYTYPE(n) (((n)&0x3) << 6)
+#define USBC_FSPHYTYPE(n) (((n)&0x3) << 8)
+#define USBC_NUMDEVEPS(n) (((n)&0xf) << 10)
+#define USBC_NUMHSTCHNL(n) (((n)&0xf) << 14)
+#define USBC_PERIOSUPPORT (1 << 18)
+#define USBC_DYNFIFOSIZING (1 << 19)
+#define USBC_MULTIPROCINTRPT (1 << 20)
+#define USBC_NPTXQDEPTH(n) (((n)&0x3) << 22)
+#define USBC_PTXQDEPTH(n) (((n)&0x3) << 24)
+#define USBC_TKNQDEPTH(n) (((n)&0x1f) << 26)
+
+// ghwcfg3
+#define USBC_XFERSIZEWIDTH(n) (((n)&0xf) << 0)
+#define USBC_PKTSIZEWIDTH(n) (((n)&0x7) << 4)
+#define USBC_OTGEN (1 << 7)
+#define USBC_I2CINTSEL (1 << 8)
+#define USBC_VNDCTLSUPT (1 << 9)
+#define USBC_OPTFEATURE (1 << 10)
+#define USBC_RSTTYPE (1 << 11)
+#define USBC_ADPSUPPORT (1 << 12)
+#define USBC_HSICMODE (1 << 13)
+#define USBC_BCSUPPORT (1 << 14)
+#define USBC_LPMMODE (1 << 15)
+#define USBC_DFIFODEPTH(n) (((n)&0xffff) << 16)
+
+// ghwcfg4
+#define USBC_NUMDEVPERIOEPS(n) (((n)&0xf) << 0)
+#define USBC_PARTIALPWRDN (1 << 4)
+#define USBC_AHBFREQ (1 << 5)
+#define USBC_HIBERNATION (1 << 6)
+#define USBC_EXTENDEDHIBERNATION (1 << 7)
+#define USBC_ACGSUPT (1 << 12)
+#define USBC_ENHANCEDLPMSUPT (1 << 13)
+#define USBC_PHYDATAWIDTH(n) (((n)&0x3) << 14)
+#define USBC_NUMCTLEPS(n) (((n)&0xf) << 16)
+#define USBC_IDDGFLTR (1 << 20)
+#define USBC_VBUSVALIDFLTR (1 << 21)
+#define USBC_AVALIDFLTR (1 << 22)
+#define USBC_BVALIDFLTR (1 << 23)
+#define USBC_SESSENDFLTR (1 << 24)
+#define USBC_DEDFIFOMODE (1 << 25)
+#define USBC_INEPS(n) (((n)&0xf) << 26)
+#define USBC_DESCDMAENABLED (1 << 30)
+#define USBC_GHWCFG4_DESCDMA (1 << 31)
+
+// gpwrdn
+#define USBC_PMUINTSEL (1 << 0)
+#define USBC_PMUACTV (1 << 1)
+#define USBC_PWRDNCLMP (1 << 3)
+#define USBC_PWRDNRST_N (1 << 4)
+#define USBC_PWRDNSWTCH (1 << 5)
+#define USBC_DISABLEVBUS (1 << 6)
+#define USBC_SRPDETECT (1 << 15)
+#define USBC_SRPDETECTMSK (1 << 16)
+#define USBC_STSCHNGINT (1 << 17)
+#define USBC_STSCHNGINTMSK (1 << 18)
+#define USBC_LINESTATE(n) (((n)&0x3) << 19)
+#define USBC_IDDIG (1 << 21)
+#define USBC_BSESSVLD (1 << 22)
+#define USBC_ADPINT (1 << 23)
+
+// gdfifocfg
+#define USBC_GDFIFOCFG(n) (((n)&0xffff) << 0)
+#define USBC_EPINFOBASEADDR(n) (((n)&0xffff) << 16)
+
+// gadpctl
+#define USBC_PRBDSCHG(n) (((n)&0x3) << 0)
+#define USBC_PRBDELTA(n) (((n)&0x3) << 2)
+#define USBC_PRBPER(n) (((n)&0x3) << 4)
+#define USBC_RTIM(n) (((n)&0x7ff) << 6)
+#define USBC_ENAPRB (1 << 17)
+#define USBC_ENASNS (1 << 18)
+#define USBC_ADPRES (1 << 19)
+#define USBC_ADPEN (1 << 20)
+#define USBC_ADPPRBINT (1 << 21)
+#define USBC_ADPSNSINT (1 << 22)
+#define USBC_ADPTOUTINT (1 << 23)
+#define USBC_ADPPRBINTMSK (1 << 24)
+#define USBC_ADPSNSINTMSK (1 << 25)
+#define USBC_ADPTOUTMSK (1 << 26)
+#define USBC_AR(n) (((n)&0x3) << 27)
+
+// hptxfsiz
+#define USBC_PTXFSTADDR(n) (((n)&0x1fff) << 0)
+#define USBC_PTXFSIZE(n) (((n)&0xfff) << 16)
+
+// dieptxf1
+#define USBC_DIEPTXF1_INEPNTXFSTADDR(n) (((n)&0xfff) << 0)
+#define USBC_DIEPTXF1_INEPNTXFDEP(n) (((n)&0x3ff) << 16)
+
+// dieptxf2
+#define USBC_DIEPTXF2_INEPNTXFSTADDR(n) (((n)&0x1fff) << 0)
+#define USBC_DIEPTXF2_INEPNTXFDEP(n) (((n)&0x3ff) << 16)
+
+// dieptxf3
+#define USBC_DIEPTXF3_INEPNTXFSTADDR(n) (((n)&0x1fff) << 0)
+#define USBC_DIEPTXF3_INEPNTXFDEP(n) (((n)&0x1ff) << 16)
+
+// dieptxf4
+#define USBC_DIEPTXF4_INEPNTXFSTADDR(n) (((n)&0x1fff) << 0)
+#define USBC_DIEPTXF4_INEPNTXFDEP(n) (((n)&0x1ff) << 16)
+
+// dieptxf5
+#define USBC_DIEPTXF5_INEPNTXFSTADDR(n) (((n)&0x1fff) << 0)
+#define USBC_DIEPTXF5_INEPNTXFDEP(n) (((n)&0x1ff) << 16)
+
+// dieptxf6
+#define USBC_DIEPTXF6_INEPNTXFSTADDR(n) (((n)&0x1fff) << 0)
+#define USBC_DIEPTXF6_INEPNTXFDEP(n) (((n)&0x1ff) << 16)
+
+// dieptxf7
+#define USBC_DIEPTXF7_INEPNTXFSTADDR(n) (((n)&0x1fff) << 0)
+#define USBC_DIEPTXF7_INEPNTXFDEP(n) (((n)&0x1ff) << 16)
+
+// dieptxf8
+#define USBC_DIEPTXF8_INEPNTXFSTADDR(n) (((n)&0x1fff) << 0)
+#define USBC_DIEPTXF8_INEPNTXFDEP(n) (((n)&0x1ff) << 16)
+
+// hcfg
+#define USBC_FSLSPCLKSEL(n) (((n)&0x3) << 0)
+#define USBC_FSLSSUPP (1 << 2)
+#define USBC_ENA32KHZS (1 << 7)
+#define USBC_HCFG_RESVALID(n) (((n)&0xff) << 8)
+#define USBC_HCFG_DESCDMA (1 << 23)
+#define USBC_FRLISTEN(n) (((n)&0x3) << 24)
+#define USBC_PERSCHEDENA (1 << 26)
+#define USBC_MODECHTIMEN (1 << 31)
+
+// hfir
+#define USBC_FRINT(n) (((n)&0xffff) << 0)
+#define USBC_HFIRRLDCTRL (1 << 16)
+
+// hfnum
+#define USBC_FRNUM(n) (((n)&0xffff) << 0)
+#define USBC_FRREM(n) (((n)&0xffff) << 16)
+
+// hptxsts
+#define USBC_PTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+#define USBC_PTXQSPCAVAIL(n) (((n)&0xff) << 16)
+#define USBC_PTXQTOP(n) (((n)&0xff) << 24)
+
+// haint
+#define USBC_HAINT(n) (((n)&0xffff) << 0)
+
+// haintmsk
+#define USBC_HAINTMSK(n) (((n)&0xffff) << 0)
+
+// hflbaddr
+#define USBC_HFLBADDR(n) (((n)&0xffffffff) << 0)
+
+// hprt
+#define USBC_PRTCONNSTS (1 << 0)
+#define USBC_PRTCONNDET (1 << 1)
+#define USBC_PRTENA (1 << 2)
+#define USBC_PRTENCHNG (1 << 3)
+#define USBC_PRTOVRCURRACT (1 << 4)
+#define USBC_PRTOVRCURRCHNG (1 << 5)
+#define USBC_PRTRES (1 << 6)
+#define USBC_PRTSUSP (1 << 7)
+#define USBC_PRTRST (1 << 8)
+#define USBC_PRTLNSTS(n) (((n)&0x3) << 10)
+#define USBC_PRTPWR (1 << 12)
+#define USBC_PRTTSTCTL(n) (((n)&0xf) << 13)
+#define USBC_PRTSPD(n) (((n)&0x3) << 17)
+
+// hcchar0
+#define USBC_HCCHAR0_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR0_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR0_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt0
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint0
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT0_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT0_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk0
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz0
+#define USBC_HCTSIZ0_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ0_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma0
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab0
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar1
+#define USBC_HCCHAR1_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR1_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR1_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt1
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint1
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT1_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT1_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk1
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz1
+#define USBC_HCTSIZ1_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ1_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma1
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab1
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar2
+#define USBC_HCCHAR2_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR2_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR2_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt2
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint2
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT2_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT2_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk2
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz2
+#define USBC_HCTSIZ2_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ2_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma2
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab2
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar3
+#define USBC_HCCHAR3_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR3_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR3_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt3
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint3
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT3_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT3_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk3
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz3
+#define USBC_HCTSIZ3_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ3_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma3
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab3
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar4
+#define USBC_HCCHAR4_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR4_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR4_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt4
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint4
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT4_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT4_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk4
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz4
+#define USBC_HCTSIZ4_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ4_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma4
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab4
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar5
+#define USBC_HCCHAR5_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR5_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR5_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt5
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint5
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT5_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT5_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk5
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz5
+#define USBC_HCTSIZ5_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ5_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma5
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab5
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar6
+#define USBC_HCCHAR6_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR6_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR6_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt6
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint6
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT6_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT6_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk6
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz6
+#define USBC_HCTSIZ6_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ6_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma6
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab6
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar7
+#define USBC_HCCHAR7_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR7_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR7_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt7
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint7
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT7_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT7_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk7
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz7
+#define USBC_HCTSIZ7_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ7_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma7
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab7
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar8
+#define USBC_HCCHAR8_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR8_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR8_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt8
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint8
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT8_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT8_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk8
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz8
+#define USBC_HCTSIZ8_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ8_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma8
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab8
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar9
+#define USBC_HCCHAR9_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR9_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR9_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt9
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint9
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT9_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT9_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk9
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz9
+#define USBC_HCTSIZ9_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ9_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma9
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab9
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar10
+#define USBC_HCCHAR10_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR10_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR10_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt10
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint10
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT10_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT10_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk10
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz10
+#define USBC_HCTSIZ10_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ10_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma10
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab10
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar11
+#define USBC_HCCHAR11_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR11_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR11_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt11
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint11
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT11_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT11_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk11
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz11
+#define USBC_HCTSIZ11_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ11_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma11
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab11
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar12
+#define USBC_HCCHAR12_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR12_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR12_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt12
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint12
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT12_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT12_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk12
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz12
+#define USBC_HCTSIZ12_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ12_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma12
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab12
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar13
+#define USBC_HCCHAR13_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR13_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR13_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt13
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint13
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT13_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT13_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk13
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz13
+#define USBC_HCTSIZ13_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ13_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma13
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab13
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar14
+#define USBC_HCCHAR14_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR14_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR14_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt14
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint14
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT14_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT14_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk14
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz14
+#define USBC_HCTSIZ14_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ14_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma14
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab14
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// hcchar15
+#define USBC_HCCHAR15_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_EPNUM(n) (((n)&0xf) << 11)
+#define USBC_HCCHAR15_EPDIR (1 << 15)
+#define USBC_LSPDDEV (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_EC(n) (((n)&0x3) << 20)
+#define USBC_HCCHAR15_DEVADDR(n) (((n)&0x7f) << 22)
+#define USBC_ODDFRM (1 << 29)
+#define USBC_CHDIS (1 << 30)
+#define USBC_CHENA (1 << 31)
+
+// hcsplt15
+#define USBC_PRTADDR(n) (((n)&0x7f) << 0)
+#define USBC_HUBADDR(n) (((n)&0x7f) << 7)
+#define USBC_XACTPOS(n) (((n)&0x3) << 14)
+#define USBC_COMPSPLT (1 << 16)
+#define USBC_SPLTENA (1 << 31)
+
+// hcint15
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_CHHLTD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_HCINT15_STALL (1 << 3)
+#define USBC_NAK (1 << 4)
+#define USBC_ACK (1 << 5)
+#define USBC_NYET (1 << 6)
+#define USBC_XACTERR (1 << 7)
+#define USBC_BBLERR (1 << 8)
+#define USBC_FRMOVRUN (1 << 9)
+#define USBC_DATATGLERR (1 << 10)
+#define USBC_HCINT15_BNAINTR (1 << 11)
+#define USBC_XCS_XACT_ERR (1 << 12)
+#define USBC_DESC_LST_ROLLINTR (1 << 13)
+
+// hcintmsk15
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_CHHLTDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_BNAINTRMSK (1 << 11)
+#define USBC_DESC_LST_ROLLINTRMSK (1 << 13)
+
+// hctsiz15
+#define USBC_HCTSIZ15_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_HCTSIZ15_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_PID(n) (((n)&0x3) << 29)
+#define USBC_DOPNG (1 << 31)
+
+// hcdma15
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// hcdmab15
+#define USBC_HCDMAB(n) (((n)&0xffffffff) << 0)
+
+// dcfg
+#define USBC_DEVSPD(n) (((n)&0x3) << 0)
+#define USBC_NZSTSOUTHSHK (1 << 2)
+#define USBC_ENA32KHZSUSP (1 << 3)
+#define USBC_DCFG_DEVADDR(n) (((n)&0x7f) << 4)
+#define USBC_PERFRINT(n) (((n)&0x3) << 11)
+#define USBC_ENDEVOUTNAK (1 << 13)
+#define USBC_XCVRDLY (1 << 14)
+#define USBC_ERRATICINTMSK (1 << 15)
+#define USBC_DCFG_DESCDMA (1 << 23)
+#define USBC_PERSCHINTVL(n) (((n)&0x3) << 24)
+#define USBC_DCFG_RESVALID(n) (((n)&0x3f) << 26)
+
+// dctl
+#define USBC_RMTWKUPSIG (1 << 0)
+#define USBC_SFTDISCON (1 << 1)
+#define USBC_GNPINNAKSTS (1 << 2)
+#define USBC_GOUTNAKSTS (1 << 3)
+#define USBC_TSTCTL(n) (((n)&0x7) << 4)
+#define USBC_SGNPINNAK (1 << 7)
+#define USBC_CGNPINNAK (1 << 8)
+#define USBC_SGOUTNAK (1 << 9)
+#define USBC_CGOUTNAK (1 << 10)
+#define USBC_PWRONPRGDONE (1 << 11)
+#define USBC_GMC(n) (((n)&0x3) << 13)
+#define USBC_IGNRFRMNUM (1 << 15)
+#define USBC_NAKONBBLE (1 << 16)
+#define USBC_ENCONTONBNA (1 << 17)
+
+// dsts
+#define USBC_SUSPSTS (1 << 0)
+#define USBC_ENUMSPD(n) (((n)&0x3) << 1)
+#define USBC_ERRTICERR (1 << 3)
+#define USBC_SOFFN(n) (((n)&0x3fff) << 8)
+#define USBC_DEVLNSTS(n) (((n)&0x3) << 22)
+
+// diepmsk
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_EPDISBLDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_TIMEOUTMSK (1 << 3)
+#define USBC_INTKNTXFEMPMSK (1 << 4)
+#define USBC_INTKNEPMISMSK (1 << 5)
+#define USBC_INEPNAKEFFMSK (1 << 6)
+#define USBC_TXFIFOUNDRNMSK (1 << 8)
+#define USBC_BNAININTRMSK (1 << 9)
+#define USBC_NAKMSK (1 << 13)
+
+// doepmsk
+#define USBC_XFERCOMPLMSK (1 << 0)
+#define USBC_EPDISBLDMSK (1 << 1)
+#define USBC_AHBERRMSK (1 << 2)
+#define USBC_SETUPMSK (1 << 3)
+#define USBC_OUTTKNEPDISMSK (1 << 4)
+#define USBC_STSPHSERCVDMSK (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERRMSK (1 << 8)
+#define USBC_BNAOUTINTRMSK (1 << 9)
+#define USBC_BBLEERRMSK (1 << 12)
+#define USBC_NAKMSK (1 << 13)
+#define USBC_NYETMSK (1 << 14)
+
+// daint
+#define USBC_INEPINT0 (1 << 0)
+#define USBC_INEPINT1 (1 << 1)
+#define USBC_INEPINT2 (1 << 2)
+#define USBC_INEPINT3 (1 << 3)
+#define USBC_INEPINT4 (1 << 4)
+#define USBC_INEPINT5 (1 << 5)
+#define USBC_INEPINT6 (1 << 6)
+#define USBC_INEPINT7 (1 << 7)
+#define USBC_INEPINT8 (1 << 8)
+#define USBC_INEPINT9 (1 << 9)
+#define USBC_INEPINT10 (1 << 10)
+#define USBC_INEPINT11 (1 << 11)
+#define USBC_INEPINT12 (1 << 12)
+#define USBC_OUTEPINT0 (1 << 16)
+#define USBC_OUTEPINT1 (1 << 17)
+#define USBC_OUTEPINT2 (1 << 18)
+#define USBC_OUTEPINT3 (1 << 19)
+#define USBC_OUTEPINT4 (1 << 20)
+#define USBC_OUTEPINT5 (1 << 21)
+#define USBC_OUTEPINT6 (1 << 22)
+#define USBC_OUTEPINT7 (1 << 23)
+#define USBC_OUTEPINT8 (1 << 24)
+#define USBC_OUTEPINT9 (1 << 25)
+#define USBC_OUTEPINT10 (1 << 26)
+#define USBC_OUTEPINT11 (1 << 27)
+#define USBC_OUTEPINT12 (1 << 28)
+
+// daintmsk
+#define USBC_INEPMSK0 (1 << 0)
+#define USBC_INEPMSK1 (1 << 1)
+#define USBC_INEPMSK2 (1 << 2)
+#define USBC_INEPMSK3 (1 << 3)
+#define USBC_INEPMSK4 (1 << 4)
+#define USBC_INEPMSK5 (1 << 5)
+#define USBC_INEPMSK6 (1 << 6)
+#define USBC_INEPMSK7 (1 << 7)
+#define USBC_INEPMSK8 (1 << 8)
+#define USBC_INEPMSK9 (1 << 9)
+#define USBC_INEPMSK10 (1 << 10)
+#define USBC_INEPMSK11 (1 << 11)
+#define USBC_INEPMSK12 (1 << 12)
+#define USBC_OUTEPMSK0 (1 << 16)
+#define USBC_OUTEPMSK1 (1 << 17)
+#define USBC_OUTEPMSK2 (1 << 18)
+#define USBC_OUTEPMSK3 (1 << 19)
+#define USBC_OUTEPMSK4 (1 << 20)
+#define USBC_OUTEPMSK5 (1 << 21)
+#define USBC_OUTEPMSK6 (1 << 22)
+#define USBC_OUTEPMSK7 (1 << 23)
+#define USBC_OUTEPMSK8 (1 << 24)
+#define USBC_OUTEPMSK9 (1 << 25)
+#define USBC_OUTEPMSK10 (1 << 26)
+#define USBC_OUTEPMSK11 (1 << 27)
+#define USBC_OUTEPMSK12 (1 << 28)
+
+// dvbusdis
+#define USBC_DVBUSDIS(n) (((n)&0xffff) << 0)
+
+// dvbuspulse
+#define USBC_DVBUSPULSE(n) (((n)&0xfff) << 0)
+
+// dthrctl
+#define USBC_NONISOTHREN (1 << 0)
+#define USBC_ISOTHREN (1 << 1)
+#define USBC_TXTHRLEN(n) (((n)&0x1ff) << 2)
+#define USBC_AHBTHRRATIO(n) (((n)&0x3) << 11)
+#define USBC_RXTHREN (1 << 16)
+#define USBC_RXTHRLEN(n) (((n)&0x1ff) << 17)
+#define USBC_ARBPRKEN (1 << 27)
+
+// diepempmsk
+#define USBC_INEPTXFEMPMSK(n) (((n)&0xffff) << 0)
+
+// diepctl0
+#define USBC_DIEPCTL0_MPS(n) (((n)&0x3) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL0_STALL (1 << 21)
+#define USBC_DIEPCTL0_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint0
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT0_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz0
+#define USBC_DIEPTSIZ0_XFERSIZE(n) (((n)&0x7f) << 0)
+#define USBC_DIEPTSIZ0_PKTCNT(n) (((n)&0x3) << 19)
+
+// diepdma0
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts0
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab0
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl1
+#define USBC_DIEPCTL1_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL1_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL1_STALL (1 << 21)
+#define USBC_DIEPCTL1_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint1
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT1_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz1
+#define USBC_DIEPTSIZ1_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ1_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma1
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts1
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab1
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl2
+#define USBC_DIEPCTL2_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL2_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL2_STALL (1 << 21)
+#define USBC_DIEPCTL2_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint2
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT2_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz2
+#define USBC_DIEPTSIZ2_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ2_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma2
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts2
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab2
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl3
+#define USBC_DIEPCTL3_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL3_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL3_STALL (1 << 21)
+#define USBC_DIEPCTL3_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint3
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT3_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz3
+#define USBC_DIEPTSIZ3_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ3_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma3
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts3
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab3
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl4
+#define USBC_DIEPCTL4_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL4_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL4_STALL (1 << 21)
+#define USBC_DIEPCTL4_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint4
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT4_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz4
+#define USBC_DIEPTSIZ4_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ4_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma4
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts4
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab4
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl5
+#define USBC_DIEPCTL5_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL5_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL5_STALL (1 << 21)
+#define USBC_DIEPCTL5_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint5
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT5_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz5
+#define USBC_DIEPTSIZ5_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ5_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma5
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts5
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab5
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl6
+#define USBC_DIEPCTL6_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL6_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL6_STALL (1 << 21)
+#define USBC_DIEPCTL6_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint6
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT6_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz6
+#define USBC_DIEPTSIZ6_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ6_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma6
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts6
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab6
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl7
+#define USBC_DIEPCTL7_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL7_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL7_STALL (1 << 21)
+#define USBC_DIEPCTL7_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint7
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT7_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz7
+#define USBC_DIEPTSIZ7_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ7_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma7
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts7
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab7
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl8
+#define USBC_DIEPCTL8_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL8_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL8_STALL (1 << 21)
+#define USBC_DIEPCTL8_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint8
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT8_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz8
+#define USBC_DIEPTSIZ8_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ8_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma8
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts8
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab8
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl9
+#define USBC_DIEPCTL9_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL9_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL9_STALL (1 << 21)
+#define USBC_DIEPCTL9_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint9
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT9_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz9
+#define USBC_DIEPTSIZ9_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ9_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma9
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts9
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab9
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl10
+#define USBC_DIEPCTL10_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL10_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL10_STALL (1 << 21)
+#define USBC_DIEPCTL10_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint10
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT10_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz10
+#define USBC_DIEPTSIZ10_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ10_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma10
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts10
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab10
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl11
+#define USBC_DIEPCTL11_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL11_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL11_STALL (1 << 21)
+#define USBC_DIEPCTL11_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint11
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT11_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz11
+#define USBC_DIEPTSIZ11_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ11_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma11
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts11
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab11
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// diepctl12
+#define USBC_DIEPCTL12_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DIEPCTL12_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_DIEPCTL12_STALL (1 << 21)
+#define USBC_DIEPCTL12_TXFNUM(n) (((n)&0xf) << 22)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// diepint12
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_TIMEOUT (1 << 3)
+#define USBC_INTKNTXFEMP (1 << 4)
+#define USBC_INTKNEPMIS (1 << 5)
+#define USBC_INEPNAKEFF (1 << 6)
+#define USBC_TXFEMP (1 << 7)
+#define USBC_TXFIFOUNDRN (1 << 8)
+#define USBC_DIEPINT12_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+
+// dieptsiz12
+#define USBC_DIEPTSIZ12_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DIEPTSIZ12_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_MC(n) (((n)&0x3) << 29)
+
+// diepdma12
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// dtxfsts12
+#define USBC_INEPTXFSPCAVAIL(n) (((n)&0xffff) << 0)
+
+// diepdmab12
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl0
+#define USBC_DOEPCTL0_MPS(n) (((n)&0x3) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL0_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint0
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT0_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz0
+#define USBC_DOEPTSIZ0_XFERSIZE(n) (((n)&0x7f) << 0)
+#define USBC_DOEPTSIZ0_PKTCNT (1 << 19)
+#define USBC_SUPCNT(n) (((n)&0x3) << 29)
+
+// doepdma0
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab0
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl1
+#define USBC_DOEPCTL1_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL1_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL1_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint1
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT1_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz1
+#define USBC_DOEPTSIZ1_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ1_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma1
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab1
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl2
+#define USBC_DOEPCTL2_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL2_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL2_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint2
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT2_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz2
+#define USBC_DOEPTSIZ2_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ2_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma2
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab2
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl3
+#define USBC_DOEPCTL3_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL3_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL3_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint3
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT3_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz3
+#define USBC_DOEPTSIZ3_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ3_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma3
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab3
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl4
+#define USBC_DOEPCTL4_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL4_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL4_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint4
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT4_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz4
+#define USBC_DOEPTSIZ4_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ4_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma4
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab4
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl5
+#define USBC_DOEPCTL5_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL5_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL5_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint5
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT5_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz5
+#define USBC_DOEPTSIZ5_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ5_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma5
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab5
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl6
+#define USBC_DOEPCTL6_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL6_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL6_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint6
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT6_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz6
+#define USBC_DOEPTSIZ6_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ6_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma6
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab6
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl7
+#define USBC_DOEPCTL7_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL7_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL7_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint7
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT7_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz7
+#define USBC_DOEPTSIZ7_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ7_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma7
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab7
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl8
+#define USBC_DOEPCTL8_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL8_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL8_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint8
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT8_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz8
+#define USBC_DOEPTSIZ8_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ8_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma8
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab8
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl9
+#define USBC_DOEPCTL9_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL9_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL9_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint9
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT9_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz9
+#define USBC_DOEPTSIZ9_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ9_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma9
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab9
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl10
+#define USBC_DOEPCTL10_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL10_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL10_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint10
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT10_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz10
+#define USBC_DOEPTSIZ10_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ10_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma10
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab10
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl11
+#define USBC_DOEPCTL11_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL11_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL11_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint11
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT11_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz11
+#define USBC_DOEPTSIZ11_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ11_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma11
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab11
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// doepctl12
+#define USBC_DOEPCTL12_MPS(n) (((n)&0x7ff) << 0)
+#define USBC_USBACTEP (1 << 15)
+#define USBC_DOEPCTL12_DPID (1 << 16)
+#define USBC_NAKSTS (1 << 17)
+#define USBC_EPTYPE(n) (((n)&0x3) << 18)
+#define USBC_SNP (1 << 20)
+#define USBC_DOEPCTL12_STALL (1 << 21)
+#define USBC_CNAK (1 << 26)
+#define USBC_SNAK (1 << 27)
+#define USBC_SETD0PID (1 << 28)
+#define USBC_SETD1PID (1 << 29)
+#define USBC_EPDIS (1 << 30)
+#define USBC_EPENA (1 << 31)
+
+// doepint12
+#define USBC_XFERCOMPL (1 << 0)
+#define USBC_EPDISBLD (1 << 1)
+#define USBC_AHBERR (1 << 2)
+#define USBC_SETUP (1 << 3)
+#define USBC_OUTTKNEPDIS (1 << 4)
+#define USBC_STSPHSERCVD (1 << 5)
+#define USBC_BACK2BACKSETUP (1 << 6)
+#define USBC_OUTPKTERR (1 << 8)
+#define USBC_DOEPINT12_BNAINTR (1 << 9)
+#define USBC_PKTDRPSTS (1 << 11)
+#define USBC_BBLEERR (1 << 12)
+#define USBC_NAKINTRPT (1 << 13)
+#define USBC_NYETINTRPT (1 << 14)
+#define USBC_STUPPKTRCVD (1 << 15)
+
+// doeptsiz12
+#define USBC_DOEPTSIZ12_XFERSIZE(n) (((n)&0x7ffff) << 0)
+#define USBC_DOEPTSIZ12_PKTCNT(n) (((n)&0x3ff) << 19)
+#define USBC_RXDPID(n) (((n)&0x3) << 29)
+
+// doepdma12
+#define USBC_DMAADDR(n) (((n)&0xffffffff) << 0)
+
+// doepdmab12
+#define USBC_DMABUFFERADDR(n) (((n)&0xffffffff) << 0)
+
+// pcgcctl
+#define USBC_STOPPCLK (1 << 0)
+#define USBC_RSTPDWNMODULE (1 << 3)
+#define USBC_PHYSLEEP (1 << 6)
+#define USBC_L1SUSPENDED (1 << 7)
+
+#endif // _USBC_H_

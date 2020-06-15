@@ -13,109 +13,125 @@
 #ifndef _KEYPAD_H_
 #define _KEYPAD_H_
 
-#ifdef CT_ASM
-#error "You are trying to use in an assembly code the normal H description of 'keypad'."
-#endif
+// Auto generated (v1.0-22-ge2f5f70). Don't edit it manually!
 
-// =============================================================================
-//  MACROS
-// =============================================================================
-/// Number of key in the keypad
 #define KEY_NB (36)
-/// Number of key in the low data register
 #define LOW_KEY_NB (30)
-/// Number of key in the high data register
 #define HIGH_KEY_NB (6)
 
-// =============================================================================
-//  TYPES
-// =============================================================================
-
-// ============================================================================
-// KEYPAD_T
-// -----------------------------------------------------------------------------
-///
-// =============================================================================
 #if defined(REG_ADDRESS_FOR_GGE)
-#define REG_KEYPAD_BASE 0x05106000
+#define REG_KEYPAD_BASE (0x05106000)
 #else
-#define REG_KEYPAD_BASE 0x50106000
+#define REG_KEYPAD_BASE (0x50106000)
 #endif
 
 typedef volatile struct
 {
-    REG32 kp_data_l;    //0x00000000
-    REG32 kp_data_h;    //0x00000004
-    REG32 kp_status;    //0x00000008
-    REG32 kp_ctrl;      //0x0000000C
-    REG32 kp_irq_mask;  //0x00000010
-    REG32 kp_irq_cause; //0x00000014
-    REG32 kp_irq_clr;   //0x00000018
+    uint32_t kp_data_l;    // 0x00000000
+    uint32_t kp_data_h;    // 0x00000004
+    uint32_t kp_status;    // 0x00000008
+    uint32_t kp_ctrl;      // 0x0000000c
+    uint32_t kp_irq_mask;  // 0x00000010
+    uint32_t kp_irq_cause; // 0x00000014
+    uint32_t kp_irq_clr;   // 0x00000018
 } HWP_KEYPAD_T;
 
 #define hwp_keypad ((HWP_KEYPAD_T *)REG_ACCESS_ADDRESS(REG_KEYPAD_BASE))
 
-//KP_STATUS
+// kp_status
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 keyin_status : 8; // [7:0], read only
-        REG32 __30_8 : 23;
-        REG32 kp_on : 1; // [31], read only
+        uint32_t keyin_status : 8; // [7:0], read only
+        uint32_t __30_8 : 23;      // [30:8]
+        uint32_t kp_on : 1;        // [31], read only
     } b;
 } REG_KEYPAD_KP_STATUS_T;
 
-//KP_CTRL
+// kp_ctrl
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 kp_en : 1; // [0]
-        REG32 __1_1 : 1;
-        REG32 kp_dbn_time : 8; // [9:2]
-        REG32 kp_itv_time : 6; // [15:10]
-        REG32 kp_in_mask : 8;  // [23:16]
-        REG32 kp_out_mask : 8; // [31:24]
+        uint32_t kp_en : 1;       // [0]
+        uint32_t __1_1 : 1;       // [1]
+        uint32_t kp_dbn_time : 8; // [9:2]
+        uint32_t kp_itv_time : 6; // [15:10]
+        uint32_t kp_in_mask : 8;  // [23:16]
+        uint32_t kp_out_mask : 8; // [31:24]
     } b;
 } REG_KEYPAD_KP_CTRL_T;
 
-//KP_IRQ_MASK
+// kp_irq_mask
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 kp_evt0_irq_mask : 1; // [0]
-        REG32 kp_evt1_irq_mask : 1; // [1]
-        REG32 kp_itv_irq_mask : 1;  // [2]
-        REG32 __31_3 : 29;
+        uint32_t kp_evt0_irq_mask : 1; // [0]
+        uint32_t kp_evt1_irq_mask : 1; // [1]
+        uint32_t kp_itv_irq_mask : 1;  // [2]
+        uint32_t __31_3 : 29;          // [31:3]
     } b;
 } REG_KEYPAD_KP_IRQ_MASK_T;
 
-//KP_IRQ_CAUSE
+// kp_irq_cause
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 kp_evt0_irq_cause : 1; // [0], read only
-        REG32 kp_evt1_irq_cause : 1; // [1], read only
-        REG32 kp_itv_irq_cause : 1;  // [2], read only
-        REG32 __15_3 : 13;
-        REG32 kp_evt0_irq_status : 1; // [16], read only
-        REG32 kp_evt1_irq_status : 1; // [17], read only
-        REG32 kp_itv_irq_status : 1;  // [18], read only
-        REG32 __31_19 : 13;
+        uint32_t kp_evt0_irq_cause : 1;  // [0], read only
+        uint32_t kp_evt1_irq_cause : 1;  // [1], read only
+        uint32_t kp_itv_irq_cause : 1;   // [2], read only
+        uint32_t __15_3 : 13;            // [15:3]
+        uint32_t kp_evt0_irq_status : 1; // [16], read only
+        uint32_t kp_evt1_irq_status : 1; // [17], read only
+        uint32_t kp_itv_irq_status : 1;  // [18], read only
+        uint32_t __31_19 : 13;           // [31:19]
     } b;
 } REG_KEYPAD_KP_IRQ_CAUSE_T;
 
-//KP_IRQ_CLR
+// kp_irq_clr
 typedef union {
-    REG32 v;
+    uint32_t v;
     struct
     {
-        REG32 kp_irq_clr : 1; // [0], write clear
-        REG32 __31_1 : 31;
+        uint32_t kp_irq_clr : 1; // [0], write clear
+        uint32_t __31_1 : 31;    // [31:1]
     } b;
 } REG_KEYPAD_KP_IRQ_CLR_T;
 
-#endif
+// kp_data_l
+#define KEYPAD_KP_DATA_L(n) (((n)&0xffffffff) << 0)
+
+// kp_data_h
+#define KEYPAD_KP_DATA_H(n) (((n)&0xffffffff) << 0)
+
+// kp_status
+#define KEYPAD_KEYIN_STATUS(n) (((n)&0xff) << 0)
+#define KEYPAD_KP_ON (1 << 31)
+
+// kp_ctrl
+#define KEYPAD_KP_EN (1 << 0)
+#define KEYPAD_KP_DBN_TIME(n) (((n)&0xff) << 2)
+#define KEYPAD_KP_ITV_TIME(n) (((n)&0x3f) << 10)
+#define KEYPAD_KP_IN_MASK(n) (((n)&0xff) << 16)
+#define KEYPAD_KP_OUT_MASK(n) (((n)&0xff) << 24)
+
+// kp_irq_mask
+#define KEYPAD_KP_EVT0_IRQ_MASK (1 << 0)
+#define KEYPAD_KP_EVT1_IRQ_MASK (1 << 1)
+#define KEYPAD_KP_ITV_IRQ_MASK (1 << 2)
+
+// kp_irq_cause
+#define KEYPAD_KP_EVT0_IRQ_CAUSE (1 << 0)
+#define KEYPAD_KP_EVT1_IRQ_CAUSE (1 << 1)
+#define KEYPAD_KP_ITV_IRQ_CAUSE (1 << 2)
+#define KEYPAD_KP_EVT0_IRQ_STATUS (1 << 16)
+#define KEYPAD_KP_EVT1_IRQ_STATUS (1 << 17)
+#define KEYPAD_KP_ITV_IRQ_STATUS (1 << 18)
+
+// kp_irq_clr
+#define KEYPAD_KP_IRQ_CLR (1 << 0)
+
+#endif // _KEYPAD_H_

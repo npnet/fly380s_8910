@@ -15,6 +15,8 @@
 #include "hal_ram_cfg.h"
 #include "drv_config.h"
 #include "osi_api.h"
+#include "connectivity_config.h"
+
 
 #define DELAYUS(us) halApplyRegisters(REG_APPLY_UDELAY(us), REG_APPLY_END)
 
@@ -418,9 +420,6 @@ void halClockInit(void)
     // change to slow clock, and change flash config for slow clock
     halApplyRegisters((uint32_t)&hwp_sysCtrl->sel_clock, sel_clock.v,
                       (uint32_t)&hwp_spiFlash->spi_config, spi_config.v,
-#ifdef CONFIG_SUPPORT_EXT_FLASH
-                      (uint32_t)&hwp_spiFlash1->spi_config, spi_config.v,
-#endif
                       REG_APPLY_END);
 
     // NOTE: it is assumed that PLL is enabled beforehand
@@ -490,9 +489,6 @@ void halClockInit(void)
                              CONFIG_DEFAULT_SPIFLASH_DEV_FREQ);
     spiflash_div.b.cfg_pll_spiflash_div_update = 1;
     hwp_sysCtrl->cfg_pll_spiflash_div = spiflash_div.v;
-#ifdef CONFIG_SUPPORT_EXT_FLASH
-    hwp_sysCtrl->cfg_pll_spiflash1_div = spiflash_div.v;
-#endif
 
     REG_SYS_CTRL_CFG_AP_CPU_DBGEN_DIV_T cfg_ap_cpu_dbgen_div = {
         .b.cfg_ap_cpu_dbgen_div = 2, // APCPU_FREQ / 4
@@ -528,14 +524,8 @@ void halClockInit(void)
     sel_clock.b.sys_sel_fast = 0; // 0 is fast
     sel_clock.b.soft_sel_mem_bridge = 0;
     sel_clock.b.soft_sel_spiflash = 0;
-#ifdef CONFIG_SUPPORT_EXT_FLASH
-    sel_clock.b.soft_sel_spiflash1 = 0;
-#endif
 
     halApplyRegisters((uint32_t)&hwp_spiFlash->spi_config, spi_config.v,
-#ifdef CONFIG_SUPPORT_EXT_FLASH
-                      (uint32_t)&hwp_spiFlash1->spi_config, spi_config.v,
-#endif
                       (uint32_t)&hwp_sysCtrl->sel_clock, sel_clock.v,
                       REG_APPLY_TYPE_UDELAY, 10,
                       REG_APPLY_END);
@@ -579,8 +569,10 @@ void halClockInit(void)
     idl_awk_en.b.awk3_en = 1; // gpio1
     idl_awk_en.b.awk4_en = 1; // uart1
     idl_awk_en.b.awk5_en = 1; // pad_uart1_rxd
-    // idl_awk_en.b.awk6_en = 1; // wcn2sys
-    // idl_awk_en.b.awk7_en = 1; // wcn_osc_en
+#ifdef CONFIG_BLUEU_BT_ENABLE
+    idl_awk_en.b.awk6_en = 1; // wcn2sys
+    idl_awk_en.b.awk7_en = 1; // wcn_osc_en
+#endif
     idl_awk_en.b.awk_osw1_en = 1;
     idl_awk_en.b.awk_osw2_en = 1;
     hwp_idle->idl_awk_en_set = idl_awk_en.v;
@@ -676,4 +668,11 @@ void halClockInit(void)
     REG_SYS_CTRL_CLK_AIF_APB_DISABLE_T clk_aif_apb_disable = {
         .b.disable_aif_apb_clk_id_aud_2ad = 1};
     hwp_sysCtrl->clk_aif_apb_disable = clk_aif_apb_disable.v;
+
+    // Sysmail registers doesn't have determinstic value on boot, and it is
+    // needed to clear them manually. It is ok to write 0 to the hole
+    // (reserved area) inside.
+    for (uintptr_t address = (uintptr_t)&hwp_mailbox->sysmail0;
+         address <= (uintptr_t)&hwp_mailbox->sysmail191; address += 4)
+        *(volatile unsigned *)address = 0;
 }

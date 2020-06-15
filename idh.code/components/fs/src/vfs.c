@@ -134,6 +134,25 @@ int vfs_unregister(const char *base_path)
     ERR_RETURN(ENOENT, -1);
 }
 
+void *vfs_mount_handle(const char *path)
+{
+    if (path == NULL)
+        return NULL;
+
+    size_t len = strlen(path);
+    if (len == 0 || len >= VFS_PREFIX_MAX)
+        return NULL;
+
+    for (int n = 0; n < VFS_COUNT_MAX; ++n)
+    {
+        vfs_entry_t *fs = g_vfs[n];
+        if (fs != NULL && len == fs->prefix_len &&
+            memcmp(path, fs->prefix, len) == 0)
+            return fs->fs;
+    }
+    return NULL;
+}
+
 // Canonical path resolver, append path to real_path from
 //
 // @param real_path     pointer of real_path
@@ -158,7 +177,7 @@ static int vfs_resolve_add_path(char *real_path, size_t pos, const char *path)
         if (len == 2 && path[0] == '.' && path[1] == '.')
         {
             char *reverse = strrchr(real_path, '/');
-            if (reverse != real_path) // not root
+            if (reverse != NULL && reverse != real_path) // not root
             {
                 *reverse = '\0';
                 pos = reverse - real_path;
@@ -991,38 +1010,35 @@ void vfs_umount_all(void)
 }
 
 #ifndef SKIP_VFS_SYSCALL_ALIAS
-OSI_STRONG_ALIAS(umount, vfs_umount);
-OSI_STRONG_ALIAS(creat, vfs_creat);
-OSI_STRONG_ALIAS(open, vfs_open);
-OSI_STRONG_ALIAS(close, vfs_close);
-OSI_STRONG_ALIAS(read, vfs_read);
-OSI_STRONG_ALIAS(write, vfs_write);
-OSI_STRONG_ALIAS(lseek, vfs_lseek);
-OSI_STRONG_ALIAS(fstat, vfs_fstat);
-OSI_STRONG_ALIAS(stat, vfs_stat);
-OSI_STRONG_ALIAS(truncate, vfs_truncate);
-OSI_STRONG_ALIAS(ftruncate, vfs_ftruncate);
-OSI_STRONG_ALIAS(link, vfs_link);
-OSI_STRONG_ALIAS(unlink, vfs_unlink);
-OSI_STRONG_ALIAS(rename, vfs_rename);
-OSI_STRONG_ALIAS(fsync, vfs_fsync);
-OSI_STRONG_ALIAS(fcntl, vfs_fcntl);
-OSI_STRONG_ALIAS(ioctl, vfs_ioctl);
-
-OSI_STRONG_ALIAS(opendir, vfs_opendir);
-OSI_STRONG_ALIAS(readdir, vfs_readdir);
-OSI_STRONG_ALIAS(readdir_r, vfs_readdir_r);
-OSI_STRONG_ALIAS(telldir, vfs_telldir);
-OSI_STRONG_ALIAS(seekdir, vfs_seekdir);
-OSI_STRONG_ALIAS(rewinddir, vfs_rewinddir);
-OSI_STRONG_ALIAS(closedir, vfs_closedir);
-OSI_STRONG_ALIAS(mkdir, vfs_mkdir);
-OSI_STRONG_ALIAS(rmdir, vfs_rmdir);
-
-OSI_STRONG_ALIAS(chdir, vfs_chdir);
-OSI_STRONG_ALIAS(getcwd, vfs_getcwd);
-OSI_STRONG_ALIAS(realpath, vfs_realpath);
-
-OSI_STRONG_ALIAS(statvfs, vfs_statvfs);
-OSI_STRONG_ALIAS(fstatvfs, vfs_fstatvfs);
+OSI_DECL_STRONG_ALIAS(vfs_umount, int umount(const char *path));
+OSI_DECL_STRONG_ALIAS(vfs_creat, int creat(const char *path, mode_t mode));
+OSI_DECL_STRONG_ALIAS(vfs_open, int open(const char *path, int flags, ...));
+OSI_DECL_STRONG_ALIAS(vfs_close, int close(int fd));
+OSI_DECL_STRONG_ALIAS(vfs_read, ssize_t read(int fd, void *buf, size_t count));
+OSI_DECL_STRONG_ALIAS(vfs_write, ssize_t write(int fd, const void *buf, size_t count));
+OSI_DECL_STRONG_ALIAS(vfs_lseek, long lseek(int fd, long offset, int whence));
+OSI_DECL_STRONG_ALIAS(vfs_fstat, int fstat(int fd, struct stat *st));
+OSI_DECL_STRONG_ALIAS(vfs_stat, int stat(const char *path, struct stat *st));
+OSI_DECL_STRONG_ALIAS(vfs_truncate, int truncate(const char *path, long length));
+OSI_DECL_STRONG_ALIAS(vfs_ftruncate, int ftruncate(int fd, long length));
+OSI_DECL_STRONG_ALIAS(vfs_link, int link(const char *from, const char *to));
+OSI_DECL_STRONG_ALIAS(vfs_unlink, int unlink(const char *path));
+OSI_DECL_STRONG_ALIAS(vfs_rename, int rename(const char *oldpath, const char *newpath));
+OSI_DECL_STRONG_ALIAS(vfs_fsync, int fsync(int fd));
+OSI_DECL_STRONG_ALIAS(vfs_fcntl, int fcntl(int fd, int cmd, ...));
+OSI_DECL_STRONG_ALIAS(vfs_ioctl, int ioctl(int fd, unsigned long request, ...));
+OSI_DECL_STRONG_ALIAS(vfs_opendir, DIR *opendir(const char *path));
+OSI_DECL_STRONG_ALIAS(vfs_readdir, struct dirent *readdir(DIR *dirp));
+OSI_DECL_STRONG_ALIAS(vfs_readdir_r, int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result));
+OSI_DECL_STRONG_ALIAS(vfs_telldir, int telldir(DIR *dirp));
+OSI_DECL_STRONG_ALIAS(vfs_seekdir, void seekdir(DIR *dirp, long loc));
+OSI_DECL_STRONG_ALIAS(vfs_rewinddir, void rewinddir(DIR *dirp));
+OSI_DECL_STRONG_ALIAS(vfs_closedir, int closedir(DIR *dirp));
+OSI_DECL_STRONG_ALIAS(vfs_mkdir, int mkdir(const char *path, mode_t mode));
+OSI_DECL_STRONG_ALIAS(vfs_rmdir, int rmdir(const char *path));
+OSI_DECL_STRONG_ALIAS(vfs_chdir, int chdir(const char *path));
+OSI_DECL_STRONG_ALIAS(vfs_getcwd, char *getcwd(char *buf, size_t size));
+OSI_DECL_STRONG_ALIAS(vfs_realpath, char *realpath(const char *buf, char *resolved_path));
+OSI_DECL_STRONG_ALIAS(vfs_statvfs, int statvfs(const char *path, struct statvfs *buf));
+OSI_DECL_STRONG_ALIAS(vfs_fstatvfs, int fstatvfs(int fd, struct statvfs *buf));
 #endif

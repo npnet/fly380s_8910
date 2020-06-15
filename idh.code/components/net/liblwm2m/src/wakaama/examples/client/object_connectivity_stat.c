@@ -214,7 +214,7 @@ static void free_object_conn_s(lwm2m_object_t * objectP)
     lwm2m_free(objectP);
 }
 
-lwm2m_object_t * get_object_conn_s(void)
+lwm2m_object_t * get_object_conn_s(void* lwm2mH)
 {
     /*
      * The get_object_conn_s() function create the object itself and return

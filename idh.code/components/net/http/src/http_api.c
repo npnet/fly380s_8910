@@ -33,7 +33,7 @@
 #include "at_cmd_http.h"
 //#include "at_utils.h"
 #include "vfs.h"
-
+#include "osi_log.h"
 bool gContentTypeFlag = false;
 bool gApiKeyFlag = false;
 char *vnetregdata = NULL;
@@ -92,7 +92,7 @@ bool Http_init(CgHttpApi *cg_http_api, char *url_char)
         = 0;
 
     mupnp_net_uri_set(cg_http_api->url, url_char);
-    sys_arch_printf("url_char: %s \n", url_char);
+    OSI_LOGXI(OSI_LOGPAR_S, 0x100075e3, "url_char: %s \n", url_char);
 
     cg_http_api->is_http = mupnp_net_url_ishttpprotocol(cg_http_api->url);
     cg_http_api->is_https = mupnp_net_url_ishttpsprotocol(cg_http_api->url);
@@ -133,9 +133,8 @@ bool Http_init(CgHttpApi *cg_http_api, char *url_char)
     }
     try
         = 0;
-    sys_arch_printf("cg_net_url_gethost %s\n", cg_http_api->host);
-    sys_arch_printf("gethost %s\n", host);
-    sys_arch_printf("cg_net_url_getport %d\n", cg_http_api->port);
+    OSI_LOGXI(OSI_LOGPAR_S, 0x100075e4, "cg_net_url_gethost %s\n", cg_http_api->host);
+    OSI_LOGI(0x100075e5, "cg_net_url_getport %d\n", cg_http_api->port);
     if (host == NULL)
     {
 
@@ -143,6 +142,7 @@ bool Http_init(CgHttpApi *cg_http_api, char *url_char)
     }
     else
     {
+        OSI_LOGXI(OSI_LOGPAR_S, 0x100075e6, "gethost %s\n", host);
 
         if (strlen(host) > 255)
         {
@@ -156,7 +156,7 @@ bool Http_init(CgHttpApi *cg_http_api, char *url_char)
         }
     }
 
-    sys_arch_printf("ip_url_host %s\n", cg_http_api->host);
+    OSI_LOGXI(OSI_LOGPAR_S, 0x100075e7, "ip_url_host %s\n", cg_http_api->host);
     if (cg_http_api->port <= 0)
     {
         if (cg_http_api->is_http)
@@ -183,7 +183,13 @@ bool Http_init(CgHttpApi *cg_http_api, char *url_char)
     memset(cg_http_api->uri_path, 0, 256);
     strncpy(cg_http_api->uri_path, uri_path, strlen(uri_path) + 1);
 
-    sys_arch_printf("cg_net_url_getrequest %s\n", cg_http_api->uri_path);
+    if (mupnp_net_url_getquery(cg_http_api->url) != NULL)
+    {
+        mupnp_strncat(cg_http_api->uri_path, "?", (256 - mupnp_strlen(cg_http_api->uri_path) - 1));
+        mupnp_strncat(cg_http_api->uri_path, mupnp_net_url_getquery(cg_http_api->url), (256 - mupnp_strlen(cg_http_api->uri_path) - 1));
+    }
+
+    OSI_LOGXI(OSI_LOGPAR_S, 0x100075e8, "cg_net_url_getrequest %s\n", cg_http_api->uri_path);
 
     return true;
 }
@@ -1162,7 +1168,7 @@ bool Http_getn(nHttp_info *http_info1)
     cg_http_api = http_info1->cg_http_api;
 
     url_char = http_info1->url;
-    sys_arch_printf("+++++++enter Http_getn");
+    OSI_LOGI(0x100075e9, "+++++++enter Http_getn");
     if (Http_init(cg_http_api, url_char) != false)
     {
         mupnp_http_request_setmethod(cg_http_api->g_httpReq, CG_HTTP_GET);
@@ -1243,7 +1249,7 @@ bool Http_getn(nHttp_info *http_info1)
         }
         if (NULL == http_info1->user_data)
         {
-            sys_arch_printf("malloc error!! \n");
+            OSI_LOGI(0x100075ea, "malloc error!! \n");
             Http_WriteUart("file is too large,no enough memory.\r\n", strlen("file is too large,no enough memory.\r\n"));
 
             http_info1->content_length = 0;
@@ -1276,7 +1282,7 @@ bool Http_getn(nHttp_info *http_info1)
 
         //mupnp_http_response_delete(rep);
 
-        sys_arch_printf("cg_http_request_post done\n");
+        OSI_LOGI(0x100075eb, "cg_http_request_post done\n");
 
         sprintf(tmpString, "%d %d %ld", 0, http_info1->status_code, http_info1->content_length);
 
@@ -1286,7 +1292,7 @@ bool Http_getn(nHttp_info *http_info1)
     }
     else
     {
-        sys_arch_printf("cg_http_get error ...\n");
+        OSI_LOGI(0x100075ec, "cg_http_get error ...\n");
         http_info1->content_length = 0;
 
         http_info1->status_code = 400;
@@ -1302,7 +1308,7 @@ bool Http_getn(nHttp_info *http_info1)
 bool Http_onenet_delete(nHttp_info *http_info1)
 {
 
-    sys_arch_printf("Enter http_deleten\n");
+    OSI_LOGI(0x100075ed, "Enter http_deleten\n");
 
     CgHttpApi *cg_http_api;
     char *url_char;
@@ -1403,7 +1409,7 @@ bool Http_onenet_delete(nHttp_info *http_info1)
     }
     else
     {
-        sys_arch_printf("cg_http_deleten error ...\n");
+        OSI_LOGI(0x100075ee, "cg_http_deleten error ...\n");
         http_info1->content_length = 0;
 
         http_info1->status_code = 400;
@@ -1419,7 +1425,7 @@ bool Http_onenet_delete(nHttp_info *http_info1)
 bool Http_onenet_put(nHttp_info *http_info1)
 {
 
-    sys_arch_printf("Enter http_postn\n");
+    OSI_LOGI(0x100075ef, "Enter http_postn\n");
 
     CgHttpApi *cg_http_api;
     char *url_char;
@@ -1495,7 +1501,7 @@ bool Http_onenet_put(nHttp_info *http_info1)
 
         http_info1->data_remain = 0;
 
-        sys_arch_printf("cg_http_request_post done\n");
+        OSI_LOGI(0x100075eb, "cg_http_request_post done\n");
 
         if (NULL == http_info1->user_data)
         {
@@ -1542,7 +1548,7 @@ bool Http_onenet_put(nHttp_info *http_info1)
     }
     else
     {
-        sys_arch_printf("cg_http_postn error ...\n");
+        OSI_LOGI(0x100075f0, "cg_http_postn error ...\n");
 
         http_info1->content_length = 0;
 
@@ -1627,7 +1633,7 @@ bool Http_headn(nHttp_info *http_info1)
 bool Http_postn(nHttp_info *http_info1)
 {
 
-    sys_arch_printf("Enter http_postn\n");
+    OSI_LOGI(0x100075ef, "Enter http_postn\n");
 
     //http_t h_status;
 
@@ -1654,7 +1660,7 @@ bool Http_postn(nHttp_info *http_info1)
 
         if (NULL == body_content)
         {
-            sys_arch_printf("error:body_content is NULL!! \n");
+            OSI_LOGI(0x100075f1, "error:body_content is NULL!! \n");
 
             http_info1->content_length = 0;
 
@@ -1666,7 +1672,7 @@ bool Http_postn(nHttp_info *http_info1)
 
             return false;
         }
-        sys_arch_printf("body_content :%s \n", body_content);
+        OSI_LOGXI(OSI_LOGPAR_S, 0x100075f2, "body_content :%s \n", body_content);
         cg_http_api->contentLen = mupnp_strlen(body_content);
 
         mupnp_http_request_setmethod(cg_http_api->g_httpReq, CG_HTTP_POST);
@@ -1788,7 +1794,7 @@ bool Http_postn(nHttp_info *http_info1)
 
 bool Http_postnreg(nHttp_info *http_info1)
 {
-    sys_arch_printf("Enter http_postn\n");
+    OSI_LOGI(0x100075ef, "Enter http_postn\n");
     //http_t h_status;
     CgHttpApi *cg_http_api;
     char *url_char;
@@ -1804,16 +1810,16 @@ bool Http_postnreg(nHttp_info *http_info1)
     size_t buffer_len;
     out = httpgenRegJsonData();
     out_len = strlen(out);
-    sys_arch_printf("guangzuincoming_data(%d): %s", out_len, out);
-    sys_arch_printf("guangzuhttpgenRegJsonDataout:%d", out_len);
+    OSI_LOGXI(OSI_LOGPAR_IS, 0x100075f3, "guangzuincoming_data(%d): %s", out_len, out);
+    OSI_LOGI(0x100075f4, "guangzuhttpgenRegJsonDataout:%d", out_len);
     mbedtls_base64_encode(NULL, 0, &buffer_len, (const unsigned char *)out, out_len);
     buffer = (unsigned char *)malloc(buffer_len + 1);
-    sys_arch_printf("guangzuhttpgenRegJsonDatabufferlen:%d", buffer_len);
+    OSI_LOGI(0x100075f5, "guangzuhttpgenRegJsonDatabufferlen:%d", buffer_len);
     if (buffer != NULL && mbedtls_base64_encode(buffer, (buffer_len + 1), &len, (const unsigned char *)out, out_len) != 0)
     {
-    	sys_arch_printf("base64 error...");
+    	OSI_LOGI(0x1000750b, "base64 error...");
 	}
-	sys_arch_printf("guangzuhttpgenRegJsonDatalen:%d", len);
+	OSI_LOGI(0x100075f6, "guangzuhttpgenRegJsonDatalen:%d", len);
 	//free(out);
 	body_content = (char *)buffer;
 #endif
@@ -1826,10 +1832,10 @@ bool Http_postnreg(nHttp_info *http_info1)
     {
         if (NULL == body_content)
         {
-            sys_arch_printf("error:body_content is NULL!! \n");
+            OSI_LOGI(0x100075f1, "error:body_content is NULL!! \n");
             return false;
         }
-        sys_arch_printf("body_content :%s \n", body_content);
+        OSI_LOGXI(OSI_LOGPAR_S, 0x100075f2, "body_content :%s \n", body_content);
         cg_http_api->contentLen = mupnp_strlen(body_content);
 
         mupnp_http_request_setmethod(cg_http_api->g_httpReq, CG_HTTP_POST);
@@ -1862,7 +1868,7 @@ bool Http_postnreg(nHttp_info *http_info1)
         rep = cg_nhttp_api_response(cg_http_api->g_httpReq, cg_http_api->host, cg_http_api->port, cg_http_api->is_https, http_info1);
         if (rep == NULL)
         {
-            sys_arch_printf("httpcg_nhttp_api_response failed");
+            OSI_LOGI(0x100075f7, "httpcg_nhttp_api_response failed");
             return false;
         }
         http_info1->status_code = rep->statusCode;
@@ -1872,7 +1878,7 @@ bool Http_postnreg(nHttp_info *http_info1)
         mupnp_log_info("cg_http_request_post done\n");
         if (mupnp_http_response_getcontent(rep) == NULL)
         {
-            sys_arch_printf("mupnp_http_response_getcontent NULL");
+            OSI_LOGI(0x100075f8, "mupnp_http_response_getcontent NULL");
             return true;
         }
         if (NULL == vnetregdata)
@@ -1887,18 +1893,18 @@ bool Http_postnreg(nHttp_info *http_info1)
         }
         if (NULL == vnetregdata)
         {
-            sys_arch_printf("httpcg_nhttp_api_response failed");
+            OSI_LOGI(0x100075f7, "httpcg_nhttp_api_response failed");
             return false;
         }
         memset(vnetregdata, 0, http_info1->content_length + 1);
         strncpy(vnetregdata, mupnp_http_response_getcontent(rep), (http_info1->content_length) + 1);
-        sys_arch_printf("httpreg_nhttp_api_response success");
+        OSI_LOGI(0x100075f9, "httpreg_nhttp_api_response success");
 
         return true;
     }
     else
     {
-        sys_arch_printf("http_init  failed");
+        OSI_LOGI(0x100075fa, "http_init  failed");
         return false;
     }
 }
@@ -1950,7 +1956,7 @@ bool Http_deleten(nHttp_info *http_info1)
 
         if (http_info1->content_length <= 0)
         {
-            sys_arch_printf("cg_http_api_response content length is %ld", http_info1->content_length);
+            OSI_LOGI(0x100075fb, "cg_http_api_response content length is %ld", http_info1->content_length);
             http_info1->content_length = 0;
         }
         else
@@ -1968,7 +1974,7 @@ bool Http_deleten(nHttp_info *http_info1)
 
             if (NULL == http_info1->user_data)
             {
-                sys_arch_printf("malloc error!! \n");
+                OSI_LOGI(0x100075ea, "malloc error!! \n");
                 http_info1->content_length = 0;
                 //http_info1->status_code = 400;
                 goto DELETEEND;
@@ -1989,7 +1995,7 @@ bool Http_deleten(nHttp_info *http_info1)
         }
 
     DELETEEND:
-        sys_arch_printf("http delete done code %d length %ld\n", http_info1->status_code, http_info1->content_length);
+        OSI_LOGI(0x100075fc, "http delete done code %d length %ld\n", http_info1->status_code, http_info1->content_length);
         sprintf(tmpString, "%d %d %ld", 3, http_info1->status_code, http_info1->content_length);
 
         Http_WriteUart(tmpString, strlen(tmpString));
@@ -2022,11 +2028,11 @@ mUpnpHttpResponse *cg_nhttp_api_response(mUpnpHttpRequest *httpReq, char *ipaddr
     bool is_read = false;
     //int iResult;
 
-    sys_arch_printf("+++Entering.cg_nhttp_api_response..\n");
+    OSI_LOGI(0x100075fd, "+++Entering.cg_nhttp_api_response..\n");
 
     if (ipaddr == NULL)
     {
-        sys_arch_printf("ipaddr is NULL");
+        OSI_LOGI(0x100075fe, "ipaddr is NULL");
         return NULL;
     }
     mupnp_http_response_clear(httpReq->httpRes);
@@ -2044,20 +2050,20 @@ mUpnpHttpResponse *cg_nhttp_api_response(mUpnpHttpRequest *httpReq, char *ipaddr
     g_sock = mupnp_socket_stream_new();
 #endif
 
-    sys_arch_printf("new socket FINISH+++");
+    OSI_LOGI(0x100075ff, "new socket FINISH+++");
 
     if (g_sock == NULL)
     {
-        sys_arch_printf("new socket fail");
+        OSI_LOGI(0x10007600, "new socket fail");
         return NULL;
     }
 
-    sys_arch_printf("new socket done+++");
+    OSI_LOGI(0x10007601, "new socket done+++");
 
     CFW_TcpipSocketSetsockopt(g_sock->id, SOL_SOCKET, SO_BINDTODEVICE, &(http_info->device), sizeof(struct ifreq));
 
-    sys_arch_printf("ipaddr %s+++", ipaddr);
-    sys_arch_printf("port %d+++", port);
+    OSI_LOGXI(OSI_LOGPAR_S, 0x10007602, "ipaddr %s+++", ipaddr);
+    OSI_LOGI(0x10007603, "port %d+++", port);
 
     if (mupnp_socket_connect(g_sock, ipaddr, port) == false)
     {
@@ -2082,13 +2088,13 @@ mUpnpHttpResponse *cg_nhttp_api_response(mUpnpHttpRequest *httpReq, char *ipaddr
     uri = mupnp_http_request_geturi(httpReq);
     version = mupnp_http_request_getversion(httpReq);
 
-    sys_arch_printf("method %s uri %s version %s+++", method, uri, version);
+    OSI_LOGXI(OSI_LOGPAR_SSS, 0x10007604, "method %s uri %s version %s+++", method, uri, version);
 
     if (method == NULL || uri == NULL || version == NULL)
     {
         //cg_socket_close(sock);
         mupnp_socket_delete(g_sock);
-        sys_arch_printf("method  uri  version error+++");
+        OSI_LOGI(0x10007605, "method  uri  version error+++");
         g_sock = NULL;
         return NULL;
     }
@@ -2103,24 +2109,24 @@ Redir:
     mupnp_string_addvalue(firstLine, version);
     mupnp_string_addvalue(firstLine, CG_HTTP_CRLF);
     mupnp_socket_write(g_sock, mupnp_string_getvalue(firstLine), mupnp_string_length(firstLine));
-    sys_arch_printf("++++++firstLine:%s", firstLine->value);
+    OSI_LOGXI(OSI_LOGPAR_S, 0x10007606, "++++++firstLine:%s", firstLine->value);
     mupnp_string_delete(firstLine);
 
     /**** send header and content ****/
     mupnp_http_packet_post((mUpnpHttpPacket *)httpReq, g_sock);
 
-    sys_arch_printf("RESPONSE READ BEGIN++:\n");
+    OSI_LOGI(0x10007607, "RESPONSE READ BEGIN++:\n");
 
     is_read = mupnp_http_response_read(httpReq->httpRes, g_sock, mupnp_http_request_isheadrequest(httpReq));
     if (is_read == false)
     {
-        sys_arch_printf("cg_nhttp_api_response RESPONSE READ END++ failed:\n");
+        OSI_LOGI(0x10007608, "cg_nhttp_api_response RESPONSE READ END++ failed:\n");
         mupnp_socket_delete(g_sock);
         g_sock = NULL;
         return NULL;
     }
 
-    sys_arch_printf("RESPONSE READ END++:\n");
+    OSI_LOGI(0x10007609, "RESPONSE READ END++:\n");
 
     statuscode = mupnp_http_response_getstatuscode(httpReq->httpRes);
 
@@ -2146,7 +2152,7 @@ Redir:
     g_sock = NULL;
     //cg_http_request_delete(httpReq);
 
-    sys_arch_printf("cg_nhttp_api_response: Done\n");
+    OSI_LOGI(0x1000760a, "cg_nhttp_api_response: Done\n");
 
     return response;
 }
@@ -2154,8 +2160,8 @@ Redir:
 //set user data for post option
 bool http_setUserdata(nHttp_info *at_nHttp_info, char *userData, long dataLen)
 {
-    sys_arch_printf("enter http_setUserdata.dataLen:%ld\n", dataLen);
-    sys_arch_printf("enter http_setUserdata.userData:%s\n", userData);
+    OSI_LOGI(0x1000760b, "enter http_setUserdata.dataLen:%ld\n", dataLen);
+    OSI_LOGXI(OSI_LOGPAR_S, 0x1000760c, "enter http_setUserdata.userData:%s\n", userData);
 
     //already malloc in the init_http()
     if (NULL == at_nHttp_info->user_data)
@@ -3139,17 +3145,17 @@ mUpnpHttpResponse *Http_get(Http_info *http_info1)
 
         if (ret == NULL)
         {
-            sys_arch_printf("Http_get ret NULL\n");
+            OSI_LOGI(0x1000760d, "Http_get ret NULL\n");
             return NULL;
         }
 
-        sys_arch_printf("Http_get done\n");
+        OSI_LOGI(0x1000760e, "Http_get done\n");
 
         return ret;
     }
     else
     {
-        sys_arch_printf("Http_get init error ...\n");
+        OSI_LOGI(0x1000760f, "Http_get init error ...\n");
 
         return NULL;
     }
@@ -3164,18 +3170,18 @@ mUpnpHttpResponse *cg_http_api_response(mUpnpHttpRequest *httpReq, char *ipaddr,
     mUpnpHttpResponse *response = NULL;
     bool is_read = false;
 
-    sys_arch_printf("Entering cg_http_api_response...\n");
+    OSI_LOGI(0x10007610, "Entering cg_http_api_response...\n");
 
     if (ipaddr == NULL)
     {
-        sys_arch_printf("ipaddr is NULL");
+        OSI_LOGI(0x100075fe, "ipaddr is NULL");
         return NULL;
     }
     mupnp_http_response_clear(httpReq->httpRes);
 
     mupnp_string_setnvalue((httpReq->httpRes)->content, '\0', 0);
 
-    sys_arch_printf("(HTTP) Posting:\n");
+    OSI_LOGI(0x10007611, "(HTTP) Posting:\n");
 
     mupnp_http_request_print(httpReq);
 
@@ -3190,7 +3196,7 @@ mUpnpHttpResponse *cg_http_api_response(mUpnpHttpRequest *httpReq, char *ipaddr,
 
     if (g_sock == NULL)
     {
-        sys_arch_printf("new socket fail");
+        OSI_LOGI(0x10007600, "new socket fail");
         return NULL;
     }
 
@@ -3226,7 +3232,7 @@ mUpnpHttpResponse *cg_http_api_response(mUpnpHttpRequest *httpReq, char *ipaddr,
         Http_WriteUart("failure, parm error!\n", 22);
         return NULL;
     }
-    sys_arch_printf("uri method get %s %s", uri, method);
+    OSI_LOGXI(OSI_LOGPAR_SS, 0x10007612, "uri method get %s %s", uri, method);
     /**** send first line ****/
     firstLine = mupnp_string_new();
     mupnp_string_addvalue(firstLine, method);
@@ -3248,7 +3254,7 @@ mUpnpHttpResponse *cg_http_api_response(mUpnpHttpRequest *httpReq, char *ipaddr,
     mupnp_socket_delete(g_sock);
     g_sock = NULL;
 
-    sys_arch_printf("cg_http_api_response read status is %d: Done\n", is_read);
+    OSI_LOGI(0x10007613, "cg_http_api_response read status is %d: Done\n", is_read);
 
     return response;
 }

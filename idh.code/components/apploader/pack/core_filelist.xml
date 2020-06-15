@@ -26,8 +26,8 @@ without further testing or modification.
 
     <!-- from TARGET_OUT -->
     <globfile src="{TARGET_OUT}/include/*.h" dstdir="components/include"/>
-    <file src="{TARGET_OUT}/rel/core_config.cmake" dstdir="cmake"/>
-    <file src="{TARGET_OUT}/rel/core_stub.o" dstdir="components/lib"/>
+    <file src="{TARGET_OUT}/lib/core_config.cmake" dstdir="cmake"/>
+    <file src="{TARGET_OUT}/lib/core_stub.o" dstdir="components/lib"/>
     <file src="{TARGET_OUT}/hex/fdl1.img" dstdir="components/lib" inclusive="8910"/>
     <file src="{TARGET_OUT}/hex/fdl2.img" dstdir="components/lib" inclusive="8910"/>
 

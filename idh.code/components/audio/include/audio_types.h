@@ -215,6 +215,25 @@ typedef enum
 extern const uint16_t gDtmfToneFreq[16][2];
 
 /**
+ * \brief audio playing type
+ */
+typedef enum
+{
+    /**
+     * Placeholder for not in playing.
+     */
+    AUDEV_PLAY_TYPE_NONE = 0,
+    /**
+     * Play to local audio path.
+     */
+    AUDEV_PLAY_TYPE_LOCAL,
+    /**
+     * Play to uplink remote during voice call.
+     */
+    AUDEV_PLAY_TYPE_VOICE,
+} audevPlayType_t;
+
+/**
  * \brief audio recording type
  */
 typedef enum

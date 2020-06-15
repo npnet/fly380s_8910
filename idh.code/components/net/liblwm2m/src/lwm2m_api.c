@@ -7,6 +7,7 @@
 #include "liblwm2m.h"
 #include "commandline.h"
 #include "expat.h"
+#include "internals.h"
 
 lwm2m_config_t *lwm2m_configs[MAX_REF_NUM];
 // static uint8_t gVersion = 0;
@@ -15,7 +16,8 @@ static void lwm2m_clientd(void *param);
 
 static bool isRefValid(uint8_t ref)
 {
-    return ref >= 0 && ref < MAX_REF_NUM && lwm2m_configs[ref] != NULL;
+    //return ref >= 0 && ref < MAX_REF_NUM && lwm2m_configs[ref] != NULL;
+    return ref < MAX_REF_NUM && lwm2m_configs[ref] != NULL; // for converity cid 39612
 }
 
 static bool isRefRegistered(uint8_t ref)
@@ -216,8 +218,10 @@ int8_t lwm2m_new_config(const uint8_t *cmdline)
             strcpy((char *)argv[argc], token);
             argc++;
         }
+        lwm2m_config->observer = false;
         lwm2m_config->argv = argv;
         lwm2m_config->argc = argc;
+        lwm2m_config->isregisted = 0;
     }
     else
     {
@@ -228,6 +232,23 @@ int8_t lwm2m_new_config(const uint8_t *cmdline)
     return ref;
 }
 
+lwm2m_ret_t lwm2m_get_observer(uint8_t ref)
+{
+    if (!isRefValid(ref))
+        return LWM2M_RET_ERROR;
+
+    return lwm2m_configs[ref]->observer == true ? LWM2M_RET_OK : LWM2M_RET_ERROR;
+}
+
+lwm2m_ret_t lwm2m_set_observer(uint8_t ref, bool observer)
+{
+    if (!isRefValid(ref))
+        return LWM2M_RET_ERROR;
+
+    lwm2m_configs[ref]->observer = observer;
+    return LWM2M_RET_OK;
+}
+
 lwm2m_ret_t lwm2m_free_task(uint8_t ref)
 {
     if (lwm2m_configs[ref])
@@ -235,6 +256,9 @@ lwm2m_ret_t lwm2m_free_task(uint8_t ref)
         if (((void *)(lwm2m_configs[ref]->this)) != NULL)
         {
             close(lwm2m_configs[ref]->ipc_socket);
+            close(lwm2m_configs[ref]->ipc_data_socket);
+            //COS_StopTask((TASK_HANDLE *)lwm2m_configs[ref]->this);
+            //COS_DeleteTask(lwm2m_configs[ref]->this);
         }
     }
     return LWM2M_RET_OK;
@@ -257,12 +281,12 @@ lwm2m_ret_t lwm2m_free_config(uint8_t ref)
             }
         }
 
-        for (i = 0; i < lwm2m_configs[ref]->argc; i++)
+        for (i = 1; i < lwm2m_configs[ref]->argc; i++)
         {
             lwm2m_free(lwm2m_configs[ref]->argv[i]);
             lwm2m_configs[ref]->argv[i] = NULL;
         }
-        //lwm2m_free(lwm2m_configs[ref]->argv);
+        lwm2m_free(lwm2m_configs[ref]->argv);
         memset(lwm2m_configs[ref]->cmdline, 0, 256);
         lwm2m_free(lwm2m_configs[ref]);
         lwm2m_configs[ref] = NULL;
@@ -312,6 +336,11 @@ uint8_t lwm2m_get_ipcSocket(uint8_t configIndex)
     return lwm2m_configs[configIndex]->ipc_socket;
 }
 
+uint8_t lwm2m_get_ipcDataSocket(uint8_t configIndex)
+{
+    return lwm2m_configs[configIndex]->ipc_data_socket;
+}
+
 void lwm2m_parse_buffer(char *buffer, void *value, uint8_t count, void *delim)
 {
     char *token;
@@ -332,18 +361,37 @@ lwm2m_ret_t lwm2m_excute_cmd(uint8_t *data, uint32_t data_len, uint8_t ref)
         return LWM2M_RET_ERROR;
 
     lwm2m_config_t *lwm2m_config = lwm2m_configs[ref];
+    if (NULL == lwm2m_config)
+    {
+        return LWM2M_RET_ERROR;
+    }
+
+    struct sockaddr_in to4 = {0};
+    to4.sin_len = sizeof(to4);
+    to4.sin_family = AF_INET;
+    to4.sin_port = 1234 + ref;
+    to4.sin_addr.s_addr = PP_HTONL(INADDR_LOOPBACK);
+    sendto(lwm2m_config->ipc_socket, data, data_len, 0, (const struct sockaddr *)&to4, sizeof(to4));
+    return LWM2M_RET_OK;
+}
+
+lwm2m_ret_t lwm2m_excute_data_cmd(uint8_t *data, uint32_t data_len, uint8_t ref)
+{
+    if (!isRefValid(ref) || !isRefRegistered(ref))
+        return LWM2M_RET_ERROR;
+
+    lwm2m_config_t *lwm2m_config = lwm2m_configs[ref];
     if (NULL == lwm2m_config || netif_default == NULL)
     {
         return LWM2M_RET_ERROR;
     }
 
     struct sockaddr_in to4 = {0};
-    ip4_addr_t *ip_addr = (ip4_addr_t *)netif_ip4_addr(netif_default);
     to4.sin_len = sizeof(to4);
     to4.sin_family = AF_INET;
-    to4.sin_port = 1234 + ref;
-    inet_addr_from_ip4addr(&(to4.sin_addr), ip_addr);
-    sendto(lwm2m_config->ipc_socket, data, data_len, 0, (const struct sockaddr *)&to4, sizeof(to4));
+    to4.sin_port = 1235 + ref;
+    to4.sin_addr.s_addr = PP_HTONL(INADDR_LOOPBACK);
+    sendto(lwm2m_config->ipc_data_socket, data, data_len, 0, (const struct sockaddr *)&to4, sizeof(to4));
     return LWM2M_RET_OK;
 }
 
@@ -477,7 +525,7 @@ lwm2m_ret_t lwm2m_write_rsp(bool result, uint8_t ref)
 
     uint8_t cmd[20] = {0};
     sprintf((char *)cmd, "write %d", result);
-    return lwm2m_excute_cmd(cmd, strlen((char *)cmd), ref);
+    return lwm2m_excute_data_cmd(cmd, strlen((char *)cmd), ref);
 }
 
 lwm2m_ret_t lwm2m_exec_rsp(bool result, uint8_t ref)
@@ -487,7 +535,7 @@ lwm2m_ret_t lwm2m_exec_rsp(bool result, uint8_t ref)
 
     uint8_t cmd[20] = {0};
     sprintf((char *)cmd, "execute %d", result);
-    return lwm2m_excute_cmd(cmd, strlen((char *)cmd), ref);
+    return lwm2m_excute_data_cmd(cmd, strlen((char *)cmd), ref);
 }
 
 lwm2m_ret_t lwm2m_discover_rsp(uint8_t result, const uint8_t *value, uint8_t ref)
@@ -499,6 +547,19 @@ lwm2m_ret_t lwm2m_discover_rsp(uint8_t result, const uint8_t *value, uint8_t ref
 
     uint8_t cmd[256] = {0};
     snprintf((char *)cmd, 255, "discover %d %s", result, value);
+    return lwm2m_excute_data_cmd(cmd, strlen((char *)cmd), ref);
+}
+
+lwm2m_ret_t lwm2m_start_fota_download(const uint8_t *uri, uint8_t ref)
+{
+    if (!isRefValid(ref) || !isRefRegistered(ref))
+        return LWM2M_RET_ERROR;
+    if (strlen((char *)uri) > 200)
+        return LWM2M_RET_ERROR;
+
+    uint8_t cmd[256] = {0};
+    snprintf((char *)cmd, 255, "download_fota %s", uri);
+    LOG_ARG("lwm2m_start_fota_download %s", uri);
     return lwm2m_excute_cmd(cmd, strlen((char *)cmd), ref);
 }
 
@@ -522,6 +583,18 @@ lwm2m_ret_t lwm2m_notify(uint16_t objId, uint16_t instId, uint16_t resId, const 
     memcpy(data + strlen((char *)cmd) + 1, value, value_length);
     ret = lwm2m_excute_cmd(data, strlen((char *)cmd) + 1 + value_length + 1, ref);
     lwm2m_free(data);
+    return ret;
+}
+
+lwm2m_ret_t lwm2m_notify_fota_state(uint32_t state, uint32_t resulte, uint8_t ref)
+{
+    if (!isRefValid(ref) || !isRefRegistered(ref))
+        return LWM2M_RET_ERROR;
+
+    uint8_t cmd[50] = {0};
+    lwm2m_ret_t ret;
+    snprintf((char *)cmd, 50, "notify_fota %ld %ld", state, resulte);
+    ret = lwm2m_excute_cmd(cmd, strlen((char *)cmd), ref);
     return ret;
 }
 
@@ -563,13 +636,15 @@ lwm2m_ret_t lwm2m_register(int ref, uint32_t lifetime, uint32_t timeout)
 
     return LWM2M_RET_OK;
 }
+lwm2m_ret_t QuitHandshake();
 
 lwm2m_ret_t lwm2m_unregister(int ref)
 {
     if (!isRefValid(ref) || !isRefRegistered(ref))
         return LWM2M_RET_ERROR;
-
-    return lwm2m_excute_cmd(((uint8_t *)"quit"), 4, ref);
+    lwm2m_configs[ref]->isquit = 1;
+    QuitHandshake();
+    return lwm2m_excute_cmd((uint8_t *)"quit", 4, ref);
 }
 
 lwm2m_ret_t lwm2m_set_dynamic_ipso(int ref)
@@ -603,21 +678,40 @@ static void lwm2m_clientd(void *param)
 {
     uint8_t ref = (uint8_t)(uint32_t)param;
     lwm2m_config_t *lwm2m_config = lwm2m_configs[ref];
+    int ret = -1;
     if (lwm2m_config == NULL || netif_default == NULL)
-    {
-        lwm2mPostEvent(ref, OBJ_OPERATE_RSP_IND, -1, -1, 0);
-        return;
-    }
+        goto EXIT;
 
     lwm2m_config->ipc_socket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    ip4_addr_t *ip_addr = (ip4_addr_t *)netif_ip4_addr(netif_default);
+    if (lwm2m_config->ipc_socket < 0)
+        goto EXIT;
     struct sockaddr_in to4 = {0};
     to4.sin_len = sizeof(to4);
     to4.sin_family = AF_INET;
     to4.sin_port = 1234 + ref;
-    inet_addr_from_ip4addr(&(to4.sin_addr), ip_addr);
-    bind(lwm2m_config->ipc_socket, (const struct sockaddr *)&to4, sizeof(to4));
+    to4.sin_addr.s_addr = PP_HTONL(INADDR_LOOPBACK);
+    if (bind(lwm2m_config->ipc_socket, (const struct sockaddr *)&to4, sizeof(to4)) < 0)
+    {
+        close(lwm2m_config->ipc_socket);
+        lwm2m_config->ipc_socket = -1;
+        goto EXIT;
+    }
 
+    lwm2m_config->ipc_data_socket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (lwm2m_config->ipc_data_socket < 0)
+        goto EXIT;
+    to4.sin_len = sizeof(to4);
+    to4.sin_family = AF_INET;
+    to4.sin_port = 1235 + ref;
+    to4.sin_addr.s_addr = PP_HTONL(INADDR_LOOPBACK);
+    if (bind(lwm2m_config->ipc_data_socket, (const struct sockaddr *)&to4, sizeof(to4)) < 0)
+    {
+        close(lwm2m_config->ipc_socket);
+        lwm2m_config->ipc_socket = -1;
+        close(lwm2m_config->ipc_data_socket);
+        lwm2m_config->ipc_data_socket = -1;
+        goto EXIT;
+    }
     int begin = lwm2m_config->argc;
 
     lwm2m_config->argv[0] = ((uint8_t *)"lwm2mclient_main");
@@ -646,13 +740,12 @@ static void lwm2m_clientd(void *param)
         snprintf((char *)lwm2m_config->argv[lwm2m_config->argc++], MALLOC_BLK, "%d", (unsigned int)lwm2m_config->timeout);
     }
     lwm2m_config->isregisted = 1;
-    int ret = lwm2mclient_main(lwm2m_config->argc, (char **)lwm2m_config->argv);
+    ret = lwm2mclient_main(lwm2m_config->argc, (char **)lwm2m_config->argv);
     lwm2m_config->isregisted = 0;
 
     for (int i = begin; i < lwm2m_config->argc; i++)
     {
         lwm2m_free(lwm2m_config->argv[i]);
-        memset(lwm2m_config->argv[i], 0, strlen((char *)lwm2m_config->argv[i]));
         lwm2m_config->argv[i] = NULL;
     }
     lwm2m_config->argc = begin;
@@ -663,6 +756,7 @@ static void lwm2m_clientd(void *param)
         memset(obj_type_table, 0, sizeof(ipso_obj_t) * MAX_DYNAMIC_OBJECTS);
     }
 
+EXIT:
     lwm2mPostEvent(ref, SERVER_QUIT_IND, ret, 0, 0);
     osiThreadExit();
 }

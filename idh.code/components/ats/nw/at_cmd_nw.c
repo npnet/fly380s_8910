@@ -869,6 +869,7 @@ static void _copsGetAvailRsp(atCommand_t *cmd, const osiEvent_t *event)
     if (0 == cfw_event->nType)
     {
         pOperInfo = (CFW_NW_OPERATOR_INFO *)cfw_event->nParam1;
+        atMemFreeLater(pOperInfo);
         prsp += sprintf(prsp, "+COPS: ");
         for (int i = 0; i < cfw_event->nParam2; i++)
         {
@@ -1346,7 +1347,8 @@ static OSI_UNUSED void _cpolAddDelRsp(atCommand_t *cmd, const osiEvent_t *event)
 
     if (cfw_event->nType == 0)
     {
-        gAtSetting.sim[nSim].cpol_format = nFormat;
+        if (cmd->param_count != 1)
+            gAtSetting.sim[nSim].cpol_format = nFormat;
         atCmdRespOK(cmd->engine);
     }
     else
@@ -1811,49 +1813,67 @@ void atCmdHandleCSQ(atCommand_t *cmd)
         ret = CFW_GetComm(&nFM, nSim);
         if (nFM != CFW_DISABLE_COMM)
         {
+            CFW_NW_STATUS_INFO sStatus;
             rat = CFW_NWGetStackRat(nSim);
             OSI_LOGXI(OSI_LOGPAR_I, 0, "rat: %d", rat);
             if (rat == 4)
             {
                 CFW_NW_QUAL_INFO iQualReport;
 
-                ret = CFW_NwGetLteSignalQuality(&nSignalLevel, &nBitError, nSim);
+                ret = CFW_GprsGetstatus(&sStatus, nSim);
                 if (ret != 0)
                 {
                     RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
                 }
-                ret = CFW_NwGetQualReport(&iQualReport, nSim);
-                if (ret != 0)
+                if (sStatus.nStatus != CFW_NW_STATUS_NOTREGISTERED_NOTSEARCHING)
                 {
-                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-                }
-                if (iQualReport.nRssidBm < -113)
-                {
-                    nSignalLevel = 0;
-                }
-                else if ((iQualReport.nRssidBm >= -113) && (iQualReport.nRssidBm <= -51))
-                {
-                    nSignalLevel = (uint8_t)((iQualReport.nRssidBm + 113) / 2);
-                }
-                else
-                {
-                    nSignalLevel = 31;
+                    ret = CFW_NwGetLteSignalQuality(&nSignalLevel, &nBitError, nSim);
+                    if (ret != 0)
+                    {
+                        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                    }
+                    ret = CFW_NwGetQualReport(&iQualReport, nSim);
+                    if (ret != 0)
+                    {
+                        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                    }
+                    OSI_LOGXI(OSI_LOGPAR_I, 0, "rat: %d", iQualReport.nRssidBm);
+                    if (iQualReport.nRssidBm < -113)
+                    {
+                        nSignalLevel = 0;
+                    }
+                    else if ((iQualReport.nRssidBm >= -113) && (iQualReport.nRssidBm <= -51))
+                    {
+                        nSignalLevel = (uint8_t)((iQualReport.nRssidBm + 113) / 2);
+                    }
+                    else
+                    {
+                        nSignalLevel = 31;
+                    }
                 }
             }
             else
             {
-                ret = CFW_NwGetSignalQuality(&nSignalLevel, &nBitError, nSim);
-                if (nSignalLevel > 113)
+                ret = CFW_NwGetStatus(&sStatus, nSim);
+                if (ret != 0)
                 {
-                    nSignalLevel = 0;
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
                 }
-                else if ((nSignalLevel <= 113) && (nSignalLevel >= 51))
+                if (sStatus.nStatus != CFW_NW_STATUS_NOTREGISTERED_NOTSEARCHING)
                 {
-                    nSignalLevel = (uint8_t)(31 - (nSignalLevel - 51) / 2);
-                }
-                else
-                {
-                    nSignalLevel = 31;
+                    ret = CFW_NwGetSignalQuality(&nSignalLevel, &nBitError, nSim);
+                    if (nSignalLevel > 113)
+                    {
+                        nSignalLevel = 0;
+                    }
+                    else if ((nSignalLevel <= 113) && (nSignalLevel >= 51))
+                    {
+                        nSignalLevel = (uint8_t)(31 - (nSignalLevel - 51) / 2);
+                    }
+                    else
+                    {
+                        nSignalLevel = 31;
+                    }
                 }
             }
             if (ret != 0)
@@ -1995,31 +2015,42 @@ void atCmdHandleCESQ(atCommand_t *cmd)
 #define CSW_GSM_850 (1 << 5)
 #define CSW_DCS_1800 (1 << 6)
 #define CSW_PCS_1900 (1 << 7)
+#define VALUEISINRANGE(value, min, max) ((value >= min) && (value <= max))
+typedef struct
+{
+    uint16_t minArfcn;
+    uint16_t maxArfcn;
+
+} AT_ARFCNLIST;
+const AT_ARFCNLIST arfcnList[] =
+    {
+        {1, 124},
+        {128, 251},
+        {512, 855},
+        {975, 1023}};
+
 bool atCheckBandInArfcnList(uint8_t Band, uint16_t Bcch)
 {
     bool Ret = false;
+    uint16_t count;
 
     switch (Band)
     {
     case 0:
-        if ((Bcch <= 124))
-            Ret = true;
-        else if ((Bcch >= 128) && (Bcch <= 251))
-            Ret = true;
-        else if ((Bcch >= 512) && (Bcch <= 885))
-            Ret = true;
-        else if ((Bcch >= 975) && (Bcch <= 1023))
-            Ret = true;
+        count = sizeof(arfcnList) / sizeof(arfcnList[0]);
+        for (uint8_t i = 0; i < count; i++)
+        {
+            if (true == (Ret = VALUEISINRANGE(Bcch, arfcnList[i].minArfcn, arfcnList[i].maxArfcn)))
+                break;
+        }
         break;
 
     case 1:
-        if ((Bcch >= 975) && (Bcch <= 1023))
-            Ret = true;
+        Ret = VALUEISINRANGE(Bcch, arfcnList[3].minArfcn, arfcnList[3].maxArfcn);
         break;
 
     case 2:
-        if ((Bcch >= 512) && (Bcch <= 885))
-            Ret = true;
+        Ret = VALUEISINRANGE(Bcch, arfcnList[2].minArfcn, arfcnList[2].maxArfcn);
         break;
 
     default:
@@ -2038,7 +2069,7 @@ void atCmdHandleMYBCCH(atCommand_t *cmd)
     int32_t iResult = 0;
     uint16_t freqnb = 0;
     uint8_t i = 0;
-    char pRsp[40] = {
+    char pRsp[100] = {
         0,
     };
     uint32_t ret = 0;
@@ -2089,19 +2120,19 @@ void atCmdHandleMYBCCH(atCommand_t *cmd)
         uint8_t uMode = atParamDefUintInRange(cmd->params[0], 0, 0, 1, &paramok);
         if (cmd->param_count > 1)
         {
-            bcch[0] = atParamUintInRange(cmd->params[1], 0, 1024, &paramok);
+            bcch[0] = atParamUintInRange(cmd->params[1], 1, 1023, &paramok);
             if (!atCheckBandInArfcnList(nBand, bcch[0]))
                 AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
         }
         if (cmd->param_count > 2)
         {
-            bcch[1] = atParamUintInRange(cmd->params[2], 0, 1024, &paramok);
+            bcch[1] = atParamUintInRange(cmd->params[2], 1, 1023, &paramok);
             if (!atCheckBandInArfcnList(nBand, bcch[1]))
                 AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
         }
         if (cmd->param_count > 3)
         {
-            bcch[2] = atParamUintInRange(cmd->params[3], 0, 1024, &paramok);
+            bcch[2] = atParamUintInRange(cmd->params[3], 1, 1023, &paramok);
             if (!atCheckBandInArfcnList(nBand, bcch[2]))
                 AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
         }
@@ -2149,21 +2180,21 @@ void atCmdHandleMYBCCH(atCommand_t *cmd)
         break;
 
     case AT_CMD_TEST:
-        memset(&pRsp, 0x0, 40);
+        memset(&pRsp, 0x0, 100);
         if (strcmp("+LOCKBCCH", cmd->desc->name) == 0)
         {
-            sprintf(pRsp, "+LOCKBCCH: (0-1),(0-1024)\n");
+            sprintf(pRsp, "+LOCKBCCH: (0-1),(1-124,128-251,512-855,975-1023)\n");
         }
         else
         {
-            sprintf(pRsp, "$MYBCCH: (0-1),(0-1024)\n");
+            sprintf(pRsp, "$MYBCCH: (0-1),(1-124,128-251,512-855,975-1023)\n");
         }
         atCmdRespInfoText(cmd->engine, pRsp);
         atCmdRespOK(cmd->engine);
         break;
 
     case AT_CMD_READ:
-        memset(&pRsp, 0x0, 40);
+        memset(&pRsp, 0x0, 100);
         if (strcmp("+LOCKBCCH", cmd->desc->name) == 0)
         {
             sprintf(pRsp, "+LOCKBCCH: %d", gAtSetting.bcchmode);
@@ -2644,6 +2675,7 @@ static void CCED_TimerRspCB(void *ctx, const osiEvent_t *event)
     memset(&tCurrCellInf, 0, sizeof(CFW_TSM_CURR_CELL_INFO));
     memset(&tNeighborCellInfo, 0, sizeof(CFW_TSM_ALL_NEBCELL_INFO));
     memset(&tNetLTEinfo, 0, sizeof(CFW_NET_INFO_T));
+    memset(pTxtBuf, 0, 1024);
 
     if (cfw_event->nEventId == EV_CFW_TSM_INFO_IND)
     {
@@ -2865,6 +2897,7 @@ static void CCED_RspCB(atCommand_t *cmd, const osiEvent_t *event)
     memset(&tCurrCellInf, 0, sizeof(CFW_TSM_CURR_CELL_INFO));
     memset(&tNeighborCellInfo, 0, sizeof(CFW_TSM_ALL_NEBCELL_INFO));
     memset(&tNetLTEinfo, 0, sizeof(CFW_NET_INFO_T));
+    memset(pTxtBuf, 0, 1024);
 
     if (cfw_event->nEventId == EV_CFW_TSM_INFO_IND)
     {
@@ -3146,7 +3179,7 @@ void atCmdHandleCCED(atCommand_t *cmd)
     else if (cmd->type == AT_CMD_TEST)
     {
         char AtTri[64];
-        sprintf(AtTri, "+CCED: (0,1),(1,2,8)");
+        sprintf(AtTri, "+CCED: (0,1,2),(1,2,8)");
         atCmdRespInfoText(cmd->engine, AtTri);
         atCmdRespOK(cmd->engine);
     }
@@ -3917,6 +3950,96 @@ void atCmdHandleSETLOCK(atCommand_t *cmd)
     }
 }
 
+void atCmdHandleSETSTSEN(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    uint8_t nStaticScene = 0;
+    uint32_t ret = ERR_SUCCESS;
+    if (cmd->type == AT_CMD_SET)
+    {
+        bool paramok = true;
+        uint8_t nStaticScene = atParamDefUintInRange(cmd->params[0], 0, 0, 1, &paramok);
+
+        if (!paramok || cmd->param_count != 1)
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
+
+        ret = CFW_SetStaticScene(nStaticScene, nSim);
+        if (ERR_SUCCESS != ret)
+        {
+            OSI_LOGI(0, "AT+SETSTSEN:Set static scene error %d\n\r", ret);
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
+        }
+        atCmdRespOK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_READ)
+    {
+        char rsp[40] = {0};
+        ret = CFW_GetStaticScene(&nStaticScene, nSim);
+        if (ERR_SUCCESS != ret)
+        {
+            OSI_LOGI(0, "AT+GETRATEPROIR:Get static scene error %d\n\r", ret);
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
+        }
+        sprintf(rsp, "+SETSTSEN: %d", nStaticScene);
+        atCmdRespInfoText(cmd->engine, rsp);
+        atCmdRespOK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_TEST)
+    {
+        atCmdRespInfoText(cmd->engine, "+SETSTSEN:(0-1)");
+        atCmdRespOK(cmd->engine);
+    }
+    else
+    {
+        atCmdRespCmsError(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+    }
+}
+
+void atCmdHandleSETRATEPRIOR(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    uint8_t nRatePrior = 0;
+    uint32_t ret = ERR_SUCCESS;
+    if (cmd->type == AT_CMD_SET)
+    {
+        bool paramok = true;
+        uint8_t nRatePrior = atParamDefUintInRange(cmd->params[0], 0, 0, 1, &paramok);
+
+        if (!paramok || cmd->param_count != 1)
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
+
+        ret = CFW_SetRatePriority(nRatePrior, nSim);
+        if (ERR_SUCCESS != ret)
+        {
+            OSI_LOGI(0, "AT+SETRATEPROIR:Set RATEPRIORITY error %d\n\r", ret);
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
+        }
+        atCmdRespOK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_READ)
+    {
+        char rsp[40] = {0};
+        ret = CFW_GetRatePriority(&nRatePrior, nSim);
+        if (ERR_SUCCESS != ret)
+        {
+            OSI_LOGI(0, "AT+GETRATEPROIR:Get RATEPRIORITY error %d\n\r", ret);
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
+        }
+        sprintf(rsp, "+SETRATEPROIR: %d", nRatePrior);
+        atCmdRespInfoText(cmd->engine, rsp);
+        atCmdRespOK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_TEST)
+    {
+        atCmdRespInfoText(cmd->engine, "+SETRATEPROIR:(0-1)");
+        atCmdRespOK(cmd->engine);
+    }
+    else
+    {
+        atCmdRespCmsError(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+    }
+}
+
 void atCmdHandleMYBAND(atCommand_t *cmd)
 {
     uint8_t nSim = atCmdGetSim(cmd->engine);
@@ -4211,6 +4334,8 @@ static void _qscanfGetFreqScanRsp(atCommand_t *cmd, const osiEvent_t *event)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_MEMORY_FAILURE);
         memset(rsp, 0, 1300);
         pScanInfo = (NW_FREQ_SCAN_INFO *)cfw_event->nParam1;
+        atMemFreeLater(pScanInfo);
+
         prsp += sprintf(prsp, "+QSCANF: ");
         for (int i = 0; i < pScanInfo->nPlmnNb; i++)
         {
@@ -4365,6 +4490,7 @@ static void _mjdcTestRegRsp(atCommand_t *cmd, const osiEvent_t *event)
 
     if (cfw_event->nType == 0)
     {
+        atMemFreeLater(p);
         if (0 == p->nMode)
         {
             sprintf(rsp, "+MJDC: %d", p->nMode);
@@ -4537,6 +4663,7 @@ void atCmdHandleBLACKLIST(atCommand_t *cmd)
         else if (nBlackFlag == 2) //Gsm
         {
             uint16_t nBlackCellTotalNumGL = 0;
+            uint32_t nIfLteflag = 0;
             nEnable = CFW_nvGetBlackListEnable(nSimid);
             if (nEnable != 1)
             {
@@ -4547,19 +4674,21 @@ void atCmdHandleBLACKLIST(atCommand_t *cmd)
             nBlackCellList.nGsmBlackcellnum = atParamUintInRange(cmd->params[1], 1, 4, &paramok);
             if (!paramok)
             {
-                AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
+                sprintf(rsp, "+CME ERROR:parameters are invalid");
+                AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
             }
             OSI_LOGI(0, "at-black:nGsmBlackcellnum %d\n", nBlackCellList.nGsmBlackcellnum);
             if ((nBlackCellList.nGsmBlackcellnum == 0) || (nBlackCellList.nGsmBlackcellnum > 4))
             {
-                AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
+                sprintf(rsp, "+CME ERROR:parameters are invalid");
+                AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
             }
             else
             {
                 for (i = 0; i < nBlackCellList.nGsmBlackcellnum; i++) //gsm nA,nL,nB
                 {
                     OSI_LOGI(0, "at-black:next gsmmm i %d, count %d\n", i, 2 + i * 3);
-                    nBlackCellList.nGsmBlackCellList[i].nArfcn = atParamUintInRange(cmd->params[2 + i * 3], 0, 65536, &paramok);
+                    nBlackCellList.nGsmBlackCellList[i].nArfcn = atParamUintInRange(cmd->params[2 + i * 3], 0, 1023, &paramok);
                     if (!paramok)
                     {
                         OSI_LOGI(0, "at-black:gsm i %d, err1\n", i);
@@ -4588,6 +4717,41 @@ void atCmdHandleBLACKLIST(atCommand_t *cmd)
                 }
                 NextParamCount = 2 + i * 3;
                 OSI_LOGI(0, "at-black: NextLteParamCount %d, i %d\n", NextParamCount, i);
+                if (cmd->param_count > 14)
+                {
+                    nIfLteflag = atParamUintInRange(cmd->params[NextParamCount], 0, 4, &paramok);
+                    OSI_LOGI(0, "at-black: nIfLteflag %d\n", nIfLteflag);
+                    if (nIfLteflag != 4)
+                    {
+                        sprintf(rsp, "+CME ERROR:Operation Not Allowed");
+                        AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
+                    }
+                }
+                else
+                {
+                    OSI_LOGI(0, "gsm first param_count %d, NextParamCount 5d\n", cmd->param_count, NextParamCount);
+
+                    if (cmd->param_count > NextParamCount)
+                    {
+                        nIfLteflag = atParamUintInRange(cmd->params[NextParamCount], 0, 4, &paramok);
+                        if (!paramok)
+                        {
+                            sprintf(rsp, "+CME ERROR:Operation Not Allowed");
+                            AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
+                        }
+                        if (nIfLteflag != 4)
+                        {
+                            sprintf(rsp, "+CME ERROR:Operation Not Allowed");
+                            AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
+                        }
+                        nBlackCellList.nLteBlackCellNum = atParamUintInRange(cmd->params[NextParamCount + 1], 0, 4, &paramok);
+                        if (!paramok)
+                        {
+                            sprintf(rsp, "+CME ERROR:Operation Not Allowed");
+                            AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
+                        }
+                    }
+                }
                 if ((NextParamCount < cmd->param_count) && (atParamUintInRange(cmd->params[NextParamCount], 0, 4, &paramok) == 4)) //lte
                 {
                     nBlackCellList.nLteBlackCellNum = atParamUintInRange(cmd->params[NextParamCount + 1], 0, 4, &paramok);
@@ -4610,7 +4774,7 @@ void atCmdHandleBLACKLIST(atCommand_t *cmd)
                             {
                                 AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
                             }
-                            nBlackCellList.nLteBlackCellList[i].nPhyCellId = atParamUintInRange(cmd->params[NextParamCount + 3 + i * 2], 0, 65536, &paramok);
+                            nBlackCellList.nLteBlackCellList[i].nPhyCellId = atParamUintInRange(cmd->params[NextParamCount + 3 + i * 2], 0, 65535, &paramok);
                             if (!paramok)
                             {
                                 AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
@@ -4650,12 +4814,14 @@ void atCmdHandleBLACKLIST(atCommand_t *cmd)
             nBlackCellList.nLteBlackCellNum = atParamUintInRange(cmd->params[1], 1, 4, &paramok);
             if (!paramok)
             {
-                AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
+                sprintf(rsp, "+CME ERROR:parameters are invalid");
+                AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
             }
             OSI_LOGI(0, "at-black:nLteBlackCellNum %d\n", nBlackCellList.nLteBlackCellNum);
             if ((nBlackCellList.nLteBlackCellNum == 0) || (nBlackCellList.nLteBlackCellNum > 4))
             {
-                AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
+                sprintf(rsp, "+CME ERROR:parameters are invalid");
+                AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
             }
             else
             {
@@ -4666,7 +4832,7 @@ void atCmdHandleBLACKLIST(atCommand_t *cmd)
                     {
                         AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
                     }
-                    nBlackCellList.nLteBlackCellList[i].nPhyCellId = atParamUintInRange(cmd->params[3 + i * 2], 0, 65536, &paramok);
+                    nBlackCellList.nLteBlackCellList[i].nPhyCellId = atParamUintInRange(cmd->params[3 + i * 2], 0, 65535, &paramok);
                     if (!paramok)
                     {
                         AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
@@ -4683,6 +4849,31 @@ void atCmdHandleBLACKLIST(atCommand_t *cmd)
                     {
                         sprintf(rsp, "+CME ERROR:Operation Not Allowed");
                         AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
+                    }
+                }
+                else
+                {
+                    OSI_LOGI(0, "lte first param_count %d, NextParamCount 5d\n", cmd->param_count, NextParamCount);
+
+                    if (cmd->param_count > NextParamCount)
+                    {
+                        nIfGsmflag = atParamUintInRange(cmd->params[NextParamCount], 0, 4, &paramok);
+                        if (!paramok)
+                        {
+                            sprintf(rsp, "+CME ERROR:Operation Not Allowed");
+                            AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
+                        }
+                        if (nIfGsmflag != 2)
+                        {
+                            sprintf(rsp, "+CME ERROR:Operation Not Allowed");
+                            AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
+                        }
+                        nBlackCellList.nGsmBlackcellnum = atParamUintInRange(cmd->params[NextParamCount + 1], 0, 4, &paramok);
+                        if (!paramok)
+                        {
+                            sprintf(rsp, "+CME ERROR:Operation Not Allowed");
+                            AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, rsp));
+                        }
                     }
                 }
                 if ((NextParamCount < cmd->param_count) && (atParamUintInRange(cmd->params[NextParamCount], 0, 4, &paramok) == 2)) //gsm
@@ -4704,7 +4895,7 @@ void atCmdHandleBLACKLIST(atCommand_t *cmd)
                         for (j = 0; j < nBlackCellList.nGsmBlackcellnum; j++) //gsm nA,nL,nB
                         {
                             OSI_LOGI(0, "at-black:next NextParamCountfff %d, j %d\n", NextParamCount + 2 + j * 3, j);
-                            nBlackCellList.nGsmBlackCellList[j].nArfcn = atParamUintInRange(cmd->params[NextParamCount + 2 + j * 3], 0, 65536, &paramok);
+                            nBlackCellList.nGsmBlackCellList[j].nArfcn = atParamUintInRange(cmd->params[NextParamCount + 2 + j * 3], 0, 1023, &paramok);
                             if (!paramok)
                             {
                                 OSI_LOGI(0, "at-black:nGsmBlackcellnum j %d, err1\n", j);
@@ -4829,11 +5020,22 @@ bool AT_EMOD_NETMSG_ProcessData(CFW_SIM_ID nSim, CFW_TSM_CURR_CELL_INFO *pCurrCe
         PosiList.txdBm = 255;
     }
     PosiList.iRssi = pCurrCellInfo->nTSM_AvRxLevel;
-    sprintf(nStr, "%x%x%x,%x%x%x,%d,%d,%d,%d,%d,%ld,-%d,%d,%d",
-            PosiList.sMcc[0], PosiList.sMcc[1], PosiList.sMcc[2],
-            PosiList.sMnc[0], PosiList.sMnc[1], PosiList.sMnc[2],
-            PosiList.sLac, PosiList.sCellID, PosiList.iBsic, PosiList.iNetMode, PosiList.iBandInfo,
-            PosiList.nArfcn, PosiList.rxdBm, PosiList.txdBm, PosiList.iRssi);
+    if (PosiList.sMnc[2] <= 9)
+    {
+        sprintf(nStr, "%x%x%x,%x%x%x,%d,%d,%d,%d,%d,%ld,-%d,%d,%d",
+                PosiList.sMcc[0], PosiList.sMcc[1], PosiList.sMcc[2],
+                PosiList.sMnc[0], PosiList.sMnc[1], PosiList.sMnc[2],
+                PosiList.sLac, PosiList.sCellID, PosiList.iBsic, PosiList.iNetMode, PosiList.iBandInfo,
+                PosiList.nArfcn, PosiList.rxdBm, PosiList.txdBm, PosiList.iRssi);
+    }
+    else
+    {
+        sprintf(nStr, "%x%x%x,%x%x,%d,%d,%d,%d,%d,%ld,-%d,%d,%d",
+                PosiList.sMcc[0], PosiList.sMcc[1], PosiList.sMcc[2],
+                PosiList.sMnc[0], PosiList.sMnc[1],
+                PosiList.sLac, PosiList.sCellID, PosiList.iBsic, PosiList.iNetMode, PosiList.iBandInfo,
+                PosiList.nArfcn, PosiList.rxdBm, PosiList.txdBm, PosiList.iRssi);
+    }
     strcat(nStrPosiList, nStr);
     return true;
 }
@@ -4965,4 +5167,166 @@ void atCfwNwInit(void)
         EV_CFW_EMC_NUM_LIST_IND, _onEV_CFW_EMC_NUM_LIST_IND,
 
         0);
+}
+
+void atCmdHandleNSTCFG(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    CFW_NW_NST_TX_PARA_CONFIG nst_para_config;
+    if (cmd->type == AT_CMD_SET)
+    {
+        // +CFGNSTFUN=<band>[,<band_indicator>[,<channel>[,<bw>[,<pwr>[,<modulation>]]]]]
+
+        memset(&nst_para_config, 0, sizeof(CFW_NW_NST_TX_PARA_CONFIG));
+        bool paramok = true;
+        if (cmd->param_count > 6)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        if (cmd->param_count >= 1)
+        {
+            uint16_t band = atParamUintInRange(cmd->params[0], 0, 65536, &paramok);
+            OSI_LOGI(0, "atCmdHandleNSTCFG set band is: %d", band);
+            if (!paramok)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            nst_para_config.band = band;
+        }
+        if (cmd->param_count >= 2)
+        {
+            uint16_t band_indicator = atParamUintInRange(cmd->params[1], 0, 65536, &paramok);
+            OSI_LOGI(0, "atCmdHandleNSTCFG set band_indicator is: %d", band_indicator);
+            if (!paramok)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            nst_para_config.band_indicator = band_indicator;
+        }
+        if (cmd->param_count >= 3)
+        {
+            uint32_t channel = atParamUintInRange(cmd->params[2], 0, 65536, &paramok);
+            OSI_LOGI(0, "atCmdHandleNSTCFG set channel is: %d", channel);
+            if (!paramok)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            nst_para_config.channel = channel;
+        }
+        if (cmd->param_count >= 4)
+        {
+            uint32_t bw = atParamUintInRange(cmd->params[3], 0, 65536, &paramok);
+            OSI_LOGI(0, "atCmdHandleNSTCFG set bw is: %d", bw);
+            if (!paramok)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            nst_para_config.bw = bw;
+        }
+        if (cmd->param_count >= 5)
+        {
+            uint32_t pwr = atParamUintInRange(cmd->params[4], 0, 65536, &paramok);
+            OSI_LOGI(0, "atCmdHandleNSTCFG set pwr is: %d", pwr);
+            if (!paramok)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            nst_para_config.pwr = pwr;
+        }
+        if (cmd->param_count >= 6)
+        {
+            uint32_t modulation = atParamUintInRange(cmd->params[5], 0, 65536, &paramok);
+            OSI_LOGI(0, "atCmdHandleNSTCFG set modulation is: %d", modulation);
+            if (!paramok)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            nst_para_config.modulation = modulation;
+        }
+        if (CFW_NstConfig(&nst_para_config, nSim) != 0)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        RETURN_OK(cmd->engine);
+    }
+    else if (AT_CMD_TEST == cmd->type)
+    {
+        atCmdRespInfoText(cmd->engine, "+NSTCFG=<band>[,<band_indicator>[,<channel>[,<bw>[,<pwr>[,<modulation>]]]]]");
+        RETURN_OK(cmd->engine);
+    }
+    else
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
+    }
+}
+
+uint8_t g_Mode_NST = 0xFF;
+void atCmdHandleNST(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    if (cmd->type == AT_CMD_SET)
+    {
+        // +CFGNASMODE=<mode>;
+        //<mode> is 1 means start,<mode> is 0 means stop
+        bool paramok = true;
+        if (cmd->param_count != 1)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        uint8_t mode = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        OSI_LOGI(0, "atCmdHandleNST set mode is: %d", mode);
+        if (!paramok)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        g_Mode_NST = mode;
+        if (mode == 1)
+        {
+            if (CFW_StartNstMode(nSim) != 0)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        else
+        {
+            if (CFW_StopNstMode(nSim) != 0)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        RETURN_OK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_READ)
+    {
+        char rsp[20];
+        if (g_Mode_NST != 0xFF)
+        {
+            sprintf(rsp, "+NST: %d", g_Mode_NST);
+            atCmdRespInfoText(cmd->engine, rsp);
+        }
+        atCmdRespOK(cmd->engine);
+    }
+    else if (AT_CMD_TEST == cmd->type)
+    {
+        atCmdRespInfoText(cmd->engine, "AT+NST=<mode>");
+        RETURN_OK(cmd->engine);
+    }
+    else
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
+    }
+}
+void atCmdHandleT3302(atCommand_t *cmd)
+{
+    if (cmd->type == AT_CMD_SET)
+    {
+        bool paramok = true;
+        if (cmd->param_count != 1)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        uint32_t v = atParamUintInRange(cmd->params[0], 0, 0xFFFFFFFF, &paramok);
+        OSI_LOGI(0, "T3302 set value: %u", v);
+
+        if (!paramok)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        if (CFW_SetT3302(v) != ERR_SUCCESS)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+        RETURN_OK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_READ)
+    {
+        char rsp[20] = {
+            0x00,
+        };
+        sprintf(rsp, "+T3302: %lu", CFW_GetT3302());
+        atCmdRespInfoText(cmd->engine, rsp);
+        atCmdRespOK(cmd->engine);
+    }
+    else if (AT_CMD_TEST == cmd->type)
+    {
+        atCmdRespInfoText(cmd->engine, "+T3302=<value>");
+        RETURN_OK(cmd->engine);
+    }
+    else
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
+    }
 }

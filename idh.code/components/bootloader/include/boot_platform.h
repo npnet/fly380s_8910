@@ -28,14 +28,91 @@ typedef enum bootResetMode
     BOOT_RESET_FORCE_DOWNLOAD, ///< reset to force download mode
 } bootResetMode_t;
 
-void bootPanic(void);
-void bootDelayUS(uint32_t us);
-void bootDebugEvent(uint32_t event);
-uint32_t bootHWTick16K(void);
+typedef enum
+{
+    BOOT_DOWNLOAD_UART1 = 0x01,
+    BOOT_DOWNLOAD_UART2 = 0x02,
+    BOOT_DOWNLOAD_UART3 = 0x03,
+    BOOT_DOWNLOAD_USERIAL = 0x08,
+} bootDownloadMode_t;
+
+#define BOOT_DNLD_FROM_UART(mode) ((mode) >= BOOT_DOWNLOAD_UART1 && (mode) <= BOOT_DOWNLOAD_UART3)
+#define BOOT_DNLD_FROM_USERIAL(mode) ((mode) == BOOT_DOWNLOAD_USERIAL)
+
+/**
+ * \brief image entry prototype
+ */
+typedef void (*bootJumpFunc_t)(uint32_t param);
+
+/**
+ * \brief reset the chip
+ *
+ * \param mode  reboot mode
+ */
 void bootReset(bootResetMode_t mode);
+
+/**
+ * \brief power off the chip
+ */
 void bootPowerOff(void);
+
+/**
+ * \brief check if the chip is boot from psm
+ *
+ * \return
+ *      - true if from psm else false
+ */
 bool bootIsFromPsmSleep(void);
 int bootPowerOnCause(void);
+
+/**
+ * \brief force update current version if secure boot enabled
+ *
+ * \param version   the version
+ * \return
+ *      - true on succeed else false
+ */
+bool bootUpdateVersion(uint32_t version);
+
+/**
+ * \brief check if secure boot enabled
+ *
+ * \return
+ *      - true if ebable secure boot else false
+ */
+bool bootSecureBootEnable(void);
+
+/**
+ * \brief if second bootloader enabled, return the offset from the first
+ *        bootloader start address in bytes
+ *
+ * \return
+ *      - 0     the second bootloader not support
+ *      - other the second bootloader start address from the first one.
+ *              (first bootloader address + this offset = second bootloader address)
+ */
+uint32_t bootSecondOffsetBytes(void);
+
+/**
+ * \brief setup med configuration
+ */
+void bootMedConfig(void);
+
+/**
+ * \brief Enable the funtion pin reset.
+ */
+void bootResetPinEnable(void);
+
+/**
+ * \brief jump to image entry
+ *
+ * There are some housekeeping before jump. For 8910, D-cache cleanup
+ * should be called outside.
+ *
+ * \param param jump entry parameter
+ * \param entry jump entry
+ */
+void bootJumpImageEntry(unsigned param, bootJumpFunc_t entry);
 
 #ifdef __cplusplus
 }

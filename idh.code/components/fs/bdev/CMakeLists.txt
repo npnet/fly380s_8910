@@ -10,10 +10,13 @@
 # without further testing or modification.
 
 set(target bdev)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC
     src/block_device.c
     src/tflash_block_device.c
-    src/partition_block_device.c)
+    src/partition_block_device.c
+)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_FS)
 target_include_directories(${target} PUBLIC include)
@@ -23,4 +26,3 @@ include(core.cmake)
 
 relative_glob(srcs include/*.h src/*.c src/*.h)
 beautify_c_code(${target} ${srcs})
-

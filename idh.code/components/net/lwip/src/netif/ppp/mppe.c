@@ -123,7 +123,7 @@ mppe_init(ppp_pcb *pcb, ppp_mppe_state *state, u8_t options)
 	else if (options & MPPE_OPT_40)
 		state->keylen = 8;
 	else {
-		PPPDEBUG(LOG_DEBUG, ("%s[%d]: unknown key length\n", debugstr,
+		LWIP_DEBUGF(LOG_DEBUG, (0, "[%d]: unknown key length\n", 
 			pcb->netif->num));
 		lcp_close(pcb, "MPPE required but peer negotiation failed");
 		return;
@@ -140,17 +140,15 @@ mppe_init(ppp_pcb *pcb, ppp_mppe_state *state, u8_t options)
 		char mkey[sizeof(state->master_key) * 2 + 1];
 		char skey[sizeof(state->session_key) * 2 + 1];
 
-		PPPDEBUG(LOG_DEBUG, ("%s[%d]: initialized with %d-bit %s mode\n",
-		       debugstr, pcb->netif->num, (state->keylen == 16) ? 128 : 40,
-		       (state->stateful) ? "stateful" : "stateless"));
+		LWIP_DEBUGF(LOG_DEBUG, (0x10007841, "[%d]: initialized with %d-bit mode\n",
+		       pcb->netif->num, (state->keylen == 16) ? 128 : 40));
 
 		for (i = 0; i < (int)sizeof(state->master_key); i++)
 			sprintf(mkey + i * 2, "%02x", state->master_key[i]);
 		for (i = 0; i < (int)sizeof(state->session_key); i++)
 			sprintf(skey + i * 2, "%02x", state->session_key[i]);
-		PPPDEBUG(LOG_DEBUG,
-		       ("%s[%d]: keys: master: %s initial session: %s\n",
-		       debugstr, pcb->netif->num, mkey, skey));
+		LWIP_DEBUGF(LOG_DEBUG, (0x10007842, "[%d]: keys: master:  initial session: \n",
+		       pcb->netif->num));
 	}
 #endif /* PPP_DEBUG */
 
@@ -221,7 +219,7 @@ mppe_compress(ppp_pcb *pcb, ppp_mppe_state *state, struct pbuf **pb, u16_t proto
 	pl = (u8_t*)np->payload;
 
 	state->ccount = (state->ccount + 1) % MPPE_CCOUNT_SPACE;
-	PPPDEBUG(LOG_DEBUG, ("mppe_compress[%d]: ccount %d\n", pcb->netif->num, state->ccount));
+	LWIP_DEBUGF(LOG_DEBUG, (0x10007843, "mppe_compress[%d]: ccount %d\n", pcb->netif->num, state->ccount));
 	/* FIXME: use PUT* macros */
 	pl[0] = state->ccount>>8;
 	pl[1] = state->ccount;
@@ -231,7 +229,7 @@ mppe_compress(ppp_pcb *pcb, ppp_mppe_state *state, struct pbuf **pb, u16_t proto
 	    (state->bits & MPPE_BIT_FLUSHED)) {	/* CCP Reset-Request  */
 		/* We must rekey */
 		if (state->stateful) {
-			PPPDEBUG(LOG_DEBUG, ("mppe_compress[%d]: rekeying\n", pcb->netif->num));
+			LWIP_DEBUGF(LOG_DEBUG, (0x10007844, "mppe_compress[%d]: rekeying\n", pcb->netif->num));
 		}
 		mppe_rekey(state, 0);
 		state->bits |= MPPE_BIT_FLUSHED;
@@ -285,8 +283,7 @@ mppe_decompress(ppp_pcb *pcb, ppp_mppe_state *state, struct pbuf **pb)
 
 	/* MPPE Header */
 	if (n0->len < MPPE_OVHD) {
-		PPPDEBUG(LOG_DEBUG,
-		       ("mppe_decompress[%d]: short pkt (%d)\n",
+		LWIP_DEBUGF(LOG_DEBUG, (0x10007845, "mppe_decompress[%d]: short pkt (%d)\n",
 		       pcb->netif->num, n0->len));
 		state->sanity_errors += 100;
 		goto sanity_error;
@@ -295,25 +292,23 @@ mppe_decompress(ppp_pcb *pcb, ppp_mppe_state *state, struct pbuf **pb)
 	pl = (u8_t*)n0->payload;
 	flushed = MPPE_BITS(pl) & MPPE_BIT_FLUSHED;
 	ccount = MPPE_CCOUNT(pl);
-	PPPDEBUG(LOG_DEBUG, ("mppe_decompress[%d]: ccount %d\n",
+	LWIP_DEBUGF(LOG_DEBUG, (0x10007846, "mppe_decompress[%d]: ccount %d\n",
 	       pcb->netif->num, ccount));
 
 	/* sanity checks -- terminate with extreme prejudice */
 	if (!(MPPE_BITS(pl) & MPPE_BIT_ENCRYPTED)) {
-		PPPDEBUG(LOG_DEBUG,
-		       ("mppe_decompress[%d]: ENCRYPTED bit not set!\n",
+		LWIP_DEBUGF(LOG_DEBUG, (0x10007847, "mppe_decompress[%d]: ENCRYPTED bit not set!\n",
 		       pcb->netif->num));
 		state->sanity_errors += 100;
 		goto sanity_error;
 	}
 	if (!state->stateful && !flushed) {
-		PPPDEBUG(LOG_DEBUG, ("mppe_decompress[%d]: FLUSHED bit not set in "
-		       "stateless mode!\n", pcb->netif->num));
+		LWIP_DEBUGF(LOG_DEBUG, (0x10007848, "mppe_decompress[%d]: FLUSHED bit not set in " "stateless mode!\n", pcb->netif->num));
 		state->sanity_errors += 100;
 		goto sanity_error;
 	}
 	if (state->stateful && ((ccount & 0xff) == 0xff) && !flushed) {
-		PPPDEBUG(LOG_DEBUG, ("mppe_decompress[%d]: FLUSHED bit not set on "
+		LWIP_DEBUGF(LOG_DEBUG, (0x10007849, "mppe_decompress[%d]: FLUSHED bit not set on "
 		       "flag packet!\n", pcb->netif->num));
 		state->sanity_errors += 100;
 		goto sanity_error;

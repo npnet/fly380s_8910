@@ -9,16 +9,16 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/fs_config.h.in ${BINARY_TOP_DIR}/include/fs_config.h)
+configure_file(include/fs_config.h.in ${out_inc_dir}/fs_config.h)
 
 set(target fs)
-add_library(${target} STATIC
-    src/sffs_vfs.c
-    src/vfs.c)
+add_app_libraries($<TARGET_FILE:${target}>)
+
+add_library(${target} STATIC src/sffs_vfs.c src/vfs.c)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_FS)
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel driver bdev sffs fatfs calclib)
+target_include_targets(${target} PRIVATE kernel driver bdev sffs fatfs calclib)
 
 relative_glob(srcs include/*.h src/*.c src/*.h)
 beautify_c_code(${target} ${srcs})

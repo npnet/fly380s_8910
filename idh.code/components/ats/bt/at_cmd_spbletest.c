@@ -26,14 +26,11 @@
 #include "at_engine.h"
 #include "at_command.h"
 #include "at_response.h"
-
-//#include "bt_config.h"
+#include "bt_abs.h"
 
 static char g_bletest_rsp_str[128] = {0};
 
 #ifndef WIN32
-#ifdef BLUETOOTH_SUPPORT_SPRD_BT
-#ifdef BT_NONSIG_SUPPORT
 static bool bletest_bt_rx_data_flag = false;
 static uint32_t rx_data_show_pkt_cnt = 0;
 static uint32_t rx_data_show_pkt_err_cnt = 0;
@@ -42,8 +39,20 @@ static uint32_t rx_data_show_bit_err_cnt = 0;
 static uint8_t rx_data_show_rssi = 0;
 static BT_STATUS rx_data_show_status = BT_SUCCESS;
 #endif
+
+static void BT_SPBLETEST_GetRXDataCallback(const BT_NONSIG_DATA *data)
+{
+#ifndef WIN32
+    rx_data_show_rssi = data->rssi;
+    rx_data_show_status = data->status;
+    rx_data_show_pkt_cnt = data->pkt_cnt;
+    rx_data_show_pkt_err_cnt = data->pkt_err_cnt;
+    rx_data_show_bit_cnt = data->bit_cnt;
+    rx_data_show_bit_err_cnt = data->bit_err_cnt;
+
+    bletest_bt_rx_data_flag = TRUE;
 #endif
-#endif
+}
 
 void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
 {
@@ -131,7 +140,7 @@ void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
                 if (cmd->param_count != 1)
                     RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
-                sprintf((char *)g_bletest_rsp_str, "%s%s%s%d", "+SPBLETEST:", s_bletest_str[bletest_index], "=", 1 /*BT_GetTestMode()*/);
+                sprintf((char *)g_bletest_rsp_str, "%s%s%s%d", "+SPBLETEST:", s_bletest_str[bletest_index], "=", BT_GetTestMode());
                 atCmdRespInfoText(cmd->engine, g_bletest_rsp_str);
                 AT_CMD_RETURN(atCmdRespOK(cmd->engine));
             }
@@ -159,8 +168,8 @@ void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
             {
                 OSI_LOGI(0, "SPBLETEST: quit TEST");
 
-                //UART_SetControllerBqbMode(FALSE);
-                //BT_Stop();
+                UART_SetControllerBqbMode(FALSE);
+                BT_Stop();
 
 #ifdef BT_NONSIG_SUPPORT
                 memset(&spbletest_bt_non_param, 0, sizeof(BT_NONSIG_PARAM));
@@ -181,24 +190,26 @@ void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
                 spbletest_bt_rx_gain_value = 0;
                 spbletest_bt_rx_status = 0;
 
-                //BT_SetTestMode(BT_TESTMODE_NONE);
+                BT_SetTestMode(BT_TESTMODE_NONE);
             }
             else if (1 == type_oper) // enter EUT mode
             {
                 OSI_LOGI(0, "SPBLETEST: enter EUT");
-                //BT_Start();
+                BT_SetTestMode(BT_TESTMODE_SIG);
+                BT_Start();
                 osiThreadSleep(1000); //wait BT init
-                //ble_adv_enable(FALSE);
+                bt_handle_adv_enable(FALSE);
                 osiThreadSleep(100);
-                //UART_SetControllerBqbMode(TRUE);
+                UART_SetControllerBqbMode(TRUE);
                 //BT_SetTestMode(BT_TESTMODE_SIG);
             }
             else if (2 == type_oper) // enter nonSignal mode
             {
                 OSI_LOGI(0, "SPBLETEST: start Non Sig Test");
-                //BT_Start();
+                BT_SetTestMode(BT_TESTMODE_NONSIG);
+                BT_Start();
                 osiThreadSleep(1000); //wait BT init
-                //ble_adv_enable(FALSE);
+                bt_handle_adv_enable(FALSE);
                 osiThreadSleep(100);
                 //BT_SetTestMode(BT_TESTMODE_NONSIG);
             }
@@ -505,7 +516,7 @@ void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
                     //here call the low layer API to stop TX
                     OSI_LOGI(0, "SPBLETEST: stop TX");
 #ifdef BT_NONSIG_SUPPORT
-                    spbletest_bt_status = BT_SetNonSigTxTestMode(false, false, &spbletest_bt_non_param);
+                    spbletest_bt_status = BT_BLE_SetNonSigTxTestMode(false, &spbletest_bt_non_param);
 #endif
                 }
                 else
@@ -556,7 +567,7 @@ void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
                     }
 
 #ifdef BT_NONSIG_SUPPORT
-                    spbletest_bt_status = BT_SetNonSigTxTestMode(false, true, &spbletest_bt_non_param);
+                    spbletest_bt_status = BT_BLE_SetNonSigTxTestMode(true, &spbletest_bt_non_param);
 #endif
                 }
 
@@ -812,7 +823,7 @@ void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
                 OSI_LOGI(0, "SPBLETEST: get RX, enable = %d", enable);
 
 #ifdef BT_NONSIG_SUPPORT
-                spbletest_bt_status = BT_SetNonSigRxTestMode(false, enable, &spbletest_bt_non_param, (BT_ADDRESS *)spbletest_bt_address);
+                spbletest_bt_status = BT_BLE_SetNonSigRxTestMode(enable, &spbletest_bt_non_param, (BT_ADDRESS *)spbletest_bt_address);
 #endif
                 //here call the low layer API to set RX, type_oper is the input x, range [0~1]
                 if (spbletest_bt_status)
@@ -841,7 +852,7 @@ void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
 
                 //here call the low layer API to get RXDATA, such as error_bits, total_bits, error_packets, total_packets, rssi
                 bletest_bt_rx_data_flag = false;
-                spbletest_bt_status = BT_GetNonSigRxData(false, BT_SPBTTEST_GetRXDataCallback);
+                spbletest_bt_status = BT_BLE_GetNonSigRxData((BT_NONSIGCALLBACK)BT_SPBLETEST_GetRXDataCallback);
 
                 if (spbletest_bt_status)
                 {
@@ -869,11 +880,11 @@ void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
                     }
                     else
                     {
-                        OSI_LOGI(0, "rxdata, null. %d %d", spbttest_bt_rx_data_flag, rx_data_show_status);
+                        OSI_LOGI(0, "rxdata, null. %d %d", bletest_bt_rx_data_flag, rx_data_show_status);
                     }
 
-                    sprintf((char *)g_bletest_rsp_str, "%s%s%s%d,%d,%d,%d,0x%x", "+SPBLETEST:", s_bletest_str[bletest_index], "=",
-                            res[0] /*error_bits  990*/, res[1] /*total_bits 1600000*/, res[2] /*error_packets 100*/, res[3] /*total_packets 1024*/, res[4] /*rssi*/);
+                    sprintf((char *)g_bletest_rsp_str, "%s%s%s%u,%u,%u,%u,0x%x", "+SPBLETEST:", s_bletest_str[bletest_index], "=",
+                            (unsigned int)res[0] /*error_bits  990*/, (unsigned int)res[1] /*total_bits 1600000*/, (unsigned int)res[2] /*error_packets 100*/, (unsigned int)res[3] /*total_packets 1024*/, (unsigned int)res[4] /*rssi*/);
                 }
                 else
 #endif

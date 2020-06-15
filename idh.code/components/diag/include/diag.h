@@ -13,16 +13,11 @@
 #ifndef _DIAG_H_
 #define _DIAG_H_
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include "diag_config.h"
+#include "drv_debug_port.h"
 #include "osi_compiler.h"
-#include "osi_vsmap.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+OSI_EXTERN_C_BEGIN
 
 #define LOG_TAG_DIAG OSI_MAKE_LOG_TAG('D', 'I', 'A', 'G')
 
@@ -58,19 +53,15 @@ typedef struct diagMsgHead
  */
 typedef bool (*diagCmdHandle_t)(const diagMsgHead_t *cmd, void *ctx);
 
+/**
+ * \brief diag device type
+ */
 typedef enum
 {
-    DIAG_DEVICE_UNKNOWN = 0,
-    DIAG_DEVICE_UART,
-    DIAG_DEVICE_USERIAL,
+    DIAG_DEVICE_UNKNOWN = 0, ///< unknown
+    DIAG_DEVICE_UART,        ///< uart
+    DIAG_DEVICE_USERIAL,     ///< usb serial
 } diagDevType_t;
-
-/**
- * @brief get diag device type
- *
- * @return  the diag device type
- */
-diagDevType_t diagDeviceType(void);
 
 /**
  * @brief get diag command data from command header
@@ -89,9 +80,18 @@ static inline const void *diagCmdData(const diagMsgHead_t *cmd) { return cmd + 1
 static inline unsigned diagCmdDataSize(const diagMsgHead_t *cmd) { return cmd->len - sizeof(diagMsgHead_t); }
 
 /**
+ * \brief diag device name
+ *
+ * It may be affected by configuration and sysnv.
+ *
+ * \return diag device name
+ */
+unsigned diagDeviceName(void);
+
+/**
  * @brief initialize diag module
  */
-void diagInit(void);
+void diagInit(drvDebugPort_t *port);
 
 /**
  * @brief register diag command handler by type
@@ -180,16 +180,5 @@ bool diagOutputPacket3(const diagMsgHead_t *cmd, const void *sub_header, unsigne
  */
 void diagBadCommand(const diagMsgHead_t *cmd);
 
-/**
- * @brief wait all diag write finished
- * @param timeout   wait timeout in milliseconds
- * @return
- *      - true      finished
- *      - false     timeout
- */
-bool diagWaitWriteFinish(unsigned timeout);
-
-#ifdef __cplusplus
-}
-#endif
+OSI_EXTERN_C_END
 #endif

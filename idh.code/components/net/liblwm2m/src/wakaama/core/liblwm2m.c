@@ -93,6 +93,7 @@ static void prv_deleteServer(lwm2m_server_t * serverP, void *userData)
     if (serverP->sessionH != NULL)
     {
          lwm2m_close_connection(serverP->sessionH, userData);
+         serverP->sessionH = NULL;
     }
     if (NULL != serverP->location)
     {
@@ -120,6 +121,7 @@ static void prv_deleteBootstrapServer(lwm2m_server_t * serverP, void *userData)
     if (serverP->sessionH != NULL)
     {
          lwm2m_close_connection(serverP->sessionH, userData);
+         serverP->sessionH = NULL;
     }
     free_block1_buffer(serverP->block1Data);
     lwm2m_free(serverP);
@@ -213,6 +215,14 @@ void lwm2m_close(lwm2m_context_t * contextP)
     lwm2m_free(contextP);
 }
 
+void lwm2m_delete_context_list(lwm2m_context_t * contextP)
+{
+    prv_deleteServerList(contextP);
+    prv_deleteBootstrapServerList(contextP);
+    prv_deleteObservedList(contextP);
+    prv_deleteTransactionList(contextP);
+}
+
 #ifdef LWM2M_CLIENT_MODE
 static int prv_refreshServerList(lwm2m_context_t * contextP)
 {
@@ -266,14 +276,14 @@ int lwm2m_configure(lwm2m_context_t * contextP,
                     lwm2m_object_t * objectList[])
 {
     int i;
-    //uint8_t found;
+    uint8_t found;
 
-    LOG_ARG("endpointName: \"%s\", msisdn: \"%s\", altPath: \"%s\", numObject: %d", endpointName, msisdn, altPath, numObject);
+    //LOG_ARG("endpointName: \"%s\", msisdn: \"%s\", altPath: \"%s\", numObject: %d", endpointName, msisdn, altPath, numObject);
     // This API can be called only once for now
     if (contextP->endpointName != NULL || contextP->objectList != NULL) return COAP_400_BAD_REQUEST;
 
     if (endpointName == NULL) return COAP_400_BAD_REQUEST;
-    #if 0
+    #if 1
     if (numObject < 3) return COAP_400_BAD_REQUEST;
     // Check that mandatory objects are present
     found = 0;
@@ -409,6 +419,7 @@ next_step:
 #ifdef LWM2M_BOOTSTRAP
         if (contextP->bootstrapServerList != NULL)
         {
+            LOG("lwm2m_bootstrap,contextP->bootstrapServerList != NULL");
             lwm2mPostEvent(contextP->ref,EVETN_IND,LWM2M_EVENT_BOOTSTRAP_START,0,0);
             bootstrap_start(contextP);
             contextP->state = STATE_BOOTSTRAPPING;

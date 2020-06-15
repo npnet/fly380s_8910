@@ -20,6 +20,7 @@ config ATR_CMD_PARAM_MAX
 
 config ATR_CMDLINE_MAX
     int "Max AT command line size"
+    default 2048 if SRV_SIMLOCK_ENABLE
     default 1024
     help
         AT parser command line buffer, including \r and not including terminate
@@ -88,6 +89,13 @@ config ATR_LF_WAIT_MS
 
         So, after \r is received, AT engine will wait a while. If \n comes,
         it will be echoed before handling the command line.
+
+config ATR_CMD_TPLUS_ENABLE
+    bool "support +++ in command line mode"
+    default n
+    help
+        It is a non-standard feature. When enabled, "+++" in command line mode
+        will be regarded as a dummy AT command.
 
 config ATR_CMD_OUTPUT_CACHE_ENABLE
     bool "Enable command engine output cache"
@@ -221,6 +229,19 @@ config ATR_CMUX_OUT_BUFF_SIZE
         overflow, the content of the buffer will be dropped silently, and no data
         will be output for that packet.
 
+config ATR_CMUX_SUBCHANNEL_MIN_IN_BUFF_SIZE
+    int "CMUX sub-channel minimum input buffer size"
+    default 64
+    help
+        CMUX sub-channel input buffer should be able to hold a frame, which can be
+        determined by CMUX max frame size. However, it is possible that peer will
+        send frame larger than the max frame size parameter. So, this option can
+        set a minimum input buffer size. When max frame size parameter is less than
+        this option, the input buffer size will use this option.
+
+        It will just consume a little more memory, when max frame size parameter is
+        very small.
+
 endif
 
 config ATR_PROFILE_COUNT
@@ -352,5 +373,11 @@ config ATS_SGCC_CATM_SUPPORT
     default n
     help
         When defined, SGCC CATM command will be used.
+
+config ATR_TB_API_SUPPORT
+    bool "Support TBox reference API"
+    default n
+    help
+        When defined, TBox reference API can be used.
 
 endmenu

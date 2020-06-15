@@ -22,42 +22,6 @@ extern "C" {
 #endif
 
 /**
- * \brief tiny helper for buffer pointer and size
- */
-typedef struct
-{
-    uintptr_t ptr; ///< buffer pointer
-    unsigned size; ///< buffer size
-} osiBuffer_t;
-
-/**
- * \brief contiguous buffer, with size as first word
- */
-typedef struct
-{
-    uint32_t size;    ///< size the following data
-    uint32_t data[0]; ///< data
-} osiBufSize32_t;
-
-/**
- * \brief contiguous buffer, with size as first short
- */
-typedef struct
-{
-    uint16_t size;    ///< size the following data
-    uint16_t data[0]; ///< data
-} osiBufSize16_t;
-
-/**
- * \brief contiguous buffer, with size as first byte
- */
-typedef struct
-{
-    uint8_t size;    ///< size the following data
-    uint8_t data[0]; ///< data
-} osiBufSize8_t;
-
-/**
  * \brief byte buffer with external assigned memory
  */
 typedef struct
@@ -128,7 +92,7 @@ static inline void osiByteBufClear(osiByteBuf_t *p)
  */
 static inline bool osiByteBufIsFull(osiByteBuf_t *p)
 {
-    return (p->len == 0);
+    return p->len >= p->size;
 }
 
 /**
@@ -139,7 +103,7 @@ static inline bool osiByteBufIsFull(osiByteBuf_t *p)
  */
 static inline bool osiByteBufIsEmpty(osiByteBuf_t *p)
 {
-    return p->len >= p->size;
+    return (p->len == 0);
 }
 
 /**

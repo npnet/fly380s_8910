@@ -1099,7 +1099,7 @@ static void tcpip_rsp(void *param)
                 OSI_LOGI(0, " port:%d %d", stLocalAddr.sin_port, ntohs(stLocalAddr.sin_port));
                 AT_StrNCpy(g_uMynetContexts.nTcpipParas[i].uLocalip, inet_ntoa(stLocalAddr.sin_addr), AT_MYNET_TCPIP_HOSTLEN);
                 g_uMynetContexts.nTcpipParas[i].uLocalip[AT_MYNET_TCPIP_HOSTLEN - 1] = '\0';
-                sys_arch_printf("tcpipParas->uLocalip=%s", tcpipParas->uLocalip);
+                OSI_LOGXI(OSI_LOGPAR_S, 0, "tcpipParas->uLocalip=%s", tcpipParas->uLocalip);
                 gMynetlocalport[i].tcp_port = ntohs(stLocalAddr.sin_port);
                 break;
             }
@@ -2429,7 +2429,7 @@ void AT_TCPIP_CmdFunc_MYNETOPEN(atCommand_t *cmd)
                 OSI_LOGI(0, " port:%d %d", stLocalAddr.sin_port, ntohs(stLocalAddr.sin_port));
                 AT_StrNCpy(tcpipParas->uLocalip, inet_ntoa(stLocalAddr.sin_addr), AT_MYNET_TCPIP_HOSTLEN);
                 tcpipParas->uLocalip[AT_MYNET_TCPIP_HOSTLEN - 1] = '\0';
-                sys_arch_printf("tcpipParas->uLocalip=%s", tcpipParas->uLocalip);
+                OSI_LOGXI(OSI_LOGPAR_S, 0, "tcpipParas->uLocalip=%s", tcpipParas->uLocalip);
                 if (tcpipParas->uProtocol == CFW_TCPIP_IPPROTO_UDP)
                     gMynetlocalport[i].udp_port = ntohs(stLocalAddr.sin_port);
                 else

@@ -16,15 +16,216 @@
 #include "osi_log.h"
 #include "at_cfg.h"
 #include "at_cfw.h"
+#include "at_cmd_ss.h"
+#include "cfw_event.h"
 #include "cfw_errorcode.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <assert.h>
-#include "at_cmd_ss.h"
+
+uint8_t g_ss_ussdVer = 2;
+//#define AT_MAX_DIGITS_USSD 183
+#define MAX_LENGTH_STRING_USSD 160
+#define MAX_LENGTH_BUFF 256
+#define DEFAULT_ALPHABET 0x0f
+bool gATSATSendUSSDFlag[NUMBER_OF_SIM]; //extern bool gATSATSendUSSDFlag[NUMBER_OF_SIM]; <-at_cmd_sat.c
 
 static bool AT_SS_IsValidPhoneNumber(const char *s, uint8_t size, bool *bIsInternational);
+typedef struct
+{
+    uint8_t ussd_input[AT_MAX_DIGITS_USSD];
+    bool b_used;
+} AT_USSD_STRING;
+AT_USSD_STRING at_ussdstring[NUMBER_OF_SIM];
+
+struct ussd_record_state
+{
+    uint8_t ussd_valid;
+    uint8_t ussd_num;
+};
+static struct ussd_record_state ussd_state = {0, 0};
+
+typedef enum _AT_MSG_ALPHABET
+{
+    AT_MSG_GSM_7 = 0,
+    AT_MSG_8_BIT_DATA,
+    AT_MSG_UCS2,
+    AT_MSG_RESERVED,
+} AT_MSG_ALPHABET;
+
+uint8_t AT_SS_GetUSSDState()
+{
+    OSI_LOGXI(OSI_LOGPAR_SI, 0x10004509, "%s state=%d", __FUNCTION__, ussd_state.ussd_valid);
+    return ussd_state.ussd_valid;
+}
+
+uint8_t AT_SS_GetUSSDNum()
+{
+    OSI_LOGXI(OSI_LOGPAR_SI, 0x1000450a, "%s num =%d", __FUNCTION__, ussd_state.ussd_num);
+    return ussd_state.ussd_num;
+}
+
+void AT_SS_SetUSSDNum(uint8_t num)
+{
+    OSI_LOGXI(OSI_LOGPAR_SI, 0x10004508, "%s num=%d", __FUNCTION__, num);
+    ussd_state.ussd_valid = 1;
+    ussd_state.ussd_num = num;
+}
+
+void AT_SS_ResetUSSDState()
+{
+    OSI_LOGXI(OSI_LOGPAR_S, 0x080000a1, "%s ", __FUNCTION__);
+    ussd_state.ussd_valid = 0;
+    ussd_state.ussd_num = 0;
+}
+
+//Parse TP-DCS , more in "3G TS 23.038 V3.3.0"
+void AT_USSDParseDCS(uint8_t nInputData, uint8_t *pAlphabet)
+{
+    //Parse TP-DCS , more in "3G TS 23.038 V3.3.0"
+    *pAlphabet = AT_MSG_RESERVED;
+
+    if ((nInputData & 0xf0) == 0x00) // bit(7-0): 0000 xxxx
+    {
+        *pAlphabet = AT_MSG_GSM_7;
+    }
+    else if ((nInputData & 0xf0) == 0x10) // bit(7-0): 0001 xxxx
+    {
+        if ((nInputData & 0x0f) == 0x00) // bit(7-0): 0001 0000
+            *pAlphabet = AT_MSG_GSM_7;
+        else if ((nInputData & 0x0f) == 0x01) // bit(7-0): 0001 0001
+            *pAlphabet = AT_MSG_UCS2;
+        else
+            *pAlphabet = AT_MSG_RESERVED;
+    }
+    else if ((nInputData & 0xc0) == 0x40) //bit(7-0): 01xx xxxx
+    {
+        //Set pAlphabet
+        if ((nInputData & 0x0c) == 0x00) // bit(7-0): 01xx 00xx
+        {
+            *pAlphabet = AT_MSG_GSM_7;
+        }
+        else if ((nInputData & 0x0c) == 0x04) // bit(7-0): 01xx 01xx
+        {
+            *pAlphabet = AT_MSG_8_BIT_DATA;
+        }
+        else if ((nInputData & 0x0c) == 0x08) // bit(7-0): 01xx 10xx
+        {
+            *pAlphabet = AT_MSG_UCS2;
+        }
+        else if ((nInputData & 0x0c) == 0x0c) // bit(7-0): 01xx 11xx
+        {
+            *pAlphabet = AT_MSG_RESERVED;
+        }
+    }
+    else if ((nInputData & 0xf0) == 0x90) //bit(7-0): 1001 xxxx
+    {
+        //Set pAlphabet
+        if ((nInputData & 0x0c) == 0x00) // bit(7-0): 1001 00xx
+        {
+            *pAlphabet = AT_MSG_GSM_7;
+        }
+        else if ((nInputData & 0x0c) == 0x04) // bit(7-0): 1001 01xx
+        {
+            *pAlphabet = AT_MSG_8_BIT_DATA;
+        }
+        else if ((nInputData & 0x0c) == 0x08) // bit(7-0): 1001 10xx
+        {
+            *pAlphabet = AT_MSG_UCS2;
+        }
+        else if ((nInputData & 0x0c) == 0x0c) // bit(7-0): 1001 11xx
+        {
+            *pAlphabet = AT_MSG_RESERVED;
+        }
+    }
+    else if ((nInputData & 0xf0) == 0xf0) //bit(7-0): 1111 0xxx
+    {
+        if ((nInputData & 0x04) == 0x04) // bit(7-0): 1111 01xx
+            *pAlphabet = AT_MSG_8_BIT_DATA;
+        else // bit(7-0): 1111 00xx
+            *pAlphabet = AT_MSG_GSM_7;
+    }
+
+    if (*pAlphabet == AT_MSG_RESERVED)
+    {
+        *pAlphabet = AT_MSG_GSM_7;
+    }
+}
+
+extern at_chset_t cfg_GetTeChset(void);
+
+void _GenerateCUSData(uint8_t *pUSSDString, uint8_t nUSSDLen, uint8_t *pDestUSSDString, uint8_t nUSSDDCS)
+{
+
+    OSI_LOGI(0x1000450b, "_GenerateCUSData nUSSDDCS %d, nUSSDLen: %d\n", nUSSDDCS, nUSSDLen);
+
+    if (nUSSDDCS == AT_MSG_UCS2)
+    {
+        uint8_t *in = NULL;
+        uint8_t nSwitchData = 0x00;
+        uint8_t i = 0x00;
+
+        in = pUSSDString;
+
+        for (i = 0x00; i < nUSSDLen; i++)
+        {
+            nSwitchData = (in[i] >> 4) + (in[i] << 4);
+            in[i] = nSwitchData;
+        }
+    }
+    if (cs_hex == gAtSetting.cscs)
+    {
+        OSI_LOGI(0x1000450c, "_GenerateCUSData cs_hex == cfg_GetTeChset()\n");
+
+        if (nUSSDDCS == AT_MSG_GSM_7 || nUSSDDCS == AT_MSG_8_BIT_DATA)
+        {
+            uint8_t *in = NULL;
+            uint8_t nSwitchData = 0x00;
+            uint8_t i = 0x00;
+
+            in = pUSSDString;
+
+            for (i = 0x00; i < nUSSDLen; i++)
+            {
+                nSwitchData = (in[i] >> 4) + (in[i] << 4);
+                in[i] = nSwitchData;
+            }
+        }
+        cfwBcdToDialString(pUSSDString, nUSSDLen, pDestUSSDString);
+    }
+    else
+    {
+        OSI_LOGI(0x1000450d, "_GenerateCUSData TE Chset not HEX\n");
+        memcpy(pDestUSSDString, pUSSDString, nUSSDLen);
+    }
+}
+
+/*==========================================================================
+ * This function is used to process SS PROC_USS REQ to SSCode related REQ.
+ *=========================================================================*/
+
+uint32_t SS_AT_ReSendProcUssV1Req(uint8_t nUTI, CFW_SIM_ID nSIMID)
+{
+    uint32_t ret;
+    uint8_t srcLen;
+
+    at_ussdstring[nSIMID].b_used = true;
+
+    OSI_LOGXI(OSI_LOGPAR_SS, 0x09000509, "USSD Func: %s ussd_input:%s", __FUNCTION__, at_ussdstring[nSIMID].ussd_input);
+    srcLen = strlen((const char *)at_ussdstring[nSIMID].ussd_input);
+
+    ret = CFW_SsSendUSSD(at_ussdstring[nSIMID].ussd_input, srcLen, 131, 0x0F, nUTI, nSIMID);
+    if (ret != ERR_SUCCESS)
+    {
+        OSI_LOGI(0x0900050a, "SS_ReSendProcUssV1Req()   CFW_CmSendUSSD  ret = %d", ret);
+        return ERR_AT_CME_PHONE_FAILURE;
+    }
+    /*Must add code here*/
+    return ERR_AT_CME_PHONE_FAILURE;
+}
+
 #ifdef PORTING_ON_GOING
 #define AT_SS_DEBUG
 uint8_t g_SsCaocStatus = 0;
@@ -50,8 +251,6 @@ const uint8_t *strRCPUC = "+CPUC:%s,%s";
 const uint8_t *strRCUSD = "+CUSD:%d";
 const uint8_t *strRCOLP = "+COLP:%d";
 
-uint8_t g_ss_ussdVer = 2;
-
 extern void AT_Result_OK(uint32_t uReturnValue, uint32_t uResultCode, uint8_t nDelayTime, uint8_t *pBuffer, uint16_t nDataSize,
                          uint8_t nDLCI, uint8_t nSim);
 extern void AT_Result_Err(uint32_t uErrorCode, uint8_t nErrorType, uint8_t nDLCI, uint8_t nSim);
@@ -62,39 +261,6 @@ extern uint32_t CFW_SimSetPUCT(CFW_SIM_PUCT_INFO *pPUCT, uint8_t *pPin2, uint8_t
 extern uint32_t CFW_SimGetPUCT(uint16_t nUTI, CFW_SIM_ID nSimID);
 extern uint32_t CFW_SimSetACM(uint32_t iCurValue, uint8_t *pPIN2, uint8_t nPinSize, uint16_t nUTI, CFW_SIM_ID nSimID);
 extern uint32_t CFW_SimGetACM(uint16_t nUTI, CFW_SIM_ID nSimID);
-
-struct ussd_record_state
-{
-    uint8_t ussd_valid;
-    uint8_t ussd_num;
-};
-
-static struct ussd_record_state ussd_state = {0, 0};
-void AT_SS_SetUSSDNum(uint8_t num)
-{
-    OSI_LOGXI(OSI_LOGPAR_SI, 0x10004508, "%s num=%d", __FUNCTION__, num);
-    ussd_state.ussd_valid = 1;
-    ussd_state.ussd_num = num;
-}
-
-uint8_t AT_SS_GetUSSDState()
-{
-    OSI_LOGXI(OSI_LOGPAR_SI, 0x10004509, "%s state=%d", __FUNCTION__, ussd_state.ussd_valid);
-    return ussd_state.ussd_valid;
-}
-
-uint8_t AT_SS_GetUSSDNum()
-{
-    OSI_LOGXI(OSI_LOGPAR_SI, 0x1000450a, "%s num =%d", __FUNCTION__, ussd_state.ussd_num);
-    return ussd_state.ussd_num;
-}
-
-void AT_SS_ResetUSSDState()
-{
-    OSI_LOGXI(OSI_LOGPAR_S, 0x080000a1, "%s ", __FUNCTION__);
-    ussd_state.ussd_valid = 0;
-    ussd_state.ussd_num = 0;
-}
 
 uint32_t SS_ReadAocFromSim(uint8_t ucFileType, uint32_t *uiRetAoc)
 {
@@ -236,7 +402,32 @@ static bool AT_SS_IsValidPhoneNumber(const char *s, uint8_t size, bool *bIsInter
     return true;
 }
 
-#ifdef PORTING_ON_GOING
+static void _onEV_CFW_SS_USSD_IND(const osiEvent_t *event)
+{
+    OSI_LOGI(0, "CUSD: In _onEV_CFW_SS_USSD_IND event");
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+
+    char *aucBuffer = (char *)malloc(2 * MAX_LENGTH_STRING_USSD + 30);
+    memset(aucBuffer, 0x00, 2 * MAX_LENGTH_STRING_USSD + 30);
+
+    CFW_SS_USSD_IND_INFO_V2 *pUSSDInd = NULL;
+    uint8_t nUSSDDCS = 0x00;
+    uint8_t aucDestUsd[2 * MAX_LENGTH_STRING_USSD + 2] = {0};
+
+    pUSSDInd = (CFW_SS_USSD_IND_INFO_V2 *)cfw_event->nParam1;
+
+    AT_USSDParseDCS(pUSSDInd->nDcs, &nUSSDDCS);
+    OSI_LOGI(0, "CUSD:pUSSDInd->nDcs=%d, nUSSDDCS: %d\n", pUSSDInd->nDcs, nUSSDDCS);
+    OSI_LOGXI(OSI_LOGPAR_SI, 0, "CUSD:pUsdString=%s nStingSize=%d", pUSSDInd->pUsdString, pUSSDInd->nStingSize);
+    _GenerateCUSData(pUSSDInd->pUsdString, pUSSDInd->nStingSize, aucDestUsd, nUSSDDCS);
+    OSI_LOGI(0, "CUSD:   nUTI = %d\n", cfw_event->nUTI);
+    AT_SS_SetUSSDNum(cfw_event->nUTI);
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "CUSD:EV_CFW_SS_USSD_IND aucDestUsd: %s\n", aucDestUsd);
+    sprintf(aucBuffer, "+CUSD: %u, \"%s\" ,%u\r\n", pUSSDInd->nOption, aucDestUsd, pUSSDInd->nDcs);
+    atCmdRespDefUrcText(aucBuffer);
+    free(aucBuffer);
+}
+
 // ////////////////////////////////////////////////////////////////////////////
 // Name:
 // Description: called by ATM,supplementary service initial
@@ -249,173 +440,15 @@ static bool AT_SS_IsValidPhoneNumber(const char *s, uint8_t size, bool *bIsInter
 //
 // ////////////////////////////////////////////////////////////////////////////
 
-uint32_t AT_SS_Init(void)
+void AT_SS_Init(void)
 {
 
     // global variable initial
-
-    return 0;
+    OSI_LOGI(0, "ss: in AT_SS_INIT nUTI=%d");
+    atEventsRegister(EV_CFW_SS_USSD_IND, _onEV_CFW_SS_USSD_IND,
+                     0);
 }
-typedef enum _AT_MSG_ALPHABET
-{
-    AT_MSG_GSM_7 = 0,
-    AT_MSG_8_BIT_DATA,
-    AT_MSG_UCS2,
-    AT_MSG_RESERVED,
-} AT_MSG_ALPHABET;
-
-//Parse TP-DCS , more in "3G TS 23.038 V3.3.0"
-void AT_USSDParseDCS(uint8_t nInputData, uint8_t *pAlphabet)
-{
-    //Parse TP-DCS , more in "3G TS 23.038 V3.3.0"
-    *pAlphabet = AT_MSG_RESERVED;
-
-    if ((nInputData & 0xf0) == 0x00) // bit(7-0): 0000 xxxx
-    {
-        *pAlphabet = AT_MSG_GSM_7;
-    }
-    else if ((nInputData & 0xf0) == 0x10) // bit(7-0): 0001 xxxx
-    {
-        if ((nInputData & 0x0f) == 0x00) // bit(7-0): 0001 0000
-            *pAlphabet = AT_MSG_GSM_7;
-        else if ((nInputData & 0x0f) == 0x01) // bit(7-0): 0001 0001
-            *pAlphabet = AT_MSG_UCS2;
-        else
-            *pAlphabet = AT_MSG_RESERVED;
-    }
-    else if ((nInputData & 0xc0) == 0x40) //bit(7-0): 01xx xxxx
-    {
-        //Set pAlphabet
-        if ((nInputData & 0x0c) == 0x00) // bit(7-0): 01xx 00xx
-        {
-            *pAlphabet = AT_MSG_GSM_7;
-        }
-        else if ((nInputData & 0x0c) == 0x04) // bit(7-0): 01xx 01xx
-        {
-            *pAlphabet = AT_MSG_8_BIT_DATA;
-        }
-        else if ((nInputData & 0x0c) == 0x08) // bit(7-0): 01xx 10xx
-        {
-            *pAlphabet = AT_MSG_UCS2;
-        }
-        else if ((nInputData & 0x0c) == 0x0c) // bit(7-0): 01xx 11xx
-        {
-            *pAlphabet = AT_MSG_RESERVED;
-        }
-    }
-    else if ((nInputData & 0xf0) == 0x90) //bit(7-0): 1001 xxxx
-    {
-        //Set pAlphabet
-        if ((nInputData & 0x0c) == 0x00) // bit(7-0): 1001 00xx
-        {
-            *pAlphabet = AT_MSG_GSM_7;
-        }
-        else if ((nInputData & 0x0c) == 0x04) // bit(7-0): 1001 01xx
-        {
-            *pAlphabet = AT_MSG_8_BIT_DATA;
-        }
-        else if ((nInputData & 0x0c) == 0x08) // bit(7-0): 1001 10xx
-        {
-            *pAlphabet = AT_MSG_UCS2;
-        }
-        else if ((nInputData & 0x0c) == 0x0c) // bit(7-0): 1001 11xx
-        {
-            *pAlphabet = AT_MSG_RESERVED;
-        }
-    }
-    else if ((nInputData & 0xf0) == 0xf0) //bit(7-0): 1111 0xxx
-    {
-        if ((nInputData & 0x04) == 0x04) // bit(7-0): 1111 01xx
-            *pAlphabet = AT_MSG_8_BIT_DATA;
-        else // bit(7-0): 1111 00xx
-            *pAlphabet = AT_MSG_GSM_7;
-    }
-
-    if (*pAlphabet == AT_MSG_RESERVED)
-    {
-        *pAlphabet = AT_MSG_GSM_7;
-    }
-}
-#define AT_MAX_DIGITS_USSD 183
-
-typedef struct
-{
-    uint8_t ussd_input[AT_MAX_DIGITS_USSD];
-    BOOL b_used;
-} AT_USSD_STRING;
-AT_USSD_STRING at_ussdstring[NUMBER_OF_SIM];
-/*==========================================================================
- * This function is used to process SS PROC_USS REQ to SSCode related REQ.
- *=========================================================================*/
-
-U8 SS_AT_ReSendProcUssV1Req(uint8_t nUTI, CFW_SIM_ID nSIMID)
-{
-    uint32_t ret;
-    uint8_t srcLen;
-
-    at_ussdstring[nSIMID].b_used = TRUE;
-
-    OSI_LOGXI(OSI_LOGPAR_SS, 0x09000509, "USSD Func: %s ussd_input:%s", __FUNCTION__, at_ussdstring[nSIMID].ussd_input);
-    srcLen = strlen(at_ussdstring[nSIMID].ussd_input);
-
-    ret = CFW_SsSendUSSD(at_ussdstring[nSIMID].ussd_input, srcLen, 131, 0x0F, nUTI, nSIMID);
-    if (ret != ERR_SUCCESS)
-    {
-        OSI_LOGI(0x0900050a, "SS_ReSendProcUssV1Req()   CFW_CmSendUSSD  ret = %d", ret);
-        return ERR_AT_CME_PHONE_FAILURE;
-    }
-    /*Must add code here*/
-    return ERR_AT_CME_PHONE_FAILURE;
-}
-
-extern at_chset_t cfg_GetTeChset(void);
-
-void _GenerateCUSData(uint8_t *pUSSDString, uint8_t nUSSDLen, uint8_t *pDestUSSDString, uint8_t nUSSDDCS)
-{
-
-    OSI_LOGI(0x1000450b, "_GenerateCUSData nUSSDDCS %d, nUSSDLen: %d\n", nUSSDDCS, nUSSDLen);
-
-    if (nUSSDDCS == AT_MSG_UCS2)
-    {
-        uint8_t *in = NULL;
-        uint8_t nSwitchData = 0x00;
-        uint8_t i = 0x00;
-
-        in = pUSSDString;
-
-        for (i = 0x00; i < nUSSDLen; i++)
-        {
-            nSwitchData = (in[i] >> 4) + (in[i] << 4);
-            in[i] = nSwitchData;
-        }
-    }
-    if (cs_hex == cfg_GetTeChset())
-    {
-        OSI_LOGI(0x1000450c, "_GenerateCUSData cs_hex == cfg_GetTeChset()\n");
-
-        if (nUSSDDCS == AT_MSG_GSM_7 || nUSSDDCS == AT_MSG_8_BIT_DATA)
-        {
-            uint8_t *in = NULL;
-            uint8_t nSwitchData = 0x00;
-            uint8_t i = 0x00;
-
-            in = pUSSDString;
-
-            for (i = 0x00; i < nUSSDLen; i++)
-            {
-                nSwitchData = (in[i] >> 4) + (in[i] << 4);
-                in[i] = nSwitchData;
-            }
-        }
-        SUL_GsmBcdToAsciiEx(pUSSDString, nUSSDLen, pDestUSSDString);
-    }
-    else
-    {
-        OSI_LOGI(0x1000450d, "_GenerateCUSData TE Chset not HEX\n");
-        SUL_MemCopy8(pDestUSSDString, pUSSDString, nUSSDLen);
-    }
-}
-
+#ifdef PORTING_ON_GOING
 // ////////////////////////////////////////////////////////////////////////////
 // Name:
 // Description: called by ATM,supplementary service asynchronous event process
@@ -427,7 +460,7 @@ void _GenerateCUSData(uint8_t *pUSSDString, uint8_t nUSSDLen, uint8_t *pDestUSSD
 // Remark:      same respond for different function,from flag to process
 //
 // ////////////////////////////////////////////////////////////////////////////
-extern BOOL gATSATSendUSSDFlag[NUMBER_OF_SIM];
+
 void AT_SS_AsyncEventProcess(atCommand_t *cmd, const osiEvent_t *event)
 {
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event
@@ -1326,7 +1359,7 @@ void atCmdHandleCCFC(atCommand_t *cmd)
         const char *tempNum = atParamStr(cmd->params[2], &paramok);
         uint8_t ucNumType = atParamDefUint(cmd->params[3], CFW_TELNUMBER_TYPE_UNKNOWN, &paramok);
         uint8_t ucClass = atParamDefUintInList(cmd->params[4], 11, list, 2, &paramok);
-        uint8_t ucTime = atParamDefUintInRange(cmd->params[7], 20, 0, 30, &paramok);
+        uint8_t ucTime = atParamDefUintInRange(cmd->params[7], 20, 1, 30, &paramok);
         size_t ucNumLen = strlen(tempNum);
         if (!paramok)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
@@ -1431,7 +1464,11 @@ void atCmdHandleCLIP(atCommand_t *cmd)
         uint8_t n = atParamDefUintInRange(cmd->params[0], 0, 0, 1, &paramok);
         if (!paramok || cmd->param_count > 1)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
+            // call CSW interface function
+#ifdef CFW_VOLTE_SUPPORT
+        cmd->uti = cfwRequestNoWaitUTI();
+        CFW_SsSetClip(n, cmd->uti, nSim);
+#endif
         gAtSetting.sim[nSim].clip = n;
         RETURN_OK(cmd->engine);
     }
@@ -1484,7 +1521,10 @@ void atCmdHandleCLIR(atCommand_t *cmd)
         uint8_t n = atParamDefUintInRange(cmd->params[0], 0, 0, 2, &paramok);
         if (!paramok || cmd->param_count > 1)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
+#ifdef CFW_VOLTE_SUPPORT
+        cmd->uti = cfwRequestNoWaitUTI();
+        CFW_SsSetClir(n, cmd->uti, nSim);
+#endif
         gAtSetting.sim[nSim].clir = n;
         RETURN_OK(cmd->engine);
     }
@@ -1509,138 +1549,137 @@ void atCmdHandleCLIR(atCommand_t *cmd)
     }
 }
 
-#ifdef PORTING_ON_GOING
-void atCmdHandleCOLP(atCommand_t *cmd)
+void atCmdHandleCSSN(atCommand_t *cmd)
 {
-    uint16_t ucLen;
-    uint8_t ucParaCount = 0;
-    uint32_t uiRetVal = ERR_SUCCESS;
-    int32_t iRetVal = 0;
-
     uint8_t nSim = atCmdGetSim(cmd->engine);
-#ifdef AT_SS_DEBUG
-    // output debug information
-    OSI_LOGXI(OSI_LOGPAR_SI, 0x10004525, "Parameter string: %s  Parameter type: %d\n", pParam->pPara, cmd->type);
-
-#endif
-    if (NULL == pParam)
+    char urc[32];
+    if (cmd->type == AT_CMD_SET)
     {
-        AT_CC_Result_Err(ERR_AT_CME_MEMORY_FAILURE, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-        return;
+        // +CSSN=<n>[,<m>]
+        bool paramok = true;
+
+        uint8_t n;
+        uint8_t m;
+        if (CFW_CfgGetSSN(&n, &m, nSim) != 0)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+        n = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        if (!paramok || (cmd->param_count != 1 && cmd->param_count != 2))
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        if (cmd->param_count == 2)
+        {
+            m = atParamUintInRange(cmd->params[1], 0, 1, &paramok);
+            if (!paramok)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            gAtSetting.sim[nSim].cssu = m;
+        }
+
+        gAtSetting.sim[nSim].cssi = n;
+        CFW_CfgSetSSN(n, m, nSim);
+        RETURN_OK(cmd->engine);
     }
-
-    // check event respond exclusive
-    g_uiCurrentCmdStampSs = pParam->uCmdStamp;
-
-    // at command type judge
-    switch (cmd->type)
+    else if (cmd->type == AT_CMD_TEST)
     {
-        // extend command (set)
-
-    case AT_CMD_SET:
+        sprintf(urc, "%s: (0-1),(0-1)", cmd->desc->name);
+        atCmdRespInfoText(cmd->engine, urc);
+        RETURN_OK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_READ)
     {
-        uint8_t ucPara1 = 0;
-
-        iRetVal = AT_Util_GetParaCount(pParam->pPara, &ucParaCount);
-
-        if (ERR_SUCCESS != iRetVal || ucParaCount > 1)
-        {
-            // return parameter error
-            AT_CC_Result_Err(ERR_AT_CME_OPERATION_NOT_ALLOWED, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-            break;
-        }
-
-        // parameter check
-        if (!ucParaCount)
-        {
-            AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, 0, 0, pParam->nDLCI, nSim);
-            break;
-        }
-
-        // first parameter
-        ucLen = 1;
-        iRetVal = AT_Util_GetParaWithRule(pParam->pPara, 0, AT_UTIL_PARA_TYPE_UINT8, (PVOID)&ucPara1, &ucLen);
-
-        if (ERR_SUCCESS != iRetVal || ucPara1 > 1)
-        {
-            // return parameter error
-            AT_CC_Result_Err(ERR_AT_CME_INVALID_CHAR_INTEXT, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-            break;
-        }
-
-#ifdef AT_SS_DEBUG
-        // output debug information
-        OSI_LOGI(0x10004537, "Para count:%d Parameter 1: %d\n", ucParaCount, ucPara1);
-
-#endif
-
-        // call CSW interface function
-        // uiRetVal = CFW_CfgSetColp(ucPara1);
-        gATCurrentucColp = ucPara1;
-
-#ifdef AT_SS_DEBUG
-        // output debug information
-        OSI_LOGI(0x1000453c, "COLP set ret: %x\n", uiRetVal);
-
-#endif
-        // execute result return
-        if (ERR_SUCCESS == uiRetVal)
-        {
-            AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, 0, 0, pParam->nDLCI, nSim);
-        }
-        else
-        {
-            AT_CC_Result_Err(ERR_AT_CME_EXE_FAIL, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-        }
+        sprintf(urc, "%s: %d,%d", cmd->desc->name, gAtSetting.sim[nSim].cssi, gAtSetting.sim[nSim].cssu);
+        atCmdRespInfoText(cmd->engine, urc);
+        RETURN_OK(cmd->engine);
     }
-
-    break;
-
-        // extend command (test)
-
-    case AT_CMD_TEST:
-        // return command format "+COLP:(0,1)"
-        AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, (uint8_t *)strTCOLP, AT_StrLen(strTCOLP), pParam->nDLCI, nSim);
-        break;
-    case AT_CMD_READ:
+    else
     {
-        // get UTI value
-
-        if (ERR_SUCCESS != uiRetVal)
-        {
-            // get UTI error
-            AT_CC_Result_Err(ERR_AT_CME_EXE_FAIL, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-        }
-        // call CSW interface function
-        uiRetVal = CFW_SsQueryColp(pParam->nDLCI, nSim); // network don't support
-#ifdef AT_SS_DEBUG
-        // output debug information
-        OSI_LOGI(0x1000453d, "COLP read ret: %x\n", uiRetVal);
-#endif
-
-        // execute result return
-        if (ERR_SUCCESS == uiRetVal)
-        {
-            // AT_SS_TRUE_RETURN(ppstResult, CMD_FUNC_SUCC_ASYN, ASYN_DELAY_CLIP, NULL, 0, pParam->nDLCI);
-            AT_CC_Result_OK(CMD_FUNC_SUCC_ASYN, CMD_RC_OK, 5, 0, 0, pParam->nDLCI, nSim);
-        }
-        else
-        {
-            AT_CC_Result_Err(ERR_AT_CME_EXE_FAIL, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-        }
-        break;
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
     }
-
-        // error command type
-
-    default:
-        AT_CC_Result_Err(ERR_AT_UNKNOWN, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-        break;
-    }
-
-    return;
 }
 
+static void COLP_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)
+{
+    //case EV_CFW_SS_QUERY_COLP_RSP
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    char aucBuffer[20] = {0};
+    uint32_t uiErrCode = 0;
+    OSI_LOGI(0, "COLP:Come in COLP_RspCallBack event ID=%d", cfw_event->nEventId);
+
+    if (0 == cfw_event->nType) // success
+    {
+        // parameter1 parsing
+        // 0 Disable  to show the COLP
+        // 1 Enable  to show the COLP
+
+        // parameter2 parsing
+        // 0 COLP not provisioned
+        // 1 COLP provisioned
+        // 2 unknown (e.g. no network, etc.)
+        uint8_t GetColp;
+        uint32_t ColpErrCode = CFW_CfgGetColp(&GetColp, nSim);
+        if (ColpErrCode != 0)
+            RETURN_CME_ERR(cmd->engine, atCfwToCmeError(ColpErrCode));
+        sprintf(aucBuffer, "%s: %u,%u", cmd->desc->name, GetColp, (uint8_t)cfw_event->nParam2);
+        atCmdRespInfoText(cmd->engine, aucBuffer);
+        RETURN_OK(cmd->engine);
+    }
+    else // if (0xfa == cfw_event->nType || (0xfc == cfw_event->nType)) //  Local Error /net work reject
+    {
+        uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
+        RETURN_CME_ERR(cmd->engine, uiErrCode);
+    }
+}
+
+void atCmdHandleCOLP(atCommand_t *cmd)
+{
+    uint32_t uiRetVal = ERR_SUCCESS;
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    OSI_LOGI(0, "COLP:Come In atCmdHandleCOLP nSim=%d", nSim);
+
+    if (AT_CMD_SET == cmd->type)
+    {
+        bool paramok = true;
+        uint8_t n = atParamInt(cmd->params[0], &paramok);
+
+        // call CSW interface function
+#ifdef CFW_VOLTE_SUPPORT
+        cmd->uti = cfwRequestNoWaitUTI();
+        CFW_SsSetColp(n, cmd->uti, nSim);
+#endif
+        uiRetVal = CFW_CfgSetColp(n, nSim);
+        if (ERR_SUCCESS == uiRetVal)
+            RETURN_OK(cmd->engine);
+        else
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+    }
+    else if (AT_CMD_TEST == cmd->type)
+    {
+        char aucBuffer[20] = {0};
+        sprintf(aucBuffer, "%s: (0,1)", cmd->desc->name);
+        atCmdRespInfoText(cmd->engine, aucBuffer);
+        RETURN_OK(cmd->engine);
+    }
+    else if (AT_CMD_READ == cmd->type)
+    {
+        // call CSW interface function
+        cmd->uti = cfwRequestUTI((osiEventCallback_t)COLP_RspCallBack, cmd);
+        uiRetVal = CFW_SsQueryColp(cmd->uti, nSim); // network don't support
+        // output debug information
+        OSI_LOGI(0x1000453d, "COLP read ret: %x\n", uiRetVal);
+        if (ERR_SUCCESS != uiRetVal)
+        {
+            cfwReleaseUTI(cmd->uti);
+            RETURN_CMS_ERR(cmd->engine, atCfwToCmsError(uiRetVal));
+        }
+        RETURN_FOR_ASYNC();
+    }
+
+    else
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+}
+
+#ifdef PORTING_ON_GOING
 // ////////////////////////////////////////////////////////////////////////////
 // Name:
 // Description:
@@ -1706,10 +1745,137 @@ void atCmdHandleCOLR(atCommand_t *cmd)
     }
     if (ppstResult != NULL)
     {
-        AT_FREE(ppstResult);
+        free(ppstResult);
         ppstResult = NULL;
     }
     return;
+}
+#endif
+
+static void CUSD_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)
+{
+    //EV_CFW_SS_SEND_USSD_RSP
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    uint32_t totalLen;
+    char *aucBuffer = NULL;
+    uint32_t uiErrCode = 0;
+    OSI_LOGI(0, "CUSD_RspCallBack:event ID=%d type=%d", cfw_event->nEventId, cfw_event->nType);
+    uint8_t nUSSDstr[256] = {
+        0x00,
+    };
+    if (0 == cfw_event->nType) // success
+    {
+        CFW_SS_USSD_IND_INFO_V2 *pstSsUssdIndInfo = NULL;
+        uint8_t aucDestUsd[2 * MAX_LENGTH_STRING_USSD + 2] = {0}; // 140
+        uint8_t nUSSDDCS = 0xff;
+
+        if (cfw_event->nEventId != EV_CFW_SS_SEND_USSD_RSP)
+        {
+            RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
+        }
+        OSI_LOGI(0, "CUSD: CUSD_RspCallBack cfw_event->nParam1=%d", cfw_event->nParam1);
+        if (cfw_event->nParam1 == 0)
+        {
+            AT_SS_ResetUSSDState();
+            if (0 != gATSATSendUSSDFlag[nSim])
+            {
+                OSI_LOGI(0, "CUSD:ATSendUSSD:gATSATSendUSSDFlag[nSim]%d\n", gATSATSendUSSDFlag[nSim]);
+                CFW_SatResponse(0x12, 0x00, 0x00, 0x00, 0x00, cfw_event->nUTI, nSim);
+                gATSATSendUSSDFlag[nSim] = false;
+            }
+            RETURN_OK(cmd->engine);
+        }
+
+        pstSsUssdIndInfo = (CFW_SS_USSD_IND_INFO_V2 *)cfw_event->nParam1;
+        if (pstSsUssdIndInfo == NULL)
+        {
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        OSI_LOGI(0, "CUSD: CUSD_RspCallBack nOption=%d", pstSsUssdIndInfo->nOption);
+
+        if (pstSsUssdIndInfo->nOption != 0 && pstSsUssdIndInfo->nOption != 1)
+            AT_SS_SetUSSDNum(cfw_event->nUTI);
+        if (gAtCfwCtx.sim[nSim].ussd && cfw_event->nParam1)
+        {
+            bool isStingSize = false;
+            if (pstSsUssdIndInfo->nStingSize)
+            {
+                isStingSize = true;
+                memset(nUSSDstr, 0, 256);
+                if (pstSsUssdIndInfo->nStingSize != 0)
+                {
+                    nUSSDstr[0] = pstSsUssdIndInfo->nDcs;
+                    memcpy(&nUSSDstr[1], pstSsUssdIndInfo->pUsdString, pstSsUssdIndInfo->nStingSize);
+                }
+                else
+                {
+                    RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                }
+
+                //nUSSDDCS = AT_CBS_CheckDCS(pstSsUssdIndInfo->nDcs);
+                AT_USSDParseDCS(pstSsUssdIndInfo->nDcs, &nUSSDDCS);
+                nUSSDstr[0] = nUSSDDCS;
+                OSI_LOGI(0, "CUSD:pstSsUssdIndInfo->nDcs=%d, nUSSDDCS: %d\n", pstSsUssdIndInfo->nDcs, nUSSDDCS);
+                OSI_LOGXI(OSI_LOGPAR_SI, 0, "CUSD:pUsdString=%s nStingSize=%d", pstSsUssdIndInfo->pUsdString, pstSsUssdIndInfo->nStingSize);
+                _GenerateCUSData(pstSsUssdIndInfo->pUsdString, pstSsUssdIndInfo->nStingSize, aucDestUsd, nUSSDDCS);
+                OSI_LOGXI(OSI_LOGPAR_SI, 0, "CUSD:EV_CFW_SS_SEND_USSD_RSP aucDestUsd: %s, strlen(aucDestUsd)\n", aucDestUsd);
+
+                totalLen = strlen("+CUSD: %u, \"%s\" ,%u") + 2 * MAX_LENGTH_STRING_USSD + 2;
+            }
+            else
+            {
+                totalLen = strlen("+CUSD: %u") + 1;
+            }
+
+            aucBuffer = malloc(totalLen);
+            if (aucBuffer == NULL)
+                RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+            memset(aucBuffer, 0x00, totalLen);
+            if (isStingSize)
+                sprintf(aucBuffer, "+CUSD: %u", pstSsUssdIndInfo->nOption);
+            else
+                sprintf(aucBuffer, "+CUSD: %u, \"%s\" ,%u", pstSsUssdIndInfo->nOption, aucDestUsd,
+                        pstSsUssdIndInfo->nDcs);
+
+            atCmdRespInfoText(cmd->engine, aucBuffer);
+            memset(aucBuffer, 0x00, totalLen);
+            free(aucBuffer);
+            aucBuffer = NULL;
+            RETURN_OK(cmd->engine);
+        }
+        else
+        {
+            OSI_LOGI(0, "CUSD:cfw_event->nParam1=%d ussd_param1=%d", cfw_event->nParam1, gAtCfwCtx.sim[nSim].ussd);
+            RETURN_CME_CFW_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+    }
+    else // if (0xfa == stCfwEvent.nType || (0xfc == stCfwEvent.nType)) //  Local Error /net work reject
+    {
+        OSI_LOGXI(OSI_LOGPAR_SI, 0, "SS func: %s nType = %x", __FUNCTION__, cfw_event->nType);
+        OSI_LOGI(0, "CUSD:CUSD_RspCallBack cfw_event->nParam2=%d", cfw_event->nParam2);
+        if (cfw_event->nEventId == EV_CFW_SS_SEND_USSD_RSP)
+        {
+            if ((cfw_event->nParam2 == 0x24) || (cfw_event->nParam2 == 0x22))
+            {
+                RETURN_OK(cmd->engine);
+            }
+            uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
+            RETURN_CME_CFW_ERR(cmd->engine, uiErrCode);
+        }
+
+        if (0xFC == cfw_event->nType)
+        {
+            uiErrCode = SS_AT_ReSendProcUssV1Req(cfw_event->nUTI, nSim);
+            RETURN_CME_CFW_ERR(cmd->engine, uiErrCode);
+        }
+        else
+        {
+            AT_SS_ResetUSSDState();
+            uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
+            RETURN_CME_CFW_ERR(cmd->engine, uiErrCode);
+        }
+    }
 }
 
 // ////////////////////////////////////////////////////////////////////////////
@@ -1726,106 +1892,34 @@ void atCmdHandleCOLR(atCommand_t *cmd)
 // ////////////////////////////////////////////////////////////////////////////
 void atCmdHandleCUSD(atCommand_t *cmd)
 {
-    uint16_t ucLen;
-    uint8_t ucParaCount = 0;
-    uint8_t *pucParam = (uint8_t *)(pParam->pPara);
-    uint32_t uiRetVal;
-    int32_t iRetVal = 0;
-
+    uint32_t uiRetVal = 0;
     uint8_t nSim = atCmdGetSim(cmd->engine);
-#ifdef AT_SS_DEBUG
-    OSI_LOGXI(OSI_LOGPAR_SI, 0x10004525, "Parameter string: %s  Parameter type: %d\n", pParam->pPara, cmd->type);
-#endif
 
-    if (NULL == pParam)
+    OSI_LOGI(0, "CUSD: Come In atCmdHandleCUSD nSim=%d", nSim);
+    if (AT_CMD_SET == cmd->type)
     {
-        AT_CC_Result_Err(ERR_AT_CME_MEMORY_FAILURE, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-        return;
-    }
-
-    g_uiCurrentCmdStampSs = pParam->uCmdStamp;
-
-    switch (cmd->type)
-    {
-    case AT_CMD_SET:
-    {
-        uint8_t ucOption = 3;             // MS originate USSD service
-        uint8_t ucDcs = DEFAULT_ALPHABET; // default alphabet 0x0F
-        uint8_t ucPara1 = 0, aucPara2[MAX_LENGTH_STRING_USSD + 2] = {0};
-        uint16_t aucPara2len = 0;
+        uint8_t ucOption = 3; // MS originate USSD service
         uint8_t u7bitStr[MAX_LENGTH_STRING_USSD] = {
             0,
         },
                 u7bitLen = 0;
+        OSI_LOGI(0, "CUSD: param_count=%d", cmd->param_count);
 
-        iRetVal = AT_Util_GetParaCount(pucParam, &ucParaCount);
+        bool paramok = true;
+        uint8_t ucPara1 = atParamUintInRange(cmd->params[0], 0, 2, &paramok);
+        const char *aucPara2 = atParamOptStr(cmd->params[1], &paramok);
+        uint8_t ucDcs = atParamDefUint(cmd->params[2], 0, &paramok);
+        size_t aucPara2len = strlen(aucPara2);
+        if (!paramok)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
-        if (ERR_SUCCESS != iRetVal || ucParaCount > 3)
-        {
-            AT_CC_Result_Err(ERR_AT_CME_PARAM_INVALID, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-            break;
-        }
-
-        if (!ucParaCount)
-        {
-            AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, 0, 0, pParam->nDLCI, nSim);
-            break;
-        }
-
-        if (ucParaCount > 0)
-        {
-            ucLen = 1;
-            iRetVal = AT_Util_GetParaWithRule(pucParam, 0, AT_UTIL_PARA_TYPE_UINT8, (PVOID)&ucPara1, &ucLen);
-
-            if (ERR_SUCCESS != iRetVal || ucPara1 > 2)
-            {
-                AT_CC_Result_Err(ERR_AT_CME_PARAM_INVALID, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-                break;
-            }
-        }
-
-        if (ucParaCount > 1)
-        {
-            aucPara2len = MAX_LENGTH_STRING_USSD;
-            iRetVal = AT_Util_GetParaWithRule(pucParam, 1, AT_UTIL_PARA_TYPE_STRING, (PVOID)aucPara2, &aucPara2len);
-
-            if (ERR_SUCCESS != iRetVal)
-            {
-                AT_CC_Result_Err(ERR_AT_CME_INVALID_CHAR_INTEXT, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-                break;
-            }
-        }
-
-        ucLen = 0;
-        if (ucParaCount > 2)
-        {
-            ucLen = sizeof(uint8_t);
-            iRetVal = AT_Util_GetParaWithRule(pucParam, 2, AT_UTIL_PARA_TYPE_UINT8, (PVOID)&ucDcs, &ucLen);
-
-            if (ERR_SUCCESS != iRetVal)
-            {
-                // return parameter error
-                AT_CC_Result_Err(ERR_AT_CME_PARAM_INVALID, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-                break;
-            }
-        }
-
-        OSI_LOGXI(OSI_LOGPAR_IISI, 0x1000453f, "Para count:%d Parameter 1: %d  string: %s ucDcs: %d\n", ucParaCount, ucPara1, aucPara2, ucDcs);
+        OSI_LOGXI(OSI_LOGPAR_ISI, 0x1000453f, "CUSD:Parameter 1: %d  string: %s ucDcs: %d\n", ucPara1, aucPara2, ucDcs);
         //
         // [[hameina[mod] 2008-4-14 for bug 8005: if send USSD string failed, the first param can also be changed.
-        if (ucParaCount == 1 && ucPara1 != 2) // hameina[+]07.10.16
+        if (cmd->param_count == 1 && ucPara1 != 2) // hameina[+]07.10.16
         {
-            if (1 == ucPara1)
-            {
-                gATCurrentss_ussd = 1;
-            }
-            else if (0 == ucPara1)
-            {
-                gATCurrentss_ussd = 0;
-            }
-
-            AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, 0, 0, pParam->nDLCI, nSim);
-            break;
+            gAtCfwCtx.sim[nSim].ussd = ucPara1;
+            RETURN_OK(cmd->engine);
         }
 
         /*
@@ -1848,16 +1942,15 @@ void atCmdHandleCUSD(atCommand_t *cmd)
         }
         else
         {
-            if (ucLen) // has dcs
+            if (ucDcs != 0) // has dcs
             {
                 int32_t rst;
-
                 g_ss_ussdVer = 2;
                 ucOption = 3;
                 rst = SUL_Encode7Bit(aucPara2, u7bitStr, aucPara2len);
-                OSI_LOGI(0x10004540, "rst= %u \n", rst);
+                OSI_LOGI(0x10004540, "CUSD:rst= %u \n", rst);
                 u7bitLen = (aucPara2len % 8) ? (aucPara2len * 7 / 8 + 1) : (aucPara2len * 7 / 8);
-                OSI_LOGI(0x10004541, "u7bitLen = %u \n", u7bitLen);
+                OSI_LOGI(0x10004541, "CUSD:u7bitLen = %u \n", u7bitLen);
                 u7bitStr[u7bitLen] = '\0';
             }
             else
@@ -1866,218 +1959,84 @@ void atCmdHandleCUSD(atCommand_t *cmd)
                 ucOption = 131;
             }
         }
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "CUSD:u7bitStr=%s", u7bitStr);
+        OSI_LOGXI(OSI_LOGPAR_SI, 0, "CUSD:aucPara2=%s aucPara2len=%d", aucPara2, aucPara2len);
 
-        OSI_LOGI(0x10004542, "USSD AT:  u7bitLen=%d ucDcs= %d   pParam->nDLCI=%d, u7bitStr[0]=0x%x, u7bitStr[1]=0x%x\n",
-                 u7bitLen, ucDcs, pParam->nDLCI, u7bitStr[0], u7bitStr[1]);
+        OSI_LOGI(0x10004542, "CUSD: u7bitLen=%d ucDcs= %d, u7bitStr[0]=0x%d, u7bitStr[1]=0x%d\n",
+                 u7bitLen, ucDcs, u7bitStr[0], u7bitStr[1]);
 
-        memcpy(at_ussdstring[nSim].ussd_input, u7bitStr, AT_MAX_DIGITS_USSD);
-        at_ussdstring[nSim].b_used = FALSE;
+        OSI_LOGI(0, "CUSD2: u7bitLen=%d ucDcs= %d, u7bitStr[0]=0%d, u7bitStr[1]=0%d\n",
+                 u7bitLen, ucDcs, u7bitStr[0], u7bitStr[1]);
 
+        memcpy(at_ussdstring[nSim].ussd_input, u7bitStr, MAX_LENGTH_STRING_USSD);
+        at_ussdstring[nSim].b_used = false;
+#if 1
         if (AT_SS_GetUSSDState())
-            uiRetVal = CFW_SsSendUSSD(u7bitStr, u7bitLen, ucOption, ucDcs, AT_SS_GetUSSDNum(), nSim);
-        else
-            uiRetVal = CFW_SsSendUSSD(u7bitStr, u7bitLen, ucOption, ucDcs, pParam->nDLCI, nSim);
-
-        OSI_LOGI(0x10004543, "USSD AT: ucOption=%d, uiRetVal=0x%x\n", ucOption, uiRetVal);
-        if (ERR_SUCCESS == uiRetVal)
         {
-            if (1 == ucPara1)
+            //EV_CFW_SS_SEND_USSD_RSP
+            OSI_LOGI(0x10004543, "USSD: ucOption=%d, uiRetVal=0x%x\n", ucOption, uiRetVal);
+            cmd->uti = cfwRequestUTI((osiEventCallback_t)CUSD_RspCallBack, cmd);
+            OSI_LOGI(0, "CUSD: cmd->uti=%d AT_SS_GetUSSDNum=%d", cmd->uti, AT_SS_GetUSSDNum());
+            if ((uiRetVal = CFW_SsSendUSSD_V2(u7bitStr, u7bitLen, ucOption, ucDcs, cmd->uti, AT_SS_GetUSSDNum(), nSim)) != 0)
             {
-                gATCurrentss_ussd = 1;
+                OSI_LOGI(0, "CUSD: CFW_SsSendUSSD: uiRetVal=0x%x\n", uiRetVal);
+                cfwReleaseUTI(cmd->uti);
+                AT_SS_ResetUSSDState();
+                RETURN_CME_CFW_ERR(cmd->engine, uiRetVal);
             }
-            else if (0 == ucPara1)
-            {
-                gATCurrentss_ussd = 0;
-            }
-
-            AT_AddWaitingEvent(EV_CFW_SS_SEND_USSD_RSP, nSim, pParam->nDLCI);
-            AT_CC_Result_OK(CMD_FUNC_SUCC_ASYN, CMD_RC_OK, 0, 0, 0, pParam->nDLCI, nSim);
+            gAtCfwCtx.sim[nSim].ussd = ucPara1;
+            RETURN_FOR_ASYNC();
         }
         else
+#endif
         {
-            AT_SS_ResetUSSDState();
-            AT_CC_Result_Err(ERR_AT_CME_EXE_FAIL, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
+            //EV_CFW_SS_SEND_USSD_RSP
+            OSI_LOGXI(OSI_LOGPAR_S, 0, "CUSD: req uti u7bitStr=%s", u7bitStr);
+            OSI_LOGI(0, "USSD 2: ucOption=%d, ucDcs=%d\n", ucOption, ucDcs);
+
+            cmd->uti = cfwRequestUTI((osiEventCallback_t)CUSD_RspCallBack, cmd);
+            if (ucDcs == 0)
+            {
+                ucDcs = 15;
+                uint8_t u8bitStr[MAX_LENGTH_STRING_USSD] = {0};
+                memcpy(u8bitStr, aucPara2, aucPara2len);
+                uiRetVal = CFW_SsSendUSSD(u8bitStr, aucPara2len, ucOption, ucDcs, cmd->uti, nSim);
+            }
+            else
+                uiRetVal = CFW_SsSendUSSD(u7bitStr, u7bitLen, ucOption, ucDcs, cmd->uti, nSim);
+            if (uiRetVal != 0)
+            {
+                OSI_LOGI(0, "CUSD2: CFW_SsSendUSSD: uiRetVal=0x%x\n", uiRetVal);
+                cfwReleaseUTI(cmd->uti);
+                AT_SS_ResetUSSDState();
+                RETURN_CME_CFW_ERR(cmd->engine, uiRetVal);
+            }
+            gAtCfwCtx.sim[nSim].ussd = ucPara1;
+            RETURN_FOR_ASYNC();
         }
     }
 
-    break;
-
-    case AT_CMD_TEST:
-        AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, (uint8_t *)strTCUSD, AT_StrLen(strTCUSD), pParam->nDLCI, nSim);
-        break;
-    case AT_CMD_READ:
+    else if (AT_CMD_TEST == cmd->type)
     {
-        uint8_t uOutString[20];
+        atCmdRespInfoText(cmd->engine, "+CUSD:(0,1,2)");
+        RETURN_OK(cmd->engine);
+    }
+
+    else if (AT_CMD_READ == cmd->type)
+    {
+        char uOutString[20];
 
         memset(uOutString, 0, 20);
-        sprintf(uOutString, strRCUSD, gATCurrentss_ussd);
-        AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, uOutString, AT_StrLen(uOutString), pParam->nDLCI, nSim);
+        sprintf(uOutString, "+CUSD:%d", gAtCfwCtx.sim[nSim].ussd);
+        atCmdRespInfoText(cmd->engine, uOutString);
+        RETURN_OK(cmd->engine);
     }
 
-    break;
-
-    default:
-        AT_CC_Result_Err(ERR_AT_CME_OPERATION_NOT_ALLOWED, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-        break;
-    }
+    else
+        RETURN_CME_CFW_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
 }
 
-// ////////////////////////////////////////////////////////////////////////////
-// Name:
-// Description: +CSSN=[<n>[,<m>]]
-// Supplementary service notifications,+CSSI messages,+CSSU messages
-// AT+CSSN=1,0
-// Parameter:   pParam, parsed command structure
-// Caller:
-// Called:      ATM
-// Return:      fail or succeed
-// Remark:      have on/off function to CC module
-//
-// ////////////////////////////////////////////////////////////////////////////
-
-void atCmdHandleCSSN(atCommand_t *cmd)
-{
-    uint16_t ucLen;
-    uint8_t ucParaCount = 0;
-    uint8_t ucCSSI = 0;
-    uint8_t ucCSSU = 0;
-    uint8_t aucBuffer[20] = {0};
-    uint8_t *pucParam = (uint8_t *)(pParam->pPara);
-    uint32_t uiRetVal = ERR_SUCCESS;
-    int32_t iRetVal = 0;
-    uint8_t nSim = atCmdGetSim(cmd->engine);
-
-#ifdef AT_SS_DEBUG
-    // output debug information
-    OSI_LOGXI(OSI_LOGPAR_SI, 0x10004525, "Parameter string: %s  Parameter type: %d\n", pParam->pPara, cmd->type);
-#endif
-    if (NULL == pParam)
-    {
-        AT_CC_Result_Err(ERR_AT_CME_INVALID_CHAR_INTEXT, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-    }
-
-    // check event respond exclusive
-    g_uiCurrentCmdStampSs = pParam->uCmdStamp;
-
-    // call ATM function
-
-    // at command type judge
-    switch (cmd->type)
-    {
-        // extend command (set)
-
-    case AT_CMD_SET:
-    {
-
-        // uint8_t  ucPara1 = 0, ucPara2 = 0;
-        // uint8_t  ucPara1Flg = EXIST, ucPara2Flg = EXIST;
-        iRetVal = AT_Util_GetParaCount(pucParam, &ucParaCount);
-
-        // result check
-
-        if (ERR_SUCCESS != iRetVal || ucParaCount > 2)
-        {
-            // return parameter error
-            AT_CC_Result_Err(ERR_AT_CME_INVALID_CHAR_INTEXT, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-            return;
-        }
-
-        if (!ucParaCount)
-        {
-            AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, 0, 0, pParam->nDLCI, nSim);
-            return;
-        }
-
-        if (ucParaCount > 0)
-        {
-            // first parameter gATCurrentucCSSI
-            ucLen = 1;
-            iRetVal = AT_Util_GetParaWithRule(pucParam, 0, AT_UTIL_PARA_TYPE_UINT8, (PVOID)&ucCSSI, &ucLen);
-
-            if (ERR_SUCCESS != iRetVal || (ucCSSI > 1 && ucCSSI != 0xff))
-            {
-                // return parameter error
-                AT_CC_Result_Err(ERR_AT_CME_INVALID_CHAR_INTEXT, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-                return;
-            }
-        }
-
-        // second parameter
-        if (ucParaCount == 2)
-        {
-            ucLen = 1;
-            iRetVal = AT_Util_GetParaWithRule(pucParam, 1, AT_UTIL_PARA_TYPE_UINT8, (PVOID)&ucCSSU, &ucLen);
-
-            if (ERR_SUCCESS != iRetVal || ucCSSU > 1)
-            {
-                // return parameter error
-                AT_CC_Result_Err(ERR_AT_CME_INVALID_CHAR_INTEXT, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-                return;
-            }
-        }
-        else
-
-            // hameina[mod] 2008-4-15 for bug 8119, if only set param <n>, param<m> will be changed to 255
-            ucCSSU = gATCurrentucCSSU;
-
-#ifdef AT_SS_DEBUG
-        OSI_LOGI(0x10004544, "Para count:%d Parameter 1: %d  Parameter 2: %d\n", ucParaCount, ucCSSI, ucCSSU);
-
-#endif
-
-        // call CSW interface function
-        // uiRetVal = CFW_CfgSetSSN(ucCSSI, ucCSSU);
-        gATCurrentucCSSI = ucCSSI;
-
-        gATCurrentucCSSU = ucCSSU;
-
-#ifdef AT_SS_DEBUG
-        OSI_LOGI(0x10004545, "CSSN set ret: %x\n", uiRetVal);
-
-#endif
-
-        // execute result return
-        if (ERR_SUCCESS == uiRetVal)
-        {
-            AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, 0, 0, pParam->nDLCI, nSim);
-        }
-        else
-        {
-            AT_CC_Result_Err(ERR_AT_CME_PHONE_FAILURE, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-        }
-    }
-
-    break;
-
-        // extend command (test)
-
-    case AT_CMD_TEST:
-        // return command format "+CSSN:(0-1),(0-1)"
-        AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, (uint8_t *)strTCSSN, AT_StrLen(strTCSSN), pParam->nDLCI, nSim);
-        break;
-
-    case AT_CMD_READ:
-        // call CSW interface function
-        // uiRetVal = CFW_CfgGetSSN(&ucCSSI, &ucCSSU);
-#ifdef AT_SS_DEBUG
-        OSI_LOGI(0x10004546, "CSSN read ret: %x\n", uiRetVal);
-#endif
-
-        // execute result return
-        sprintf(aucBuffer, strRCSSN, gATCurrentucCSSI, gATCurrentucCSSU);
-
-        // AT_SS_SYN_RETURN(ppstResult, aucBuffer, AT_StrLen(aucBuffer), pParam->nDLCI);
-        AT_CC_Result_OK(CMD_FUNC_SUCC, CMD_RC_OK, 0, aucBuffer, AT_StrLen(aucBuffer), pParam->nDLCI, nSim);
-        break;
-
-    default:
-        AT_CC_Result_Err(ERR_AT_CME_OPERATION_NOT_ALLOWED, CMD_ERROR_CODE_TYPE_CME, pParam->nDLCI, nSim);
-        break;
-    }
-
-    return;
-}
-
+#ifdef PORTING_ON_GOING
 // ////////////////////////////////////////////////////////////////////////////
 // Name:
 // Description:+CAOC[=<mode>]
@@ -2344,6 +2303,7 @@ void atCmdHandleCPUC(atCommand_t *cmd)
         break;
     }
 }
+#endif
 
 uint8_t ATssPswdServiceCode[] = {'0', '3', 0};
 uint8_t ATssClipCode[] = {'3', '0', 0};
@@ -2391,24 +2351,24 @@ const ATCodeToSsCode ssATCodeToSsCode[] =
         {ATssBarringOfIncomingCode, SS_BARRINGOFINCOMINGCALLS},
         {(uint8_t *)NULL, (ss_code_enum)0}};
 
-static BOOL CallForwardingFlag = FALSE;
-BOOL AT_IsDigit(INT8 CharValue)
+static bool CallForwardingFlag = false;
+bool AT_IsDigit(uint8_t CharValue)
 {
     if ((CharValue >= '0') && (CharValue <= '9'))
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 }
-//INT8 at_branchbuf[80] ;//man
-static BOOL AT_IsCCString(INT8 *s)
+//uint8_t at_branchbuf[80] ;//man
+static bool AT_IsCCString(const char *s)
 {
-    INT8 len;
+    uint8_t len;
     uint16_t i;
 
     if (NULL == s)
     {
         OSI_LOGI(0x10004557, "AT_IsCCString:ERROR!string is NULL");
-        return FALSE;
+        return false;
         ;
     }
 
@@ -2416,39 +2376,41 @@ static BOOL AT_IsCCString(INT8 *s)
     OSI_LOGXI(OSI_LOGPAR_S, 0x10004558, "AT_IsCCString:s string is %s", s);
 
     if (0 == len)
-        return FALSE;
+        return false;
     len = strlen(s);
 
     // special case for #+number, it is a number, we just dial
+    OSI_LOGI(0, "ss:AT_IsCCString s[0]=%c s[len - 1]=%c", s[0], s[len - 1]);
     if ((s[0] == '#') && (s[len - 1] != '#'))
-        return TRUE;
+        return true;
 
     if ((s[0] == '+') || AT_IsDigit(s[0]) || ((s[0] == '*') && (s[len - 1] != '#')))
     {
         for (i = 1; i < len - 1; i++)
         {
+            OSI_LOGI(0, "ss:AT_IsCCString: s[%d]=%c", s[i]);
             if (!(AT_IsDigit(s[i]) || s[i] == 'P'                                              //CHAR_DTMF ||   /* allow DTMF separator */
                   || s[i] == 'p' || s[i] == '*' || s[i] == '#' || s[i] == 'w' || s[i] == 'W')) //man
 
-                return FALSE;
+                return false;
         }
 
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
-BOOL AT_GetCallInfo(CFW_CC_CURRENT_CALL_INFO *pCallInfo, uint8_t CallStatus, CFW_SIM_ID nSimID)
+bool AT_GetCallInfo(CFW_CC_CURRENT_CALL_INFO *pCallInfo, uint8_t CallStatus, CFW_SIM_ID nSimID)
 {
     CFW_CC_CURRENT_CALL_INFO CallInfo[AT_MAX_CC_NUM];
     uint8_t Count = 0;
-    BOOL RtnValue = FALSE;
+    bool RtnValue = false;
     uint8_t i;
 
-    ASSERT(pCallInfo != NULL);
+    //assert(pCallInfo != NULL);
     memset(CallInfo, 0, AT_MAX_CC_NUM * sizeof(CFW_CC_CURRENT_CALL_INFO));
     RtnValue = CFW_CcGetCurrentCall(CallInfo, &Count, nSimID);
-    OSI_LOGI(0x10004559, "AT_GetCallInfo:Count:%d,rtnValue:%d", Count, RtnValue);
+    OSI_LOGI(0x10004559, "ss:AT_GetCallInfo:Count:%d,rtnValue:%d", Count, RtnValue);
     if (ERR_SUCCESS == RtnValue)
     {
 
@@ -2459,55 +2421,56 @@ BOOL AT_GetCallInfo(CFW_CC_CURRENT_CALL_INFO *pCallInfo, uint8_t CallStatus, CFW
                 if (CallStatus == CallInfo[i].status)
                 {
                     *pCallInfo = CallInfo[i];
-                    return TRUE;
+                    return true;
                 }
             }
         }
     }
 
-    return FALSE;
+    return false;
 }
 
-BOOL AT_IsSSString(INT8 *s, CFW_SIM_ID nSimID)
+bool AT_IsSSString(const char *s, CFW_SIM_ID nSimID)
 {
 
-    INT8 len;
+    uint8_t len;
 
     CFW_CC_CURRENT_CALL_INFO CallInfo;
-    BOOL CallStarting;
+    bool CallStarting;
 
     if (NULL == s)
     {
-        OSI_LOGI(0x1000455a, "AT_IsSSString:ERROR!string is NULL");
-        return FALSE;
+        OSI_LOGI(0x1000455a, "ss:AT_IsSSString:ERROR!string is NULL");
+        return false;
         ;
     }
     if (AT_IsCCString(s))
     {
-        return FALSE;
+        OSI_LOGI(0, "ss:AT_IsSSString: AT_IsCCString ruturn true=%d", AT_IsCCString(s));
+        return false;
     }
     CallStarting = AT_GetCallInfo(&CallInfo, CFW_CM_STATUS_ACTIVE, nSimID);
     len = strlen(s);
 
     if (0 == len)
-        return FALSE;
+        return false;
 
     if ((len > 4) && (s[len - 1] == '#') && (s[len - 2] != '#') && (s[len - 2] != '*'))
-        return TRUE;
+        return true;
 
     if (((s[0] == '*') || (s[0] == '#')) && (s[len - 1] == '#') && (s[len - 2] != '#') && (s[len - 2] != '*'))
-        return TRUE;
+        return true;
 
     if ((len < 3) && (len > 0))
     {
         /* There is at least one call active */
         if (!CallStarting && s[0] == '1')
-            return FALSE;
+            return false;
 
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 /*==========================================================================
@@ -2520,9 +2483,9 @@ static void BreaktItUp(uint8_t *pStr, uint8_t len, uint8_t pos, SSParsedParamete
 {
     uint8_t parmNum = 0;
 
-    ASSERT(pStr != NULL);
-    ASSERT(pParsed != NULL);
-    ASSERT(pStr[len - 1] == CHR_HASH);
+    //assert(pStr != NULL);
+    //assert(pParsed != NULL);
+    //assert(pStr[len - 1] == CHR_HASH);
 
     /* Pos points to the first parameter */
     pParsed->parmStart[parmNum] = pos;
@@ -2587,13 +2550,10 @@ static uint8_t ParseUserInput(uint8_t *pStr, uint8_t len, SSParsedParameters *pP
 {
     uint8_t i, pos = 0;
     uint8_t resultFlag = 1;
-
-    ASSERT(pStr != NULL);
-    ASSERT(pParsed != NULL);
-    ASSERT(len != 0);
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "ss:-->Comer in ParseUserInput pStr=%s", pStr);
     /* Check that the last chr is # if the length is > 2 */
     /*Correct assert, allow a user_len <=2*/
-    //ASSERT((len <= 2) || ((len > 2) && (pStr[len - 1] == CHR_HASH)));
+    //assert((len <= 2) || ((len > 2) && (pStr[len - 1] == CHR_HASH)));
 
     /* make all parms empty */
     for (i = 0; i < MAX_PARMS; i++)
@@ -2601,7 +2561,7 @@ static uint8_t ParseUserInput(uint8_t *pStr, uint8_t len, SSParsedParameters *pP
         pParsed->parmStart[i] = 0;
         pParsed->parmLen[i] = 0;
     }
-
+    OSI_LOGI(0, "ss:-->Comer in ParseUserInput->1 len=%d", len);
     /* Not empty so look at the beginning of the string .. treat special if len <=2 */
     if (len <= 2)
     {
@@ -2612,6 +2572,7 @@ static uint8_t ParseUserInput(uint8_t *pStr, uint8_t len, SSParsedParameters *pP
     else
     {
         /* the string length is 3 or more */
+        OSI_LOGI(0, "ss:ParseUserInput * or #-->pStr[pos]=%d", pStr[pos]);
         switch (pStr[pos])
         {
         case CHR_STAR:
@@ -2619,6 +2580,7 @@ static uint8_t ParseUserInput(uint8_t *pStr, uint8_t len, SSParsedParameters *pP
             pos++;
             if ((pStr[pos + 1] >= '0' && pStr[pos + 1] <= '9') || (pStr[pos] >= '0' && pStr[pos] <= '9'))
             {
+                OSI_LOGI(0, "ss:ParseUserInput *-->pStr[pos]=%d", pStr[pos]);
                 switch (pStr[pos])
                 {
                 case CHR_HASH:
@@ -2639,6 +2601,7 @@ static uint8_t ParseUserInput(uint8_t *pStr, uint8_t len, SSParsedParameters *pP
             }
             else
             {
+                OSI_LOGI(0, "ss: ParseUserInput * resultFlag=0");
                 resultFlag = 0;
             }
             break;
@@ -2648,6 +2611,7 @@ static uint8_t ParseUserInput(uint8_t *pStr, uint8_t len, SSParsedParameters *pP
             pos++;
             if ((pStr[pos + 1] >= '0' && pStr[pos + 1] <= '9') || (pStr[pos] >= '0' && pStr[pos] <= '9'))
             {
+                OSI_LOGI(0, "ss:ParseUserInput #-->pStr[pos]=%d", pStr[pos]);
                 if (pStr[pos] == CHR_HASH)
                 {
                     pos++;
@@ -2661,6 +2625,7 @@ static uint8_t ParseUserInput(uint8_t *pStr, uint8_t len, SSParsedParameters *pP
             }
             else
             {
+                OSI_LOGI(0, "ss: ParseUserInput # resultFlag=0");
                 resultFlag = 0;
             }
             break;
@@ -2670,10 +2635,11 @@ static uint8_t ParseUserInput(uint8_t *pStr, uint8_t len, SSParsedParameters *pP
             pParsed->type = SSMMI_USS;
             pParsed->parmStart[0] = pos;
             pParsed->parmLen[0] = len;
+            OSI_LOGI(0, "ss: ParseUserInput default!!");
             break;
         }
     }
-
+    OSI_LOGI(0, "ss: ParseUserInput end resultFlag=%d", resultFlag);
     return resultFlag;
 }
 
@@ -2681,23 +2647,24 @@ static uint8_t ParseUserInput(uint8_t *pStr, uint8_t len, SSParsedParameters *pP
  * This routine is used to check if the length terminated string specified
  * matches the null terminated string
  *=========================================================================*/
-static BOOL CmpzStrToLStr(const uint8_t *pZStr, const uint8_t *pLStr, uint8_t strLength)
+static bool CmpzStrToLStr(const uint8_t *pZStr, const uint8_t *pLStr, uint8_t strLength)
 {
-    BOOL retValue = TRUE; /* Assume they match */
+    bool retValue = true; /* Assume they match */
 
-    ASSERT(pZStr != NULL);
-    ASSERT(pLStr != NULL);
-
+    //assert(pZStr != NULL);
+    //assert(pLStr != NULL);
+    OSI_LOGXI(OSI_LOGPAR_SI, 0, "ss:CmpzStrToLStr pZStr=%s strLength=%d", pZStr, strLength);
     /* Check if both of same length */
-    if (strlen(pZStr) == strLength)
+    if (strlen((const char *)pZStr) == strLength)
     {
         /* the lengths are the same so they could be the same */
         while (strLength)
         {
+            OSI_LOGI(0, "ss:CmpzStrToLStr pZStr=%d pLStr=%d", *pZStr, *pLStr);
             if (*pZStr != *pLStr)
             {
                 /* Not same so the strings don't match */
-                retValue = FALSE;
+                retValue = false;
                 break;
             }
             pZStr++;
@@ -2707,10 +2674,10 @@ static BOOL CmpzStrToLStr(const uint8_t *pZStr, const uint8_t *pLStr, uint8_t st
     }
     else
     {
-        /* Not of same length so set result to FALSE */
-        retValue = FALSE;
+        /* Not of same length so set result to false */
+        retValue = false;
     }
-
+    OSI_LOGI(0, "ss:CmpzStrToLStr retValue=%d", retValue);
     /* return the result */
     return retValue;
 }
@@ -2720,14 +2687,14 @@ static BOOL CmpzStrToLStr(const uint8_t *pZStr, const uint8_t *pLStr, uint8_t st
  * a binary enum value. If non digit characters are encountered then
  * a false is returned otherwise a true.
  *=========================================================================*/
-static BOOL ValidMmiBsCode(uint8_t *pBsCodeStr, uint8_t bsCodeLen, Adp_bs_code_enum *pMmiBsCode)
+static bool ValidMmiBsCode(uint8_t *pBsCodeStr, uint8_t bsCodeLen, Adp_bs_code_enum *pMmiBsCode)
 {
     uint32_t code = 0;
-    BOOL retValue = TRUE; /* assume it is ok */
+    bool retValue = true; /* assume it is ok */
 
-    ASSERT(pBsCodeStr != NULL);
-    ASSERT(pMmiBsCode != NULL);
-    ASSERT(bsCodeLen != 0);
+    //assert(pBsCodeStr != NULL);
+    //assert(pMmiBsCode != NULL);
+    //assert(bsCodeLen != 0);
 
     while (bsCodeLen != 0)
     {
@@ -2735,7 +2702,7 @@ static BOOL ValidMmiBsCode(uint8_t *pBsCodeStr, uint8_t bsCodeLen, Adp_bs_code_e
         if (!isdigit(*pBsCodeStr))
         {
             /* A non digit has been encountered */
-            retValue = FALSE;
+            retValue = false;
             break;
         }
 
@@ -2745,7 +2712,7 @@ static BOOL ValidMmiBsCode(uint8_t *pBsCodeStr, uint8_t bsCodeLen, Adp_bs_code_e
         if (code > 0xFFFF)
         {
             /* the bs code value is too big so flag it as illegal */
-            retValue = FALSE;
+            retValue = false;
             break;
         }
 
@@ -2753,14 +2720,13 @@ static BOOL ValidMmiBsCode(uint8_t *pBsCodeStr, uint8_t bsCodeLen, Adp_bs_code_e
         pBsCodeStr++;
         bsCodeLen--;
     }
-
+    OSI_LOGI(0, "ValidMmiBsCode *pBsCodeStr:%d, (Adp_bs_code_enum)code:%d code:%d", *pBsCodeStr, (Adp_bs_code_enum)code, code);
     /* copy the decoded code into the output variable */
     *pMmiBsCode = (Adp_bs_code_enum)code;
 
     if (!((*pMmiBsCode >= 10 && *pMmiBsCode <= 25 && *pMmiBsCode != 14 && *pMmiBsCode != 15) || (*pMmiBsCode == 29) || (*pMmiBsCode == 0)))
-        retValue = FALSE;
+        retValue = false;
 
-    OSI_LOGI(0x090004e4, "ValidMmiBsCode *pMmiBsCode %d, %d", *pMmiBsCode, retValue);
     /* return the conversion status */
     return retValue;
 }
@@ -2773,9 +2739,9 @@ static BOOL ValidMmiBsCode(uint8_t *pBsCodeStr, uint8_t bsCodeLen, Adp_bs_code_e
  *=========================================================================*/
 static void CopySubString(uint8_t *pSrc, uint8_t subLen, uint8_t *pDst, uint8_t *dstLen, uint8_t maxLen)
 {
-    ASSERT(pSrc != NULL);
-    ASSERT(pDst != NULL);
-    ASSERT(dstLen != NULL);
+    //assert(pSrc != NULL);
+    //assert(pDst != NULL);
+    //assert(dstLen != NULL);
 
     /* update the destiantion string length */
     *dstLen = subLen = (subLen > maxLen) ? maxLen : subLen;
@@ -2806,15 +2772,15 @@ static void CopySubString(uint8_t *pSrc, uint8_t subLen, uint8_t *pDst, uint8_t 
 static void GetTypeOfOperation(uint8_t *pStr, SSParsedParameters *pParsedParameters, l4_op_code_enum *pOpCode, ss_code_enum *pSSCode)
 {
     const ATCodeToSsCode *pTable = &ssATCodeToSsCode[0];
-    BOOL found;
+    bool found;
     uint8_t *servCode_p = NULL;
     uint8_t servCodeLen;
 
-    ASSERT(pStr != NULL);
-    ASSERT(pParsedParameters != NULL);
-    ASSERT(pOpCode != NULL);
-    ASSERT(pSSCode != NULL);
-
+    //assert(pStr != NULL);
+    //assert(pParsedParameters != NULL);
+    //assert(pOpCode != NULL);
+    //assert(pSSCode != NULL);
+    OSI_LOGI(0, "ss:GetTypeOfOperation: pParsedParameters->type=%d", pParsedParameters->type);
     /* check if the user string prefix is ussd type */
     if (pParsedParameters->type == SSMMI_USS)
     {
@@ -2825,28 +2791,28 @@ static void GetTypeOfOperation(uint8_t *pStr, SSParsedParameters *pParsedParamet
     {
         /* It is NOT but it could be if the service code is meaningless */
         /* so first look through the recognised service code table */
-        found = FALSE;
+        found = false;
         servCode_p = &pStr[pParsedParameters->parmStart[0]];
         servCodeLen = pParsedParameters->parmLen[0];
-
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "ss:GetTypeOfOperation servCode_p=%s", servCode_p);
         /* search through table */
         while (pTable->pzMmiStr != NULL)
         {
-            if (CmpzStrToLStr(pTable->pzMmiStr, servCode_p, servCodeLen) == TRUE)
+            if (CmpzStrToLStr(pTable->pzMmiStr, servCode_p, servCodeLen) == true)
             {
                 /* A match has been found */
-                found = TRUE;
+                found = true;
                 break;
             }
             /* increment the table pointer */
             pTable++;
         }
-
-        if (found == TRUE)
+        OSI_LOGI(0, "ss:GetTypeOfOperation: 1--found=%d", found);
+        if (found == true)
         {
             /* A match found in the table so it is a recognised type */
             *pSSCode = pTable->SSCode;
-
+            OSI_LOGI(0, "ss: GetTypeOfOperation pParsedParameters->type=%d", pParsedParameters->type);
             switch (pParsedParameters->type)
             {
             case SSMMI_STAR: /* activate or register */
@@ -2872,28 +2838,29 @@ static void GetTypeOfOperation(uint8_t *pStr, SSParsedParameters *pParsedParamet
 
             default:
                 //The program can not go here.
-                OSI_LOGI(0x090004e2, "SS MMI Parsing should never reach here");
-                ASSERT(0);
+                OSI_LOGI(0x090004e2, "ss: MMI Parsing should never reach here");
+                //assert(0);
                 break;
             }
         }
         else
         {
+            OSI_LOGI(0, "ss:GetTypeOfOperation: 2 found =%d", found);
         }
     }
 }
 
 /*Invoke CSW function to set or guery call waiting.*/
-static void ADP_SS_SetCallWaiting(l4_op_code_enum OpCode, BOOL BsCodePresent, Adp_bs_code_enum MmiBsCode, uint8_t nDLCI, CFW_SIM_ID nSimID)
+static void ADP_SS_SetCallWaiting(l4_op_code_enum OpCode, bool BsCodePresent, Adp_bs_code_enum MmiBsCode, uint8_t nDLCI, CFW_SIM_ID nSimID)
 {
     uint32_t ret;
 
-    if (BsCodePresent == FALSE)
+    if (BsCodePresent == false)
     {
-        BsCodePresent = TRUE;
+        BsCodePresent = true;
         MmiBsCode = Adp_TELEPHONY;
     }
-
+    OSI_LOGI(0, "ss:ADP_SS_SetCallWaiting MmiBsCode BsCodePresent=%d MmiBsCode=%d", BsCodePresent, MmiBsCode);
     switch (OpCode)
     {
     case SS_OP_REGISTERSS:
@@ -2931,15 +2898,15 @@ static void ADP_SS_SetCallWaiting(l4_op_code_enum OpCode, BOOL BsCodePresent, Ad
 }
 
 /*Invoke CSW function to set or guery call forwarding.*/
-static void ADP_SS_SetCallForward(l4_op_code_enum OpCode, ss_code_enum SSCode, BOOL BsCodePresent, Adp_bs_code_enum MmiBsCode, BOOL TimePresent, INT8 Time, uint8_t numberBCDBytesLen, uint8_t *pNumberBCD, uint8_t nDLCI, CFW_SIM_ID nSimID)
+static void ADP_SS_SetCallForward(l4_op_code_enum OpCode, ss_code_enum SSCode, bool BsCodePresent, Adp_bs_code_enum MmiBsCode, bool TimePresent, uint8_t Time, uint8_t numberBCDBytesLen, uint8_t *pNumberBCD, uint8_t nDLCI, CFW_SIM_ID nSimID)
 {
     CFW_SS_SET_CALLFORWARDING_INFO CallForward;
     uint32_t ret;
     memset(&CallForward, 0, sizeof(CFW_SS_SET_CALLFORWARDING_INFO));
 
-    if (BsCodePresent == FALSE)
+    if (BsCodePresent == false)
     {
-        BsCodePresent = TRUE;
+        BsCodePresent = true;
         MmiBsCode = Adp_TELEPHONY;
     }
 
@@ -2952,10 +2919,14 @@ static void ADP_SS_SetCallForward(l4_op_code_enum OpCode, ss_code_enum SSCode, B
     {
     case SS_CFU:
         CallForward.nReason = CFW_SS_FORWARDING_REASON_UNCONDITIONAL;
+        if (OpCode != SS_OP_REGISTERSS && OpCode != SS_OP_ERASESS)
+            CallForward.nClass = 0;
         break;
 
     case SS_CFB:
         CallForward.nReason = CFW_SS_FORWARDING_REASON_MOBILEBUSY;
+        if (OpCode != SS_OP_INTERROGATESS)
+            CallForward.nClass = 0;
         break;
 
     case SS_CFNRY:
@@ -2964,6 +2935,8 @@ static void ADP_SS_SetCallForward(l4_op_code_enum OpCode, ss_code_enum SSCode, B
 
     case SS_CFNRC:
         CallForward.nReason = CFW_SS_FORWARDING_REASON_NOTREACHABLE;
+        if (OpCode != SS_OP_DEACTIVATESS)
+            CallForward.nClass = 0; //31.2.1.2.1
         break;
 
     case SS_ALLFORWARDINGSS:
@@ -2985,23 +2958,23 @@ static void ADP_SS_SetCallForward(l4_op_code_enum OpCode, ss_code_enum SSCode, B
     case SS_OP_ACTIVATESS:
         if (pNumberBCD != NULL)
         {
-            CallForward.nNumber.pDialNumber = AT_MALLOC(numberBCDBytesLen);
-            ASSERT(CallForward.nNumber.pDialNumber != NULL);
+            //CallForward.nNumber.pDialNumber = (uint8_t *)malloc(numberBCDBytesLen);
+            //assert(CallForward.nNumber.pDialNumber != NULL);
             memcpy(CallForward.nNumber.pDialNumber, pNumberBCD, numberBCDBytesLen);
         }
         CallForward.nNumber.nDialNumberSize = numberBCDBytesLen;
         CallForward.nNumber.nClir = 0;
-        if (CallForwardingFlag == FALSE)
+        if (CallForwardingFlag == false)
         {
             CallForward.nNumber.nType = CFW_TELNUMBER_TYPE_UNKNOWN;
         }
         else
         {
             CallForward.nNumber.nType = CFW_TELNUMBER_TYPE_INTERNATIONAL;
-            CallForwardingFlag = FALSE;
+            CallForwardingFlag = false;
         }
 
-        if (TimePresent == TRUE)
+        if (TimePresent == true)
         {
             CallForward.nTime = Time;
         }
@@ -3011,12 +2984,13 @@ static void ADP_SS_SetCallForward(l4_op_code_enum OpCode, ss_code_enum SSCode, B
         {
             OSI_LOGI(0x090004ec, "ADP_SS_SetCallForward()   CFW_SsSetCallForwarding  ret = %d", ret);
         }
+#if 0        
         if (CallForward.nNumber.pDialNumber != NULL)
         {
-            AT_FREE(CallForward.nNumber.pDialNumber);
+            free(CallForward.nNumber.pDialNumber);
             CallForward.nNumber.pDialNumber = NULL;
         }
-
+#endif
         break;
 
     case SS_OP_ERASESS:
@@ -3058,12 +3032,12 @@ static void ADP_SS_SetCallForward(l4_op_code_enum OpCode, ss_code_enum SSCode, B
 }
 
 /*Invoke CSW function to set or guery call barring.*/
-static void ADP_SS_SetCallBarring(l4_op_code_enum OpCode, ss_code_enum SSCode, BOOL BsCodePresent, Adp_bs_code_enum MmiBsCode, uint8_t PasswordLength, uint8_t *pPassword, uint8_t nDLCI, CFW_SIM_ID nSimID)
+static void ADP_SS_SetCallBarring(l4_op_code_enum OpCode, ss_code_enum SSCode, bool BsCodePresent, Adp_bs_code_enum MmiBsCode, uint8_t PasswordLength, uint8_t *pPassword, uint8_t nDLCI, CFW_SIM_ID nSimID)
 {
     uint16_t nFac = 0;
     uint8_t nClass = 0;
     uint32_t ret = 0;
-    ASSERT(pPassword != NULL);
+    //assert(pPassword != NULL);
 
     OSI_LOGI(0x090004f5, "ADP_SS_SetCallBarring SSCode = %d", SSCode);
     switch (SSCode)
@@ -3100,9 +3074,9 @@ static void ADP_SS_SetCallBarring(l4_op_code_enum OpCode, ss_code_enum SSCode, B
         break;
     }
 
-    if (BsCodePresent == FALSE)
+    if (BsCodePresent == false)
     {
-        BsCodePresent = TRUE;
+        BsCodePresent = true;
         MmiBsCode = Adp_TELEPHONY;
     }
     nClass = MmiBsCode;
@@ -3146,18 +3120,18 @@ static void ADP_SS_SetCallBarring(l4_op_code_enum OpCode, ss_code_enum SSCode, B
  *=========================================================================*/
 static void SS_RegisterREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_enum SSCode, uint8_t nDLCI, CFW_SIM_ID nSimID)
 {
-    BOOL MmiBsCodePresent = FALSE;
-    Adp_bs_code_enum MmiBsCode;
+    bool MmiBsCodePresent = false;
+    Adp_bs_code_enum MmiBsCode = Adp_ALL_BS_AND_TS;
     uint8_t PasswordLength = 0;
     uint8_t pwd[MAXPASSWORDLEN] = {0};
-    BOOL TimePresent = 0;
-    INT8 Time;
+    bool TimePresent = 0;
+    uint8_t Time = 0;
     uint8_t NumberBCD[AT_MAX_CC_ADDR_LEN] = {0};
     uint8_t BytesLenBCD = 0;
 
-    ASSERT(pStr != NULL);
-    ASSERT(pParsed != NULL);
-
+    //assert(pStr != NULL);
+    //assert(pParsed != NULL);
+    OSI_LOGI(0, "ss:SS_RegisterREQ SSCode=%d", SSCode);
     /*. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . */
     /* Copy the optional mmi basic service code */
     switch (SSCode)
@@ -3203,16 +3177,16 @@ static void SS_RegisterREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_e
         if (pParsed->parmLen[3] != 0)
         {
             /* A timer value has been supplied so try and decode it */
-            TimePresent = TRUE; //ValidReplyTime(&pStr[pParsed->parmStart[3]], pParsed->parmLen[3], &Time);
+            TimePresent = true; //ValidReplyTime(&pStr[pParsed->parmStart[3]], pParsed->parmLen[3], &Time);
         }
         else
         {
-            TimePresent = FALSE;
+            TimePresent = false;
             Time = 0;
         }
         if (SS_CFNRY == SSCode && Time == 0)
         {
-            TimePresent = TRUE;
+            TimePresent = true;
             Time = 5;
         }
     /*Don't break here, WARNING, WARNING, WARNING, WARNING*/
@@ -3232,10 +3206,10 @@ static void SS_RegisterREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_e
         if (pParsed->parmLen[1] != 0)
         {
             /* A forwarding number has been supplied so try and bcd encode it */
-            if (strncmp(&pStr[pParsed->parmStart[1]], "+", 1) == 0)
+            if (strncmp((const char *)&pStr[pParsed->parmStart[1]], "+", 1) == 0)
             {
                 SUL_AsciiToGsmBcd(&pStr[pParsed->parmStart[1] + 1], pParsed->parmLen[1] - 1, &NumberBCD[0]);
-                CallForwardingFlag = TRUE;
+                CallForwardingFlag = true;
                 BytesLenBCD = (pParsed->parmLen[1] - 1) / 2;
                 BytesLenBCD += (pParsed->parmLen[1] - 1) % 2;
             }
@@ -3261,14 +3235,14 @@ static void SS_RegisterREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_e
  *=========================================================================*/
 static void SS_EraseREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_enum SSCode, uint8_t nDLCI, CFW_SIM_ID nSimID)
 {
-    BOOL MmiBsCodePresent = FALSE;
-    Adp_bs_code_enum MmiBsCode;
+    bool MmiBsCodePresent = false;
+    Adp_bs_code_enum MmiBsCode = Adp_ALL_BS_AND_TS;
     uint8_t PasswordLength = 0;
     uint8_t pwd[MAXPASSWORDLEN] = {0};
 
-    ASSERT(pStr != NULL);
-    ASSERT(pParsed != NULL);
-
+    //assert(pStr != NULL);
+    //assert(pParsed != NULL);
+    OSI_LOGI(0, "ss:SS_EraseREQ SSCode=%d", SSCode);
     switch (SSCode)
     {
     case SS_CW:
@@ -3325,8 +3299,7 @@ static void SS_EraseREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_enum
                 MmiBsCodePresent = ValidMmiBsCode(&pStr[pParsed->parmStart[1]], pParsed->parmLen[1], &MmiBsCode);
             }
         }
-
-        ADP_SS_SetCallForward(SS_OP_ERASESS, SSCode, MmiBsCodePresent, MmiBsCode, FALSE, 0, 0, NULL, nDLCI, nSimID);
+        ADP_SS_SetCallForward(SS_OP_ERASESS, SSCode, MmiBsCodePresent, MmiBsCode, false, 0, 0, NULL, nDLCI, nSimID);
         break;
 
     default:
@@ -3340,18 +3313,18 @@ static void SS_EraseREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_enum
  *=========================================================================*/
 static void SS_ActivateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_enum SSCode, uint8_t nDLCI, CFW_SIM_ID nSimID)
 {
-    BOOL MmiBsCodePresent = FALSE;
-    Adp_bs_code_enum MmiBsCode;
+    bool MmiBsCodePresent = false;
+    Adp_bs_code_enum MmiBsCode = Adp_ALL_BS_AND_TS;
     uint8_t PasswordLength = 0;
     uint8_t pwd[MAXPASSWORDLEN] = {0};
-    BOOL TimePresent = 0;
-    INT8 Time;
+    bool TimePresent = 0;
+    uint8_t Time = 0;
     uint8_t NumberBCD[AT_MAX_CC_ADDR_LEN] = {0};
     uint8_t BytesLenBCD = 0;
 
-    ASSERT(pStr != NULL);
-    ASSERT(pParsed != NULL);
-
+    //assert(pStr != NULL);
+    //assert(pParsed != NULL);
+    OSI_LOGI(0, "ss:SS_ActivateREQ SSCode=%d", SSCode);
     switch (SSCode)
     {
     case SS_CW:
@@ -3394,11 +3367,11 @@ static void SS_ActivateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_e
         if (pParsed->parmLen[3] != 0)
         {
             /* A timer value has been supplied so try and decode it */
-            TimePresent = TRUE; //ValidReplyTime(&pStr[pParsed->parmStart[3]], pParsed->parmLen[3], &Time);
+            TimePresent = true; //ValidReplyTime(&pStr[pParsed->parmStart[3]], pParsed->parmLen[3], &Time);
         }
         else
         {
-            TimePresent = FALSE;
+            TimePresent = false;
             Time = 0;
         }
     /*Don't break here, WARNING, WARNING, WARNING, WARNING*/
@@ -3418,10 +3391,10 @@ static void SS_ActivateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_e
         if (pParsed->parmLen[1] != 0)
         {
             /* A forwarding number has been supplied so try and bcd encode it */
-            if (strncmp(&pStr[pParsed->parmStart[1]], "+", 1) == 0)
+            if (strncmp((const char *)&pStr[pParsed->parmStart[1]], "+", 1) == 0)
             {
                 SUL_AsciiToGsmBcd(&pStr[pParsed->parmStart[1] + 1], pParsed->parmLen[1] - 1, &NumberBCD[0]);
-                CallForwardingFlag = TRUE;
+                CallForwardingFlag = true;
             }
             else
             {
@@ -3444,14 +3417,14 @@ static void SS_ActivateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_e
  *=========================================================================*/
 static void SS_DeactivateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_enum SSCode, uint8_t nDLCI, CFW_SIM_ID nSimID)
 {
-    BOOL MmiBsCodePresent = FALSE;
-    Adp_bs_code_enum MmiBsCode;
+    bool MmiBsCodePresent = true;
+    Adp_bs_code_enum MmiBsCode = Adp_ALL_BS_AND_TS;
     uint8_t PasswordLength = 0;
     uint8_t pwd[MAXPASSWORDLEN] = {0};
 
-    ASSERT(pStr != NULL);
-    ASSERT(pParsed != NULL);
-
+    //assert(pStr != NULL);
+    //assert(pParsed != NULL);
+    OSI_LOGI(0, "ss:SS_DeactivateREQ SSCode=%d", SSCode);
     switch (SSCode)
     {
     case SS_CW:
@@ -3461,7 +3434,7 @@ static void SS_DeactivateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code
             /* A basic service code has been supplied so try and decode it */
             MmiBsCodePresent = ValidMmiBsCode(&pStr[pParsed->parmStart[1]], pParsed->parmLen[1], &MmiBsCode);
         }
-
+        OSI_LOGI(0, "ss:SS_DeactivateREQ MmiBsCode=%d MmiBsCodePresent=%d", MmiBsCode, MmiBsCodePresent);
         /* Change to CSW request */
         ADP_SS_SetCallWaiting(SS_OP_DEACTIVATESS, MmiBsCodePresent, MmiBsCode, nDLCI, nSimID);
         break;
@@ -3500,7 +3473,7 @@ static void SS_DeactivateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code
             MmiBsCodePresent = ValidMmiBsCode(&pStr[pParsed->parmStart[2]], pParsed->parmLen[2], &MmiBsCode);
         }
 
-        ADP_SS_SetCallForward(SS_OP_DEACTIVATESS, SSCode, MmiBsCodePresent, MmiBsCode, FALSE, 0, 0, NULL, nDLCI, nSimID);
+        ADP_SS_SetCallForward(SS_OP_DEACTIVATESS, SSCode, MmiBsCodePresent, MmiBsCode, false, 0, 0, NULL, nDLCI, nSimID);
         break;
 
     default:
@@ -3515,14 +3488,14 @@ static void SS_DeactivateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code
 static void SS_InterrogateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_code_enum SSCode, uint8_t nDLCI, CFW_SIM_ID nSimID)
 {
     uint32_t ret;
-    BOOL MmiBsCodePresent = FALSE;
-    Adp_bs_code_enum MmiBsCode;
+    bool MmiBsCodePresent = false;
+    Adp_bs_code_enum MmiBsCode = Adp_ALL_BS_AND_TS;
     uint8_t PasswordLength = 0;
     uint8_t pwd[MAXPASSWORDLEN] = {0};
 
-    ASSERT(pStr != NULL);
-    ASSERT(pParsed != NULL);
-
+    //assert(pStr != NULL);
+    //assert(pParsed != NULL);
+    OSI_LOGI(0, "ss:SS_InterrogateREQ SSCode=%d", SSCode);
     switch (SSCode)
     {
     case SS_CW:
@@ -3570,7 +3543,7 @@ static void SS_InterrogateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_cod
             /* A basic service code has been supplied so try and decode it */
             MmiBsCodePresent = ValidMmiBsCode(&pStr[pParsed->parmStart[2]], pParsed->parmLen[2], &MmiBsCode);
         }
-        ADP_SS_SetCallForward(SS_OP_INTERROGATESS, SSCode, MmiBsCodePresent, MmiBsCode, FALSE, 0, 0, NULL, nDLCI, nSimID);
+        ADP_SS_SetCallForward(SS_OP_INTERROGATESS, SSCode, MmiBsCodePresent, MmiBsCode, false, 0, 0, NULL, nDLCI, nSimID);
         break;
 
     case SS_CLIP:
@@ -3617,21 +3590,23 @@ static void SS_InterrogateREQ(uint8_t *pStr, SSParsedParameters *pParsed, ss_cod
 PURPOSE             : Parse SS string.
 INPUT PARAMETERS    : mmi_ss_parsing_string_req_struct *pReq
  **************************************************************/
-BOOL AT_SS_Adaption_ParseStringREQ(at_ss_parsing_string_req_struct *pReq, uint8_t nDLCI, CFW_SIM_ID nSimID)
+bool AT_SS_Adaption_ParseStringREQ(at_ss_parsing_string_req_struct *pReq, uint8_t nDLCI, CFW_SIM_ID nSimID)
 {
     uint8_t resultFlag = 1;
     SSParsedParameters Parsed;
     l4_op_code_enum OpCode = 0;
     ss_code_enum SSCode = 0;
-
-    ASSERT(pReq != NULL);
-
     /* parse the mmi string */
+    OSI_LOGXI(OSI_LOGPAR_SI, 0, "ss:AT_SS_Adaption_ParseStringREQ pReq->input=%s length=%d", pReq->input, pReq->length);
     resultFlag = ParseUserInput(pReq->input, pReq->length, &Parsed);
+    OSI_LOGXI(OSI_LOGPAR_SI, 0, "ss:AT_SS_Adaption_ParseStringREQ: pReq=%s resultFlag=%d", pReq->input, resultFlag);
     if (resultFlag == 1)
     {
         /* Determine the type of operation and process accordingly */
         GetTypeOfOperation(pReq->input, &Parsed, &OpCode, &SSCode);
+        OSI_LOGI(0, "ss:AT_SS_Adaption_ParseStringREQ: OpCode=%d SSCode=%d", OpCode, SSCode);
+        OSI_LOGI(0, "ss:Parsed->length[1]=%d Parsed->length[2]=%d", Parsed.parmLen[1], Parsed.parmLen[2]);
+        OSI_LOGI(0, "ss:Parsed->parmStart[1]=%d Parsed->parmStart[2]=%d", Parsed.parmStart[1], Parsed.parmStart[2]);
         /* process accordingly */
         switch (OpCode)
         {
@@ -3662,7 +3637,7 @@ BOOL AT_SS_Adaption_ParseStringREQ(at_ss_parsing_string_req_struct *pReq, uint8_
 
         case SS_OP_REGISTERPASSWORD:
             resultFlag = 0;
-            OSI_LOGI(0x1000455b, "ParseStringREQ ERROR! don't support password!");
+            OSI_LOGI(0x1000455b, "ss:ParseStringREQ ERROR! don't support password!");
             /*GSM2.30 V4.11.0 page 15 states that only registartion shall be allowed*/
             /*this means that process only if * or ** prefix in string           */
             if ((Parsed.type == SSMMI_STAR) || (Parsed.type == SSMMI_STARSTAR))
@@ -3679,7 +3654,7 @@ BOOL AT_SS_Adaption_ParseStringREQ(at_ss_parsing_string_req_struct *pReq, uint8_
 
         case SS_OP_PROCESSUNSTRUCTUREDSS_DATA:
             resultFlag = 0;
-            OSI_LOGI(0x1000455c, "ParseStringREQ ERROR! don't support USSD!");
+            OSI_LOGI(0x1000455c, "ss:ParseStringREQ ERROR! don't support USSD!");
             /*SS ProcUss REQ, invoke CSW function.*/
             //resultFlag = SS_ProcUssReq(pReq->input, pReq->length);
             //SS_Adaption_SendParseStringRSP(resultFlag);
@@ -3688,8 +3663,8 @@ BOOL AT_SS_Adaption_ParseStringREQ(at_ss_parsing_string_req_struct *pReq, uint8_
         default:
             /* this should never happen */
             resultFlag = 0;
-            OSI_LOGI(0x1000455d, "AT_SS_Adaption_ParseStringREQ default resultFlag = %d", resultFlag);
-            ASSERT(0);
+            OSI_LOGI(0x1000455d, "ss:AT_SS_Adaption_ParseStringREQ default resultFlag = %d", resultFlag);
+            //assert(0);
             break;
         }
     }
@@ -3699,9 +3674,8 @@ BOOL AT_SS_Adaption_ParseStringREQ(at_ss_parsing_string_req_struct *pReq, uint8_
         //SS_Adaption_SendParseStringRSP(resultFlag);
     }
 
-    return (BOOL)resultFlag;
+    return (bool)resultFlag;
 }
-#endif
 
 static void CACM_SetRspCB(atCommand_t *cmd, const osiEvent_t *event)
 {

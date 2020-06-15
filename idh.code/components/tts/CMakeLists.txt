@@ -9,19 +9,19 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/tts_config.h.in ${BINARY_TOP_DIR}/include/tts_config.h)
+configure_file(include/tts_config.h.in ${out_inc_dir}/tts_config.h)
 
 set(target tts)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC src/tts_player.c src/tts_dummy.c)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_TTS)
 target_include_directories(${target} PUBLIC include)
 target_include_directories(${target} PUBLIC aisound/include)
-target_include_targets(${target} PRIVATE kernel driver hal fs audio ml)
+target_link_libraries(${target} PRIVATE kernel driver hal fs audio ml)
 
-if(CONFIG_TTS_AISOUND_SUPPORT)
-    target_link_libraries(${target} PRIVATE aisound)
-endif()
+target_link_libraries_if(CONFIG_TTS_AISOUND_SUPPORT THEN ${target} PRIVATE aisound)
 
 add_subdirectory_if_exist(aisound)
 

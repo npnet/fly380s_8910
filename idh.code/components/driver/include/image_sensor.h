@@ -34,6 +34,7 @@ typedef struct
     void (*cameraStopPrev)(void);
     void (*cameraPrevNotify)(void);
     void (*cameraGetSensorInfo)(sensorInfo_t **pSensorInfo);
+    void (*cameraFlashSet)(uint8_t level);
 } SensorOps_t;
 
 //general sensor drv need ping-pang buffer for continus data mode

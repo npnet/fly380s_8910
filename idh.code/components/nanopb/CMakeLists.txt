@@ -10,6 +10,8 @@
 # without further testing or modification.
 
 set(target nanopb)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC
     src/pb_common.c
     src/pb_decode.c
@@ -18,7 +20,7 @@ add_library(${target} STATIC
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_UNITY)
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel driver calclib)
+target_include_targets(${target} PRIVATE kernel driver calclib)
 
 set(srcs src/pb_util.c include/pb_util.h)
 beautify_c_code(${target} ${srcs})

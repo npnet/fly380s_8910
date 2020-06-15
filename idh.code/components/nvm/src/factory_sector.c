@@ -17,6 +17,7 @@
 #include "osi_api.h"
 #include "drv_spi_flash.h"
 #include "calclib/crc32.h"
+#include "hal_chip.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -59,7 +60,7 @@ static int _factoryBlockSequence(const void *ptr)
 
 static const void *_blockMapAddress(factoryContex_t *d, int block)
 {
-    unsigned offset = CONFIG_FACTORY_FLASH_OFFSET + block * sizeof(factoryBlock_t);
+    unsigned offset = HAL_FLASH_OFFSET(CONFIG_FACTORY_FLASH_ADDRESS) + block * sizeof(factoryBlock_t);
     return drvSpiFlashMapAddress(d->flash, offset);
 }
 
@@ -133,7 +134,7 @@ static int _findBlockForWrite(factoryContex_t *d)
     else
         erase_sector = 0;
 
-    unsigned erase_offset = CONFIG_FACTORY_FLASH_OFFSET + erase_sector * FACTORY_SECTOR_SIZE;
+    unsigned erase_offset = HAL_FLASH_OFFSET(CONFIG_FACTORY_FLASH_ADDRESS) + erase_sector * FACTORY_SECTOR_SIZE;
     drvSpiFlashErase(d->flash, erase_offset, FACTORY_SECTOR_SIZE);
 
     block = erase_sector * FACTORY_BLOCK_PER_SECTOR;
@@ -160,7 +161,7 @@ static void _blockWrite(factoryContex_t *d, factoryBlock_t *block)
     block->crc_inv = ~block->crc;
 
     d->curr_block = n;
-    drvSpiFlashWrite(d->flash, CONFIG_FACTORY_FLASH_OFFSET + n * sizeof(factoryBlock_t),
+    drvSpiFlashWrite(d->flash, HAL_FLASH_OFFSET(CONFIG_FACTORY_FLASH_ADDRESS) + n * sizeof(factoryBlock_t),
                      block, sizeof(factoryBlock_t));
 }
 

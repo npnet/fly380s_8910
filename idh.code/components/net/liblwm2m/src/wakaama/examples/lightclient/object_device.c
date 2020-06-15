@@ -242,7 +242,7 @@ static uint8_t prv_device_execute(uint16_t instanceId,
     return COAP_405_METHOD_NOT_ALLOWED;
 }
 
-lwm2m_object_t * get_object_device()
+lwm2m_object_t * get_object_device(void *lwm2mH)
 {
     /*
      * The get_object_device function create the object itself and return a pointer to the structure that represent it.

@@ -15,11 +15,14 @@
 #include "boot_fdl.h"
 #include "boot_fdl_channel.h"
 #include "boot_platform.h"
+#include "boot_bsl_cmd.h"
 #include "osi_log.h"
 #include "osi_api.h"
-
+#include "calclib/crc32.h"
 #include <string.h>
 #include <stdlib.h>
+
+#define IDENTIFY_COUNT (3)
 
 enum hdlc_parser_state
 {
@@ -32,6 +35,7 @@ enum hdlc_parser_state
 struct fdl_engine
 {
     fdlChannel_t *ch;
+    unsigned max_packet_len;
 };
 
 static inline uint16_t _cpu_to_be16(uint16_t num)
@@ -80,37 +84,7 @@ uint16_t _calc_crc16_frm(const uint16_t *src, int len)
     return (~sum);
 }
 
-static __attribute__((unused)) uint16_t _calc_crc16_for_nv(uint16_t base, uint8_t *data, uint32_t len)
-{
-    const uint16_t CRC_16_POLYNOMIAL = 0x1021;
-    const uint16_t CRC_16_L_POLYNOMIAL = 0x8000;
-    const uint16_t CRC_16_L_SEED = 0x0080;
-
-    for (uint32_t i = 0; i < len; ++i)
-    {
-        for (uint16_t k = CRC_16_L_SEED; k != 0; k = (k >> 1))
-        {
-            if ((base & CRC_16_L_POLYNOMIAL) != 0)
-            {
-                base = base << 1;
-                base = base ^ CRC_16_POLYNOMIAL;
-            }
-            else
-            {
-                base = (base << 1);
-            }
-
-            if ((data[i] & k) != 0)
-            {
-                base = base ^ CRC_16_POLYNOMIAL;
-            }
-        }
-    }
-
-    return base;
-}
-
-fdlEngine_t *fdlEngineCreate(fdlChannel_t *channel)
+fdlEngine_t *fdlEngineCreate(fdlChannel_t *channel, unsigned max_packet_len)
 {
     if (channel == NULL)
         return NULL;
@@ -123,6 +97,7 @@ fdlEngine_t *fdlEngineCreate(fdlChannel_t *channel)
     }
 
     fdl->ch = channel;
+    fdl->max_packet_len = max_packet_len;
     return fdl;
 }
 
@@ -133,6 +108,24 @@ void fdlEngineDestroy(fdlEngine_t *fdl)
         fdl->ch->flush_input(fdl->ch);
         free(fdl);
     }
+}
+
+fdlChannel_t *fdlEngineGetChannel(fdlEngine_t *fdl)
+{
+    return fdl->ch;
+}
+
+unsigned fdlEngineGetMaxPacketLen(fdlEngine_t *fdl)
+{
+    return fdl->max_packet_len;
+}
+
+static int prvGetChar(fdlEngine_t *fdl)
+{
+    uint8_t ch;
+    if (fdl->ch->read(fdl->ch, &ch, 1) < 0)
+        return -1;
+    return ch;
 }
 
 static inline uint32_t _fdl_read(fdlEngine_t *fdl, void *buf_, unsigned size)
@@ -200,8 +193,8 @@ bool fdlEngineSendPacket(fdlEngine_t *fdl, fdlPacket_t *pkt)
         return false;
 
     uint32_t size = pkt->size + 4;
-    pkt->size = _cpu_to_be16(pkt->size);
-    pkt->type = _cpu_to_be16(pkt->type);
+    pkt->size = OSI_FROM_BE16(pkt->size);
+    pkt->type = OSI_FROM_BE16(pkt->type);
 
     uint8_t *data = (uint8_t *)pkt;
     uint16_t crc = _calc_crc16_frm((uint16_t *)data, size);
@@ -294,16 +287,16 @@ bool fdlEngineSetBaud(fdlEngine_t *fdl, unsigned baud)
     return fdl->ch->set_baud(fdl->ch, baud);
 }
 
-bool fdlEngineProcess(fdlEngine_t *fdl, fdlProc_t proc, void *ctx)
+bool fdlEngineProcess(fdlEngine_t *fdl, fdlProc_t proc, fdlPolling_t polling, void *ctx)
 {
     if (fdl == NULL || proc == NULL)
         return false;
 
-    const uint32_t FDL_PACKET_MAX_LEN = 0x2000;
-    fdlPacket_t *pkt = malloc(FDL_PACKET_MAX_LEN + sizeof(fdlPacket_t) + 2);
+    const unsigned pkt_mem_len = fdl->max_packet_len + 32;
+    fdlPacket_t *pkt = malloc(pkt_mem_len);
     if (pkt == NULL)
         return false;
-    memset(pkt, 0xff, FDL_PACKET_MAX_LEN + sizeof(fdlPacket_t) + 2);
+    memset(pkt, 0xff, pkt_mem_len);
 
     uint8_t *data = (uint8_t *)pkt;
     uint8_t recv_buf[128];
@@ -314,7 +307,11 @@ bool fdlEngineProcess(fdlEngine_t *fdl, fdlProc_t proc, void *ctx)
     {
         int r = _fdl_read(fdl, &recv_buf[0], recv_len);
         if (r <= 0)
+        {
+            if (polling != NULL)
+                polling(fdl, ctx);
             continue;
+        }
 
         for (unsigned i = 0; i < r; ++i)
         {
@@ -344,7 +341,7 @@ bool fdlEngineProcess(fdlEngine_t *fdl, fdlProc_t proc, void *ctx)
                     {
                         OSI_LOGE(0, "FDL process, crc mismatch[type: %x size: %x, Got: 0x%04x, Calc: 0x%04x]",
                                  pkt->type, pkt->size, crc, calc_crc);
-                        bootPanic();
+                        osiPanic();
                     }
                     else
                     {
@@ -380,6 +377,18 @@ bool fdlEngineProcess(fdlEngine_t *fdl, fdlProc_t proc, void *ctx)
                     state = HDLC_STATE_RUN;
                 }
 
+                if (len >= pkt_mem_len)
+                {
+                    OSI_LOGE(0, "FDL: packet length overflow len/%d", len);
+
+                    // Drop all data, and search HDLC_FLAG. ResearchDowload may
+                    // be halt or timeout, and it is needed to check log for
+                    // this error.
+                    len = 0;
+                    state = HDLC_STATE_START;
+                    break;
+                }
+
                 data[len++] = b;
                 int head_len = sizeof(pkt->type) + sizeof(pkt->size);
                 if (len == head_len)
@@ -399,5 +408,29 @@ bool fdlEngineProcess(fdlEngine_t *fdl, fdlProc_t proc, void *ctx)
     }
 
     free(pkt);
+    return false;
+}
+
+bool fdlEngineIdentify(fdlEngine_t *fdl, unsigned timeout)
+{
+    int count = 0;
+    osiElapsedTimer_t elapsed;
+
+    osiElapsedTimerStart(&elapsed);
+    while (timeout == 0 || osiElapsedTime(&elapsed) < timeout)
+    {
+        int ch = prvGetChar(fdl);
+        if (ch < 0)
+            continue;
+
+        if (ch != HDLC_FLAG)
+            count = 0;
+        else
+            count++;
+
+        if (count >= IDENTIFY_COUNT)
+            return true;
+    }
+
     return false;
 }

@@ -91,6 +91,8 @@ Contains code snippets which are:
 #include <string.h>
 #include <stdio.h>
 
+#include "osi_log.h"
+
 #ifndef MIN
 #define MIN(a, b) ((a) < (b)? (a) : (b))
 #endif
@@ -100,7 +102,7 @@ static void handle_reset(lwm2m_context_t * contextP,
                          coap_packet_t * message)
 {
 #ifdef LWM2M_CLIENT_MODE
-    LOG("Entering");
+    OSI_LOGI(0x100076b2, "handle_reset Entering");
     observe_cancel(contextP, message->mid, fromSessionH);
 #endif
 }
@@ -113,7 +115,7 @@ static uint8_t handle_request(lwm2m_context_t * contextP,
     lwm2m_uri_t * uriP;
     uint8_t result = COAP_IGNORE;
 
-    LOG("Entering");
+    OSI_LOGI(0x100076b3, "handle_request Entering");
 	
 #ifdef LWM2M_CLIENT_MODE
     uriP = uri_decode(contextP->altPath, message->uri_path);
@@ -208,13 +210,13 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
     static coap_packet_t message[1];
     static coap_packet_t response[1];
 
-    LOG("Entering");
+    OSI_LOGI(0x100076b4, " lwm2m_handle_packet Entering");
     coap_error_code = coap_parse_message(message, buffer, (uint16_t)length);
     if (coap_error_code == NO_ERROR)
     {
         LOG_ARG("Parsed: ver %u, type %u, tkl %u, code %u.%.2u, mid %u, Content type: %d",
                 message->version, message->type, message->token_len, message->code >> 5, message->code & 0x1F, message->mid, message->content_type);
-        LOG_ARG("Payload:%d, %.*s", message->payload_len, message->payload);
+        //LOG_ARG("Payload:%d, %.*s", message->payload_len, message->payload);
         for(int i=0;i<message->payload_len;i++)
         {
             LOG_ARG("payload[%d]:0x%x", i, message->payload[i]);
@@ -314,7 +316,7 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                         LOG_ARG("Blockwise: unaware resource with payload length %u/%u", response->payload_len, block_size);
                         if (block_offset >= response->payload_len)
                         {
-                            LOG("handle_incoming_data(): block_offset >= response->payload_len");
+                            OSI_LOGI(0x100076b5, "handle_incoming_data(): block_offset >= response->payload_len");
 
                             response->code = COAP_402_BAD_OPTION;
                             coap_set_payload(response, "BlockOutOfScope", 15); /* a const char str[] and sizeof(str) produces larger code size */
@@ -352,6 +354,23 @@ void lwm2m_handle_packet(lwm2m_context_t * contextP,
                 if (1 == coap_set_status_code(response, coap_error_code))
                 {
                     coap_error_code = message_send(contextP, response, fromSessionH);
+                }
+            }
+        }
+        else if(message->code == CONTENT_2_05)
+        {
+            if(IS_OPTION(message,COAP_OPTION_BLOCK2))
+            {
+                lwm2m_server_t * serverP;
+                serverP = utils_findServer(contextP, fromSessionH);
+                if(serverP != NULL)
+                {
+                    uint32_t block2_num;
+                    uint8_t block2_more;
+                    uint16_t block2_size;
+                    coap_get_header_block2(message, &block2_num, &block2_more,&block2_size,NULL);
+                    coap_error_code = lwm2m_fota_block2_handler(contextP,  message->mid, message->payload, message->payload_len, block2_size, block2_num, block2_more, message);
+                    LOG_ARG("lwm2m_fota_block2_handler coap_error_code %d\r\n",coap_error_code);
                 }
             }
         }
@@ -427,7 +446,7 @@ uint8_t message_send(lwm2m_context_t * contextP,
     size_t pktBufferLen = 0;
     size_t allocLen;
 
-    LOG("Entering");
+    OSI_LOGI(0x100076b6, "message_send Entering");
     allocLen = coap_serialize_get_size(message);
     LOG_ARG("Size to allocate: %d", allocLen);
     if (allocLen == 0) return COAP_500_INTERNAL_SERVER_ERROR;
@@ -439,7 +458,7 @@ uint8_t message_send(lwm2m_context_t * contextP,
         LOG_ARG("coap_serialize_message() returned %d", pktBufferLen);
         for (int i=0;i<message->payload_len;i++)
         {
-            sys_arch_printf("message_send: payload[%d]=0x%x",i,message->payload[i]);
+            OSI_LOGI(0x100076b7, "message_send: payload[%d]=0x%x",i,message->payload[i]);
         }
         if (0 != pktBufferLen)
         {

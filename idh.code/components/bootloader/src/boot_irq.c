@@ -15,6 +15,7 @@
 #include "hwregs.h"
 #include <stdlib.h>
 
+#ifdef CONFIG_SOC_8910
 extern void bootTimerISR(void);
 
 void bootIrqHandler(void)
@@ -50,3 +51,10 @@ void bootDisableIrq(uint32_t irqn)
 {
     GIC_DisableIRQ(irqn);
 }
+#endif
+
+#ifdef CONFIG_SOC_8811
+void bootEnableInterrupt(void)
+{
+}
+#endif

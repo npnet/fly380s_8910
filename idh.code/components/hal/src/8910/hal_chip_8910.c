@@ -16,8 +16,6 @@
 #include "cmsis_core.h"
 #include "osi_log.h"
 
-#define DEBUG_EVENT_TIMEOUT_US (300)
-
 static uint32_t gClock26MUseMap = 0;
 static uint8_t gCameraClkFlag = 0;
 
@@ -198,28 +196,6 @@ void halCameraClockRelease(cameraUser_t user)
     osiExitCritical(sc);
 }
 
-void OSI_SECTION_SRAM_BOOT_TEXT osiDelayUS(uint32_t us)
-{
-    uint32_t start = hwp_timer4->hwtimer_curval_l;
-    uint32_t tick = us * 2; // 2MHz
-    while ((unsigned)(hwp_timer4->hwtimer_curval_l - start) < tick)
-        asm("nop;");
-}
-
-void OSI_SECTION_SRAM_BOOT_TEXT osiDebugEvent(uint32_t event)
-{
-    for (int n = 0; n < DEBUG_EVENT_TIMEOUT_US; n += 10)
-    {
-        if (hwp_debugHost->event != 0)
-        {
-            hwp_debugHost->event = event;
-            return;
-        }
-
-        osiDelayUS(10);
-    }
-}
-
 void osiDCacheClean(const void *address, size_t size)
 {
     __DMB();
@@ -318,23 +294,10 @@ void OSI_SECTION_SRAM_TEXT osiIrqRestore(uint32_t flags)
         : "memory", "cc");
 }
 
-uint32_t osiHWTick16K(void)
-{
-    return hwp_timer1->hwtimer_curval;
-}
-
-uint32_t osiHWTick32(void)
-{
-    return hwp_timer4->hwtimer_curval_l;
-}
-
-OSI_STRONG_ALIAS(osiEnterCritical, osiIrqSave);
-OSI_STRONG_ALIAS(osiExitCritical, osiIrqRestore);
-
-OSI_STRONG_ALIAS(uxPortEnterCritical, osiIrqSave);
-OSI_STRONG_ALIAS(vPortExitCritical, osiIrqRestore);
-
-OSI_STRONG_ALIAS(uxPortSetInterruptMaskFromISR, osiIrqSave);
-OSI_STRONG_ALIAS(vPortClearInterruptMaskFromISR, osiIrqRestore);
-
-OSI_STRONG_ALIAS(vPortDisableInterrupts, osiIrqSave);
+OSI_DECL_STRONG_ALIAS(osiIrqSave, uint32_t osiEnterCritical(void));
+OSI_DECL_STRONG_ALIAS(osiIrqSave, uint32_t uxPortEnterCritical(void));
+OSI_DECL_STRONG_ALIAS(osiIrqSave, uint32_t uxPortSetInterruptMaskFromISR(void));
+OSI_DECL_STRONG_ALIAS(osiIrqSave, uint32_t vPortDisableInterrupts(void));
+OSI_DECL_STRONG_ALIAS(osiIrqRestore, void osiExitCritical(uint32_t flags));
+OSI_DECL_STRONG_ALIAS(osiIrqRestore, void vPortExitCritical(uint32_t flags));
+OSI_DECL_STRONG_ALIAS(osiIrqRestore, void vPortClearInterruptMaskFromISR(uint32_t flags));

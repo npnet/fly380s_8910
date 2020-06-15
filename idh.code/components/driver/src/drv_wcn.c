@@ -17,7 +17,7 @@
 #include "drv_names.h"
 #include "hal_chip.h"
 #include <stdlib.h>
-#include "drv_wcn_internal.h"
+#include "drv_wcn.h"
 
 #define CP_PWRCTRL_BTFM_STABLE (1 << 1)
 
@@ -163,6 +163,21 @@ static inline void _wcnRfInit()
     hwp_wcnRfIf->wf_gain_table_2 = 0xA800;
     hwp_wcnRfIf->wf_gain_table_1 = 0xA000;
     hwp_wcnRfIf->wf_gain_table_0 = 0x8000;
+
+    hwp_wcnRfIf->adc_setting0 = 0x620; // change adc_clk_edge to 0
+
+    hwp_wcnWlan->phy_reg_offset_addr = 0xff;
+    hwp_wcnWlan->phy_reg_write_data = 0x1;
+
+    hwp_wcnWlan->phy_reg_offset_addr = 0x0;
+    hwp_wcnWlan->phy_reg_write_data = 0xfb1f810;
+
+    hwp_wcnWlan->phy_reg_offset_addr = 0x5;
+    hwp_wcnWlan->phy_reg_write_data = 0xb020a452;
+
+    // Set the initial gain to F
+    hwp_wcnWlan->phy_reg_offset_addr = 0x0C;
+    hwp_wcnWlan->phy_reg_write_data = 0xF1585800;
 
     hwp_wcnRfIf->sys_control = 0x263;
     osiThreadSleep(5);

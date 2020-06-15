@@ -15,9 +15,10 @@
 #include "osi_api.h"
 #include <stdlib.h>
 
-#include "drv_wcn_internal.h"
+#include "drv_wcn.h"
 
 #define WIFI_SCAN_MIN_INTERVAL (120)
+#define WIFI_RSSI_CALIB_OFFSET (18)
 
 typedef struct
 {
@@ -71,24 +72,34 @@ static bool prvWifiDataReady()
 static void prvWifiClearReady()
 {
     REG_WCN_WLAN_CONFIG_REG_T conf_reg = {hwp_wcnWlan->config_reg};
-    // clear
     conf_reg.b.apb_clear = 1;
     hwp_wcnWlan->config_reg = conf_reg.v;
-    // enable
+    REG_WAIT_FIELD_NEZ(conf_reg, hwp_wcnWlan->config_reg, apb_clear);
+
     conf_reg.b.apb_clear = 0;
     hwp_wcnWlan->config_reg = conf_reg.v;
+    REG_WAIT_FIELD_EQZ(conf_reg, hwp_wcnWlan->config_reg, apb_clear);
 }
 
 static inline void prvLoadApInfo(wifiApInfo_t *info)
 {
+    REG_WCN_WLAN_CONFIG_REG_T conf_reg = {hwp_wcnWlan->config_reg};
+    conf_reg.b.apb_hold = 1;
+    hwp_wcnWlan->config_reg = conf_reg.v;
+    REG_WAIT_FIELD_NEZ(conf_reg, hwp_wcnWlan->config_reg, apb_hold);
+
     info->bssid_low = hwp_wcnWlan->bssidaddr_l;
     info->bssid_high = (hwp_wcnWlan->bssidaddr_h & 0xffff);
-    info->rssival = (int8_t)hwp_wcnWlan->rssival;
+    info->rssival = (int8_t)hwp_wcnWlan->rssival + WIFI_RSSI_CALIB_OFFSET;
+
+    conf_reg.b.apb_hold = 0;
+    hwp_wcnWlan->config_reg = conf_reg.v;
+    REG_WAIT_FIELD_EQZ(conf_reg, hwp_wcnWlan->config_reg, apb_hold);
 }
 
 static bool prvSaveApInfo(wifiApInfo_t *info, wifiScanRequest_t *req)
 {
-    if (req->found > req->max)
+    if (req->found >= req->max)
         return false;
 
     bool new_ap = true;
@@ -124,7 +135,8 @@ static void prvWifiScanChannel_(uint8_t ch, uint32_t timeout, wifiScanRequest_t 
             wifiApInfo_t info = {.channel = ch};
             prvLoadApInfo(&info);
             prvWifiClearReady();
-            prvSaveApInfo(&info, req);
+            if (!prvSaveApInfo(&info, req))
+                return;
         }
     }
 }
@@ -141,7 +153,7 @@ static void prvWifiScanChannel(uint8_t ch, uint32_t timeout, wifiScanRequest_t *
 
     // the broadcast interval from wifi ap is 100 ms, if got none
     // during 120 ms, we can presume there is no ap on this channel
-    if (req->found != 0 && tout2 != 0)
+    if (req->found != 0 && tout2 != 0 && req->found < req->max)
     {
         prvWifiScanChannel_(ch, tout2, req);
     }

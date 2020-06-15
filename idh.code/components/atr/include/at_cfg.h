@@ -19,6 +19,7 @@
 #include "atr_config.h"
 #include "ats_config.h"
 #include "osi_compiler.h"
+#include "time.h"
 
 #define AT_ALARM OSI_MAKE_TAG('A', 'T', 'A', 'L')
 
@@ -26,11 +27,11 @@
 // Gather definition from other ats module
 // ///////////////////////////////////////////////////////////////////////
 
-#define AT_GPRS_APN_MAX_LEN 50
-#define AT_GPRS_PDPADDR_MAX_LEN 50
+#define AT_GPRS_APN_MAX_LEN 99
+#define AT_GPRS_PDPADDR_MAX_LEN 21
 #define AT_GPRS_PDPTYPE_MAX_LEN 50
-#define AT_GPRS_USR_MAX_LEN 50
-#define AT_GPRS_PAS_MAX_LEN 50
+#define AT_GPRS_USR_MAX_LEN 64
+#define AT_GPRS_PAS_MAX_LEN 64
 
 #define AT_PDPCID_MIN 1
 #define AT_PDPCID_MAX 7
@@ -41,6 +42,7 @@ typedef enum
     cs_hex,
     cs_ucs2,
     cs_gbk, // equals to PCCP 936 char set
+    cs_ira,
     cs_COUNT_,
     cs_INVALID_ = 0x8F,
 } at_chset_t;
@@ -397,6 +399,17 @@ typedef struct
     uint8_t flight_mode; // AUTO_SAVE
 } atSimSetting_t;
 
+typedef struct
+{
+    uint32_t rx_bytes[31];
+    uint32_t tx_bytes[31];
+    uint32_t act_time[31];
+    time_t up_time[31];
+    uint64_t total_rx_bytes;
+    uint64_t total_tx_bytes;
+    uint64_t total_act_time;
+} atTbDataStatistics_t;
+
 // &W_SAVE
 typedef struct
 {
@@ -433,6 +446,11 @@ typedef struct
     uint8_t psm_mode;
     uint8_t mcuNotifySleepMode;
     uint32_t mcuNotifySleepDelayMs;
+    uint8_t csta;
+    uint8_t csvm;
+#ifdef CONFIG_ATR_TB_API_SUPPORT
+    atTbDataStatistics_t tbDataStatistics[2];
+#endif
 } atSetting_t;
 
 extern atSetting_t gAtSetting;
@@ -444,7 +462,10 @@ extern atSetting_t gAtSetting;
  * version of core libraries, the variable rather than macros
  * are used in core library.
  */
+struct atCmdDesc;
 extern const bool gAtEchoCommandOnly;
+extern const bool gAtCmdTplusEnable;
+extern const struct atCmdDesc gAtTplusCmdDesc;
 extern const bool gAtUrcBuffEnable;
 extern const unsigned gAtUrcBuffSize;
 extern const unsigned gAtUrcBuffCount;
@@ -452,6 +473,7 @@ extern const unsigned gAtCmdlineMax;
 extern const unsigned gAtLfWaitMs;
 extern const unsigned gAtCmuxOutBuffSize;
 extern const unsigned gAtCmuxInBuffSize;
+extern const unsigned gAtCmuxSubMinInBuffSize;
 extern const unsigned gAtCmuxDlcNum;
 extern const unsigned gAtDataBuffSize;
 extern const unsigned gAtPppEndCheckTimeout;

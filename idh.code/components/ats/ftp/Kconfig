@@ -11,10 +11,22 @@
 
 menu "at_ftp"
 
+choice
+	prompt "select ftp version"
+	default AT_NEWFTP_SUPPORT
 config AT_FTP_SUPPORT
-    bool "AT_FTP_SUPPORT enabled"
-    default y
-    help
-        When enabled, AT_FTP_SUPPORT will be defined
+	bool "Enable the old version ftp client command"
+	help
+		Enable the old version ftp client command
+config AT_NEWFTP_SUPPORT
+	bool "Enable the new version ftp client command"
+	select FTP_MODULE_SUPPORT
+	help
+		Enable the new version ftp client command
+config AT_NOFTP_SUPPORT
+	bool "Disable the at ftp clinet command"
+	help
+		Disable the at ftp client command
 
+endchoice
 endmenu

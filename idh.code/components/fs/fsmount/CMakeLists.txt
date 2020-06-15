@@ -10,6 +10,8 @@
 # without further testing or modification.
 
 set(target fsmount)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC src/fs_mount.c)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_FS)
@@ -17,7 +19,7 @@ target_include_directories(${target} PUBLIC include)
 target_include_targets(${target} PRIVATE kernel driver bdev fs sffs fatfs calclib)
 
 if(CONFIG_FS_MOUNT_SDCARD)
-target_sources(${target} PRIVATE src/fs_mount_sdcard.c)
+    target_sources(${target} PRIVATE src/fs_mount_sdcard.c)
 endif()
 
 target_incbin(${target} ${partinfo_bin} gPartInfo)

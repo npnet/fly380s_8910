@@ -44,6 +44,7 @@ OSI_SYSNV_VAR(int gSysnvDiagDevice, 1);  // diag.h
 OSI_SYSNV_VAR(bool gSysnvSimHotPlug, true);
 OSI_SYSNV_VAR(bool gSysnvSimVoltTrigMode, true);
 OSI_SYSNV_VAR(int gSysnvUsbDetMode, 0); // drv_usb.h
+OSI_SYSNV_VAR(int gSysnvNATCfg, 0);
 
 /**
  * load system NV from persitent storage

@@ -152,6 +152,7 @@ static void udp_rsp(void *param)
     case EV_CFW_TCPIP_ERR_IND:
         if (CFW_TcpipSocketClose(uSocket) != ERR_SUCCESS)
         {
+            free(pEvent);
             AT_CMD_RETURN(atCmdRespInfoText(engine, "CFW_TcpipSocketClose error"));
         }
         break;

@@ -694,9 +694,10 @@ void _GetFDNRecordRSP(const osiEvent_t *event)
     CFW_SIM_PBK_ENTRY_INFO *pRecord = NULL;
     uint8_t nSim = cfw_event->nFlag;
 
-    if (pgATFNDlist[nSim]->nTotalRecordNum < 1)
+    if (pgATFNDlist[nSim] == NULL || pgATFNDlist[nSim]->nTotalRecordNum < 1)
     {
         OSI_LOGI(0x100047ba, "GetFDNRecord WARNING:FDN List is NULL !\n");
+        return;
     }
 
     OSI_LOGI(0x100047bb, "GetFDNRecord start: nType:0x%x,nSim:%d!\n", cfw_event->nType, nSim);

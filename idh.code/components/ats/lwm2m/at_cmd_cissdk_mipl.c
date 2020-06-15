@@ -23,7 +23,7 @@
 #include <cis_def.h>
 #include <cis_api.h>
 #include <cis_if_sys.h>
-#include <cis_log.h>
+//#include <cis_log.h>
 #include <cis_list.h>
 #include "at_response.h"
 #include "ctype.h"
@@ -102,7 +102,7 @@ static void *g_context = NULL;
 
 static void cis_event_ind_process(void *param)
 {
-    LOGD("enter cis_event_ind_process");
+    OSI_LOGI(0x0, "enter cis_event_ind_process");
     osiEvent_t *pEvent = (osiEvent_t *)param;
     st_context_t *context = (st_context_t *)pEvent->param1;
     atCmdEngine_t *engine = gEngine;
@@ -116,36 +116,39 @@ static void cis_event_ind_process(void *param)
         {
         case CIS_EVENT_RESPONSE_SUCCESS:
         {
-            LOGI("cis_on_event response ok mid:%ld\n", (uint32_t)pEvent->param3);
+            OSI_LOGI(0x0, "cis_on_event response ok mid:%ld\n", (uint32_t)pEvent->param3);
             atCmdRespOK(gEngine);
         }
         break;
         case CIS_EVENT_RESPONSE_FAILED:
         {
-            LOGI("cis_on_event response failed mid:%ld\n", (uint32_t)pEvent->param3);
+            OSI_LOGI(0x0, "cis_on_event response failed mid:%ld\n", (uint32_t)pEvent->param3);
             if (g_ResponseMsgId != (uint32_t)pEvent->param3)
             {
                 g_ResponseMsgId = (uint32_t)pEvent->param3;
                 atCmdRespCmeError(gEngine, ERR_AT_CME_EXE_FAIL);
             }
             else
+            {
+                free(pEvent);
                 return;
+            }
         }
         break;
         case CIS_EVENT_NOTIFY_SUCCESS:
         {
-            LOGI("cis_on_event notify ok mid:%ld\n", (uint32_t)pEvent->param3);
+            OSI_LOGI(0x0, "cis_on_event notify ok mid:%ld\n", (uint32_t)pEvent->param3);
             atCmdRespOK(gEngine);
         }
         break;
         case CIS_EVENT_NOTIFY_FAILED:
         {
-            LOGI("cis_on_event notify failed mid:%ld\n", (uint32_t)pEvent->param3);
+            OSI_LOGI(0x0, "cis_on_event notify failed mid:%ld\n", (uint32_t)pEvent->param3);
             atCmdRespCmeError(gEngine, ERR_AT_CME_EXE_FAIL);
         }
         break;
         case CIS_EVENT_UPDATE_NEED:
-            LOGI("cis_on_event need to update,reserve time:%lds\n", (uint32_t)pEvent->param3);
+            OSI_LOGI(0x0, "cis_on_event need to update,reserve time:%lds\n", (uint32_t)pEvent->param3);
             cis_update_reg(g_context, LIFETIME_INVALID, false);
             break;
         case CIS_EVENT_REG_SUCCESS:
@@ -173,7 +176,7 @@ static void cis_event_ind_process(void *param)
         char refstr[100] = {0};
         cis_uri_t uri = newNode->uri;
         cis_mid_t mid = newNode->mid;
-        st_object_t *obj = prv_findObject(context, uri.objectId);
+        st_object_t *obj = (st_object_t *)cis_findObject((void *)context, uri.objectId);
         uint32_t res_count = 0;
         if (obj != NULL)
             res_count = obj->attributeCount + obj->actionCount;
@@ -228,7 +231,7 @@ static void cis_event_ind_process(void *param)
 
             for (int i = 0; i < value[count].asBuffer.length; i++)
             {
-                snprintf(hexStr + 2 * i, sizeof(hexStr), "%02X", value[count].asBuffer.buffer[i]);
+                sprintf(hexStr + 2 * i, "%02X", value[count].asBuffer.buffer[i]);
             }
 
             sprintf(refstr, "+MIPLWRITE:%d,%ld,%d,%d,%d,%d,%ld,%s,0,%d", 0, mid,
@@ -377,7 +380,7 @@ cis_coapret_t cis_onRead(void *context, cis_uri_t *uri, cis_mid_t mid)
     newNode->mid = mid;
     newNode->uri = *uri;
 
-    LOGI("cis_onRead:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
+    OSI_LOGI(0x0, "cis_onRead:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
 
     cis_PostEvent(context, SAMPLE_CALLBACK_READ, newNode, NULL);
     return CIS_CALLBACK_CONFORM;
@@ -392,7 +395,7 @@ cis_coapret_t cis_onDiscover(void *context, cis_uri_t *uri, cis_mid_t mid)
     newNode->mid = mid;
     newNode->uri = *uri;
 
-    LOGI("cis_onDiscover:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
+    OSI_LOGI(0x0, "cis_onDiscover:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
 
     cis_PostEvent(context, SAMPLE_CALLBACK_DISCOVER, newNode, NULL);
     return CIS_CALLBACK_CONFORM;
@@ -402,11 +405,11 @@ cis_coapret_t cis_onWrite(void *context, cis_uri_t *uri, const cis_data_t *value
 {
     if (CIS_URI_IS_SET_RESOURCE(uri))
     {
-        LOGI("cis_onWrite:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
+        OSI_LOGI(0x0, "cis_onWrite:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
     }
     else
     {
-        LOGI("cis_onWrite:(%d/%d)\n", uri->objectId, uri->instanceId);
+        OSI_LOGI(0x0, "cis_onWrite:(%d/%d)\n", uri->objectId, uri->instanceId);
     }
 
     struct st_callback_info *newNode = (struct st_callback_info *)malloc(sizeof(struct st_callback_info));
@@ -425,7 +428,7 @@ cis_coapret_t cis_onExec(void *context, cis_uri_t *uri, const uint8_t *value, ui
 {
     if (CIS_URI_IS_SET_RESOURCE(uri))
     {
-        LOGI("cis_onExec:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
+        OSI_LOGI(0x0, "cis_onExec:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
     }
     else
     {
@@ -453,7 +456,7 @@ cis_coapret_t cis_onExec(void *context, cis_uri_t *uri, const uint8_t *value, ui
 
 cis_coapret_t cis_onObserve(void *context, cis_uri_t *uri, bool flag, cis_mid_t mid)
 {
-    LOGI("cis_onObserve mid:%ld uri:(%d/%d/%d)\n", mid, uri->objectId, uri->instanceId, uri->resourceId);
+    OSI_LOGI(0x0, "cis_onObserve mid:%ld uri:(%d/%d/%d)\n", mid, uri->objectId, uri->instanceId, uri->resourceId);
 
     struct st_callback_info *newNode = (struct st_callback_info *)malloc(sizeof(struct st_callback_info));
     newNode->next = NULL;
@@ -465,17 +468,17 @@ cis_coapret_t cis_onObserve(void *context, cis_uri_t *uri, bool flag, cis_mid_t 
     if (newNode->param.asObserve.flag)
     {
 
-        LOGD(0, "cis_on_observe set: %d/%d/%d",
-             uri->objectId,
-             CIS_URI_IS_SET_INSTANCE(uri) ? uri->instanceId : -1,
-             CIS_URI_IS_SET_RESOURCE(uri) ? uri->resourceId : -1);
+        OSI_LOGI(0, "cis_on_observe set: %d/%d/%d",
+                 uri->objectId,
+                 CIS_URI_IS_SET_INSTANCE(uri) ? uri->instanceId : -1,
+                 CIS_URI_IS_SET_RESOURCE(uri) ? uri->resourceId : -1);
     }
     else
     {
-        LOGD(0, "cis_on_observe cancel: %d/%d/%d\n",
-             uri->objectId,
-             CIS_URI_IS_SET_INSTANCE(uri) ? uri->instanceId : -1,
-             CIS_URI_IS_SET_RESOURCE(uri) ? uri->resourceId : -1);
+        OSI_LOGI(0, "cis_on_observe cancel: %d/%d/%d\n",
+                 uri->objectId,
+                 CIS_URI_IS_SET_INSTANCE(uri) ? uri->instanceId : -1,
+                 CIS_URI_IS_SET_RESOURCE(uri) ? uri->resourceId : -1);
     }
     cis_PostEvent(context, SAMPLE_CALLBACK_OBSERVE, newNode, NULL);
     return CIS_CALLBACK_CONFORM;
@@ -485,7 +488,7 @@ cis_coapret_t cis_onParams(void *context, cis_uri_t *uri, cis_observe_attr_t par
 {
     if (CIS_URI_IS_SET_RESOURCE(uri))
     {
-        LOGI("cis_on_params:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
+        OSI_LOGI(0x0, "cis_on_params:(%d/%d/%d)\n", uri->objectId, uri->instanceId, uri->resourceId);
     }
 
     if (!CIS_URI_IS_SET_INSTANCE(uri))
@@ -505,7 +508,7 @@ cis_coapret_t cis_onParams(void *context, cis_uri_t *uri, cis_observe_attr_t par
 
 void cis_onEvent(void *context, cis_evt_t eid, void *param)
 {
-    LOGI("cis_on_event(%ld):%s\n", eid, STR_EVENT_CODE(eid));
+    OSI_LOGI(0x0, "cis_on_event(%ld):%s\n", eid, STR_EVENT_CODE(eid));
 
     cis_PostEvent(context, EVETN_IND, (void *)eid, param);
 }
@@ -519,7 +522,7 @@ static void lwm2m_clientd(void *param)
         osiThreadSleepRelaxed(100, OSI_DELAY_MAX);
     }
     hThread = NULL;
-    LOGI("lwm2m_clientd will exit...");
+    OSI_LOGI(0x0, "lwm2m_clientd will exit...");
     osiThreadExit();
 }
 
@@ -654,17 +657,19 @@ void AT_CmdFunc_MIPLCREATE(atCommand_t *pParam)
             AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_PARAM_INVALID));
         }
 
-        LOGI("mipl config totalsize: %ld", totalsize);
+        OSI_LOGI(0x0, "mipl config totalsize: %ld", totalsize);
+
         sys_arch_dump(databuff, offset);
+
         if (cis_init(&g_context, databuff, offset, NULL) != CIS_RET_OK)
         {
-            printf("cis entry init failed.\n");
+            OSI_LOGI(0x0, "cis entry init failed.\n");
             atCmdRespCmeError(pParam->engine, ERR_AT_CME_EXE_FAIL);
             goto CLEAN;
         }
 
         cis_version(&ver);
-        printf("CIS SDK Version:%u.%u.%u\n", ver.major, ver.minor, ver.micro);
+        OSI_LOGI(0x0, "CIS SDK Version:%u.%u.%u\n", ver.major, ver.minor, ver.micro);
 
         g_shutdown = false;
 
@@ -1731,7 +1736,7 @@ void AT_CmdFunc_MIPLDISCOVERRSP(atCommand_t *pParam)
         st_object_t *obj = NULL;
         if (g_context != NULL && g_objectid != URI_INVALID)
         {
-            obj = prv_findObject(g_context, g_objectid);
+            obj = (st_object_t *)cis_findObject((void *)g_context, g_objectid);
             if (obj == NULL)
             {
                 AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_EXE_FAIL));
@@ -1786,7 +1791,10 @@ void AT_CmdFunc_MIPLDISCOVERRSP(atCommand_t *pParam)
                 cis_uri_update(&uri);
                 ret = cis_response(g_context, &uri, NULL, msgid, CIS_RESPONSE_CONTINUE);
             }
-            ret = cis_response(g_context, NULL, NULL, msgid, CIS_RESPONSE_DISCOVER);
+            if (ret == CIS_RET_OK)
+                ret = cis_response(g_context, NULL, NULL, msgid, CIS_RESPONSE_DISCOVER);
+            else
+                AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_EXE_FAIL));
         }
         else
         {

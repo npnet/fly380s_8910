@@ -30,10 +30,10 @@
 // =============================================================================
 //  TYPES
 // =============================================================================
-#define AUD_VOCODE_MODE_NB_GSM    0x1
-#define AUD_VOCODE_MODE_NB_VOLTE  0x2
-#define AUD_VOCODE_MODE_WB_OA     0x3
-#define AUD_VOCODE_MODE_WB_BE     0x4
+#define AUD_VOCODE_MODE_NB_GSM 0x1
+#define AUD_VOCODE_MODE_NB_VOLTE 0x2
+#define AUD_VOCODE_MODE_WB_OA 0x3
+#define AUD_VOCODE_MODE_WB_BE 0x4
 
 // =============================================================================
 // VOIS_AUDIO_CFG_T
@@ -65,7 +65,6 @@ typedef struct
 
 } VOIS_AUDIO_CFG_T;
 
-
 // =============================================================================
 // VOIS_STATUS_T
 // -----------------------------------------------------------------------------
@@ -91,19 +90,17 @@ typedef enum
     VOIS_LOOP_QTY
 } VOIS_LOOP_T;
 
-
 typedef enum
 {
     MIXVOISE_STATE_IDLE,
     MIXVOISE_STATE_MIXLOCAL,
     MIXVOISE_STATE_MIXREMOTE,
     MIXVOISE_STATE_MIXALL,
-}MIXVOISE_STATE;
+} MIXVOISE_STATE;
 
 // =============================================================================
 //  FUNCTIONS
 // =============================================================================
-
 
 // =============================================================================
 // vois_Open
@@ -112,8 +109,6 @@ typedef enum
 /// This function registers the VoiS context in HAL map engine.
 // =============================================================================
 PUBLIC VOID vois_Open(VOID);
-
-
 
 // =============================================================================
 // vois_Setup
@@ -131,9 +126,7 @@ PUBLIC VOID vois_Open(VOID);
 /// #VOIS_AUDIO_CFG_T for more details.
 /// @return #VOIS_ERR_NO, the configuration being applied.
 // =============================================================================
-PUBLIC VOIS_ERR_T vois_Setup(AUD_ITF_T itf, CONST VOIS_AUDIO_CFG_T* cfg);
-
-
+PUBLIC VOIS_ERR_T vois_Setup(AUD_ITF_T itf, CONST VOIS_AUDIO_CFG_T *cfg);
 
 // =============================================================================
 // vois_Start
@@ -151,11 +144,8 @@ PUBLIC VOIS_ERR_T vois_Setup(AUD_ITF_T itf, CONST VOIS_AUDIO_CFG_T* cfg);
 ///         #VOIS_ERR_NO it can execute the command.
 // =============================================================================
 PUBLIC VOIS_ERR_T vois_Start(
-                        CONST AUD_ITF_T      itf,
-                        CONST VOIS_AUDIO_CFG_T* cfg);
-
-
-
+    CONST AUD_ITF_T itf,
+    CONST VOIS_AUDIO_CFG_T *cfg);
 
 // =============================================================================
 // vois_Stop
@@ -169,7 +159,6 @@ PUBLIC VOIS_ERR_T vois_Start(
 ///         #VOIS_ERR_NO if it can execute the command.
 // =============================================================================
 PUBLIC VOIS_ERR_T vois_Stop(VOID);
-
 
 // =============================================================================
 // VOIS_USER_HANDLER_T
@@ -188,33 +177,31 @@ PUBLIC VOIS_ERR_T vois_Stop(VOID);
 // =============================================================================
 typedef VOID (*VOIS_USER_HANDLER_T)(VOIS_STATUS_T);
 
-
-PUBLIC VOIS_ERR_T vois_RecordStart( INT32 *startAddress,INT32 length,VOIS_USER_HANDLER_T handler);
-PUBLIC VOIS_ERR_T vois_RecordStop( VOID);
-PUBLIC VOIS_ERR_T vois_RecordPush( INT16* MicPcmBuffer, INT16 len);
+PUBLIC VOIS_ERR_T vois_RecordStart(INT32 *startAddress, INT32 length, VOIS_USER_HANDLER_T handler);
+PUBLIC VOIS_ERR_T vois_RecordStop(VOID);
+PUBLIC VOIS_ERR_T vois_RecordPush(INT16 *MicPcmBuffer, INT16 len);
 
 #ifdef VOIS_DUMP_PCM
 PUBLIC VOID vois_DumpPcmDataHandler(VOIS_STATUS_T status);
-PUBLIC VOIS_ERR_T vois_DumpSpkPCMPush( INT16* pcmBuffer, INT16 len);
-PUBLIC VOIS_ERR_T vois_DumpResPCMPush( INT16* pcmBuffer, INT16 len);
-PUBLIC VOIS_ERR_T vois_DumpMicPCMPush( INT16* pcmBuffer, INT16 len);
-PUBLIC VOID  vois_DumpPcmDataStart(VOIS_USER_HANDLER_T handler);
-PUBLIC VOID  vois_DumpPcmDataStop(VOID);
+PUBLIC VOIS_ERR_T vois_DumpSpkPCMPush(INT16 *pcmBuffer, INT16 len);
+PUBLIC VOIS_ERR_T vois_DumpResPCMPush(INT16 *pcmBuffer, INT16 len);
+PUBLIC VOIS_ERR_T vois_DumpMicPCMPush(INT16 *pcmBuffer, INT16 len);
+PUBLIC VOID vois_DumpPcmDataStart(VOIS_USER_HANDLER_T handler);
+PUBLIC VOID vois_DumpPcmDataStop(VOID);
 
 #endif
 PUBLIC void vois_MixDataStop(void);
 
 PUBLIC void vois_TaskStart(void);
 
-PUBLIC AUD_ERR_T vois_TestModeSetup(CONST SND_ITF_T         itf,
-                                   CONST HAL_AIF_STREAM_T* stream,
-                                   CONST AUD_LEVEL_T *     cfg,
-                                   AUD_TEST_T              mode,
-                                   UINT32 voismode);
+PUBLIC AUD_ERR_T vois_TestModeSetup(CONST SND_ITF_T itf,
+                                    CONST HAL_AIF_STREAM_T *stream,
+                                    CONST AUD_LEVEL_T *cfg,
+                                    AUD_TEST_T mode,
+                                    UINT32 voismode);
 
-PUBLIC VOIS_ERR_T vois_SetCfg(AUD_ITF_T itf, CONST VOIS_AUDIO_CFG_T* cfg,
-	AUD_DEVICE_CFG_EXT_T devicecfg, SND_BT_WORK_MODE_T btworkmode);
-
+PUBLIC VOIS_ERR_T vois_SetCfg(AUD_ITF_T itf, CONST VOIS_AUDIO_CFG_T *cfg,
+                              AUD_DEVICE_CFG_EXT_T devicecfg, SND_BT_WORK_MODE_T btworkmode);
 
 // =============================================================================
 //vois_SetBtNRECFlag
@@ -222,7 +209,6 @@ PUBLIC VOIS_ERR_T vois_SetCfg(AUD_ITF_T itf, CONST VOIS_AUDIO_CFG_T* cfg,
 /// vois_SetBtNRECFlag
 // =============================================================================
 PUBLIC VOID vois_SetBtNRECFlag(UINT32 flag);
-
 
 ///  @} <- End of the aps group
 
@@ -232,7 +218,7 @@ PUBLIC VOID vois_SetBtNRECFlag(UINT32 flag);
 // -----------------------------------------------------------------------------
 /// get the vois Latest config.
 // =============================================================================
-PUBLIC VOIS_AUDIO_CFG_T* vois_GetAudioCfg(VOID);
+PUBLIC VOIS_AUDIO_CFG_T *vois_GetAudioCfg(VOID);
 
 PUBLIC HAL_AIF_FREQ_T vois_GetSampleRate(VOID);
 

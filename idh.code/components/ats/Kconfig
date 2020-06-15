@@ -20,9 +20,12 @@ orsource "cfw/Kconfig"
 orsource "lwm2m/Kconfig"
 orsource "ssim/Kconfig"
 orsource "dm/Kconfig"
+orsource "mqtt/Kconfig"
 orsource "cam/Kconfig"
 orsource "misc/Kconfig"
 orsource "apn/Kconfig"
+orsource "alic/Kconfig"
 orsource "bt/Kconfig"
+orsource "wifi/Kconfig"
 
 endmenu

@@ -16,507 +16,473 @@
 #include "osi_api.h"
 #include "osi_profile.h"
 #include "osi_byte_buf.h"
+#include "hal_spi_flash_defs.h"
 
-// spi_config.tx_rx_size
-enum
+#define FLASHRAM_CODE OSI_SECTION_LINE(.ramtext.flashhal)
+#define FLASHRAM_API FLASHRAM_CODE OSI_NO_INLINE
+#include "hal_spi_flash_internal.h"
+
+#define SECTOR_COUNT_4K (SIZE_4K / SIZE_4K)
+#define SECTOR_COUNT_8K (SIZE_8K / SIZE_4K)
+#define SECTOR_COUNT_16K (SIZE_16K / SIZE_4K)
+#define SECTOR_COUNT_32K (SIZE_32K / SIZE_4K)
+#define SECTOR_COUNT_1M ((1 << 20) / SIZE_4K)
+#define SECTOR_COUNT_2M ((2 << 20) / SIZE_4K)
+#define SECTOR_COUNT_4M ((4 << 20) / SIZE_4K)
+#define SECTOR_COUNT_8M ((8 << 20) / SIZE_4K)
+#define SECTOR_COUNT_16M ((16 << 20) / SIZE_4K)
+
+typedef struct
 {
-    RX_FIFO_WIDTH_8BIT = 0,
-    RX_FIFO_WIDTH_16BIT = 1,
-    RX_FIFO_WIDTH_32BIT = 2,
-    RX_FIFO_WIDTH_24BIT = 3,
+    uint16_t offset;
+    uint16_t wp;
+} halSpiFlashWpMap_t;
+
+/**
+ * Table for GD 1MB
+ */
+FLASHRAM_CODE static const halSpiFlashWpMap_t gGD8MWpMap[] = {
+    {SECTOR_COUNT_1M, WP_GD8M_ALL},
+    {SECTOR_COUNT_1M - SECTOR_COUNT_1M / 16, WP_GD8M_15_16},
+    {SECTOR_COUNT_1M - SECTOR_COUNT_1M / 8, WP_GD8M_7_8},
+    {SECTOR_COUNT_1M - SECTOR_COUNT_1M / 4, WP_GD8M_3_4},
+    {SECTOR_COUNT_1M / 2, WP_GD8M_1_2},
+    {SECTOR_COUNT_1M / 4, WP_GD8M_1_4},
+    {SECTOR_COUNT_1M / 8, WP_GD8M_1_8},
+    {SECTOR_COUNT_1M / 16, WP_GD8M_1_16},
+    {SECTOR_COUNT_32K, WP_GD8M_32K},
+    {SECTOR_COUNT_16K, WP_GD8M_16K},
+    {SECTOR_COUNT_8K, WP_GD8M_8K},
+    {SECTOR_COUNT_4K, WP_GD8M_4K},
+    {0, WP_GD8M_NONE},
 };
 
-#define DELAY_AFTER_RESET (100)                  // us, tRST_R(20), tRST_P(20), tRST_E(12ms)
-#define DELAY_AFTER_RELEASE_DEEP_POWER_DOWN (20) // us, tRES1(20), tRES2(20)
+/**
+ * Table for GD 2MB
+ */
+FLASHRAM_CODE static const halSpiFlashWpMap_t gGD16MWpMap[] = {
+    {SECTOR_COUNT_2M, WP_GD16M_ALL},
+    {SECTOR_COUNT_2M - SECTOR_COUNT_2M / 32, WP_GD16M_31_32},
+    {SECTOR_COUNT_2M - SECTOR_COUNT_2M / 16, WP_GD16M_15_16},
+    {SECTOR_COUNT_2M - SECTOR_COUNT_2M / 8, WP_GD16M_7_8},
+    {SECTOR_COUNT_2M - SECTOR_COUNT_2M / 4, WP_GD16M_3_4},
+    {SECTOR_COUNT_2M / 2, WP_GD16M_1_2},
+    {SECTOR_COUNT_2M / 4, WP_GD16M_1_4},
+    {SECTOR_COUNT_2M / 8, WP_GD16M_1_8},
+    {SECTOR_COUNT_2M / 16, WP_GD16M_1_16},
+    {SECTOR_COUNT_2M / 32, WP_GD16M_1_32},
+    {SECTOR_COUNT_32K, WP_GD16M_32K},
+    {SECTOR_COUNT_16K, WP_GD16M_16K},
+    {SECTOR_COUNT_8K, WP_GD16M_8K},
+    {SECTOR_COUNT_4K, WP_GD16M_4K},
+    {0, WP_GD16M_NONE},
+};
 
-#define SIZE_4K (4 * 1024)
-#define SIZE_32K (32 * 1024)
-#define SIZE_64K (64 * 1024)
+/**
+ * Table for GD 4MB
+ */
+FLASHRAM_CODE static const halSpiFlashWpMap_t gGD32MWpMap[] = {
+    {SECTOR_COUNT_4M, WP_GD32M_ALL},
+    {SECTOR_COUNT_4M - SECTOR_COUNT_4M / 64, WP_GD32M_63_64},
+    {SECTOR_COUNT_4M - SECTOR_COUNT_4M / 32, WP_GD32M_31_32},
+    {SECTOR_COUNT_4M - SECTOR_COUNT_4M / 16, WP_GD32M_15_16},
+    {SECTOR_COUNT_4M - SECTOR_COUNT_4M / 8, WP_GD32M_7_8},
+    {SECTOR_COUNT_4M - SECTOR_COUNT_4M / 4, WP_GD32M_3_4},
+    {SECTOR_COUNT_4M / 2, WP_GD32M_1_2},
+    {SECTOR_COUNT_4M / 4, WP_GD32M_1_4},
+    {SECTOR_COUNT_4M / 8, WP_GD32M_1_8},
+    {SECTOR_COUNT_4M / 16, WP_GD32M_1_16},
+    {SECTOR_COUNT_4M / 32, WP_GD32M_1_32},
+    {SECTOR_COUNT_4M / 64, WP_GD32M_1_64},
+    {SECTOR_COUNT_32K, WP_GD32M_32K},
+    {SECTOR_COUNT_16K, WP_GD32M_16K},
+    {SECTOR_COUNT_8K, WP_GD32M_8K},
+    {SECTOR_COUNT_4K, WP_GD32M_4K},
+    {0, WP_GD32M_NONE},
+};
 
-#define MID_WINBOND (0xEF)
-#define MID_GD (0xC8)
-#define MID(id) ((id)&0xff)
+/**
+ * Table for GD 8MB
+ */
+FLASHRAM_CODE static const halSpiFlashWpMap_t gGD64MWpMap[] = {
+    {SECTOR_COUNT_8M, WP_GD32M_ALL},
+    {SECTOR_COUNT_8M - SECTOR_COUNT_8M / 64, WP_GD32M_63_64},
+    {SECTOR_COUNT_8M - SECTOR_COUNT_8M / 32, WP_GD32M_31_32},
+    {SECTOR_COUNT_8M - SECTOR_COUNT_8M / 16, WP_GD32M_15_16},
+    {SECTOR_COUNT_8M - SECTOR_COUNT_8M / 8, WP_GD32M_7_8},
+    {SECTOR_COUNT_8M - SECTOR_COUNT_8M / 4, WP_GD32M_3_4},
+    {SECTOR_COUNT_8M / 2, WP_GD32M_1_2},
+    {SECTOR_COUNT_8M / 4, WP_GD32M_1_4},
+    {SECTOR_COUNT_8M / 8, WP_GD32M_1_8},
+    {SECTOR_COUNT_8M / 16, WP_GD32M_1_16},
+    {SECTOR_COUNT_8M / 32, WP_GD32M_1_32},
+    {SECTOR_COUNT_8M / 64, WP_GD32M_1_64},
+    {SECTOR_COUNT_32K, WP_GD32M_32K},
+    {SECTOR_COUNT_16K, WP_GD32M_16K},
+    {SECTOR_COUNT_8K, WP_GD32M_8K},
+    {SECTOR_COUNT_4K, WP_GD32M_4K},
+    {0, WP_GD32M_NONE},
+};
 
-#define IS_GD(id) (MID(id) == MID_GD)
-#define IS_WINBOND(id) (MID(id) == MID_WINBOND)
+/**
+ * Table for GD 16MB
+ */
+FLASHRAM_CODE static const halSpiFlashWpMap_t gGD128MWpMap[] = {
+    {SECTOR_COUNT_16M, WP_GD32M_ALL},
+    {SECTOR_COUNT_16M - SECTOR_COUNT_16M / 64, WP_GD32M_63_64},
+    {SECTOR_COUNT_16M - SECTOR_COUNT_16M / 32, WP_GD32M_31_32},
+    {SECTOR_COUNT_16M - SECTOR_COUNT_16M / 16, WP_GD32M_15_16},
+    {SECTOR_COUNT_16M - SECTOR_COUNT_16M / 8, WP_GD32M_7_8},
+    {SECTOR_COUNT_16M - SECTOR_COUNT_16M / 4, WP_GD32M_3_4},
+    {SECTOR_COUNT_16M / 2, WP_GD32M_1_2},
+    {SECTOR_COUNT_16M / 4, WP_GD32M_1_4},
+    {SECTOR_COUNT_16M / 8, WP_GD32M_1_8},
+    {SECTOR_COUNT_16M / 16, WP_GD32M_1_16},
+    {SECTOR_COUNT_16M / 32, WP_GD32M_1_32},
+    {SECTOR_COUNT_16M / 64, WP_GD32M_1_64},
+    {SECTOR_COUNT_32K, WP_GD32M_32K},
+    {SECTOR_COUNT_16K, WP_GD32M_16K},
+    {SECTOR_COUNT_8K, WP_GD32M_8K},
+    {SECTOR_COUNT_4K, WP_GD32M_4K},
+    {0, WP_GD32M_NONE},
+};
 
-#define CAPACITY_BYTES(id) (1 << (((id) >> 16) & 0xff))
+/**
+ * Table for XMCA
+ */
+FLASHRAM_CODE static const halSpiFlashWpMap_t gXmcaWpMap[] = {
+    {128, WP_XMCA_ALL},
+    {127, WP_XMCA_127_128},
+    {126, WP_XMCA_126_128},
+    {124, WP_XMCA_124_128},
+    {120, WP_XMCA_120_128},
+    {112, WP_XMCA_112_128},
+    {96, WP_XMCA_96_128},
+    {64, WP_XMCA_64_128},
+    {32, WP_XMCA_32_128},
+    {16, WP_XMCA_16_128},
+    {8, WP_XMCA_8_128},
+    {4, WP_XMCA_4_128},
+    {2, WP_XMCA_2_128},
+    {1, WP_XMCA_1_128},
+    {8, WP_XMCA_NONE},
+};
 
-#define STREG_WIP (1 << 0)
-#define STREG_WEL (1 << 1)
-#define STREG_BP0 (1 << 2)
-#define STREG_BP1 (1 << 3)
-#define STREG_BP2 (1 << 4)
-#define STREG_BP3 (1 << 5)
-#define STREG_BP4 (1 << 6)
-#define STREG_QE (1 << 9)
-#define STREG_SUS2 (1 << 10)
-#define STREG_SUS1 (1 << 15)
-#define STREG_LB1 (1 << 11)
-#define STREG_LB2 (1 << 12)
-#define STREG_LB3 (1 << 13)
-#define STREG_CMP (1 << 14)
-
-#define OPCODE_WRITE_ENABLE 0x06
-#define OPCODE_WRITE_VOLATILE_STATUS_ENABLE 0x50
-#define OPCODE_WRITE_DISABLE 0x04
-#define OPCODE_READ_STATUS 0x05
-#define OPCODE_READ_STATUS_2 0x35
-#define OPCODE_READ_STATUS_3 0x15
-#define OPCODE_WRITE_STATUS 0x01
-#define OPCODE_WRITE_STATUS_2 0x31
-#define OPCODE_WRITE_STATUS_3 0x11
-#define OPCODE_SECTOR_ERASE 0x20
-#define OPCODE_BLOCK_ERASE 0xd8
-#define OPCODE_BLOCK32K_ERASE 0x52
-#define OPCODE_CHIP_ERASE 0xc7 // or 0x60
-#define OPCODE_ERASE_SUSPEND 0x75
-#define OPCODE_ERASE_RESUME 0x7a
-#define OPCODE_PROGRAM_SUSPEND 0x75
-#define OPCODE_PROGRAM_RESUME 0x7a
-#define OPCODE_RESET_ENABLE 0x66
-#define OPCODE_RESET 0x99
-#define OPCODE_PAGE_PROGRAM 0x02
-#define OPCODE_READ_ID 0x9f
-#define OPCODE_SECURITY_ERASE 0x44
-#define OPCODE_SECURITY_PROGRAM 0x42
-#define OPCODE_SECURITY_READ 0x48
-#define OPCODE_POWER_DOWN 0xb9
-#define OPCODE_RELEASE_POWER_DOWN 0xab
-#define OPCODE_QUAD_FAST_READ 0xeb
-#define OPCODE_READ_UNIQUE_ID 0x4b
-
-#define WP_GD_WINBOND_MASK (STREG_CMP | STREG_BP0 | STREG_BP1 | STREG_BP2 | STREG_BP3 | STREG_BP4)
-#define WP_GD_WINBOND_NONE (0x0000)
-#define WP_GD_WINBOND_4K (STREG_BP4 | STREG_BP3 | STREG_BP0)
-#define WP_GD_WINBOND_8K (STREG_BP4 | STREG_BP3 | STREG_BP1)
-#define WP_GD_WINBOND_16K (STREG_BP4 | STREG_BP3 | STREG_BP1 | STREG_BP0)
-#define WP_GD_WINBOND_32K (STREG_BP4 | STREG_BP3 | STREG_BP2 | STREG_BP1)
-#define WP_GD_WINBOND_1_64 (STREG_BP3 | STREG_BP0)
-#define WP_GD_WINBOND_1_32 (STREG_BP3 | STREG_BP1)
-#define WP_GD_WINBOND_1_16 (STREG_BP3 | STREG_BP1 | STREG_BP0)
-#define WP_GD_WINBOND_1_8 (STREG_BP3 | STREG_BP2)
-#define WP_GD_WINBOND_1_4 (STREG_BP3 | STREG_BP2 | STREG_BP0)
-#define WP_GD_WINBOND_1_2 (STREG_BP3 | STREG_BP2 | STREG_BP1)
-#define WP_GD_WINBOND_3_4 (STREG_CMP | STREG_BP2 | STREG_BP0)
-#define WP_GD_WINBOND_7_8 (STREG_CMP | STREG_BP2)
-#define WP_GD_WINBOND_15_16 (STREG_CMP | STREG_BP1 | STREG_BP0)
-#define WP_GD_WINBOND_31_32 (STREG_CMP | STREG_BP1)
-#define WP_GD_WINBOND_63_64 (STREG_CMP | STREG_BP0)
-#define WP_GD_WINBOND_ALL (STREG_BP2 | STREG_BP1 | STREG_BP0)
-
-#define CMD_ADDRESS(opcode, address) ((opcode) | ((address) << 8))
-#define EXTCMD_NORX(opcode) ((opcode) << 8)
-#define EXTCMD_SRX(opcode) (((opcode) << 8) | (1 << 16))             // rx single mode
-#define EXTCMD_QRX(opcode) (((opcode) << 8) | (1 << 16) | (1 << 17)) // rx quad mode
-
-#ifdef CONFIG_SOC_8910
-static inline void prvWaitNotBusy(uintptr_t d)
+/**
+ * Find WP bits from offset
+ */
+FLASHRAM_CODE static uint16_t prvFindFromWpMap(const halSpiFlashWpMap_t *wpmap, uint32_t offset)
 {
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_STATUS_T status;
-    REG_WAIT_FIELD_EQZ(status, hwp->spi_status, spi_flash_busy);
-    REG_WAIT_FIELD_EQZ(status, hwp->spi_status, spi_flash_busy);
-}
-
-static inline void prvClearFifo(uintptr_t d)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_FIFO_CONTROL_T fifo_control = {
-        .b.rx_fifo_clr = 1,
-        .b.tx_fifo_clr = 1,
-    };
-    hwp->spi_fifo_control = fifo_control.v;
-}
-
-static inline void prvSetRxSize(uintptr_t d, unsigned size)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_BLOCK_SIZE_T block_size = {hwp->spi_block_size};
-    block_size.b.spi_rw_blk_size = size;
-    hwp->spi_block_size = block_size.v;
-}
-
-static inline void prvSetFifoWidth(uintptr_t d, unsigned width)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_CONFIG_T config = {hwp->spi_config};
-    if (width == 1)
-        config.b.tx_rx_size = RX_FIFO_WIDTH_8BIT;
-    else if (width == 2)
-        config.b.tx_rx_size = RX_FIFO_WIDTH_16BIT;
-    else if (width == 3)
-        config.b.tx_rx_size = RX_FIFO_WIDTH_24BIT;
-    else
-        config.b.tx_rx_size = RX_FIFO_WIDTH_32BIT;
-    hwp->spi_config = config.v;
-}
-
-static inline void prvWriteCommand(uintptr_t d, uint32_t cmd)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    hwp->spi_cmd_addr = cmd;
-    (void)hwp->spi_cmd_addr;
-}
-
-static inline uint32_t prvReadBack(uintptr_t d)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    return hwp->rx_status;
-}
-
-static inline void prvWriteFifo8(uintptr_t d, const uint8_t *txdata, unsigned txsize)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-
-    for (unsigned n = 0; n < txsize; n++)
-        hwp->spi_data_fifo = txdata[n];
-}
-
-static inline void prvReadFifo8(uintptr_t d, uint8_t *data, unsigned size)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    while (size > 0)
+    for (;;)
     {
-        REG_SPI_FLASH_SPI_STATUS_T spi_status = {hwp->spi_status};
-        int count = OSI_MIN(int, spi_status.b.rx_fifo_count, size);
-        for (int n = 0; n < count; n++)
-            *data++ = hwp->spi_data_fifo;
-        size -= count;
+        if (offset >= wpmap->offset)
+            return wpmap->wp;
+        ++wpmap;
     }
 }
-#endif
 
-#ifdef CONFIG_SOC_8955
-static inline void prvWaitNotBusy(uintptr_t d)
+/**
+ * Find real offset from offset
+ */
+FLASHRAM_CODE static uint16_t prvFindFromWpOffset(const halSpiFlashWpMap_t *wpmap, uint32_t offset)
 {
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_DATA_FIFO_RO_T status;
-    REG_WAIT_FIELD_EQZ(status, hwp->spi_data_fifo_ro, spi_flash_busy);
-    REG_WAIT_FIELD_EQZ(status, hwp->spi_data_fifo_ro, spi_flash_busy);
-}
-
-static inline void prvClearFifo(uintptr_t d)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_FIFO_CONTROL_T fifo_control = {
-        .b.rx_fifo_clr = 1,
-        .b.tx_fifo_clr = 1,
-    };
-    hwp->spi_fifo_control = fifo_control.v;
-}
-
-static inline void prvSetRxSize(uintptr_t d, unsigned size)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_BLOCK_SIZE_T block_size = {hwp->spi_block_size};
-    block_size.b.spi_rw_blk_size = size;
-    hwp->spi_block_size = block_size.v;
-}
-
-static inline void prvSetFifoWidth(uintptr_t d, unsigned width)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_CONFIG_T config = {hwp->spi_config};
-    if (width == 1)
-        config.b.tx_rx_size = RX_FIFO_WIDTH_8BIT;
-    else if (width == 2)
-        config.b.tx_rx_size = RX_FIFO_WIDTH_16BIT;
-    else if (width == 3)
-        config.b.tx_rx_size = RX_FIFO_WIDTH_24BIT;
-    else
-        config.b.tx_rx_size = RX_FIFO_WIDTH_32BIT;
-    hwp->spi_config = config.v;
-}
-
-static inline void prvWriteCommand(uintptr_t d, uint32_t cmd)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    hwp->spi_cmd_addr = cmd;
-    (void)hwp->spi_cmd_addr;
-}
-
-static inline uint32_t prvReadBack(uintptr_t d)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    return hwp->spi_read_back;
-}
-
-static inline void prvWriteFifo8(uintptr_t d, const uint8_t *txdata, unsigned txsize)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-
-    for (unsigned n = 0; n < txsize; n++)
-        hwp->spi_data_fifo_wo = txdata[n];
-}
-
-static inline void prvReadFifo8(uintptr_t d, uint8_t *data, unsigned size)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    while (size > 0)
+    for (;;)
     {
-        REG_SPI_FLASH_SPI_DATA_FIFO_RO_T spi_status = {hwp->spi_data_fifo_ro};
-        int count = OSI_MIN(int, spi_status.b.rx_fifo_count, size);
-        for (int n = 0; n < count; n++)
-            *data++ = hwp->spi_data_fifo_wo;
-        size -= count;
+        if (offset >= wpmap->offset)
+            return wpmap->offset;
+        ++wpmap;
     }
 }
-#endif
 
-#ifdef CONFIG_SOC_8909
-static inline void prvWaitNotBusy(uintptr_t d)
+/**
+ * SR with proper WP bits
+ */
+FLASHRAM_CODE static uint16_t prvStatusWpLower(const halSpiFlashProp_t *prop, uint16_t status, uint32_t offset)
 {
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_FIFO_STATUS_T status;
-    REG_WAIT_FIELD_EQZ(status, hwp->spi_fifo_status, spi_flash_busy);
-    REG_WAIT_FIELD_EQZ(status, hwp->spi_fifo_status, spi_flash_busy);
-}
-
-static inline void prvClearFifo(uintptr_t d)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_FIFO_CONTROL_T fifo_control = {
-        .b.rx_fifo_clr = 1,
-        .b.tx_fifo_clr = 1,
-    };
-    hwp->spi_fifo_control = fifo_control.v;
-}
-
-static inline void prvSetRxSize(uintptr_t d, unsigned size)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_BLOCK_SIZE_T block_size = {hwp->spi_block_size};
-    block_size.b.spi_rw_blk_size = size;
-    hwp->spi_block_size = block_size.v;
-}
-
-static inline void prvSetFifoWidth(uintptr_t d, unsigned width)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    REG_SPI_FLASH_SPI_CONFIG_T config = {hwp->spi_config};
-    if (width == 1)
-        config.b.tx_rx_size = RX_FIFO_WIDTH_8BIT;
-    else if (width == 2)
-        config.b.tx_rx_size = RX_FIFO_WIDTH_16BIT;
-    else if (width == 3)
-        config.b.tx_rx_size = RX_FIFO_WIDTH_24BIT;
-    else
-        config.b.tx_rx_size = RX_FIFO_WIDTH_32BIT;
-    hwp->spi_config = config.v;
-}
-
-static inline void prvWriteCommand(uintptr_t d, uint32_t cmd)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    hwp->spi_cmd_addr = cmd;
-    (void)hwp->spi_cmd_addr;
-}
-
-static inline uint32_t prvReadBack(uintptr_t d)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    return hwp->spi_read_back;
-}
-
-static inline void prvWriteFifo8(uintptr_t d, const uint8_t *txdata, unsigned txsize)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-
-    for (unsigned n = 0; n < txsize; n++)
-        hwp->spi_data_fifo = txdata[n];
-}
-
-static inline void prvReadFifo8(uintptr_t d, uint8_t *data, unsigned size)
-{
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d;
-    while (size > 0)
+    uint32_t capacity = prop->capacity;
+    if (prop->wp_gd_en)
     {
-        REG_SPI_FLASH_SPI_FIFO_STATUS_T spi_status = {hwp->spi_fifo_status};
-        int count = OSI_MIN(int, spi_status.b.rx_fifo_count, size);
-        for (int n = 0; n < count; n++)
-            *data++ = hwp->spi_data_fifo;
-        size -= count;
+        unsigned scount = (offset / SIZE_4K);
+        if (capacity == (1 << 20))
+            return (status & ~WP_GD8M_MASK) | prvFindFromWpMap(gGD8MWpMap, scount);
+        else if (capacity == (2 << 20))
+            return (status & ~WP_GD16M_MASK) | prvFindFromWpMap(gGD16MWpMap, scount);
+        else if (capacity == (4 << 20))
+            return (status & ~WP_GD32M_MASK) | prvFindFromWpMap(gGD32MWpMap, scount);
+        else if (capacity == (8 << 20))
+            return (status & ~WP_GD32M_MASK) | prvFindFromWpMap(gGD64MWpMap, scount);
+        else if (capacity == (16 << 20))
+            return (status & ~WP_GD32M_MASK) | prvFindFromWpMap(gGD128MWpMap, scount);
+        else
+            return status;
+    }
+    else if (prop->wp_xmca_en)
+    {
+        unsigned num = offset >> (CAPACITY_BITS(prop->mid) - 7);
+        return (status & ~WP_XMCA_MASK) | prvFindFromWpMap(gXmcaWpMap, num);
+    }
+    else
+    {
+        return status;
     }
 }
-#endif
 
-// Send command (basic or extended), with additional tx data, without rx data
-static void prvCmdNoRx(uintptr_t hwp, uint32_t cmd, const void *tx_data, unsigned tx_size)
+/**
+ * SR with proper WP bits
+ */
+FLASHRAM_API uint16_t halSpiFlashStatusWpRange(const halSpiFlashProp_t *prop, uint16_t status, uint32_t offset, uint32_t size)
 {
-    prvWaitNotBusy(hwp);
-    prvClearFifo(hwp);
-    prvSetRxSize(hwp, 0);
-    prvWriteFifo8(hwp, tx_data, tx_size);
-    prvWriteCommand(hwp, cmd);
-    prvWaitNotBusy(hwp);
+    return prvStatusWpLower(prop, status, offset);
 }
 
-// Send command (basic or extended), without additional tx data, without rx data
-static void prvCmdOnlyNoRx(uintptr_t hwp, uint32_t cmd)
+/**
+ * WP range from offset
+ */
+FLASHRAM_API osiUintRange_t halSpiFlashWpRange(const halSpiFlashProp_t *prop, uint32_t offset, uint32_t size)
 {
-    prvCmdNoRx(hwp, cmd, NULL, 0);
+    osiUintRange_t range = {0, 0};
+    uint32_t capacity = prop->capacity;
+    if (prop->wp_gd_en)
+    {
+        unsigned scount = (offset / SIZE_4K);
+        if (capacity == (1 << 20))
+            range.maxval = prvFindFromWpOffset(gGD8MWpMap, scount) * SIZE_4K;
+        else if (capacity == (2 << 20))
+            range.maxval = prvFindFromWpOffset(gGD16MWpMap, scount) * SIZE_4K;
+        else if (capacity == (4 << 20))
+            range.maxval = prvFindFromWpOffset(gGD32MWpMap, scount) * SIZE_4K;
+        else if (capacity == (8 << 20))
+            range.maxval = prvFindFromWpOffset(gGD64MWpMap, scount) * SIZE_4K;
+        else if (capacity == (16 << 20))
+            range.maxval = prvFindFromWpOffset(gGD128MWpMap, scount) * SIZE_4K;
+    }
+    else if (prop->wp_xmca_en)
+    {
+        unsigned num = offset >> (CAPACITY_BITS(prop->mid) - 7);
+        range.maxval = prvFindFromWpOffset(gXmcaWpMap, num) << (CAPACITY_BITS(prop->mid) - 7);
+    }
+    return range;
 }
 
-// Send command (basic or extended), with additional tx data, get rx data by readback
-static uint32_t prvCmdRxReadback(uintptr_t hwp, uint32_t cmd, unsigned rx_size,
-                                 const void *tx_data, unsigned tx_size)
+/**
+ * Write volatile SR 1/2, with check
+ */
+FLASHRAM_CODE static void prvWriteVolatileSR12(uintptr_t hwp, const halSpiFlashProp_t *prop, uint16_t sr)
 {
-    prvWaitNotBusy(hwp);
-    prvClearFifo(hwp);
-    prvSetRxSize(hwp, rx_size);
-    prvSetFifoWidth(hwp, rx_size);
-    prvWriteFifo8(hwp, tx_data, tx_size);
-    prvWriteCommand(hwp, cmd);
-    prvWaitNotBusy(hwp);
+    for (;;)
+    {
+        if (prop->write_sr12)
+        {
+            halSpiFlashWriteVolatileSREnable(hwp);
+            halSpiFlashWriteSR12(hwp, sr);
+        }
+        else
+        {
+            halSpiFlashWriteVolatileSREnable(hwp);
+            halSpiFlashWriteSR1(hwp, sr & 0xff);
+            halSpiFlashWriteVolatileSREnable(hwp);
+            halSpiFlashWriteSR2(hwp, (sr >> 8) & 0xff);
+        }
 
-    uint32_t result = prvReadBack(hwp) >> ((4 - rx_size) * 8);
-    prvSetRxSize(hwp, 0);
-    return result;
+        // check whether volatile SR are written correctly
+        uint16_t new_sr = halSpiFlashReadSR12(hwp);
+        if (new_sr == sr)
+            break;
+    }
 }
 
-// Send command (basic or extended), without additional tx data, get rx data by readback
-static uint32_t prvCmdOnlyReadback(uintptr_t hwp, uint32_t cmd, unsigned rx_size)
+/**
+ * Write volatile SR 1, with check
+ */
+FLASHRAM_CODE static void prvWriteVolatileSR1(uintptr_t hwp, const halSpiFlashProp_t *prop, uint8_t sr)
 {
-    return prvCmdRxReadback(hwp, cmd, rx_size, NULL, 0);
+    for (;;)
+    {
+        halSpiFlashWriteVolatileSREnable(hwp);
+        halSpiFlashWriteSR1(hwp, sr);
+
+        // check whether volatile SR are written correctly
+        uint8_t new_sr = halSpiFlashReadSR1(hwp);
+        if (new_sr == sr)
+            break;
+    }
 }
 
-// Send command (basic or extended), without additional tx data, get rx data by fifo
-static void prvCmdRxFifo(uintptr_t hwp, uint32_t cmd, const void *tx_data, unsigned tx_size,
-                         void *rx_data, unsigned rx_size)
+/**
+ * Prepare for erase/program
+ */
+FLASHRAM_API void halSpiFlashPrepareEraseProgram(uintptr_t hwp, const halSpiFlashProp_t *prop, uint32_t offset, uint32_t size)
 {
-    prvWaitNotBusy(hwp);
-    prvClearFifo(hwp);
-    prvSetRxSize(hwp, rx_size);
-    prvSetFifoWidth(hwp, 1);
-    prvWriteFifo8(hwp, tx_data, tx_size);
-    prvWriteCommand(hwp, cmd);
-
-    prvReadFifo8(hwp, rx_data, rx_size);
-    prvWaitNotBusy(hwp);
-    prvSetRxSize(hwp, 0);
+    if (prop->volatile_sr_en && prop->wp_gd_en)
+    {
+        uint16_t sr = halSpiFlashReadSR12(hwp);
+        uint16_t sr_open = halSpiFlashStatusWpRange(prop, sr, offset, size);
+        if (sr != sr_open)
+            prvWriteVolatileSR12(hwp, prop, sr_open);
+    }
+    else if (prop->volatile_sr_en && prop->wp_xmca_en)
+    {
+        uint8_t sr = halSpiFlashReadSR1(hwp);
+        uint8_t sr_open = halSpiFlashStatusWpRange(prop, sr, offset, size);
+        if (sr != sr_open)
+            prvWriteVolatileSR1(hwp, prop, sr_open);
+    }
+    halSpiFlashWriteEnable(hwp);
 }
 
-uint32_t halSpiFlashReadId(uintptr_t hwp)
+/**
+ * Finish for erase/program
+ */
+FLASHRAM_API void halSpiFlashFinishEraseProgram(uintptr_t hwp, const halSpiFlashProp_t *prop)
 {
-    return prvCmdOnlyReadback(hwp, EXTCMD_SRX(OPCODE_READ_ID), 3);
+    if (prop->volatile_sr_en && prop->wp_gd_en)
+    {
+        uint16_t sr = halSpiFlashReadSR12(hwp);
+        uint16_t sr_close = halSpiFlashStatusWpAll(prop, sr);
+        if (sr != sr_close)
+            prvWriteVolatileSR12(hwp, prop, sr_close);
+    }
+    else if (prop->volatile_sr_en && prop->wp_xmca_en)
+    {
+        uint8_t sr = halSpiFlashReadSR1(hwp);
+        uint8_t sr_close = halSpiFlashStatusWpAll(prop, sr);
+        if (sr != sr_close)
+            prvWriteVolatileSR1(hwp, prop, sr_close);
+    }
 }
 
-void halSpiFlashWriteEnable(uintptr_t hwp)
-{
-    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_WRITE_ENABLE));
-}
-
-void halSpiFlashWriteDisable(uintptr_t hwp)
-{
-    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_WRITE_DISABLE));
-}
-
-void halSpiFlashProgramSuspend(uintptr_t hwp)
-{
-    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_PROGRAM_SUSPEND));
-}
-
-void halSpiFlashEraseSuspend(uintptr_t hwp)
-{
-    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_ERASE_SUSPEND));
-}
-
-void halSpiFlashProgramResume(uintptr_t hwp)
-{
-    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_PROGRAM_RESUME));
-}
-
-void halSpiFlashEraseResume(uintptr_t hwp)
-{
-    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_ERASE_RESUME));
-}
-
-void halSpiFlashChipErase(uintptr_t hwp)
-{
-    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_CHIP_ERASE));
-}
-
-void halSpiFlashResetEnable(uintptr_t hwp)
-{
-    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_RESET_ENABLE));
-}
-
-void halSpiFlashReset(uintptr_t hwp)
-{
-    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_RESET));
-}
-
-uint8_t halSpiFlashReadStatus(uintptr_t hwp)
-{
-    return prvCmdOnlyReadback(hwp, EXTCMD_SRX(OPCODE_READ_STATUS), 1) & 0xff;
-}
-
-uint8_t halSpiFlashReadStatus2(uintptr_t hwp)
-{
-    return prvCmdOnlyReadback(hwp, EXTCMD_SRX(OPCODE_READ_STATUS_2), 1) & 0xff;
-}
-
-void halSpiFlashWriteVolatileStatusEnable(uintptr_t hwp)
+/**
+ * OPCODE_WRITE_VOLATILE_STATUS_ENABLE
+ */
+FLASHRAM_API void halSpiFlashWriteVolatileSREnable(uintptr_t hwp)
 {
     prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_WRITE_VOLATILE_STATUS_ENABLE));
 }
 
-void halSpiFlashPageProgram(uintptr_t hwp, uint32_t offset, const void *data, uint32_t size)
+/**
+ * OPCODE_PAGE_PROGRAM
+ */
+FLASHRAM_API void halSpiFlashPageProgram(uintptr_t hwp, uint32_t offset, const void *data, uint32_t size)
 {
+#ifdef CONFIG_SOC_8811
+    hwp_med->med_clr = 0xffffffff;
+#endif
     prvCmdNoRx(hwp, CMD_ADDRESS(OPCODE_PAGE_PROGRAM, offset), data, size);
 }
 
-void halSpiFlashErase4K(uintptr_t hwp, uint32_t offset)
+/**
+ * OPCODE_SECTOR_ERASE
+ */
+FLASHRAM_API void halSpiFlashErase4K(uintptr_t hwp, uint32_t offset)
 {
+#ifdef CONFIG_SOC_8811
+    hwp_med->med_clr = 0xffffffff;
+#endif
     prvCmdOnlyNoRx(hwp, CMD_ADDRESS(OPCODE_SECTOR_ERASE, offset));
 }
 
-void halSpiFlashErase32K(uintptr_t hwp, uint32_t offset)
+/**
+ * OPCODE_BLOCK32K_ERASE
+ */
+FLASHRAM_API void halSpiFlashErase32K(uintptr_t hwp, uint32_t offset)
 {
+#ifdef CONFIG_SOC_8811
+    hwp_med->med_clr = 0xffffffff;
+#endif
     prvCmdOnlyNoRx(hwp, CMD_ADDRESS(OPCODE_BLOCK32K_ERASE, offset));
 }
 
-void halSpiFlashErase64K(uintptr_t hwp, uint32_t offset)
+/**
+ * OPCODE_BLOCK_ERASE
+ */
+FLASHRAM_API void halSpiFlashErase64K(uintptr_t hwp, uint32_t offset)
 {
+#ifdef CONFIG_SOC_8811
+    hwp_med->med_clr = 0xffffffff;
+#endif
     prvCmdOnlyNoRx(hwp, CMD_ADDRESS(OPCODE_BLOCK_ERASE, offset));
 }
 
-void halSpiFlashDeepPowerDown(uintptr_t hwp)
+/**
+ * OPCODE_PROGRAM_SUSPEND
+ */
+FLASHRAM_API void halSpiFlashProgramSuspend(uintptr_t hwp)
+{
+    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_PROGRAM_SUSPEND));
+}
+
+/**
+ * OPCODE_ERASE_SUSPEND
+ */
+FLASHRAM_API void halSpiFlashEraseSuspend(uintptr_t hwp)
+{
+    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_ERASE_SUSPEND));
+}
+
+/**
+ * OPCODE_PROGRAM_RESUME
+ */
+FLASHRAM_API void halSpiFlashProgramResume(uintptr_t hwp)
+{
+    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_PROGRAM_RESUME));
+}
+
+/**
+ * OPCODE_ERASE_RESUME
+ */
+FLASHRAM_API void halSpiFlashEraseResume(uintptr_t hwp)
+{
+    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_ERASE_RESUME));
+}
+
+/**
+ * OPCODE_CHIP_ERASE
+ */
+FLASHRAM_API void halSpiFlashChipErase(uintptr_t hwp)
+{
+#ifdef CONFIG_SOC_8811
+    hwp_med->med_clr = 0xffffffff;
+#endif
+    prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_CHIP_ERASE));
+}
+
+/**
+ * OPCODE_POWER_DOWN
+ */
+FLASHRAM_API void halSpiFlashDeepPowerDown(uintptr_t hwp)
 {
     prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_POWER_DOWN));
 }
 
-void halSpiFlashReleaseDeepPowerDown(uintptr_t hwp)
+/**
+ * OPCODE_RELEASE_POWER_DOWN
+ */
+FLASHRAM_API void halSpiFlashReleaseDeepPowerDown(uintptr_t hwp)
 {
     prvCmdOnlyNoRx(hwp, EXTCMD_NORX(OPCODE_RELEASE_POWER_DOWN));
     osiDelayUS(DELAY_AFTER_RELEASE_DEEP_POWER_DOWN);
 }
 
-void halSpiFlashProgramSecurityRegister(uintptr_t hwp, uint32_t address, const void *data, uint32_t size)
+/**
+ * OPCODE_SECURITY_PROGRAM
+ */
+FLASHRAM_API void halSpiFlashProgramSecurityRegister(uintptr_t hwp, uint32_t address, const void *data, uint32_t size)
 {
     prvCmdNoRx(hwp, CMD_ADDRESS(OPCODE_SECURITY_PROGRAM, address), data, size);
 }
 
-void halSpiFlashEraseSecurityRegister(uintptr_t hwp, uint32_t address)
+/**
+ * OPCODE_SECURITY_ERASE
+ */
+FLASHRAM_API void halSpiFlashEraseSecurityRegister(uintptr_t hwp, uint32_t address)
 {
     prvCmdOnlyNoRx(hwp, CMD_ADDRESS(OPCODE_SECURITY_ERASE, address));
 }
 
-uint16_t halSpiFlashReadStatus12(uintptr_t hwp)
-{
-    uint8_t lo = halSpiFlashReadStatus(hwp);
-    uint8_t hi = halSpiFlashReadStatus2(hwp);
-    return (hi << 8) | lo;
-}
-
-void halSpiFlashWriteStatus12(uintptr_t hwp, uint16_t status)
-{
-    uint8_t data[2] = {status & 0xff, (status >> 8) & 0xff};
-    prvCmdNoRx(hwp, OPCODE_WRITE_STATUS, data, 2);
-}
-
-void halSpiFlashErase(uintptr_t hwp, uint32_t offset, uint32_t size)
+/**
+ * Erase (64K/32K/4K)
+ */
+FLASHRAM_API void halSpiFlashErase(uintptr_t hwp, uint32_t offset, uint32_t size)
 {
     if (size == SIZE_64K)
         halSpiFlashErase64K(hwp, offset);
@@ -526,13 +492,19 @@ void halSpiFlashErase(uintptr_t hwp, uint32_t offset, uint32_t size)
         halSpiFlashErase4K(hwp, offset);
 }
 
-void halSpiFlashReadUniqueId(uintptr_t hwp, uint8_t uid[8])
+/**
+ * OPCODE_READ_UNIQUE_ID
+ */
+FLASHRAM_API void halSpiFlashReadUniqueId(uintptr_t hwp, uint8_t uid[8])
 {
     uint8_t tx_data[4] = {};
     prvCmdRxFifo(hwp, EXTCMD_SRX(OPCODE_READ_UNIQUE_ID), tx_data, 4, uid, 8);
 }
 
-uint16_t halSpiFlashReadCpId(uintptr_t hwp)
+/**
+ * OPCODE_READ_UNIQUE_ID
+ */
+FLASHRAM_API uint16_t halSpiFlashReadCpId(uintptr_t hwp)
 {
     uint8_t uid[18];
     uint8_t tx_data[4] = {};
@@ -540,7 +512,10 @@ uint16_t halSpiFlashReadCpId(uintptr_t hwp)
     return osiBytesGetLe16(&uid[16]);
 }
 
-void halSpiFlashReadSecurityRegister(uintptr_t hwp, uint32_t address, void *data, uint32_t size)
+/**
+ * OPCODE_SECURITY_READ
+ */
+FLASHRAM_API void halSpiFlashReadSecurityRegister(uintptr_t hwp, uint32_t address, void *data, uint32_t size)
 {
     uint8_t tx_data[4] = {(address >> 16) & 0xff, (address >> 8) & 0xff, address & 0xff, 0};
     uint32_t val = prvCmdRxReadback(hwp, EXTCMD_SRX(OPCODE_SECURITY_READ), size, tx_data, 4);
@@ -551,137 +526,11 @@ void halSpiFlashReadSecurityRegister(uintptr_t hwp, uint32_t address, void *data
         *pout++ = *pin++;
 }
 
-bool halSpiFlashIsWipFinished(uintptr_t hwp)
+/**
+ * OPCODE_READ_SFDP
+ */
+FLASHRAM_API void halSpiFlashReadSFDP(uintptr_t hwp, uint32_t address, void *data, uint32_t size)
 {
-    osiDelayUS(1);
-    if (halSpiFlashReadStatus(hwp) & STREG_WIP)
-        return false;
-    if (halSpiFlashReadStatus(hwp) & STREG_WIP)
-        return false;
-    return true;
-}
-
-void halSpiFlashWaitWipFinish(uintptr_t hwp)
-{
-    OSI_LOOP_WAIT(halSpiFlashIsWipFinished(hwp));
-}
-
-uint16_t halSpiFlashStatusWpRange(uint32_t id, uint16_t status, uint32_t offset, uint32_t size)
-{
-    if (!IS_GD(id) && !IS_WINBOND(id))
-        return status;
-
-    uint32_t capacity = CAPACITY_BYTES(id);
-    uint32_t wp = WP_GD_WINBOND_NONE;
-    // try to write protect low address as possible
-    if (offset >= capacity - capacity / 64)
-        wp = WP_GD_WINBOND_63_64;
-    else if (offset >= capacity - capacity / 32)
-        wp = WP_GD_WINBOND_31_32;
-    else if (offset >= capacity - capacity / 16)
-        wp = WP_GD_WINBOND_15_16;
-    else if (offset >= capacity - capacity / 8)
-        wp = WP_GD_WINBOND_7_8;
-    else if (offset >= capacity - capacity / 4)
-        wp = WP_GD_WINBOND_3_4;
-    else if (offset >= capacity / 2)
-        wp = WP_GD_WINBOND_1_2;
-    else if (offset >= capacity / 4)
-        wp = WP_GD_WINBOND_1_4;
-    else if (offset >= capacity / 8)
-        wp = WP_GD_WINBOND_1_8;
-    else if (offset >= capacity / 16)
-        wp = WP_GD_WINBOND_1_16;
-    else if (offset >= capacity / 32)
-        wp = WP_GD_WINBOND_1_32;
-    else if (offset >= capacity / 64)
-        wp = WP_GD_WINBOND_1_64;
-    else if (offset >= 32 * 1024)
-        wp = WP_GD_WINBOND_32K;
-    else if (offset >= 16 * 1024)
-        wp = WP_GD_WINBOND_16K;
-    else if (offset >= 8 * 1024)
-        wp = WP_GD_WINBOND_8K;
-    else if (offset >= 4 * 1024)
-        wp = WP_GD_WINBOND_4K;
-
-    return (status & ~WP_GD_WINBOND_MASK) | wp;
-}
-
-uint16_t halSpiFlashStatusWpAll(uint32_t id, uint16_t status)
-{
-    if (!IS_GD(id) && !IS_WINBOND(id))
-        return status;
-
-    return (status & ~WP_GD_WINBOND_MASK) | WP_GD_WINBOND_ALL;
-}
-
-uint16_t halSpiFlashStatusWpNone(uint32_t id, uint16_t status)
-{
-    if (!IS_GD(id) && !IS_WINBOND(id))
-        return status;
-
-    return (status & ~WP_GD_WINBOND_MASK) | WP_GD_WINBOND_NONE;
-}
-
-void halSpiFlashPrepareEraseProgram(uintptr_t hwp, uint32_t mid, uint32_t offset, uint32_t size)
-{
-    uint16_t status = halSpiFlashReadStatus12(hwp);
-    uint16_t status_open = halSpiFlashStatusWpRange(mid, status, offset, size);
-    while (status_open != status)
-    {
-        halSpiFlashWriteVolatileStatusEnable(hwp);
-        halSpiFlashWriteStatus12(hwp, status_open);
-        status = halSpiFlashReadStatus12(hwp);
-    }
-
-    halSpiFlashWriteEnable(hwp);
-}
-
-void halSpiFlashFinishEraseProgram(uintptr_t hwp, uint32_t mid)
-{
-    uint16_t status = halSpiFlashReadStatus12(hwp);
-    uint16_t status_close = halSpiFlashStatusWpAll(mid, status);
-    while (status_close != status)
-    {
-        halSpiFlashWriteVolatileStatusEnable(hwp);
-        halSpiFlashWriteStatus12(hwp, status_close);
-        status = halSpiFlashReadStatus12(hwp);
-    }
-}
-
-void halSpiFlashStatusCheck(uintptr_t hwp)
-{
-    if (hwp == 0)
-        hwp = (uintptr_t)hwp_spiFlash;
-
-    uint32_t mid = halSpiFlashReadId(hwp);
-    uint16_t status = halSpiFlashReadStatus12(hwp);
-
-    bool reset_needed = false;
-    if (IS_GD(mid) && (status & (STREG_SUS1 | STREG_SUS2)))
-        reset_needed = true;
-    if (IS_WINBOND(mid) && (status & STREG_SUS1))
-        reset_needed = true;
-
-    if (reset_needed)
-    {
-        halSpiFlashResetEnable(hwp);
-        halSpiFlashReset(hwp);
-        osiDelayUS(DELAY_AFTER_RESET);
-    }
-
-    uint16_t status_needed = halSpiFlashStatusWpAll(mid, status) | STREG_QE;
-    if (IS_GD(mid))
-        status_needed &= ~(STREG_WIP | STREG_WEL | STREG_SUS2 | STREG_SUS1);
-    if (IS_WINBOND(mid))
-        status_needed &= ~(STREG_WIP | STREG_WEL | STREG_SUS1);
-
-    if (status != status_needed)
-    {
-        // Write to non-volatile status
-        halSpiFlashWriteEnable(hwp);
-        halSpiFlashWriteStatus12(hwp, status_needed);
-        halSpiFlashWaitWipFinish(hwp);
-    }
+    uint8_t tx_data[4] = {(address >> 16) & 0xff, (address >> 8) & 0xff, address & 0xff, 0};
+    prvCmdRxFifo(hwp, EXTCMD_SRX(OPCODE_READ_SFDP), tx_data, 4, data, size);
 }

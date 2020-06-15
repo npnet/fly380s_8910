@@ -130,7 +130,7 @@ pbuf_free_ooseq(void)
   for (pcb = tcp_active_pcbs; NULL != pcb; pcb = pcb->next) {
     if (NULL != pcb->ooseq) {
       /** Free the ooseq pbufs of one PCB only */
-      LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_free_ooseq: freeing out-of-sequence pbufs\n"));
+      LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0x100079ef, "pbuf_free_ooseq: freeing out-of-sequence pbufs\n"));
       tcp_segs_free(pcb->ooseq);
       pcb->ooseq = NULL;
       return;
@@ -223,7 +223,7 @@ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 {
   struct pbuf *p;
   u16_t offset;
-  //LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_alloc(length=%"U16_F")\n", length));
+  //LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0,"pbuf_alloc(length=%hu)\n", length));
 
   if ((type == PBUF_REF) || (type == PBUF_ROM)) {
     return pbuf_alloc_reference(NULL, length, type);
@@ -318,7 +318,7 @@ pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
     LWIP_ASSERT("pbuf_alloc: erroneous type", 0);
     return NULL;
   }
-  //LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_alloc(length=%"U16_F") == %p\n", length, (void *)p));
+  LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0,"pbuf_alloc(length=%hu) == %p\n", length, (void *)p));
 
   return p;
 }
@@ -355,9 +355,7 @@ pbuf_alloc_reference(void *payload, u16_t length, pbuf_type type)
   /* only allocate memory for the pbuf structure */
   p = (struct pbuf *)memp_malloc(MEMP_PBUF);
   if (p == NULL) {
-    LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_LEVEL_SERIOUS,
-                ("pbuf_alloc_reference: Could not allocate MEMP_PBUF for PBUF_%s.\n",
-                (type == PBUF_ROM) ? "ROM" : "REF"));
+    LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_LEVEL_SERIOUS,(0x100079f0, "pbuf_alloc_reference: Could not allocate MEMP_PBUF for PBUF_.\n"));
     return NULL;
   }
   pbuf_init_alloced_pbuf(p, payload, length, length, type);
@@ -388,7 +386,7 @@ pbuf_alloced_custom(pbuf_layer l, u16_t length, pbuf_type type, struct pbuf_cust
                     void *payload_mem, u16_t payload_mem_len)
 {
   u16_t offset;
-  LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_alloced_custom(length=%"U16_F")\n", length));
+  LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0x100079f1, "pbuf_alloced_custom(length=%hu)\n", length));
 
   /* determine header offset */
   switch (l) {
@@ -417,7 +415,7 @@ pbuf_alloced_custom(pbuf_layer l, u16_t length, pbuf_type type, struct pbuf_cust
   }
 
   if (LWIP_MEM_ALIGN_SIZE(offset) + length > payload_mem_len) {
-    LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("pbuf_alloced_custom(length=%"U16_F") buffer too short\n", length));
+    LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_LEVEL_WARNING, (0x100079f2, "pbuf_alloced_custom(length=%hu) buffer too short\n", length));
     return NULL;
   }
 
@@ -567,8 +565,7 @@ pbuf_header_impl(struct pbuf *p, s16_t header_size_increment, u8_t force)
     p->payload = (u8_t *)p->payload - header_size_increment;
     /* boundary check fails? */
     if ((u8_t *)p->payload < (u8_t *)p + SIZEOF_STRUCT_PBUF) {
-      LWIP_DEBUGF( PBUF_DEBUG | LWIP_DBG_TRACE,
-        ("pbuf_header: failed as %p < %p (not enough space for new header size)\n",
+      LWIP_DEBUGF( PBUF_DEBUG | LWIP_DBG_TRACE,(0x08101285, "pbuf_header: failed as %p < %p (not enough space for new header size)\n",
         (void *)p->payload, (void *)((u8_t *)p + SIZEOF_STRUCT_PBUF)));
       /* restore old payload pointer */
       p->payload = payload;
@@ -593,7 +590,7 @@ pbuf_header_impl(struct pbuf *p, s16_t header_size_increment, u8_t force)
   p->len += header_size_increment;
   p->tot_len += header_size_increment;
 
-  //LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_header: old %p new %p (%"S16_F")\n",
+  //LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0,"pbuf_header: old %p new %p (%hd)\n",
   //  (void *)payload, (void *)p->payload, header_size_increment));
 
   return 0;
@@ -709,11 +706,10 @@ pbuf_free(struct pbuf *p)
   if (p == NULL) {
     LWIP_ASSERT("p != NULL", p != NULL);
     /* if assertions are disabled, proceed with debug output */
-    LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_LEVEL_SERIOUS,
-      ("pbuf_free(p == NULL) was called.\n"));
+    LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_LEVEL_SERIOUS,(0x08101287, "pbuf_free(p == NULL) was called.\n"));
     return 0;
   }
-  //LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_free(%p)\n", (void *)p));
+  //LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0,"pbuf_free(%p)\n", (void *)p));
 
   PERF_START;
 
@@ -736,7 +732,7 @@ pbuf_free(struct pbuf *p)
     if (ref == 0) {
       /* remember next pbuf in chain for next iteration */
       q = p->next;
-      //LWIP_DEBUGF( PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_free: deallocating %p\n", (void *)p));
+      //LWIP_DEBUGF( PBUF_DEBUG | LWIP_DBG_TRACE, (0,"pbuf_free: deallocating %p\n", (void *)p));
       alloc_src = pbuf_get_allocsrc(p);
 #if LWIP_SUPPORT_CUSTOM_PBUF
       /* is this a custom pbuf? */
@@ -767,7 +763,7 @@ pbuf_free(struct pbuf *p)
     /* p->ref > 0, this pbuf is still referenced to */
     /* (and so the remaining pbufs in chain as well) */
     } else {
-      LWIP_DEBUGF( PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_free: %p has ref %"U16_F", ending here.\n", (void *)p, ref));
+      LWIP_DEBUGF( PBUF_DEBUG | LWIP_DBG_TRACE, (0x100079f3, "pbuf_free: %p has ref %hu, ending here.\n", (void *)p, ref));
       /* stop walking through the chain */
       p = NULL;
     }
@@ -871,7 +867,7 @@ pbuf_chain(struct pbuf *h, struct pbuf *t)
   pbuf_cat(h, t);
   /* t is now referenced by h */
   pbuf_ref(t);
-  LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_chain: %p references %p\n", (void *)h, (void *)t));
+  LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0x0810128c, "pbuf_chain: %p references %p\n", (void *)h, (void *)t));
 }
 
 /**
@@ -900,11 +896,10 @@ pbuf_dechain(struct pbuf *p)
     /* total length of pbuf p is its own length only */
     p->tot_len = p->len;
     /* q is no longer referenced by p, free it */
-    LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_dechain: unreferencing %p\n", (void *)q));
+    LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0x0810129a, "pbuf_dechain: unreferencing %p\n", (void *)q));
     tail_gone = pbuf_free(q);
     if (tail_gone > 0) {
-      LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE,
-                  ("pbuf_dechain: deallocated %p (as it is no longer referenced)\n", (void *)q));
+      LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE,(0x0810129b, "pbuf_dechain: deallocated %p (as it is no longer referenced)\n", (void *)q));
     }
     /* return remaining tail or NULL if deallocated */
   }
@@ -936,7 +931,7 @@ pbuf_copy(struct pbuf *p_to, const struct pbuf *p_from)
 {
   u16_t offset_to=0, offset_from=0, len;
 
-  LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_copy(%p, %p)\n",
+  LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0x100079f4, "pbuf_copy(%p, %p)\n",
     (const void*)p_to, (const void*)p_from));
 
   /* is the target big enough to hold the source? */
@@ -982,7 +977,7 @@ pbuf_copy(struct pbuf *p_to, const struct pbuf *p_from)
                   (p_to->next == NULL), return ERR_VAL;);
     }
   } while (p_from);
-  LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_copy: end of chain reached.\n"));
+  LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, (0x100079f5, "pbuf_copy: end of chain reached.\n"));
   return ERR_OK;
 }
 

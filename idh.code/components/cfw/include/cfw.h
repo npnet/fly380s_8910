@@ -227,6 +227,18 @@ typedef struct _OPER_DEFAULT_APN_INFO_V2
     uint8_t Defaultapn[10];
 } OPER_DEFAULT_APN_INFO_V2;
 
+typedef struct
+{
+    //UINT16 mode;//1:gsm/2:lte
+    uint16_t band;
+    uint16_t band_indicator;
+    uint32_t channel; //dlarfcn
+    uint16_t bw;
+    uint16_t pwr; //pcl
+    uint16_t modulation;
+    uint16_t reserved[5];
+} CFW_NW_NST_TX_PARA_CONFIG;
+
 #define BAL_PROC_DEFAULT 0
 #define BAL_PROC_COMPLETE 1
 #define BAL_PROC_CONTINUE 2
@@ -239,6 +251,10 @@ typedef struct _OPER_DEFAULT_APN_INFO_V2
 \return
 EventName
 */
+
+int32_t CFW_StartNstMode(CFW_SIM_ID nSimID);
+int32_t CFW_StopNstMode(CFW_SIM_ID nSimID);
+int32_t CFW_NstConfig(CFW_NW_NST_TX_PARA_CONFIG *nst_para_config, CFW_SIM_ID nSimID);
 const char *CFW_EventName(
     uint32_t id);
 /*! \brief The CFW_SetEventProc function installs an application-defined event procedure for CFW response events or indicator events.
@@ -480,6 +496,8 @@ typedef struct _CFW_SPN_INFO
     uint8_t nSPNDisplayFlag;
     uint8_t nSpnName[17];
 } CFW_SPN_INFO;
+
+void CFW_nvmWriteStatic(CFW_SIM_ID nSimID);
 
 uint32_t CFW_ShellControl(
     uint8_t nCommand);
@@ -1752,6 +1770,20 @@ uint32_t CFW_CfgNwGetOperatorInfo(
     uint8_t **pOperatorId,
     uint8_t **pOperatorName,
     uint32_t nIndex);
+
+/*! \brief function retrieves the T3302 value.
+
+\return \a T3302 value 
+*/
+uint32_t CFW_GetT3302();
+
+/*! \brief function set T3302 value.
+
+\param [in]  value T3302 value. 
+\return \a ERR_SUCCESS on success
+*/
+uint32_t CFW_SetT3302(
+    uint32_t value);
 
 /*! \brief function retrieves the operator ID by operator name.
 
@@ -4183,6 +4215,15 @@ uint32_t CFW_SsSendUSSD(
     uint16_t nUTI,
     CFW_SIM_ID nSimID);
 
+uint32_t CFW_SsSendUSSD_V2(
+    uint8_t *pUsdString,
+    uint8_t nUsdStringSize,
+    uint8_t nOption,
+    uint8_t nDcs,
+    uint16_t nUTI,
+    uint16_t nTI,
+    CFW_SIM_ID nSimID);
+
 typedef struct _CFW_SS_USSD_IND_INFO
 {
     uint8_t *pUsdString;
@@ -4191,6 +4232,15 @@ typedef struct _CFW_SS_USSD_IND_INFO
     uint8_t nDcs;
     uint8_t padding;
 } CFW_SS_USSD_IND_INFO;
+
+typedef struct _CFW_SS_USSD_IND_INFO_V2
+{
+    uint8_t pUsdString[255];
+    uint8_t nStingSize;
+    uint8_t nOption;
+    uint8_t nDcs;
+    uint8_t padding;
+} CFW_SS_USSD_IND_INFO_V2;
 
 //
 // SIM Service
@@ -5905,6 +5955,8 @@ uint32_t CFW_SimGetPbkStorage(
     uint8_t nStorage,
     uint16_t nUTI,
     CFW_SIM_ID nSimID);
+void CFW_SimSetProiorityResetFlag(
+    uint8_t nResetFlag);
 
 uint32_t CFW_SatActivation(
     uint8_t nMode,
@@ -7452,6 +7504,12 @@ typedef struct
 
 typedef struct
 {
+    uint8_t nPdpAddrSize;
+    uint8_t pPdpAddr[THE_PDP_ADDR_MAX_LEN];
+} CFW_GPRS_DYNAMIC_IP_INFO;
+
+typedef struct
+{
     uint8_t nPdpType;
     uint8_t nAuthProt;
     uint8_t nApnSize;
@@ -7638,6 +7696,7 @@ uint32_t CFW_GprsRemovePdpCxt(
 uint8_t CFW_GprsGetDefaultPdnInfo(CFW_GPRS_PDPCONT_DFTPDN_INFO *PdnInfo, CFW_SIM_ID nSimID);
 uint32_t CFW_GprsSendCtxCfg_V2(CFW_GPRS_DFTPDN_INFO *pDftPdn, CFW_SIM_ID nSimID);
 uint32_t CFW_GprsGetDynamicAPN(uint8_t nCid, CFW_GPRS_DYNAMIC_APN_INFO *pDyncApn, CFW_SIM_ID nSimID);
+uint32_t CFW_GprsGetDynamicIP(uint8_t nCid, CFW_GPRS_DYNAMIC_IP_INFO *pDyncIP, CFW_SIM_ID nSimID);
 
 typedef enum
 {
@@ -8964,7 +9023,8 @@ uint8_t CFW_SmsGetSmsType(CFW_SIM_ID nSimID);
 uint32_t CFW_SwitchPort(uint8_t nFlag);
 
 uint32_t CFW_GetRFTemperature(uint32_t *temp);
-
+uint32_t CFW_SetLTEFreqPwrRange(uint16_t freqlow, uint16_t freqhigh, uint16_t power);
+uint32_t CFW_SetRFFreqPwrRange(uint16_t mode, uint16_t band, uint16_t powerlow, uint16_t powerhigh);
 typedef struct _CFW_APNS_UNAME_UPWD
 {
     char apn[50];
@@ -9001,7 +9061,9 @@ uint32_t SimPollReq(uint8_t nTimerOut, CFW_SIM_ID nSimID);
 uint32_t SimPollOffReq(CFW_SIM_ID nSimID);
 uint32_t CFW_SimInitStage1(CFW_SIM_ID nSimID);
 uint32_t CFW_SimInitStage3(CFW_SIM_ID nSimID);
-uint32_t SimSelectApplicationReq(uint8_t *AID, uint8_t AIDLength, CFW_SIM_ID nSimID);
+uint32_t SimSelectApplicationReq(uint8_t *AID, uint8_t AIDLength, uint8_t ChannelID, CFW_SIM_ID nSimID);
+uint32_t CFW_SimTPDUCommand(uint8_t *TPDU, uint16_t Length, uint8_t Channel, uint16_t nUTI, CFW_SIM_ID nSimID);
+
 uint32_t CFW_SmsSendMessage(CFW_DIALNUMBER *pNumber, uint8_t *pData, uint16_t nDataSize, uint16_t nUTI, CFW_SIM_ID nSimId);
 void CFW_InvalideTmsiPTmis(CFW_SIM_ID nSimID);
 void CFW_GetUsimAID(uint8_t *aid, uint8_t *length, CFW_SIM_ID nSimID);
@@ -9029,5 +9091,45 @@ bool CFW_SatGetOpenChannelUserInfo(uint8_t *pUser, uint8_t *pUserLen, uint8_t *p
 bool CFW_SatGetOpenChannelAPN(uint8_t *pAPN, uint8_t *pApnLen, CFW_SIM_ID nSimID);
 bool CFW_SatGetOpenChannelDestAddress(uint8_t *pAddress, uint8_t *pAddressLen, uint8_t *pAddressType, CFW_SIM_ID nSimID);
 bool CFW_SatGetOpenChannelNetInfo(uint8_t *pBuffer, uint8_t *pBearerType, uint8_t *pTranType, uint8_t *pTranPort, CFW_SIM_ID nSimID);
+
+uint32_t CFW_SendMtSmsAckPPError(uint8_t nCause, CFW_SIM_ID nSimID);
+
+uint32_t CFW_CfgGetNewSmsOptionMT(uint8_t *nOption, uint8_t *nNewSmsStorage, CFW_SIM_ID nSimID);
+
+uint32_t CFW_CfgSetNewSmsOptionMT(uint8_t nOption, uint8_t nNewSmsStorage, CFW_SIM_ID nSimID);
+
+#define OPEN_CHANNEL_CMD 0x00
+#define CLOSE_CHANNEL_CMD 0x80
+#define OPEN_CMD_LENGTH 0x01
+#define CLOSE_CMD_LENGTH 0x00
+uint32_t CFW_SimSelectApplication(uint8_t *aid, uint8_t length, uint8_t channel, uint16_t nUTI, CFW_SIM_ID nSimID);
+uint32_t CFW_SimManageChannel(uint8_t command, uint8_t channel, uint16_t nUTI, CFW_SIM_ID nSimID);
+
+uint32_t CFW_SetCSPagingFlag(bool nFlag);
+
+uint32_t CFW_GetCSPagingFlag(uint8_t *nFlag);
+uint32_t CFW_SetSimFileUpdateCountMode(uint8_t op_mode, CFW_SIM_ID nSimID);
+uint16_t CFW_GetSimFileUpdateCount(uint8_t nFileID, uint8_t bReal, CFW_SIM_ID nSimID);
+
+uint32_t CFW_SetStaticScene(uint8_t iScene, CFW_SIM_ID nSimID);
+uint32_t CFW_GetStaticScene(uint8_t *iScene, CFW_SIM_ID nSimID);
+uint32_t CFW_SetRatePriority(uint8_t iPriority, CFW_SIM_ID nSimID);
+uint32_t CFW_GetRatePriority(uint8_t *iPriority, CFW_SIM_ID nSimID);
+
+typedef struct
+{
+    uint8_t nTimeValue;
+    uint8_t nMaxCount;
+} CFW_PDN_TIMER_MAXCOUNT_INFO;
+
+uint32_t CFW_SetPdnActTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO pdnTimerAndMaxCount, uint8_t nRat, CFW_SIM_ID nSimID);
+
+uint32_t CFW_GetPdnActTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO *pdnTimerAndMaxCount, uint8_t nRat, CFW_SIM_ID nSimID);
+
+uint32_t CFW_SetPdnDeactTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO pdnTimerAndMaxCount, uint8_t nRat, CFW_SIM_ID nSimID);
+
+uint32_t CFW_GetPdnDeactTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO *pdnTimerAndMaxCount, uint8_t nRat, CFW_SIM_ID nSimID);
+
+extern uint32_t CSW_SetAndGetMicGain(uint8_t *resultcode, uint8_t *hasMsg, uint8_t *resultMsg, uint8_t mode, uint8_t nPath, uint8_t nCtrl, uint8_t *nParam, uint16_t nParamLength);
 
 #endif

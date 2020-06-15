@@ -231,6 +231,8 @@ int atCfgProfileEncode(const atSetting_t *p, void *buf, size_t size)
     PB_OPT_ENC_ASSIGN(p->psm_mode, psm_mode);
     PB_OPT_ENC_ASSIGN(p->mcuNotifySleepMode, mcuNotifySleepMode);
     PB_OPT_ENC_ASSIGN(p->mcuNotifySleepDelayMs, mcuNotifySleepDelayMs);
+    PB_OPT_ENC_ASSIGN(p->csta, csta);
+    PB_OPT_ENC_ASSIGN(p->csvm, csvm);
     return pbEncodeToMem(fields, pbs, buf, size);
 }
 
@@ -276,6 +278,8 @@ bool atCfgProfileDecode(atSetting_t *p, const void *buf, size_t size)
     PB_OPT_DEC_ASSIGN(p->psm_mode, psm_mode);
     PB_OPT_DEC_ASSIGN(p->mcuNotifySleepMode, mcuNotifySleepMode);
     PB_OPT_DEC_ASSIGN(p->mcuNotifySleepDelayMs, mcuNotifySleepDelayMs);
+    PB_OPT_DEC_ASSIGN(p->csta, csta);
+    PB_OPT_DEC_ASSIGN(p->csvm, csvm);
     return true;
 }
 
@@ -389,12 +393,56 @@ static bool atCfgSimAutoSaveDecode(pb_istream_t *stream, pbArrayDecodeParam_t *p
     return true;
 }
 
+#ifdef CONFIG_ATR_TB_API_SUPPORT
+static bool atCfgTbDataStatisticsEncode(pb_ostream_t *stream, const pbArrayEncodeParam_t *param, unsigned idx)
+{
+    const pb_field_t *fields = pbAtTbDataStatisticsAutoSaveCfg_fields;
+    atTbDataStatistics_t *p = &((atTbDataStatistics_t *)param->data)[idx];
+    pbAtTbDataStatisticsAutoSaveCfg pbdata = {};
+    pbAtTbDataStatisticsAutoSaveCfg *pbs = &pbdata;
+
+    PB_ENC_STRING(p->rx_bytes, rx_bytes);
+    PB_ENC_STRING(p->tx_bytes, tx_bytes);
+    PB_ENC_STRING(p->act_time, act_time);
+    PB_ENC_STRING(p->up_time, up_time);
+
+    PB_OPT_ENC_ASSIGN(p->total_rx_bytes, total_rx_bytes);
+    PB_OPT_ENC_ASSIGN(p->total_tx_bytes, total_tx_bytes);
+    PB_OPT_ENC_ASSIGN(p->total_act_time, total_act_time);
+    return pb_encode_submessage(stream, fields, pbs);
+}
+
+static bool atCfgTbDataStatisticsDecode(pb_istream_t *stream, pbArrayDecodeParam_t *param)
+{
+    const pb_field_t *fields = pbAtTbDataStatisticsAutoSaveCfg_fields;
+    atTbDataStatistics_t *p = &((atTbDataStatistics_t *)param->data)[param->idx];
+    pbAtTbDataStatisticsAutoSaveCfg pbdata;
+    pbAtTbDataStatisticsAutoSaveCfg *pbs = &pbdata;
+
+    PB_DEC_STRING(p->rx_bytes, rx_bytes);
+    PB_DEC_STRING(p->tx_bytes, tx_bytes);
+    PB_DEC_STRING(p->act_time, act_time);
+    PB_DEC_STRING(p->up_time, up_time);
+
+    if (!pb_decode(stream, fields, pbs))
+        return false;
+
+    PB_OPT_DEC_ASSIGN(p->total_rx_bytes, total_rx_bytes);
+    PB_OPT_DEC_ASSIGN(p->total_tx_bytes, total_tx_bytes);
+    PB_OPT_DEC_ASSIGN(p->total_act_time, total_act_time);
+    return true;
+}
+#endif
+
 int atCfgAutoSaveEncode(const atSetting_t *p, void *buf, size_t size)
 {
     const pb_field_t *fields = pbAtAutoSaveCfg_fields;
     pbAtAutoSaveCfg pbdata = {};
     pbAtAutoSaveCfg *pbs = &pbdata;
 
+#ifdef CONFIG_ATR_TB_API_SUPPORT
+    PB_ENC_ARRAY(p->tbDataStatistics, tbDataStatistics, atCfgTbDataStatisticsEncode);
+#endif
     PB_ENC_ARRAY(p->sim, sim, atCfgSimAutoSaveEncode);
     PB_ENC_ARRAY2D(p->g_staAtGprsCidInfo, g_staAtGprsCidInfo, atCfgCidInfoEncode);
     PB_OPT_ENC_ASSIGN(p->timezone, timezone);
@@ -410,7 +458,9 @@ bool atCfgAutoSaveDecode(atSetting_t *p, const void *buf, size_t size)
     const pb_field_t *fields = pbAtAutoSaveCfg_fields;
     pbAtAutoSaveCfg pbdata = {};
     pbAtAutoSaveCfg *pbs = &pbdata;
-
+#ifdef CONFIG_ATR_TB_API_SUPPORT
+    PB_DEC_ARRAY(p->tbDataStatistics, tbDataStatistics, atCfgTbDataStatisticsDecode);
+#endif
     PB_DEC_ARRAY(p->sim, sim, atCfgSimAutoSaveDecode);
     PB_DEC_ARRAY2D(p->g_staAtGprsCidInfo, g_staAtGprsCidInfo, atCfgCidInfoDecode);
 

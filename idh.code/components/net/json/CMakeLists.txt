@@ -10,6 +10,7 @@
 # without further testing or modification.
 
 set(target json)
+add_app_libraries($<TARGET_FILE:${target}>)
 
 add_library(${target} STATIC
     cJSON/cJSON_Utils.c
@@ -17,4 +18,4 @@ add_library(${target} STATIC
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 #target_compile_definitions(${target} PRIVATE AT_MQTTSN_SUPPORT=1)
 target_include_directories(${target} PUBLIC cJSON)
-target_link_libraries(${target} PRIVATE kernel calclib)
+target_include_targets(${target} PRIVATE kernel calclib)

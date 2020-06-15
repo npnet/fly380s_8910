@@ -52,6 +52,18 @@ config NET_TRACE_IP_PACKET
 
         It is just for debug, and usually not needed in produciton.
 
+config NET_LWM2M_SUPPORT
+    bool "NET_LWM2M_SUPPORT enabled"
+    default y
+    help
+        When enabled, NET_LWM2M_SUPPORT will be defined
+
+config NET_PAHO_MQTT_SUPPORT
+    bool "NET_PAHO_MQTT_SUPPORT enabled"
+    default n
+    help
+        When enabled, NET_PAHO_MQTT_SUPPORT will be defined
+
 config NET_ALI_SDK_SUPPORT
     bool "NET_ALI_SDK_SUPPORT enabled"
     default y
@@ -63,7 +75,22 @@ config NET_ALI_SDK_DYNAMIC_LOAD
     default n
     help
         When enabled, NET_ALI_SDK_DYNAMIC_LOAD will be defined
+
+config NET_CIS_SDK_SUPPORT
+    bool "NET_CIS_SDK_SUPPORT enabled"
+    default n
+    help
+        When enabled, NET_CIS_SDK_SUPPORT will be defined
+
+config NET_NAT_SUPPORT
+    bool "NET_NAT_SUPPORT enabled"
+    default y
+    help
+        When enabled, NET_NAT_SUPPORT will be defined
 orsource "mupnp/Kconfig"
 orsource "http/Kconfig"
+orsource "mbedtls/Kconfig"
+orsource "liblwm2m/Kconfig"
+orsource "ftp/Kconfig"
 
 endmenu

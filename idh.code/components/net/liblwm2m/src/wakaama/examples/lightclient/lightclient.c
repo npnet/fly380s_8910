@@ -73,14 +73,14 @@
 #include <errno.h>
 #include <signal.h>
 
-extern lwm2m_object_t * get_object_device(void);
+extern lwm2m_object_t * get_object_device(void* lwm2mH);
 extern void free_object_device(lwm2m_object_t * objectP);
 extern lwm2m_object_t * get_server_object(void);
 extern void free_server_object(lwm2m_object_t * object);
-extern lwm2m_object_t * get_security_object(void);
+extern lwm2m_object_t * get_security_object(void* lwm2mH);
 extern void free_security_object(lwm2m_object_t * objectP);
 extern char * get_server_uri(lwm2m_object_t * objectP, uint16_t secObjInstID);
-extern lwm2m_object_t * get_test_object(void);
+extern lwm2m_object_t * get_test_object(void* lwm2mH);
 extern void free_test_object(lwm2m_object_t * object);
 
 #define MAX_PACKET_SIZE 1024
@@ -385,6 +385,16 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to open socket: %d %s\r\n", errno, strerror(errno));
         return -1;
     }
+    /*
+     * The liblwm2m library is now initialized with the functions that will be in
+     * charge of communication
+     */
+    lwm2mH = lwm2m_init(&data);
+    if (NULL == lwm2mH)
+    {
+        fprintf(stderr, "lwm2m_init() failed\r\n");
+        return -1;
+    }
 
     /*
      * Now the main function fill an array with each object, this list will be later passed to liblwm2m.
@@ -405,30 +415,21 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    objArray[2] = get_object_device();
+    objArray[2] = get_object_device(lwm2mH);
     if (NULL == objArray[2])
     {
         fprintf(stderr, "Failed to create Device object\r\n");
         return -1;
     }
 
-    objArray[3] = get_test_object();
+    objArray[3] = get_test_object(lwm2mH);
     if (NULL == objArray[3])
     {
         fprintf(stderr, "Failed to create Test object\r\n");
         return -1;
     }
 
-    /*
-     * The liblwm2m library is now initialized with the functions that will be in
-     * charge of communication
-     */
-    lwm2mH = lwm2m_init(&data);
-    if (NULL == lwm2mH)
-    {
-        fprintf(stderr, "lwm2m_init() failed\r\n");
-        return -1;
-    }
+
 
     /*
      * We configure the liblwm2m library with the name of the client - which shall be unique for each client -

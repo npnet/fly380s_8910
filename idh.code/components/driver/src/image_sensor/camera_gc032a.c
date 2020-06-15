@@ -23,9 +23,9 @@
 #include "drv_names.h"
 #include "osi_clock.h"
 
-#define CAM_GC032a_ID 0x232a
 static osiClockConstrainRegistry_t gcCamCLK = {.tag = HAL_NAME_CAM};
-const cameraReg_t RG_InitVga[] =
+
+const cameraReg_t RG_InitVgaSPI[] =
     {
         /*System*/
         {0xf3, 0x83}, //ff//1f//01 data output
@@ -415,36 +415,38 @@ sensorInfo_t gc032aInfo =
         false, //		bool spi_little_endian_en;
         false,
         false,
-        SENSOR_VDD_2800MV,          //		cameraAVDD_t avdd_val; // voltage of avdd
-        SENSOR_VDD_1800MV,          //		cameraAVDD_t iovdd_val;
-        CAMA_CLK_OUT_FREQ_12M,      //		cameraClk_t sensorClk;
-        ROW_RATIO_1_1,              //		camRowRatio_t rowRatio;
-        COL_RATIO_1_1,              //		camColRatio_t colRatio;
-        SENSOR_IMAGE_FORMAT_YUV422, //		cameraImageFormat_t image_format; // define in SENSOR_IMAGE_FORMAT_E enum,
-        SPI_MODE_MASTER2_2,         //		camSpiMode_t camSpiMode;
-        SPI_OUT_Y1_U0_Y0_V0,        //		camSpiYuv_t camYuvMode;
-        camCaptureIdle,             //		camCapture_t camCapStatus;
-        CAM_OUT_PACKET_DDR_2BIT,    //		sensorOutformat_t sensorFormat;
-        NULL,                       //		drvIfcChannel_t *camp_ipc;
-        NULL,                       //		drvI2cMaster_t *i2c_p;
-        NULL,                       //		CampCamptureCB captureCB;
+        SENSOR_VDD_2800MV,     //		cameraAVDD_t avdd_val; // voltage of avdd
+        SENSOR_VDD_1800MV,     //		cameraAVDD_t iovdd_val;
+        CAMA_CLK_OUT_FREQ_12M, //		cameraClk_t sensorClk;
+        ROW_RATIO_1_1,         //		camRowRatio_t rowRatio;
+        COL_RATIO_1_1,         //		camColRatio_t colRatio;
+        CAM_FORMAT_YUV,        //		cameraImageFormat_t image_format; // define in SENSOR_IMAGE_FORMAT_E enum,
+        SPI_MODE_MASTER2_2,    //		camSpiMode_t camSpiMode;
+        SPI_OUT_Y1_U0_Y0_V0,   //		camSpiYuv_t camYuvMode;
+        camCaptureIdle,        //		camCapture_t camCapStatus;
+        camSpi_In,
+        NULL, //		drvIfcChannel_t *camp_ipc;
+        NULL, //		drvI2cMaster_t *i2c_p;
+        NULL, //		CampCamptureCB captureCB;
         NULL,
 };
 
 static void prvCamGc032aPowerOn(void)
 {
     halPmuSetPowerLevel(HAL_POWER_CAMD, gc032aInfo.dvdd_val);
-    osiDelayUS(2);
+    halPmuSwitchPower(HAL_POWER_CAMD, true, false);
+    osiDelayUS(1000);
     halPmuSetPowerLevel(HAL_POWER_CAMA, gc032aInfo.avdd_val);
-    osiDelayUS(2);
+    halPmuSwitchPower(HAL_POWER_CAMA, true, false);
+    osiDelayUS(1000);
 }
 
 static void prvCamGc032aPowerOff(void)
 {
-    halPmuSetPowerLevel(HAL_POWER_CAMD, SENSOR_VDD_CLOSED);
-    osiDelayUS(2);
-    halPmuSetPowerLevel(HAL_POWER_CAMA, SENSOR_VDD_CLOSED);
-    osiDelayUS(2);
+    halPmuSwitchPower(HAL_POWER_CAMA, false, false);
+    osiDelayUS(1000);
+    halPmuSwitchPower(HAL_POWER_CAMD, false, false);
+    osiDelayUS(1000);
 }
 
 static bool prvCamGc032aI2cOpen(uint32_t name, drvI2cBps_t bps)
@@ -514,14 +516,16 @@ static bool prvCamWriteRegList(const cameraReg_t *regList, uint16_t len)
 
 static bool prvCamGc032aRginit(sensorInfo_t *info)
 {
-    if (info->sensorFormat == CAM_OUT_PACKET_DDR_2BIT)
+    switch (info->sensorType)
     {
-        if (prvCamWriteRegList(RG_InitVga, sizeof(RG_InitVga) / sizeof(cameraReg_t)))
-            return true;
+    case camSpi_In:
+        if (!prvCamWriteRegList(RG_InitVgaSPI, sizeof(RG_InitVgaSPI) / sizeof(cameraReg_t)))
+            return false;
+        break;
+    default:
         return false;
     }
-    else
-        return false;
+    return true;
 }
 
 static void prvCamIsrCB(void *ctx)
@@ -614,9 +618,7 @@ static void prvCamIsrCB(void *ctx)
                 if (drvCampStopTransfer(gc032aInfo.nPixcels, gc032aInfo.previewdata[gc032aInfo.page_turn]) == true)
                 {
                     OSI_LOGD(0, "recv data %d", gc032aInfo.page_turn);
-                    uint32_t critical = osiEnterCritical();
                     gc032aInfo.page_turn = 1 - gc032aInfo.page_turn;
-                    osiExitCritical(critical);
                     osiSemaphoreRelease(gc032aInfo.cam_sem_preview);
                     gc032aInfo.isFirst = false;
                     if (--gc032aInfo.preview_page)
@@ -661,8 +663,7 @@ bool camGc032aOpen(void)
     drvCamSetPdn(true);
     osiDelayUS(1000);
     drvCamSetPdn(false);
-    hwp_iomux->pad_i2c_m1_scl_cfg_reg = 0x10200;
-    hwp_iomux->pad_i2c_m1_sda_cfg_reg = 0x10200;
+
     if (!prvCamGc032aI2cOpen(gc032aInfo.i2c_name, gc032aInfo.baud))
     {
         OSI_LOGE(0, "cam prvCamGc032aI2cOpen fail");
@@ -683,6 +684,7 @@ bool camGc032aOpen(void)
     drvCameraControllerEnable(true);
     return true;
 }
+
 void camGc032aClose(void)
 {
     if (gc032aInfo.isCamOpen)
@@ -703,6 +705,7 @@ void camGc032aClose(void)
         gc032aInfo.isCamOpen = false;
     }
 }
+
 void camGc032aGetId(uint8_t *data, uint8_t len)
 {
     if (gc032aInfo.isCamOpen)
@@ -738,7 +741,8 @@ bool camGc032aCheckId(void)
             gc032aInfo.isCamOpen = true;
         }
         camGc032aGetId(sensorID, 2);
-        if ((CAM_GC032a_ID >> 8 == sensorID[0]) && ((CAM_GC032a_ID & 0xff) == sensorID[1]))
+        OSI_LOGI(0, "cam get id 0x%x,0x%x", sensorID[0], sensorID[1]);
+        if ((gc032aInfo.sensorid[0] == sensorID[0]) && (gc032aInfo.sensorid[1] == sensorID[1]))
         {
             OSI_LOGI(0, "check id successful");
             camGc032aClose();
@@ -835,6 +839,22 @@ void camGc032aStopPrev(void)
     gc032aInfo.preview_page = 0;
 }
 
+void camGc032aSetFalsh(uint8_t level)
+{
+    if (level >= 0 && level < 16)
+    {
+        if (level == 0)
+        {
+            halPmuSwitchPower(HAL_POWER_CAMFLASH, false, false);
+        }
+        else
+        {
+            halPmuSetCamFlashLevel(level);
+            halPmuSwitchPower(HAL_POWER_CAMFLASH, true, false);
+        }
+    }
+}
+
 void camGc032aBrightness(uint8_t level)
 {
 }
@@ -877,6 +897,7 @@ bool camGc032aReg(SensorOps_t *pSensorOpsCB)
         pSensorOpsCB->cameraSetEv = camGc032aEv;
         pSensorOpsCB->cameraSetImageEffect = camGc032aImageEffect;
         pSensorOpsCB->cameraGetSensorInfo = camGc032aGetSensorInfo;
+        pSensorOpsCB->cameraFlashSet = camGc032aSetFalsh;
         return true;
     }
     return false;

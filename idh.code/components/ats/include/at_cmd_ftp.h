@@ -96,6 +96,7 @@ typedef struct _CFW_FTP_CTX
     struct sockaddr_storage ser_ip_data;
     ip_addr_t serverIp;
     char getpath[256];
+    bool get_closedelay;
     int32_t req_getoffset, req_getsize, getsize, getparam;
     char putpath[256];
     FTP_TXBUFFER_T tx_buf;

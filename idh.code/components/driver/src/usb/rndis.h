@@ -581,15 +581,12 @@ int rndis_set_param_vendor(struct rndis_params *params, uint32_t vendorID,
                            const char *vendorDescr);
 int rndis_set_param_medium(struct rndis_params *params, uint32_t medium,
                            uint32_t speed);
-void rndis_add_hdr(const uint8_t *buf, uint32_t rndis_len);
-int rndis_rm_hdr(drvEthReq_t *rx);
 rndisResp_t *rndis_get_next_response(struct rndis_params *params);
 void rndis_free_response(struct rndis_params *params, rndisResp_t *resp);
 
 void rndis_uninit(struct rndis_params *params);
 int rndis_signal_connect(struct rndis_params *params);
 int rndis_signal_disconnect(struct rndis_params *params);
-int rndis_state(struct rndis_params *params);
-extern void rndis_set_host_mac(struct rndis_params *params, const uint8_t *addr);
+void rndis_set_host_mac(struct rndis_params *params, const uint8_t *addr);
 
 #endif /* _LINUX_RNDIS_H */

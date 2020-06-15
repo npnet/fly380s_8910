@@ -9,12 +9,15 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(include/mal_config.h.in ${BINARY_TOP_DIR}/include/mal_config.h)
+configure_file(include/mal_config.h.in ${out_inc_dir}/mal_config.h)
 
 set(target mal)
+add_app_libraries($<TARGET_FILE:${target}>)
+
 add_library(${target} STATIC
     src/mal_engine.c
-    src/mal_cfw.c)
+    src/mal_cfw.c
+)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_MAL)
 target_include_directories(${target} PUBLIC include)

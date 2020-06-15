@@ -26,6 +26,7 @@ void output_buffer(FILE * stream, uint8_t * buffer, int length, int indent);
 
 int create_socket(const char * portStr, int addressFamily)
 {
+#if 0
     int s = -1;
     struct addrinfo hints;
     struct addrinfo *res;
@@ -55,7 +56,32 @@ int create_socket(const char * portStr, int addressFamily)
     }
 
     freeaddrinfo(res);
-
+#else
+    int s = -1;
+    int port_nr = atoi(portStr);
+    if ((port_nr <= 0) || (port_nr > 0xffff)) {
+      return -1;
+    }
+    if(netif_default == NULL)
+    {
+        return -1;
+    }
+    s = socket(ai_family,SOCK_DGRAM,IPPROTO_UDP);
+    if (s >= 0)
+    {
+        ip4_addr_t *ip_addr = (ip4_addr_t *)netif_ip4_addr(netif_default);
+        struct sockaddr_in bindAddr = {0};
+        bindAddr.sin_len = sizeof(bindAddr);
+        bindAddr.sin_family = AF_INET;
+        bindAddr.sin_port = lwip_htons((u16_t)port_nr);
+        inet_addr_from_ip4addr(&(bindAddr.sin_addr), ip_addr);
+        if(-1 == bind(s,(const struct sockaddr *)&bindAddr,sizeof(bindAddr)))
+        {
+            close(s);
+            s = -1;
+        }
+    }
+#endif
     return s;
 }
 
@@ -68,12 +94,11 @@ connection_t * connection_find(connection_t * connList,
     connP = connList;
     while (connP != NULL)
     {
-        //zhangyi del for porting 20180710
-        //if (sockaddr_cmp((struct sockaddr*) (&connP->addr),(struct sockaddr*) addr))
-        //{
-        //    return connP;
-        //}
-        //connP = connP->next;
+        if (sockaddr_cmp((struct sockaddr*) (&connP->addr),(struct sockaddr*) addr))
+        {
+            return connP;
+        }
+        connP = connP->next;
     }
 
     return connP;

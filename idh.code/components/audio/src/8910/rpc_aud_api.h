@@ -58,6 +58,9 @@ INT32 DM_ZspMusicVibrateStop(void);
 INT32 DM_ZspMusicPlayStartEx(AUD_AP2CP_PARA_T *Aud_Para);
 INT32 DM_ZspMusicPlayStopEx(AUD_AP2CP_PARA_T *Aud_Para);
 void DM_AudSetToneMode(UINT32 isToneMode);
+HAL_ERR_T hal_zspVoicePlayStart(void);
+HAL_ERR_T hal_zspVoicePlayStop(void);
+void aud_SetLdoVB(UINT32 en);
 
 #endif // _RPC_AUD_API_H_
 // AUTO GENERATED END

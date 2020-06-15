@@ -17,10 +17,17 @@ set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 include(cmake/extension.cmake)
 
+# Use a global property to collect all application libraries
+define_property(GLOBAL PROPERTY app_libraries
+    BRIEF_DOCS "app libraries"
+    FULL_DOCS "app libraries"
+)
+
 set(out_hex_dir ${CMAKE_CURRENT_BINARY_DIR}/hex)
+set(out_hex_example_dir ${CMAKE_CURRENT_BINARY_DIR}/hex/examples)
+set(out_hex_unittest_dir ${CMAKE_CURRENT_BINARY_DIR}/hex/unittests)
 set(out_lib_dir ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(out_rpc_dir ${CMAKE_CURRENT_BINARY_DIR}/rpcgen)
-set(out_rel_dir ${CMAKE_CURRENT_BINARY_DIR}/rel)
 set(out_inc_dir ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(tools_dir ${CMAKE_CURRENT_SOURCE_DIR}/tools)
 
@@ -33,17 +40,31 @@ set(iomuxgen_py ${tools_dir}/iomuxgen.py)
 set(keypadgen_py ${tools_dir}/keypadgen.py)
 set(partinfogen_py ${tools_dir}/partinfogen.py)
 set(modemgen_py ${tools_dir}/modemgen.py)
-set(nvbintool_py ${tools_dir}/nvbintool.py)
-set(cpiogen_py ${tools_dir}/cpiogen.py)
-set(cmd_symdefgen python3 ${tools_dir}/symdefgen.py)
+set(romtablegen_py ${tools_dir}/romtablegen.py)
+set(symdefgen_py ${tools_dir}/symdefgen.py)
+set(groupgen_py ${tools_dir}/groupgen.py)
 set(corestubgen dtools expgen)
 set(cmd_mkuimage dtools mkuimage)
+set(cmd_mksimage dtools mksimage)
 set(cmd_mkappimg dtools mkappimg)
 set(cmd_elf2lod dtools elf2lod)
+set(cmd_elf2bin dtools elf2bin)
+set(cmd_elf2romhex dtools elf2romhex)
+set(cmd_lzmare2 dtools lzmare2)
 set(partinfo_bin ${out_hex_dir}/partinfo.bin)
-set(core_stub_o ${out_rel_dir}/core_stub.o)
+set(core_stub_o ${out_lib_dir}/core_stub.o)
+set(dummy_c_file ${SOURCE_TOP_DIR}/cmake/dummy.c)
+set(dummy_cxx_file ${SOURCE_TOP_DIR}/cmake/dummy.cpp)
 
 set(AUTO_GENERATION_NOTICE "Auto generated. Don't edit it manually!")
+
+find_package(Git)
+if(GIT_FOUND)
+    execute_process(COMMAND "${GIT_EXECUTABLE}" describe --abbrev=8 --always --dirty
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE BUILD_GIT_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
 
 # BUILD_REVISION: A string to identify the build. When not specified, which
 #       is common in development, it will be "DEVEL". CI will define it in
@@ -55,30 +76,36 @@ if(NOT BUILD_REVISION)
     endif()
 endif()
 
-# By default, BUILD_GIT_REVISION will be get by git command. However, it is
-# possible to be specified by command line option. Due to BUILD_GIT_REVISION
-# may be used for macro definition, it will make the build image "stable".
-if(NOT BUILD_GIT_REVISION)
-    find_package(Git)
-    if(GIT_FOUND)
-        execute_process(COMMAND "${GIT_EXECUTABLE}" describe --abbrev=8 --always --dirty
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            OUTPUT_VARIABLE BUILD_GIT_REVISION
-            OUTPUT_STRIP_TRAILING_WHITESPACE)
-    endif()
-endif()
-
-if(NOT BUILD_GIT_REVISION)
-    set(BUILD_GIT_REVISION "unknown")
-endif()
-
 # BUILD_AUTO_REVISION: A string to identify the source codes revision.
 #       When it is built under git working directory, it will be "g1234abcd"
 #       or "g1234abcd-dirty" if the working directory is dirty. When not in
 #       git working directory, it will be "unknown". And it can be overrided
 #       in command line.
 if(NOT BUILD_AUTO_REVISION)
-    set(BUILD_AUTO_REVISION "g${BUILD_GIT_REVISION}")
+    if(BUILD_GIT_REVISION)
+        set(BUILD_AUTO_REVISION "g${BUILD_GIT_REVISION}")
+    endif()
+endif()
+
+if(NOT BUILD_AUTO_REVISION)
+    set(BUILD_AUTO_REVISION "unknown")
+endif()
+
+# BUILD_REVISION_NUMBER: A number to identify the source codes revision.
+#       When it is built under git working directory, and the working
+#       directory is clean, it will be "0x1234abcd". Otherwise, it is "0".
+#       And it can be overrided in command line.
+if(NOT BUILD_REVISION_NUMBER)
+    if(BUILD_GIT_REVISION)
+        set(BUILD_REVISION_NUMBER "0x${BUILD_GIT_REVISION}")
+    endif()
+    if(BUILD_REVISION_NUMBER MATCHES "-dirty")
+        set(BUILD_REVISION_NUMBER "0")
+    endif()
+endif()
+
+if(NOT BUILD_REVISION_NUMBER)
+    set(BUILD_REVISION_NUMBER "0")
 endif()
 
 # BUILD_TARGET
@@ -133,7 +160,7 @@ include(cmake/toolchain-gcc.cmake)
 set(BUILD_SHARED_LIBS OFF)
 
 project(${BUILD_TARGET} C CXX ASM)
-include_directories(${BINARY_TOP_DIR}/include)
+include_directories(${out_inc_dir})
 include_directories(${SOURCE_TOP_DIR}/components/newlib/include)
 add_custom_target(beautify)
 add_custom_target(unittests)
@@ -141,138 +168,23 @@ add_custom_target(examples ALL)
 add_custom_target(rpcgen)
 add_appimg_delete()
 
-set(unittest_libs kernel osi_lib unity driver hal calclib
-     bdev sffs fatfs fs fsmount atr ats cfw mal audio rpc apploader
-    ${modem_libs} ${sysrom_elf}
-)
-
 add_subdirectory_if_exist(components)
 add_subdirectory_if_exist(unittest)
 add_subdirectory_if_exist(examples)
 
-# Generate all nvitem.bin with merge param delta nv
-foreach(nvmvariant ${CONFIG_NVM_VARIANTS})
-    set(nvmprj ${NVM_VARIANT_${nvmvariant}_NVMPRJ})
-    set(nvitem_bin ${out_hex_dir}/${nvmvariant}_nvitem.bin)
-    set(prinv_bin ${out_hex_dir}/${nvmvariant}_prinv.bin)
-    get_filename_component(nvitemdir ${nvmprj} DIRECTORY)
-    file(GLOB nvitems ${nvitemdir}/*.prj ${nvitemdir}/*.nvm)
+pacvariant_gen()
 
-    add_custom_command(OUTPUT ${prinv_bin}
-        COMMAND python3 ${nvbintool_py} gen
-            --fix-size ${CONFIG_NVBIN_FIXED_SIZE}
-            --gendir ${BINARY_TOP_DIR}/nvgen/${nvmvariant}
-            ${nvmprj} ${prinv_bin}
-        DEPENDS ${nvbintool_py} ${nvitems}
-        WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-    )
-
-    set(deltanv_dir ${BINARY_TOP_DIR}/nvgen/${nvmvariant}_Deltanv)
-    set(pdnv_bin ${deltanv_dir}/delta_nv.bin)
-    file(GLOB pdeltanvs ${pdeltanv_dir}/include_all.nv)
-    get_filename_component(nvitemprj ${nvmprj} NAME)
-    set(prj_delta ${nvitemprj}_file)
-    cpp_only(${prj_delta} ${pdeltanvs} hal)
-
-    add_custom_command(OUTPUT ${pdnv_bin}
-        COMMAND python3 ${nvbintool_py} diffs
-            --src $<TARGET_OBJECTS:${prj_delta}>
-            --des ${deltanv_dir}/config_all.nv
-            ${BINARY_TOP_DIR}/nvgen/${nvmvariant}/${nvitemprj}
-        DEPENDS ${nvbintool_py} ${nvitems} ${pdeltanvs} ${prinv_bin} ${prj_delta}
-        WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-    )
-
-    add_custom_command(OUTPUT ${nvitem_bin}
-        COMMAND python3 ${nvbintool_py} apply
-            --nvbin ${prinv_bin}
-            --deltanv ${pdnv_bin}
-            --output ${nvitem_bin}
-        DEPENDS ${nvbintool_py} ${nvitems} ${pdnv_bin}
-        WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-    )
-endforeach()
-
-if(NOT ${CONFIG_PACKAGE_FILE_JSON_PATH} STREQUAL "")
-    set(package_file_config ${out_hex_dir}/package_file.json)
-    set(package_file ${out_hex_dir}/package_file.cpio)
-    configure_file(${CONFIG_PACKAGE_FILE_JSON_PATH} ${package_file_config})
-    execute_process(
-        COMMAND python3 ${cpiogen_py} cmake
-            --config ${package_file_config}
-            --cmake ${BINARY_TOP_DIR}/package_file.cmake
-        WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-    )
-    include(${BINARY_TOP_DIR}/package_file.cmake)
-endif()
-
-if(DEFINED package_file_depends)
-    set(package_file_cpio package_file.cpio)
-    add_custom_command(OUTPUT ${out_hex_dir}/${package_file_cpio}
-        COMMAND python3 ${cpiogen_py} archive
-            --config ${package_file_config}
-            --output ${out_hex_dir}/${package_file_cpio}
-        DEPENDS ${cpiogen_py} ${package_file_depends} ${package_file_config}
-        WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-    )
-endif()
-
-if(CONFIG_SOC_8910)
-    # Sign fdl1/fdl2/boot/ap. They are common to all variants
-    set(sign_password 12345678)     # customer product shall replace with customer's key
-    set(sign_product test)          # customer product shall replace with customer's product name
-    set(sign_boot_padlen 0xbce0)    # can't be changed
-    add_custom_command(OUTPUT ${out_hex_dir}/fdl1.sign.img ${out_hex_dir}/fdl2.sign.img ${out_hex_dir}/boot.sign.img ${out_hex_dir}/${BUILD_TARGET}.sign.img
-        COMMAND vlrsign --pw ${sign_password} --pn ${sign_product} --ha Blake2
-            --img ${out_hex_dir}/boot.img --out ${out_hex_dir}/boot.sign.img --plen ${sign_boot_padlen}
-        COMMAND vlrsign --pw ${sign_password} --pn ${sign_product} --ha Blake2
-            --img ${out_hex_dir}/fdl1.img --out ${out_hex_dir}/fdl1.sign.img
-        COMMAND vlrsign --pw ${sign_password} --pn ${sign_product} --ha Blake2
-            --img ${out_hex_dir}/fdl2.img --out ${out_hex_dir}/fdl2.sign.img
-        COMMAND vlrsign --pw ${sign_password} --pn ${sign_product} --ha Blake2
-            --img ${out_hex_dir}/${BUILD_TARGET}.img --out ${out_hex_dir}/${BUILD_TARGET}.sign.img
-        DEPENDS ${out_hex_dir}/boot.img ${out_hex_dir}/fdl1.img
-            ${out_hex_dir}/fdl2.img ${out_hex_dir}/${BUILD_TARGET}.img
-    )
-
-    # Create pac for all variants
-    foreach(nvmvariant ${CONFIG_NVM_VARIANTS})
-        build_modem_image(${nvmvariant})
-
-        set(nvname ${NVM_VARIANT_${nvmvariant}_NVMITEM})
-        set(pac_config ${out_hex_dir}/${nvmvariant}.json)
-        set(pac_file ${out_hex_dir}/${BUILD_TARGET}-${nvmvariant}-${nvname}_${BUILD_RELEASE_TYPE}.pac)
-        pac_init_fdl(init_fdl ${pac_config})
-        pac_nvitem_8910(nvitem_8910 ${pac_config})
-
-        if(DEFINED package_file_depends)
-            set(pac_package_file cfg-pack-cpio -i PACKAGE_FILE -p ${out_hex_dir}/${package_file_cpio} ${pac_config})
-        endif()
-
-        execute_process(
-            COMMAND python3 ${pacgen_py} ${init_fdl} ${nvitem_8910}
-                cfg-phase-check ${pac_config}
-                cfg-image -i BOOTLOADER -a ${CONFIG_BOOT_FLASH_ADDRESS} -s ${CONFIG_BOOT_FLASH_SIZE}
-                    -p ${out_hex_dir}/boot.sign.img ${pac_config}
-                cfg-image -i AP -a ${CONFIG_APP_FLASH_ADDRESS} -s ${CONFIG_APP_FLASH_SIZE}
-                    -p ${out_hex_dir}/${BUILD_TARGET}.sign.img ${pac_config}
-                cfg-image -i PS -a ${CONFIG_FS_MODEM_FLASH_ADDRESS} -s ${CONFIG_FS_MODEM_FLASH_SIZE}
-                    -p ${out_hex_dir}/${nvmvariant}.img ${pac_config}
-                ${pac_package_file}
-                cfg-clear-nv ${pac_config}
-                cfg-nv -s ${CONFIG_NVBIN_FIXED_SIZE} -p ${out_hex_dir}/${nvmvariant}_nvitem.bin
-                    ${pac_config}
-                dep-gen --base ${SOURCE_TOP_DIR} ${pac_config}
-            OUTPUT_VARIABLE pac_dep
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-        )
-
-        add_custom_command(OUTPUT ${pac_file}
-            COMMAND python3 ${pacgen_py} pac-gen ${pac_config} ${pac_file}
-            DEPENDS ${pacgen_py} ${pac_config} ${pac_dep}
-            WORKING_DIRECTORY ${SOURCE_TOP_DIR}
-        )
-        add_custom_target(${nvmvariant}_pacgen ALL DEPENDS ${pac_file})
-    endforeach()
-endif()
+# "all_libs" is a target to link all app libraries
+set(target all_libs)
+set(all_libs_out ${out_lib_dir}/all_libs.a)
+get_property(app_libraries GLOBAL PROPERTY app_libraries)
+list(APPEND app_libraries ${libc_file_name} ${libm_file_name} ${libgcc_file_name})
+add_custom_command(OUTPUT ${all_libs_out}
+    COMMAND python3 ${groupgen_py} --base ${BINARY_TOP_DIR} ${all_libs_out} ${app_libraries}
+    DEPENDS ${groupgen_py} ${app_libraries}
+    WORKING_DIRECTORY ${BINARY_TOP_DIR}
+)
+add_custom_target(build_${target} DEPENDS ${all_libs_out})
+add_library(${target} STATIC IMPORTED GLOBAL)
+set_target_properties(${target} PROPERTIES IMPORTED_LOCATION ${all_libs_out})
+add_dependencies(${target} build_${target})

@@ -1,11 +1,9 @@
 #ifndef _HAL_AIF_H_
 #define _HAL_AIF_H_
 
-
 // =============================================================================
 //  MACROS
 // =============================================================================
-
 
 // =============================================================================
 //  TYPES
@@ -23,7 +21,6 @@ typedef enum
 
     HAL_SERIAL_MODE_QTY
 } HAL_SERIAL_MODE_T;
-
 
 // =============================================================================
 // HAL_AIF_RX_DELAY_T
@@ -44,8 +41,6 @@ typedef enum
     HAL_AIF_RX_DELAY_QTY
 } HAL_AIF_RX_DELAY_T;
 
-
-
 // =============================================================================
 // HAL_AIF_TX_DELAY_T
 // -----------------------------------------------------------------------------
@@ -60,8 +55,6 @@ typedef enum
 
     HAL_AIF_TX_DELAY_QTY
 } HAL_AIF_TX_DELAY_T;
-
-
 
 // =============================================================================
 // HAL_AIF_TX_MODE_T
@@ -80,9 +73,7 @@ typedef enum
     HAL_AIF_TX_MODE_MONO_STEREO_DUPLI,
 
     HAL_AIF_TX_MODE_QTY
-} HAL_AIF_TX_MODE_T ;
-
-
+} HAL_AIF_TX_MODE_T;
 
 // =============================================================================
 // HAL_AIF_RX_MODE_T
@@ -99,57 +90,52 @@ typedef enum
     HAL_AIF_RX_MODE_QTY
 } HAL_AIF_RX_MODE_T;
 
-
-
-
-
 // =============================================================================
 // HAL_AIF_SERIAL_CFG_T
 // -----------------------------------------------------------------------------
 // =============================================================================
 typedef struct
 {
-    HAL_SERIAL_MODE_T   mode;
+    HAL_SERIAL_MODE_T mode;
 
     /// If TRUE, AIF is used as the master
-    BOOL                aifIsMaster;
+    BOOL aifIsMaster;
 
     /// If TRUE, lsb comes first
-    BOOL                lsbFirst;
+    BOOL lsbFirst;
 
     /// Configure LRCK polarity.
     ///0 = high level on LRCK means left channel, low level means right.
     ///1 = high level on LRCK means right channel, low level means left.
-    BOOL                polarity;
+    BOOL polarity;
 
-    HAL_AIF_RX_DELAY_T  rxDelay;
+    HAL_AIF_RX_DELAY_T rxDelay;
 
-    HAL_AIF_TX_DELAY_T  txDelay;
+    HAL_AIF_TX_DELAY_T txDelay;
 
-    HAL_AIF_RX_MODE_T   rxMode;
+    HAL_AIF_RX_MODE_T rxMode;
 
-    HAL_AIF_TX_MODE_T   txMode;
+    HAL_AIF_TX_MODE_T txMode;
 
     /// LRCK frequency (sampling)
-    UINT32              fs;
+    UINT32 fs;
 
     /// BCK/LRCK ratio
-    UINT32              bckLrckRatio;
+    UINT32 bckLrckRatio;
 
     /// if Master Mode, invert BCLK out. if slave Mode, invert BCLK in.
-    BOOL                invertBck;
+    BOOL invertBck;
 
     /// Delay Audio output data or LRCK by half cycle.
-    BOOL                outputHalfCycleDelay;
+    BOOL outputHalfCycleDelay;
 
     /// Delay Audio input data or LRCK by half cycle.
-    BOOL                inputHalfCycleDelay;
+    BOOL inputHalfCycleDelay;
 
     /// Sets the Bck gating. This bit decide if AIF continue to output BCK
     /// clock after 16-bit data has been sent.
-    BOOL                enableBckOutGating;
+    BOOL enableBckOutGating;
 } HAL_AIF_SERIAL_CFG_T;
-
 
 // =============================================================================
 // HAL_AIF_IF_T
@@ -171,10 +157,10 @@ typedef enum
     HAL_AIF_IF_SERIAL_1 = 0x0202,
     HAL_AIF_IF_SERIAL_2 = 0x0404,
     HAL_AIF_IF_PARALLEL = 0x0808,
-    HAL_AIF_IF_PARALLEL_STEREO= 0x1010,
+    HAL_AIF_IF_PARALLEL_STEREO = 0x1010,
     HAL_AIF_IF_SERIAL_IN_PARALLEL_OUT = 0x0110,
-    HAL_AIF_IF_SERIAL_1_IN_PARALLEL_OUT=0x0210,
-    HAL_AIF_IF_SERIAL_2_IN_PARALLEL_OUT=0x0410,
+    HAL_AIF_IF_SERIAL_1_IN_PARALLEL_OUT = 0x0210,
+    HAL_AIF_IF_SERIAL_2_IN_PARALLEL_OUT = 0x0410,
     HAL_AIF_IF_QTY = 0xFFFF,
 } HAL_AIF_IF_T;
 
@@ -187,7 +173,6 @@ typedef enum
 
 } HAL_AIF_ID_T;
 
-
 // =============================================================================
 // HAL_AIF_HANDLER_T
 // -----------------------------------------------------------------------------
@@ -197,8 +182,6 @@ typedef enum
 // =============================================================================
 typedef VOID (*HAL_AIF_HANDLER_T)(VOID);
 
-
-
 // =============================================================================
 // HAL_AIF_SR_T
 // -----------------------------------------------------------------------------
@@ -206,8 +189,8 @@ typedef VOID (*HAL_AIF_HANDLER_T)(VOID);
 // =============================================================================
 typedef enum
 {
-    HAL_AIF_FREQ_8000HZ  =  8000,
-    HAL_AIF_FREQ_9600HZ  =  9600,
+    HAL_AIF_FREQ_8000HZ = 8000,
+    HAL_AIF_FREQ_9600HZ = 9600,
     HAL_AIF_FREQ_11025HZ = 11025,
     HAL_AIF_FREQ_12000HZ = 12000,
     HAL_AIF_FREQ_16000HZ = 16000,
@@ -219,8 +202,6 @@ typedef enum
     HAL_AIF_FREQ_96000HZ = 96000,
     HAL_AIF_FREQ_128000HZ = 128000,
 } HAL_AIF_FREQ_T;
-
-
 
 // =============================================================================
 // HAL_AIF_CH_NB_T
@@ -240,7 +221,6 @@ typedef enum
     HAL_AIF_CHANNEL_STEREO = 3,
 } HAL_AIF_CH_T;
 
-
 // =============================================================================
 // HAL_AIF_CONFIG_T
 // -----------------------------------------------------------------------------
@@ -249,16 +229,16 @@ typedef enum
 typedef struct
 {
 
-    HAL_AIF_IF_T            interface;
-    HAL_AIF_FREQ_T          sampleRate;
-    HAL_AIF_CH_NB_T         channelNb;
+    HAL_AIF_IF_T interface;
+    HAL_AIF_FREQ_T sampleRate;
+    HAL_AIF_CH_NB_T channelNb;
 
     /// This field is only relevant if the serial
     /// interface is used. Otherwise, set it to 0.
-    HAL_AIF_SERIAL_CFG_T*   serialCfg;
-    HAL_AIF_ID_T          nAIFID;
-    BOOL          PARALLEL_FOR_FM;
-    HAL_AIF_CH_T    channel;
+    HAL_AIF_SERIAL_CFG_T *serialCfg;
+    HAL_AIF_ID_T nAIFID;
+    BOOL PARALLEL_FOR_FM;
+    HAL_AIF_CH_T channel;
 
 } HAL_AIF_CONFIG_T;
 
@@ -269,7 +249,7 @@ typedef struct
 // =============================================================================
 typedef struct
 {
-    UINT32* startAddress;
+    UINT32 *startAddress;
     /// Stream length in bytes.
     /// The length of a stream must be a multiple of 16 bytes.
     /// The maximum size is 32 KB.
@@ -299,8 +279,6 @@ typedef struct
     UINT32 uiLength; // size of var_data        ......
     char acPcmData[0];
 } BBAT_PCM_STREAM_T;
-
-
 
 // =============================================================================
 // HAL_AIF_TONE_TYPE_T
@@ -356,7 +334,6 @@ typedef enum
     HAL_AIF_SILENCE
 } HAL_AIF_TONE_TYPE_T;
 
-
 // =============================================================================
 // HAL_AIF_TONE_ATTENUATION_T
 // -----------------------------------------------------------------------------
@@ -376,7 +353,6 @@ typedef enum
     HAL_AIF_TONE_M15DB
 } HAL_AIF_TONE_ATTENUATION_T;
 
-
 // =============================================================================
 //  FUNCTIONS
 // =============================================================================
@@ -394,7 +370,7 @@ typedef enum
 /// @return HAL_ERR_NO if everything is alright or HAL_ERR_RESOURCE_BUSY if
 /// the AIF has already been opened.
 // =============================================================================
-PUBLIC HAL_ERR_T hal_AifOpen(CONST HAL_AIF_CONFIG_T* config);
+PUBLIC HAL_ERR_T hal_AifOpen(CONST HAL_AIF_CONFIG_T *config);
 
 // =============================================================================
 // hal_AifClose
@@ -404,7 +380,6 @@ PUBLIC HAL_ERR_T hal_AifOpen(CONST HAL_AIF_CONFIG_T* config);
 /// This function release the resource to #HAL_SYS_FREQ_32K.
 // =============================================================================
 PUBLIC VOID hal_AifClose(VOID);
-
 
 // =============================================================================
 // hal_AifSetSideTone
@@ -429,9 +404,7 @@ PUBLIC VOID hal_AifSetSideTone(UINT32 vol);
 /// @return HAL_ERR_NO if everything is alright or HAL_ERR_RESOURCE_BUSY if
 /// a play is already in process.
 // =============================================================================
-PUBLIC HAL_ERR_T hal_AifPlayStream(CONST HAL_AIF_STREAM_T* playedStream);
-
-
+PUBLIC HAL_ERR_T hal_AifPlayStream(CONST HAL_AIF_STREAM_T *playedStream);
 
 // =============================================================================
 // hal_AifRecordStream
@@ -447,11 +420,7 @@ PUBLIC HAL_ERR_T hal_AifPlayStream(CONST HAL_AIF_STREAM_T* playedStream);
 /// the audio, without recording data from anywhere.
 ///
 // =============================================================================
-PUBLIC HAL_ERR_T hal_AifRecordStream(CONST HAL_AIF_STREAM_T* recordedStream);
-
-
-
-
+PUBLIC HAL_ERR_T hal_AifRecordStream(CONST HAL_AIF_STREAM_T *recordedStream);
 
 // =============================================================================
 // hal_AifStopPlay
@@ -460,15 +429,12 @@ PUBLIC HAL_ERR_T hal_AifRecordStream(CONST HAL_AIF_STREAM_T* recordedStream);
 // =============================================================================
 PUBLIC HAL_ERR_T hal_AifStopPlay(VOID);
 
-
 // =============================================================================
 // hal_AifStopRecord
 // -----------------------------------------------------------------------------
 /// Stop playing a buffer
 // =============================================================================
 PUBLIC HAL_ERR_T hal_AifStopRecord(VOID);
-
-
 
 // =============================================================================
 // hal_AifPause
@@ -480,7 +446,6 @@ PUBLIC HAL_ERR_T hal_AifStopRecord(VOID);
 // =============================================================================
 PUBLIC HAL_ERR_T hal_AifPause(BOOL pause);
 
-
 // =============================================================================
 // hal_AifLoopBack
 // -----------------------------------------------------------------------------
@@ -491,14 +456,12 @@ PUBLIC HAL_ERR_T hal_AifPause(BOOL pause);
 // =============================================================================
 PUBLIC VOID hal_AifLoopBack(BOOL pause);
 
-
 // =============================================================================
 // hal_AifPlayReachedHalf
 // -----------------------------------------------------------------------------
 /// Check if the buffer has reached the middle and clear the status.
 // =============================================================================
 PUBLIC BOOL hal_AifPlayReachedHalf(VOID);
-
 
 // =============================================================================
 // hal_AifPlayReachedEnd
@@ -507,7 +470,6 @@ PUBLIC BOOL hal_AifPlayReachedHalf(VOID);
 // =============================================================================
 PUBLIC BOOL hal_AifPlayReachedEnd(VOID);
 
-
 // =============================================================================
 // hal_AifRecordReachedHalf
 // -----------------------------------------------------------------------------
@@ -515,16 +477,12 @@ PUBLIC BOOL hal_AifPlayReachedEnd(VOID);
 // =============================================================================
 PUBLIC BOOL hal_AifRecordReachedHalf(VOID);
 
-
 // =============================================================================
 // hal_AifRecordReachedEnd
 // -----------------------------------------------------------------------------
 /// Check if the buffer has reached the end and clear the status.
 // =============================================================================
 PUBLIC BOOL hal_AifRecordReachedEnd(VOID);
-
-
-
 
 // =============================================================================
 // hal_AifTone
@@ -549,11 +507,9 @@ PUBLIC BOOL hal_AifRecordReachedEnd(VOID);
 /// @return #HAL_ERR_NO
 // =============================================================================
 PUBLIC HAL_ERR_T hal_AifTone(
-    CONST HAL_AIF_TONE_TYPE_T         tone,
-    CONST HAL_AIF_TONE_ATTENUATION_T  attenuation,
+    CONST HAL_AIF_TONE_TYPE_T tone,
+    CONST HAL_AIF_TONE_ATTENUATION_T attenuation,
     CONST BOOL start);
-
-
 
 // =============================================================================
 // hal_AifTonePause
@@ -573,7 +529,7 @@ PUBLIC HAL_ERR_T hal_AifTonePause(BOOL pause);
 /// @param
 /// @return INT32* pointer to the IFC Curr_AHB_Addr register.
 // =============================================================================
-PUBLIC INT32* hal_AifGetIfcStatusRegPtr(VOID);
+PUBLIC INT32 *hal_AifGetIfcStatusRegPtr(VOID);
 
 // =============================================================================
 // hal_AifGetOverflowStatus
@@ -611,7 +567,6 @@ PUBLIC UINT32 hal_AifSideToneGainDb2Val(INT32 db);
 
 /// @} //<-- End of aif group
 
-
 // =============================================================================
 // hal_AifSetAudClk
 // -----------------------------------------------------------------------------
@@ -625,8 +580,8 @@ PUBLIC VOID hal_AifClrAudClk(VOID);
 // -----------------------------------------------------------------------------
 /// hal_SetBtClk
 // =============================================================================
-PUBLIC HAL_ERR_T  hal_SetBtClk(VOID);
-PUBLIC HAL_ERR_T  hal_ClrBtClk(VOID);
+PUBLIC HAL_ERR_T hal_SetBtClk(VOID);
+PUBLIC HAL_ERR_T hal_ClrBtClk(VOID);
 
 // =============================================================================
 // hal_AifAudTopFlag
@@ -648,7 +603,6 @@ PUBLIC VOID hal_AifSetAif2Flag(BOOL flag);
 /// Set the SampleRate.
 // =============================================================================
 
-PUBLIC HAL_ERR_T hal_newAifSetSampleRate(CONST HAL_AIF_CONFIG_T* config, HAL_AIF_FREQ_T sampleRate, BOOL isPlay);
-
+PUBLIC HAL_ERR_T hal_newAifSetSampleRate(CONST HAL_AIF_CONFIG_T *config, HAL_AIF_FREQ_T sampleRate, BOOL isPlay);
 
 #endif // _HAL_AIF_H_

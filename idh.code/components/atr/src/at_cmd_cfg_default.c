@@ -164,6 +164,7 @@ const atSetting_t gAtDefaultSetting = {
         {
             {
                 1,
+                .nAuthProt = 1,
             },
         },
     },
@@ -172,4 +173,44 @@ const atSetting_t gAtDefaultSetting = {
     .psm_mode = 0,
     .mcuNotifySleepMode = 0,
     .mcuNotifySleepDelayMs = 120,
+    .csta = CFW_TELNUMBER_TYPE_UNKNOWN,
+    .csvm = 0,
+#ifdef CONFIG_ATR_TB_API_SUPPORT
+    .tbDataStatistics = {
+        [0] = {
+            .rx_bytes = {
+                0,
+            },
+            .tx_bytes = {
+                0,
+            },
+            .act_time = {
+                0,
+            },
+            .up_time = {
+                0,
+            },
+            .total_rx_bytes = 0,
+            .total_tx_bytes = 0,
+            .total_act_time = 0,
+        },
+        [1] = {
+            .rx_bytes = {
+                0,
+            },
+            .tx_bytes = {
+                0,
+            },
+            .act_time = {
+                0,
+            },
+            .up_time = {
+                0,
+            },
+            .total_rx_bytes = 0,
+            .total_tx_bytes = 0,
+            .total_act_time = 0,
+        },
+    },
+#endif
 };

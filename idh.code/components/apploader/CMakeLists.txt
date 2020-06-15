@@ -9,7 +9,7 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-configure_file(src/core_config.cmake.in ${out_rel_dir}/core_config.cmake)
+configure_file(src/core_config.cmake.in ${out_lib_dir}/core_config.cmake)
 
 set(core_export ${CMAKE_CURRENT_BINARY_DIR}/core_export.o)
 set(export_list ${CMAKE_CURRENT_SOURCE_DIR}/src/core_export.list)
@@ -22,10 +22,12 @@ add_custom_command(OUTPUT ${core_export} ${core_stub_o}
 )
 
 set(target apploader)
-add_library(${target} STATIC src/app_loader.c src/app_loader_vars.c ${core_export})
+add_app_libraries($<TARGET_FILE:${target}>)
+
+add_library(${target} STATIC src/app_loader.c ${core_export})
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_include_directories(${target} PUBLIC include)
 target_include_targets(${target} PRIVATE kernel fs calclib)
 
-relative_glob(srcs include/*.h src/*.c src/*.h)
+relative_glob(srcs include/*.h src/*.[ch])
 beautify_c_code(${target} ${srcs})

@@ -15,65 +15,65 @@
 // * RAMRUN_IMAGE_SIZE: The sram size.
 // * RAMRUN_FLASH_SIZE: The maximum romable size. When defined, it is only
 //      used to check romable size.
+// * RAMRUN_MMU_ENABLE: 1 for MMU enabled, 0 for disabled
 // * CONFIG_UIMAGE_HEADER_SIZE: uimage header size.
 //
 // Address between [__flash_start, __flash_end] is romable.
 
-#include "hal_config.h"
+#include "link_defs.ld"
+#include "boot_config.h"
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
 ENTRY(bootEntry)
 EXTERN(bootEntry)
 
-#define ROTEXT() .text .text.* .sramboottext .sramtext .ramtext .gnu.linkonce.t.* .glue_7 .glue_7t .vfp11_veneer .v4_bx
-#define RODATA() .rdata .rodata .rodata.* .gnu.linkonce.r.*
-#define DATA() .data .data.* .sramdata .ramdata .gnu.linkonce.d.*
-#define BSS() .bss .bss.* .srambss .rambss COMMON .scommon .sbss .sbss.* .sbss2 .sbss2.* .gnu.linkonce.b.*
+#define text_contents       *(BOOT_ENTRY) \
+                            SORT(*)(.sramboottext .sramboottext.*) \
+                            SORT(*)(.sramtext .sramtext.*) \
+                            SORT(*)(.ramtext .ramtext.*) \
+                            SORT(*)(DEF_RO) \
+                            KEEP(*(.rokeep))
+#define data_contents       SORT(*)(.sramdata .sramdata.*) \
+                            SORT(*)(DEF_RW) \
+                            KEEP(*(.rwkeep))
+#define bss_contents        *(.srambss .srambss.*) \
+                            *(DEF_ZI)
 
 MEMORY {
-    sram(rwx): ORIGIN = RAMRUN_IMAGE_START, LENGTH = RAMRUN_IMAGE_SIZE
+    sram(rwx): ORIGIN = RAMRUN_IMAGE_START+CONFIG_UIMAGE_HEADER_SIZE,
+               LENGTH = RAMRUN_IMAGE_SIZE-CONFIG_UIMAGE_HEADER_SIZE
 }
 
 SECTIONS {
-    . = ORIGIN(sram);
+    NOAT_SECT(text) > sram
+    NOAT_SECT(data) > sram
+    ANCHOR_SECT(lastflash) > sram
+    NOLOAD_SECT(bss) > sram
+    ANCHOR_SECT(lastsram) > sram
 
-    // skip uimage header
-    . += CONFIG_UIMAGE_HEADER_SIZE;
-    __flash_start = .;
-
-    .text . : {
-        *(BOOT_ENTRY)
-        *(ROTEXT() RODATA())
-        . = ALIGN(CONFIG_CACHE_LINE_SIZE);
-    }
-
-    .data . : {
-        *(DATA())
-        . = ALIGN(CONFIG_CACHE_LINE_SIZE);
-    }
-    __flash_end = .;
+    __flash_start = LOADADDR(.text);
+    __flash_end = ADDR(.lastflash);
 
 #ifdef RAMRUN_FLASH_SIZE
     ASSERT(__flash_end - RAMRUN_IMAGE_START <= RAMRUN_FLASH_SIZE, "flash overflow")
 #endif
 
-    .bss . : {
-        __bss_start = .;
-        *(BSS())
-        __bss_end = .;
-        . = ALIGN(CONFIG_CACHE_LINE_SIZE);
-    }
+#if defined(RAMRUN_MMU_ENABLE) && (RAMRUN_MMU_ENABLE)
+    __mmu_ttbl1_address = ORIGIN(sram) + LENGTH(sram) - 0x4000;
+    __mmu_ttbl2_address = ORIGIN(sram) + LENGTH(sram) - 0x4400;
+    __sram_top = __mmu_ttbl2_address;
+    ASSERT(__mmu_ttbl1_address % 16384 == 0, "TTB L1 is not aligned")
+#else
+    __sram_top = ORIGIN(sram) + LENGTH(sram);
+#endif
 
-    __sram_end = .;
-    __sram_top = RAMRUN_IMAGE_START + RAMRUN_IMAGE_SIZE;
+    __sram_end = ADDR(.lastsram);
+    ASSERT(__sram_end <= __sram_top, "sram overflow")
 
-    /DISCARD/ : { *(.iplt*) }
-    /DISCARD/ : { *(.igot*) }
-    /DISCARD/ : { *(.rel*) }
-    /DISCARD/ : { *(.dynstr*) }
-    /DISCARD/ : { *(.dynamic*) }
-    /DISCARD/ : { *(.plt*) }
-    /DISCARD/ : { *(.interp*) }
-    /DISCARD/ : { *(.gnu*) }
+    __sram_heap_start = __sram_end;
+    __sram_heap_end = __sram_top;
+    __blue_screen_end = CONFIG_BOOT_BLUE_SCREEN_STACK_TOP;
+
+    IGNORE_DISCARD_SECTS
 }

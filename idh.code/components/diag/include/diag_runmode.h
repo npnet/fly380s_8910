@@ -13,9 +13,10 @@
 #ifndef _DIAG_RUNMODE_H_
 #define _DIAG_RUNMODE_H_
 
-#include <stdint.h>
+#include "drv_debug_port.h"
+#include "osi_compiler.h"
 
-#define DIAG_CHECK_RUN_MODE_TIMEOUT (500) // ms
+OSI_EXTERN_C_BEGIN
 
 /**
  * @brief Diag run mode enumeration
@@ -31,15 +32,15 @@ typedef enum
     DIAG_RM_CALIB_POST_NO_LCM_MODE = 0x06, ///< calibration post mode without lcm, app
     DIAG_RM_BBAT = 0x07,
     DIAG_RM_MAX_COUNT,
-} diagRm_t;
+} diagRunMode_t;
 
 /**
  * @breif check run mode
  *
- * @param ms_timeout    check mode timeout
- * @return
- *      - runmode       the run mode
+ * @param port debug port
+ * @return the run mode, refer to \p diagRunMode_t.
  */
-diagRm_t diagRmCheck(uint32_t ms_timeout);
+diagRunMode_t diagRunModeCheck(drvDebugPort_t *port);
 
+OSI_EXTERN_C_END
 #endif

@@ -19,6 +19,7 @@ set(CONFIG_NOR_PHY_ADDRESS 0x60000000)
 set(CONFIG_NOR_EXT_PHY_ADDRESS 0x70000000)
 set(CONFIG_RAM_PHY_ADDRESS 0x80000000)
 
+set(CONFIG_SRAM_SIZE 0x40000)
 set(CONFIG_GIC_BASE_ADDRESS 0x08201000)
 set(CONFIG_GIC_CPU_INTERFACE_OFFSET 0x00001000)
 
@@ -27,14 +28,7 @@ set(CONFIG_ROM_LOAD_SRAM_OFFSET 0xc0)
 set(CONFIG_ROM_LOAD_SIZE 0xbf40)
 math(EXPR CONFIG_ROM_SRAM_LOAD_ADDRESS "${CONFIG_SRAM_PHY_ADDRESS}+${CONFIG_ROM_LOAD_SRAM_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
 
-math(EXPR CONFIG_BOOT_EXCEPTION_STACK_SIZE "${CONFIG_BOOT_SVC_STACK_SIZE}+${CONFIG_BOOT_IRQ_STACK_SIZE}" OUTPUT_FORMAT HEXADECIMAL)
-math(EXPR CONFIG_BOOT_SVC_STACK_TOP "${CONFIG_BOOT_EXCEPTION_STACK_START}+${CONFIG_BOOT_SVC_STACK_SIZE}" OUTPUT_FORMAT HEXADECIMAL)
-math(EXPR CONFIG_BOOT_IRQ_STACK_TOP "${CONFIG_BOOT_SVC_STACK_TOP}+${CONFIG_BOOT_IRQ_STACK_SIZE}" OUTPUT_FORMAT HEXADECIMAL)
-
-math(EXPR CONFIG_BOOTLOADER_SIZE "${CONFIG_BOOT_FLASH_SIZE}" OUTPUT_FORMAT HEXADECIMAL)
-math(EXPR CONFIG_BOOT_FLASH_ADDRESS "${CONFIG_NOR_PHY_ADDRESS}+${CONFIG_BOOT_FLASH_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
-math(EXPR CONFIG_APP_FLASH_ADDRESS "${CONFIG_NOR_PHY_ADDRESS}+${CONFIG_APP_FLASH_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
-math(EXPR CONFIG_FS_MODEM_FLASH_ADDRESS "${CONFIG_NOR_PHY_ADDRESS}+${CONFIG_FS_MODEM_FLASH_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
+set(CONFIG_BOOTLOADER_SIZE ${CONFIG_BOOT_FLASH_SIZE})
 
 set(CONFIG_APP_SRAM_OFFSET 0x100)
 set(CONFIG_APP_SRAM_SIZE 0x1f00)
@@ -48,11 +42,11 @@ set(CONFIG_UND_STACK_TOP 0x800)
 set(CONFIG_SYS_STACK_TOP 0x800)
 set(CONFIG_STACK_BOTTOM 0xc00)
 
-math(EXPR CONFIG_APPIMG_FLASH_ADDRESS
-    "${CONFIG_NOR_PHY_ADDRESS}+${CONFIG_APPIMG_FLASH_OFFSET}"
+math(EXPR CONFIG_APP_BTFW_RAM_OFFSET
+    "${CONFIG_APP_RAM_OFFSET}+${CONFIG_APP_TOTAL_RAM_SIZE}-${CONFIG_APP_BTFW_RAM_SIZE}"
     OUTPUT_FORMAT HEXADECIMAL)
 math(EXPR CONFIG_APP_FILEIMG_RAM_OFFSET
-    "${CONFIG_APP_RAM_OFFSET}+${CONFIG_APP_TOTAL_RAM_SIZE}-${CONFIG_APP_FILEIMG_RAM_SIZE}"
+    "${CONFIG_APP_BTFW_RAM_OFFSET}-${CONFIG_APP_FILEIMG_RAM_SIZE}"
     OUTPUT_FORMAT HEXADECIMAL)
 math(EXPR CONFIG_APP_FLASHIMG_RAM_OFFSET
     "${CONFIG_APP_FILEIMG_RAM_OFFSET}-${CONFIG_APP_FLASHIMG_RAM_SIZE}"
@@ -73,101 +67,92 @@ math(EXPR CONFIG_DEFAULT_SPIFLASH_CTRL_FREQ "${CONFIG_DEFAULT_CPUPLL_FREQ}*2/${C
 math(EXPR CONFIG_DEFAULT_SPIFLASH_DEV_FREQ "${CONFIG_DEFAULT_CPUPLL_FREQ}*2/${CONFIG_DEFAULT_SPIFLASH_DEV_HALF_DIV}")
 math(EXPR CONFIG_DEFAULT_SPIFLASH_INTF_FREQ "${CONFIG_DEFAULT_SPIFLASH_DEV_FREQ}/${CONFIG_DEFAULT_SPIFLASH_INTF_DIV}")
 
-set(modem_libs)
-set(sysrom_elf)
 set(unittest_ldscript ${SOURCE_TOP_DIR}/components/hal/ldscripts/flashrun.ld)
+set(pac_fdl_files ${out_hex_dir}/fdl1.sign.img ${out_hex_dir}/fdl2.sign.img)
 
-# Configuration all nvmvariants
-set(modembin_dir prebuilts/modem/8910)
-set(pdeltanv_dir components/nvitem/8910/param_deltanv)
+function(pacvariant_gen)
+    # Sign fdl1/fdl2/boot/ap. They are common to all variants
+    set(sign_password 12345678)     # customer product shall replace with customer's key
+    set(sign_product test)          # customer product shall replace with customer's product name
+    set(sign_boot_padlen 0xbce0)    # can't be changed
+    add_custom_command(OUTPUT ${pac_fdl_files} ${out_hex_dir}/boot.sign.img ${out_hex_dir}/${BUILD_TARGET}.sign.img
+        COMMAND vlrsign --pw ${sign_password} --pn ${sign_product} --ha Blake2
+            --img ${out_hex_dir}/boot.img --out ${out_hex_dir}/boot.sign.img --plen ${sign_boot_padlen}
+        COMMAND vlrsign --pw ${sign_password} --pn ${sign_product} --ha Blake2
+            --img ${out_hex_dir}/fdl1.img --out ${out_hex_dir}/fdl1.sign.img
+        COMMAND vlrsign --pw ${sign_password} --pn ${sign_product} --ha Blake2
+            --img ${out_hex_dir}/fdl2.img --out ${out_hex_dir}/fdl2.sign.img
+        COMMAND vlrsign --pw ${sign_password} --pn ${sign_product} --ha Blake2
+            --img ${out_hex_dir}/${BUILD_TARGET}.img --out ${out_hex_dir}/${BUILD_TARGET}.sign.img
+        DEPENDS ${out_hex_dir}/boot.img ${out_hex_dir}/fdl1.img
+            ${out_hex_dir}/fdl2.img ${out_hex_dir}/${BUILD_TARGET}.img
+    )
 
-config_nvm_variant_8910(cat1_128X256_UIS8910A_module
-    ${modembin_dir}/cat1_128X256_UIS8910A_module nvitem)
+    # Create pac for all variants
+    foreach(nvmvariant ${CONFIG_NVM_VARIANTS})
+        set(modemgen_dir ${BINARY_TOP_DIR}/modemgen/${nvmvariant})
+        set(modem_img ${out_hex_dir}/${nvmvariant}.img)
+        set(nvitem_bin ${out_hex_dir}/${nvmvariant}_nvitem.bin)
+        set(prepack_cpio ${out_hex_dir}/${nvmvariant}_prepack.cpio)
+        set(pac_file ${out_hex_dir}/${BUILD_TARGET}-${nvmvariant}-${BUILD_RELEASE_TYPE}.pac)
 
-config_nvm_variant_8910(catm_128X256_UIS8910A_NoIratNoDualsim
-    ${modembin_dir}/catm_128X256_UIS8910A_NoIratNoDualsim nvitem)
+        add_custom_command(OUTPUT ${modem_img} ${nvitem_bin} ${prepack_cpio}
+            COMMAND python3 ${modemgen_py} imggen8910
+                --config ${SOURCE_TOP_DIR}/components/hal/config/8910/modem_nvm.json
+                --source-top ${SOURCE_TOP_DIR}
+                --binary-top ${BINARY_TOP_DIR}
+                --cproot ${SOURCE_TOP_DIR}/prebuilts/modem/8910
+                --aproot ${SOURCE_TOP_DIR}/components/nvitem/8910
+                --workdir ${modemgen_dir}
+                --fix-size ${CONFIG_NVBIN_FIXED_SIZE}
+                --partinfo ${CONFIG_PARTINFO_JSON_PATH}
+                --deltainc ${out_inc_dir}
+                --dep ${modemgen_dir}/modem.d
+                --deprel ${BINARY_TOP_DIR}
+                ${nvmvariant}
+                ${prepack_cpio} ${nvitem_bin} ${modem_img}
+            DEPFILE ${modemgen_dir}/modem.d
+            WORKING_DIRECTORY ${SOURCE_TOP_DIR}
+        )
 
-config_nvm_variant_8910(catm_128X256_UIS8910A_NoIratNoDualsim_module_DTForDingLi
-    ${modembin_dir}/catm_128X256_UIS8910A_NoIratNoDualsim_module_DTForDingLi nvitem)
+        if(CONFIG_APP_FLASH2_ENABLED)
+            set(target_flash2_bin ${out_hex_dir}/${BUILD_TARGET}.flash2.bin)
+            set(cfg_ap2 cfg-image -i AP2 -a ${CONFIG_APP_FLASH2_ADDRESS}
+                -s ${CONFIG_APP_FLASH2_SIZE} -p ${target_flash2_bin})
+        endif()
+        if(CONFIG_FS_EXT_ENABLED)
+            set(cfg_fmt_fext cfg-fmt-flash -i FMT_FSEXT -b FEXT -n)
+        endif()
 
-config_nvm_variant_8910(cat1_128X256_UIS8910A_module_DTForDingLi
-    ${modembin_dir}/cat1_128X256_UIS8910A_module_DTForDingLi nvitem)
-
-config_nvm_variant_8910(catm_128X256_UIS8910A_EM610_NoIratNoDualsim
-    ${modembin_dir}/catm_128X256_UIS8910A_EM610_NoIratNoDualsim nvitem)
-
-config_nvm_variant_8910(catm_128X128_UIS8910C_EM610_NoIratNoDualsim
-    ${modembin_dir}/catm_128X256_UIS8910A_EM610_NoIratNoDualsim nvitem)
-
-config_nvm_variant_8910(catm_128X128_UIS8910C_EM610V2_NoIratNoDualsim_PHYTEST
-    ${modembin_dir}/catm_128X128_UIS8910C_EM610V2_NoIratNoDualsim_PHYTEST nvitem)
-
-config_nvm_variant_8910(cat1_128X128_UIS8910C_EM610V2_NoDualsim_PHYTEST
-    ${modembin_dir}/cat1_128X128_UIS8910C_EM610V2_NoDualsim_PHYTEST nvitem)
-
-config_nvm_variant_8910(cat1_128X128_UIS8910C_EM610V2_NoDualsim
-    ${modembin_dir}/cat1_128X128_UIS8910C_EM610V2_NoDualsim nvitem)
-
-config_nvm_variant_8910(catm_128X128_UIS8910C_EM610V2_NoIratNoDualsim
-    ${modembin_dir}/catm_128X128_UIS8910C_EM610V2_NoIratNoDualsim nvitem)
-
-config_nvm_variant_8910(cat1_UIS8915DM_UIS8910GF_SingleSim
-    ${modembin_dir}/cat1_UIS8915DM_UIS8910GF_SingleSim nvitem)
-
-config_nvm_variant_8910(cat1_UIS8910DM_L04_SingleSim
-    ${modembin_dir}/cat1_UIS8910DM_L04_SingleSim nvitem)
-
-config_nvm_variant_8910(cat1_64X128_UIS8915DM_SingleSim
-    ${modembin_dir}/cat1_64X128_UIS8915DM_SingleSim nvitem)
-
-config_nvm_variant_8910(UIS8915DM_NONBL_SS
-    ${modembin_dir}/UIS8915DM_NONBL_SS nvitem)
-
-config_nvm_variant_8910(UIS8915DM_NONBL_SS_PHYTEST
-    ${modembin_dir}/UIS8915DM_NONBL_SS_PHYTEST nvitem)
-
-config_nvm_variant_8910(UIS8915DM_NONBL_BB_RF_SS
-    ${modembin_dir}/UIS8915DM_NONBL_BB_RF_SS nvitem)
-
-config_nvm_variant_8910(UIS8915DM_NONBL_BB_RF_SS_PHYTEST
-    ${modembin_dir}/UIS8915DM_NONBL_BB_RF_SS_PHYTEST nvitem)
-
-config_nvm_variant_8910(cat1_64X128_UIS8915DM_SingleSim_DTForDingLi
-    ${modembin_dir}/cat1_64X128_UIS8915DM_SingleSim_DTForDingLi nvitem)
-
-config_nvm_variant_8910(cat1_64X128_UIS8915DM_SingleSim_PHYTEST
-    ${modembin_dir}/cat1_64X128_UIS8915DM_SingleSim_PHYTEST nvitem)
-
-config_nvm_variant_8910(cat1_64X128_UIS8915DM_BB_RF_SingleSim
-    ${modembin_dir}/cat1_64X128_UIS8915DM_BB_RF_SingleSim nvitem)
-
-config_nvm_variant_8910(cat1_64X128_UIS8915DM_BB_RF_SingleSim_PHYTEST
-    ${modembin_dir}/cat1_64X128_UIS8915DM_BB_RF_SingleSim_PHYTEST nvitem)
-
-config_nvm_variant_8910(catm_64X128_UIS8915DM_NoIratSingleSim
-    ${modembin_dir}/catm_64X128_UIS8915DM_NoIratSingleSim nvitem)
-
-config_nvm_variant_8910(catm_64X128_UIS8915DM_NoIratSingleSim_DTForDingLi
-    ${modembin_dir}/catm_64X128_UIS8915DM_NoIratSingleSim_DTForDingLi nvitem)
-
-config_nvm_variant_8910(catm_64X128_UIS8915DM_NoIratSingleSim_PHYTEST
-    ${modembin_dir}/catm_64X128_UIS8915DM_NoIratSingleSim_PHYTEST nvitem)
-
-config_nvm_variant_8910(catm_64X128_UIS8915DM_NoIratSingleSim_3GPPR14
-    ${modembin_dir}/catm_64X128_UIS8915DM_NoIratSingleSim_3GPPR14 nvitem)
-
-config_nvm_variant_8910(catm_64X128_UIS8915DM_BB_RF_NoIratSingleSim
-    ${modembin_dir}/catm_64X128_UIS8915DM_BB_RF_NoIratSingleSim nvitem)
-
-config_nvm_variant_8910(UIS8915DM_CATM_BB_RF_NoIratSingleSim_3GPPR14
-    ${modembin_dir}/UIS8915DM_CATM_BB_RF_NoIratSingleSim_3GPPR14 nvitem)
-
-config_nvm_variant_8910(catm_UIS8915DM_BB_RF_NoIratSingleSim_PHYTEST
-    ${modembin_dir}/catm_UIS8915DM_BB_RF_NoIratSingleSim_PHYTEST nvitem)
-
-config_nvm_variant_8910(catm_nbiot_64x128_NoIratSingleSim
-    ${modembin_dir}/catm_nbiot_64x128_NoIratSingleSim nvitem)
-
-config_nvm_variant_8910(cat1_UIS8915DM_BB_RF_SS_NoVolte
-    ${modembin_dir}/cat1_UIS8915DM_BB_RF_SS_NoVolte nvitem)
-
+        pac_init_fdl(init_fdl)
+        add_custom_command(OUTPUT ${pac_file}
+            COMMAND python3 ${pacgen_py} ${init_fdl}
+                cfg-nvitem -n "Calibration" -i 0xFFFFFFFF --use 1 --replace 0 --continue 0 --backup 1
+                cfg-nvitem -n "GSM Calibration" -i 0x26d --use 1 --replace 0 --continue 1 --backup 1
+                cfg-nvitem -n "LTE Calibration" -i 0x26e --use 1 --replace 0 --continue 0 --backup 1
+                cfg-nvitem -n "IMEI" -i 0xFFFFFFFF --use 1 --replace 0 --continue 0 --backup 1
+                cfg-image -i BOOTLOADER -a ${CONFIG_BOOT_FLASH_ADDRESS} -s ${CONFIG_BOOTLOADER_SIZE}
+                    -p ${out_hex_dir}/boot.sign.img
+                cfg-image -i AP -a ${CONFIG_APP_FLASH_ADDRESS} -s ${CONFIG_APP_FLASH_SIZE}
+                    -p ${out_hex_dir}/${BUILD_TARGET}.sign.img
+                ${cfg_ap2}
+                cfg-image -i PS -a ${CONFIG_FS_MODEM_FLASH_ADDRESS} -s ${CONFIG_FS_MODEM_FLASH_SIZE}
+                    -p ${out_hex_dir}/${nvmvariant}.img
+                cfg-fmt-flash -i FMT_FSSYS -b FSYS -n
+                ${cfg_fmt_fext}
+                cfg-clear-nv
+                cfg-nv -s ${CONFIG_NVBIN_FIXED_SIZE} -p ${out_hex_dir}/${nvmvariant}_nvitem.bin
+                cfg-pack-cpio -i PREPACK -p ${prepack_cpio}
+                cfg-phase-check
+                dep-gen --base ${BINARY_TOP_DIR} ${pac_file} ${pac_file}.d
+                pac-gen ${pac_file}
+            DEPFILE ${pac_file}.d
+            DEPENDS ${pac_fdl_files} ${out_hex_dir}/boot.sign.img
+                ${out_hex_dir}/${BUILD_TARGET}.sign.img
+                ${out_hex_dir}/${nvmvariant}.img
+                ${target_flash2_bin}
+            WORKING_DIRECTORY ${SOURCE_TOP_DIR}
+        )
+        add_custom_target(${nvmvariant}_pacgen ALL DEPENDS ${pac_file})
+    endforeach()
+endfunction()

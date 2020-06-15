@@ -296,6 +296,9 @@ static void _gc9305SleepIn(bool is_sleep)
         _lcdDelayMs(120);
         LCD_CtrlWrite_GC9305(0x29); // display on
 #endif
+         halGoudatResetLcdPin();
+        _lcdDelayMs(100);
+
         _gc9305Init();
     }
 }
@@ -398,12 +401,12 @@ static uint32_t _gc9305ReadId(void)
     uint32_t ret_id = 0;
     HAL_ERR_T r_err;
     uint8_t id[4] = {0};
-    OSI_LOGI(0, "lcd:  gc9305   _gc9305ReadId \n");
+    OSI_LOGI(0, "lcd: rst and read gc9305 Id \n");
     halPmuSwitchPower(HAL_POWER_LCD, true, true);
     _lcdDelayMs(10);
     gc9305_farmk = g_lcd_gc9305.is_use_fmark;
     gc9305_line_mode = g_lcd_gc9305.bus_mode;
-
+    halGoudatResetLcdPin();
     halGoudaReadConfig(gc9305_line_mode, g_lcd_gc9305.is_use_fmark, g_lcd_gc9305.fmark_delay);
     _lcdDelayMs(140);
     //hwp_analogReg->pad_spi_lcd_cfg2 |= ANALOG_REG_PAD_SPI_LCD_SIO_SPU;

@@ -359,6 +359,7 @@ void atCmdHandleFSLSTFILE(atCommand_t *cmd)
                 {
                     // borrow rsp for full_path
                     sprintf(rsp, "%s/%s", name, ent->d_name);
+                    osiThreadSleep(50);
                     if (vfs_stat(rsp, &st) != 0)
                         continue;
 

@@ -10,23 +10,19 @@
 # without further testing or modification.
 
 set(target edp)
+add_app_libraries($<TARGET_FILE:${target}>)
 
 add_library(${target} STATIC)
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 #target_compile_definitions(${target} PRIVATE AT_MQTTSN_SUPPORT=1)
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel calclib net lwip json)
+target_include_targets(${target} PRIVATE kernel calclib net lwip json)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-
-target_include_directories(${target} PRIVATE ../external/platform/include)
-target_include_directories(${target} PRIVATE ../external/platform/service/include)
-#target_include_directories(${target} PRIVATE ../../posix/include)
-#target_include_directories(${target} PRIVATE ../lwip/src/include)
 
 set(EDPSRCDIR src)
 set(src_edp
     ${EDPSRCDIR}/EdpKit.c
-    ${EDPSRCDIR}/mbedtls.c   
+    ${EDPSRCDIR}/mbedtls.c
 )
 
 target_sources(${target} PRIVATE

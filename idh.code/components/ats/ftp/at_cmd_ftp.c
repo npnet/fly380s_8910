@@ -672,6 +672,7 @@ static bool ftp_GetStart(CFW_FTP_CTX_T *ctx)
     ctx->ftp_command = FTP_TYPE;
     ctx->ftpState = GET_FILE;
     ctx->getsize = 0;
+    ctx->get_closedelay = false;
     return true;
 }
 
@@ -848,8 +849,7 @@ static int32_t ftp_get_data_ind(uint32_t len)
         }
         else
         {
-            if ((0 == CFW_TcpipGetRecvAvailable(gFTPCtx.dataSocket)) &&
-                (CFW_SOCKET_CLOSING == CFW_TcpipSocketGetStatus(gFTPCtx.dataSocket)))
+            if ((0 == CFW_TcpipGetRecvAvailable(gFTPCtx.dataSocket)) && gFTPCtx.get_closedelay)
                 CFW_TcpipSocketClose(gFTPCtx.dataSocket);
         }
     }
@@ -981,6 +981,13 @@ static int32_t ftp_ctrl_data_ind(void)
         if (gFTPCtx.listenSocket != 0xFF)
             CFW_TcpipSocketClose(gFTPCtx.listenSocket);
         return ftp_errorHandler(gFTPCtx.ftp_command);
+    }
+    else if ((FTP_STRNCMP(gRecBuf, "150", 3) == 0) &&
+             (gFTPCtx.ftp_command == FTP_ABOR) &&
+             (gFTPCtx.getsize == gFTPCtx.req_getsize))
+    {
+        OSI_LOGI(0, "FTP# ignore 150 when download had finished");
+        return 0;
     }
     else
     {
@@ -1269,6 +1276,7 @@ int32_t ftp_data_msg_handler(osiEvent_t ev)
         if (ftp_connect_socket() == FTP_SOCKET_GET && CFW_TcpipGetRecvAvailable(gFTPCtx.dataSocket) != 0)
         {
             OSI_LOGI(0, "FTP# Available received data is not empty when download.");
+            gFTPCtx.get_closedelay = true;
             return 0;
         }
         CFW_TcpipSocketClose(gFTPCtx.dataSocket);
@@ -1466,6 +1474,7 @@ static bool ftp_setGETINFO(CFW_FTP_CTX_T *ctx, const char *path, uint16_t length
     ctx->req_getsize = size;
     ctx->getparam = num;
     ctx->getsize = 0;
+    ctx->get_closedelay = false;
     OSI_LOGXI(OSI_LOGPAR_SII, 0x10004156, "FTP# ftp_setGETINFO path=%s, offset=%d,size=%d", path, offset, size);
     return true;
 }

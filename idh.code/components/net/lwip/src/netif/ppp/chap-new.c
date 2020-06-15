@@ -281,10 +281,15 @@ static void chap_generate_challenge(ppp_pcb *pcb) {
  */
 static void  chap_handle_response(ppp_pcb *pcb, int id,
 		     unsigned char *pkt, int len) {
-	int response_len = 0, ok, mlen;
+	int response_len = 0, ok;
+#if !PPP_AUTHGPRS_SUPPORT
+    int mlen;
+#endif
 	const unsigned char *response = NULL;
+#if !PPP_AUTHGPRS_SUPPORT
 	unsigned char *outp;
 	struct pbuf *p;
+#endif    
 	const char *name = NULL;	/* initialized to shut gcc up */
 #if 0 /* UNUSED */
 	int (*verifier)(const char *, const char *, int, const struct chap_digest_type *,
@@ -345,7 +350,7 @@ static void  chap_handle_response(ppp_pcb *pcb, int id,
 	} else if ((pcb->chap_server.flags & AUTH_DONE) == 0)
 		return;
 #if PPP_AUTHGPRS_SUPPORT
-	if ((pcb->chap_server.flags & AUTH_DONE) == 0 && pcb->netif == NULL)
+	if ((pcb->chap_server.flags & AUTH_DONE) == 0)
 	{
 		if(pcb->acted == 0)
 		{
@@ -366,12 +371,18 @@ static void  chap_handle_response(ppp_pcb *pcb, int id,
 			pcb->peer_response[response_len] = 0;
 			pcb->len_response = response_len;
 			pcb->auth_type = 2;
-                    ppp_notice("pcb->peer_username[%d]", response_len);
+			ppp_notice("pcb->peer_username[%d]", response_len);
+
+			/* for ACK */
+			pcb->id = id;
+			memcpy(pcb->msg, message, strlen(message));
 			new_phase(pcb, PPP_PHASE_CALLBACK);
 		}
-	return;
-	}
+	    return;
+	}else return;
+	
 #endif
+#if !PPP_AUTHGPRS_SUPPORT
 	/* send the response */
 	mlen = strlen(message);
 	len = CHAP_HDRLEN + mlen;
@@ -431,8 +442,61 @@ static void  chap_handle_response(ppp_pcb *pcb, int id,
 		}
 		pcb->chap_server.flags |= AUTH_DONE;
 	}
+#endif    
 }
+#if PPP_AUTHGPRS_SUPPORT
+void chap_SendAuthResponse(ppp_pcb *pcb, int ActStatus)
+{
+    int mlen, len;	
+	unsigned char *outp;
+	struct pbuf *p;	
 
+    if(ActStatus == 0) pcb->chap_server.flags |= AUTH_FAILED;
+    
+    /* send the response */
+	mlen = strlen(pcb->msg);
+	len = CHAP_HDRLEN + mlen;
+    
+	p = pbuf_alloc(PBUF_RAW, (u16_t)(PPP_HDRLEN +len), PPP_CTRL_PBUF_TYPE);
+	if(NULL == p)
+		return;
+	if(p->tot_len != p->len) {
+		pbuf_free(p);
+		return;
+	}
+
+	outp = (unsigned char *)p->payload;
+	MAKEHEADER(outp, PPP_CHAP);
+
+	outp[0] = (pcb->chap_server.flags & AUTH_FAILED)? CHAP_FAILURE: CHAP_SUCCESS;
+	outp[1] = pcb->id;
+	outp[2] = len >> 8;
+	outp[3] = len;
+	if (mlen > 0)
+		memcpy(outp + CHAP_HDRLEN, pcb->msg, mlen);
+	ppp_write(pcb, p);
+
+	if (pcb->chap_server.flags & CHALLENGE_VALID) {
+		pcb->chap_server.flags &= ~CHALLENGE_VALID;
+		if (!(pcb->chap_server.flags & AUTH_DONE) && !(pcb->chap_server.flags & AUTH_FAILED)) {
+		}
+		if (pcb->chap_server.flags & AUTH_FAILED) {
+			auth_peer_fail(pcb, PPP_CHAP);
+		} else {
+			if ((pcb->chap_server.flags & AUTH_DONE) == 0)
+				auth_peer_success(pcb, PPP_CHAP,
+						  pcb->chap_server.digest->code,
+						  pcb->peer_username, strlen(pcb->peer_username));
+			if (pcb->settings.chap_rechallenge_time) {
+				pcb->chap_server.flags |= TIMEOUT_PENDING;
+				TIMEOUT(chap_timeout, pcb,
+					pcb->settings.chap_rechallenge_time);
+			}
+		}
+		pcb->chap_server.flags |= AUTH_DONE;
+	}
+}
+#endif
 /*
  * chap_verify_response - check whether the peer's response matches
  * what we think it should be.  Returns 1 if it does (authentication

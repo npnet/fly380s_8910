@@ -134,7 +134,7 @@ static void dm_event_ind_process(void *param)
         char refstr[100] = {0};
         cis_uri_t uri = newNode->uri;
         cis_mid_t mid = newNode->mid;
-        st_object_t *obj = prv_findObject(context, uri.objectId);
+        st_object_t *obj = cis_findObject(context, uri.objectId);
         uint32_t res_count = 0;
         if (obj != NULL)
             res_count = obj->attributeCount + obj->actionCount;
@@ -571,7 +571,7 @@ void atCmdHandleSELFREGISTER(atCommand_t *cmd)
         if (cmd->param_count == 1)
         {
             char repStr[32] = {0};
-            sprintf(repStr, "+SELFREGISTER: %d", (gAtSetting.self_register >> operator) & 0x01);
+            sprintf(repStr, "%s: %d", cmd->desc->name, (gAtSetting.self_register >> operator) & 0x01);
             atCmdRespInfoText(cmd->engine, repStr);
         }
         else
@@ -600,6 +600,13 @@ void atCmdHandleSELFREGISTER(atCommand_t *cmd)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             }
         }
+        atCmdRespOK(cmd->engine);
+    }
+    else if (AT_CMD_TEST == cmd->type)
+    {
+        char repStr[32] = {0};
+        sprintf(repStr, "%s: (0-2),(0-1)", cmd->desc->name);
+        atCmdRespInfoText(cmd->engine, repStr);
         atCmdRespOK(cmd->engine);
     }
     else

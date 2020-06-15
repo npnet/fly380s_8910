@@ -235,6 +235,7 @@ CIS_API cis_ret_t    cis_response   	  (void* context,const cis_uri_t* uri,const
 CIS_API cis_ret_t    cis_notify	          (void* context,const cis_uri_t* uri,const cis_data_t* value,cis_mid_t mid,cis_coapret_t result,bool needAck);
 cis_ret_t cis_clearFwState(void* context, bool fwFlag);
 
+void* cis_findObject(void* context, cis_oid_t objectid);
 
 #if CIS_ENABLE_UPDATE_MCU
 cis_ret_t cis_set_sota_info(char* version,uint16_t size);

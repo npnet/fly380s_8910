@@ -129,7 +129,7 @@ tcp_get_value(struct snmp_node_instance* instance, void* value)
     memset(value, 0, 2*sizeof(u32_t)); /* not supported */
     return 2*sizeof(u32_t);
   default:
-    LWIP_DEBUGF(SNMP_MIB_DEBUG,("tcp_get_value(): unknown id: %"S32_F"\n", instance->node->oid));
+    LWIP_DEBUGF(SNMP_MIB_DEBUG,(0x100076e4, "tcp_get_value(): unknown id: %ld\n", instance->node->oid));
     break;
   }
 

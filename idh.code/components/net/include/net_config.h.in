@@ -23,5 +23,6 @@
 #cmakedefine CONFIG_NET_LOG_BUF_SIZE @CONFIG_NET_LOG_BUF_SIZE@
 
 #cmakedefine CONFIG_NET_TRACE_IP_PACKET
+#cmakedefine CONFIG_NET_NAT_SUPPORT
 
 #endif

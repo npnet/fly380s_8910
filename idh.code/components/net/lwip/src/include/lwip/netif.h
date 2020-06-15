@@ -113,7 +113,12 @@ extern "C" {
 #define NETIF_LINK_MODE_LWIP 0
 #define NETIF_LINK_MODE_PPP 1
 #define NETIF_LINK_MODE_NETCARD 2
-
+#if IP_NAT
+#define NETIF_LINK_MODE_NAT_WAN 3
+#define NETIF_LINK_MODE_NAT_LWIP_LAN 4
+#define NETIF_LINK_MODE_NAT_PPP_LAN 5
+#define NETIF_LINK_MODE_NAT_NETDEV_LAN 6
+#endif
 enum lwip_internal_netif_client_data_index
 {
 #if LWIP_DHCP
@@ -543,6 +548,9 @@ u8_t netif_name_to_index(const char *name);
 char * netif_index_to_name(u8_t idx, char *name);
 struct netif* netif_get_by_index(u8_t idx);
 struct netif* netif_get_by_cid(u8_t sim_cid);
+#if IP_NAT
+struct netif* netif_get_by_cid_type(u8_t sim_cid, u8_t type);
+#endif
 
 /* Interface indexes always start at 1 per RFC 3493, section 4, num starts at 0 */
 #define netif_get_index(netif)      ((netif)->num + 1)

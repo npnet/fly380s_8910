@@ -43,4 +43,9 @@
  */
 #cmakedefine CONFIG_APP_SSIM_SUPPORT
 
+/**
+ * Whether to reuse at uart at blue screen
+ */
+#cmakedefine CONFIG_ATR_UART_BLUE_SCREEN_DEBUG
+
 #endif

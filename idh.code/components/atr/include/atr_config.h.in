@@ -81,6 +81,11 @@
 #cmakedefine CONFIG_ATR_LF_WAIT_MS @CONFIG_ATR_LF_WAIT_MS@
 
 /**
+ * support +++ in command line mode (non-standard)
+ */
+#cmakedefine CONFIG_ATR_CMD_TPLUS_ENABLE
+
+/**
  * whether enable AT command output cache
  *
  * When enabled, a small cache will be added to AT command output. It will
@@ -132,6 +137,11 @@
  * content of the buffer will be dropped silently.
  */
 #cmakedefine CONFIG_ATR_CMUX_OUT_BUFF_SIZE @CONFIG_ATR_CMUX_OUT_BUFF_SIZE@
+
+/**
+ * CMUX sub-channel minimum input buffer size
+ */
+#cmakedefine CONFIG_ATR_CMUX_SUBCHANNEL_MIN_IN_BUFF_SIZE @CONFIG_ATR_CMUX_SUBCHANNEL_MIN_IN_BUFF_SIZE@
 
 /**
  * CMUX maximum DLC number
@@ -249,6 +259,11 @@
  * whether to support camera AT commands
  */
 #cmakedefine CONFIG_AT_CAMERA_SUPPORT
+
+/**
+ * whether to support TBox reference API
+ */
+#cmakedefine CONFIG_ATR_TB_API_SUPPORT
 
 #undef CONFIG_AT_WITHOUT_SAT
 #undef CONFIG_AT_WITHOUT_SMS

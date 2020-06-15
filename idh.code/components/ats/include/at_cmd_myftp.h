@@ -10,8 +10,6 @@
 * without further testing or modification.
 */
 
-#ifdef CONFIG_AT_FTP_SUPPORT
-
 #ifndef __AT_MYFTP_H__
 #define __AT_MYFTP_H__
 
@@ -138,5 +136,4 @@ void AT_GPRS_CmdFunc_MYFTPSIZE(atCommand_t *pParam);
 void AT_GPRS_CmdFunc_MYFTPGET(atCommand_t *pParam);
 void AT_GPRS_CmdFunc_MYFTPPUT(atCommand_t *pParam);
 
-#endif /* __CFW_FTP_H__ */
 #endif

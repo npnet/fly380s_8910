@@ -61,7 +61,7 @@ extern void sys_post_DNSevent_to_APP(uint32_t nEventId, uint32_t nParam1, uint32
 #include "lwip/priv/tcpip_priv.h"
 
 #include <string.h>
-
+#include <osi_log.h>
 /* netconns are polled once per second (e.g. continue write on memory error) */
 #define NETCONN_TCP_POLL_INTERVAL 2
 
@@ -238,7 +238,7 @@ recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p,
 #else  /* LWIP_SO_RCVBUF */
   if (!sys_mbox_valid(&conn->recvmbox)) {
 #endif /* LWIP_SO_RCVBUF */
-    LWIP_DEBUGF(API_MSG_DEBUG, ("recv_udp: no mbox or recv_bufsize max drop UDP package\n"));
+    LWIP_DEBUGF(API_MSG_DEBUG, (0x100076bb, "recv_udp: no mbox or recv_bufsize max drop UDP package\n"));
     pbuf_free(p);
     return;
   }
@@ -329,6 +329,8 @@ recv_tcp(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
   } else {
 #if LWIP_SO_RCVBUF
     SYS_ARCH_INC(conn->recv_avail, len);
+    OSI_LOGI(0, "recv_tcp recv_avail %d", conn->recv_avail);
+
 #endif /* LWIP_SO_RCVBUF */
     /* Register event with callback */
     API_EVENT(conn, NETCONN_EVT_RCVPLUS, len);
@@ -535,7 +537,7 @@ accept_function(void *arg, struct tcp_pcb *newpcb, err_t err)
     return ERR_VAL;
   }
   if (!sys_mbox_valid(&conn->acceptmbox)) {
-    LWIP_DEBUGF(API_MSG_DEBUG, ("accept_function: acceptmbox already deleted\n"));
+    LWIP_DEBUGF(API_MSG_DEBUG, (0x100076bc, "accept_function: acceptmbox already deleted\n"));
     return ERR_VAL;
   }
 
@@ -550,13 +552,13 @@ accept_function(void *arg, struct tcp_pcb *newpcb, err_t err)
   LWIP_ASSERT("expect newpcb == NULL or err == ERR_OK", err == ERR_OK);
   LWIP_UNUSED_ARG(err); /* for LWIP_NOASSERT */
 
-  LWIP_DEBUGF(API_MSG_DEBUG, ("accept_function: newpcb->state: %s\n", tcp_debug_state_str(newpcb->state)));
+  LWIP_DEBUGF(API_MSG_DEBUG, (0x100076bd, "accept_function: newpcb->state: %d\n", newpcb->state));
 
   /* We have to set the callback here even though
    * the new socket is unknown. newconn->socket is marked as -1. */
   newconn = netconn_alloc(conn->type, conn->callback);
   if (newconn == NULL) {
-    sys_arch_printf("accept_function newconn == NULL sys_mbox_trypost ERR_ABRT\n");
+    OSI_LOGI(0x10007619, "accept_function newconn == NULL sys_mbox_trypost ERR_ABRT\n");
     newpcb->is_for_socket = 1;
     /* outof netconns: pass on this error to the application */
     if (sys_mbox_trypost(&conn->acceptmbox, lwip_netconn_err_to_msg(ERR_ABRT)) == ERR_OK) {
@@ -978,7 +980,7 @@ lwip_netconn_do_close_internal(struct netconn *conn  WRITE_DELAYED_PARAM)
   } else {
     err = tcp_shutdown(tpcb, shut_rx, shut_tx);
   }
-  LWIP_DEBUGF(TCP_DEBUG, ("lwip_netconn_do_close_internal: err=%d,shut_close=%d",err,shut_close));
+  LWIP_DEBUGF(TCP_DEBUG, (0x100076be, "lwip_netconn_do_close_internal: err=%d,shut_close=%d",err,shut_close));
   if (err == ERR_OK) {
     close_finished = 1;
 #if LWIP_SO_LINGER
@@ -1121,7 +1123,7 @@ lwip_netconn_do_delconn(void *m)
     msg->err = ERR_OK;
     /* Drain and delete mboxes */
     netconn_drain(msg->conn);
-    LWIP_DEBUGF(TCP_DEBUG, ("lwip_netconn_do_delconn:msg->conn->pcb.tcp=%p", msg->conn->pcb.tcp));
+    LWIP_DEBUGF(TCP_DEBUG, (0x100076bf, "lwip_netconn_do_delconn:msg->conn->pcb.tcp=%p", msg->conn->pcb.tcp));
 
     if (msg->conn->pcb.tcp != NULL) {
 
@@ -1771,6 +1773,7 @@ lwip_netconn_do_write(void *m)
 #endif /* LWIP_TCPIP_CORE_LOCKING */
         /* for both cases: if lwip_netconn_do_writemore was called, don't ACK the APIMSG
            since lwip_netconn_do_writemore ACKs it! */
+           msg->conn->sent_size += msg->msg.w.offset;
         return;
       } else {
         err = ERR_CONN;

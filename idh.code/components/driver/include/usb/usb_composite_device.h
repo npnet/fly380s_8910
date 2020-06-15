@@ -230,7 +230,17 @@ udevDrv_t *copsGetGadgetDriver(cops_t *c);
  *      - NULL  fail
  *      - other the serial function
  */
-copsFunc_t *createSerialFunc(uint32_t nane);
+copsFunc_t *createSerialFunc(uint32_t name);
+
+/**
+ * @brief Create a debugging serial function instance
+ *
+ * @param name  serial name
+ * @return
+ *      - NULL  fail
+ *      - other the serial function
+ */
+copsFunc_t *createDebugSerialFunc(uint32_t name);
 
 /**
  * @brief Create a rndis function instance

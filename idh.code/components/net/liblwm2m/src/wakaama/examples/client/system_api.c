@@ -25,6 +25,7 @@
  */
 #include "liblwm2m.h"
 #include "lwm2mclient.h"
+#include "osi_api.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -58,6 +59,7 @@ void init_value_change(lwm2m_context_t * lwm2m)
 void system_reboot()
 {
     // exit(1);
+    osiShutdown(OSI_SHUTDOWN_RESET);
 }
 
 #endif

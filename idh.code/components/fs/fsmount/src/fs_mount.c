@@ -24,16 +24,17 @@
 #include <stdlib.h>
 #include <sys/queue.h>
 
-// #define MOUNT_FAILED OSI_DO_WHILE0(osiDebugEvent(__LINE__); osiPanic();)
-#define MOUNT_FAILED return false
-
+#define SUBPART_MAX_COUNT (8)
 #define PARTINFO_SIZE_MAX (64 * 1024)
 #define HEADER_VERSION (0x100)
 #define HEADER_MAGIC OSI_MAKE_TAG('P', 'R', 'T', 'I')
-#define TYPE_FBDEV1 OSI_MAKE_TAG('F', 'B', 'D', '1')
 #define TYPE_FBDEV2 OSI_MAKE_TAG('F', 'B', 'D', '2')
 #define TYPE_SUBPART OSI_MAKE_TAG('B', 'P', 'R', 'T')
 #define TYPE_SFFS OSI_MAKE_TAG('S', 'F', 'F', 'S')
+
+#define MOUNT_ONLY (0)
+#define MOUNT_FORMAT_ON_FAIL (1)
+#define MOUNT_FORCE_FORMAT (2)
 
 enum
 {
@@ -82,23 +83,29 @@ typedef struct
     uint32_t flags;
 } descSffs_t;
 
-typedef SLIST_ENTRY(fsBdevDesc) fsBdevDescIter_t;
-typedef SLIST_HEAD(fsBdevDescHead, fsBdevDesc) fsBdevDescHead_t;
-typedef struct fsBdevDesc
+typedef struct bdevRegistry
 {
-    fsBdevDescIter_t iter;
+    /**/ SLIST_ENTRY(bdevRegistry) iter;
     uint32_t type;
     uint32_t name;
     blockDevice_t *bdev;
-} fsBdevDesc_t;
+} bdevRegistry_t;
 
-static fsBdevDescHead_t gBdevList = SLIST_HEAD_INITIALIZER(gBdevList);
+static SLIST_HEAD(, bdevRegistry) gBdevList = SLIST_HEAD_INITIALIZER(gBdevList);
+static fsMountScenario_t gFsScenario = FS_SCENRARIO_APP;
+extern const unsigned gPartInfo[];
 
-static bool prvAddBlockDevice(uint32_t type, uint32_t name, blockDevice_t *bdev)
+/**
+ * Register block device to global list
+ */
+static bool prvRegisterBlockDevice(uint32_t type, uint32_t name, blockDevice_t *bdev)
 {
-    fsBdevDesc_t *desc = calloc(1, sizeof(fsBdevDesc_t));
+    bdevRegistry_t *desc = calloc(1, sizeof(bdevRegistry_t));
     if (desc == NULL)
+    {
+        OSI_LOGE(0x10006ffd, "failed to add block device %4c", name);
         return false;
+    }
 
     desc->type = type;
     desc->name = name;
@@ -107,199 +114,416 @@ static bool prvAddBlockDevice(uint32_t type, uint32_t name, blockDevice_t *bdev)
     return true;
 }
 
-static blockDevice_t *prvFindBlockDevice(uint32_t name)
+/**
+ * Unregister block device to global list, if exists
+ */
+static void prvUnregisterBlockDevice(blockDevice_t *bdev)
 {
-    fsBdevDesc_t *desc;
+    bdevRegistry_t *desc;
+    SLIST_FOREACH(desc, &gBdevList, iter)
+    {
+        if (desc->bdev == bdev)
+        {
+            SLIST_REMOVE(&gBdevList, desc, bdevRegistry, iter);
+            free(desc);
+            return;
+        }
+    }
+}
+
+/**
+ * Find from created block device list by name
+ */
+static blockDevice_t *prvFindCreatedDevice(uint32_t name)
+{
+    bdevRegistry_t *desc;
     SLIST_FOREACH(desc, &gBdevList, iter)
     {
         if (desc->name == name)
             return desc->bdev;
     }
-
     return NULL;
 }
 
-// There will only exist one variation for each elf. The code size will be
-// smaller if inlined.
-static OSI_FORCE_INLINE bool prvMountAll(const void *parti, unsigned ro_mask,
-                                         unsigned ignore_mask, bool format_on_fail,
-                                         bool force_format)
+/**
+ * Helper for description type
+ */
+OSI_FORCE_INLINE static unsigned prvDescType(const void *ptr)
 {
-    if (parti == NULL || !OSI_IS_ALIGNED(parti, 4))
+    return *(const unsigned *)ptr;
+}
+
+/**
+ * Helper for description size, -1 on error
+ */
+static int prvDescSize(unsigned type)
+{
+    if (type == TYPE_FBDEV2)
+        return sizeof(descFbdev_t);
+    if (type == TYPE_SUBPART)
+        return sizeof(descSubpart_t);
+    if (type == TYPE_SFFS)
+        return sizeof(descSffs_t);
+    return -1;
+}
+
+/**
+ * Find flash block device decription by name
+ */
+static const descFbdev_t *prvFindFbdevDescByName(unsigned name)
+{
+    uintptr_t ptr = (uintptr_t)gPartInfo;
+    descHeader_t *header = (descHeader_t *)OSI_PTR_INCR_POST(ptr, sizeof(descHeader_t));
+    uintptr_t ptr_end = (uintptr_t)gPartInfo + header->size;
+
+    while (ptr < ptr_end)
     {
-        OSI_LOGE(0x10006ff5, "invalid partition description address");
-        MOUNT_FAILED;
+        uint32_t type = *(uint32_t *)ptr;
+        if (type == TYPE_FBDEV2)
+        {
+            const descFbdev_t *desc = (const descFbdev_t *)ptr;
+            if (desc->name == name)
+                return desc;
+        }
+        ptr += prvDescSize(type);
+    }
+    return NULL;
+}
+
+/**
+ * Find SFFS decription by mount point name
+ */
+static const descSffs_t *prvFindSffsDescByMount(const char *mount)
+{
+    uintptr_t ptr = (uintptr_t)gPartInfo;
+    descHeader_t *header = (descHeader_t *)OSI_PTR_INCR_POST(ptr, sizeof(descHeader_t));
+    uintptr_t ptr_end = (uintptr_t)gPartInfo + header->size;
+
+    while (ptr < ptr_end)
+    {
+        uint32_t type = *(uint32_t *)ptr;
+        if (type == TYPE_SFFS)
+        {
+            const descSffs_t *desc = (const descSffs_t *)ptr;
+            if (strncmp(desc->mount, mount, 64) == 0)
+                return desc;
+        }
+        ptr += prvDescSize(type);
+    }
+    return NULL;
+}
+
+/**
+ * Find SFFS decription by device name
+ */
+static const descSffs_t *prvFindSffsDescByDeviceName(unsigned device)
+{
+    uintptr_t ptr = (uintptr_t)gPartInfo;
+    descHeader_t *header = (descHeader_t *)OSI_PTR_INCR_POST(ptr, sizeof(descHeader_t));
+    uintptr_t ptr_end = (uintptr_t)gPartInfo + header->size;
+
+    while (ptr < ptr_end)
+    {
+        uint32_t type = *(uint32_t *)ptr;
+        if (type == TYPE_SFFS)
+        {
+            const descSffs_t *desc = (const descSffs_t *)ptr;
+            if (desc->device == device)
+                return desc;
+        }
+        ptr += prvDescSize(type);
+    }
+    return NULL;
+}
+
+/**
+ * Find sub-partitions by parent device name
+ */
+static int prvFindSubpartDescByParentName(const descSubpart_t *descs[], unsigned device)
+{
+    int count = 0;
+    uintptr_t ptr = (uintptr_t)gPartInfo;
+    descHeader_t *header = (descHeader_t *)OSI_PTR_INCR_POST(ptr, sizeof(descHeader_t));
+    uintptr_t ptr_end = (uintptr_t)gPartInfo + header->size;
+
+    while (ptr < ptr_end)
+    {
+        uint32_t type = *(uint32_t *)ptr;
+        if (type == TYPE_SUBPART)
+        {
+            const descSubpart_t *desc = (const descSubpart_t *)ptr;
+            if (desc->device == device)
+                descs[count++] = desc;
+        }
+        ptr += prvDescSize(type);
+    }
+    return count;
+}
+
+/**
+ * Helper for read-only from description flags
+ */
+static bool prvFlagReadOnly(unsigned flags)
+{
+    return (gFsScenario == FS_SCENRARIO_APP && (flags & PARTINFO_APPLICATION_RO)) ||
+           (gFsScenario == FS_SCENRARIO_BOOTLOADER && (flags & PARTINFO_BOOTLOADER_RO));
+}
+
+/**
+ * Helper for ignore from description flags
+ */
+static bool prvFlagIgnored(unsigned flags)
+{
+    return (gFsScenario == FS_SCENRARIO_APP && (flags & PARTINFO_APPLICATION_IGNORE)) ||
+           (gFsScenario == FS_SCENRARIO_BOOTLOADER && (flags & PARTINFO_BOOTLOADER_IGNORE));
+}
+
+/**
+ * Mount SFFS. The block device should be valid.
+ */
+static bool prvMountSffs(const descSffs_t *desc, blockDevice_t *bdev, unsigned opt)
+{
+    if (opt == MOUNT_FORCE_FORMAT)
+    {
+        if (sffsVfsMkfs(bdev) != 0)
+        {
+            OSI_LOGE(0x10007002, "failed to format");
+            return false;
+        }
     }
 
-    uintptr_t ptr = (uintptr_t)parti;
+    bool read_only = prvFlagReadOnly(desc->flags);
+    if (sffsVfsMount(desc->mount, bdev, 4, desc->reserve_block, read_only) == 0)
+        return true;
+
+    if (opt != MOUNT_FORMAT_ON_FAIL)
+    {
+        OSI_LOGXE(OSI_LOGPAR_S, 0x10007000, "failed to mount %s", desc->mount);
+        return false;
+    }
+
+    if (sffsVfsMkfs(bdev) != 0)
+    {
+        OSI_LOGE(0x10007002, "failed to format");
+        return false;
+    }
+
+    if (sffsVfsMount(desc->mount, bdev, 4, desc->reserve_block, read_only) != 0)
+    {
+        OSI_LOGXE(OSI_LOGPAR_S, 0x10007000, "failed to mount %s", desc->mount);
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Create FBDEV2 if not exists. To reduce possibility to lose erase count
+ * information, FORCE_FORMAT is treated as FORMAT_ON_FAIL.
+ */
+static bool prvCreateFbdev2(const descFbdev_t *desc, unsigned opt)
+{
+    if (prvFindCreatedDevice(desc->name) != NULL)
+        return true;
+
+    drvSpiFlash_t *flash = drvSpiFlashOpen(desc->flash);
+    if (flash == NULL)
+    {
+        OSI_LOGE(0x10006ff9, "failed to open spi flash %4c", desc->flash);
+        return false;
+    }
+
+    blockDevice_t *fbdev = flashBlockDeviceCreateV2(
+        flash, desc->offset, desc->size,
+        desc->eb_size, desc->pb_size, false);
+
+    if (fbdev != NULL)
+        goto created;
+
+    if (opt == MOUNT_ONLY)
+    {
+        OSI_LOGE(0x10006ffa, "failed to mount flash block device %4c", desc->name);
+        return false;
+    }
+
+    if (!flashBlockDeviceFormatV2(
+            flash, desc->offset, desc->size,
+            desc->eb_size, desc->pb_size))
+    {
+        OSI_LOGE(0x10006ffc, "failed to format flash block device %4c", desc->name);
+        return false;
+    }
+
+    fbdev = flashBlockDeviceCreateV2(
+        flash, desc->offset, desc->size,
+        desc->eb_size, desc->pb_size, false);
+
+    if (fbdev == NULL)
+    {
+        OSI_LOGE(0x10006ffa, "failed to mount flash block device %4c", desc->name);
+        return false;
+    }
+
+created:
+    if (!prvRegisterBlockDevice(desc->type, desc->name, fbdev))
+    {
+        blockDeviceDestroy(fbdev);
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Create sub-partition block device if not created.
+ */
+static bool prvCreateSubpart(const descSubpart_t *desc)
+{
+    if (prvFindCreatedDevice(desc->name) != NULL)
+        return true;
+
+    blockDevice_t *parent = prvFindCreatedDevice(desc->device);
+    if (parent == NULL)
+    {
+        OSI_LOGE(0x10006ffe, "failed to find block device %4c", desc->device);
+        return false;
+    }
+
+    blockDevice_t *bdev = partBlockDeviceCreate(parent, desc->offset, desc->count);
+    if (bdev == NULL)
+    {
+        OSI_LOGE(0x10006fff, "failed to create sub partition %4c", desc->name);
+        return false;
+    }
+
+    if (!prvRegisterBlockDevice(desc->type, desc->name, bdev))
+        return false;
+
+    return true;
+}
+
+/**
+ * Format a file system
+ */
+bool fsMountFormat(const char *name)
+{
+    if (name == NULL || gFsScenario == FS_SCENRARIO_UNKNOWN)
+        return false;
+
+    const descSffs_t *fsdesc = prvFindSffsDescByMount(name);
+    if (fsdesc == NULL)
+        return false;
+
+    vfs_umount(fsdesc->mount); // unmount and ignore return value
+
+    const descFbdev_t *bdesc = prvFindFbdevDescByName(fsdesc->device);
+    if (bdesc == NULL)
+        return false;
+
+    if (!prvCreateFbdev2(bdesc, MOUNT_FORCE_FORMAT))
+        return false;
+
+    blockDevice_t *bdev = prvFindCreatedDevice(fsdesc->device);
+    return prvMountSffs(fsdesc, bdev, MOUNT_FORCE_FORMAT);
+}
+
+/**
+ * Format all file systems on flash block device
+ */
+bool fsMountFormatFlash(unsigned name)
+{
+    if (gFsScenario == FS_SCENRARIO_UNKNOWN)
+        return false;
+
+    const descFbdev_t *fbdesc = prvFindFbdevDescByName(name);
+    if (fbdesc == NULL)
+    {
+        OSI_LOGE(0x10006ffe, "failed to find block device %4c", name);
+        return false;
+    }
+
+    const descSffs_t *fsdesc = prvFindSffsDescByDeviceName(fbdesc->name);
+    if (fsdesc != NULL)
+        return fsMountFormat(fsdesc->mount);
+
+    const descSubpart_t *subdescs[SUBPART_MAX_COUNT];
+    int subcount = prvFindSubpartDescByParentName(subdescs, fbdesc->name);
+
+    for (int n = 0; n < subcount; n++)
+    {
+        const descSubpart_t *subdesc = subdescs[n];
+        const descSffs_t *subfsdesc = prvFindSffsDescByDeviceName(subdesc->name);
+        if (subfsdesc != NULL)
+            vfs_umount(subfsdesc->mount);
+
+        blockDevice_t *bdev = prvFindCreatedDevice(subdesc->name);
+        if (bdev != NULL)
+        {
+            prvUnregisterBlockDevice(bdev);
+            blockDeviceDestroy(bdev);
+        }
+    }
+
+    if (!prvCreateFbdev2(fbdesc, MOUNT_FORCE_FORMAT))
+        return false;
+
+    for (int n = 0; n < subcount; n++)
+    {
+        const descSubpart_t *subdesc = subdescs[n];
+        if (!prvCreateSubpart(subdesc))
+            return false;
+
+        blockDevice_t *subbdev = prvFindCreatedDevice(subdesc->name);
+        const descSffs_t *subfsdesc = prvFindSffsDescByDeviceName(subdesc->name);
+        if (subfsdesc == NULL)
+            continue;
+
+        if (!prvMountSffs(subfsdesc, subbdev, MOUNT_FORCE_FORMAT))
+            return false;
+    }
+    return true;
+}
+
+/**
+ * Mount all, optionally format on fail.
+ */
+static OSI_FORCE_INLINE bool prvMountAll(bool format_on_fail)
+{
+    if (gFsScenario == FS_SCENRARIO_UNKNOWN)
+        return false;
+
+    uintptr_t ptr = (uintptr_t)gPartInfo;
     descHeader_t *header = (descHeader_t *)OSI_PTR_INCR_POST(ptr, sizeof(descHeader_t));
     if (header->magic != HEADER_MAGIC ||
         header->version != HEADER_VERSION ||
         header->size > PARTINFO_SIZE_MAX)
     {
         OSI_LOGE(0x10006ff6, "invalid partition description header");
-        MOUNT_FAILED;
+        return false;
     }
 
-    if (header->crc != crc32Calc((const char *)parti + 8, header->size - 8))
+    if (header->crc != crc32Calc((const char *)gPartInfo + 8, header->size - 8))
     {
         OSI_LOGE(0x10006ff7, "invalid partition description crc");
-        MOUNT_FAILED;
+        return false;
     }
 
-    uintptr_t ptr_end = (uintptr_t)parti + header->size;
+    uintptr_t ptr_end = (uintptr_t)gPartInfo + header->size;
     while (ptr < ptr_end)
     {
         uint32_t type = *(uint32_t *)ptr;
-        if (type == TYPE_FBDEV1)
+        if (type == TYPE_FBDEV2)
         {
-#ifdef CONFIG_FS_FBDEV_V1_SUPPORTED
-            descFbdev_t *desc = (descFbdev_t *)OSI_PTR_INCR_POST(ptr, sizeof(descFbdev_t));
+            const descFbdev_t *desc = (const descFbdev_t *)OSI_PTR_INCR_POST(ptr, sizeof(descFbdev_t));
             if (ptr > ptr_end)
             {
                 OSI_LOGE(0x10006ff8, "invalid partition description exceed end");
-                MOUNT_FAILED;
+                return false;
             }
 
-            // Skip it if it is marked as ignored
-            if ((desc->flags & ignore_mask) != 0)
+            if (prvFlagIgnored(desc->flags))
                 continue;
 
-            drvSpiFlash_t *flash = drvSpiFlashOpen(desc->flash);
-            if (flash == NULL)
-            {
-                OSI_LOGE(0x10006ff9, "failed to open spi flash %4c", desc->flash);
-                MOUNT_FAILED;
-            }
-
-            if (force_format)
-            {
-                if (!flashBlockDeviceFormat(
-                        flash, desc->offset, desc->size,
-                        desc->eb_size, desc->pb_size))
-                {
-                    OSI_LOGE(0x10006ffc, "failed to format flash block device %4c", desc->name);
-                    MOUNT_FAILED;
-                }
-            }
-
-            blockDevice_t *fbdev = flashBlockDeviceCreate(
-                flash, desc->offset, desc->size,
-                desc->eb_size, desc->pb_size, false);
-
-            if (fbdev == NULL)
-            {
-                if (force_format || !format_on_fail)
-                {
-                    OSI_LOGE(0x10006ffa, "failed to mount flash block device %4c", desc->name);
-                    MOUNT_FAILED;
-                }
-                else
-                {
-                    OSI_LOGE(0x10006ffb, "failed to mount flash block device %4c, try format", desc->name);
-
-                    if (!flashBlockDeviceFormat(
-                            flash, desc->offset, desc->size,
-                            desc->eb_size, desc->pb_size))
-                    {
-                        OSI_LOGE(0x10006ffc, "failed to format flash block device %4c", desc->name);
-                        MOUNT_FAILED;
-                    }
-
-                    fbdev = flashBlockDeviceCreate(
-                        flash, desc->offset, desc->size,
-                        desc->eb_size, desc->pb_size, false);
-                    if (fbdev == NULL)
-                    {
-                        OSI_LOGE(0x10006ffa, "failed to mount flash block device %4c after format", desc->name);
-                        MOUNT_FAILED;
-                    }
-                }
-            }
-
-            if (!prvAddBlockDevice(desc->type, desc->name, fbdev))
-            {
-                OSI_LOGE(0x10006ffd, "failed to add block device %4c", desc->name);
-                MOUNT_FAILED;
-            }
-#else
-            MOUNT_FAILED;
-#endif
-        }
-        else if (type == TYPE_FBDEV2)
-        {
-#ifdef CONFIG_FS_FBDEV_V2_SUPPORTED
-            descFbdev_t *desc = (descFbdev_t *)OSI_PTR_INCR_POST(ptr, sizeof(descFbdev_t));
-            if (ptr > ptr_end)
-            {
-                OSI_LOGE(0x10006ff8, "invalid partition description exceed end");
-                MOUNT_FAILED;
-            }
-
-            // Skip it if it is marked as ignored
-            if ((desc->flags & ignore_mask) != 0)
-                continue;
-
-            drvSpiFlash_t *flash = drvSpiFlashOpen(desc->flash);
-            if (flash == NULL)
-            {
-                OSI_LOGE(0x10006ff9, "failed to open spi flash %4c", desc->flash);
-                MOUNT_FAILED;
-            }
-
-            if (force_format)
-            {
-                if (!flashBlockDeviceFormatV2(
-                        flash, desc->offset, desc->size,
-                        desc->eb_size, desc->pb_size))
-                {
-                    OSI_LOGE(0x10006ffc, "failed to format flash block device %4c", desc->name);
-                    MOUNT_FAILED;
-                }
-            }
-
-            blockDevice_t *fbdev = flashBlockDeviceCreateV2(
-                flash, desc->offset, desc->size,
-                desc->eb_size, desc->pb_size, false);
-
-            if (fbdev == NULL)
-            {
-                if (force_format || !format_on_fail)
-                {
-                    OSI_LOGE(0x10006ffa, "failed to mount flash block device %4c", desc->name);
-                    MOUNT_FAILED;
-                }
-                else
-                {
-                    OSI_LOGE(0x10006ffb, "failed to mount flash block device %4c, try format", desc->name);
-
-                    if (!flashBlockDeviceFormatV2(
-                            flash, desc->offset, desc->size,
-                            desc->eb_size, desc->pb_size))
-                    {
-                        OSI_LOGE(0x10006ffc, "failed to format flash block device %4c", desc->name);
-                        MOUNT_FAILED;
-                    }
-
-                    fbdev = flashBlockDeviceCreateV2(
-                        flash, desc->offset, desc->size,
-                        desc->eb_size, desc->pb_size, false);
-                    if (fbdev == NULL)
-                    {
-                        OSI_LOGE(0x10006ffa, "failed to mount flash block device %4c after format", desc->name);
-                        MOUNT_FAILED;
-                    }
-                }
-            }
-
-            if (!prvAddBlockDevice(desc->type, desc->name, fbdev))
-            {
-                OSI_LOGE(0x10006ffd, "failed to add block device %4c", desc->name);
-                MOUNT_FAILED;
-            }
-#else
-            MOUNT_FAILED;
-#endif
+            if (!prvCreateFbdev2(desc, format_on_fail ? MOUNT_FORMAT_ON_FAIL : MOUNT_ONLY))
+                return false;
         }
         else if (type == TYPE_SUBPART)
         {
@@ -307,32 +531,14 @@ static OSI_FORCE_INLINE bool prvMountAll(const void *parti, unsigned ro_mask,
             if (ptr > ptr_end)
             {
                 OSI_LOGE(0x10006ff8, "invalid partition description exceed end");
-                MOUNT_FAILED;
+                return false;
             }
 
-            // Skip it if it is marked as ignored
-            if ((desc->flags & ignore_mask) != 0)
+            if (prvFlagIgnored(desc->flags))
                 continue;
 
-            blockDevice_t *parent = prvFindBlockDevice(desc->device);
-            if (parent == NULL)
-            {
-                OSI_LOGE(0x10006ffe, "failed to find block device %4c", desc->device);
-                MOUNT_FAILED;
-            }
-
-            blockDevice_t *bdev = partBlockDeviceCreate(parent, desc->offset, desc->count);
-            if (bdev == NULL)
-            {
-                OSI_LOGE(0x10006fff, "failed to create sub partition %4c", desc->name);
-                MOUNT_FAILED;
-            }
-
-            if (!prvAddBlockDevice(desc->type, desc->name, bdev))
-            {
-                OSI_LOGE(0x10006ffd, "failed to add block device %4c", desc->name);
-                MOUNT_FAILED;
-            }
+            if (!prvCreateSubpart(desc))
+                return false;
         }
         else if (type == TYPE_SFFS)
         {
@@ -340,88 +546,62 @@ static OSI_FORCE_INLINE bool prvMountAll(const void *parti, unsigned ro_mask,
             if (ptr > ptr_end)
             {
                 OSI_LOGE(0x10006ff8, "invalid partition description exceed end");
-                MOUNT_FAILED;
+                return false;
             }
 
-            // Skip it if it is marked as ignored
-            if ((desc->flags & ignore_mask) != 0)
+            if (prvFlagIgnored(desc->flags))
                 continue;
 
-            blockDevice_t *bdev = prvFindBlockDevice(desc->device);
+            if (vfs_mount_handle(desc->mount) != NULL)
+                continue;
+
+            blockDevice_t *bdev = prvFindCreatedDevice(desc->device);
             if (bdev == NULL)
             {
                 OSI_LOGE(0x10006ffe, "failed to find block device %4c", desc->device);
-                MOUNT_FAILED;
+                return false;
             }
 
-            if (force_format)
-            {
-                if (sffsVfsMkfs(bdev) != 0)
-                {
-                    OSI_LOGE(0x10007002, "failed to format");
-                    MOUNT_FAILED;
-                }
-            }
-
-            bool read_only = ((desc->flags & ro_mask) != 0);
-            if (sffsVfsMount(desc->mount, bdev, 4, desc->reserve_block, read_only) != 0)
-            {
-                if (force_format || !format_on_fail)
-                {
-                    OSI_LOGXE(OSI_LOGPAR_S, 0x10007000, "failed to mount %s", desc->mount);
-                    MOUNT_FAILED;
-                }
-                else
-                {
-                    OSI_LOGXE(OSI_LOGPAR_S, 0x10007001, "failed to mount %s, try format", desc->mount);
-
-                    if (sffsVfsMkfs(bdev) != 0)
-                    {
-                        OSI_LOGE(0x10007002, "failed to format");
-                        MOUNT_FAILED;
-                    }
-
-                    if (sffsVfsMount(desc->mount, bdev, 4, desc->reserve_block, read_only) != 0)
-                    {
-                        OSI_LOGE(0x10007003, "failed to mount after format");
-                        MOUNT_FAILED;
-                    }
-                }
-            }
+            if (!prvMountSffs(desc, bdev, format_on_fail ? MOUNT_FORMAT_ON_FAIL : MOUNT_ONLY))
+                return false;
         }
         else
         {
             OSI_LOGE(0x10007004, "invalid partition description type %4c", type);
-            MOUNT_FAILED;
+            return false;
         }
     }
 
     return true;
 }
 
-bool fsMountAllFdl(const void *parti)
+void fsMountSetScenario(fsMountScenario_t scenario)
 {
-    return prvMountAll(parti, 0, 0, false, false);
+    gFsScenario = scenario;
 }
 
-bool fsMountAllBoot(const void *parti)
+bool fsMountAll(void)
 {
-    return prvMountAll(parti, PARTINFO_BOOTLOADER_RO, PARTINFO_BOOTLOADER_IGNORE, false, false);
+    return prvMountAll(false);
 }
 
-bool fsMountAllApp(const void *parti)
+bool fsMountWithFormatAll(void)
 {
-#ifdef CONFIG_FS_FORMAT_FLASH_ON_MOUNT_FAIL
-    bool format = true;
-#else
-    bool format = false;
-#endif
-    return prvMountAll(parti, PARTINFO_APPLICATION_RO, PARTINFO_APPLICATION_IGNORE, format, false);
+    return prvMountAll(true);
 }
 
-bool fsMountFormatAll(const void *parti)
+void fsUmountAll(void)
 {
-    return prvMountAll(parti, 0, 0, false, true);
+    vfs_umount_all();
+
+    while (!SLIST_EMPTY(&gBdevList))
+    {
+        bdevRegistry_t *desc = SLIST_FIRST(&gBdevList);
+        SLIST_REMOVE_HEAD(&gBdevList, iter);
+
+        blockDeviceDestroy(desc->bdev);
+        free(desc);
+    }
 }
 
 void fsRemountFactory(unsigned flags)
@@ -433,18 +613,4 @@ void fsRemountFactory(unsigned flags)
                   CONFIG_FS_FACTORY_MOUNT_POINT, flags);
     }
 #endif
-}
-
-void fsUmountAllFdl(void)
-{
-    vfs_umount_all();
-
-    while (!SLIST_EMPTY(&gBdevList))
-    {
-        fsBdevDesc_t *desc = SLIST_FIRST(&gBdevList);
-        SLIST_REMOVE_HEAD(&gBdevList, iter);
-
-        blockDeviceDestroy(desc->bdev);
-        free(desc);
-    }
 }

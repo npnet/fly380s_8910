@@ -346,18 +346,20 @@ struct ppp_pcb_s {
   unsigned int mppe_keys_set           :1; /* Have the MPPE keys been set? */
 #endif /* MPPE_SUPPORT */
 
+    uint8_t sim_id;
+    uint8_t cid_id; 
+    uint8_t acted;
 #if PPP_AUTH_SUPPORT
 #if PPP_AUTHGPRS_SUPPORT
-	char peer_username[MAXNAMELEN + 1];
-	char peer_response[CHAL_MAX_PKTLEN];
-	uint8_t chap_challenge[MAX_CHALLENGE_LEN];
-	uint8_t chap_challenge_len;
-	uint8_t len_username;
-	uint8_t len_response; 
-	uint8_t sim_id;
-	uint8_t cid_id; 
-	uint8_t acted;
-	uint8_t auth_type;//  1/pap ;2/chap
+    char peer_username[MAXNAMELEN + 1];
+    char peer_response[CHAL_MAX_PKTLEN];
+    uint8_t chap_challenge[MAX_CHALLENGE_LEN];
+    uint8_t chap_challenge_len;
+    uint8_t len_username;
+    uint8_t len_response; 
+    uint8_t auth_type;//  1/pap ;2/chap
+    uint8_t id;
+    char msg[256];
 #endif
   /* auth data */
 #if PPP_SERVER && defined(HAVE_MULTILINK)

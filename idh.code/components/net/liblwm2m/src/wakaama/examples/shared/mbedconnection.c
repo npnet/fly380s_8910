@@ -22,7 +22,13 @@
 #include "mbedconnection.h"
 #include "commandline.h"
 #include "internals.h"
+#include "mbedtls/net_sockets.h"
+#include "mbedtls/timing.h"
+
 #include "mbedtls/debug.h"
+#include <errno.h>
+
+#include "osi_log.h"
 
 #define COAP_PORT "5683"
 #define COAPS_PORT "5684"
@@ -30,7 +36,58 @@
 
 #define MAX_PACKET_SIZE 1024
 
-extern int sockaddr_cmp(struct sockaddr *x, struct sockaddr *y);
+static int get_port(struct sockaddr *x)
+{
+   if (x->sa_family == AF_INET)
+   {
+       return ((struct sockaddr_in *)x)->sin_port;
+   }
+#if LWIP_IPV6
+   else if (x->sa_family == AF_INET6) {
+       return ((struct sockaddr_in6 *)x)->sin6_port;
+   }
+#endif
+   else {
+       printf("non IPV4 or IPV6 address\n");
+       return  -1;
+   }
+}
+
+static int sockaddr_cmp(struct sockaddr *x, struct sockaddr *y)
+{
+    int portX = get_port(x);
+    int portY = get_port(y);
+
+    // if the port is invalid of different
+    if (portX == -1 || portX != portY)
+    {
+        return 0;
+    }
+
+    // IPV4?
+    if (x->sa_family == AF_INET)
+    {
+        // is V4?
+        if (y->sa_family == AF_INET)
+        {
+            // compare V4 with V4
+            return ((struct sockaddr_in *)x)->sin_addr.s_addr == ((struct sockaddr_in *)y)->sin_addr.s_addr;
+        } else {
+            return 0;
+        }
+    }
+#if LWIP_IPV6
+    else if (x->sa_family == AF_INET6 && y->sa_family == AF_INET6) {
+        // IPV6 with IPV6 compare
+        return memcmp(((struct sockaddr_in6 *)x)->sin6_addr.s6_addr, ((struct sockaddr_in6 *)y)->sin6_addr.s6_addr, 16) == 0;
+    }
+#endif
+    else {
+        // unknown address type
+        printf("non IPV4 or IPV6 address\n");
+        return 0;
+    }
+}
 
 /********************* Security Obj Helpers **********************/
 char *security_get_uri(lwm2m_object_t *obj, int instanceId, char *uriBuffer, int bufferSize)
@@ -71,7 +128,7 @@ int64_t security_get_mode(lwm2m_object_t *obj, int instanceId)
     }
 
     lwm2m_data_free(size, dataP);
-    LOG("Unable to get security mode : use not secure mode");
+    OSI_LOGI(0x1000769c, "Unable to get security mode : use not secure mode");
     return LWM2M_SECURITY_MODE_NONE;
 }
 
@@ -113,7 +170,7 @@ char *security_get_secret_key(lwm2m_object_t *obj, int instanceId, int *length)
     if (dataP == NULL)
         return NULL;
     dataP->id = 5; // secret key
-    LOG("security_get_secret_key");
+    OSI_LOGI(0x1000769d, "security_get_secret_key");
     obj->readFunc(instanceId, &size, &dataP, obj);
     if (dataP != NULL &&
         dataP->type == LWM2M_TYPE_OPAQUE)
@@ -130,6 +187,7 @@ char *security_get_secret_key(lwm2m_object_t *obj, int instanceId, int *length)
     }
     else
     {
+        lwm2m_data_free(size, dataP);
         return NULL;
     }
 }
@@ -178,12 +236,12 @@ int send_data(dtls_connection_t *connP,
     return 0;
 }
 
-static int net_would_block(int fd)
+static int net_would_block(const mbedtls_net_context *ctx)
 {
     /*
      * Never return 'WOULD BLOCK' on a non-blocking socket
      */
-    if ((fcntl(fd, F_GETFL, 0) & O_NONBLOCK) != O_NONBLOCK)
+    if ((fcntl(ctx->fd, F_GETFL, 0) & O_NONBLOCK) != O_NONBLOCK)
         return (0);
 
     switch (errno)
@@ -204,9 +262,11 @@ static int net_would_block(int fd)
  */
 int mbeddtls_lwm2m_send(void *connP, const unsigned char *buf, size_t len)
 {
-    LOG("mbeddtls_lwm2m_send enter");
+    OSI_LOGI(0x1000769e, "mbeddtls_lwm2m_send enter");
     dtls_connection_t *ctx = (dtls_connection_t *)connP;
     int fd = ctx->sock;
+    LOG_ARG("mbeddtls_lwm2m_send enter,fd=%d", fd);
+    mbedtls_net_context *mbed_ctx = ctx->server_fd;
 
     if (fd < 0)
         return (MBEDTLS_ERR_NET_INVALID_CONTEXT);
@@ -254,7 +314,7 @@ int mbeddtls_lwm2m_send(void *connP, const unsigned char *buf, size_t len)
         if (nbSent < 0)
         {
 
-            if (net_would_block(fd) != 0)
+            if (net_would_block(mbed_ctx) != 0)
                 return (MBEDTLS_ERR_SSL_WANT_WRITE);
 
 #if (defined(_WIN32) || defined(_WIN32_WCE)) && !defined(EFIX64) && \
@@ -285,6 +345,7 @@ int mbeddtls_lwm2m_recv(void *ctx, unsigned char *buffer, size_t len)
 
     int fd = ((dtls_connection_t *)ctx)->sock;
     LOG_ARG("mbeddtls_lwm2m_recv enter,fd=%d", fd);
+    mbedtls_net_context *mbed_ctx = ((dtls_connection_t *)ctx)->server_fd;
     if (fd < 0)
         return (MBEDTLS_ERR_NET_INVALID_CONTEXT);
 
@@ -306,7 +367,7 @@ int mbeddtls_lwm2m_recv(void *ctx, unsigned char *buffer, size_t len)
     if (0 > numBytes)
     {
 
-        if (net_would_block(fd) != 0)
+        if (net_would_block(mbed_ctx) != 0)
             return (MBEDTLS_ERR_SSL_WANT_READ);
 
 #if (defined(_WIN32) || defined(_WIN32_WCE)) && !defined(EFIX64) && \
@@ -363,16 +424,19 @@ int mbeddtls_lwm2m_recv_timeout(void *ctx, unsigned char *buf, size_t len,
 {
     int ret;
     struct timeval tv;
-    fd_set read_fds;  
+    fd_set read_fds;
+    uint32_t selectms = 500;
+    //int fd = ((mbedtls_net_context *) ctx)->fd;
     int fd = ((dtls_connection_t *)ctx)->sock;
 
-    LOG("mbedtls_lwm2m_recv_timeout entering");
+    OSI_LOGI(0x1000769f, "mbedtls_lwm2m_recv_timeout entering");
     if (fd < 0)
         return (MBEDTLS_ERR_NET_INVALID_CONTEXT);
 
-    
-    #if 0
-    uint32_t selectms = 500;
+    //tv.tv_sec = timeout / 1000;
+    //tv.tv_usec = (timeout % 1000) * 1000;
+
+    //ret = select(fd + 1, &read_fds, NULL, NULL, timeout == 0 ? NULL : &tv);
     uint32_t trytimes = timeout/selectms;
     uint32_t leftms = timeout%selectms;
     tv.tv_sec = selectms / 1000;
@@ -395,14 +459,6 @@ int mbeddtls_lwm2m_recv_timeout(void *ctx, unsigned char *buf, size_t len,
         tv.tv_usec = (tv.tv_sec == 0)?(leftms*1000):(leftms%1000 * 1000);
         ret = select(fd + 1, &read_fds, NULL, NULL, timeout == 0 ? NULL : &tv);
     }
-    #else
-    FD_ZERO(&read_fds);
-    FD_SET(fd, &read_fds);
-    tv.tv_sec = timeout / 1000;
-    tv.tv_usec = (timeout % 1000) * 1000;
-
-    ret = select(fd + 1, &read_fds, NULL, NULL, timeout == 0 ? NULL : &tv);
-    #endif
     /* Zero fds ready means we timed out */
     if (ret == 0)
         return (MBEDTLS_ERR_SSL_TIMEOUT);
@@ -432,34 +488,105 @@ static void lwm2m_debug(void *ctx, int level,
     ((void)level);
     LOG_ARG("%s", param);
 }
-//mbedtls_ssl_context * g_sslContext = NULL;
+mbedtls_ssl_context * g_sslContext = NULL;
+
+static const int lwm2m_ciphersuite_preference[] =
+{
+    MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8,
+    MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256,
+    MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA,
+    MBEDTLS_TLS_PSK_WITH_AES_256_CBC_SHA384,
+    MBEDTLS_TLS_PSK_WITH_AES_256_CBC_SHA,
+    MBEDTLS_TLS_PSK_WITH_3DES_EDE_CBC_SHA,
+    MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256,
+    MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA,
+    MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256,
+    MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA,
+    MBEDTLS_TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+    
+};
+
 int get_dtls_context(dtls_connection_t *connList)
 {
     int ret;
     const char *pers = "lwm2mclient";
-    LOG("Enterring get_dtls_context");
+    OSI_LOGI(0x100076a0, "Enterring get_dtls_context");
 
-    mbedtls_net_init(&connList->server_fd);
-    mbedtls_ssl_init(&connList->ssl);
+    connList->server_fd = lwm2m_malloc(sizeof(mbedtls_net_context));
+    if (connList->server_fd == NULL)
+    {
+        LOG_ARG("connList->server_fd MALLOC FAILED:%d!\n", sizeof(mbedtls_net_context));
+        return -1;
+    }
+    mbedtls_net_init(connList->server_fd);
 
-    mbedtls_ssl_config_init(&connList->conf);
+    connList->ssl = lwm2m_malloc(sizeof(mbedtls_ssl_context));
+    if (connList->ssl == NULL)
+    {
+        LOG_ARG("connList->ssl MALLOC FAILED:%d!\n", sizeof(mbedtls_ssl_context));
+        return -1;
+    }
+    mbedtls_ssl_init(connList->ssl);
+    g_sslContext = connList->ssl;
+    connList->conf = lwm2m_malloc(sizeof(mbedtls_ssl_config));
+    if (connList->conf == NULL)
+    {
+        LOG_ARG("connList->conf MALLOC FAILED:%d!\n", sizeof(mbedtls_ssl_config));
+        return -1;
+    }
+    mbedtls_ssl_config_init(connList->conf);
 
-    mbedtls_x509_crt_init(&connList->cacert);
+    connList->cacert = lwm2m_malloc(sizeof(mbedtls_x509_crt));
+    if (connList->cacert == NULL)
+    {
+        LOG_ARG("connList->cacert MALLOC FAILED:%d!\n", sizeof(mbedtls_x509_crt));
+        return -1;
+    }
+    mbedtls_x509_crt_init(connList->cacert);
 
-    mbedtls_ctr_drbg_init(&connList->ctr_drbg);
+#if 0
+    connList->clicert = lwm2m_malloc(sizeof(mbedtls_x509_crt));
+    if (connList->clicert == NULL)
+    {
+        LOG_ARG("connList->clicert MALLOC FAILED:%d!\n", sizeof(mbedtls_x509_crt));
+        return -1;
+    }
+    mbedtls_x509_crt_init(connList->clicert);
 
-    mbedtls_entropy_init(&connList->entropy);
+    connList->clikey = lwm2m_malloc(sizeof(mbedtls_pk_context));
+    if (connList->clikey == NULL)
+    {
+        LOG_ARG("connList->clikey MALLOC FAILED:%d!\n", sizeof(mbedtls_x509_crt));
+        return -1;
+    }
+    mbedtls_pk_init(connList->clikey);
+#endif
+    connList->ctr_drbg = lwm2m_malloc(sizeof(mbedtls_ctr_drbg_context));
+    if (connList->ctr_drbg == NULL)
+    {
+        LOG_ARG("connList->ctr_drbg MALLOC FAILED:%d!\n", sizeof(mbedtls_ctr_drbg_context));
+        return -1;
+    }
+    mbedtls_ctr_drbg_init(connList->ctr_drbg);
 
-    if ((ret = mbedtls_ctr_drbg_seed(&connList->ctr_drbg, mbedtls_entropy_func, &connList->entropy,
+    connList->entropy = lwm2m_malloc(sizeof(mbedtls_entropy_context));
+    if (connList->entropy == NULL)
+    {
+        LOG_ARG("connList->entropy MALLOC FAILED:%d!\n", sizeof(mbedtls_entropy_context));
+        return -1;
+    }
+    mbedtls_entropy_init(connList->entropy);
+
+    if ((ret = mbedtls_ctr_drbg_seed(connList->ctr_drbg, mbedtls_entropy_func, connList->entropy,
                                      (const unsigned char *)pers, strlen(pers))) != 0)
     {
         LOG_ARG("mbedtls_ctr_drbg_seed failed...,ret=%d\n", ret);
         return ret;
     }
 
-    connList->server_fd.fd = connList->sock;
+    connList->server_fd->fd = connList->sock;
     LOG_ARG("mbedtls_use the sock=%d\n", connList->sock);
-    if ((ret = mbedtls_ssl_config_defaults(&connList->conf,
+    if ((ret = mbedtls_ssl_config_defaults(connList->conf,
                                            MBEDTLS_SSL_IS_CLIENT,
                                            MBEDTLS_SSL_TRANSPORT_DATAGRAM,
                                            MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
@@ -467,26 +594,30 @@ int get_dtls_context(dtls_connection_t *connList)
         LOG_ARG("mbedtls_ssl_config_defaults failed ret = %d\n", ret);
         return ret;
     }
-    ret = mbedtls_net_set_block(&connList->server_fd);
+    ret = mbedtls_net_set_block(connList->server_fd);
     mbedtls_timing_delay_context *timer = lwm2m_malloc(sizeof(mbedtls_timing_delay_context));
-    mbedtls_ssl_set_timer_cb(&connList->ssl, timer, mbedtls_timing_set_delay,
+    if (timer == NULL)
+        LOG_ARG("get_dtls_context timer malloc failed:%d\n", sizeof(mbedtls_timing_delay_context));
+    mbedtls_ssl_set_timer_cb(connList->ssl, timer, mbedtls_timing_set_delay,
                              mbedtls_timing_get_delay);
+
+    mbedtls_ssl_conf_ciphersuites(connList->conf, lwm2m_ciphersuite_preference);
 
     int length = 0;
     int id_len = 0;
     char *psk = security_get_secret_key(connList->securityObj, connList->securityInstId, &length);
     if(psk == NULL)
     {
-        LOG("psk == NULL\n");
+        OSI_LOGI(0x100076a1, "security_get_secret_key get psk is null\n");
     }
     
     char *psk_id = security_get_public_id(connList->securityObj, connList->securityInstId, &id_len);
     if(psk_id == NULL)
     {
-        LOG("psk_id == NULL\n");
+        OSI_LOGI(0x100076a2, "security_get_public_id get psk_id is null\n");
     }
 
-    if ((ret = mbedtls_ssl_conf_psk(&connList->conf, (const unsigned char *)psk, length,
+    if ((ret = mbedtls_ssl_conf_psk(connList->conf, (const unsigned char *)psk, length,
                                     (const unsigned char *)psk_id,
                                     id_len)) != 0)
     {
@@ -500,23 +631,57 @@ int get_dtls_context(dtls_connection_t *connList)
     lwm2m_free(psk_id);
     /* OPTIONAL is not optimal for security,
     * but makes interop easier in this simplified example */
-    mbedtls_ssl_conf_authmode(&connList->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
-    mbedtls_ssl_conf_ca_chain(&connList->conf, &connList->cacert, NULL);
-    mbedtls_ssl_conf_rng(&connList->conf, mbedtls_ctr_drbg_random, &connList->ctr_drbg);
-    mbedtls_ssl_conf_dbg(&connList->conf, lwm2m_debug, NULL);
-    mbedtls_debug_set_threshold(5);
+ #if 0  
+    ret = mbedtls_x509_crt_parse(connList->clicert, (const unsigned char *)client_cert,
+                                 strlen(client_cert) + 1);
+    if (ret < 0)
+    {
+		LOG_ARG("mbedtls_x509_crt_parse client_cert failed...,ret=%d\n", ret);
+        return ret;
+    }
 
-    if ((ret = mbedtls_ssl_setup(&connList->ssl, &connList->conf)) != 0)
+
+    ret = mbedtls_pk_parse_key(connList->clikey, (const unsigned char *)client_key,
+                               strlen(client_key) + 1, NULL, 0);
+
+    if (ret < 0)
+    {
+		LOG_ARG("mbedtls_pk_parse_key  failed...,ret=%d\n", ret);
+        return ret;
+    }
+    
+    ret = mbedtls_ssl_conf_own_cert(connList->conf, connList->clicert, connList->clikey);
+    if (ret < 0)
+    {
+        LOG_ARG("mbedtls_ssl_conf_own_cert failed...,ret=%d\n", ret);
+        return ret;
+    }
+    if( ret = mbedtls_x509_crt_parse( connList->cacert, lwm2m_ca_cert, strlen( lwm2m_ca_cert ) + 1 ) != 0 )
+    {
+        LOG(" mbedtls_x509_crt_parse failed\n");
+        return ret;
+    }
+#endif
+    mbedtls_ssl_conf_legacy_renegotiation(connList->conf, MBEDTLS_SSL_LEGACY_ALLOW_RENEGOTIATION);
+    mbedtls_ssl_conf_renegotiation(connList->conf, MBEDTLS_SSL_RENEGOTIATION_ENABLED);
+    mbedtls_ssl_conf_authmode(connList->conf, MBEDTLS_SSL_VERIFY_NONE);
+    mbedtls_ssl_conf_ca_chain(connList->conf, connList->cacert, NULL);
+    mbedtls_ssl_conf_rng(connList->conf, mbedtls_ctr_drbg_random, connList->ctr_drbg);
+    mbedtls_ssl_conf_dbg(connList->conf, lwm2m_debug, NULL);
+    mbedtls_debug_set_threshold(3);
+
+    if ((ret = mbedtls_ssl_setup(connList->ssl, connList->conf)) != 0)
     {
         LOG_ARG("mbedtls_ssl_setup failed ret = %d\n", ret);
         return ret;
     }
-    //mbedtls_ssl_set_bio(&connList->ssl, connList, mbeddtls_lwm2m_send, mbeddtls_lwm2m_recv, NULL);
-    mbedtls_ssl_set_bio(&connList->ssl, connList, mbeddtls_lwm2m_send, mbeddtls_lwm2m_recv, mbeddtls_lwm2m_recv_timeout);
+    mbedtls_ssl_conf_read_timeout(connList->conf, 60000);
+    mbedtls_ssl_set_bio(connList->ssl, connList, mbeddtls_lwm2m_send, mbeddtls_lwm2m_recv, mbeddtls_lwm2m_recv_timeout);
     /*
     * 4. Handshake
     */
-    while ((ret = mbedtls_ssl_handshake(&connList->ssl)) != 0)
+
+    while ((ret = mbedtls_ssl_handshake(connList->ssl)) != 0)
     {
         if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
         {
@@ -525,7 +690,12 @@ int get_dtls_context(dtls_connection_t *connList)
         }
     }
     LOG_ARG(" success ! mbedtls_ssl_handshake returned %x\n\n", -ret);
-    LOG(" ok\n");
+    if ((ret = mbedtls_ssl_get_session(connList->ssl, &connList->saved_session)) != 0)
+    {
+        LOG_ARG(" failed\n  ! mbedtls_ssl_get_session returned -0x%x\n\n", -ret);
+    }
+    connList->send_firstData = 1;
+    OSI_LOGI(0x100075e0, " ok\n");
     return 0;
 }
 
@@ -549,7 +719,7 @@ int get_dtls_context(dtls_connection_t *connList)
 
 int create_socket(const char *portStr, int ai_family)
 {
-    LOG("Enterring create_socket");
+    OSI_LOGI(0x100076a3, "Enterring create_socket");
 #if 0
     int s = -1;
     struct addrinfo hints;
@@ -615,7 +785,7 @@ dtls_connection_t *connection_new_incoming(dtls_connection_t *connList,
                                            const struct sockaddr *addr,
                                            size_t addrLen)
 {
-    dtls_connection_t *connP;
+    dtls_connection_t *connP = NULL;
 
     connP = (dtls_connection_t *)lwm2m_malloc(sizeof(dtls_connection_t));
     if (connP != NULL)
@@ -625,7 +795,7 @@ dtls_connection_t *connection_new_incoming(dtls_connection_t *connList,
         memcpy(&(connP->addr), addr, addrLen);
         connP->addrLen = addrLen;
         connP->next = connList;
-        LOG("new_incoming");
+        OSI_LOGI(0x100076a4, "new_incoming");
 
         /*      connP->dtlsSession = (session_t *)lwm2m_malloc(sizeof(session_t));
 
@@ -640,7 +810,7 @@ dtls_connection_t *connection_new_incoming(dtls_connection_t *connList,
     }
     else
     {
-        LOG("new_incoming,malloc failed!");
+        OSI_LOGI(0x100076a5, "new_incoming,malloc failed!");
     }
 
     return connP;
@@ -767,7 +937,7 @@ dtls_connection_t *connection_create(dtls_connection_t *connList,
         // do we need to start tinydtls?
         if (connP != NULL)
         {
-            LOG(" connP != NULL");
+            OSI_LOGI(0x100076a6, " connP != NULL");
             connP->securityObj = securityObj;
             connP->securityInstId = instanceId;
             connP->lwm2mH = lwm2mH;
@@ -803,39 +973,88 @@ dtls_connection_t *connection_create(dtls_connection_t *connList,
 
 void connection_free(dtls_connection_t *connList)
 {
-	 LOG("Enter connection_free");
-    dtls_connection_t* connList_tmp = connList;
-    while (connList_tmp != NULL)
+    OSI_LOGI(0x100076a7, "Enter connection_free");
+    //dtls_connection_t *nextQ;
+
+    //nextQ = connList->next;
+    while (connList)
     {
-        //connList = connList_tmp;
-        dtls_connection_t *nextP = connList_tmp->next;
+        OSI_LOGI(0x100076a8, "connList != NULL");
 
-        if (connList_tmp->issecure != 0)
+        dtls_connection_t *nextP;
+
+        nextP = connList->next;
+
+        if (connList->server_fd)
         {
-            mbedtls_net_free(&connList_tmp->server_fd);
 
-            mbedtls_entropy_free(&connList_tmp->entropy);
-
-            mbedtls_ssl_config_free(&connList_tmp->conf);
-
-            mbedtls_x509_crt_free(&connList_tmp->cacert);
-
-            if (connList_tmp->ssl.p_timer){
-                lwm2m_free(connList_tmp->ssl.p_timer);
-                connList_tmp->ssl.p_timer = NULL;
-                }
-            mbedtls_ssl_free(&connList_tmp->ssl);
-
-            mbedtls_ctr_drbg_free(&connList_tmp->ctr_drbg);
+            mbedtls_net_free(connList->server_fd);
+            lwm2m_free(connList->server_fd);
+            connList->server_fd = NULL;
         }
-         sys_arch_printf("M2M# connection_free connList = %p", connList_tmp);
-        lwm2m_free(connList_tmp);
-        connList_tmp = nextP;
+
+        if (connList->entropy)
+        {
+            mbedtls_entropy_free(connList->entropy);
+            lwm2m_free(connList->entropy);
+            connList->entropy = NULL;
+        }
+        if (connList->conf)
+        {
+            mbedtls_ssl_config_free(connList->conf);
+            lwm2m_free(connList->conf);
+            connList->conf = NULL;
+        }
+        if (connList->cacert)
+        {
+            mbedtls_x509_crt_free(connList->cacert);
+            lwm2m_free(connList->cacert);
+            connList->cacert = NULL;
+        }
+#if 0
+        if (connList->clicert)
+        {
+            mbedtls_x509_crt_free(connList->clicert);
+            lwm2m_free(connList->clicert);
+            connList->clicert = NULL;
+
+        }
+        if (connList->clikey)
+        {
+            mbedtls_pk_free(connList->clikey);
+            lwm2m_free(connList->clikey);
+            connList->clikey = NULL;
+
+        }
+#endif
+        if (connList->ssl)
+        {
+            if (connList->ssl->p_timer)
+                lwm2m_free(connList->ssl->p_timer);
+            mbedtls_ssl_free(connList->ssl);
+            lwm2m_free(connList->ssl);
+            connList->ssl = NULL;
+            g_sslContext = NULL;
+        }
+        if (connList->ctr_drbg)
+        {
+            mbedtls_ctr_drbg_free(connList->ctr_drbg);
+            lwm2m_free(connList->ctr_drbg);
+            connList->ctr_drbg = NULL;
+        }
+        mbedtls_ssl_session_free( &connList->saved_session);
+
+        OSI_LOGI(0x100076a9, "M2M# connection_free connList = %p", connList);
+
+        lwm2m_free(connList);
+        connList = nextP;
     }
 }
+uint32_t last_dataTransTick = 0;
 
 int connection_send(dtls_connection_t *connP, uint8_t *buffer, size_t length)
 {
+    int ret = -1;
 
     if (connP->issecure == 0)
     {
@@ -846,12 +1065,47 @@ int connection_send(dtls_connection_t *connP, uint8_t *buffer, size_t length)
     }
     else
     {
-        if (-1 == mbedtls_ssl_write(&connP->ssl, buffer, length))
-        {
-            return -1;
+
+        uint32_t current_tick = (uint32_t)osiUpTime();
+
+        if (!connP->send_firstData && (30 * 16384 < current_tick - last_dataTransTick))
+        { //mbedtls_ssl_renegotiate( connP->ssl);
+            if ((ret = mbedtls_ssl_session_reset(connP->ssl)) != 0)
+            {
+                LOG_ARG(" failed\n  ! mbedtls_ssl_session_reset returned -0x%x\n\n", -ret);
+                return ret;
+            }
+            if ((ret = mbedtls_ssl_set_session(connP->ssl, &connP->saved_session)) != 0)
+            {
+                LOG_ARG(" failed\n  ! mbedtls_ssl_conf_session returned -0x%x\n\n", -ret);
+                return ret;
+            }
+            ret = mbedtls_net_set_block(connP->server_fd);
+            mbedtls_ssl_set_bio(connP->ssl, connP, mbeddtls_lwm2m_send, mbeddtls_lwm2m_recv, mbeddtls_lwm2m_recv_timeout);
+            while ((ret = mbedtls_ssl_handshake(connP->ssl)) != 0)
+            {
+                if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
+                    ret != MBEDTLS_ERR_SSL_WANT_WRITE)
+                {
+                    LOG_ARG(" failed\n  ! mbedtls_ssl_handshake returned -0x%x\n\n", -ret);
+                    return ret;
+                }
+            }
+            if ((ret = mbedtls_ssl_get_session(connP->ssl, &connP->saved_session)) != 0)
+            {
+                LOG_ARG(" failed\n  ! after rehandshake mbedtls_ssl_get_session returned -0x%x\n\n", -ret);
+            }
+            OSI_LOGI(0x100076aa, " rehandshake,ok\n");
         }
+
+        connP->send_firstData = 0;
+        if (0 > (ret = mbedtls_ssl_write(connP->ssl, buffer, length)))
+        {
+            return ret;
+        }
+        last_dataTransTick = current_tick;
     }
-    LOG("connection_send success");
+    OSI_LOGI(0x100076ab, "connection_send success");
     return 0;
 }
 
@@ -860,15 +1114,18 @@ int connection_handle_packet(dtls_connection_t *connP, uint8_t *buffer, size_t n
 
     if (connP->issecure != 0) //(connP->dtlsSession != NULL)
     {
-        LOG("security mode");
-        mbedtls_net_set_nonblock(&connP->server_fd);
-        mbedtls_ssl_set_bio(&connP->ssl, connP, mbeddtls_lwm2m_send, mbeddtls_lwm2m_recv, NULL);
-        int result = mbedtls_ssl_read(&connP->ssl, buffer, numBytes);
-        if (result < 0)
+        OSI_LOGI(0x100076ac, "security mode");
+        last_dataTransTick = (uint32_t)osiUpTime();
+        mbedtls_net_set_nonblock(connP->server_fd);
+        //mbedtls_ssl_set_bio( connList->ssl, connList, mbeddtls_lwm2m_send, mbeddtls_lwm2m_recv, mbeddtls_lwm2m_recv_timeout);
+        mbedtls_ssl_set_bio(connP->ssl, connP, mbeddtls_lwm2m_send, mbeddtls_lwm2m_recv, NULL);
+        int result = mbedtls_ssl_read(connP->ssl, buffer, MAX_PACKET_SIZE);
+        if (result <= 0)
         {
             LOG_ARG("error dtls handling message %d\n", result);
             return result;
         }
+		
         LOG_ARG("after mbedtls_ssl_read,relsult=%d", result);
         lwm2m_handle_packet(connP->lwm2mH, buffer, result, (void *)connP);
         return 0;
@@ -894,12 +1151,12 @@ uint8_t lwm2m_buffer_send(void *sessionH,
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
-    if (-1 == connection_send(connP, buffer, length))
+    if (0 > connection_send(connP, buffer, length))
     {
         LOG_ARG("#> failed sending %lu bytes\r\n", length);
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
-    LOG("lwm2m_buffer_send success");
+    OSI_LOGI(0x100076ad, "lwm2m_buffer_send success");
     return COAP_NO_ERROR;
 }
 
