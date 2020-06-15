@@ -150,6 +150,8 @@ int16_t AT_NITZ_TimeZone;
 uint8_t gNitzGet = 0;
 #endif
 
+bool Net_Time_flag = false;//是否有下发网络时间
+
 typedef struct AT_CCED
 {
     uint8_t sMcc[3];
@@ -453,6 +455,13 @@ static void _onEV_CFW_NW_NETWORKINFO_IND(const osiEvent_t *event)
 #if defined(AT_CUCC_DATAREG) || defined(AT_CTCC_DATAREG)
     //startIotSelfRegOnce(gAtCurrentSetting.self_register);
 #endif
+	/*！----------自定义加入这层*/
+	/*判断是否有网络下发校时功能*/
+	if(p->nUniversalTimeZoneLen == 0)
+		Net_Time_flag = false;
+	else
+ 		Net_Time_flag = true;
+	/*----------------------！*/
 
     if (p->nUniversalTimeZoneLen > 0)
     {
@@ -2980,7 +2989,7 @@ static void CCED_RspCB(atCommand_t *cmd, const osiEvent_t *event)
 /*
  *******************************************************************************
  *  possible input from ATM:                                                   *
- *  AT+cced=?   -->test, return +CCED: (0,1),(1,2,8) 
+ *  AT+cced=?   -->test, return +CCED: (0,1),(1,2,8)
                                 OK                                             *
  *  AT+cced?    -->not support                                                 *
  *  AT+cced=X,X -->set                                                         *
@@ -3158,7 +3167,7 @@ void atCmdHandleCCED(atCommand_t *cmd)
 /*
  *******************************************************************************
  *  possible input from ATM:                                                   *                                           *
- *  AT+GTCCINFO?    --> 
+ *  AT+GTCCINFO?    -->
  *  AT+GTCCINFO=?   -->not support                                                 *
  *  AT+GTCCINFO=X,X -->not support                                                 *
  *******************************************************************************

@@ -16,6 +16,10 @@ extern CFW_SNTP_CONFIG *sntpClient;
 extern void sntpConfigInit();
 extern sntp_status_t sntpUpdateStart();
 
+/*外部nas信令校时*/
+extern bool Net_Time_flag;
+
+
 /*
 	  name : lv_poc_sntp_Update_Time
 	 param : none
@@ -26,6 +30,8 @@ extern sntp_status_t sntpUpdateStart();
 void lv_poc_sntp_Update_Time(void)
 {
 	sntp_status_t result;//同步更新时间结果
+
+	if(Net_Time_flag == true) return;//外部已通过nas信令完成校时 判断为移动或电信卡
 
 	if (sntpClient == NULL)
 	{
