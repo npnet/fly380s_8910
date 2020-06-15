@@ -1221,7 +1221,7 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	static lv_poc_activity_ext_t	activity_idle_ext = {ACT_ID_POC_IDLE,
 															lv_poc_idle_create,
 															lv_poc_idle_prepare_destory};
-	lv_poc_control_text_t control = {"主菜单", "群组", "下一页"}; //{"主菜单","群组","下一页"}
+	lv_poc_control_text_t control = {"主菜单", "", "下一页"}; //{"主菜单","群组","下一页"}
 	if(activity_idle != NULL)
 	{
 		return NULL;
