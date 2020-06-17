@@ -286,6 +286,13 @@ typedef enum{//呼吸灯周期
 }LVPOCIDTCOM_Led_Period_t;
 
 typedef enum{
+	LVPOCUPDATE_TYPE_START = 0 ,
+	LVPOCUPDATE_TYPE_MEMBERLIST ,
+	LVPOCUPDATE_TYPE_GROUPLIST ,
+	LVPOCUPDATE_TYPE_END ,
+}poc_update_type;
+
+typedef enum{
 	LVPOCAUDIO_Type_Start_Index,
 	LVPOCAUDIO_Type_Start_Machine,      // 欢迎使用数字公网对讲机
 	LVPOCAUDIO_Type_Fail_Update_Group,      //群组信息更新失败

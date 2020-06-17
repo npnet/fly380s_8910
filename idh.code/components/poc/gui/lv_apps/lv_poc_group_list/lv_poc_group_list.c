@@ -182,6 +182,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 			{
 				case LV_GROUP_KEY_ENTER:
 				{
+					if(false != list_refresh_status)
 					lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
 				}
 
@@ -189,6 +190,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_GROUP_KEY_UP:
 				{
+					if(false != list_refresh_status)
 					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
@@ -222,6 +224,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_KEY_ESC:
 				{
+					if(false != list_refresh_status)
 					lv_poc_del_activity(poc_group_list_activity);
 					break;
 				}
@@ -542,6 +545,8 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
 
         p_cur = p_cur->next;
     }
+
+	lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_GROUPLIST,activity_list);//刷新列表
 }
 
 lv_poc_status_t lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
