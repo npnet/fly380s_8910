@@ -59,6 +59,12 @@
 #cmakedefine CONFIG_POC_GUI_CHOICE_SIM_SUPPORT
 
 /**
+ * Wheth the POC tts is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_TTS_SUPPORT
+
+/**
  * Wheth the POC gui choice net type is enabled.
  *
  */
@@ -69,6 +75,12 @@
  *
  */
 #cmakedefine CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
+
+/**
+ * Wheth the POC audio speaker women is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_AUDIO_SPEAKER_WOMEN
 
 /**
  * Wheth the POC keypad light is enabled.

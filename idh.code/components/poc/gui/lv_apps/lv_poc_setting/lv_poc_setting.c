@@ -21,7 +21,9 @@ static const char * net_type_str[] = {"4G/3G/2G","仅3G/2G"};
 #endif
 static const char * lv_poc_setting_title_text = "设置";
 static const char * lv_poc_setting_btn_text_btn_voice = "按键音";
+#ifdef CONFIG_POC_TTS_SUPPORT
 static const char * lv_poc_setting_btn_text_broadcast = "语音播报";
+#endif
 static const char * lv_poc_setting_btn_text_big_font = "大号字体";
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 static const char * lv_poc_setting_btn_text_key_light = "按键灯";
@@ -93,6 +95,7 @@ static void lv_poc_setting_btn_voice_btn_cb(lv_obj_t * obj)
 	//lv_sw_toggle(ext_obj);
 }
 
+#ifdef CONFIG_POC_TTS_SUPPORT
 static void lv_poc_setting_broadcast_btn_cb(lv_obj_t * obj)
 {
     lv_obj_t * ext_obj = NULL;
@@ -111,6 +114,7 @@ static void lv_poc_setting_broadcast_btn_cb(lv_obj_t * obj)
 	//sw_state = lv_sw_get_state(ext_obj) == true? false : true;
 	//lv_sw_toggle(ext_obj);
 }
+#endif
 
 static void lv_poc_setting_big_font_btn_cb(lv_obj_t * obj)
 {
@@ -306,6 +310,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
 
     lv_list_set_btn_selected(list, btn);
 
+#ifdef CONFIG_POC_TTS_SUPPORT
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_broadcast);
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
@@ -332,6 +337,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     {
     	lv_sw_off(sw, LV_ANIM_OFF);
     }
+#endif
 
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_big_font);
     lv_obj_set_click(btn, true);
@@ -535,7 +541,11 @@ static void lv_poc_setting_pressed_cb(lv_obj_t * obj, lv_event_t event)
     {
 	    int index = lv_list_get_btn_index((lv_obj_t *)poc_setting_win->display_obj, obj);
 	    char * text = (char *)lv_list_get_btn_text((const lv_obj_t *)obj);
+#ifdef CONFIG_POC_TTS_SUPPORT
 	    poc_broadcast_play_rep((uint8_t *)text, strlen(text), poc_setting_conf->voice_broadcast_switch, false);
+#else
+	    poc_broadcast_play_rep((uint8_t *)text, strlen(text), true, false);
+#endif
 	    setting_selected_item = index;
 	    lv_poc_setting_item_func_t func = lv_poc_setting_items_funcs[index];
 	    func(obj);

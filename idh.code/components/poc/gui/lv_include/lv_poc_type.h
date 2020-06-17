@@ -1,6 +1,7 @@
 ﻿#ifndef __LV_POC_TYPR_H_
 #define __LV_POC_TYPR_H_
 #include "lvgl.h"
+#include "poc_config.h"
 
 //typedef char         		 INT8;
 typedef unsigned char 		 UINT8;
@@ -111,7 +112,9 @@ typedef struct
 {
 	uint8_t read_and_write_check;
 	uint8_t btn_voice_switch;         //[0]close   [1]open   [default 0]
+#ifdef CONFIG_POC_TTS_SUPPORT
 	uint8_t voice_broadcast_switch;   //[0]close   [1]open   [default 0]
+#endif
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	uint8_t keypad_led_switch;        //[0]close   [1]open   [default 0]
 #endif
@@ -285,6 +288,24 @@ typedef enum{//呼吸灯周期
 typedef enum{
 	LVPOCAUDIO_Type_Start_Index,
 	LVPOCAUDIO_Type_Start_Machine,      // 欢迎使用数字公网对讲机
+	LVPOCAUDIO_Type_Fail_Update_Group,      //群组信息更新失败
+	LVPOCAUDIO_Type_Fail_Update_Member,      //成员列表更新失败
+	LVPOCAUDIO_Type_Insert_SIM_Card,      //请插入SIM卡
+	LVPOCAUDIO_Type_Join_Group,      //加入群组
+	LVPOCAUDIO_Type_Low_Battery,      //电量低请充电
+	LVPOCAUDIO_Type_No_Login,      //当前未登录
+	LVPOCAUDIO_Type_Offline_Member,      //成员不在线
+	LVPOCAUDIO_Type_Success_Member_Call,      //单呼成功
+	LVPOCAUDIO_Type_Success_Build_Group,      //建组成功
+	LVPOCAUDIO_Type_Success_Login,      //登录成功
+	LVPOCAUDIO_Type_No_Connected,      //当前网络未连接
+	LVPOCAUDIO_Type_Tone_Cannot_Speak,   //
+	LVPOCAUDIO_Type_Tone_Lost_Mic,   //
+	LVPOCAUDIO_Type_Tone_Note,   //
+	LVPOCAUDIO_Type_Tone_Start_Listen,   //
+	LVPOCAUDIO_Type_Tone_Start_Speak,   //
+	LVPOCAUDIO_Type_Tone_Stop_Listen,   //
+	LVPOCAUDIO_Type_Tone_Stop_Speak,   //
 	LVPOCAUDIO_Type_End_Index,
 } LVPOCAUDIO_Type_e;
 

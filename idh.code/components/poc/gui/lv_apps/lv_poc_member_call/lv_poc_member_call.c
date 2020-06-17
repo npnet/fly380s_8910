@@ -294,6 +294,7 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 		}
 		else
 		{
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Member_Call, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始单呼", NULL);
 		}
 	}

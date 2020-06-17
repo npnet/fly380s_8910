@@ -119,6 +119,7 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 	}
 	else
 	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
 	}
 	lv_poc_member_call_obj_information = NULL;
@@ -244,6 +245,7 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	}
 	else
 	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 
@@ -298,6 +300,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     {
 		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
 		{
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 		}
     }

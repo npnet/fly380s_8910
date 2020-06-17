@@ -243,6 +243,24 @@ add_library(${target} STATIC
 
 	gui/resource/audiofile/lv_poc_audio_msg.c
 	gui/resource/audiofile/lv_poc_audio_start_machine.c
+	gui/resource/audiofile/lv_poc_audio_no_connected.c
+	gui/resource/audiofile/lv_poc_audio_no_login.c
+	gui/resource/audiofile/lv_poc_audio_fail_to_update_group.c
+	gui/resource/audiofile/lv_poc_audio_fail_to_update_member.c
+	gui/resource/audiofile/lv_poc_audio_success_to_build_group.c
+	gui/resource/audiofile/lv_poc_audio_low_battery.c
+	gui/resource/audiofile/lv_poc_audio_success_member_call.c
+	gui/resource/audiofile/lv_poc_audio_join_group.c
+	gui/resource/audiofile/lv_poc_audio_offline_member.c
+	gui/resource/audiofile/lv_poc_audio_insert_sim_card.c
+	gui/resource/audiofile/lv_poc_audio_success_to_login.c
+	gui/resource/audiofile/lv_poc_audio_tone_cannot_speak.c
+	gui/resource/audiofile/lv_poc_audio_tone_lost_mic.c
+	gui/resource/audiofile/lv_poc_audio_tone_note.c
+	gui/resource/audiofile/lv_poc_audio_tone_start_listen.c
+	gui/resource/audiofile/lv_poc_audio_tone_start_speak.c
+	gui/resource/audiofile/lv_poc_audio_tone_stop_listen.c
+	gui/resource/audiofile/lv_poc_audio_tone_stop_sepak.c
 
 	idt/src/app_test.cpp
 	idt/core/idt-freertos.o
