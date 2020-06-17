@@ -1,4 +1,4 @@
-#ifndef __LV_POC_H_
+﻿#ifndef __LV_POC_H_
 #define __LV_POC_H_
 
 #include <stdio.h>
@@ -32,6 +32,7 @@
 #include "lv_apps/lv_poc_notation/lv_poc_notation.h"
 #include "lv_apps/lv_poc_led/lv_poc_led.h"
 #include "lv_apps/lv_poc_sntp/lv_poc_sntp.h"
+#include "lv_apps/lv_poc_list_repeat_refresh/lv_poc_list_repeat_refresh.h"
 
 
 #endif //__LV_POC_H_
