@@ -1340,7 +1340,11 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
         }
         else if(cur_key != LV_GROUP_KEY_POC)
         {
-		    poc_play_btn_voice_one_time(vol_cur, poc_setting_conf->voice_broadcast_switch || !(poc_setting_conf->btn_voice_switch));
+		    poc_play_btn_voice_one_time(vol_cur,
+#ifdef CONFIG_POC_TTS_SUPPORT
+			    poc_setting_conf->voice_broadcast_switch ||
+#endif
+			    !(poc_setting_conf->btn_voice_switch));
         }
     }
 
@@ -2052,6 +2056,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 	poc_battery_get_status(&battery_t);
     const lv_img_dsc_t * battery_img = NULL;
 	static uint8_t battery_img_cur = 0;
+	static uint8_t low_battery_check_count = 0;
 
     if(!battery_t.battery_status)
     {
@@ -2092,7 +2097,14 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         else if(battery_t.battery_value >= 0)
         {
             battery_img = &stat_sys_battery_0;
+            if(low_battery_check_count < 1)
+            {
+	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, false);
+            }
+            low_battery_check_count = (low_battery_check_count + 1) % 60;
+            return (lv_img_dsc_t *)battery_img;
         }
+        low_battery_check_count = 0;
     }
     else
     {

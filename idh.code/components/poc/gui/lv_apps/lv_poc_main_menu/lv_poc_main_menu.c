@@ -67,7 +67,11 @@ static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
 	{
 		return;
 	}
+#ifdef CONFIG_POC_TTS_SUPPORT
 	poc_broadcast_play_rep((uint8_t *)text, strlen(text), poc_setting_conf->voice_broadcast_switch, false);
+#else
+	poc_broadcast_play_rep((uint8_t *)text, strlen(text), true, false);
+#endif
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
 		if(0 == strcmp(text, (const char *)lv_poc_main_menu_item_text_member_list))

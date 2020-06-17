@@ -113,6 +113,7 @@ static void lv_poc_build_group_new_group_cb(int result_type)
 {
 	if(result_type == 1)
 	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Build_Group, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_success_text, NULL);
 	}
 	else
@@ -301,6 +302,7 @@ static void lv_poc_build_group_get_list_cb(int msg_type)
 	}
 	else
 	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 }
@@ -337,6 +339,7 @@ void lv_poc_build_group_open(void)
 
 	if(!lv_poc_get_member_list(NULL, lv_poc_build_group_member_list, 1, lv_poc_build_group_get_list_cb))
 	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 

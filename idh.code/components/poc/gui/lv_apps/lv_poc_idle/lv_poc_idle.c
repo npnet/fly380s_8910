@@ -727,7 +727,7 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 		lv_poc_idle_page2_msg_content_t *msg_content = &page2_msg->msg[page2_msg->reader];
 		bool is_normal = false;
 
-		if(msg_content->state == lv_poc_idle_page2_none_msg)
+		if(msg_content->state <= lv_poc_idle_page2_none_msg || msg_content->state > lv_poc_idle_page2_listen)
 		{
 			if(page2_display_state != lv_poc_idle_page2_speak
 				&& page2_display_state != lv_poc_idle_page2_listen
@@ -740,30 +740,27 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				{
 					if(have_warning == true)
 					{
-						page2_display_state = lv_poc_idle_page2_warnning_info;
 						dest_msg = &page2_msg->msg_warnning_info;
 						char *content[] = {dest_msg->second_line_text_1,};
 						lv_poc_idle_set_page2(lv_poc_idle_page2_warnning_info, content, 1);
 					}
 					else
 					{
-						page2_display_state = lv_poc_idle_page2_normal_info;
 						dest_msg = &page2_msg->msg_normal_info;
 						char *content[] = {dest_msg->second_line_text_2, dest_msg->third_line_text_2};
 						lv_poc_idle_set_page2(lv_poc_idle_page2_normal_info, content, 2);
 					}
 					page2_msg->normal_msg_count = 0;
-					break;
 				}
 			}
 			return;
 		}
 		page2_msg->normal_msg_count = 0;
+		page2_msg->reader = (page2_msg->reader + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
 
 
 		if(msg_content->state == lv_poc_idle_page2_normal_info)
 		{
-			page2_msg->reader = (page2_msg->reader + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
 			dest_msg = &page2_msg->msg_normal_info;
 			memset(dest_msg, 0, sizeof(lv_poc_idle_page2_msg_content_t));
 			dest_msg->state = lv_poc_idle_page2_normal_info;
@@ -995,12 +992,6 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 				}
 			}
 		}
-		else
-		{
-			memset(msg_content, 0, sizeof(lv_poc_idle_page2_msg_content_t));
-			page2_msg->reader = (page2_msg->reader + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
-			return;
-		}
 
 		dest_msg->state = msg_content->state;
 		if(is_normal)
@@ -1019,7 +1010,6 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 
 		page2_display_state = dest_msg->state;
 		memset(msg_content, 0, sizeof(lv_poc_idle_page2_msg_content_t));
-		page2_msg->reader = (page2_msg->reader + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
 	} while(0);
 
 	if(dest_msg != NULL)
@@ -1058,7 +1048,7 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 
 void lv_poc_idle_set_page2(lv_poc_idle_page2_display_t msg_type, char * content[], int csize)
 {
-	if(content == NULL || idle_page_task_msg == NULL || idle_page_task == NULL || csize < 1)
+	if(content == NULL || idle_page_task_msg == NULL || idle_page_task == NULL || csize < 1 || msg_type <= lv_poc_idle_page2_none_msg || msg_type > lv_poc_idle_page2_listen)
 	{
 		return;
 	}
@@ -1070,6 +1060,7 @@ void lv_poc_idle_set_page2(lv_poc_idle_page2_display_t msg_type, char * content[
 
 	lv_poc_idle_page2_msg_t *page2_msg = idle_page_task_msg;
 	lv_poc_idle_page2_msg_content_t *msg_content = &page2_msg->msg[page2_msg->writer];
+	page2_msg->writer = (page2_msg->writer + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
 
 	memset(msg_content, 0, sizeof(lv_poc_idle_page2_msg_content_t));
 
@@ -1140,11 +1131,7 @@ void lv_poc_idle_set_page2(lv_poc_idle_page2_display_t msg_type, char * content[
 		}
 	}
 
-	if(text_content_write > 0)
-	{
-		page2_msg->writer = (page2_msg->writer + 1) % LV_POC_IDLE_PAE_MAX_MSG_SIZE;
-		msg_content->state = msg_type;
-	}
+	msg_content->state = msg_type;
 }
 
 /*************************************************
@@ -1250,5 +1237,4 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 
 	return activity_idle;
 }
-
 

@@ -360,6 +360,46 @@ static osiThread_t * prv_play_voice_one_time_thread = NULL;
 static auPlayer_t * prv_play_voice_one_time_player = NULL;
 extern lv_poc_audio_dsc_t lv_poc_audio_msg;
 extern lv_poc_audio_dsc_t lv_poc_audio_start_machine;
+extern lv_poc_audio_dsc_t lv_poc_audio_no_connected;
+extern lv_poc_audio_dsc_t lv_poc_audio_no_login;
+extern lv_poc_audio_dsc_t lv_poc_audio_fail_to_update_group;
+extern lv_poc_audio_dsc_t lv_poc_audio_fail_to_update_member;
+extern lv_poc_audio_dsc_t lv_poc_audio_success_to_build_group;
+extern lv_poc_audio_dsc_t lv_poc_audio_low_battery;
+extern lv_poc_audio_dsc_t lv_poc_audio_success_member_call;
+extern lv_poc_audio_dsc_t lv_poc_audio_join_group;
+extern lv_poc_audio_dsc_t lv_poc_audio_offline_member;
+extern lv_poc_audio_dsc_t lv_poc_audio_insert_sim_card;
+extern lv_poc_audio_dsc_t lv_poc_audio_success_to_login;
+extern lv_poc_audio_dsc_t lv_poc_audio_tone_cannot_speak;
+extern lv_poc_audio_dsc_t lv_poc_audio_tone_lost_mic;
+extern lv_poc_audio_dsc_t lv_poc_audio_tone_note;
+extern lv_poc_audio_dsc_t lv_poc_audio_tone_start_listen;
+extern lv_poc_audio_dsc_t lv_poc_audio_tone_start_speak;
+extern lv_poc_audio_dsc_t lv_poc_audio_tone_stop_listen;
+extern lv_poc_audio_dsc_t lv_poc_audio_tone_stop_sepak;
+static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
+	NULL,
+	&lv_poc_audio_start_machine,
+	&lv_poc_audio_fail_to_update_group,
+	&lv_poc_audio_fail_to_update_member,
+	&lv_poc_audio_insert_sim_card,
+	&lv_poc_audio_join_group,
+	&lv_poc_audio_low_battery,
+	&lv_poc_audio_no_login,
+	&lv_poc_audio_offline_member,
+	&lv_poc_audio_success_member_call,
+	&lv_poc_audio_success_to_build_group,
+	&lv_poc_audio_success_to_login,
+	&lv_poc_audio_no_connected,
+	&lv_poc_audio_tone_cannot_speak,
+	&lv_poc_audio_tone_lost_mic,
+	&lv_poc_audio_tone_note,
+	&lv_poc_audio_tone_start_listen,
+	&lv_poc_audio_tone_start_speak,
+	&lv_poc_audio_tone_stop_listen,
+	&lv_poc_audio_tone_stop_sepak,
+};
 
 static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
@@ -394,12 +434,13 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 	int voice_queue_reader = 0;
 	int voice_queue_writer = 0;
 	LVPOCAUDIO_Type_e voice_type = 0;
+	auStreamFormat_t voice_formate = AUSTREAM_FORMAT_UNKNOWN;
 
 	while(1)
 {
 		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 50))
 		{
-		if(event.id != 101)
+			if(event.id != 101)
 			{
 				continue;
 			}
@@ -414,7 +455,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					isPlayVoice = false;
 				}
 			}
-		else if(isPlayVoice)
+			else if(isPlayVoice)
 			{
 				voice_queue[voice_queue_writer] = voice_type;
 				voice_queue_writer = (voice_queue_writer + 1) % 10;
@@ -432,9 +473,9 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				}
 				else
 				{
-				continue;
+					continue;
 				}
-		}
+			}
 
 			if(voice_queue_reader == voice_queue_writer)
 			{
@@ -449,9 +490,40 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			continue;
 		}
 
-		if(voice_type == LVPOCAUDIO_Type_Start_Machine)
+		switch(voice_type)
 		{
-			auPlayerStartMem(prv_play_voice_one_time_player, AUSTREAM_FORMAT_MP3, params, lv_poc_audio_start_machine.data, lv_poc_audio_start_machine.data_size);
+			case LVPOCAUDIO_Type_Start_Machine:
+			case LVPOCAUDIO_Type_Fail_Update_Group:
+			case LVPOCAUDIO_Type_Fail_Update_Member:
+			case LVPOCAUDIO_Type_Insert_SIM_Card:
+			case LVPOCAUDIO_Type_Join_Group:
+			case LVPOCAUDIO_Type_Low_Battery:
+			case LVPOCAUDIO_Type_No_Login:
+			case LVPOCAUDIO_Type_Offline_Member:
+			case LVPOCAUDIO_Type_Success_Member_Call:
+			case LVPOCAUDIO_Type_Success_Build_Group:
+			case LVPOCAUDIO_Type_Success_Login:
+			case LVPOCAUDIO_Type_No_Connected:
+				voice_formate = AUSTREAM_FORMAT_MP3;
+				break;
+			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
+			case LVPOCAUDIO_Type_Tone_Lost_Mic:
+			case LVPOCAUDIO_Type_Tone_Note:
+			case LVPOCAUDIO_Type_Tone_Start_Listen:
+			case LVPOCAUDIO_Type_Tone_Start_Speak:
+			case LVPOCAUDIO_Type_Tone_Stop_Listen:
+			case LVPOCAUDIO_Type_Tone_Stop_Speak:
+				voice_formate = AUSTREAM_FORMAT_WAVPCM;
+				break;
+
+			default:
+				voice_formate = AUSTREAM_FORMAT_WAVPCM;
+				break;
+		}
+
+		if(prv_lv_poc_audio_array[voice_type] != NULL)
+		{
+			auPlayerStartMem(prv_play_voice_one_time_player, voice_formate, params, prv_lv_poc_audio_array[voice_type]->data, prv_lv_poc_audio_array[voice_type]->data_size);
 			isPlayVoice = true;
 		}
 	}
@@ -754,17 +826,20 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 
 	if(!poc_check_sim_prsent(POC_SIM_1))
 	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, false);
 		return false;
 	}
 
 	if (CFW_CfgGetNwStatus(&status, nSim) != 0 ||
 		CFW_NwGetStatus(&nStatusInfo, nSim) != 0)
 	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, false);
 		return false;
 	}
 
-	if(nStatusInfo.nStatus == 0 || nStatusInfo.nStatus == 2 || nStatusInfo.nStatus == 3 || nStatusInfo.nStatus == 4)
+	if(nStatusInfo.nStatus == 0 || nStatusInfo.nStatus == 2 || nStatusInfo.nStatus == 4)
 	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, false);
 		return false;
 	}
 	return true;
@@ -860,7 +935,9 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->theme.current_theme = poc_setting->theme.white;
 	poc_setting->read_and_write_check = 0x3f;
 	poc_setting->btn_voice_switch = 0;
+#ifdef CONFIG_POC_TTS_SUPPORT
 	poc_setting->voice_broadcast_switch = 0;
+#endif
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_setting->keypad_led_switch = 0;
 #endif
@@ -1003,6 +1080,7 @@ poc_get_device_account_rep(POC_SIM_ID nSim)
 bool
 poc_broadcast_play_rep(uint8_t * text, uint32_t length, uint8_t play, bool force)
 {
+#ifdef CONFIG_POC_TTS_SUPPORT
 	if(!play)
 	{
 		return false;
@@ -1023,6 +1101,9 @@ poc_broadcast_play_rep(uint8_t * text, uint32_t length, uint8_t play, bool force
 	}
 	char * test_text = "1234567890";
 	return ttsPlayText(test_text, strlen(test_text), ML_UTF8);
+#else
+	return true;
+#endif
 }
 
 /*

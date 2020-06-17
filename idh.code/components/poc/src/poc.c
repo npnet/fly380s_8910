@@ -35,10 +35,11 @@ static void pocIdtStartHandleTask(void * ctx)
 	poc_net_work_config(POC_SIM_1);
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0);
 	poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, true);
+	osiThreadSleep(5000);
 	while(!poc_get_network_register_status(POC_SIM_1))
 	{
 		OSI_LOGI(0, "[poc][idt] checking network\n");
-		osiThreadSleep(1000);
+		osiThreadSleep(5000);
 	}
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0);
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
