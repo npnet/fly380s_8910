@@ -50,15 +50,25 @@ static void pocIdtStartHandleTask(void * ctx)
 }
 
 #ifdef CONFIG_POC_GUI_START_ANIMATION_SUPPORT
-static void pocStartAnimation(void)
+static void pocStartAnimation(void *ctx)
 {
-	lv_obj_t * bg = lv_obj_create(lv_scr_act(), NULL);
-	lv_obj_set_size(bg, 160, 128);
-	lv_obj_t * label = lv_label_create(bg, NULL);
-	lv_label_set_text(label, "Flyscale");
-	lv_obj_align(label, bg, LV_ALIGN_CENTER, 0, 0);
-	osiThreadSleep(3000);
-	lv_obj_del(bg);
+	lvGuiRequestSceenOn(3);
+	lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
+	lv_img_set_auto_size(poc_power_on_backgroup_image, false);
+	lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
+	extern lv_img_dsc_t img_poweron_poc_logo_unicom;
+	lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
+
+	osiThreadSleep(4000);
+	osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+	osiThreadSleep(2800);
+	lv_poc_create_idle();
+	osiThreadSleep(200);
+	lv_obj_del(poc_power_on_backgroup_image);
+	lvGuiUpdateLastActivityTime();
+	lvGuiReleaseScreenOn(3);
+
+	osiThreadExit();
 }
 #endif
 
@@ -66,12 +76,12 @@ static void pocStartAnimation(void)
 static void pocLvglStart(void)
 {
 #ifdef CONFIG_POC_GUI_START_ANIMATION_SUPPORT
-	pocStartAnimation();
-#endif
-
+	osiThreadCreate("oicStartWithAnimation", pocStartAnimation, NULL, OSI_PRIORITY_NORMAL, 1024 * 15, 64);
+#else
 	lv_poc_create_idle();
 
 	osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+#endif
 }
 #else
 static void pocLvglStart(void)

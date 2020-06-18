@@ -50,7 +50,7 @@ config POC_GUI_CHOICE_SIM_SUPPORT
 
 config POC_GUI_START_ANIMATION_SUPPORT
     bool "POC gui start animation supported"
-    default n
+    default y
     help
         poc gui should be supported.
 

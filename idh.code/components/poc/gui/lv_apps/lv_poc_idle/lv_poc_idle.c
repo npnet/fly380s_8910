@@ -1203,6 +1203,21 @@ static void  lv_poc_idle_control_right_label_event_cb(lv_obj_t * obj, lv_event_t
 	}
 }
 
+static void lv_poc_idle_start_task_cb(lv_task_t *task)
+{
+	lv_poc_idle_time_task();
+	lv_poc_idle_page_2_hide();
+
+	idle_page_task_msg = (lv_poc_idle_page2_msg_t *)lv_mem_alloc(sizeof(lv_poc_idle_page2_msg_t));
+	if(idle_page_task_msg != NULL)
+	{
+		memset(idle_page_task_msg, 0, sizeof(lv_poc_idle_page2_msg_t));
+		idle_page_task = lv_task_create(lv_poc_idle_page_task_cb, 100, LV_TASK_PRIO_LOWEST, idle_page_task_msg);
+	}
+
+	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在检查网络");
+}
+
 lv_poc_activity_t * lv_poc_create_idle(void)
 {
 	static lv_poc_activity_ext_t	activity_idle_ext = {ACT_ID_POC_IDLE,
@@ -1222,19 +1237,11 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	lv_obj_set_click(activity_idle->control->right_button, true);
 	lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
 
-	lv_poc_idle_time_task();
-	lv_poc_idle_page_2_hide();
-
-	idle_page_task_msg = (lv_poc_idle_page2_msg_t *)lv_mem_alloc(sizeof(lv_poc_idle_page2_msg_t));
-	if(idle_page_task_msg != NULL)
+	lv_task_t * prv_poc_idle_start_task = lv_task_create(lv_poc_idle_start_task_cb, 300, LV_TASK_PRIO_LOWEST, NULL);
+	if(prv_poc_idle_start_task != NULL)
 	{
-		memset(idle_page_task_msg, 0, sizeof(lv_poc_idle_page2_msg_t));
-		idle_page_task = lv_task_create(lv_poc_idle_page_task_cb, 100, LV_TASK_PRIO_LOWEST, idle_page_task_msg);
+		lv_task_once(prv_poc_idle_start_task);
 	}
-
-	char * content[] = {"正在检查网络",};
-	lv_poc_idle_set_page2(lv_poc_idle_page2_warnning_info, content, 1);
-
 	return activity_idle;
 }
 

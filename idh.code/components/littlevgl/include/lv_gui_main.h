@@ -151,5 +151,13 @@ void lvGuiSetAnimationInactive(bool inactive);
  */
 bool lvGuiGetScreenStatus(void);
 
+/**
+ * \brief update last activity time
+ *
+ *
+ * \param
+ */
+void lvGuiUpdateLastActivityTime(void);
+
 OSI_EXTERN_C_END
 #endif

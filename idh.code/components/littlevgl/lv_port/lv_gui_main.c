@@ -305,13 +305,16 @@ static void prvLvTaskHandler(void)
 static bool prvIsInactiveTimeout(void)
 {
     lvGuiContext_t *d = &gLvGuiCtx;
-
+	OSI_LOGI(0, "[poc_lcd_check] piint 1");
     if (d->screen_on_users != 0)
         return false;
+	OSI_LOGI(0, "[poc_lcd_check] piint 2");
     if (d->inactive_timeout == 0)
         return false;
+	OSI_LOGI(0, "[poc_lcd_check] piint 3");
     if (!d->anim_inactive && lv_anim_count_running())
         return false;
+	OSI_LOGI(0, "[poc_lcd_check] piint 4");
     return lv_disp_get_inactive_time(d->disp) > d->inactive_timeout;
 }
 
@@ -345,6 +348,7 @@ static void prvLvThreadEntry(void *param)
 
         if (d->screen_on && prvIsInactiveTimeout())
         {
+			OSI_LOGI(0, "[poc_lcd_check] piint 5");
             OSI_LOGI(0, "inactive timeout, screen off");
             lvGuiScreenOff();
         }
@@ -362,7 +366,7 @@ void lvGuiInit(lvGuiCreate_t create)
 
     d->screen_on = true;
     d->keypad_pending = false;
-    d->anim_inactive = false;
+    d->anim_inactive = true;
     d->last_key = 0xff;
     d->last_key_state = KEY_STATE_RELEASE;
     d->screen_on_users = 0;
@@ -506,4 +510,16 @@ bool lvGuiGetScreenStatus(void)
 		return false;
 	}
 	return gLvGuiCtx.screen_on;
+}
+
+/**
+ * \brief update last activity time
+ *
+ *
+ * \param
+ */
+void lvGuiUpdateLastActivityTime(void)
+{
+	lvGuiContext_t *d = &gLvGuiCtx;
+	d->keypad->driver.disp->last_activity_time = lv_tick_get();
 }
