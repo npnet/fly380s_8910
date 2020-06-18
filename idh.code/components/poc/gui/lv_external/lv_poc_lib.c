@@ -438,7 +438,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 
 	while(1)
 {
-		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 50))
+		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 20))
 		{
 			if(event.id != 101)
 			{
@@ -466,7 +466,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		{
 			if(isPlayVoice)
 			{
-				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 40))
+				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 20))
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;

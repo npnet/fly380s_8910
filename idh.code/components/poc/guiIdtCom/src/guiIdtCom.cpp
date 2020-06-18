@@ -69,6 +69,7 @@ static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length);
 static int LvGuiIdtCom_self_info_json_parse_status(void);
 static bool LvGuiIdtCom_self_is_member_call(char * info);
 static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx);
+static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx);
 static void lvPocGuiIdtCom_get_listen_status(LvPocGuiIdtCom_SignalType_t SignalType_t);
 
 //--------------------------------------------------------------------------------
@@ -198,7 +199,9 @@ public:
 	DWORD current_group;
 	DWORD query_group;
 	osiTimer_t * delay_close_listen_timer;
+	osiTimer_t * start_speak_voice_timer;
 	bool delay_close_listen_timer_running;
+	bool start_speak_voice_timer_running;
 	char self_info_cjson_str[GUIIDTCOM_SELF_INFO_SZIE];
 	cJSON * self_info_cjson;
 } PocGuiIIdtComAttr_t;
@@ -818,6 +821,13 @@ static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx)
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
 }
 
+static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
+{
+	pocIdtAttr.start_speak_voice_timer_running = false;
+    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
+    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+}
+
 //--------------------------------------------------------------------------------
 //      用户调试函数
 //  输入:
@@ -1044,7 +1054,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			{
 				break;
 			}
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Listen, true);
+
 			m_IdtUser.m_status = USER_OPRATOR_START_SPEAK;
 
 			if(m_IdtUser.m_iCallId == -1)
@@ -1092,8 +1102,11 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 		{
 			//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "开始对讲", NULL);
 			//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
-			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, "正在讲话", "");
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"正在讲话", (const uint8_t *)"");
+			if(m_IdtUser.m_status == USER_OPRATOR_SPEAKING)
+			{
+				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, "正在讲话", "");
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"正在讲话", (const uint8_t *)"");
+			}
 			break;
 		}
 
@@ -1171,9 +1184,19 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 					m_IdtUser.m_iRxCount = 0;
 					m_IdtUser.m_iTxCount = 0;
 					//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "获得话权", NULL);
+					poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Listen, true);
 
-				    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
-				    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+				    if(pocIdtAttr.start_speak_voice_timer != NULL)
+				    {
+					    if(pocIdtAttr.start_speak_voice_timer_running)
+					    {
+						    osiTimerStop(pocIdtAttr.start_speak_voice_timer);
+						    pocIdtAttr.start_speak_voice_timer_running = false;
+					    }
+					    osiTimerStart(pocIdtAttr.start_speak_voice_timer, 160);
+					    pocIdtAttr.start_speak_voice_timer_running = true;
+				    }
+
 				    pocIdtAttr.mic_ctl = mic_ctl;
 			    }
 			    else
@@ -1671,7 +1694,7 @@ static void prvPocGuiIdtTaskHandleRecord(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND:
 		{
-			if(m_IdtUser.m_status < UT_STATUS_ONLINE)
+			if(m_IdtUser.m_status < UT_STATUS_ONLINE || m_IdtUser.m_status < USER_OPRATOR_START_SPEAK || m_IdtUser.m_status > USER_OPRATOR_SPEAKING)
 			{
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, GUIIDTCOM_RELEASE_MIC);
 				break;
@@ -2190,6 +2213,7 @@ extern "C" void lvPocGuiIdtCom_Init(void)
 	memset(&pocIdtAttr, 0, sizeof(PocGuiIIdtComAttr_t));
 	pocIdtAttr.pPocMemberList = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
 	pocIdtAttr.delay_close_listen_timer = osiTimerCreate(NULL, LvGuiIdtCom_delay_close_listen_timer_cb, NULL);
+	pocIdtAttr.start_speak_voice_timer = osiTimerCreate(NULL, LvGuiIdtCom_start_speak_voice_timer_cb, NULL);
 	pocGuiIdtComStart();
 }
 

@@ -344,7 +344,8 @@ void lv_poc_member_call_open(void * information)
 
 
 	lv_poc_member_call_add(lv_poc_member_call_member_list_obj, lv_poc_get_member_name((lv_poc_member_info_t)information), true, information);
-	lv_poc_member_call_set_title(lv_poc_get_member_name((lv_poc_member_info_t)information));
+	//lv_poc_member_call_set_title(lv_poc_get_member_name((lv_poc_member_info_t)information));
+	lv_poc_member_call_set_title((const char *)"单呼");
 	lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
 	lv_poc_member_call_self_call_close = 0;
 	lv_poc_set_member_call_status(information, true, lv_poc_member_call_set_member_call_status_cb);
