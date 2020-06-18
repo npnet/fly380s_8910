@@ -114,6 +114,8 @@ add_library(${target} STATIC
 	gui/resource/image/signal/stat_sys_signal_in_sprd.c
 	gui/resource/image/signal/stat_sys_signal_inout_sprd.c
 	gui/resource/image/signal/stat_sys_signal_out_sprd.c
+	gui/resource/image/poweron/img_poweron_poc_logo_unicom.c
+	gui/resource/image/poweroff/img_poweroff_poc_logo_unicom.c
 
 	gui/resource/font/lv_poc_font_msyh_1bit_2500_10.c
 	gui/resource/font/lv_poc_font_msyh_1bit_2500_11.c

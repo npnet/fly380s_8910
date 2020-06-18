@@ -2025,7 +2025,7 @@ static void pocGuiIdtComTaskEntry(void *argument)
 
 	osiEvent_t event;
 
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < 1; i++)
     {
 	    osiThreadSleep(1000);
     }
