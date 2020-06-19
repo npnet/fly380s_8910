@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file lv_indev.c
  *
  */
@@ -473,6 +473,11 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
 				|| data->key == 46/*音量减*/)
 			{
 				lv_group_send_data(g, data->key);
+				if(indev_reset_check(&i->proc)) return;
+			}
+			else if(data->key == 44)/*锁组*/
+			{
+				indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, NULL);
 				if(indev_reset_check(&i->proc)) return;
 			}
             /*Just send other keys again to the object (e.g. 'A' or `LV_GORUP_KEY_RIGHT)*/

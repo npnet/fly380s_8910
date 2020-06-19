@@ -25,7 +25,11 @@ static bool lv_poc_group_list_design_func(struct _lv_obj_t * obj, const lv_area_
 
 static void lv_poc_get_group_list_cb(int result_type);
 
+static void lv_poc_group_list_locked_activity_destory(void);
 
+static void lv_poc_group_list_locked_activity_open(void);
+
+static lv_res_t lv_poc_lockgroup_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param);
 
 static lv_obj_t * activity_list;
 
@@ -35,6 +39,10 @@ lv_poc_activity_t * poc_group_list_activity;
 
 char group_member_list_is_open = 0;
 
+/*锁组or解锁*/
+char group_list_locked_unlock = 0;
+
+
 static char lv_poc_group_member_list_title[LIST_ELEMENT_NAME_MAX_LENGTH];
 
 static char lv_poc_group_list_current_group_title[LIST_ELEMENT_NAME_MAX_LENGTH * 2];
@@ -42,9 +50,9 @@ static char lv_poc_group_list_current_group_title[LIST_ELEMENT_NAME_MAX_LENGTH *
 static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
 {
     display_area.x1 = 0;
-    display_area.x2 = lv_obj_get_x(display) + lv_poc_get_display_width(display);
+    display_area.x2 = lv_poc_get_display_width(display);
     display_area.y1 = 0;
-    display_area.y2 = 0 + lv_poc_get_display_height(display);
+    display_area.y2 = lv_poc_get_display_height(display);
     activity_list = lv_poc_list_create(display, NULL, display_area, lv_poc_group_list_list_config);
     return (lv_obj_t *)activity_list;
 }
@@ -183,7 +191,10 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 				case LV_GROUP_KEY_ENTER:
 				{
 					if(false != list_refresh_status)
-					lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
+					{
+						lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
+						lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_MEMBERLIST,activity_list,LVPOCLISTIDTCOM_LIST_PERIOD_50);//刷新列表
+					}
 				}
 
 				case LV_GROUP_KEY_DOWN:
@@ -197,13 +208,11 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_GROUP_KEY_GP:
 				{
-
 					break;
 				}
 
 				case LV_GROUP_KEY_MB:
 				{
-
 					break;
 				}
 
@@ -240,6 +249,19 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 		case LV_SIGNAL_DEFOCUS:
 		{
 			break;
+		}
+		case LV_SIGNAL_LONG_PRESS_REP:
+		{
+			case LV_GROUP_KEY_MB:
+			{
+				group_list_locked_unlock++;
+
+				if(2 == group_list_locked_unlock)
+				{
+					lv_poc_group_list_locked_activity_open();
+				}
+				break;
+			}
 		}
 
 		default:
@@ -499,9 +521,12 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
 		return;
 	}
 
-    list_element_t * p_cur;
+    list_element_t * p_cur = NULL;
     lv_obj_t * btn;
+	lv_obj_t * btn_label = NULL;
     lv_coord_t btn_height = (display_area.y2 - display_area.y1)/(LV_POC_LIST_COLUM_COUNT + 1);
+	lv_coord_t btn_width = (display_area.x2 - display_area.x1);
+
     char is_first_item = 1;
     char is_set_current_group = 1;
 
@@ -532,22 +557,28 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
         	lv_list_set_btn_selected(activity_list, btn);
         }
 
+		btn_label = lv_list_get_btn_label(btn);
         if(is_set_current_group == 1
 	        && GROUP_EQUATION((void *)p_cur->name, (void *)current_group_name, (void *)p_cur->information, (void *)current_group, NULL))
         {
 	        is_set_current_group = 0;
-        	lv_list_set_btn_selected(activity_list, btn);
-        	lv_obj_t * btn_label = lv_list_get_btn_label(btn);
         	strcpy(lv_poc_group_list_current_group_title, (const char *)p_cur->name);
         	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
         	lv_label_set_text(btn_label, (const char *)lv_poc_group_list_current_group_title);
-        }
+		}
+
+		lv_obj_t * img = lv_img_create(btn, NULL);
+		lv_img_set_src(img, &unlock);//unlock
+		lv_img_set_auto_size(img, false);
+		lv_obj_set_width(btn_label, btn_width - (lv_coord_t)unlock.header.w - (lv_coord_t)ic_group.header.w - 15);//-15是减去间隙(两个图标)
+		lv_obj_align(img, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
         p_cur = p_cur->next;
     }
 
-	lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_GROUPLIST,activity_list);//刷新列表
+	lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_GROUPLIST,activity_list,LVPOCLISTIDTCOM_LIST_PERIOD_10);//刷新列表
 }
+
 
 lv_poc_status_t lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
 {
@@ -800,6 +831,211 @@ lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj,
 }
 
 //lv_poc_status lv_poc_group_list_get_state(const char * name);
+
+static lv_obj_t * lv_poc_lockgroupwindow_obj = NULL;
+static lv_obj_t * lv_poc_lockgroupwindow_label_1 = NULL;
+static lv_obj_t * lv_poc_lockgroupwindow_label_2 = NULL;
+static lv_obj_t * lv_poc_lockgroupwindow_label_3 = NULL;
+
+
+static const char * lv_poc_lockgroupwindow_label_1_text = "锁组";
+static const char * lv_poc_lockgroupwindow_label_2_text = "是否锁组？";
+static const char * lv_poc_lockgroupwindow_label_3_text = "          确定          ";
+
+static lv_style_t lv_poc_lockgroup_style = {0};
+static lv_style_t lv_poc_lockgroupbutton_style = {0};
+
+static lv_style_t style_line;
+static lv_obj_t *line1;
+static lv_point_t line_points[] = {{5,26},{125,26}};
+
+/*
+	  name : lv_poc_group_list_lock_open
+	 param : none
+	author : wangls
+  describe : 打开锁组弹跳框
+	  date : 2020-06-19
+*/
+static
+void lv_poc_group_list_locked_activity_open(void)
+{
+
+	if(lv_poc_lockgroupwindow_obj != NULL)
+	{
+		return ;
+	}
+
+	poc_setting_conf = lv_poc_setting_conf_read();//获取字体
+	memset(&lv_poc_lockgroup_style, 0, sizeof(lv_style_t));
+    lv_style_copy(&lv_poc_lockgroup_style, &lv_style_pretty_color);
+    lv_poc_lockgroup_style.text.color = LV_COLOR_BLACK;
+    lv_poc_lockgroup_style.text.font = (lv_font_t *)(poc_setting_conf->font.idle_lockgroupwindows_msg_font);
+    lv_poc_lockgroup_style.text.opa = 255;
+    lv_poc_lockgroup_style.body.main_color = LV_COLOR_WHITE;
+    lv_poc_lockgroup_style.body.grad_color = LV_COLOR_WHITE;
+    lv_poc_lockgroup_style.body.opa = 255;
+	lv_poc_lockgroup_style.body.radius = 0;
+
+	lv_poc_lockgroupwindow_obj = lv_obj_create(lv_scr_act(), NULL);
+    lv_obj_set_style(lv_poc_lockgroupwindow_obj,&lv_poc_lockgroup_style);
+    lv_obj_set_size(lv_poc_lockgroupwindow_obj, LV_HOR_RES - 40, LV_VER_RES - 40);
+    lv_obj_set_pos(lv_poc_lockgroupwindow_obj, LV_HOR_RES -140, LV_VER_RES - 98);
+
+	//第一行text
+	lv_poc_lockgroupwindow_label_1 = lv_label_create(lv_poc_lockgroupwindow_obj, NULL);
+	lv_obj_set_size(lv_poc_lockgroupwindow_label_1, lv_obj_get_width(lv_poc_lockgroupwindow_obj) - 4, lv_obj_get_height(lv_poc_lockgroupwindow_obj) / 3);
+	lv_label_set_text(lv_poc_lockgroupwindow_label_1,lv_poc_lockgroupwindow_label_1_text);
+	lv_obj_set_style(lv_poc_lockgroupwindow_label_1,&lv_poc_lockgroup_style);
+	lv_obj_align(lv_poc_lockgroupwindow_label_1,lv_poc_lockgroupwindow_obj,LV_ALIGN_IN_TOP_LEFT,10,6);
+
+    //创建线条
+	lv_style_copy(&style_line, &lv_style_plain);
+	style_line.line.color = LV_COLOR_GRAY;
+	style_line.line.width = 1;
+	style_line.line.rounded = 1;
+
+	line1 = lv_line_create(lv_poc_lockgroupwindow_obj, NULL);
+	lv_line_set_points(line1, line_points, 2);
+	lv_line_set_style(line1, LV_LINE_STYLE_MAIN, &style_line);
+	lv_obj_align(line1, NULL, LV_ALIGN_IN_TOP_MID, 0, 0);
+
+	//第二行text
+	lv_poc_lockgroupwindow_label_2 = lv_label_create(lv_poc_lockgroupwindow_obj, NULL);
+	lv_obj_set_size(lv_poc_lockgroupwindow_label_2, lv_obj_get_width(lv_poc_lockgroupwindow_obj) - 4, lv_obj_get_height(lv_poc_lockgroupwindow_obj) / 3);
+	lv_label_set_text(lv_poc_lockgroupwindow_label_2, lv_poc_lockgroupwindow_label_2_text);
+	lv_obj_set_style(lv_poc_lockgroupwindow_label_2,&lv_poc_lockgroup_style);
+	lv_obj_align(lv_poc_lockgroupwindow_label_2,lv_poc_lockgroupwindow_obj,LV_ALIGN_IN_LEFT_MID,10,-3);
+
+	//第三行字体
+	memset(&lv_poc_lockgroupbutton_style, 0, sizeof(lv_style_t));
+    lv_style_copy(&lv_poc_lockgroupbutton_style, &lv_style_pretty_color);
+    lv_poc_lockgroupbutton_style.text.color = LV_COLOR_WHITE;
+    lv_poc_lockgroupbutton_style.text.font = (lv_font_t *)(poc_setting_conf->font.idle_lockgroupwindows_msg_font);
+    lv_poc_lockgroupbutton_style.text.opa = 255;
+    lv_poc_lockgroupbutton_style.body.main_color = LV_COLOR_BLUE;
+    lv_poc_lockgroupbutton_style.body.grad_color = LV_COLOR_BLUE;
+	lv_poc_lockgroupbutton_style.body.opa = 255;
+	lv_poc_lockgroupbutton_style.body.radius = 0;
+
+	//第三行text
+	lv_poc_lockgroupwindow_label_3 = lv_label_create(lv_poc_lockgroupwindow_obj, NULL);
+	lv_obj_set_size(lv_poc_lockgroupwindow_label_3, LV_HOR_RES - 40, lv_obj_get_height(lv_poc_lockgroupwindow_obj) / 3);
+	lv_obj_set_style(lv_poc_lockgroupwindow_label_3,&lv_poc_lockgroupbutton_style);
+	lv_label_set_text(lv_poc_lockgroupwindow_label_3, lv_poc_lockgroupwindow_label_3_text);
+	lv_label_set_body_draw(lv_poc_lockgroupwindow_label_3,true);//重刷背景颜色
+	lv_obj_align(lv_poc_lockgroupwindow_label_3,lv_poc_lockgroupwindow_obj,LV_ALIGN_IN_BOTTOM_MID,0,-6);
+
+    lv_poc_group_list_cb_set_active(ACT_ID_POC_LOCK_GROUP, true);
+	lv_poc_lockgroupwindow_obj->signal_cb = lv_poc_lockgroup_signal_func;
+
+}
+
+/*
+	  name : lv_poc_lockgroup_signal_func
+	 param : none
+	author : wangls
+  describe : 回调
+	  date : 2020-06-19
+*/
+static
+lv_res_t lv_poc_lockgroup_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
+{
+	switch(sign)
+	{
+		case LV_SIGNAL_CONTROL:
+		{
+			if(param == NULL) return LV_RES_OK;
+			unsigned int c = *(unsigned int *)param;
+			switch(c)
+			{
+				case LV_GROUP_KEY_ENTER:
+				{
+					/*处理锁组信息*/
+
+					break;
+				}
+
+				case LV_GROUP_KEY_DOWN:
+
+				case LV_GROUP_KEY_UP:
+				{
+					break;
+				}
+
+				case LV_GROUP_KEY_GP:
+				{
+					break;
+				}
+
+				case LV_GROUP_KEY_MB:
+				{
+					break;
+				}
+
+				case LV_GROUP_KEY_VOL_DOWN:
+				{
+					break;
+				}
+
+				case LV_GROUP_KEY_VOL_UP:
+				{
+					break;
+				}
+
+				case LV_GROUP_KEY_POC:
+				{
+					break;
+				}
+
+				case LV_KEY_ESC:
+				{
+					lv_poc_group_list_locked_activity_destory();
+					break;
+				}
+			}
+			break;
+		}
+
+		case LV_SIGNAL_FOCUS:
+		{
+			break;
+		}
+
+		case LV_SIGNAL_DEFOCUS:
+		{
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+	return LV_RES_OK;
+}
+
+/*
+	  name : lv_poc_group_list_locked_event_handler
+	 param : none
+	author : wangls
+  describe : 摧毁锁组弹跳框
+	  date : 2020-06-19
+*/
+static
+void lv_poc_group_list_locked_activity_destory(void)
+{
+	if(lv_poc_lockgroupwindow_obj == NULL)
+	{
+		return;
+	}
+	group_list_locked_unlock = 0;
+	lv_obj_del(lv_poc_lockgroupwindow_obj);
+
+	lv_poc_lockgroupwindow_obj = NULL;
+	lv_poc_lockgroupwindow_label_1 = NULL;
+	lv_poc_lockgroupwindow_label_2 = NULL;
+	lv_poc_lockgroupwindow_label_3 = NULL;
+}
 
 #ifdef __cplusplus
 }
