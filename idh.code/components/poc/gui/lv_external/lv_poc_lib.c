@@ -1,4 +1,4 @@
-#include "poc_config.h"
+﻿#include "poc_config.h"
 #include "lv_include/lv_poc_lib.h"
 #include "lv_objx/lv_poc_obj/lv_poc_font_resource.h"
 #include "lv_objx/lv_poc_obj/lv_poc_obj.h"
@@ -875,6 +875,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.idle_date_label_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
 	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
 	poc_setting->font.idle_popwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
+	poc_setting->font.idle_lockgroupwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
 
 	poc_setting->theme.white = &theme_white;
 	poc_setting->theme.white->style_list_scroll = (uint32_t)&theme_white_style_list_scroll;

@@ -1,4 +1,4 @@
-//img resource declaration
+﻿//img resource declaration
 
 #ifndef __INCLUDE_LV_POC_IMG_RESOURCE__
 #define  __INCLUDE_LV_POC_IMG_RESOURCE__
@@ -96,6 +96,10 @@ LV_IMG_DECLARE(ic_select);
 LV_IMG_DECLARE(ic_setting);
 LV_IMG_DECLARE(ic_toolbar_bg);
 
+LV_IMG_DECLARE(locked);
+LV_IMG_DECLARE(unlock);
+LV_IMG_DECLARE(power_off);
+LV_IMG_DECLARE(reboot);
 
 
 
