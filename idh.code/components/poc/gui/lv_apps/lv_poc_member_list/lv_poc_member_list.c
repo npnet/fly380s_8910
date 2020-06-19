@@ -603,7 +603,7 @@ void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
         }
     }
 
-	lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_MEMBERLIST,activity_list);//刷新列表
+	lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_MEMBERLIST,activity_list,LVPOCLISTIDTCOM_LIST_PERIOD_10);//刷新列表
 }
 
 
