@@ -1,4 +1,5 @@
-﻿#include "poc_config.h"
+#include "poc_config.h"
+#include "ats_config.h"
 #include "lv_include/lv_poc_lib.h"
 #include "lv_objx/lv_poc_obj/lv_poc_font_resource.h"
 #include "lv_objx/lv_poc_obj/lv_poc_obj.h"
@@ -957,6 +958,12 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
 	poc_setting->volume = 5;
 	poc_setting->language = 0;
+#ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
+	strcpy(poc_setting->account_name, "00000");
+	strcpy(poc_setting->account_passwd, "00000");
+	strcpy(poc_setting->ip_address, "124.160.11.21");
+	poc_setting->ip_port = 10000;
+#endif
 }
 
 /*

@@ -552,6 +552,14 @@ extern lv_style_t theme_black_style_control;
 *************************************************/
 
 /*******************
+*     NAME:    lv_poc_setting_init
+*   AUTHOR:    lugj
+* DESCRIPT:    初始化对讲机设置
+*     DATE:    2019-10-24
+********************/
+bool lv_poc_setting_init(void);
+
+/*******************
 *	  NAME: 	lv_poc_stabar_task
 *	AUTHOR:    lugj
 * DESCRIPT:    状态栏任务

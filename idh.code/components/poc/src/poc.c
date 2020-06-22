@@ -59,6 +59,7 @@ static void pocStartAnimation(void *ctx)
 	extern lv_img_dsc_t img_poweron_poc_logo_unicom;
 	lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
 
+	lv_poc_setting_init();
 	osiThreadSleep(4000);
 	osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 	osiThreadSleep(2800);

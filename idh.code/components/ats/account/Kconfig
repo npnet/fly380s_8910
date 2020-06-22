@@ -9,24 +9,12 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-menu "AT commands"
+menu "at_tcpip"
 
-orsource "audio/Kconfig"
-orsource "http/Kconfig"
-orsource "coap/Kconfig"
-orsource "ftp/Kconfig"
-orsource "tcpip/Kconfig"
-orsource "cfw/Kconfig"
-orsource "lwm2m/Kconfig"
-orsource "ssim/Kconfig"
-orsource "dm/Kconfig"
-orsource "mqtt/Kconfig"
-orsource "cam/Kconfig"
-orsource "misc/Kconfig"
-orsource "apn/Kconfig"
-orsource "alic/Kconfig"
-orsource "bt/Kconfig"
-orsource "wifi/Kconfig"
-orsource "account/Kconfig"
+config AT_MY_ACCOUNT_SUPPORT
+    bool "AT_MY_ACCOUNT_SUPPORT enabled"
+    default y
+    help
+        When enabled, AT_MY_ACCOUNT_SUPPORT will be defined
 
 endmenu
