@@ -147,4 +147,9 @@
  */
 #cmakedefine CONFIG_AT_WIFI_SENSITIVITY_TEST_SUPPORT
 
+/**
+ * whether some my account at command can be used
+ */
+#cmakedefine CONFIG_AT_MY_ACCOUNT_SUPPORT
+
 #endif

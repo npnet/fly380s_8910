@@ -83,6 +83,8 @@ typedef enum
 
     LVPOCGUIIDTCOM_SIGNAL_RELEASE_LISTEN_TIMER_REP,
 
+    LVPOCGUIIDTCOM_SIGNAL_DELAY_IND,
+
     LVPOCGUIIDTCOM_SIGNAL_END,
 } LvPocGuiIdtCom_SignalType_t;
 
@@ -97,6 +99,8 @@ void lvPocGuiIdtCom_Init(void);
 bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
 
 void lvPocGuiIdtCom_log(void);
+
+bool lvPocGuiIdtCom_get_status(void);
 
 void *lvPocGuiIdtCom_get_self_info(void);
 

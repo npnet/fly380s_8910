@@ -2,6 +2,7 @@
 #define __LV_POC_TYPR_H_
 #include "lvgl.h"
 #include "poc_config.h"
+#include "ats_config.h"
 
 //typedef char         		 INT8;
 typedef unsigned char 		 UINT8;
@@ -132,6 +133,12 @@ typedef struct
 	uint8_t language;                 //[0]简体中文       [default 0]
 	nv_poc_font_size_msg_t font;
 	nv_poc_theme_msg_t theme;
+#ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
+	char account_name[32];
+	char account_passwd[32];
+	char ip_address[20];
+	int  ip_port;
+#endif
 } nv_poc_setting_msg_t;
 
 typedef enum

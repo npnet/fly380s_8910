@@ -676,5 +676,7 @@ $MYSYSMODE,     atCmdHandleMYSYSMODE, 0
 +LOCREL,         atCmdHandleLOCREL, 0
 #endif
 
++LOGACCOUNT,    atCmdHandleLOGACCOUNT, 0      //write/read current account
+
 %%
 

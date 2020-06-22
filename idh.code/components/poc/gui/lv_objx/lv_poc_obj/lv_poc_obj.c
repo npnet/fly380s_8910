@@ -303,14 +303,6 @@ static __attribute__((const)) lv_poc_activity_attribute_cb_set_obj * lv_poc_get_
 *************************************************/
 
 /*******************
-*     NAME:    lv_poc_setting_init
-*   AUTHOR:    lugj
-* DESCRIPT:    初始化对讲机设置
-*     DATE:    2019-10-24
-********************/
-static bool lv_poc_setting_init(void);
-
-/*******************
 *     NAME:    lv_poc_theme_init
 *   AUTHOR:    lugj
 * DESCRIPT:    初始化对讲机主题
@@ -535,7 +527,7 @@ static void lv_exec_task(lv_task_t * task);
 * DESCRIPT:    初始化对讲机设置
 *     DATE:    2019-10-24
 ********************/
-static bool lv_poc_setting_init(void)
+bool lv_poc_setting_init(void)
 {
     lv_poc_setting_conf_init();
     poc_setting_conf = lv_poc_setting_conf_read();
@@ -2453,7 +2445,7 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     if(!is_lv_poc_atctivity_init)
     {
         is_lv_poc_atctivity_init = true;
-        lv_poc_setting_init();
+        //lv_poc_setting_init();
         lv_poc_theme_init();
         lv_poc_status_bar_init();
         lv_poc_activity_list_init();

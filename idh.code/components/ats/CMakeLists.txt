@@ -36,7 +36,7 @@ target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_targets(${target} PRIVATE
     kernel driver ml hal calclib atr cfw fs fsmount
     aworker net lwip mbedtls mal diag
-    nvm fupdate audio service tts
+    nvm fupdate audio service tts lvgl poc
 )
 
 target_sources(${target} PRIVATE
@@ -88,6 +88,10 @@ target_sources_if(CONFIG_AT_CAMERA_SUPPORT THEN ${target} PRIVATE cam/at_cmd_cam
 target_sources_if(CONFIG_SOC_8910 THEN ${target} PRIVATE bt/at_cmd_bt.c)
 target_sources_if(CONFIG_AT_SPBTTEST_SUPPORT THEN ${target} PRIVATE bt/at_cmd_spbttest.c)
 target_sources_if(CONFIG_AT_SPBLETEST_SUPPORT THEN ${target} PRIVATE bt/at_cmd_spbletest.c)
+if(CONFIG_AT_MY_ACCOUNT_SUPPORT)
+    target_sources(${target} PRIVATE account/at_cmd_account.c)
+endif()
+
 target_sources_if(CONFIG_AT_SPBLE_SUPPORT THEN ${target} PRIVATE bt/at_cmd_spble.c)
 target_sources_if(CONFIG_AT_SPBLE_SUPPORT THEN ${target} PRIVATE bt/at_cmd_btmsg.c)
 target_sources_if(CONFIG_AT_BT_CLASSIC_SUPPORT THEN ${target} PRIVATE bt/at_cmd_bt_classic.c)

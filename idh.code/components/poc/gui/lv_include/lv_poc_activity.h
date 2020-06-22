@@ -1,4 +1,4 @@
-﻿#ifndef __LV_POC_ACTIVITY_H_
+#ifndef __LV_POC_ACTIVITY_H_
 #define __LV_POC_ACTIVITY_H_
 
 #include "lvgl.h"
@@ -24,7 +24,8 @@ enum
     ACT_ID_POC_EDEG_KEY_SET,            /*15: edeg key steting*/
     ACT_ID_POC_VOLUM,                   /*16: turn volum*/
     ACT_ID_POC_DISPLAY,                 /*17: display*/
-    ACT_ID_POC_LOCK_GROUP,              /*18: display*/
+    ACT_ID_POC_WARNNING,                /*18: warn*/
+    ACT_ID_POC_LOCK_GROUP,              /*19: display*/
     ACT_ID_ANYOBJ,                      /* : any object for example*/
 
     ACT_ID_MAX,

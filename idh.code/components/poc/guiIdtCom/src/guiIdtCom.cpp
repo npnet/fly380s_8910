@@ -957,7 +957,9 @@ void IDT_Entry(void*)
 
     CallBack.pfDbg              = callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"34042", (char*)"34042", 1, &CallBack, 0, 20000, 0);
+    nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+
+    IDT_Start(NULL, 1, (char*)poc_config->ip_address, poc_config->ip_port, NULL, 0, (char*)poc_config->account_name, (char*)poc_config->account_passwd, 1, &CallBack, 0, 20000, 0);
 }
 
 static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
@@ -2020,6 +2022,16 @@ static void prvPocGuiIdtTaskHandleReleaseListenTimer(uint32_t id, uint32_t ctx)
 	pocIdtAttr.delay_close_listen_timer = NULL;
 }
 
+static void prvPocGuiIdtTaskHandleDelay(uint32_t id, uint32_t ctx)
+{
+	if(ctx < 1)
+	{
+		return;
+	}
+
+	osiThreadSleep(ctx);
+}
+
 static void pocGuiIdtComTaskEntry(void *argument)
 {
 
@@ -2173,6 +2185,12 @@ static void pocGuiIdtComTaskEntry(void *argument)
 				break;
 			}
 
+			case LVPOCGUIIDTCOM_SIGNAL_DELAY_IND:
+			{
+				prvPocGuiIdtTaskHandleDelay(event.param1, event.param2);
+				break;
+			}
+
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");
 				break;
@@ -2219,7 +2237,7 @@ extern "C" void lvPocGuiIdtCom_Init(void)
 
 extern "C" bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
 {
-    if (pocIdtAttr.thread == NULL || pocIdtAttr.isReady == false)
+    if (pocIdtAttr.thread == NULL || (signal != LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND && pocIdtAttr.isReady == false))
     {
 	    return false;
     }
@@ -2241,6 +2259,11 @@ extern "C" bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ct
 extern "C" void lvPocGuiIdtCom_log(void)
 {
 	lvPocGuiIdtCom_Init();
+}
+
+bool lvPocGuiIdtCom_get_status(void)
+{
+	return m_IdtUser.m_status;
 }
 
 extern "C" void *lvPocGuiIdtCom_get_self_info(void)
