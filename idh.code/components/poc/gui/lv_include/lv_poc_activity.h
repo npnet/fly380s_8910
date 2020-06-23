@@ -1,4 +1,4 @@
-#ifndef __LV_POC_ACTIVITY_H_
+﻿#ifndef __LV_POC_ACTIVITY_H_
 #define __LV_POC_ACTIVITY_H_
 
 #include "lvgl.h"
@@ -26,6 +26,7 @@ enum
     ACT_ID_POC_DISPLAY,                 /*17: display*/
     ACT_ID_POC_WARNNING,                /*18: warn*/
     ACT_ID_POC_LOCK_GROUP,              /*19: display*/
+    ACT_ID_POC_SHUTDOWN,                /*20: shutdown*/
     ACT_ID_ANYOBJ,                      /* : any object for example*/
 
     ACT_ID_MAX,
@@ -43,3 +44,4 @@ typedef struct
 } lv_poc_activity_ext_t;
 
 #endif // __LV_POC_ACTIVITY_H_
+

@@ -877,6 +877,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
 	poc_setting->font.idle_popwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
 	poc_setting->font.idle_lockgroupwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
+	poc_setting->font.idle_shutdownwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 16);
 
 	poc_setting->theme.white = &theme_white;
 	poc_setting->theme.white->style_list_scroll = (uint32_t)&theme_white_style_list_scroll;

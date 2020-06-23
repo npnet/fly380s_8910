@@ -34,6 +34,6 @@
 #include "lv_apps/lv_poc_sntp/lv_poc_sntp.h"
 #include "lv_apps/lv_poc_list_repeat_refresh/lv_poc_list_repeat_refresh.h"
 #include "lv_apps/lv_poc_warnning/lv_poc_warnning.h"
-
+#include "lv_apps/lv_poc_shutdown_note/lv_poc_shutdown_note.h"
 
 #endif //__LV_POC_H_
