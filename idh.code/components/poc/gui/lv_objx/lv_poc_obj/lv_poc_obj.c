@@ -2567,6 +2567,66 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
 }
 
 /*******************
+*     NAME:    lv_poc_create_mini_activity
+*   AUTHOR:    lugj
+* DESCRIPT:    创建一个有效的mini activity
+*     DATE:    2019-10-25
+********************/
+lv_poc_activity_t *lv_poc_create_mini_activity(lv_poc_activity_ext_t *activity_ext, lv_area_t *act_area)
+{
+    lv_style_t * poc_display_style = NULL;
+
+    poc_setting_conf = lv_poc_setting_conf_read();
+    poc_display_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_base);
+    lv_poc_activity_t *activity = (lv_poc_activity_t *)lv_mem_alloc(sizeof(lv_poc_activity_t));
+    //lv_mem_assert(activity);
+    memset(activity,0,sizeof(lv_poc_activity_t));
+
+    lv_poc_stack_push(activity);
+    lv_poc_activity_list_insert(activity);
+
+    current_activity = activity;
+
+    activity->has_control = false;
+    activity->has_stabar= true;
+    activity->status_bar = lv_poc_status_bar;
+    activity->activity_ext.actId = activity_ext->actId;
+    activity->activity_ext.create = activity_ext->create;
+    activity->activity_ext.prepare_destory = activity_ext->prepare_destory;
+
+    activity->base = lv_img_create(lv_scr_act(), NULL);
+    lv_img_set_auto_size(activity->base, false);
+    lv_obj_set_size(activity->base, act_area->x2 - act_area->x1, act_area->y2 - act_area->y1);
+    lv_obj_set_pos(activity->base, act_area->x1, act_area->y1);
+    //lv_img_set_src(activity->base,&ic_launcher_bg);
+
+    lv_obj_set_style(activity->base, poc_display_style);
+    activity->display = activity->base;
+
+    lv_obj_set_signal_cb(activity->display, lv_poc_signal_cb);
+    lv_obj_set_design_cb(activity->display, lv_poc_design_cb);
+    lv_obj_set_event_cb(activity->display, lv_poc_event_cb);
+
+    activity->signal_func = NULL;
+    activity->design_func = NULL;
+    activity->event_func = NULL;
+
+#if 1
+    lv_group_focus_freeze(poc_indev_group,false);
+    lv_group_add_obj(poc_indev_group,activity->display);
+    lv_group_focus_obj(activity->display);
+    lv_group_focus_freeze(poc_indev_group,true);
+#endif
+    if(activity->activity_ext.create != NULL)
+    {
+        activity->ext_data = (void *)activity->activity_ext.create(activity->display);
+    }
+    OSI_LOGI(0, "[poc_activity] create a mini activity\n");
+
+    return activity;
+}
+
+/*******************
 *     NAME:    lv_poc_get_user_obj
 *   AUTHOR:    lugj
 * DESCRIPT:    从activity中获取可以显示区域

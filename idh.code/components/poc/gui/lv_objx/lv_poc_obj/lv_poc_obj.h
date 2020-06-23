@@ -621,6 +621,14 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
 																	bool has_control,
                                                                     lv_poc_control_text_t *control_text);
 
+/*******************
+*     NAME:    lv_poc_create_mini_activity
+*   AUTHOR:    lugj
+* DESCRIPT:    创建一个有效的mini activity
+*     DATE:    2020-06-22
+********************/
+lv_poc_activity_t *lv_poc_create_mini_activity(lv_poc_activity_ext_t *activity_ext, lv_area_t *act_area);
+
 
 /*******************
 *     NAME:    lv_poc_get_user_obj
