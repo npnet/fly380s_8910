@@ -101,6 +101,8 @@ LV_IMG_DECLARE(unlock);
 LV_IMG_DECLARE(power_off);
 LV_IMG_DECLARE(reboot);
 
+LV_IMG_DECLARE(img_poweroff_poc_logo_unicom);
+
 
 
 #ifdef __cplusplus

@@ -73,6 +73,7 @@ typedef struct
 	uint32_t idle_page2_msg_font;
 	uint32_t idle_popwindows_msg_font;
 	uint32_t idle_lockgroupwindows_msg_font;
+	uint32_t idle_shutdownwindows_msg_font;
 } nv_poc_font_size_msg_t;
 
 
@@ -371,3 +372,4 @@ typedef struct _lv_poc_audio_dsc_t
 } lv_poc_audio_dsc_t;
 
 #endif // __LV_POC_TYPR_H_
+

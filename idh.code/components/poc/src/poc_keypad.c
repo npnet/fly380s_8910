@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -25,6 +25,8 @@
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_lib.h"
 #include "guiIdtCom_api.h"
+#include "lv_include/lv_poc.h"
+
 
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
@@ -36,7 +38,7 @@ static bool isReadyPowerOff = false;
 static void prvPowerKeyCb(void *ctx)
 {
 	isReadyPowerOff = true;
-    osiShutdown(OSI_SHUTDOWN_POWER_OFF);
+	lv_poc_shutdown_note_activity_open();//关机提示
 }
 
 bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
@@ -73,7 +75,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 			{
 				if(prvPowerTimer != NULL)
 				{
-					osiTimerStart(prvPowerTimer, 5000);
+					osiTimerStart(prvPowerTimer, LONGPRESS_SHUTDOWN_TIME);
 					isReadyPowerOff = false;
 				}
 			}

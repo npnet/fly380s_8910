@@ -1,4 +1,4 @@
-# Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿# Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
 # All rights reserved.
 #
 # This software is supplied "AS IS" without any warranties.
@@ -45,6 +45,7 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_sntp/lv_poc_sntp.c
 	gui/lv_apps/lv_poc_list_repeat_refresh/lv_poc_list_repeat_refresh.c
 	gui/lv_apps/lv_poc_warnning/lv_poc_warnning.c
+	gui/lv_apps/lv_poc_shutdown_note/lv_poc_shutdown_note.c
 
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c
@@ -120,7 +121,7 @@ add_library(${target} STATIC
 	gui/resource/image/power_off_reboot/power_off.c
 	gui/resource/image/power_off_reboot/reboot.c
 	gui/resource/image/lock/locked.c
-	gui/resource/image/lock/unlock.c	
+	gui/resource/image/lock/unlock.c
 
 	gui/resource/font/lv_poc_font_msyh_1bit_2500_10.c
 	gui/resource/font/lv_poc_font_msyh_1bit_2500_11.c
@@ -274,7 +275,7 @@ add_library(${target} STATIC
 	idt/core/idt-freertos.o
 
 	guiIdtCom/src/guiIdtCom.cpp
-	
+
 	)
 
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
