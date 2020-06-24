@@ -15,8 +15,8 @@ extern "C" {
 	  name : lv_poc_shutdown_note
 	 param : none
 	author : wangls
-  describe : 网络更新时间
-	  date : 2020-06-09
+  describe : 关机提示
+	  date : 2020-06-22
 */
 void lv_poc_shutdown_note_activity_open(void);
 

@@ -46,6 +46,7 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_list_repeat_refresh/lv_poc_list_repeat_refresh.c
 	gui/lv_apps/lv_poc_warnning/lv_poc_warnning.c
 	gui/lv_apps/lv_poc_shutdown_note/lv_poc_shutdown_note.c
+	gui/lv_apps/lv_poc_shutdown_charge/lv_poc_shutdown_charge.c
 
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c
@@ -117,11 +118,20 @@ add_library(${target} STATIC
 	gui/resource/image/signal/stat_sys_signal_inout_sprd.c
 	gui/resource/image/signal/stat_sys_signal_out_sprd.c
 	gui/resource/image/poweron/img_poweron_poc_logo_unicom.c
+	gui/resource/image/poweron/img_poweron_poc_logo_sprd.c
 	gui/resource/image/poweroff/img_poweroff_poc_logo_unicom.c
 	gui/resource/image/power_off_reboot/power_off.c
 	gui/resource/image/power_off_reboot/reboot.c
 	gui/resource/image/lock/locked.c
 	gui/resource/image/lock/unlock.c
+	gui/resource/image/shutdown_battery/no_battery_charging_shutdown.c
+	gui/resource/image/shutdown_battery/indeterminate0.c
+	gui/resource/image/shutdown_battery/indeterminate1.c
+	gui/resource/image/shutdown_battery/indeterminate2.c
+	gui/resource/image/shutdown_battery/indeterminate3.c
+	gui/resource/image/shutdown_battery/indeterminate4.c
+	gui/resource/image/shutdown_battery/indeterminate5.c
+	gui/resource/image/shutdown_battery/indeterminate6.c
 
 	gui/resource/font/lv_poc_font_msyh_1bit_2500_10.c
 	gui/resource/font/lv_poc_font_msyh_1bit_2500_11.c

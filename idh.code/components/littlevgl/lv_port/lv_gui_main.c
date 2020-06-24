@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -253,7 +253,7 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
             }
         }
 
-	    if(!pocKeypadHandle(data->key, data->state, NULL))
+	    if((!pocKeypadHandle(data->key, data->state, NULL))&&(!lv_poc_charge_poweron_status()))
 	    {
 		    lvGuiScreenOn();
 	    }
