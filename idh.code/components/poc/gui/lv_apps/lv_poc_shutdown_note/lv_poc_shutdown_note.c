@@ -13,6 +13,12 @@ static lv_res_t lv_poc_shutdown_signal_func(struct _lv_obj_t * obj, lv_signal_t 
 static void lv_poc_shutdown_note_activity_destory(lv_obj_t *obj);
 static void lv_poc_shutdown_animation(lv_task_t * task);
 static void lv_poc_shutdown_task(lv_task_t * task);
+static void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t event);
+static void lv_poc_power_off_warning_cancel_event_handler(lv_obj_t *obj, lv_event_t event);
+static void lv_poc_reboot_warning_apply_event_handler(lv_obj_t *obj, lv_event_t event);
+static void lv_poc_reboot_warning_cancel_event_handler(lv_obj_t *obj, lv_event_t event);
+static void lv_poc_shutdown_note_reboot_warning_create(lv_task_t * task);
+static void lv_poc_shutdown_note_power_off_warning_create(lv_task_t * task);
 
 static lv_obj_t *lv_poc_shutdown_note_obj = NULL;//消息框
 lv_poc_activity_t * poc_shutdown_list_activity = NULL;//活动窗口
@@ -201,6 +207,7 @@ void lv_poc_shutdown_note_activity_open(void)
 static
 void lv_poc_shutdown_note_event_handler(lv_obj_t *obj, lv_event_t event)
 {
+	if(obj == NULL) return;
 	//回调事件
 	if(event == LV_EVENT_PRESSED){
 
@@ -213,12 +220,14 @@ void lv_poc_shutdown_note_event_handler(lv_obj_t *obj, lv_event_t event)
 
 		if(shutdown_list_keyvalue == 0)//关机
 		{
-			lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
+			//提示是否确认关机
+			lv_task_t * task = lv_task_create(lv_poc_shutdown_note_power_off_warning_create, 50,
 				LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
 			lv_task_once(task);
 		}else if(shutdown_list_keyvalue == 1)//重新启动
 		{
-			lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
+			//提示是否确认重新启动
+			lv_task_t * task = lv_task_create(lv_poc_shutdown_note_reboot_warning_create, 50,
 				LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_REBOOT);
 			lv_task_once(task);
 		}
@@ -266,6 +275,10 @@ lv_res_t lv_poc_shutdown_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, v
 				case LV_GROUP_KEY_ENTER:
 				{
 					lv_signal_send(lv_poc_shutdown_note_obj, LV_SIGNAL_PRESSED, NULL);
+					lv_signal_send(lv_poc_shutdown_note_obj, LV_SIGNAL_CONTROL, param);
+					//删除窗口
+					lv_poc_del_activity(poc_shutdown_list_activity);
+					break;
 				}
 
 				case LV_GROUP_KEY_DOWN:
@@ -364,7 +377,7 @@ void lv_poc_shutdown_animation(lv_task_t * task)
 }
 
 /*
-	  name : lv_poc_shutdown_animation
+	  name : lv_poc_shutdown_task
 	 param : none
 	author : wangls
   describe : 关机
@@ -385,6 +398,116 @@ void lv_poc_shutdown_task(lv_task_t * task)
 		osiShutdown(OSI_SHUTDOWN_RESET);
 	}
 
+}
+
+/*
+	  name : lv_poc_shutdown_note_power_off_warning_create
+	 param : none
+	author : wangls
+  describe : 确认关机提示窗口
+	  date : 2020-06-23
+*/
+static
+void lv_poc_shutdown_note_power_off_warning_create(lv_task_t * task)
+{
+	char *title = "关机";
+	char *context = "您的对讲机将会\n关机。";
+	char *opt_left_str = "            确定            ";//28格才能填满
+	lv_area_t warnningarea = {15, 20, 145, 118};//提示框大小
+
+	//新建提示框
+	lv_poc_warnning_open(title, context, opt_left_str,lv_poc_power_off_warning_apply_event_handler,
+		NULL, lv_poc_power_off_warning_cancel_event_handler, warnningarea);
+
+}
+
+/*
+	  name : lv_poc_power_off_warning_event_handler
+	 param : none
+	author : wangls
+  describe : 关机 确定事件
+	  date : 2020-06-23
+*/
+static
+void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t event)
+{
+	//回调事件
+	if(event == LV_EVENT_APPLY){//确认关机
+		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
+			LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
+		lv_task_once(task);
+	}
+}
+
+/*
+	  name : lv_poc_power_off_warning_event_handler
+	 param : none
+	author : wangls
+  describe : 关机 取消事件
+	  date : 2020-06-23
+*/
+static
+void lv_poc_power_off_warning_cancel_event_handler(lv_obj_t *obj, lv_event_t event)
+{
+	//回调事件
+	if(event == LV_EVENT_CANCEL){//取消关机
+
+	}
+}
+
+/*
+	  name : lv_poc_shutdown_note_reboot_warning_create
+	 param : none
+	author : wangls
+  describe : 确认重新启动提示窗口
+	  date : 2020-06-24
+*/
+static
+void lv_poc_shutdown_note_reboot_warning_create(lv_task_t * task)
+{
+	char *title = "重新启动";
+	char *context = "您确定需要重新\n启动对讲机吗？";
+	char *opt_left_str = "            确定            ";//28格才能填满
+	lv_area_t warnningarea = {15, 20, 145, 118};//提示框大小
+
+	//新建提示框
+	lv_poc_warnning_open(title, context, opt_left_str,lv_poc_reboot_warning_apply_event_handler,
+		NULL, lv_poc_reboot_warning_cancel_event_handler, warnningarea);
+
+}
+
+/*
+	  name : lv_poc_reboot_warning_apply_event_handler
+	 param : none
+	author : wangls
+  describe : 重新启动 确定/取消 事件
+	  date : 2020-06-23
+*/
+static
+void lv_poc_reboot_warning_apply_event_handler(lv_obj_t *obj, lv_event_t event)
+{
+	//回调事件
+	if(event == LV_EVENT_APPLY){//确认重新启动
+		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
+			LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_REBOOT);
+		lv_task_once(task);
+	}
+}
+
+/*
+	  name : lv_poc_reboot_warning_cancel_event_handler
+	 param : none
+	author : wangls
+  describe : 重新启动 取消事件
+	  date : 2020-06-23
+*/
+static
+void lv_poc_reboot_warning_cancel_event_handler(lv_obj_t *obj, lv_event_t event)
+{
+	//回调事件
+	if(event == LV_EVENT_CANCEL){//取消重新启动
+
+	}
 }
 
 #ifdef __cplusplus
