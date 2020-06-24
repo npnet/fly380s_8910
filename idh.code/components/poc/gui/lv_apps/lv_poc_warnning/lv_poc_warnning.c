@@ -13,10 +13,10 @@ extern lv_group_t *poc_indev_group;
 typedef struct{
 	char title[32];
 	char context[64];
-	char opt_left_str[10];
-	char opt_right_str[10];
-	bool (*opt_left_cb)(lv_obj_t * obj, lv_event_t event);
-	bool (*opt_right_cb)(lv_obj_t * obj, lv_event_t event);
+	char opt_left_str[32];
+	char opt_right_str[32];
+	void (*opt_left_cb)(lv_obj_t * obj, lv_event_t event);
+	void (*opt_right_cb)(lv_obj_t * obj, lv_event_t event);
 
 	lv_poc_activity_t *activity;
 	lv_obj_t *prv_base_obj;
@@ -35,24 +35,9 @@ typedef struct{
 
 static lv_poc_warnning_stack_t prv_lv_poc_warnning_stack = {0};
 
-
-
-static lv_obj_t * lv_poc_lockgroupwindow_obj = NULL;
-static lv_obj_t * lv_poc_lockgroupwindow_label_1 = NULL;
-static lv_obj_t * lv_poc_lockgroupwindow_label_2 = NULL;
-static lv_obj_t * lv_poc_lockgroupwindow_label_3 = NULL;
-
-
-static const char * lv_poc_lockgroupwindow_label_1_text = "锁组";
-static const char * lv_poc_lockgroupwindow_label_2_text = "是否锁组？";
-static const char * lv_poc_lockgroupwindow_label_3_text = " 		 确定 		 ";
-
 static lv_style_t lv_poc_lockgroup_style = {0};
 static lv_style_t lv_poc_lockgroupbutton_style = {0};
-static lv_style_t lv_poc_lockgroup_around_style = {0};
-
 static lv_style_t style_line;
-static lv_obj_t *line1;
 
 static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display);
 
@@ -77,9 +62,10 @@ static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display)
 	lv_poc_lockgroup_style.body.grad_color = LV_COLOR_WHITE;
 	lv_poc_lockgroup_style.body.opa = 255;
 	lv_poc_lockgroup_style.body.radius = 0;
+	lv_poc_lockgroup_style.body.border.part = LV_BORDER_NONE;//去除边缘
 
 	warnning->prv_base_obj = lv_obj_create(display, NULL);
-	lv_obj_set_style(warnning->prv_base_obj, &lv_poc_lockgroup_style);
+	lv_obj_set_style(warnning->prv_base_obj, (lv_style_t *)poc_setting_conf->theme.current_theme->style_base);
 	lv_obj_set_size(warnning->prv_base_obj, lv_obj_get_width(display), lv_obj_get_height(display));
 	lv_obj_align(warnning->prv_base_obj, display, LV_ALIGN_CENTER, 0, 0);
 
@@ -88,7 +74,7 @@ static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display)
 	lv_obj_set_size(warnning->prv_title_obj, lv_obj_get_width(warnning->prv_base_obj) - 4, lv_obj_get_height(warnning->prv_base_obj) / 3);
 	lv_label_set_text(warnning->prv_title_obj,warnning->title);
 	lv_obj_set_style(warnning->prv_title_obj,&lv_poc_lockgroup_style);
-	lv_obj_align(warnning->prv_title_obj,warnning->prv_base_obj,LV_ALIGN_IN_TOP_LEFT,0,5);
+	lv_obj_align(warnning->prv_title_obj,warnning->prv_base_obj,LV_ALIGN_IN_TOP_LEFT,10,5);
 
 	//创建线条
 	lv_style_copy(&style_line, &lv_style_plain);
@@ -111,7 +97,7 @@ static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display)
 	lv_obj_set_size(warnning->prv_context_obj, lv_obj_get_width(warnning->prv_base_obj) - 4, lv_obj_get_height(warnning->prv_base_obj) / 3);
 	lv_label_set_text(warnning->prv_context_obj, warnning->context);
 	lv_obj_set_style(warnning->prv_context_obj, &lv_poc_lockgroup_style);
-	lv_obj_align(warnning->prv_context_obj,warnning->prv_base_obj,LV_ALIGN_IN_LEFT_MID, 0, -2);
+	lv_obj_align(warnning->prv_context_obj,warnning->prv_base_obj,LV_ALIGN_IN_LEFT_MID, 10, -2);
 
 	//第三行字体
 	memset(&lv_poc_lockgroupbutton_style, 0, sizeof(lv_style_t));
@@ -150,6 +136,7 @@ static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display)
 		lv_obj_align(warnning->prv_opt_left_obj, warnning->prv_base_obj, LV_ALIGN_IN_BOTTOM_LEFT, 4, 0);
 		lv_obj_align(warnning->prv_opt_right_obj, warnning->prv_base_obj, LV_ALIGN_IN_BOTTOM_RIGHT, -4, 0);
 	}
+	return warnning->prv_base_obj;
 }
 
 static void prv_lv_poc_warnning_activity_destory(lv_obj_t *obj)
@@ -221,7 +208,7 @@ lv_res_t prv_lv_poc_warnning_signal_func(struct _lv_obj_t * obj, lv_signal_t sig
 				{
 					if(warnning->prv_opt_left_obj != NULL && warnning->opt_left_cb != NULL)
 					{
-						warnning->opt_left_cb(warnning->activity->display, LV_EVENT_CLICKED);
+						warnning->opt_left_cb(warnning->activity->display, LV_EVENT_APPLY);
 					}
 					lv_poc_del_activity(warnning->activity);
 					break;
@@ -261,9 +248,9 @@ lv_res_t prv_lv_poc_warnning_signal_func(struct _lv_obj_t * obj, lv_signal_t sig
 
 				case LV_KEY_ESC:
 				{
-					if(warnning->prv_opt_right_obj != NULL && warnning->opt_right_cb != NULL)
+					if(warnning->opt_right_cb != NULL)
 					{
-						warnning->opt_right_cb(warnning->activity->display, LV_EVENT_CLICKED);
+						warnning->opt_right_cb(warnning->activity->display, LV_EVENT_CANCEL);
 					}
 					lv_poc_del_activity(warnning->activity);
 					break;
@@ -298,6 +285,7 @@ lv_res_t prv_lv_poc_warnning_signal_func(struct _lv_obj_t * obj, lv_signal_t sig
 	         opt_left_cb:弹窗左边回调函数
 	         opt_right_str:弹窗右边提示内容
 	         opt_right_cb:弹窗右边回调函数
+	         warnningarea:弹窗大小
 	author : lugj
   describe : 打开警告弹窗
 	  date : 2020-06-22
@@ -305,9 +293,10 @@ lv_res_t prv_lv_poc_warnning_signal_func(struct _lv_obj_t * obj, lv_signal_t sig
 void lv_poc_warnning_open(const char *title,
 	const char *context,
 	const char *opt_left_str,
-	bool (*opt_left_cb)(lv_obj_t * obj, lv_event_t event),
+	void (*opt_left_cb)(lv_obj_t * obj, lv_event_t event),
 	const char *opt_right_str,
-	bool (*opt_right_cb)(lv_obj_t * obj, lv_event_t event))
+	void (*opt_right_cb)(lv_obj_t * obj, lv_event_t event),
+	lv_area_t warnningarea)
 {
     lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_WARNNING,
 											prv_lv_poc_warnning_activity_create,
@@ -330,6 +319,9 @@ void lv_poc_warnning_open(const char *title,
 	if(opt_right_str != NULL)
 	{
 		strcpy(warnning->opt_right_str, opt_right_str);
+	}else
+	{
+		memset(warnning->opt_right_str, 0, sizeof(warnning->opt_right_str));
 	}
 	warnning->opt_left_cb = opt_left_cb;
 	warnning->opt_right_cb = opt_right_cb;
@@ -340,8 +332,15 @@ void lv_poc_warnning_open(const char *title,
 		return;
 	}
 
-
 	lv_area_t area = {20, 30, 140, 105};
+
+	if(warnningarea.x1 != 0
+		|| warnningarea.x2 != 0
+		|| warnningarea.y1 != 0
+		|| warnningarea.y2 != 0)
+	{
+		area = warnningarea;
+	}
 
 	warnning->activity = lv_poc_create_mini_activity(&activity_ext, &area);
 	lv_poc_activity_set_signal_cb(warnning->activity, prv_lv_poc_warnning_signal_func);

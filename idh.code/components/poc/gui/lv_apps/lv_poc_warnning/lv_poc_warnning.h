@@ -1,4 +1,4 @@
-#ifndef __LV_POC_WARNNING_H_
+﻿#ifndef __LV_POC_WARNNING_H_
 #define __LV_POC_WARNNING_H_
 
 
@@ -24,9 +24,10 @@ extern "C" {
 void lv_poc_warnning_open(const char *title,
 	const char *context,
 	const char *opt_left_str,
-	bool (*opt_left_cb)(lv_obj_t * obj, lv_event_t event),
+	void (*opt_left_cb)(lv_obj_t * obj, lv_event_t event),
 	const char *opt_right_str,
-	bool (*opt_right_cb)(lv_obj_t * obj, lv_event_t event));
+	void (*opt_right_cb)(lv_obj_t * obj, lv_event_t event),
+	lv_area_t warnningarea);
 
 
 #ifdef __cplusplus
