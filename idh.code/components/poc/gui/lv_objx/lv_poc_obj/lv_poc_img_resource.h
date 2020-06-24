@@ -101,6 +101,16 @@ LV_IMG_DECLARE(unlock);
 LV_IMG_DECLARE(power_off);
 LV_IMG_DECLARE(reboot);
 LV_IMG_DECLARE(img_poweroff_poc_logo_unicom);
+LV_IMG_DECLARE(img_poweron_poc_logo_sprd);
+
+LV_IMG_DECLARE(no_battery_charging_shutdown);
+LV_IMG_DECLARE(indeterminate0);
+LV_IMG_DECLARE(indeterminate1);
+LV_IMG_DECLARE(indeterminate2);
+LV_IMG_DECLARE(indeterminate3);
+LV_IMG_DECLARE(indeterminate4);
+LV_IMG_DECLARE(indeterminate5);
+LV_IMG_DECLARE(indeterminate6);
 
 
 #ifdef __cplusplus

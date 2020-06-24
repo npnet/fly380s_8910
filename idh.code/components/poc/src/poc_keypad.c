@@ -38,7 +38,14 @@ static bool isReadyPowerOff = false;
 static void prvPowerKeyCb(void *ctx)
 {
 	isReadyPowerOff = true;
-	lv_poc_shutdown_note_activity_open();//关机提示
+	if(!lv_poc_charge_poweron_status())//正常开机
+	{
+		lv_poc_shutdown_note_activity_open();//关机提示
+	}
+	else//充电开机
+	{
+		osiShutdown(OSI_SHUTDOWN_RESET);//重启设备
+	}
 }
 
 bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)

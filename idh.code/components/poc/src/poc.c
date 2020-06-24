@@ -53,6 +53,14 @@ static void pocIdtStartHandleTask(void * ctx)
 static void pocStartAnimation(void *ctx)
 {
 	lvGuiRequestSceenOn(3);
+	//魔方图片
+	lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
+	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
+	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
+	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+	osiThreadSleep(4000);
+	lv_obj_del(poc_power_on_backgroup_sprd_image);
+	//开机图片
 	lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
 	lv_img_set_auto_size(poc_power_on_backgroup_image, false);
 	lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
@@ -97,16 +105,30 @@ static void pocLvglStart(void)
 
 void pocStart(void *ctx)
 {
-    OSI_LOGI(0, "lvgl poc start");
+    OSI_LOGI(0, "[song]lvgl poc start");
+
     poc_Status_Led_Task();
     lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0);
     drvLcdInitV2();
 
-    drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
     drvLcdOpenV2(lcd);
     drvLcdFill(lcd, 0, NULL, true);
     drvLcdSetBackLightEnable(lcd, true);
-	lvGuiInit(pocLvglStart);
+
+	//获取开机方式
+	uint32_t boot_causes = osiGetBootCauses();
+	OSI_LOGI(0, "[song]poc boot mode is = %d", boot_causes);
+	if(boot_causes == OSI_BOOTCAUSE_CHARGE
+		|| boot_causes == (OSI_BOOTCAUSE_CHARGE|OSI_BOOTCAUSE_PSM_WAKEUP))
+		//设备为充电启动||设备充电启动并且从PSM唤醒启动
+	{
+		OSI_LOGI(0, "[song]poc boot mode is charge power on");
+		lvGuiInit(pocLvgl_ShutdownCharge_Start);
+	}else//设备重启或正常开机
+	{
+		lvGuiInit(pocLvglStart);
+	}
 
 	osiThreadExit();
 }
