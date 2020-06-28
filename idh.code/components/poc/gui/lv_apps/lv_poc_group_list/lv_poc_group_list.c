@@ -193,7 +193,6 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 					if(false != list_refresh_status)
 					{
 						lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
-						lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_MEMBERLIST,activity_list,LVPOCLISTIDTCOM_LIST_PERIOD_50);//刷新列表
 					}
 				}
 
@@ -576,7 +575,8 @@ void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
         p_cur = p_cur->next;
     }
 
-	lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_GROUPLIST,activity_list,LVPOCLISTIDTCOM_LIST_PERIOD_10);//刷新列表
+	lv_refr_now(NULL);
+	//lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_GROUPLIST,activity_list,LVPOCLISTIDTCOM_LIST_PERIOD_10);//刷新列表
 }
 
 
