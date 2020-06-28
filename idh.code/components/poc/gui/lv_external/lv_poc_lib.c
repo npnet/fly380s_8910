@@ -1,4 +1,4 @@
-#include "poc_config.h"
+﻿#include "poc_config.h"
 #include "ats_config.h"
 #include "lv_include/lv_poc_lib.h"
 #include "lv_objx/lv_poc_obj/lv_poc_font_resource.h"
@@ -865,18 +865,18 @@ static void
 prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 {
 	poc_setting->font.list_btn_big_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
-	poc_setting->font.list_btn_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
+	poc_setting->font.list_btn_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
 	poc_setting->font.about_label_big_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
-	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
+	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
 	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
-	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
-	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
+	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
+	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
 	//poc_setting->font.status_bar_signal_type_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 45);
 	poc_setting->font.idle_date_label_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
-	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
+	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
 	poc_setting->font.idle_popwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 18);
-	poc_setting->font.idle_lockgroupwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
+	poc_setting->font.idle_lockgroupwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 16);
 	poc_setting->font.idle_shutdownwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 16);
 
 	poc_setting->theme.white = &theme_white;

@@ -519,6 +519,7 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
         	lv_list_set_btn_selected(activity_list, btn);
         }
     }
+	lv_refr_now(NULL);
 
 }
 

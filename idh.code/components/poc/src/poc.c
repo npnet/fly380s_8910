@@ -29,6 +29,7 @@
 #include "lv_include/lv_poc.h"
 #include "app_test.h"
 #include "guiIdtCom_api.h"
+#include "hal_chip.h"
 
 static void pocIdtStartHandleTask(void * ctx)
 {
@@ -124,6 +125,7 @@ void pocStart(void *ctx)
 		//设备为充电启动||设备充电启动并且从PSM唤醒启动
 	{
 		OSI_LOGI(0, "[song]poc boot mode is charge power on");
+		poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
 		lvGuiInit(pocLvgl_ShutdownCharge_Start);
 	}else//设备重启或正常开机
 	{
