@@ -65,7 +65,7 @@ static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display)
 	lv_poc_lockgroup_style.body.border.part = LV_BORDER_NONE;//去除边缘
 
 	warnning->prv_base_obj = lv_obj_create(display, NULL);
-	lv_obj_set_style(warnning->prv_base_obj, (lv_style_t *)poc_setting_conf->theme.current_theme->style_base);
+	lv_obj_set_style(warnning->prv_base_obj, &lv_poc_lockgroup_style);
 	lv_obj_set_size(warnning->prv_base_obj, lv_obj_get_width(display), lv_obj_get_height(display));
 	lv_obj_align(warnning->prv_base_obj, display, LV_ALIGN_CENTER, 0, 0);
 
