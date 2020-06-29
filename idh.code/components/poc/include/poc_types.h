@@ -91,8 +91,8 @@ typedef struct
 	auRecorder_t     *recorder;         //real recorder
 	uint8_t          *prvSwapData;      //storage temp data
 	uint32_t          prvSwapDataLength;//length of temp data
-	uint32_t          prvTimerDuration; //duration of send data to others
-	osiTimer_t       *prvTimerID;       //timer which can execute callback in specified duration
+	uint32_t          prvDuration; //duration of send data to others
+	osiThread_t      *prvThreadID;       //thread which can execute callback
 	pocAudioRecorderCallback_t callback;//user specify func
 	bool              status;           //status of recorder
 } pocAudioRecorder_t;

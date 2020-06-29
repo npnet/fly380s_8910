@@ -305,16 +305,12 @@ static void prvLvTaskHandler(void)
 static bool prvIsInactiveTimeout(void)
 {
     lvGuiContext_t *d = &gLvGuiCtx;
-	OSI_LOGI(0, "[poc_lcd_check] piint 1");
     if (d->screen_on_users != 0)
         return false;
-	OSI_LOGI(0, "[poc_lcd_check] piint 2");
     if (d->inactive_timeout == 0)
         return false;
-	OSI_LOGI(0, "[poc_lcd_check] piint 3");
     if (!d->anim_inactive && lv_anim_count_running())
         return false;
-	OSI_LOGI(0, "[poc_lcd_check] piint 4");
     return lv_disp_get_inactive_time(d->disp) > d->inactive_timeout;
 }
 
@@ -348,7 +344,6 @@ static void prvLvThreadEntry(void *param)
 
         if (d->screen_on && prvIsInactiveTimeout())
         {
-			OSI_LOGI(0, "[poc_lcd_check] piint 5");
             OSI_LOGI(0, "inactive timeout, screen off");
             lvGuiScreenOff();
         }
