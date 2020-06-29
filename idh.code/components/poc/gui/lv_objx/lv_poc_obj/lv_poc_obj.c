@@ -556,9 +556,9 @@ static bool lv_poc_theme_init(void)
     theme_white_style_base.body.grad_color = LV_COLOR_MAKE(0x00,0x00,0x00);
     theme_white_style_base.body.radius = 0;
     theme_white_style_base.body.opa = 255;
-    theme_white_style_base.image.color = LV_COLOR_BLUE;
-    theme_white_style_base.image.intense = 0x33;
-	//theme_white_style_base.image.opa = 255;
+    theme_white_style_base.image.color = LV_COLOR_MAKE(0xFF, 0xF5, 0x98);//天蓝色
+    theme_white_style_base.image.intense = 60;
+	theme_white_style_base.image.opa = 240;
 
     lv_style_copy(&theme_white_style_list_scroll, &lv_style_scr);
     lv_style_copy(&theme_white_style_list_page, &theme_white_style_list_scroll);
@@ -966,9 +966,11 @@ static bool lv_poc_init_stabar_battery_img(void)
 {
     bool ret_val = true;
     lv_obj_t *obj = NULL;
+
     lv_poc_status_bar_fptr->has_battery = lv_poc_get_battery_state();
-    lv_poc_status_bar_fptr->battery_img = lv_img_create(lv_poc_status_bar, NULL);
+	lv_poc_status_bar_fptr->battery_img = lv_img_create(lv_poc_status_bar, NULL);
     obj = lv_poc_status_bar_fptr->battery_img;
+
     lv_img_set_src(obj, lv_poc_get_battery_img());
     lv_obj_set_opa_scale_enable(obj, false);
     lv_obj_align(obj, lv_poc_status_bar, LV_ALIGN_IN_RIGHT_MID, 0, 0);
@@ -2474,7 +2476,7 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     activity->activity_ext.create = activity_ext->create;
     activity->activity_ext.prepare_destory = activity_ext->prepare_destory;
 
-    activity->base = lv_img_create(lv_scr_act(), NULL);
+    activity->base = lv_obj_create(lv_scr_act(), NULL);
     //activity->base->ext_attr = activity;
     lv_obj_set_size(activity->base,LV_POC_SCREEN_SCALE_HOR_RES,LV_POC_SCREEN_SCALE_VER_RES);
     lv_obj_set_pos(activity->base,LV_POC_SCREEN_X,LV_POC_SCREEN_Y);
