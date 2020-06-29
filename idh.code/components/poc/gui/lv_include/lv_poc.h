@@ -38,3 +38,4 @@
 #include "lv_apps/lv_poc_shutdown_charge/lv_poc_shutdown_charge.h"
 
 #endif //__LV_POC_H_
+

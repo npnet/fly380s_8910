@@ -27,7 +27,6 @@
 #include "guiIdtCom_api.h"
 #include "lv_include/lv_poc.h"
 
-
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
 static lv_indev_state_t prvPttKeyState = 0xff;

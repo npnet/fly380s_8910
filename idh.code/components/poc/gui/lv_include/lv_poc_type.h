@@ -1,5 +1,4 @@
-﻿
-#ifndef __LV_POC_TYPR_H_
+﻿#ifndef __LV_POC_TYPR_H_
 #define __LV_POC_TYPR_H_
 #include "lvgl.h"
 #include "poc_config.h"
