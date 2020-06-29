@@ -222,31 +222,79 @@ static auPocMemWriter_t * prvPocAudioRecorderMemWriterCreate(uint32_t max_size)
     return p;
 }
 
-void prvPocAudioRecorderTimerCallback(void *ctx)
+void prvPocAudioRecorderThreadCallback(void *ctx)
 {
 	if(ctx == NULL)
 	{
+		osiThreadExit();
 		return;
 	}
 
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)ctx;
+	osiEvent_t event = {0};
 
-	if(recorder->callback == NULL || recorder->prvSwapData == NULL || recorder->prvSwapDataLength < 1 || recorder->writer == NULL || recorder->reader == NULL)
+	while(recorder->callback == NULL || recorder->prvSwapData == NULL || recorder->prvSwapDataLength < 1 || recorder->writer == NULL || recorder->reader == NULL)
 	{
-		return;
+		osiThreadSleep(30);
+	}
+	memset(&event, 0, sizeof(osiEvent_t));
+	recorder->prvThreadID = osiThreadCurrent();
+
+	while(1)
+	{
+		while(!osiEventTryWait(recorder->prvThreadID, &event, recorder->prvDuration))
+		{
+			if(!recorder->status)
+			{
+				continue;
+			}
+
+			if(!recorder->prvRestart)
+			{
+				if(recorder->writer->pos - recorder->reader->pos < recorder->prvSwapDataLength)
+				{
+					continue;
+				}
+			}
+			else
+			{
+				if(recorder->reader->pos > recorder->writer->pos)
+				{
+					if(recorder->reader->size - recorder->reader->pos + recorder->writer->pos < recorder->prvSwapDataLength)
+					{
+						continue;
+					}
+				}
+				else
+				{
+					if(recorder->writer->pos - recorder->reader->pos < recorder->prvSwapDataLength)
+					{
+						continue;
+					}
+				}
+			}
+
+			if(-1 == auReaderRead((auReader_t *)recorder->reader, recorder->prvSwapData, recorder->prvSwapDataLength))
+			{
+				continue;
+			}
+
+			recorder->callback(recorder->prvSwapData, recorder->prvSwapDataLength);
+		}
+
+		if(event.id == OSI_EVENT_ID_QUIT)
+		{
+			break;
+		}
 	}
 
-	if(recorder->writer->pos - recorder->reader->pos < recorder->prvSwapDataLength)
-	{
-		return;
-	}
-
-	if(-1 == auReaderRead((auReader_t *)recorder->reader, recorder->prvSwapData, recorder->prvSwapDataLength))
-	{
-		return;
-	}
-
-	recorder->callback(recorder->prvSwapData, recorder->prvSwapDataLength);
+	auRecorderDelete((auRecorder_t *)recorder->recorder);
+	auReaderDelete((auReader_t *)recorder->reader);
+	auWriterDelete((auWriter_t *)recorder->writer);
+	free(recorder->prvSwapData);
+	free(recorder);
+	recorder->prvThreadID = NULL;
+	osiThreadExit();
 }
 
 /**
@@ -285,6 +333,9 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 		return 0;
 	}
 	recorder->status = false;
+	recorder->prvRestart = false;
+	recorder->prvDuration = duration;
+	recorder->callback = callback;
 
 	recorder->recorder = auRecorderCreate();
 	if(recorder->recorder == NULL)
@@ -300,6 +351,7 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 		free(recorder);
 		return 0;
 	}
+	recorder->writer->user = (void *)recorder;
 
 	recorder->reader = prvPocAudioRecorderMemReaderCreate(recorder->writer->buf, recorder->writer->max_size);
 	if(recorder->reader == NULL)
@@ -309,9 +361,10 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 		free(recorder);
 		return 0;
 	}
+	recorder->reader->user = (void *)recorder;
 
-	recorder->prvTimerID = osiTimerCreate(NULL, prvPocAudioRecorderTimerCallback, (void *)recorder);
-	if(recorder->prvTimerID == NULL)
+	recorder->prvThreadID = osiThreadCreate("redr_cb_thd", prvPocAudioRecorderThreadCallback, (void *)recorder, OSI_PRIORITY_NORMAL, 2480, 64);
+	if(recorder->prvThreadID == NULL)
 	{
 		auReaderDelete((auReader_t *)recorder->reader);
 		auWriterDelete((auWriter_t *)recorder->writer);
@@ -324,7 +377,7 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 	recorder->prvSwapData = (uint8_t *)malloc(sizeof(uint8_t) * (recorder->prvSwapDataLength + 10));
 	if(recorder->prvSwapData == NULL)
 	{
-		osiTimerDelete(recorder->prvTimerID);
+		osiSendQuitEvent(recorder->prvThreadID, false);
 		auReaderDelete((auReader_t *)recorder->reader);
 		auWriterDelete((auWriter_t *)recorder->writer);
 		auRecorderDelete((auRecorder_t *)recorder->recorder);
@@ -332,11 +385,6 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 		return 0;
 	}
 
-	recorder->reader->user = (void *)recorder;
-	recorder->writer->user = (void *)recorder;
-	recorder->prvRestart = false;
-	recorder->prvTimerDuration = duration;
-	recorder->callback = callback;
 	return (POCAUDIORECORDER_HANDLE)recorder;
 }
 
@@ -363,23 +411,13 @@ bool pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
 	{
 		return true;
 	}
+	recorder->status = true;
 
 	bool ret = auRecorderStartWriter(recorder->recorder, AUDEV_RECORD_TYPE_MIC, AUSTREAM_FORMAT_PCM, NULL, (auWriter_t *)recorder->writer);
 	if(ret == false)
 	{
 		recorder->status = false;
-		return false;
 	}
-	ret = osiTimerStartPeriodic(recorder->prvTimerID, recorder->prvTimerDuration);
-	if(ret == false)
-	{
-		auRecorderStop((auRecorder_t *)recorder->recorder);
-		recorder->status = false;
-		return false;
-	}
-	recorder->status = true;
-	recorder->prvRestart = false;
-	recorder->writer->pos = 0;
 	return ret;
 }
 
@@ -421,6 +459,7 @@ bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id)
 	{
 		return false;
 	}
+	bool ret = false;
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
 
 	if(!recorder->status)
@@ -428,17 +467,15 @@ bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id)
 		return true;
 	}
 
-	osiTimerStop(recorder->prvTimerID);
+	recorder->status = false;
 
 	if(auRecorderStop((auRecorder_t *)recorder->recorder))
 	{
-		recorder->status = false;
-		pocAudioRecorderReset(recorder_id);
-		return true;
+		ret = true;
 	}
 	pocAudioRecorderReset(recorder_id);
 
-	return false;
+	return ret;
 }
 
 /**
@@ -460,13 +497,7 @@ bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE       recorder_id)
 	{
 		return false;
 	}
-
-	auRecorderDelete((auRecorder_t *)recorder->recorder);
-	auReaderDelete((auReader_t *)recorder->reader);
-	auWriterDelete((auWriter_t *)recorder->writer);
-	osiTimerDelete(recorder->prvTimerID);
-	free(recorder->prvSwapData);
-	free(recorder);
+	osiSendQuitEvent(recorder->prvThreadID, false);
 
 	return true;
 }
