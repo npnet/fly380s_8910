@@ -965,9 +965,11 @@ static bool lv_poc_init_stabar_battery_img(void)
 {
     bool ret_val = true;
     lv_obj_t *obj = NULL;
+
     lv_poc_status_bar_fptr->has_battery = lv_poc_get_battery_state();
-    lv_poc_status_bar_fptr->battery_img = lv_img_create(lv_poc_status_bar, NULL);
+	lv_poc_status_bar_fptr->battery_img = lv_img_create(lv_poc_status_bar, NULL);
     obj = lv_poc_status_bar_fptr->battery_img;
+
     lv_img_set_src(obj, lv_poc_get_battery_img());
     lv_obj_set_opa_scale_enable(obj, false);
     lv_obj_align(obj, lv_poc_status_bar, LV_ALIGN_IN_RIGHT_MID, 0, 0);
