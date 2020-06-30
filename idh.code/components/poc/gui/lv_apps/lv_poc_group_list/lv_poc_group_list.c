@@ -127,6 +127,7 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     }
     else
     {
+	    poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
     }
 }

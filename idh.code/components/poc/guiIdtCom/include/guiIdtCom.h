@@ -35,6 +35,7 @@ public:
 public:
     UCHAR   m_ucGNum[32];     //组号码
     UCHAR   m_ucGName[64];    //组名字
+    UCHAR   m_ucPriority;
 };
 
 //全部的组
