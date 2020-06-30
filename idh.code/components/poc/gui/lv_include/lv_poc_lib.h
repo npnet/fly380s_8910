@@ -29,10 +29,15 @@ typedef unsigned char UC_64[64];
 //通过消息获取的群组信息
 typedef struct Msg_GROUP_MEMBER_s
 {
+    uint8_t           ucPrio;             //优先级
+    uint8_t           ucUTType;           //UTType,UT_TYPE_NONE
+    uint8_t           ucAttr;             //终端属性,UT_ATTR_HS
     UC_32           ucNum;              //号码
     UC_64           ucName;             //名字
-
-    uint8_t         ucStatus;           //主状态 UT_STATUS_OFFLINE之类
+    UC_32           ucAGNum;            //关联组信息
+    uint8_t           ucChanNum;          //摄像头通道个数
+    uint8_t           ucStatus;           //主状态 UT_STATUS_OFFLINE之类
+    uint8_t           ucFGCount;          //父组个数
 }Msg_GROUP_MEMBER_s;
 
 //通过消息获取的组数据
@@ -47,6 +52,7 @@ typedef struct _CGroup
 {
     uint8_t   m_ucGNum[32];     //组号码
     uint8_t   m_ucGName[64];    //组名字
+    uint8_t   m_ucPriority;     //组优先级
 }CGroup;
 
 /*

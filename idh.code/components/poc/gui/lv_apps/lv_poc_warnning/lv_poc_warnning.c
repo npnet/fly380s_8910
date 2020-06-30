@@ -114,7 +114,7 @@ static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display)
 	lv_obj_set_size(warnning->prv_opt_left_obj, lv_obj_get_width(warnning->prv_base_obj), lv_obj_get_height(warnning->prv_base_obj) / 3);
 	lv_obj_set_style(warnning->prv_opt_left_obj,&lv_poc_lockgroupbutton_style);
 	lv_obj_set_click(warnning->prv_opt_left_obj, true);
-	lv_obj_set_event_cb(warnning->prv_opt_left_obj, warnning->opt_left_cb);
+	lv_obj_set_event_cb(warnning->prv_opt_left_obj, (lv_event_cb_t)warnning->opt_left_cb);
 	lv_label_set_text(warnning->prv_opt_left_obj, warnning->opt_left_str);
 	lv_label_set_body_draw(warnning->prv_opt_left_obj,true);//重刷背景颜色
 
@@ -129,7 +129,7 @@ static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display)
 		lv_obj_set_size(warnning->prv_opt_right_obj, lv_obj_get_width(warnning->prv_base_obj), lv_obj_get_height(warnning->prv_base_obj) / 3);
 		lv_obj_set_style(warnning->prv_opt_right_obj,&lv_poc_lockgroupbutton_style);
 		lv_obj_set_click(warnning->prv_opt_right_obj, true);
-		lv_obj_set_event_cb(warnning->prv_opt_right_obj, warnning->opt_right_cb);
+		lv_obj_set_event_cb(warnning->prv_opt_right_obj, (lv_event_cb_t)warnning->opt_right_cb);
 		lv_label_set_text(warnning->prv_opt_right_obj, warnning->opt_right_str);
 		lv_label_set_body_draw(warnning->prv_opt_right_obj,true);//重刷背景颜色
 
