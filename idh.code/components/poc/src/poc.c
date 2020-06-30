@@ -31,9 +31,11 @@
 #include "guiIdtCom_api.h"
 #include "hal_chip.h"
 
+static void lv_poc_network_config_task(lv_task_t * task);
+
 static void pocIdtStartHandleTask(void * ctx)
 {
-	poc_net_work_config(POC_SIM_1);
+//	poc_net_work_config(POC_SIM_1);
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0);
 	poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, true);
 	osiThreadSleep(5000);
@@ -54,6 +56,11 @@ static void pocIdtStartHandleTask(void * ctx)
 static void pocStartAnimation(void *ctx)
 {
 	lvGuiRequestSceenOn(3);
+	//首先启动配网任务，解决第一次下载程序代码登陆不上问题
+	lv_task_t * task = lv_task_create(lv_poc_network_config_task,
+		50, LV_TASK_PRIO_HIGH, NULL);
+	lv_task_once(task);
+
 	//魔方图片
 	lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
 	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
@@ -134,6 +141,20 @@ void pocStart(void *ctx)
 
 	osiThreadExit();
 }
+
+/*
+	  name : lv_poc_network_config_task
+	 param : none
+	author : wangls
+  describe : 设备配网任务
+	  date : 2020-06-30
+*/
+static
+void lv_poc_network_config_task(lv_task_t * task)
+{
+	poc_net_work_config(POC_SIM_1);
+}
+
 
 
 #endif

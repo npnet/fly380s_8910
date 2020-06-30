@@ -269,6 +269,7 @@ add_library(${target} STATIC
 	gui/resource/audiofile/lv_poc_audio_success_to_build_group.c
 	gui/resource/audiofile/lv_poc_audio_low_battery.c
 	gui/resource/audiofile/lv_poc_audio_success_member_call.c
+	gui/resource/audiofile/lv_poc_audio_exit_member_call.c
 	gui/resource/audiofile/lv_poc_audio_join_group.c
 	gui/resource/audiofile/lv_poc_audio_offline_member.c
 	gui/resource/audiofile/lv_poc_audio_insert_sim_card.c
@@ -280,6 +281,19 @@ add_library(${target} STATIC
 	gui/resource/audiofile/lv_poc_audio_tone_start_speak.c
 	gui/resource/audiofile/lv_poc_audio_tone_stop_listen.c
 	gui/resource/audiofile/lv_poc_audio_tone_stop_sepak.c
+	gui/resource/audiofile/lv_poc_audio_start_login.c
+	gui/resource/audiofile/lv_poc_audio_now_loginning.c
+	gui/resource/audiofile/lv_poc_audio_try_to_login.c
+	gui/resource/audiofile/lv_poc_audio_unable_to_call_yourself.c
+	gui/resource/audiofile/lv_poc_audio_fail_to_build_group.c
+	gui/resource/audiofile/lv_poc_audio_fail_to_build_group_due_to_less_than_two_people.c
+	gui/resource/audiofile/lv_poc_audio_fail_due_to_already_exist_selfgroup.c
+	gui/resource/audiofile/lv_poc_audio_account_cannot_be_empty.c
+	gui/resource/audiofile/lv_poc_audio_username_or_passward_incorrect.c
+	gui/resource/audiofile/lv_poc_audio_current_no_any_network.c
+	gui/resource/audiofile/lv_poc_audio_server_timeout_to_try_again.c
+	gui/resource/audiofile/lv_poc_audio_this_account_already_logined.c
+	gui/resource/audiofile/lv_poc_audio_loginning_please_wait.c
 
 	idt/src/app_test.cpp
 	idt/core/idt-freertos.o
