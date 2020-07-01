@@ -135,6 +135,21 @@ static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 		}
 
 		lv_poc_member_call_obj_information = obj->user_data;
+
+		/*获取该列表单呼对象是不是自己*/
+		lv_obj_t * sigal_member_list;
+		//char sigal_member_list_text[20] = {0};
+		OSI_LOGI(0, "[song] call is start\n");
+		sigal_member_list = lv_list_get_btn_selected(activity_list);
+		/*使用下面这个函数就死机*/
+		//strcpy((char *)sigal_member_list_text, lv_list_get_btn_text(sigal_member_list));
+		if(NULL != strstr(lv_list_get_btn_text(sigal_member_list),"我"))//如果是自己
+		{
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Unable_To_Call_Yourself, true);
+			//OSI_LOGI(0, "[song] call is myself\n");
+		}
+		/*获取结束*/
+
 		if(!lv_poc_get_member_status(lv_poc_member_call_obj_information, lv_poc_member_list_get_member_status_cb))
 		{
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"错误", NULL);

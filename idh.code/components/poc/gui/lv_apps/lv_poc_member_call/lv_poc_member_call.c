@@ -286,6 +286,7 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 	{
 		if(current_status != 1)
 		{
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Member_Call, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
 			if(lv_poc_member_call_self_call_close == 0)
 			{

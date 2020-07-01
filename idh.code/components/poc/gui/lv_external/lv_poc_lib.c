@@ -153,7 +153,7 @@ lv_poc_setting_get_current_volume(IN POC_MMI_VOICE_TYPE_E type)
 	nv_poc_setting_msg_t * config = lv_poc_setting_conf_read();
 	if(type == POC_MMI_VOICE_MSG)
 	{
-		return config->volume;
+		return config->tonevolume;
 	}
 	else if(type == POC_MMI_VOICE_PLAY)
 	{
@@ -185,7 +185,7 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
 	nv_poc_setting_msg_t * config = lv_poc_setting_conf_read();
 	if(type == POC_MMI_VOICE_MSG)
 	{
-		config->volume = poc_volum / 10;
+		config->tonevolume = poc_volum / 10;
 		audevSetVoiceVolume(poc_volum);
 	}
 	else if(type == POC_MMI_VOICE_PLAY)
@@ -379,6 +379,23 @@ extern lv_poc_audio_dsc_t lv_poc_audio_tone_start_listen;
 extern lv_poc_audio_dsc_t lv_poc_audio_tone_start_speak;
 extern lv_poc_audio_dsc_t lv_poc_audio_tone_stop_listen;
 extern lv_poc_audio_dsc_t lv_poc_audio_tone_stop_sepak;
+//新加入
+extern lv_poc_audio_dsc_t lv_poc_audio_start_login;
+extern lv_poc_audio_dsc_t lv_poc_audio_now_loginning;
+extern lv_poc_audio_dsc_t lv_poc_audio_try_to_login;
+extern lv_poc_audio_dsc_t lv_poc_audio_unable_to_call_yourself;
+extern lv_poc_audio_dsc_t lv_poc_audio_member_signal_call;
+extern lv_poc_audio_dsc_t lv_poc_audio_exit_member_call;
+extern lv_poc_audio_dsc_t lv_poc_audio_fail_to_build_group;
+extern lv_poc_audio_dsc_t lv_poc_audio_fail_to_build_group_due_to_less_than_two_people;
+extern lv_poc_audio_dsc_t lv_poc_audio_fail_due_to_already_exist_selfgroup;
+extern lv_poc_audio_dsc_t lv_poc_audio_account_cannot_be_empty;
+extern lv_poc_audio_dsc_t lv_poc_audio_username_or_passward_incorrect;
+extern lv_poc_audio_dsc_t lv_poc_audio_current_no_any_network;
+extern lv_poc_audio_dsc_t lv_poc_audio_server_timeout_to_try_again;
+extern lv_poc_audio_dsc_t lv_poc_audio_this_account_already_logined;
+extern lv_poc_audio_dsc_t lv_poc_audio_loginning_please_wait;
+
 static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	NULL,
 	&lv_poc_audio_start_machine,
@@ -393,6 +410,22 @@ static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	&lv_poc_audio_success_to_build_group,
 	&lv_poc_audio_success_to_login,
 	&lv_poc_audio_no_connected,
+	&lv_poc_audio_start_login,
+	&lv_poc_audio_now_loginning,
+	&lv_poc_audio_try_to_login,
+	&lv_poc_audio_unable_to_call_yourself,
+	&lv_poc_audio_member_signal_call,
+	&lv_poc_audio_exit_member_call,
+	&lv_poc_audio_fail_to_build_group,
+	&lv_poc_audio_fail_to_build_group_due_to_less_than_two_people,
+	&lv_poc_audio_fail_due_to_already_exist_selfgroup,
+	&lv_poc_audio_account_cannot_be_empty,
+	&lv_poc_audio_username_or_passward_incorrect,
+	&lv_poc_audio_current_no_any_network,
+	&lv_poc_audio_server_timeout_to_try_again,
+	&lv_poc_audio_this_account_already_logined,
+	&lv_poc_audio_loginning_please_wait,
+
 	&lv_poc_audio_tone_cannot_speak,
 	&lv_poc_audio_tone_lost_mic,
 	&lv_poc_audio_tone_note,
@@ -400,6 +433,7 @@ static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	&lv_poc_audio_tone_start_speak,
 	&lv_poc_audio_tone_stop_listen,
 	&lv_poc_audio_tone_stop_sepak,
+	&lv_poc_audio_start_login,
 };
 
 static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
@@ -428,7 +462,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 static void prv_play_voice_one_time_thread_callback(void * ctx)
 {
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
-   auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
+   	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
 	bool isPlayVoice = false;
 	osiEvent_t event = {0};
 	LVPOCAUDIO_Type_e voice_queue[10] = {0};
@@ -505,6 +539,21 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Success_Build_Group:
 			case LVPOCAUDIO_Type_Success_Login:
 			case LVPOCAUDIO_Type_No_Connected:
+			case LVPOCAUDIO_Type_Start_Login:
+			case LVPOCAUDIO_Type_Now_Loginning:
+			case LVPOCAUDIO_Type_Try_To_Login:
+			case LVPOCAUDIO_Type_Unable_To_Call_Yourself:
+			case LVPOCAUDIO_Type_Member_Signal_Call:
+			case LVPOCAUDIO_Type_Exit_Member_Call:
+			case LVPOCAUDIO_Type_Fail_To_Build_Group:
+			case LVPOCAUDIO_Type_Fail_To_Build_Group_Due_To_Less_Than_Two_People:
+			case LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup:
+			case LVPOCAUDIO_Type_Account_Cannot_Be_Empty:
+			case LVPOCAUDIO_Type_Username_Or_Passward_Incorrect:
+			case LVPOCAUDIO_Type_Current_No_Any_Network:
+			case LVPOCAUDIO_Type_Server_Timeout_To_Try_Again:
+			case LVPOCAUDIO_Type_This_Account_Already_Logined:
+			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				break;
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
@@ -515,6 +564,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
+				audevSetPlayVolume(10);//修改tone声音大小
 				break;
 
 			default:
@@ -526,6 +576,8 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		{
 			auPlayerStartMem(prv_play_voice_one_time_player, voice_formate, params, prv_lv_poc_audio_array[voice_type]->data, prv_lv_poc_audio_array[voice_type]->data_size);
 			isPlayVoice = true;
+			//还原音量
+			audevSetPlayVolume(lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY));
 		}
 	}
 
@@ -571,7 +623,7 @@ poc_play_voice_one_time(IN       LVPOCAUDIO_Type_e voice_type, IN bool isBreak)
 		if(NULL == prv_play_voice_one_time_player)
 		{
 			return;
-	}
+		}
 	}
 
 	if(prv_play_voice_one_time_thread == NULL)
@@ -1851,7 +1903,6 @@ lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_
 	member_call_config.members = member,
 	member_call_config.enable = enable;
 	member_call_config.func = func;
-
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_IND, &member_call_config))
 	{
 		return false;

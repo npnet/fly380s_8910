@@ -1050,7 +1050,16 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 
 		    if (UT_STATUS_ONLINE > login_info->status)
 		    {
-				poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, true);
+				//当前未登录
+				if(login_info->cause == 33)
+				{//账号在别处被登录
+					poc_play_voice_one_time(LVPOCAUDIO_Type_This_Account_Already_Logined, true);
+				}
+				else
+				{//当前未登录
+					poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, true);
+				}
+
 			    m_IdtUser.m_status = UT_STATUS_OFFLINE;
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
 				osiTimerStop(pocIdtAttr.get_group_list_timer);
@@ -1061,7 +1070,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 		    pocIdtAttr.isReady = true;
 
 	        IDT_StatusSubs((char*)"###", GU_STATUSSUBS_BASIC);
-	        if(m_IdtUser.m_status < UT_STATUS_ONLINE)
+	        if(m_IdtUser.m_status < UT_STATUS_ONLINE)//登录成功
 	        {
 				poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Login, true);
 	        }
@@ -1070,6 +1079,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 
 			LvGuiIdtCom_self_info_json_parse_status();
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL);
 			osiTimerStart(pocIdtAttr.get_group_list_timer, 2000);
 			break;
 		}
@@ -2072,8 +2082,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 				if (CAUSE_ZERO != grop->wRes)
 					return;
 
-				if(grop->dwSn == pocIdtAttr.query_group
-					&& pocIdtAttr.pPocMemberList != NULL
+				if(pocIdtAttr.pPocMemberList != NULL
 					&& pocIdtAttr.pPocMemberListBuf != NULL)
 				{
 					Msg_GData_s *pPocMemberList = NULL;

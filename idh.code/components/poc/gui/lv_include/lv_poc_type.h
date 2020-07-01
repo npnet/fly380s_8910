@@ -131,6 +131,7 @@ typedef struct
 	uint8_t net_type;                 //[0]4G/3G/2G  [1]only 3G/2G    [default 0]
 #endif
 	uint8_t volume;                   //[0-10]    [default 5]
+	uint8_t tonevolume;               //[0-10]    [default 3]
 	uint8_t language;                 //[0]简体中文       [default 0]
 	nv_poc_font_size_msg_t font;
 	nv_poc_theme_msg_t theme;
@@ -331,6 +332,22 @@ typedef enum{
 	LVPOCAUDIO_Type_Success_Build_Group,      //建组成功
 	LVPOCAUDIO_Type_Success_Login,      //登录成功
 	LVPOCAUDIO_Type_No_Connected,      //当前网络未连接
+	LVPOCAUDIO_Type_Start_Login,      //开始登录
+	LVPOCAUDIO_Type_Now_Loginning,	//正在登录
+	LVPOCAUDIO_Type_Try_To_Login,	  //尝试登录中
+	LVPOCAUDIO_Type_Unable_To_Call_Yourself,	 //无法呼叫自己
+	LVPOCAUDIO_Type_Member_Signal_Call,		//单呼
+	LVPOCAUDIO_Type_Exit_Member_Call,	//退出单呼
+	LVPOCAUDIO_Type_Fail_To_Build_Group, //建组失败
+	LVPOCAUDIO_Type_Fail_To_Build_Group_Due_To_Less_Than_Two_People, //建组失败，群组成员不能少于两人
+	LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup, //建组失败-已有自建群组
+	LVPOCAUDIO_Type_Account_Cannot_Be_Empty, //账号不能为空
+	LVPOCAUDIO_Type_Username_Or_Passward_Incorrect, //用户名或密码不正确
+	LVPOCAUDIO_Type_Current_No_Any_Network, //当前没有任何网络
+	LVPOCAUDIO_Type_Server_Timeout_To_Try_Again, //服务器超时，请检查后重试
+	LVPOCAUDIO_Type_This_Account_Already_Logined, //该账号已在别处登陆
+	LVPOCAUDIO_Type_Loginning_Please_Wait, // 正在登陆请稍后
+
 	LVPOCAUDIO_Type_Tone_Cannot_Speak,   //
 	LVPOCAUDIO_Type_Tone_Lost_Mic,   //
 	LVPOCAUDIO_Type_Tone_Note,   //
