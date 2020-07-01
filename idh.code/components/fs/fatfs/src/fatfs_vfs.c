@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -62,6 +62,9 @@ extern void free(void *ptr);
 extern void *calloc(size_t nmemb, size_t size);
 extern void *realloc(void *ptr, size_t size);
 extern int strcmp(const char *s1, const char *s2);
+extern char *strstr(const char *str1, const char *str2);
+
+
 
 #define FAT_OPEN_MAX (32)
 

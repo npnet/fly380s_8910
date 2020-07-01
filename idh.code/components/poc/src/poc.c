@@ -35,7 +35,6 @@ static void lv_poc_network_config_task(lv_task_t * task);
 
 static void pocIdtStartHandleTask(void * ctx)
 {
-//	poc_net_work_config(POC_SIM_1);
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0);
 	poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, true);
 	osiThreadSleep(5000);
@@ -46,6 +45,9 @@ static void pocIdtStartHandleTask(void * ctx)
 	}
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0);
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
+	//登录任务
+	poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, true);
+	osiThreadSleep(2000);
 	lvPocGuiIdtCom_log();
 	/*网络校时*/
 	lv_poc_sntp_Update_Time();
@@ -84,7 +86,6 @@ static void pocStartAnimation(void *ctx)
 	lv_obj_del(poc_power_on_backgroup_image);
 	lvGuiUpdateLastActivityTime();
 	lvGuiReleaseScreenOn(3);
-
 	osiThreadExit();
 }
 #endif

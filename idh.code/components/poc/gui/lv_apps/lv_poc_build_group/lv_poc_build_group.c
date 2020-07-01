@@ -118,6 +118,7 @@ static void lv_poc_build_group_new_group_cb(int result_type)
 	}
 	else
 	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_To_Build_Group, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_failed_text, NULL);
 	}
 	lv_poc_del_activity(poc_build_group_activity);
@@ -141,6 +142,7 @@ static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, i
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,
 				(const uint8_t *)lv_poc_build_group_few_member_text1,
 				(const uint8_t *)lv_poc_build_group_few_member_text2);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_To_Build_Group_Due_To_Less_Than_Two_People, true);
 		}
 		lv_poc_del_activity(poc_build_group_activity);
 		return false;

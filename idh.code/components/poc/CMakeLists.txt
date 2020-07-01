@@ -269,6 +269,7 @@ add_library(${target} STATIC
 	gui/resource/audiofile/lv_poc_audio_success_to_build_group.c
 	gui/resource/audiofile/lv_poc_audio_low_battery.c
 	gui/resource/audiofile/lv_poc_audio_success_member_call.c
+	gui/resource/audiofile/lv_poc_audio_member_signal_call.c
 	gui/resource/audiofile/lv_poc_audio_exit_member_call.c
 	gui/resource/audiofile/lv_poc_audio_join_group.c
 	gui/resource/audiofile/lv_poc_audio_offline_member.c
