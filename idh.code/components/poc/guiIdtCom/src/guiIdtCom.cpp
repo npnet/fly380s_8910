@@ -70,7 +70,6 @@ static int LvGuiIdtCom_self_info_json_parse_status(void);
 static bool LvGuiIdtCom_self_is_member_call(char * info);
 static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx);
 static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx);
-static void lvPocGuiIdtCom_get_listen_status(LvPocGuiIdtCom_SignalType_t SignalType_t);
 
 //--------------------------------------------------------------------------------
 //      TRACE小函数
@@ -236,7 +235,6 @@ typedef struct Listen_Status
 
 CIdtUser m_IdtUser;
 static PocGuiIIdtComAttr_t pocIdtAttr = {0};
-static Lv_Listen_Sta lv_listen_sta = {0};
 
 
 
@@ -856,8 +854,10 @@ static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
 
 static void LvGuiIdtCom_get_member_list_timer_cb(void *ctx)
 {
+	OSI_LOGI(0, "[song]timer cb enter!");
 	if(!pocIdtAttr.isPocMemberListBuf)
 	{
+		OSI_LOGI(0, "[song]start to obtain member information!");
 		if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_CUR_GROUP, NULL))
 		{
 			return;
@@ -1081,6 +1081,8 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL);
 			osiTimerStart(pocIdtAttr.get_group_list_timer, 2000);
+			//主动获取成员信息
+			osiTimerStart(pocIdtAttr.get_member_list_timer, 1000);
 			break;
 		}
 
@@ -1958,8 +1960,6 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, NULL, NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Stop_Listen, true);
-			//可以播放按键音
-			lvPocGuiIdtCom_get_listen_status(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP);
 			break;
 		}
 
@@ -1970,8 +1970,6 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			memset(speaker_name, 0, sizeof(char) * 100);
 			strcpy(speaker_name, (const char *)pocIdtAttr.speaker.ucName);
 			strcat(speaker_name, (const char *)"正在讲话");
-			//禁止播放按键音
-			lvPocGuiIdtCom_get_listen_status(LVPOCGUIIDTCOM_SIGNAL_LISTEN_SPEAKER_REP);
 			//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "正在聆听", NULL);
 			//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在聆听", NULL);
 			if(!pocIdtAttr.is_member_call)
@@ -2449,45 +2447,6 @@ extern "C" void *lvPocGuiIdtCom_get_current_group_info(void)
 	}
 	return (void *)&m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group];
 }
-
-/*
-      name : lvPocGuiIdtCom_get_listen_status
-     param :
-     			none
-  describe : 获取是否在接听状态下
-      date : 2020-06-08
-*/
-static void lvPocGuiIdtCom_get_listen_status(LvPocGuiIdtCom_SignalType_t SignalType_t)
-{
-	switch(SignalType_t)
-	{
-		case LVPOCGUIIDTCOM_SIGNAL_LISTEN_SPEAKER_REP:
-		{
-			lv_listen_sta.listen_status = true;
-			break;
-		}
-		case LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP:
-		{
-			lv_listen_sta.listen_status = false;
-			break;
-		}
-		default:
-		break;
-	}
-}
-
-/*
-      name : lvPocGuiIdtCom_listen_status
-     param :
-     			none
-  describe : 返回接听状态
-      date : 2020-06-08
-*/
-extern "C" int lvPocGuiIdtCom_listen_status(void)
-{
-	return lv_listen_sta.listen_status;
-}
-
 
 #endif
 
