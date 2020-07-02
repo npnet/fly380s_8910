@@ -209,7 +209,9 @@ static lv_res_t lv_poc_member_call_signal_func(struct _lv_obj_t * obj, lv_signal
 		{
 			if(lv_poc_member_call_member_list_obj != NULL && current_activity == poc_member_call_activity)
 			{
-				lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
+				lv_poc_refr_func(LVPOCUPDATE_TYPE_MEMBERLIST_CALL,
+					LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
+				//lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
 			}
 			break;
 		}
@@ -347,7 +349,10 @@ void lv_poc_member_call_open(void * information)
 	lv_poc_member_call_add(lv_poc_member_call_member_list_obj, lv_poc_get_member_name((lv_poc_member_info_t)information), true, information);
 	//lv_poc_member_call_set_title(lv_poc_get_member_name((lv_poc_member_info_t)information));
 	lv_poc_member_call_set_title((const char *)"单呼");
-	lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
+
+	lv_poc_refr_func(LVPOCUPDATE_TYPE_MEMBERLIST_CALL,
+		LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
+	//lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
 	lv_poc_member_call_self_call_close = 0;
 	lv_poc_set_member_call_status(information, true, lv_poc_member_call_set_member_call_status_cb);
 }
@@ -585,6 +590,18 @@ lv_poc_status_t lv_poc_member_call_get_state(lv_poc_member_list_t *member_list_o
 	}
 
 	return lv_poc_member_list_get_state(member_list_obj, name, information);
+}
+
+/*
+	  name : lv_poc_member_call_list_refr
+	 param : none
+	author : wangls
+  describe : 刷新单呼列表信息
+	  date : 2020-07-02
+*/
+void lv_poc_member_call_list_refr(lv_task_t * task)
+{
+	lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
 }
 
 #ifdef __cplusplus

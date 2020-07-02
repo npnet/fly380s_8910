@@ -32,10 +32,10 @@
 #include "lv_apps/lv_poc_notation/lv_poc_notation.h"
 #include "lv_apps/lv_poc_led/lv_poc_led.h"
 #include "lv_apps/lv_poc_sntp/lv_poc_sntp.h"
-#include "lv_apps/lv_poc_list_repeat_refresh/lv_poc_list_repeat_refresh.h"
 #include "lv_apps/lv_poc_warnning/lv_poc_warnning.h"
 #include "lv_apps/lv_poc_shutdown_note/lv_poc_shutdown_note.h"
 #include "lv_apps/lv_poc_shutdown_charge/lv_poc_shutdown_charge.h"
+#include "lv_apps/lv_poc_refr/lv_poc_refr.h"
 
 #endif //__LV_POC_H_
 

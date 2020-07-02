@@ -43,10 +43,10 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_notation/lv_poc_notation.c
 	gui/lv_apps/lv_poc_led/lv_poc_led.c
 	gui/lv_apps/lv_poc_sntp/lv_poc_sntp.c
-	gui/lv_apps/lv_poc_list_repeat_refresh/lv_poc_list_repeat_refresh.c
 	gui/lv_apps/lv_poc_warnning/lv_poc_warnning.c
 	gui/lv_apps/lv_poc_shutdown_note/lv_poc_shutdown_note.c
 	gui/lv_apps/lv_poc_shutdown_charge/lv_poc_shutdown_charge.c
+	gui/lv_apps/lv_poc_refr/lv_poc_refr.c
 
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c

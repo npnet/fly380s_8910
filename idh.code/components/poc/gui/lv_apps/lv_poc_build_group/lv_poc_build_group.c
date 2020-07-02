@@ -300,7 +300,8 @@ static void lv_poc_build_group_get_list_cb(int msg_type)
 
 	if(msg_type==1)//显示
 	{
-		lv_poc_build_group_refresh(NULL);
+		lv_poc_refr_func(LVPOCUPDATE_TYPE_BUILD_GROUPLIST,
+			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
 	}
 	else
 	{
@@ -521,8 +522,6 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj)
         	lv_list_set_btn_selected(activity_list, btn);
         }
     }
-	lv_refr_now(NULL);
-
 }
 
 lv_poc_status_t lv_poc_build_group_move_top(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
