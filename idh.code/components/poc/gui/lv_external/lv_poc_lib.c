@@ -464,6 +464,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
    	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
 	bool isPlayVoice = false;
+	bool PlayVoiceType = false;//语音还是嘟声音
 	osiEvent_t event = {0};
 	LVPOCAUDIO_Type_e voice_queue[10] = {0};
 	int voice_queue_reader = 0;
@@ -488,6 +489,8 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
+					//还原音量
+					lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 				}
 			}
 			else if(isPlayVoice)
@@ -505,6 +508,8 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
+					//还原音量
+					lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 				}
 				else
 				{
@@ -555,6 +560,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
 			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 				voice_formate = AUSTREAM_FORMAT_MP3;
+				PlayVoiceType = false;
 				break;
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
 			case LVPOCAUDIO_Type_Tone_Lost_Mic:
@@ -564,7 +570,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
-				audevSetPlayVolume(10);//修改tone声音大小
+				PlayVoiceType = true;
 				break;
 
 			default:
@@ -572,12 +578,19 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				break;
 		}
 
+		if(PlayVoiceType == false)/* 语音音量 */
+		{
+			audevSetPlayVolume(20);//修改语音声音大小
+		}
+		else/* 嘟音量 */
+		{
+			audevSetPlayVolume(10);//修改tone声音大小
+		}
+
 		if(prv_lv_poc_audio_array[voice_type] != NULL)
 		{
 			auPlayerStartMem(prv_play_voice_one_time_player, voice_formate, params, prv_lv_poc_audio_array[voice_type]->data, prv_lv_poc_audio_array[voice_type]->data_size);
 			isPlayVoice = true;
-			//还原音量
-			audevSetPlayVolume(lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY));
 		}
 	}
 
@@ -594,7 +607,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 void
 poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 {
-	if(!quiet && (!lvPocGuiIdtCom_listen_status()))
+	if(!quiet)
 	{
 		if(prv_play_btn_voice_one_time_thread != NULL)
 		{

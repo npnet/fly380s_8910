@@ -101,6 +101,28 @@ static void lv_poc_list_update_task(lv_task_t * task)
 			if(btn) lv_list_set_btn_selected(activity_list, btn);
 		}
 	}
+	else if(user_data_type == LVPOCUPDATE_TYPE_NORMAL)//刷新机制
+	{
+		LV_ASSERT_OBJ(activity_list, LV_OBJX_NAME);
+
+		lv_list_ext_t * ext = lv_obj_get_ext_attr(activity_list);
+		/*If there is a valid selected button the make the next selected*/
+		if(ext->selected_btn != NULL) {
+			lv_obj_t * btn_next = lv_list_get_prev_btn(activity_list, ext->selected_btn);
+			//if(btn_next) /* 注释此处 --- 强制向上刷新*/
+			lv_list_set_btn_selected(activity_list, btn_next);
+
+			//归位焦点
+			btn_next = lv_list_get_next_btn(activity_list, ext->selected_btn);
+            if(btn_next)
+			lv_list_set_btn_selected(activity_list, btn_next);
+		}
+		/*If there is no selected button the make the first selected*/
+		else {
+			lv_obj_t * btn = lv_list_get_next_btn(activity_list, NULL);
+			if(btn) lv_list_set_btn_selected(activity_list, btn);
+		}
+	}
 	else if(user_data_type == LVPOCUPDATE_TYPE_BUILD_GROUPLIST)//群组列表里的成员列表刷新机制
 	{
 		LV_ASSERT_OBJ(activity_list, LV_OBJX_NAME);
