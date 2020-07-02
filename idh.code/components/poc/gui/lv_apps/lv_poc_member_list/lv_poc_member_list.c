@@ -29,7 +29,6 @@ static bool lv_poc_member_list_design_func(struct _lv_obj_t * obj, const lv_area
 
 static void lv_poc_member_list_get_list_cb(int msg_type);
 
-
 static lv_obj_t * activity_list;
 
 static lv_poc_win_t * activity_win;
@@ -171,7 +170,6 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 			{
 				case LV_GROUP_KEY_ENTER:
 				{
-					if(false != list_refresh_status)
 					lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
 				}
 
@@ -179,7 +177,6 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_UP:
 				{
-					if(false != list_refresh_status)
 					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
@@ -214,7 +211,6 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_ESC:
 				{
-					if(false != list_refresh_status)
 					lv_poc_del_activity(poc_member_list_activity);
 					break;
 				}
@@ -226,7 +222,9 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 		{
 			if(lv_poc_member_list_obj != NULL && current_activity == poc_member_list_activity)
 			{
-				lv_poc_member_list_refresh(NULL);
+
+				lv_poc_refr_func(LVPOCUPDATE_TYPE_MEMBERLIST,
+					LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
 			}
 			break;
 		}
@@ -259,7 +257,8 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	//add your information
 	if(msg_type==1)//显示
 	{
-		lv_poc_member_list_refresh(NULL);
+		lv_poc_refr_func(LVPOCUPDATE_TYPE_MEMBERLIST,
+			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
 	}
 	else
 	{
@@ -325,7 +324,8 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     }
     else
     {
-	    lv_poc_member_list_refresh(NULL);
+		lv_poc_refr_func(LVPOCUPDATE_TYPE_MEMBERLIST,
+			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
     }
 }
 
@@ -617,9 +617,6 @@ void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
         	lv_list_set_btn_selected(activity_list, btn);
         }
     }
-	lv_refr_now(NULL);
-
-	//lv_poc_list_repeat_refresh(LVPOCUPDATE_TYPE_MEMBERLIST,activity_list,LVPOCLISTIDTCOM_LIST_PERIOD_10);//刷新列表
 }
 
 
@@ -1113,8 +1110,6 @@ lv_poc_status_t lv_poc_member_list_get_state(lv_poc_member_list_t *member_list_o
 
     return POC_MEMBER_NONENTITY;
 }
-
-
 #ifdef __cplusplus
 }
 #endif

@@ -579,12 +579,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		}
 
 		if(PlayVoiceType == false)/* 语音音量 */
-		{
-			audevSetPlayVolume(20);//修改语音声音大小
+		{/*0 - 110*/
+			audevSetPlayVolume(50);//修改语音声音大小
 		}
 		else/* 嘟音量 */
 		{
-			audevSetPlayVolume(10);//修改tone声音大小
+			audevSetPlayVolume(20);//修改tone声音大小
 		}
 
 		if(prv_lv_poc_audio_array[voice_type] != NULL)
