@@ -140,6 +140,8 @@ typedef struct
 	char account_passwd[32];
 	char ip_address[20];
 	int  ip_port;
+	char old_account_name[32];
+	char old_account_current_group[32];
 #endif
 } nv_poc_setting_msg_t;
 
@@ -360,6 +362,17 @@ typedef enum{
 	LVPOCAUDIO_Type_Tone_Stop_Speak,   //
 	LVPOCAUDIO_Type_End_Index,
 } LVPOCAUDIO_Type_e;
+
+typedef enum _lv_poc_group_oprator_type
+{
+	LV_POC_GROUP_OPRATOR_TYPE_NONE,
+	LV_POC_GROUP_OPRATOR_TYPE_UNLOCK,
+	LV_POC_GROUP_OPRATOR_TYPE_LOCK,
+	LV_POC_GROUP_OPRATOR_TYPE_LOCK_FAILED,
+	LV_POC_GROUP_OPRATOR_TYPE_LOCK_OK,
+	LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_FAILED,
+	LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_OK,
+} lv_poc_group_oprator_type;
 
 typedef struct _list_element_t{
     char name[LIST_ELEMENT_NAME_MAX_LENGTH];

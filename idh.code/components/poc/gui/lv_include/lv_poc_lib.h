@@ -139,6 +139,7 @@ typedef lv_poc_status_t (*lv_poc_group_list_move_down_cb)(lv_poc_group_list_t *g
 
 typedef lv_poc_status_t (*lv_poc_group_list_is_exists_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 
+typedef lv_poc_status_t (*lv_poc_group_list_lock_group_cb)(lv_poc_group_list_t *group_list_obj, lv_poc_group_oprator_type opt);
 
 
 /*
@@ -188,6 +189,7 @@ typedef struct _lv_poc_activity_attribute_cb_set
 		lv_poc_group_list_move_up_cb move_up;
 		lv_poc_group_list_move_down_cb move_down;
 		lv_poc_group_list_is_exists_cb exists;
+		lv_poc_group_list_lock_group_cb lock_group;
 	} group_list;
 
 	lv_poc_notation_msg_cb window_note;
@@ -651,6 +653,22 @@ lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb 
 */
 bool
 lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_member_call_status_cb func);
+
+/*
+	  name : lv_poc_get_lock_group
+	  param :
+	  date : 2020-06-30
+*/
+lv_poc_group_info_t
+lv_poc_get_lock_group(void);
+
+/*
+	  name : lv_poc_set_lock_group
+	  param :
+	  date : 2020-06-30
+*/
+bool
+lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, void (*func)(lv_poc_group_oprator_type opt));
 
 #ifdef __cplusplus
 }

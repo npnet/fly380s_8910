@@ -18,7 +18,7 @@ extern "C" {
   describe : 关机提示
 	  date : 2020-06-22
 */
-void lv_poc_shutdown_note_activity_open(void);
+void lv_poc_shutdown_note_activity_open(lv_task_t * task);
 
 
 

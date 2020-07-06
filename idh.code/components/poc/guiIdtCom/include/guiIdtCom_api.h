@@ -89,6 +89,14 @@ typedef enum
 
     LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF,
 
+    LVPOCGUIIDTCOM_SIGNAL_GET_LOCK_GROUP_STATUS_IND,
+
+    LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_IND,
+    LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_REP,
+
+    LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_IND,
+    LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_REP,
+
     LVPOCGUIIDTCOM_SIGNAL_END,
 } LvPocGuiIdtCom_SignalType_t;
 
@@ -97,6 +105,13 @@ typedef struct
 	int status;
 	unsigned short cause;
 } LvPocGuiIdtCom_login_t;
+
+typedef struct
+{
+	int opt;
+	void *group_info;
+	void (*cb)(lv_poc_group_oprator_type opt);
+} LvPocGuiIdtCom_lock_group_t;
 
 void lvPocGuiIdtCom_Init(void);
 
@@ -111,6 +126,8 @@ void *lvPocGuiIdtCom_get_self_info(void);
 void *lvPocGuiIdtCom_get_current_group_info(void);
 
 int lvPocGuiIdtCom_listen_status(void);
+
+void *lvPocGuiIdtCom_get_current_lock_group(void);
 
 OSI_EXTERN_C_END
 

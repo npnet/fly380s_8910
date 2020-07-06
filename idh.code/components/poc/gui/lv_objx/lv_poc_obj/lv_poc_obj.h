@@ -444,6 +444,7 @@ typedef struct _lv_poc_activity_attribute_cb_set_obj
 		lv_poc_group_list_move_up_cb move_up;
 		lv_poc_group_list_move_down_cb move_down;
 		lv_poc_group_list_is_exists_cb exists;
+		lv_poc_group_list_lock_group_cb lock_group;
 	} group_list[LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE];
 
 	lv_poc_notation_msg_cb note;
