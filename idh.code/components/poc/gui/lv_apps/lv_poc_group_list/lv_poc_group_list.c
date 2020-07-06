@@ -25,6 +25,8 @@ static bool lv_poc_group_list_design_func(struct _lv_obj_t * obj, const lv_area_
 
 static void lv_poc_get_group_list_cb(int result_type);
 
+static void lv_poc_group_list_title_refr(lv_task_t * task);
+
 static lv_obj_t * activity_list;
 
 static lv_area_t display_area;
@@ -115,11 +117,8 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 
     if(msg_type == 1)
     {
-		lv_poc_refr_func(LVPOCUPDATE_TYPE_GROUPLIST_TITLE,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
-//	    lv_poc_member_list_open(lv_poc_group_member_list_title,
-//			member_list,
-//			member_list->hide_offline);
+		lv_poc_refr_task_once(lv_poc_group_list_title_refr,
+			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
     }
     else
     {
@@ -268,8 +267,8 @@ static void lv_poc_get_group_list_cb(int result_type)
 
 	if(result_type == 1)
 	{
-		lv_poc_refr_func(LVPOCUPDATE_TYPE_GROUPLIST,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
+		lv_poc_refr_func_ui(lv_poc_group_list_refresh,
+			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH, NULL);
 	}
 	else
 	{
@@ -351,8 +350,8 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     }
     else
     {
-		lv_poc_refr_func(LVPOCUPDATE_TYPE_GROUPLIST,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
+		lv_poc_refr_func_ui(lv_poc_group_list_refresh,
+			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH, NULL);
     }
 }
 
@@ -488,8 +487,12 @@ int lv_poc_group_list_get_information(lv_poc_group_list_t *group_list_obj, const
 
 }
 
-void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
+void lv_poc_group_list_refresh(lv_task_t * task)
 {
+	lv_poc_group_list_t *group_list_obj = NULL;
+
+	group_list_obj = (lv_poc_group_list_t *)task->user_data;
+
 	if(group_list_obj == NULL)
 	{
 		group_list_obj = group_list;
@@ -816,9 +819,10 @@ lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj,
 	  name : lv_poc_build_group_list_refr
 	 param : none
 	author : wangls
-  describe : 刷新新建群组列表标头信息
+  describe : 刷新新建群组列表信息
 	  date : 2020-07-02
 */
+static
 void lv_poc_group_list_title_refr(lv_task_t * task)
 {
 	lv_poc_member_list_open(lv_poc_group_member_list_title,

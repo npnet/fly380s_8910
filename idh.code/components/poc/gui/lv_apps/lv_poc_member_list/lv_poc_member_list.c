@@ -138,14 +138,12 @@ static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 		/*获取该列表单呼对象是不是自己*/
 		lv_obj_t * sigal_member_list;
 		//char sigal_member_list_text[20] = {0};
-		OSI_LOGI(0, "[song] call is start\n");
 		sigal_member_list = lv_list_get_btn_selected(activity_list);
 		/*使用下面这个函数就死机*/
 		//strcpy((char *)sigal_member_list_text, lv_list_get_btn_text(sigal_member_list));
 		if(NULL != strstr(lv_list_get_btn_text(sigal_member_list),"我"))//如果是自己
 		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Unable_To_Call_Yourself, true);
-			//OSI_LOGI(0, "[song] call is myself\n");
 		}
 		/*获取结束*/
 
@@ -223,8 +221,8 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 			if(lv_poc_member_list_obj != NULL && current_activity == poc_member_list_activity)
 			{
 
-				lv_poc_refr_func(LVPOCUPDATE_TYPE_MEMBERLIST,
-					LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
+				lv_poc_refr_func_ui(lv_poc_member_list_refresh,
+					LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH,NULL);
 			}
 			break;
 		}
@@ -257,8 +255,8 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	//add your information
 	if(msg_type==1)//显示
 	{
-		lv_poc_refr_func(LVPOCUPDATE_TYPE_MEMBERLIST,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
+		lv_poc_refr_func_ui(lv_poc_member_list_refresh,
+			LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
 	}
 	else
 	{
@@ -324,9 +322,9 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     }
     else
     {
-		lv_poc_refr_func(LVPOCUPDATE_TYPE_MEMBERLIST,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH);
-    }
+		lv_poc_refr_func_ui(lv_poc_member_list_refresh,
+			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH,NULL);
+	}
 }
 
 lv_poc_status_t lv_poc_member_list_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information)
@@ -553,8 +551,12 @@ int lv_poc_member_list_get_information(lv_poc_member_list_t *member_list_obj, co
 
 }
 
-void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
+void lv_poc_member_list_refresh(lv_task_t * task)
 {
+	lv_poc_member_list_t *member_list_obj = NULL;
+
+	member_list_obj = (lv_poc_member_list_t *)task->user_data;
+
 	if(member_list_obj == NULL)
 	{
 		member_list_obj = lv_poc_member_list_obj;

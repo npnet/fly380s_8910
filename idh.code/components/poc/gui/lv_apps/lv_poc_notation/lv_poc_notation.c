@@ -1,4 +1,4 @@
-
+﻿
 /*************************************************
 *
 *                  Include
@@ -393,8 +393,6 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 			lv_poc_notation_speaking((const int8_t *)notation_msg->label_1_text,
 				(const int8_t *)notation_msg->label_2_text);
 
-			//log查看
-			OSI_LOGI(0, "[song] test height");
 			break;
 		}
 

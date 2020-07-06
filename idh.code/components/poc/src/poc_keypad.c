@@ -39,9 +39,8 @@ static void prvPowerKeyCb(void *ctx)
 	isReadyPowerOff = true;
 	if(!lv_poc_charge_poweron_status())//正常开机
 	{
-	    lv_task_t * task = lv_task_create(lv_poc_shutdown_note_activity_open, 50,
-			LV_TASK_PRIO_HIGH, NULL);
-		lv_task_once(task);
+		lv_poc_refr_task_once(lv_poc_shutdown_note_activity_open,
+			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
 	}
 	else//充电开机
 	{
