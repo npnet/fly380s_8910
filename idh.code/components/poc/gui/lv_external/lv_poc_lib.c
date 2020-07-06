@@ -1029,6 +1029,8 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 #ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
 	strcpy(poc_setting->account_name, "00000");
 	strcpy(poc_setting->account_passwd, "00000");
+	strcpy(poc_setting->old_account_name, "");
+	strcpy(poc_setting->old_account_current_group, "");
 	strcpy(poc_setting->ip_address, "124.160.11.21");
 	poc_setting->ip_port = 10000;
 #endif
@@ -1923,6 +1925,52 @@ lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_
 		return false;
 	}
 	return true;;
+}
+
+/*
+	  name : lv_poc_get_lock_group
+	  param :
+	  date : 2020-06-30
+*/
+lv_poc_group_info_t
+lv_poc_get_lock_group(void)
+{
+	return (lv_poc_group_info_t)lvPocGuiIdtCom_get_current_lock_group();
+}
+
+/*
+	  name : lv_poc_set_lock_group
+	  param :
+	  date : 2020-06-30
+*/
+bool
+lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, void (*func)(lv_poc_group_oprator_type opt))
+{
+	static LvPocGuiIdtCom_lock_group_t group_info = {0};
+	if(opt != LV_POC_GROUP_OPRATOR_TYPE_LOCK && opt != LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
+	{
+		return false;
+	}
+
+	group_info.opt = opt;
+	group_info.cb = func;
+	group_info.group_info = group;
+
+	if(opt == LV_POC_GROUP_OPRATOR_TYPE_LOCK)
+	{
+		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_IND, &group_info))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_IND, &group_info))
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 

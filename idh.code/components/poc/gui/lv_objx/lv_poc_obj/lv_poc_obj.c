@@ -133,6 +133,7 @@ static lv_poc_status_t prv_lv_poc_group_list_move_bottom(lv_poc_group_list_t *gr
 static lv_poc_status_t prv_lv_poc_group_list_move_up(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 static lv_poc_status_t prv_lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 static lv_poc_status_t prv_lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+static lv_poc_status_t prv_lv_poc_group_list_lock_group(lv_poc_group_list_t *group_list_obj, lv_poc_group_oprator_type opt);
 
 static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_type, int num, ...);
 
@@ -222,6 +223,7 @@ static __attribute__((unused)) lv_poc_activity_attribute_cb_set_obj prv_lv_poc_a
 			.move_up = lv_poc_group_list_move_up,
 			.move_down = lv_poc_group_list_move_down,
 			.exists = lv_poc_group_list_is_exists,
+			.lock_group = lv_poc_group_list_lock_group,
 		},
 
 		{0},
@@ -272,6 +274,7 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 		.move_up = prv_lv_poc_group_list_move_up,
 		.move_down = prv_lv_poc_group_list_move_down,
 		.exists = prv_lv_poc_group_list_is_exists,
+		.lock_group = prv_lv_poc_group_list_lock_group,
 	},
 
 	.window_note = prv_lv_poc_notation_msg,
@@ -1891,6 +1894,25 @@ static lv_poc_status_t prv_lv_poc_group_list_is_exists(lv_poc_group_list_t *grou
 			if(cb_set_obj->group_list[i].exists != NULL)
 			{
 				status = cb_set_obj->group_list[i].exists(group_list_obj, name, information);
+			}
+		 }
+	 }
+
+	 return status;
+}
+
+static lv_poc_status_t prv_lv_poc_group_list_lock_group(lv_poc_group_list_t *group_list_obj, lv_poc_group_oprator_type opt)
+{
+	 lv_poc_activity_attribute_cb_set_obj * cb_set_obj = lv_poc_get_activity_attribute_cb_set_obj();
+	 lv_poc_status_t status = POC_UNKNOWN_FAULT;
+
+	 for(int i = 0; i < LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE; i++)
+	 {
+		 if(cb_set_obj->group_list[i].active == true && cb_set_obj->group_list[i].activity_id > 0)
+		 {
+			if(cb_set_obj->group_list[i].lock_group != NULL)
+			{
+				status = cb_set_obj->group_list[i].lock_group(group_list_obj, opt);
 			}
 		 }
 	 }

@@ -160,7 +160,7 @@ lv_obj_t * lv_poc_shutdown_note_activity_create(lv_poc_display_t *display)
   describe : 关机提示
 	  date : 2020-06-22
 */
-void lv_poc_shutdown_note_activity_open(void)
+void lv_poc_shutdown_note_activity_open(lv_task_t *task)
 {
 	static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_SHUTDOWN,
 																lv_poc_shutdown_note_activity_create,

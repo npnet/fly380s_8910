@@ -28,6 +28,8 @@ static void lv_poc_get_group_list_cb(int result_type);
 static void lv_poc_group_list_title_refr(lv_task_t * task);
 static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt);
 
+static void lv_poc_group_delete_oprator_cb(int result_type);
+
 static void lv_poc_lock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
 
 static void lv_poc_lock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
@@ -36,21 +38,36 @@ static void lv_poc_unlock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
 
 static void lv_poc_unlock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
 
+static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
+
+static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
+
+static void lv_poc_set_current_group_informartion_task(lv_task_t * task);
+
+static void lv_poc_group_list_notation(lv_task_t * task);
+
 static lv_obj_t * activity_list;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_list_info = NULL;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_lock_info = NULL;
 
+static lv_poc_group_list_item_info_t * lv_poc_group_delete_info = NULL;
+
 static lv_poc_group_list_item_info_t * lv_poc_group_current_lock_info = NULL;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_current_info = NULL;
+
+lv_poc_group_info_t *lv_poc_group_list_get_member_list_info = NULL;
+
 
 static lv_area_t display_area;
 
 lv_poc_activity_t * poc_group_list_activity;
 
 char group_member_list_is_open = 0;
+
+static int prv_group_list_cur_opt = 0;
 
 
 static char lv_poc_group_member_list_title[LIST_ELEMENT_NAME_MAX_LENGTH];
@@ -61,6 +78,8 @@ static const char * lv_poc_lockgroupwindow_label_lock_text = "锁组";
 static const char * lv_poc_lockgroupwindow_label_unlock_text = "解锁";
 static const char * lv_poc_lockgroupwindow_label_lock_question_text = "是否锁组？";
 static const char * lv_poc_lockgroupwindow_label_unlock_question_text = "是否解锁？";
+static const char * lv_poc_lockgroupwindow_label_delete_group_text = "删除";
+static const char * lv_poc_lockgroupwindow_label_delete_group_question_text = "确认删除吗？";
 static const char * lv_poc_lockgroupwindow_label_OK_text = "          确定          ";
 
 static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
@@ -76,6 +95,8 @@ static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
 static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 {
 	lv_poc_group_list_cb_set_active(ACT_ID_POC_GROUP_LIST, false);
+	lv_poc_group_list_get_member_list_info = NULL;
+	prv_group_list_cur_opt = 0;
 	activity_list = NULL;
 	if(group_list != NULL)
 	{
@@ -144,7 +165,7 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     if(msg_type == 1)
     {
 		lv_poc_refr_task_once(lv_poc_group_list_title_refr,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
     }
     else
     {
@@ -153,48 +174,17 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     }
 }
 
+/*
+	  name : lv_poc_group_list_set_current_group_cb
+	 param : none
+	author : wangls
+  describe : lv任务刷新
+	  date : 2020-07-28
+	 result: 解决新建群组里刷新白屏-黑屏-无法唤醒/问题
+*/
 static void lv_poc_group_list_set_current_group_cb(int result_type)
 {
-	if(result_type == 1)
-	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Join_Group, false);
-		if(lv_poc_group_current_info != NULL && activity_list != NULL)
-		{
-			lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
-
-			lv_poc_group_list_item_info_t *group_info = lv_poc_group_current_info;
-			list_element_t * group_item = (list_element_t *)group_info->item_information;
-			lv_obj_t *btn_label = lv_list_get_btn_label(group_item->list_item);
-			lv_label_set_text(btn_label, " ");
-			lv_label_set_text(btn_label, lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-			lv_img_set_src(group_info->lock_img, &unlock);
-			group_info->is_lock = false;
-
-			group_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
-			group_item = (list_element_t *)group_info->item_information;
-			btn_label = lv_list_get_btn_label(group_item->list_item);
-	    	strcpy(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-	    	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
-			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
-			lv_img_set_src(group_info->lock_img, &unlock);
-			group_info->is_lock = false;
-			lv_poc_group_current_info = group_info;
-
-			if(lv_poc_get_lock_group() != NULL)
-			{
-				lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_LOCK, (lv_poc_group_info_t)group_item->information, lv_poc_group_lock_oprator_cb);
-			}
-		}
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
-	}
-	else if(result_type == 2)
-	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
-	}
-	else
-	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"失败");
-	}
+	lv_poc_refr_func_ui(lv_poc_set_current_group_informartion_task, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)result_type);
 }
 
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
@@ -218,7 +208,10 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 	{
 		lv_poc_group_lock_info = p_info;
 		lv_poc_set_current_group((lv_poc_group_info_t)p_element->information, lv_poc_group_list_set_current_group_cb);
-
+		#if 0/*test*/
+		lv_poc_member_list_open(NULL,NULL,false);
+		#endif
+		#if 1
 		if(member_list == NULL)
 		{
 			member_list = (lv_poc_member_list_t *)lv_mem_alloc(sizeof(lv_poc_member_list_t));
@@ -228,42 +221,59 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 		{
 			memset((void *)member_list, 0, sizeof(lv_poc_member_list_t));
 			strcpy(lv_poc_group_member_list_title, (const char *)p_element->name);
-			member_list->hide_offline = true;
-			lv_poc_get_member_list((lv_poc_group_info_t)p_element->information,
+			member_list->hide_offline = false;
+			lv_poc_group_list_get_member_list_info = (lv_poc_group_info_t *)p_element->information;
+			lv_poc_get_member_list(lv_poc_group_list_get_member_list_info,
 				member_list,
-				2,
+				1,
 				lv_poc_group_list_get_membet_list_cb);
 		}
+		#endif
 	}
 	else if(LV_EVENT_LONG_PRESSED == event)
 	{
-		if(lv_poc_group_list_info == NULL)
+		if(prv_group_list_cur_opt == 1)
 		{
-			return;
-		}
+			if(lv_poc_group_list_info == NULL)
+			{
+				return;
+			}
 
-		if(lv_poc_get_lock_group() != NULL)  //解锁组
+			if(lv_poc_get_lock_group() != NULL)  //解锁组
+			{
+				lv_poc_group_lock_info = NULL;
+				lv_poc_warnning_open(lv_poc_lockgroupwindow_label_unlock_text,
+					lv_poc_lockgroupwindow_label_unlock_question_text,
+					lv_poc_lockgroupwindow_label_OK_text,
+					lv_poc_unlock_group_question_OK_cb,
+					NULL,
+					lv_poc_unlock_group_question_CANCEL_cb,
+					lock_window_area);
+			}
+			else  //锁组
+			{
+				lv_poc_group_lock_info = p_info;
+				lv_poc_warnning_open(lv_poc_lockgroupwindow_label_lock_text,
+					lv_poc_lockgroupwindow_label_lock_question_text,
+					lv_poc_lockgroupwindow_label_OK_text,
+					lv_poc_lock_group_question_OK_cb,
+					NULL,
+					lv_poc_lock_group_question_CANCEL_cb,
+					lock_window_area);
+			}
+		}
+		else if(prv_group_list_cur_opt == 2)
 		{
-			lv_poc_group_lock_info = NULL;
-			lv_poc_warnning_open(lv_poc_lockgroupwindow_label_unlock_text,
-				lv_poc_lockgroupwindow_label_unlock_question_text,
+			lv_poc_group_delete_info = p_info;
+			lv_poc_warnning_open(lv_poc_lockgroupwindow_label_delete_group_text,
+				lv_poc_lockgroupwindow_label_delete_group_question_text,
 				lv_poc_lockgroupwindow_label_OK_text,
-				lv_poc_unlock_group_question_OK_cb,
+				lv_poc_delete_group_question_OK_cb,
 				NULL,
-				lv_poc_unlock_group_question_CANCEL_cb,
+				lv_poc_delete_group_question_CANCEL_cb,
 				lock_window_area);
 		}
-		else  //锁组
-		{
-			lv_poc_group_lock_info = p_info;
-			lv_poc_warnning_open(lv_poc_lockgroupwindow_label_lock_text,
-				lv_poc_lockgroupwindow_label_lock_question_text,
-				lv_poc_lockgroupwindow_label_OK_text,
-				lv_poc_lock_group_question_OK_cb,
-				NULL,
-				lv_poc_lock_group_question_CANCEL_cb,
-				lock_window_area);
-		}
+		prv_group_list_cur_opt = 0;
 	}
 }
 
@@ -326,6 +336,11 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 		case LV_SIGNAL_FOCUS:
 		{
+			/*可以解决白屏问题，但是锁组死机*/
+			#if 1
+			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
+				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
+			#endif
 			break;
 		}
 
@@ -341,6 +356,22 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 			{
 				case LV_GROUP_KEY_MB:
 				{
+					if(prv_group_list_cur_opt > 0)
+					{
+						break;
+					}
+					prv_group_list_cur_opt = 1;
+					lv_signal_send(activity_list, LV_SIGNAL_LONG_PRESS, NULL);
+					break;
+				}
+
+				case LV_GROUP_KEY_GP:
+				{
+					if(prv_group_list_cur_opt > 0)
+					{
+						break;
+					}
+					prv_group_list_cur_opt = 2;
 					lv_signal_send(activity_list, LV_SIGNAL_LONG_PRESS, NULL);
 					break;
 				}
@@ -392,6 +423,7 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 	{
 		if(lv_poc_group_current_info != NULL)
 		{
+			#if 0/*以下代码死机*/
 			if(lv_poc_group_lock_info == NULL)
 			{
 				if(activity_list == NULL)
@@ -400,6 +432,8 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 				}
 				lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
 				lv_poc_group_current_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
+				if(lv_poc_group_current_info == NULL) return;
+				lv_poc_group_lock_info = lv_poc_group_current_info;
 			}
 
 			lv_poc_group_list_item_info_t *group_info = lv_poc_group_current_info;
@@ -420,6 +454,10 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
 			lv_img_set_src(group_info->lock_img, &locked);
 			group_info->is_lock = true;
+			#else/*解决锁组死机*/
+			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
+				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_LOWEST, NULL);
+			#endif
 		}
 	}
 	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
@@ -432,6 +470,11 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 		lv_poc_group_current_lock_info = NULL;
 		lv_img_set_src(group_info->lock_img, &unlock);
 		group_info->is_lock = false;
+
+		#if 1/*解决刷新缺口*/
+		lv_poc_refr_func_ui(lv_poc_group_list_refresh,
+			LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_LOWEST, NULL);
+		#endif
 	}
 }
 
@@ -453,7 +496,7 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 				OSI_LOGI(0, "lock an empty group\n");
 				break;
 			}
-			OSI_LOGI(0, "lock group success\n");
+			OSI_LOGI(0, "[song]lock group success\n");
 			lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_LOCK);
 			lv_task_once(fresh_task);
 			break;
@@ -472,7 +515,7 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 				OSI_LOGI(0, "unlock an empty group\n");
 				break;
 			}
-			OSI_LOGI(0, "unlock group success\n");
+			OSI_LOGI(0, "[song]unlock group success\n");
 			lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_UNLOCK);
 			lv_task_once(fresh_task);
 			break;
@@ -481,6 +524,41 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 		default:
 			break;
 	}
+}
+
+static void lv_poc_group_delete_oprator_cb(int result_type)
+{
+	if(poc_group_list_activity == NULL)
+	{
+		return;
+	}
+
+	if(result_type == 0)
+	{
+		if(lv_poc_group_delete_info == NULL)
+		{
+			return;
+		}
+
+		if(group_list != NULL)
+		{
+			lv_list_clean(activity_list);
+
+			lv_poc_group_list_clear(group_list);
+
+			if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
+			{
+				poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, true);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
+			}
+		}
+	}
+	else
+	{
+		OSI_LOGI(0, "delete group fail, cause:%d\n", result_type);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"删除群组失败", NULL);
+	}
+	lv_poc_group_delete_info = NULL;
 }
 
 static void lv_poc_lock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
@@ -525,7 +603,26 @@ static void lv_poc_unlock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t ev
 	}
 }
 
+static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
+{
+	if(event == LV_EVENT_APPLY)
+	{
+		if(lv_poc_group_delete_info == NULL)
+		{
+			return;
+		}
+		list_element_t * item_info = (list_element_t *)lv_poc_group_delete_info->item_information;
+		lv_poc_group_info_t * group_info = (lv_poc_group_info_t)item_info->information;
+		lv_poc_delete_group((lv_poc_group_info_t)group_info, lv_poc_group_delete_oprator_cb);
+	}
+}
 
+static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event)
+{
+	if(event == LV_EVENT_CANCEL)
+	{
+	}
+}
 
 
 void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
@@ -673,7 +770,7 @@ void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * 
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         group_list_obj->group_list = p_cur->next;
         lv_obj_del(p_cur->list_item);
@@ -682,6 +779,7 @@ void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * 
         return;
     }
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -697,6 +795,30 @@ void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * 
         p_prv = p_cur;
         p_cur = p_cur->next;
     }
+}
+
+void lv_poc_group_list_clear(lv_poc_group_list_t *group_list_obj)
+{
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return;
+	}
+
+	list_element_t * cur_p = group_list_obj->group_list;
+	list_element_t * temp_p;
+	while(cur_p != NULL)
+	{
+		temp_p = cur_p;
+		cur_p =cur_p->next;
+		//lv_obj_del(temp_p->list_item);
+		lv_mem_free(temp_p);
+	}
+	group_list_obj->group_list = NULL;
 }
 
 int lv_poc_group_list_get_information(lv_poc_group_list_t *group_list_obj, const char * name, void *** information)
@@ -842,8 +964,8 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	        && GROUP_EQUATION((void *)p_cur->name, (void *)current_group_name, (void *)p_cur->information, (void *)current_group, NULL))
         {
 	        is_set_current_group = 0;
-        	strcpy(lv_poc_group_list_current_group_title, (const char *)p_cur->name);
-        	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+        	strcpy(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+        	strcat(lv_poc_group_list_current_group_title, (const char *)p_cur->name);
         	lv_label_set_text(btn_label, (const char *)lv_poc_group_list_current_group_title);
         	lv_poc_group_current_info = p_group_info;
 		}
@@ -872,6 +994,23 @@ void lv_poc_group_list_refresh(lv_task_t * task)
     }
 }
 
+void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
+{
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return;
+	}
+	lv_list_clean(activity_list);
+	lv_poc_group_list_clear(group_list_obj);
+
+	lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb);
+}
+
 
 lv_poc_status_t lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, const char * name, void * information)
 {
@@ -894,12 +1033,13 @@ lv_poc_status_t lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, 
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -941,13 +1081,14 @@ lv_poc_status_t lv_poc_group_list_move_bottom(lv_poc_group_list_t *group_list_ob
 
     p_cur = group_list_obj->group_list;
     p_scr = p_cur;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_scr != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         is_find = true;
         p_scr = p_cur;
         group_list_obj->group_list = p_cur->next;
     }
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -997,14 +1138,15 @@ lv_poc_status_t lv_poc_group_list_move_up(lv_poc_group_list_t *group_list_obj, c
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         p_prv->next = p_cur->next;
         p_cur->next = p_prv;
@@ -1014,6 +1156,7 @@ lv_poc_status_t lv_poc_group_list_move_up(lv_poc_group_list_t *group_list_obj, c
 
     p_prv_prv = p_prv;
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -1053,8 +1196,8 @@ lv_poc_status_t lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj,
         return status;
     }
 
-    p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    p_cur = group_list_obj->group_list;/*p_cur != NULL 防止内存泄露*/
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         if(NULL != p_cur->next)
         {
@@ -1067,6 +1210,7 @@ lv_poc_status_t lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj,
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -1145,6 +1289,82 @@ void lv_poc_group_list_title_refr(lv_task_t * task)
 		member_list,
 		member_list->hide_offline);
 }
+
+/*
+	  name : lv_poc_set_current_group_informartion_task
+	 param : none
+	author : wangls
+  describe : 刷新群组信息
+	  date : 2020-07-28
+*/
+static
+void lv_poc_set_current_group_informartion_task(lv_task_t * task)
+{
+	int result_type = (int)task->user_data;
+
+	if(result_type == 1)
+	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Join_Group, false);
+		if(lv_poc_group_current_info != NULL && activity_list != NULL)
+		{
+			lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
+			if(cur_btn == NULL) return;
+
+			lv_poc_group_list_item_info_t *group_info = lv_poc_group_current_info;
+			if(group_info == NULL) return;
+
+			list_element_t * group_item = (list_element_t *)group_info->item_information;
+			if(group_item == NULL) return;
+			lv_obj_t *btn_label = lv_list_get_btn_label(group_item->list_item);
+			lv_label_set_text(btn_label, " ");
+			lv_label_set_text(btn_label, lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
+			lv_img_set_src(group_info->lock_img, &unlock);
+			group_info->is_lock = false;
+
+			group_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
+			group_item = (list_element_t *)group_info->item_information;
+			btn_label = lv_list_get_btn_label(group_item->list_item);
+	    	strcpy(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
+	    	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
+			lv_img_set_src(group_info->lock_img, &unlock);
+			group_info->is_lock = false;
+
+			if(group_info == NULL) return;
+			lv_poc_group_current_info = group_info;
+
+			if(lv_poc_get_lock_group() != NULL)
+			{
+				lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_LOCK, (lv_poc_group_info_t)group_item->information, lv_poc_group_lock_oprator_cb);
+			}
+		}
+		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
+		lv_poc_refr_task_once(lv_poc_group_list_notation, LVPOCLISTIDTCOM_LIST_PERIOD_300, LV_TASK_PRIO_LOW);
+	}
+	else if(result_type == 2)
+	{
+		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
+	}
+	else
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"失败");
+	}
+
+}
+
+/*
+	  name : lv_poc_group_list_notation
+	 param : none
+	author : wangls
+  describe : 延时弹框
+	  date : 2020-07-30
+*/
+static
+void lv_poc_group_list_notation(lv_task_t * task)
+{
+	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
+}
+
 
 #ifdef __cplusplus
 }

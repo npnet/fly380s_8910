@@ -144,6 +144,7 @@ static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 		if(NULL != strstr(lv_list_get_btn_text(sigal_member_list),"我"))//如果是自己
 		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Unable_To_Call_Yourself, true);
+			return;
 		}
 		/*获取结束*/
 

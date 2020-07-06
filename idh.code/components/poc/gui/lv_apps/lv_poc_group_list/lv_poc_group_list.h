@@ -1,9 +1,16 @@
-﻿#ifndef __LV_POC_GROUP_LIST_H_
+#ifndef __LV_POC_GROUP_LIST_H_
 #define __LV_POC_GROUP_LIST_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct
+{
+	void        * item_information;
+	lv_obj_t    * lock_img;
+	bool          is_lock;
+} lv_poc_group_list_item_info_t;
 
 void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj);
 
@@ -26,6 +33,8 @@ lv_poc_status_t lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj,
 //void lv_poc_group_list_set_state(const char * name, bool is_online);
 
 lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+
+lv_poc_status_t lv_poc_group_list_lock_group(lv_poc_group_list_t *group_list_obj, lv_poc_group_oprator_type opt);
 
 //lv_poc_status lv_poc_group_list_get_state(const char * name);
 
