@@ -356,11 +356,6 @@ static void prvPowerOn(void *arg)
 #ifdef CONFIG_HEADSET_DETECT_SUPPORT
     drvHandsetInit();
 #endif
-
-#ifdef CONFIG_POC_SUPPORT
-	osiThreadCreate("pocStart", pocStart, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
-#endif
-
 }
 
 void osiAppStart(void)
@@ -421,4 +416,11 @@ void osiAppStart(void)
     // wait a while for PM source created
     osiThreadSleep(10);
     osiPmStart();
+	
+#ifdef CONFIG_POC_SUPPORT
+	if (osiGetBootMode() != OSI_BOOTMODE_CALIB)
+	{
+		osiThreadCreate("pocStart", pocStart, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+	}
+#endif
 }

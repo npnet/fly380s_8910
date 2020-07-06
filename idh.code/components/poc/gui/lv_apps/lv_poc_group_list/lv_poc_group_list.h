@@ -13,7 +13,7 @@ void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * 
 
 int lv_poc_group_list_get_information(lv_poc_group_list_t *group_list_obj, const char * name, void *** information);
 
-void lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj);
+void lv_poc_group_list_refresh(lv_task_t * task);
 
 lv_poc_status_t lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 
@@ -28,7 +28,6 @@ lv_poc_status_t lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj,
 lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 
 //lv_poc_status lv_poc_group_list_get_state(const char * name);
-void lv_poc_group_list_title_refr(lv_task_t * task);
 
 #ifdef __cplusplus
 }

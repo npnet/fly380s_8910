@@ -1,4 +1,4 @@
-#ifndef __LV_POC_LIB_H_
+﻿#ifndef __LV_POC_LIB_H_
 #define __LV_POC_LIB_H_
 
 #include "lvgl.h"
@@ -104,7 +104,7 @@ typedef void (*lv_poc_member_list_clear_cb)(lv_poc_member_list_t *member_list_ob
 
 typedef int (*lv_poc_member_list_get_information_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void *** information);
 
-typedef void (*lv_poc_member_list_refresh_cb)(lv_poc_member_list_t *member_list_obj);
+typedef void (*lv_poc_member_list_refresh_cb)(lv_task_t *task);
 
 typedef lv_poc_status_t (*lv_poc_member_list_move_top_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 
@@ -127,7 +127,7 @@ typedef void (*lv_poc_group_list_remove_cb)(lv_poc_group_list_t *group_list_obj,
 
 typedef int (*lv_poc_group_list_get_information_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void *** information);
 
-typedef void (*lv_poc_group_list_refresh_cb)(lv_poc_group_list_t *group_list_obj);
+typedef void (*lv_poc_group_list_refresh_cb)(lv_task_t *task);
 
 typedef lv_poc_status_t (*lv_poc_group_list_move_top_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 

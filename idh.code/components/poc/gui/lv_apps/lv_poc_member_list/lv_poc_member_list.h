@@ -1,4 +1,4 @@
-#ifndef __LV_POC_MEMBER_LIST_H_
+﻿#ifndef __LV_POC_MEMBER_LIST_H_
 #define __LV_POC_MEMBER_LIST_H_
 
 #include "lv_include/lv_poc_type.h"
@@ -18,7 +18,7 @@ void lv_poc_member_list_clear(lv_poc_member_list_t *member_list_obj);
 
 int lv_poc_member_list_get_information(lv_poc_member_list_t *member_list_obj, const char * name, void *** information);
 
-void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj);
+void lv_poc_member_list_refresh(lv_task_t * task);
 
 lv_poc_status_t lv_poc_member_list_move_top(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 

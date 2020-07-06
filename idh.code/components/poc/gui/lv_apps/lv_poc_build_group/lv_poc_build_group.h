@@ -1,4 +1,4 @@
-#ifndef __LV_POC_BUILD_GROUP_H_
+﻿#ifndef __LV_POC_BUILD_GROUP_H_
 #define __LV_POC_BUILD_GROUP_H_
 
 #ifdef __cplusplus
@@ -24,7 +24,7 @@ void lv_poc_build_group_clear(lv_poc_member_list_t *member_list_obj);
 
 int lv_poc_build_group_get_information(lv_poc_member_list_t *member_list_obj, const char * name, void *** information);
 
-void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list_obj);
+void lv_poc_build_group_refresh(lv_task_t * task);
 
 lv_poc_status_t lv_poc_build_group_move_top(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 

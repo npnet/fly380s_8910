@@ -32,6 +32,7 @@
 #include "hal_chip.h"
 
 static void lv_poc_network_config_task(lv_task_t * task);
+static void lv_poc_power_on_picture(lv_task_t * task);
 
 static void pocIdtStartHandleTask(void * ctx)
 {
@@ -81,7 +82,8 @@ static void pocStartAnimation(void *ctx)
 	osiThreadSleep(4000);
 	osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 	osiThreadSleep(2800);
-	lv_poc_create_idle();
+	lv_poc_refr_task_once(lv_poc_power_on_picture,
+		LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
 	osiThreadSleep(200);
 	lv_obj_del(poc_power_on_backgroup_image);
 	lvGuiUpdateLastActivityTime();
@@ -156,6 +158,17 @@ void lv_poc_network_config_task(lv_task_t * task)
 	poc_net_work_config(POC_SIM_1);
 }
 
-
+/*
+	  name : lv_poc_power_on_picture
+	 param : none
+	author : wangls
+  describe : 开机桌面
+	  date : 2020-07-03
+*/
+static
+void lv_poc_power_on_picture(lv_task_t * task)
+{
+	lv_poc_create_idle();
+}
 
 #endif
