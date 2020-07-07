@@ -166,6 +166,7 @@ config FDL_PACKET_MAX_LEN
 
 config NVBIN_FIXED_SIZE
     hex "NV bin fixed size"
+    depends on SOC_8910 || SOC_8811
     default 0x20000 if SOC_8910
     default 0x14000 if SOC_8811
     help

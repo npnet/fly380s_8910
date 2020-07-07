@@ -47,10 +47,16 @@ int atDeviceRead(atDevice_t *th, void *data, size_t size)
     return 0;
 }
 
-void atDeviceSetFormat(atDevice_t *th, size_t baud, atDeviceFormat_t format, atDeviceParity_t parity)
+void atDeviceSetBaudrate(atDevice_t *th, size_t baud)
+{
+    if (th->set_baud != NULL)
+        th->set_baud(th, baud);
+}
+
+void atDeviceSetFormat(atDevice_t *th, atDeviceFormat_t format, atDeviceParity_t parity)
 {
     if (th->set_format != NULL)
-        th->set_format(th, baud, format, parity);
+        th->set_format(th, format, parity);
 }
 
 bool atDeviceSetFlowCtrl(atDevice_t *th, atDeviceRXFC_t rxfc, atDeviceTXFC_t txfc)

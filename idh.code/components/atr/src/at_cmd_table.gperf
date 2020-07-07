@@ -103,6 +103,8 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 +CGSN,          atCmdHandleCGSN, 0          // 5.4 Request product serial number identification
 +CSCS,          atCmdHandleCSCS, 0          // 5.5 Select TE character set
 +CIMI,          atCmdHandleCIMI, 0          // 5.6 Request international mobile subscriber identity
++CEID,           atCmdHandleEID, 0           // get eid
+
 #ifdef CONFIG_ATR_CMUX_SUPPORT
 +CMUX,          atCmdHandleCMUX, 0          // 5.7 Multiplexing mode
 #endif
@@ -157,14 +159,16 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 +CLIP,          atCmdHandleCLIP, 0          // 7.6 Calling line identification presentation
 +CLIR,          atCmdHandleCLIR, 0          // 7.7 Calling line identification restriction
 +CCWA,          atCmdHandleCCWA, 0          // 7.12 Call waiting
++CUSD,          atCmdHandleCUSD, 0          // 7.15 Unstructured supplementary service data
 +CLCC,          atCmdHandleCLCC, 0          // 7.18 List current calls
 +CPOL,          atCmdHandleCPOL, 0          // 7.19 Preferred PLMN list
-+CPLS,          atCmdHandleCPLS, 0          // 7.20 Selection of preferred PLMN list
+//+CPLS,          atCmdHandleCPLS, 0          // 7.20 Selection of preferred PLMN list
 +CPWD,          atCmdHandleCPWD, 0          // 7.5 Change password
 +COLP,          atCmdHandleCOLP, 0          // 7.8 Connected line identification presentation
 +CCFC,          atCmdHandleCCFC, 0          // 7.11 Call forwarding number and conditions
 +CCED,          atCmdHandleCCED, 0
 +MJDC,          atCmdHandleMJDC, 0          //Detect the jamming.
++SDMBS,         atCmdHandleSDMBS, 0         //Set Pseudo base station identification.
 
 
 +CTEC,          atCmdHandleCTEC, 0          // Change RAT
@@ -494,7 +498,7 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 #endif
 
 #ifdef CONFIG_SOC_8910
-+TSTSETCS,      atCmdHandleTSTSETCS, 0      // Just use to test close CS domain
+//+TSTSETCS,      atCmdHandleTSTSETCS, 0      // Just use to test close CS domain
 +SIMLOCKTEST,      atCmdHandleSimlockTest, 0      // Just use to test close CS domain
 #endif
 
@@ -603,11 +607,18 @@ $MYSYSMODE,     atCmdHandleMYSYSMODE, 0
 +RFTEMPERATURE,   atCmdHandleRFTEMPERATURE, 0
 +SETLTEFRP,       atCmdHandleSETLTEFRP, 0
 +SETRFFRP,        atCmdHandleSETRFFRP, 0
++SETVOS,          atCmdHandleSETVOS, 0
 #endif
 
 #ifdef CONFIG_SOC_8910
 +SPBTCTRL,      atCmdHandleSPBTCTRL, 0      // BT control commands
 #endif
+
+#ifdef CONFIG_AT_BTCOMM_SUPPORT
++BTCOMM,        AT_BTApp_CmdFunc_BtComm, 0
++BTSPP,         AT_BTApp_CmdFunc_BtSpp, 0
+#endif
+
 
 #ifdef CONFIG_AT_SPBTTEST_SUPPORT
 +SPBTTEST,      AT_SPBT_CmdFunc_TEST, 0

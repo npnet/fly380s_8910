@@ -30132,10 +30132,10 @@
     ITEM_NAME    = enable
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 3011
     ITEM_PARENT  = 3010
-    ITEM_DESC    =  
+    ITEM_DESC    = =1:use mpr_pwr. =2:use soft ampr. =other: no ampr
   END_ITEM
 
   BEGIN_ITEM

@@ -88,6 +88,8 @@ static bool prvDiagSendMulti(const osiBuffer_t *bufs, unsigned count, unsigned s
 {
     diagContext_t *d = gDiagCtx;
     int enc_size = osiHdlcEncodeMultiLen(bufs, count);
+    if (enc_size < 0)
+        return false;
 
     void *enc_buf = malloc(enc_size);
     if (enc_buf != NULL)

@@ -62,10 +62,10 @@ typedef struct
     HWP_UART_T *hwp;
     volatile uint32_t *reg_cfg_clk_uart;
     uint8_t irqn;
-    uint8_t iomux_rx;
-    uint8_t iomux_tx;
-    uint8_t iomux_rts;
-    uint8_t iomix_cts;
+    unsigned iomux_rx;
+    unsigned iomux_tx;
+    unsigned iomux_rts;
+    unsigned iomix_cts;
 } drvUartHWDesc_t;
 
 struct drvUart
@@ -98,29 +98,34 @@ struct drvUart
 
 #if defined(CONFIG_SOC_8909)
 static const drvUartHWDesc_t gUartHWDesc[] = {
-    {DRV_NAME_UART1, hwp_uart1, &hwp_sysCtrl->cfg_clk_uart[0],
-     SYS_IRQ_UART1,
-     PINFUNC_UART1_RXD, PINFUNC_UART1_TXD,
-     PINFUNC_UART1_RTS, PINFUNC_UART1_CTS},
-    {DRV_NAME_UART2, hwp_uart2, &hwp_sysCtrl->cfg_clk_uart[1],
-     SYS_IRQ_UART2,
-     PINFUNC_UART2_RXD, PINFUNC_UART2_TXD,
-     PINFUNC_UART2_RTS, PINFUNC_UART2_CTS},
-    {DRV_NAME_UART3, hwp_uart3, &hwp_sysCtrl->cfg_clk_uart[2],
-     SYS_IRQ_UART3,
-     PINFUNC_UART3_RXD, PINFUNC_UART3_TXD,
-     PINFUNC_UART3_RTS, PINFUNC_UART3_CTS},
+    {DRV_NAME_UART1, hwp_uart1, &hwp_sysCtrl->cfg_clk_uart[0], SYS_IRQ_UART1,
+     HAL_IOMUX_FUN_UART1_RXD,
+     HAL_IOMUX_FUN_UART1_TXD,
+     HAL_IOMUX_FUN_UART1_RTS,
+     HAL_IOMUX_FUN_UART1_CTS},
+    {DRV_NAME_UART2, hwp_uart2, &hwp_sysCtrl->cfg_clk_uart[1], SYS_IRQ_UART2,
+     HAL_IOMUX_FUN_UART2_RXD,
+     HAL_IOMUX_FUN_UART2_TXD,
+     HAL_IOMUX_FUN_UART2_RTS,
+     HAL_IOMUX_FUN_UART2_CTS},
+    {DRV_NAME_UART3, hwp_uart3, &hwp_sysCtrl->cfg_clk_uart[2], SYS_IRQ_UART3,
+     HAL_IOMUX_FUN_UART3_RXD,
+     HAL_IOMUX_FUN_UART3_TXD,
+     HAL_IOMUX_FUN_UART3_RTS,
+     HAL_IOMUX_FUN_UART3_CTS},
 };
 #elif defined(CONFIG_SOC_8955)
 static const drvUartHWDesc_t gUartHWDesc[] = {
-    {DRV_NAME_UART1, hwp_uart, &hwp_sysCtrl->cfg_clk_uart[1],
-     SYS_IRQ_UART,
-     PINFUNC_UART1_RXD, PINFUNC_UART1_TXD,
-     PINFUNC_UART1_RTS, PINFUNC_UART1_CTS},
-    {DRV_NAME_UART2, hwp_uart2, &hwp_sysCtrl->cfg_clk_uart[2],
-     SYS_IRQ_UART2,
-     PINFUNC_UART2_RXD, PINFUNC_UART2_TXD,
-     PINFUNC_UART2_RTS, PINFUNC_UART2_CTS},
+    {DRV_NAME_UART1, hwp_uart, &hwp_sysCtrl->cfg_clk_uart[1], SYS_IRQ_UART,
+     HAL_IOMUX_FUN_UART1_RXD,
+     HAL_IOMUX_FUN_UART1_TXD,
+     HAL_IOMUX_FUN_UART1_RTS,
+     HAL_IOMUX_FUN_UART1_CTS},
+    {DRV_NAME_UART2, hwp_uart2, &hwp_sysCtrl->cfg_clk_uart[2], SYS_IRQ_UART2,
+     HAL_IOMUX_FUN_UART2_RXD,
+     HAL_IOMUX_FUN_UART2_TXD,
+     HAL_IOMUX_FUN_UART2_RTS,
+     HAL_IOMUX_FUN_UART2_CTS},
 };
 #endif
 
@@ -446,11 +451,6 @@ int drvUartSendAll(drvUart_t *d, const void *data, size_t size, uint32_t timeout
     return total - size;
 }
 
-uint32_t drvUartActualBaudrate(drvUart_t *d)
-{
-    return d->cfg.baud;
-}
-
 bool drvUartWaitTxFinish(drvUart_t *d, uint32_t timeout)
 {
     if (d == NULL)
@@ -606,8 +606,8 @@ bool drvUartOpen(drvUart_t *d)
 
     osiIrqDisable(d->hw_desc->irqn);
 
-    halIomuxRequest(d->hw_desc->iomux_rx);
-    halIomuxRequest(d->hw_desc->iomux_tx);
+    halIomuxSetFunction(d->hw_desc->iomux_rx);
+    halIomuxSetFunction(d->hw_desc->iomux_tx);
 
     _setBaud(d);
 

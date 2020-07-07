@@ -79,6 +79,7 @@ typedef void (*ftpconn_destroy_t)();
 typedef bool (*ftpconn_connect_t)(char *host, char *port, ftp_net_callback_t *cb, void *context, ftp_sock_e flag);
 typedef bool (*ftpconn_disconnect_t)(ftp_sock_e flag);
 typedef bool (*ftpconn_send_t)(uint8_t *buf, uint32_t buflen, ftp_sock_e flag);
+typedef int32_t (*ftpconn_read_t)(uint8_t *buf, uint32_t buflen, ftp_sock_e flag);
 typedef void (*ftpconn_setTimeout_t)(uint32_t tm, ftp_sock_e flag);
 typedef void (*ftpconn_killTimeout_t)(ftp_sock_e flag);
 
@@ -90,6 +91,7 @@ typedef struct _ftpconn_op_t
     ftpconn_connect_t connect1;
     ftpconn_disconnect_t disconnect;
     ftpconn_send_t send1;
+    ftpconn_read_t read1;
     ftpconn_setTimeout_t setTimeout;
     ftpconn_killTimeout_t killTimeout;
 } ftpconn_op_t;
@@ -102,12 +104,14 @@ static const ftpconn_op_t gFTPConnOp =
         ftp_conn_connect,
         ftp_conn_disconnect,
         ftp_conn_send,
+        ftp_conn_read,
         ftp_conn_SetTimeout,
         ftp_conn_KillTimeout};
 
 static const ftpconn_op_t gFTPSConnOp =
     {
         "FTPS",
+        NULL,
         NULL,
         NULL,
         NULL,
@@ -144,6 +148,7 @@ typedef struct _ftp_getopt_t
 {
     char getpath[FTP_STRING_SIZE];
     uint32_t req_getoffset, req_getsize, getsize;
+    uint32_t req_ReadSize;
     bool getCancel;
 } ftp_getopt_t;
 
@@ -867,6 +872,9 @@ static bool ftp_state_transfer_resp(ftpctx_t *ctx, int ftpcode)
     if (ctx->state == FTP_DATA_TRANSFER)
     {
         state(ctx, FTP_DATA_WAIT_CLOSE);
+
+        if (gFTPLibCtx->dataCmd != FTP_DATA_GET)
+            gFTPLibCtx->ftpCon.op->setTimeout(10, FTP_DATA_SOCK);
     }
 
     return result;
@@ -1183,18 +1191,21 @@ static void ftp_ctrl_onDisconnect(void *context)
         ftp_result_output(ctx, FTP_MSG_LOGOUT, gFTPErrCode, 0, 0);
         break;
     case FTP_SIZE:
+        setError(FTP_RET_CMD_BROKEN);
         ftp_result_output(ctx, FTP_MSG_SIZE, gFTPErrCode, 0, 0);
         break;
     case FTP_TYPE:
     case FTP_PASV:
     case FTP_DATA_WAIT_CLOSE:
     case FTP_DATA_WAIT_CONNECT:
+    case FTP_DATA_TRANSFER:
     case FTP_DATA_WAIT_RETR:
     case FTP_DATA_WAIT_226:
     case FTP_RETR_SIZE:
     case FTP_REST:
     case FTP_RETR:
     case FTP_STOR:
+        setError(FTP_RET_CMD_BROKEN);
         ftp_result_output(ctx, ftp_getDataMsg(ctx), gFTPErrCode, 0, 0);
         break;
     case FTP_IDLE:
@@ -1301,6 +1312,12 @@ static void ftp_data_onConnect(void *context, bool ret)
         return;
     }
 
+    if (ctx->state == FTP_STOP)
+    {
+        FTPLOGI(FTPLOG_LIB, "[onConnect][DATA]: ftplib is stop.");
+        return;
+    }
+
     FTPLOGI(FTPLOG_LIB, "[onConnect][DATA]: %s", (ret ? "success" : "failure"));
 
     ftp_result_output(ctx, FTP_MSG_CONNECT_DATA, (ret ? FTP_RET_SUCCESS : FTP_RET_DATA_CONNECT_FAIL), 0, 0);
@@ -1331,6 +1348,12 @@ static void ftp_data_onDisconnect(void *context)
     if (!ctx)
     {
         FTPLOGI(FTPLOG_LIB, "[onDisconnect][DATA]: ftplib is not initialized.");
+        return;
+    }
+
+    if (ctx->state == FTP_STOP)
+    {
+        FTPLOGI(FTPLOG_LIB, "[onDisconnect][DATA]: ftplib is stop.");
         return;
     }
 
@@ -1423,14 +1446,22 @@ static void ftp_data_onRead(ftp_recv_ret_e ret, void *context, uint8_t *buf, uin
         return;
     }
 
+    if (ctx->state == FTP_STOP)
+    {
+        FTPLOGI(FTPLOG_LIB, "[onRead][DATA]: ftplib is stop.");
+        return;
+    }
+
     switch (ret)
     {
     case FTP_RECV_SUCC:
     {
-        FTPLOGI(FTPLOG_LIB, "[onRead][DATA]: success, buflen = %d, getCancel:%d", buflen, (uint32_t)ctx->getOpt.getCancel);
+        //FTPLOGI(FTPLOG_LIB, "[onRead][DATA]: success, buflen = %d, getCancel:%d", buflen, (uint32_t)ctx->getOpt.getCancel);
 
         if (ctx->dataCmd == FTP_DATA_GET && !ctx->getOpt.getCancel)
         {
+            ctx->ftpCon.op->killTimeout(FTP_DATA_SOCK);
+
             if (ctx->getOpt.req_getsize != 0)
             {
                 uint32_t lastsize = ctx->getOpt.req_getsize - ctx->getOpt.getsize;
@@ -1440,16 +1471,14 @@ static void ftp_data_onRead(ftp_recv_ret_e ret, void *context, uint8_t *buf, uin
                 if (buflen >= lastsize)
                 {
                     ctx->getOpt.getsize += lastsize;
-                    ctx->ftpCon.op->killTimeout(FTP_DATA_SOCK);
                     ctx->ftpCon.op->disconnect(FTP_DATA_SOCK);
-                    ftp_result_output(ctx, FTP_MSG_TRANSFER_DATA, gFTPErrCode, (uint32_t)buf, lastsize);
+                    ftp_result_output(ctx, FTP_MSG_TRANSFER_DATA, gFTPErrCode, (uint32_t)NULL, lastsize);
                     return;
                 }
             }
 
             ctx->getOpt.getsize += buflen;
-            ctx->ftpCon.op->setTimeout(TIMEOUT_RECV_DATA, FTP_DATA_SOCK);
-            ftp_result_output(ctx, FTP_MSG_TRANSFER_DATA, gFTPErrCode, (uint32_t)buf, buflen);
+            ftp_result_output(ctx, FTP_MSG_TRANSFER_DATA, gFTPErrCode, (uint32_t)NULL, buflen);
         }
     }
     break;
@@ -1475,6 +1504,12 @@ static void ftp_data_onException(void *context)
     if (!ctx)
     {
         FTPLOGI(FTPLOG_LIB, "[onException][DATA]: ftplib is not initialized.");
+        return;
+    }
+
+    if (ctx->state == FTP_STOP)
+    {
+        FTPLOGI(FTPLOG_LIB, "[onException][DATA]: ftplib is stop.");
         return;
     }
 
@@ -1647,7 +1682,7 @@ ftp_ret_t FTPLib_logout()
     if (gFTPLibCtx->state != FTP_IDLE)
     {
         FTPLOGI(FTPLOG_LIB, "ftplib is busy.");
-        return FTP_RET_API_ERR;
+        return FTP_RET_FTP_IS_BUSY;
     }
 
     if (!ftp_state_quit(gFTPLibCtx))
@@ -1687,7 +1722,7 @@ ftp_ret_t FTPLib_size(char *file, uint32_t *size)
     if (gFTPLibCtx->state != FTP_IDLE)
     {
         FTPLOGI(FTPLOG_LIB, "ftplib is busy.");
-        return FTP_RET_API_ERR;
+        return FTP_RET_FTP_IS_BUSY;
     }
 
     gFTPSize = 0;
@@ -1708,7 +1743,7 @@ ftp_ret_t FTPLib_size(char *file, uint32_t *size)
     return gFTPErrCode;
 }
 
-ftp_ret_t FTPLib_get(char *file, uint32_t offset, uint32_t size)
+ftp_ret_t FTPLib_getStart(char *file, uint32_t offset, uint32_t size)
 {
     if (!file || (strlen(file) > (FTP_STRING_SIZE - 1)))
         return FTP_RET_API_ERR;
@@ -1728,13 +1763,14 @@ ftp_ret_t FTPLib_get(char *file, uint32_t offset, uint32_t size)
     if (gFTPLibCtx->state != FTP_IDLE || gFTPLibCtx->dataCmd != FTP_DATA_NULL)
     {
         FTPLOGI(FTPLOG_LIB, "ftplib is busy.");
-        return FTP_RET_API_ERR;
+        return FTP_RET_FTP_IS_BUSY;
     }
 
     ftp_getopt_t *opt = (ftp_getopt_t *)&gFTPLibCtx->getOpt;
     strncpy(opt->getpath, file, FTP_STRING_SIZE - 1);
     opt->req_getoffset = offset;
     opt->req_getsize = size;
+    opt->req_ReadSize = 0;
     opt->getsize = 0;
     opt->getCancel = false;
     gFTPLibCtx->putOpt.putStop = false;
@@ -1752,6 +1788,39 @@ ftp_ret_t FTPLib_get(char *file, uint32_t offset, uint32_t size)
     return gFTPErrCode;
 }
 
+int32_t FTPLib_get(uint8_t *buf, uint32_t buflen)
+{
+    int32_t ByteNum = 0;
+
+    if (gFTPLibCtx == NULL)
+    {
+        FTPLOGI(FTPLOG_LIB, "ftplib is not initialized.");
+        return FTP_RET_FTP_NOT_INITED;
+    }
+
+    if (!gFTPLibCtx->login)
+    {
+        FTPLOGI(FTPLOG_LIB, "ftplib didn't login to server yet.");
+        return FTP_RET_FTP_NOT_CONNECTED;
+    }
+
+    if (gFTPLibCtx->ftpCon.op->read1)
+        ByteNum = gFTPLibCtx->ftpCon.op->read1(buf, buflen, FTP_DATA_SOCK);
+
+    if (ByteNum >= 0)
+        gFTPLibCtx->getOpt.req_ReadSize += ByteNum;
+
+    if ((gFTPLibCtx->state == FTP_DATA_TRANSFER) || (gFTPLibCtx->state == FTP_DATA_WAIT_CLOSE))
+    {
+        if ((gFTPLibCtx->getOpt.req_ReadSize == gFTPLibCtx->getOpt.getsize))
+            gFTPLibCtx->ftpCon.op->setTimeout(TIMEOUT_RECV_DATA, FTP_DATA_SOCK);
+        else
+            gFTPLibCtx->ftpCon.op->killTimeout(FTP_DATA_SOCK);
+    }
+
+    return ByteNum;
+}
+
 ftp_ret_t FTPLib_getStop()
 {
     if (gFTPLibCtx == NULL)
@@ -1766,10 +1835,10 @@ ftp_ret_t FTPLib_getStop()
         return FTP_RET_FTP_NOT_CONNECTED;
     }
 
-    if (gFTPLibCtx->state == FTP_IDLE || gFTPLibCtx->dataCmd != FTP_DATA_GET)
+    if ((gFTPLibCtx->state != FTP_DATA_TRANSFER && gFTPLibCtx->state != FTP_DATA_WAIT_CLOSE) || gFTPLibCtx->dataCmd != FTP_DATA_GET)
     {
         FTPLOGI(FTPLOG_LIB, "ftp internal state error.");
-        return FTP_RET_API_ERR;
+        return FTP_RET_INTERNAL_ERR;
     }
 
     if (gFTPLibCtx->getOpt.getCancel == true)
@@ -1779,12 +1848,10 @@ ftp_ret_t FTPLib_getStop()
     }
 
     gFTPLibCtx->getOpt.getCancel = true;
-    if (gFTPLibCtx->state == FTP_DATA_WAIT_CONNECT || gFTPLibCtx->state == FTP_RETR_SIZE || gFTPLibCtx->state == FTP_REST || gFTPLibCtx->state == FTP_RETR || gFTPLibCtx->state == FTP_DATA_TRANSFER || gFTPLibCtx->state == FTP_DATA_WAIT_CLOSE)
-    {
-        gFTPLibCtx->ftpCon.op->killTimeout(FTP_DATA_SOCK);
-        if (gFTPLibCtx->ftpCon.op->disconnect(FTP_DATA_SOCK) != true)
-            return FTP_RET_API_ERR;
-    }
+
+    gFTPLibCtx->ftpCon.op->killTimeout(FTP_DATA_SOCK);
+    if (gFTPLibCtx->ftpCon.op->disconnect(FTP_DATA_SOCK) != true)
+        return FTP_RET_API_ERR;
 
     if (gFTPLibCtx->ftpc.apiType == FTP_API_SYNC)
     {
@@ -1815,7 +1882,7 @@ ftp_ret_t FTPLib_putStart(char *file)
     if (gFTPLibCtx->state != FTP_IDLE || gFTPLibCtx->dataCmd != FTP_DATA_NULL)
     {
         FTPLOGI(FTPLOG_LIB, "ftplib is busy.");
-        return FTP_RET_API_ERR;
+        return FTP_RET_FTP_IS_BUSY;
     }
 
     ftp_putopt_t *opt = (ftp_putopt_t *)&gFTPLibCtx->putOpt;
@@ -1858,7 +1925,7 @@ ftp_ret_t FTPLib_put(uint8_t *buf, uint32_t buflen)
     if (gFTPLibCtx->state != FTP_DATA_TRANSFER || gFTPLibCtx->dataCmd != FTP_DATA_PUT)
     {
         FTPLOGI(FTPLOG_LIB, "ftp internal state error");
-        return FTP_RET_API_ERR;
+        return FTP_RET_INTERNAL_ERR;
     }
 
     gFTPLibCtx->ftpCon.op->killTimeout(FTP_DATA_SOCK);
@@ -1874,9 +1941,12 @@ ftp_ret_t FTPLib_put(uint8_t *buf, uint32_t buflen)
     gFTPLibCtx->ftpCon.op->setTimeout(TIMEOUT_RECV_DATA, FTP_DATA_SOCK);
 
     if (gFTPLibCtx->ftpc.apiType == FTP_API_ASYNC)
+    {
         ftp_result_output(gFTPLibCtx, FTP_MSG_TRANSFER_DATA, gFTPErrCode, 0, 0);
-
-    return gFTPErrCode;
+        return FTP_RET_SUCCESS;
+    }
+    else
+        return gFTPErrCode;
 }
 
 ftp_ret_t FTPLib_putStop()
@@ -1896,7 +1966,7 @@ ftp_ret_t FTPLib_putStop()
     if (gFTPLibCtx->state == FTP_IDLE || gFTPLibCtx->dataCmd != FTP_DATA_PUT)
     {
         FTPLOGI(FTPLOG_LIB, "ftp internal state error");
-        return FTP_RET_API_ERR;
+        return FTP_RET_INTERNAL_ERR;
     }
 
     gFTPLibCtx->putOpt.putStop = true;

@@ -701,7 +701,8 @@ void ping_result_statics(atCmdEngine_t *engine, char *response)
     gPingstatus = false;
 
     sprintf(response, "\n\rPing statistics for %s", pcIpAddr);
-    atCmdRespInfoText(engine, response);
+    if (atCmdEngineIsValid(engine))
+        atCmdRespInfoText(engine, response);
     if (AT_PING_MIN_DELAY == 0x7fffffff)
         AT_PING_MIN_DELAY = -1;
     if (AT_PING_ECHO_NUM == 0)
@@ -713,7 +714,8 @@ void ping_result_statics(atCmdEngine_t *engine, char *response)
         sprintf(response, "Packets: Sent = %d, Received = %d, Lose = %d <%d\%%>, max_delay = %ld ms, min_delay = %ld ms, average delay = %ld ms", AT_PING_SEQNO, AT_PING_ECHO_NUM,
                 AT_PING_SEQNO - AT_PING_ECHO_NUM, 100 - AT_PING_ECHO_NUM * 100 / AT_PING_SEQNO, AT_PING_MAX_DELAY, AT_PING_MIN_DELAY, AT_PING_TIME_SUM / AT_PING_ECHO_NUM);
     }
-    atCmdRespInfoText(engine, response);
+    if (atCmdEngineIsValid(engine))
+        atCmdRespInfoText(engine, response);
     if (gPingtimer != NULL)
     {
         osiTimerStop(gPingtimer);
@@ -735,7 +737,7 @@ void ping_result_statics(atCmdEngine_t *engine, char *response)
 
 void ping_continue(atCmdEngine_t *engine, char *response)
 {
-    if (AT_PING_SEQNO < AT_PING_TOTAL_NUM)
+    if (AT_PING_SEQNO < AT_PING_TOTAL_NUM && atCmdEngineIsValid(engine))
     {
         int8_t nRetValue = AT_SendIP_ICMP_Ping(engine, (uint32_t)engine);
         if (nRetValue != ERR_SUCCESS)
@@ -746,7 +748,6 @@ void ping_continue(atCmdEngine_t *engine, char *response)
                 OSI_LOGI(0, "AT_TCPIP_CmdFunc_PING: start timer failed!");
                 char response[200] = {0};
                 ping_result_statics(engine, response);
-                RETURN_CME_ERR(engine, ERR_AT_CME_EXE_FAIL);
             }
             return;
         }

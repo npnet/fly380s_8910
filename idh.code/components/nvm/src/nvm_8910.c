@@ -104,6 +104,14 @@ static const nvDescription_t gNvDesc[] = {
     {NVID_SIM_LOCK_CUSTOMIZE_DATA, "sim_lock_customize_data.bin", MODEMNV_DIR, RUNNINGNV_DIR},
     {NVID_SIM_LOCK_USER_DATA, "sim_lock_user_data.bin", MODEMNV_DIR, RUNNINGNV_DIR},
     {NVID_SIM_LOCK_CONTROL_KEY_ID, "sim_lock_control_key.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+
+    {NVID_IMS_CSM_NV, "ims_csm_setting.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_IMS_SAPP_NV, "ims_sapp_setting.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_IMS_ISIM_NV, "ims_isim_setting.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_SIM_DELTA_NV, "sim_delta_nv.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_SIM_DELTA_CARD2_NV, "sim_delta_nv_card2.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_PLMN_DELTA_NV, "plmn_delta_nv.bin", MODEMNV_DIR, RUNNINGNV_DIR},
+    {NVID_PLMN_DELTA_CARD2_NV, "plmn_delta_nv_card2.bin", MODEMNV_DIR, RUNNINGNV_DIR},
 };
 
 void nvmInit(void)

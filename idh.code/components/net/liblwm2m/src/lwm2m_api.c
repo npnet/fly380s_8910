@@ -77,7 +77,7 @@ void lwm2mPostEvent(uint8_t ref, uint32_t nEventId, uint32_t nResult, uint32_t n
     int ret = -1;
     if (nEventId == EVETN_IND && lwm2m_configs[ref]->pending_regcmd)
     {
-        if (nResult == LWM2M_EVENT_REG_FAILED || nResult == LWM2M_EVENT_STATUS_HALT)
+        if (nResult == LWM2M_EVENT_REG_FAILED || nResult == LWM2M_EVENT_STATUS_HALT || nResult == LWM2M_EVENT_REG_TIMEOUT)
             ret = 0;
         else if (nResult == LWM2M_EVENT_REG_SUCCESS)
             ret = 1;

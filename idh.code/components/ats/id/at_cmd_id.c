@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "nvm.h"
+#include "osi_log.h"
 
 OSI_WEAK const char *AT_GMI_ID = GMI_ID;
 OSI_WEAK const char *AT_GMM_ID = GMM_ID;
@@ -242,6 +243,57 @@ void atCmdHandleCIMI(atCommand_t *cmd)
             cfwReleaseUTI(cmd->uti);
             RETURN_CME_CFW_ERR(cmd->engine, res);
         }
+        RETURN_FOR_ASYNC();
+    }
+    else if (cmd->type == AT_CMD_TEST)
+    {
+        RETURN_OK(cmd->engine);
+    }
+    else
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_NOT_SURPORT);
+    }
+}
+
+extern uint16_t hex2ascii(uint8_t *pInput, uint16_t nInputLen, char *pOutput);
+static void _eidRsp(atCommand_t *cmd, const osiEvent_t *event)
+{
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    OSI_LOGI(0, "receive EV_CFW_SIM_GET_EID_RSP , cfw_event->nType = %d", cfw_event->nType);
+    if (cfw_event->nType == 0)
+    {
+        char eid[21] = {0};
+        uint16_t length = hex2ascii((uint8_t *)cfw_event->nParam1, cfw_event->nParam2, eid);
+        if (length == 0)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        atCmdRespInfoNText(cmd->engine, eid, length);
+        atCmdRespOK(cmd->engine);
+        free((void *)cfw_event->nParam1);
+    }
+    else if (cfw_event->nType == 0xF0)
+    {
+        RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
+    }
+    else
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+    }
+}
+//CFW_SimGetEID
+void atCmdHandleEID(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    uint32_t res;
+
+    if (cmd->type == AT_CMD_EXE)
+    {
+        uint16_t uti = cfwRequestUTI((osiEventCallback_t)_eidRsp, cmd);
+        if ((res = CFW_SimGetEID(uti, nSim)) != 0)
+        {
+            cfwReleaseUTI(uti);
+            RETURN_CME_CFW_ERR(cmd->engine, res);
+        }
+        OSI_LOGI(0, "call CFW_SimGetEID OK");
         RETURN_FOR_ASYNC();
     }
     else if (cmd->type == AT_CMD_TEST)

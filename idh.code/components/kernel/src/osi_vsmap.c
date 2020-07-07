@@ -23,6 +23,33 @@ int osiUintIdCompare(const void *key, const void *p)
     return (ik > ip) ? 1 : (ik < ip) ? -1 : 0;
 }
 
+int osiUint16IdCompare(const void *key, const void *p)
+{
+    uint16_t ik = *(const uint16_t *)key;
+    uint16_t ip = *(const uint16_t *)p;
+    return (ik > ip) ? 1 : (ik < ip) ? -1 : 0;
+}
+
+bool osiArrayIsSorted(const void *base, size_t nmemb, size_t size,
+                      int (*compar)(const void *, const void *))
+{
+    if (base == NULL || compar == NULL)
+        return false;
+
+    const char *curr = (const char *)base;
+    for (unsigned n = 1; n < nmemb; n++)
+    {
+        const char *prev = curr;
+        curr += size;
+        if (compar(curr, prev) <= 0)
+        {
+            OSI_LOGE(0, "array 0x%x value %d not sorted", base, n);
+            return false;
+        }
+    }
+    return true;
+}
+
 bool osiVsmapIsSorted(const osiValueStrMap_t *vs, size_t count)
 {
     bool ok = true;

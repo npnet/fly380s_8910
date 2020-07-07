@@ -199,7 +199,8 @@ struct netif *TCPIP_nat_lan_lwip_netif_create(uint8_t nCid, uint8_t nSimId)
     ip4_addr_t *wan_ip4_addr = (ip4_addr_t *)netif_ip4_addr(wan_netif);
     ip4_addr_t ip4;
     ip4_addr_t ip4_gw;
-    if ((wan_ip4_addr->addr & 0xff000000UL) != 0xc0000000UL) //192.xxx.xxx.xxx
+    OSI_LOGI(0x0, "TCPIP_nat_lan_lwip_netif_create wan_ip4_addr 0x%x\n", wan_ip4_addr->addr);
+    if ((wan_ip4_addr->addr & 0xff) != 0xc0) //192.xxx.xxx.xxx
     {
         IP4_ADDR(&ip4, 192, 168, nCid, 2 + netif_num);
         IP4_ADDR(&ip4_gw, 192, 168, nCid, 1);

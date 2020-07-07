@@ -214,17 +214,23 @@ void atCmdHandleSimlockSPDATAENCRYPT(atCommand_t *cmd)
     {
     case AT_CMD_SET:
         encrypt_key = malloc(2 * sizeof(simlock_encrypt_keys_t) + 1);
+        if (encrypt_key == NULL)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
         memset(encrypt_key, 0, 2 * sizeof(simlock_encrypt_keys_t) + 1);
 
         char *rsp = malloc(2 * sizeof(simlock_encrypt_keys_t) + 1 + PAD_LEN);
+        if (rsp == NULL)
+        {
+            free(encrypt_key);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+        }
         memset(rsp, 0, 2 * sizeof(simlock_encrypt_keys_t) + PAD_LEN);
 
         const char *data = atParamStr(cmd->params[0], &paramok);
-        if (NULL == encrypt_key && NULL == rsp)
+        if (!paramok)
         {
-            OSI_LOGI(0, "SIMLOCK: storage malloc fail");
-            atCmdRespCmeError(cmd->engine, ERR_AT_UNKNOWN);
-            return;
+            free(encrypt_key);
+            free(rsp);
         }
 
         status = srvSimlockEncryptKeys(data, strlen(data), (char *)encrypt_key, 2 * sizeof(simlock_encrypt_keys_t) + 1);

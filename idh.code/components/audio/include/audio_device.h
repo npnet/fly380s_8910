@@ -278,6 +278,28 @@ bool audevSetRecordSampleRate(uint32_t samplerate);
 uint32_t audevGetRecordSampleRate(void);
 
 /**
+ * \brief set local record sample time interval
+ *
+ * default value is 20 ms
+ * max value is 20 ms,min value is 5 ms
+ *
+ * \p time_ms should be 5 or 10 or 20.
+ *
+ * \return
+ *      - true on success
+ *      - false on invalid parameter, or failed
+ */
+bool audevSetRecordSampleInterval(uint8_t time_ms);
+
+/**
+ * \brief get record sample time interval
+ *
+ * \return
+ * 	 - sample time interval
+ */
+uint8_t audevGetRecordSampleInterval(void);
+
+/**
  * \brief start voice for call
  *
  * \return
@@ -469,6 +491,16 @@ bool audevStopPlayTest(void);
  * Close mic and speaker
  */
 void audSetLdoVB(uint32_t en);
+
+/**
+ * Get audCodec Open status
+ */
+bool audIsCodecOpen(void);
+
+/**
+ * headset plug depop
+ */
+void audHeadsetdepop_en(bool en, uint8_t mictype);
 
 OSI_EXTERN_C_END
 #endif

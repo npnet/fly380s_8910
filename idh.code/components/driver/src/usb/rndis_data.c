@@ -211,7 +211,7 @@ void rndisEtherUnbind(rndisData_t *rnd)
 int rndisEtherEnable(rndisData_t *rnd)
 {
     rndisPriv_t *priv = prvRndis2Priv(rnd);
-    OSI_LOGV(0, "Rndis Ethernet enable\n");
+    OSI_LOGI(0, "rndis ether enable");
     if (priv->enable)
     {
         OSI_LOGW(0, "rndis data enable, already enabled");
@@ -239,7 +239,7 @@ fail_rx:
 
 void rndisEtherDisable(rndisData_t *rnd)
 {
-    OSI_LOGD(0, "Rndis Ethernet disable\n");
+    OSI_LOGI(0, "rndis ether disable");
     rndisPriv_t *priv = prvRndis2Priv(rnd);
     if (priv == NULL)
         return;

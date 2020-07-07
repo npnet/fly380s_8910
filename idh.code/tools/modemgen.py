@@ -54,8 +54,23 @@ def nvm_from_prj(fname):
     return nvms
 
 
+# Collect modules from prj.
+def modules_from_prj(fname):
+    modules = []
+    with open(fname, 'r') as fh:
+        for line in fh.readlines():
+            line = line.strip()
+            if line.startswith('#') or not line:
+                continue
+            if line.startswith('MODULE'):
+                fields = line.split()
+                if len(fields) == 3:
+                    modules.append(os.path.basename(fields[2]))
+    return modules
+
+
 # Get generated bin file name from prj
-def nvbin_from_prg(prj):
+def nvbin_from_prj(prj):
     with open(prj, 'r') as fh:
         for line in fh.readlines():
             line = line.strip()
@@ -175,19 +190,30 @@ def nvdata_modify(nvdata, nvid, offset, dlen, ddata):
     raise Exception('nvid {} not found'.format(nvid))
 
 
-# Apply deltanv.bin to nvdata
+# Apply deltanv.bin to nvdata.
+# The format of deltanv.bin is multiple bulks. Each nulk:
+# * file name: 20B
+# * version: 2B
+# * bulk size: 4B (total bulk)
+# * multiple bulk data
+#   * nvid: 2B
+#   * offset: 2B
+#   * size: 2B (data size plus 4)
+#   * data
+# * 0xffff: 2B
 def nvbin_apply_delta(nvdata, fname):
     with open(fname, 'rb') as fh:
         delta = fh.read()
 
     size = len(delta)
     pos = 0
-    while pos < size:
+    while pos + 26 < size:
         _, dsize = struct.unpack('<HI', delta[pos+20:pos+26])
         dpos = pos + 26
         while dpos < pos + dsize - 2:
             nvid, offset, dlen = struct.unpack('HHH', delta[dpos:dpos+6])
             ddata = delta[dpos+6:dpos+6+dlen]
+            # print("delta nvid {} offset {} len {}, at {}".format(nvid, offset, dlen, dpos))
             nvdata_modify(nvdata, nvid, offset, dlen, ddata)
             dpos += 6 + dlen
         pos = dpos + 2
@@ -348,10 +374,13 @@ def mimggen8910(args):
     apprj = os.path.join(apdir, 'nvitem/nvitem.prj')
     dnvin = os.path.join(apdir, 'deltanv/deltanv_all.nv')
     cpfilecfg = cpcfg['cpfilelist'][vari['cpfilelist']]
+    imsdir = os.path.join(cpdir, 'ims_delta_nv')
 
     # Collect cp/ap nvm by parsing prj file
     cpnvms = nvm_from_prj(cpprj)
     apnvms = nvm_from_prj(apprj)
+    imsnvms = glob.glob(os.path.join(imsdir, '*.nv'))
+    imsxml = os.path.join(imsdir, 'Index.xml')
 
     # Collect prepack files
     prepack_json = os.path.join(apdir, 'prepack/prepack.json')
@@ -380,17 +409,24 @@ def mimggen8910(args):
     # always rebuild the target.
     if args.dep:
         deps = cpfiles + [cpprj] + cpnvms + [apprj] + \
-            apnvms + [prepack_json] + prepackfiles
+            apnvms + [prepack_json] + prepackfiles + \
+            imsnvms + [imsxml]
         deps.append(args.config)
         deps.append(args.partinfo)
         deps.extend(glob.glob(os.path.join(os.path.dirname(dnvin), '*.nv')))
         deps.append(__file__)
 
+        # HACK: Some special characters can't be handled well by ninja.
+        #       So, ignore them in dep. It will make dependency incomplete,
+        #       and should ignore only if ninja can't handle it.
+        def dep_ignore(fname):
+            return '&' in fname
+
         deptarget = args.image
         if args.deprel:
             deptarget = os.path.relpath(deptarget, args.deprel)
         dep = '{}: {}\n'.format(deptarget, ' '.join(
-            [os.path.relpath(x, args.deprel) for x in deps]))
+            [os.path.relpath(x, args.deprel) for x in deps if not dep_ignore(x)]))
         write_file_if_change(args.dep, dep.encode('utf-8'))
 
     # copy cpbins, keep in output directory for easier debug
@@ -413,9 +449,12 @@ def mimggen8910(args):
     nvmprj = os.path.join(nvmdir, 'nvitem.prj')
     nvm_prj_merge(nvmprj, [apprj, cpprj])
 
+    nvm_modules = modules_from_prj(nvmprj)
+    ims_nv_exists = 'ims_nv.nvm' in nvm_modules
+
     # Generate nvitem.bin.
     subprocess.run(['NVGen', nvmprj, '-L'])
-    nvmbin = nvbin_from_prg(nvmprj)
+    nvmbin = nvbin_from_prj(nvmprj)
 
     # Read nvitem.bin
     with open(nvmbin, 'rb') as fh:
@@ -444,6 +483,7 @@ def mimggen8910(args):
 
     subprocess.run(['NVGen', nvmprj, '-L', '-c', dnvdir])
 
+    nvmdata = bytearray(nvmdata)
     nvbin_apply_delta(nvmdata, dnvbin)
 
     # Write nvitem.bin to output
@@ -478,6 +518,19 @@ def mimggen8910(args):
     for nv in nvbins:
         nvbase = os.path.basename(nv)
         pgen_add_file(pgen, nv, os.path.join(cpcfg['modemnv_dir'], nvbase))
+
+    # Generate ims_delta_nv.bin
+    if ims_nv_exists:
+        imsgendir = os.path.join(workdir, 'ims_delta_nv')
+        ensure_dir(imsgendir)
+        for f in imsnvms:
+            shutil.copy(f, os.path.join(imsgendir, os.path.basename(f)))
+        shutil.copy(imsxml, os.path.join(imsgendir, os.path.basename(imsxml)))
+        subprocess.run(['NVGen', nvmprj, '-L', '-c', imsgendir],
+                       stdout=subprocess.DEVNULL)
+
+        pgen_add_file(pgen, os.path.join(imsgendir, 'delta_nv.bin'),
+                      'nvm/ims_delta_nv.bin')
 
     # generate modem image json
     fbdevdesc = parti_find_fbdev(parti, cpcfg['fbdev_name'])
@@ -564,7 +617,7 @@ def mnvgen8811(args):
 
     # Generate nvitem.bin.
     subprocess.run(['NVGen', nvmprj, '-L'])
-    nvmbin = nvbin_from_prg(nvmprj)
+    nvmbin = nvbin_from_prj(nvmprj)
 
     # Read nvitem.bin
     with open(nvmbin, 'rb') as fh:

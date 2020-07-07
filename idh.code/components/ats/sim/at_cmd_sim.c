@@ -1750,6 +1750,10 @@ void atCmdHandleCCID(atCommand_t *cmd)
     {
         CFW_SIM_STATUS status = CFW_GetSimStatus(nSim);
         OSI_LOGI(0, "CCID get sim status: %d", status);
+        if (status == CFW_SIM_ABSENT)
+        {
+            RETURN_CME_CFW_ERR(cmd->engine, ERR_AT_CME_SIM_NOT_INSERTED);
+        }
 
         uint8_t *pICCID = CFW_GetICCID(nSim);
         if (pICCID != NULL)
@@ -4555,6 +4559,11 @@ void atCmdHandleCGLA(atCommand_t *cmd)
             free(pTPDU);
             goto CGLA_ERROR;
         }
+
+        OSI_LOGI(0, "Original channel value of TPDU = %d", pTPDU[0]);
+        pTPDU[0] = (pTPDU[0] & 0xF0) | at_sim_session[cmd_session].sim_channel;
+        OSI_LOGI(0, "Used channel value of TPDU = %d", pTPDU[0]);
+
         OSI_LOGI(0, "at_sim_session[at_session].sim_channel = %d", at_sim_session[cmd_session].sim_channel);
         cmd->uti = cfwRequestUTI((osiEventCallback_t)callback_cgla, cmd);
         uint32_t ret = CFW_SimTPDUCommand(pTPDU, length >> 1, at_sim_session[cmd_session].sim_channel, cmd->uti, nSim);
@@ -5009,7 +5018,7 @@ void atCmdHandleCSVM(atCommand_t *cmd)
         memset(&updateVoiceMailInfo, 0, sizeof(CFW_SIM_INFO_VOICEMAIL));
 
         int length = cfwDialStringToBcd(number, strlen(number), updateVoiceMailInfo.mailbox_number);
-        if (updateVoiceMailInfo.mailbox_number_len < 0)
+        if (length < 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         updateVoiceMailInfo.mailbox_number_len = length;
 

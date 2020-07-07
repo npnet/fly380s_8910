@@ -117,12 +117,13 @@ typedef enum
 
 typedef struct
 {
-    audevInput_t indev;   // input device
-    audevOutput_t outdev; // output device
-    uint8_t voice_vol;    // volume for voice call
-    uint8_t play_vol;     // volume for play and tone
-    bool out_mute;        // output mute for voice call, play, tone
-    uint32_t sample_rate; // sample freq for mic record and voice call record
+    audevInput_t indev;      // input device
+    audevOutput_t outdev;    // output device
+    uint8_t voice_vol;       // volume for voice call
+    uint8_t play_vol;        // volume for play and tone
+    bool out_mute;           // output mute for voice call, play, tone
+    uint32_t sample_rate;    // sample freq for mic record and voice call record
+    uint8_t sample_interval; // sample time interval for mic record
 } audevSetting_t;
 
 typedef struct
@@ -156,6 +157,7 @@ typedef struct
     struct
     {
         audevRecordType_t type;
+        bool enc_error;
         auFrame_t frame;
         audevRecordOps_t ops;
         void *ops_ctx;
@@ -384,24 +386,73 @@ static bool prvSetVoiceConfig(void)
  */
 static bool prvSetPlayConfig(void)
 {
+    SND_SPK_LEVEL_T FadeStartLevel, FadeEndLevel;
     audevContext_t *d = &gAudevCtx;
+    FadeStartLevel = (d->play.level.spkLevel);
+    FadeEndLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute);
+    OSI_LOGI(0, "audio device prvSetPlayConfig , old Level/%d new Level/%d",
+             FadeStartLevel, FadeEndLevel);
+
+    if (FadeStartLevel == FadeEndLevel)
+        return true;
 
     AUD_LEVEL_T level = {
-        .spkLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute),
+        .spkLevel = FadeEndLevel,
         .micLevel = SND_MIC_ENABLE,
         .sideLevel = SND_SIDE_VOL_15,
         .toneLevel = SND_TONE_0DB,
         .appMode = SND_APP_MODE_MUSIC,
     };
 
-    if (!DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level))
-        return false;
+    bool isIncrease = (FadeEndLevel > FadeStartLevel) ? true : false;
 
-    if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
-        return false;
+#define STEPLEVEL (1)
+    while (1)
+    {
+        if (isIncrease)
+        {
+            FadeStartLevel = FadeStartLevel + STEPLEVEL;
+            level.spkLevel = OSI_MIN(unsigned, FadeStartLevel, FadeEndLevel);
+            level.spkLevel = OSI_MIN(unsigned, AUDIO_LEVEL_MAX, level.spkLevel);
+            OSI_LOGI(0, "audio device prvSetPlayConfig , level.spkLevel/%d ", level.spkLevel);
+            if (DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level) != 0)
+                return false;
 
-    //update para in play
-    d->play.level.spkLevel = level.spkLevel;
+            if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
+                return false;
+
+            //update para in play
+            d->play.level.spkLevel = level.spkLevel;
+
+            if ((level.spkLevel == AUDIO_LEVEL_MAX) || (level.spkLevel == FadeEndLevel))
+                break;
+
+            osiDelayUS(1000);
+        }
+        else
+        {
+            FadeStartLevel = (FadeStartLevel < STEPLEVEL) ? 0 : (FadeStartLevel - STEPLEVEL);
+            level.spkLevel = OSI_MAX(unsigned, FadeStartLevel, FadeEndLevel);
+            OSI_LOGI(0, "audio device prvSetPlayConfig , level.spkLevel/%d ", level.spkLevel);
+
+            if (DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level) != 0)
+                return false;
+
+            if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
+                return false;
+
+            //update para in play
+            d->play.level.spkLevel = level.spkLevel;
+
+            if ((level.spkLevel == 0) || (level.spkLevel == FadeEndLevel))
+                break;
+
+            osiDelayUS(1000);
+        }
+    }
+
+    OSI_LOGI(0, "audio device prvSetPlayConfig , d->play.level.spkLevel/%d",
+             d->play.level.spkLevel);
 
     return true;
 }
@@ -619,7 +670,18 @@ static void prvRecPutFramesLocked(void)
             break;
 
         // We shouldn't break even put_frame failed, to avoid overflow
-        d->record.ops.put_frame(d->record.ops_ctx, &d->record.frame);
+        // just send finsh event to notify recorder app to stop
+        if (!d->record.enc_error)
+        {
+            d->record.enc_error = !d->record.ops.put_frame(d->record.ops_ctx, &d->record.frame);
+            if (d->record.enc_error)
+            {
+                if ((d->clk_users & AUDEV_CLK_USER_RECORD) &&
+                    d->record.enc_error &&
+                    d->record.ops.handle_event != NULL)
+                    d->record.ops.handle_event(d->record.ops_ctx, AUDEV_RECORD_EVENT_FINISH);
+            }
+        }
     }
 }
 
@@ -693,6 +755,7 @@ static bool prvNvDecode(audevSetting_t *p, uint8_t *buffer, unsigned length)
     PB_OPT_DEC_ASSIGN(p->play_vol, play_vol);
     PB_OPT_DEC_ASSIGN(p->out_mute, out_mute);
     PB_OPT_DEC_ASSIGN(p->sample_rate, sample_rate);
+    PB_OPT_DEC_ASSIGN(p->sample_interval, sample_interval);
     return true;
 }
 
@@ -711,6 +774,7 @@ static int prvNvEncode(const audevSetting_t *p, void *buffer, unsigned length)
     PB_OPT_ENC_ASSIGN(p->play_vol, play_vol);
     PB_OPT_ENC_ASSIGN(p->out_mute, out_mute);
     PB_OPT_ENC_ASSIGN(p->sample_rate, sample_rate);
+    PB_OPT_ENC_ASSIGN(p->sample_interval, sample_interval);
     return pbEncodeToMem(fields, pbs, buffer, length);
 }
 
@@ -786,6 +850,7 @@ static void prvSetDefaultSetting(audevSetting_t *p)
     p->play_vol = 60;
     p->out_mute = false;
     p->sample_rate = 8000;
+    p->sample_interval = 20;
 }
 
 /**
@@ -957,6 +1022,9 @@ bool audevSetInput(audevInput_t dev)
     d->cfg.indev = dev;
     prvSetDeviceExt();
 
+    if (d->clk_users & AUDEV_CLK_USER_VOICE)
+        prvSetVoiceConfig();
+
     audevSetting_t cfg = d->cfg;
     osiMutexUnlock(d->lock);
 
@@ -1093,6 +1161,34 @@ bool audevSetRecordSampleRate(uint32_t samplerate)
 }
 
 /**
+ * Get sample time interval for mic record
+ */
+uint8_t audevGetRecordSampleInterval(void)
+{
+    audevContext_t *d = &gAudevCtx;
+    return d->cfg.sample_interval;
+}
+
+/**
+ * Set sample time interval for mic record
+ */
+bool audevSetRecordSampleInterval(uint8_t time_ms)
+{
+    audevContext_t *d = &gAudevCtx;
+    // 1. local mic recorder sample time interval config range in 5ms 10ms 20ms Buffer size
+    if ((time_ms != 20) && (time_ms != 10) && (time_ms != 5))
+        return false;
+
+    osiMutexLock(d->lock);
+    d->cfg.sample_interval = time_ms;
+    audevSetting_t cfg = d->cfg;
+    osiMutexUnlock(d->lock);
+
+    prvStoreNv(&cfg);
+    return true;
+}
+
+/**
  * Start voice call
  */
 bool audevStartVoice(void)
@@ -1102,8 +1198,11 @@ bool audevStartVoice(void)
 
     osiMutexLock(d->lock);
 
-    if (d->clk_users != 0) // disable when any user is working
+    if ((d->clk_users & ~AUDEV_CLK_USER_VOICE) != 0) // disable when any other users is working
         goto failed;
+
+    if (d->clk_users & AUDEV_CLK_USER_VOICE)
+        goto success;
 
     prvEnableAudioClk(AUDEV_CLK_USER_VOICE);
     if (!prvSetVoiceConfig())
@@ -1115,6 +1214,7 @@ bool audevStartVoice(void)
     if (!prvWaitStatus(CODEC_VOIS_START_DONE))
         goto failed_disable_clk;
 
+success:
     osiMutexUnlock(d->lock);
     return true;
 
@@ -1619,9 +1719,16 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
         if ((d->clk_users & ~(AUDEV_CLK_USER_VOICE | AUDEV_CLK_USER_PLAYTEST)) != 0) // disable when any other users is working
             goto failed;
 
+        // 1. local mic recorder sample time interval config range in 5ms - 20ms Buffer size
+        // 2. pcm_buffer_bytes >=5ms buffersize <= 20ms buffersize
+        unsigned max_buffer_bytes = ((d->cfg.sample_rate == 8000) ? sizeof(HAL_SPEECH_PCM_BUF_T) : sizeof(HAL_VOLTE_PCM_BUF_T));
+        unsigned pcm_buffer_bytes = max_buffer_bytes / (20 / d->cfg.sample_interval);
+        pcm_buffer_bytes = OSI_MIN(unsigned, max_buffer_bytes, pcm_buffer_bytes);
+        pcm_buffer_bytes = OSI_MAX(unsigned, (max_buffer_bytes / 4), pcm_buffer_bytes);
+
         HAL_AIF_STREAM_T stream = {
             .startAddress = ((d->cfg.sample_rate == 8000) ? (uint32_t *)d->shmem->txPcmBuffer.pcmBuf : (uint32_t *)d->shmem->txPcmVolte.pcmBuf),
-            .length = ((d->cfg.sample_rate == 8000) ? sizeof(HAL_SPEECH_PCM_BUF_T) : sizeof(HAL_VOLTE_PCM_BUF_T)),
+            .length = pcm_buffer_bytes,
             .sampleRate = d->cfg.sample_rate,
             .channelNb = HAL_AIF_MONO,
             .voiceQuality = 0,
@@ -1640,6 +1747,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
         d->record.type = type;
         d->record.ops = *rec_ops;
         d->record.ops_ctx = rec_ctx;
+        d->record.enc_error = false;
 
         d->record.frame.sample_format = AUSAMPLE_FORMAT_S16;
         d->record.frame.channel_count = 1;
@@ -1656,6 +1764,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
         d->shmem->audInPara.sbcOutFlag = 0;
         d->shmem->audInPara.fileEndFlag = 0;
         d->shmem->audInPara.inLenth = AUDIO_INPUT_BUF_SIZE;
+        d->shmem->audInPara.outLength = pcm_buffer_bytes / 2; //ping/pang length
         d->shmem->audOutPara.samplerate = HAL_AIF_FREQ_8000HZ;
         d->shmem->audOutPara.length = AUDEV_PLAY_OUT_BUF_SIZE;
         memset(d->shmem->audOutput, 0, AUDIO_OUTPUT_BUF_SIZE);
@@ -1709,6 +1818,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
         d->record.type = type;
         d->record.ops = *rec_ops;
         d->record.ops_ctx = rec_ctx;
+        d->record.enc_error = false;
 
         d->record.frame.sample_format = AUSAMPLE_FORMAT_S16;
         d->record.frame.channel_count = out_channel_count;
@@ -1892,5 +2002,28 @@ void audSetLdoVB(uint32_t en)
     audevContext_t *d = &gAudevCtx;
     osiMutexLock(d->lock);
     aud_SetLdoVB(en);
+    osiMutexUnlock(d->lock);
+}
+
+bool audIsCodecOpen(void)
+{
+    audevContext_t *d = &gAudevCtx;
+    return (d->clk_users != 0);
+}
+
+void audHeadsetdepop_en(bool en, uint8_t mictype)
+{
+    audevContext_t *d = &gAudevCtx;
+    osiMutexLock(d->lock);
+    if (en)
+    {
+        //four seg heaset set 1,three seg headset set 2
+        if ((mictype == 2) || (mictype == 3))
+            aud_HeadsetConfig(1, 0);
+        else
+            aud_HeadsetConfig(2, 0);
+    }
+    else
+        aud_HeadsetConfig(0, 0);
     osiMutexUnlock(d->lock);
 }

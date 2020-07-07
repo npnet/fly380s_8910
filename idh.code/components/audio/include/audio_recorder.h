@@ -30,6 +30,17 @@ struct auWriter;
 struct osiPipe;
 
 /**
+ * \brief audio recorder status
+ */
+typedef enum
+{
+    AURECORDER_STATUS_IDLE,     ///< recorder not started
+    AURECORDER_STATUS_RECORD,   ///< recorder is started
+    AURECORDER_STATUS_PAUSE,    ///< recorder is paused
+    AURECORDER_STATUS_FINISHED, ///< recorder is finished
+} auRecorderStatus_t;
+
+/**
  * \brief audio recorder event
  *
  * There are no separated event for error. When fatal errors occur, audio
@@ -98,6 +109,19 @@ void auRecorderSetEventCallback(auRecorder_t *d, auRecorderEventCallback_t cb, v
  *      - recording type
  */
 audevRecordType_t auRecorderGetType(auRecorder_t *d);
+
+/**
+ * \brief check whether recorder is running
+ *
+ * Recorder will be paused implicitly.
+ *
+ * \return
+ *      - 0 if recorder is stop
+ *      - 1 if recorder is running
+ *      - 2 if recorder is pause
+ *      - 3 if recorder is finish
+ */
+auRecorderStatus_t auRecorderGetStatus(auRecorder_t *d);
 
 /**
  * \brief start audio recoder
@@ -209,6 +233,31 @@ bool auRecorderStartMem(auRecorder_t *d, audevRecordType_t type, auStreamFormat_
  */
 bool auRecorderStartWriter(auRecorder_t *d, audevRecordType_t type, auStreamFormat_t format,
                            const auEncoderParamSet_t *params, struct auWriter *writer);
+
+/**
+ * \brief audio recorder pause
+ *
+ * At pause, the audio input device will be releases, and the audio device
+ * can be used for other purpose.
+ *
+ * \param d 			the audio recorder
+ * \return
+ *		- true on success
+ *		- false on invalid parameter
+ */
+
+bool auRecorderPause(auRecorder_t *d);
+
+/**
+ * \brief audio recorder resume
+ *
+ * \param d 			the audio recorder
+ * \return
+ *		- true on success
+ *		- false on invalid parameter
+ */
+
+bool auRecorderResume(auRecorder_t *d);
 
 /**
  * \brief stop audio recorder

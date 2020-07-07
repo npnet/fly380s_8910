@@ -627,7 +627,7 @@ sntp_request(void *arg)
       /* DNS request sent, wait for sntp_dns_found being called */
       LWIP_DEBUGF(SNTP_DEBUG_STATE, (0x100076fc, "sntp_request: Waiting for server address to be resolved.\n"));
       return;
-    } else if (err == ERR_OK) {
+    } else if (err == ERR_OK || err == ERR_LOCAL_OK) {
       sntp_servers[sntp_current_server].addr = sntp_server_address;
     }
   } else

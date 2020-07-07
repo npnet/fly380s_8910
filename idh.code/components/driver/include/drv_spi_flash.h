@@ -111,7 +111,7 @@ void drvSpiFlashClearRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32
 /**
  * \brief get flash properties
  *
- * \p halSpiFlashProp_t is defined in \p hal_spi_flash.h
+ * \p halSpiFlash_t is defined in \p hal_spi_flash.h
  *
  * The returned property pointer is the property used by the driver.
  * It is designed not to be const. If you really know that the default
@@ -122,7 +122,7 @@ void drvSpiFlashClearRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32
  * \return
  *      - flash properties
  */
-struct halSpiFlashProp *drvSpiFlashGetProp(drvSpiFlash_t *d);
+struct halSpiFlash *drvSpiFlashGetProp(drvSpiFlash_t *d);
 
 /**
  * \brief get flash manufactor id
@@ -323,10 +323,6 @@ uint16_t drvSpiFlashReadCpId(drvSpiFlash_t *d);
 /**
  * \brief read security register
  *
- * According to flash type, the number of security registers:
- * - 3: 1/2/3
- * - 1: 0
- *
  * \param d SPI flash instance pointer, must be valid
  * \param num security register number
  * \param address address inside security register
@@ -342,7 +338,7 @@ bool drvSpiFlashReadSecurityRegister(drvSpiFlash_t *d, uint8_t num, uint16_t add
  * \brief program security register
  *
  * \param d SPI flash instance pointer, must be valid
- * \param num security register number, start from 1
+ * \param num security register number
  * \param address address inside security register
  * \param data data to be programmed
  * \param size program size
@@ -356,7 +352,7 @@ bool drvSpiFlashProgramSecurityRegister(drvSpiFlash_t *d, uint8_t num, uint16_t 
  * \brief program security register
  *
  * \param d SPI flash instance pointer, must be valid
- * \param num security register number, start from 1
+ * \param num security register number
  * \return
  *      - true on success
  *      - false on invalid parameter, or not support
@@ -370,12 +366,23 @@ bool drvSpiFlashEraseSecurityRegister(drvSpiFlash_t *d, uint8_t num);
  * no ways to erase/program the security register.
  *
  * \param d SPI flash instance pointer, must be valid
- * \param num security register number, start from 1
+ * \param num security register number
  * \return
  *      - true on success
  *      - false on invalid parameter, or not support
  */
 bool drvSpiFlashLockSecurityRegister(drvSpiFlash_t *d, uint8_t num);
+
+/**
+ * \brief whether security register is locked
+ *
+ * \param d SPI flash instance pointer, must be valid
+ * \param num security register number
+ * \return
+ *      - true if \p num is valid and locked
+ *      - false if not locked, or invalid parameter
+ */
+bool drvSpiFlashIsSecurityRegisterLocked(drvSpiFlash_t *d, uint8_t num);
 
 /**
  * \brief read SFDP
@@ -389,6 +396,14 @@ bool drvSpiFlashLockSecurityRegister(drvSpiFlash_t *d, uint8_t num);
  *      - false on fail, invalid parameters or not support
  */
 bool drvSpiFlashReadSFDP(drvSpiFlash_t *d, unsigned address, void *data, unsigned size);
+
+/**
+ * \brief unique id length
+ *
+ * \param d SPI flash instance pointer, must be valid
+ * \return unique id length, 0 for not support
+ */
+int drvSpiFlashUidLength(drvSpiFlash_t *d);
 
 #ifdef __cplusplus
 }

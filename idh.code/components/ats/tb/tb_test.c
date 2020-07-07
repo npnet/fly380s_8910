@@ -24,6 +24,7 @@
 #include "atr_config.h"
 
 #ifdef CONFIG_ATR_TB_API_SUPPORT
+static int g_Index = 0;
 
 void tbtest_wan_network_info_cb(tb_wan_notify_type_e type, const char *value)
 {
@@ -121,12 +122,14 @@ void tbtest_data_wan_disconnect(void)
 {
     OSI_LOGI(0, "tbtest_data_wan_disconnect");
     tb_data_wan_disconnect(TB_PROFILE_ID_PUBLIC);
+    tb_data_wan_disconnect(TB_PROFILE_ID_PRIVATE);
 }
 
 void tbtest_data_wan_connect(void)
 {
     OSI_LOGI(0, "tbtest_data_wan_connect");
     tb_data_wan_connect(TB_PROFILE_ID_PUBLIC);
+    tb_data_wan_connect(TB_PROFILE_ID_PRIVATE);
 }
 
 void tbtest_data_set_connect_parameter(void)
@@ -206,6 +209,15 @@ void tbtest_data_get_ipv4_address(void)
         OSI_LOGXI(OSI_LOGPAR_S, 0, "pref_dns_addr:%s", (const char *)address.pref_dns_addr);
         OSI_LOGXI(OSI_LOGPAR_S, 0, "standy_dns_addr:%s", (const char *)address.standy_dns_addr);
     }
+
+    memset(&address, 0, sizeof(address));
+    OSI_LOGI(0, "private:");
+    if (TB_SUCCESS == tb_data_get_ipv4_address(TB_PROFILE_ID_PRIVATE, &address))
+    {
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "ip_addr:%s", (const char *)address.ip_addr);
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "pref_dns_addr:%s", (const char *)address.pref_dns_addr);
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "standy_dns_addr:%s", (const char *)address.standy_dns_addr);
+    }
 }
 
 void tbtest_sim_callback_fun(tb_sim_status type)
@@ -261,16 +273,16 @@ void tbtest_sim_get_phone_num(void)
     }
 }
 
-static int g_Index = 0;
 void tbtest_send_message()
 {
     OSI_LOGI(0, "tbtest_send_message: send message test!!!");
-    tb_sms_msg_type *msg = malloc(800);
-    memset(msg, 0x00, 800);
-    strncpy((char *)msg->dest_num, "10086", 6);
+    tb_sms_msg_type *msg = (tb_sms_msg_type *)malloc(sizeof(tb_sms_msg_type));
+    memset(msg, 0x00, sizeof(tb_sms_msg_type));
+    strncpy((char *)msg->dest_num, "10010", 6);
     memcpy(msg->msg_content, "\xE7\xA5\x81\xE4\xB8\xB9\xE4\xB8\xB9\x00", 10);
     msg->msg_len = 10;
     tb_sms_send_sms(msg);
+    free(msg);
 }
 
 void tbtest_sms_get_sms_withid()
@@ -338,6 +350,141 @@ void tbtest_sms_get_contents_fun(tb_sms_message *received_message)
              received_message->date.minute,
              received_message->date.second,
              received_message->date.izone);
+}
+
+void tbtest_voice_callback_fun(tb_voice_report_event_e event, void *voice_report_info)
+{
+    OSI_LOGI(0, "tbtest_voice_callback_fun, type: %d", event);
+    switch (event)
+    {
+    case TB_VOICE_REPORT_CALL_INFO:
+        OSI_LOGI(0, "tbtest_voice_callback_fun");
+        break;
+    case TB_VOICE_REPORT_MSD_TRANSMISSION_STATUS:
+        OSI_LOGI(0, "Not support at this time!!!");
+        break;
+    default:
+        OSI_LOGI(0, "tbtest_voice_callback_fun error unkwown type!!!");
+        break;
+    }
+}
+
+void tbtest_voice_dial_call()
+{
+    char call_number[6] = "10010";
+
+    OSI_LOGI(0, "tbtest_voice_dial_call");
+    tb_voice_dial_call(call_number);
+}
+
+void tbtest_voice_connect_call()
+{
+    OSI_LOGI(0, "tbtest_voice_connect_call");
+    tb_voice_answer_call();
+}
+
+void tbtest_voice_hungup_call()
+{
+    OSI_LOGI(0, "tbtest_voice_hungup_call");
+    tb_voice_hungup_call();
+}
+
+void tbtest_voice_switch_audio_channel0()
+{
+    OSI_LOGI(0, "tbtest_voice_switch_audio_channel0 speak!!!");
+    tb_voice_switch_audio_channel(0);
+}
+
+void tbtest_voice_switch_audio_channel1()
+{
+    OSI_LOGI(0, "tbtest_voice_switch_audio_channel0 headset!!!");
+    tb_voice_switch_audio_channel(1);
+}
+
+void tbtest_device_get_modemserialnumber()
+{
+    char msn[24 + 1] = {
+        0,
+    };
+
+    OSI_LOGI(0, "tbtest_device_get_modemserialnumber");
+    if (TB_SUCCESS == tb_device_get_modemserialnumber(msn, sizeof(msn) - 1))
+    {
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "tb_device_get_modemserialnumber msn:%s", (const char *)msn);
+    }
+}
+
+void tbtest_device_get_hwversion()
+{
+    char hwver[32 + 1] = {
+        0,
+    };
+
+    OSI_LOGI(0, "tbtest_device_get_hwversion");
+    if (TB_SUCCESS == tb_device_get_hwversion(hwver, sizeof(hwver) - 1))
+    {
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "tbtest_device_get_hwversion hwver:%s", (const char *)hwver);
+    }
+}
+
+void tbtest_device_getversion()
+{
+    char ver[64 + 1] = {
+        0,
+    };
+
+    OSI_LOGI(0, "tbtest_device_getversion");
+    if (TB_SUCCESS == tb_device_getversion(ver, sizeof(ver) - 1))
+    {
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "tbtest_device_getversion ver:%s", (const char *)ver);
+    }
+}
+
+void tbtest_device_geticcid()
+{
+    char iccid[20 + 1] = {
+        0,
+    };
+
+    OSI_LOGI(0, "tbtest_device_geticcid");
+    if (TB_SUCCESS == tb_device_get_iccid(iccid, sizeof(iccid) - 1))
+    {
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "tbtest_device_geticcid iccid:%s", (const char *)iccid);
+    }
+}
+
+tb_timer_p g_tbtest_timer = NULL;
+
+void tbtest_timer_handler(void *timer)
+{
+    OSI_LOGI(0, "tbtest_timer_handler");
+}
+
+void tbtest_device_set_rtc_timer(void)
+{
+    OSI_LOGI(0, "tbtest_device_set_rtc_timer");
+    tb_device_set_rtc_timer(5, tbtest_timer_handler, &g_tbtest_timer);
+}
+
+void tbtest_device_cancel_timer(void)
+{
+    OSI_LOGI(0, "tbtest_device_cancel_timer");
+    if (g_tbtest_timer != NULL)
+    {
+        tb_device_cancel_timer(g_tbtest_timer);
+    }
+}
+
+void tbtest_device_shutdown_system(void)
+{
+    OSI_LOGI(0, "tbtest_device_shutdown_system");
+    tb_device_shutdown_system();
+}
+
+void tbtest_device_reboot_system(void)
+{
+    OSI_LOGI(0, "tbtest_device_reboot_system");
+    tb_device_reboot_system();
 }
 
 #endif

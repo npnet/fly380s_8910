@@ -60,8 +60,12 @@ typedef struct _ftp_sock_t
 {
     void *context;
     int sock;
+    bool enable;
     int errcode;
     ftp_con_status_t status;
+    uint8_t *availBuf;
+    uint32_t availableSize;
+    uint32_t availableoffset;
     struct sockaddr_storage addr;
     size_t addrLen;
     uint32_t recvTimestamp;
@@ -74,6 +78,7 @@ typedef struct _ftp_connection_t
     ftp_sock_t sockset[FTP_MAX_SOCK];
     sa_family_t family;
     osiSemaphore_t *sem;
+    osiMutex_t *lock;
     osiThread_t *threadConn;
     bool threadEnable;
 } ftp_connection_t;
@@ -83,6 +88,7 @@ void ftp_conn_destroy();
 bool ftp_conn_connect(char *host, char *port, ftp_net_callback_t *cb, void *context, ftp_sock_e flag);
 bool ftp_conn_disconnect(ftp_sock_e flag);
 bool ftp_conn_send(uint8_t *buf, uint32_t buflen, ftp_sock_e flag);
+int32_t ftp_conn_read(uint8_t *buf, uint32_t buflen, ftp_sock_e flag);
 void ftp_conn_SetTimeout(uint32_t tm, ftp_sock_e flag);
 void ftp_conn_KillTimeout(ftp_sock_e flag);
 

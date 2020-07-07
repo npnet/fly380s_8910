@@ -173,7 +173,7 @@ static inline void _wcnRfInit()
     hwp_wcnWlan->phy_reg_write_data = 0xfb1f810;
 
     hwp_wcnWlan->phy_reg_offset_addr = 0x5;
-    hwp_wcnWlan->phy_reg_write_data = 0xb020a452;
+    hwp_wcnWlan->phy_reg_write_data = 0xa820a452;
 
     // Set the initial gain to F
     hwp_wcnWlan->phy_reg_offset_addr = 0x0C;

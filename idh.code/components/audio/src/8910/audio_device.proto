@@ -21,4 +21,5 @@ message pbAudev
     optional uint32 tone_vol = 5;
     optional uint32 out_mute = 6;
     optional uint32 sample_rate = 7;
+    optional uint32 sample_interval = 8;
 }

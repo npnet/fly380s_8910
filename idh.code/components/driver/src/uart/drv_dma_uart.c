@@ -43,7 +43,7 @@
 #define UART_TX_TRIG_FIFO_MODE (0)
 #define UART_RX_TRIG_FIFO_MODE (64)
 #define UART_TX_TRIG_DMA_MODE (1)
-#define UART_RX_TRIG_DMA_MODE (64)
+#define UART_RX_TRIG_DMA_MODE (112)
 
 // The source IDs should match hardware
 #define AD_SOURCE_UART1RX 0
@@ -65,7 +65,6 @@ struct drvUart
     uint8_t tx_dma_source_id;
     uint32_t irqn;
     uint32_t irq_priority;
-    uint32_t actual_baud;
 
     bool tx_use_dma;
     bool rx_use_dma;
@@ -217,7 +216,7 @@ static bool _uartAutoBaudCheck(drvUart_t *d)
     {
         OSI_LOGI(0, "DRV %4c baud locked, status=0x%x", d->name, status.v);
         d->auto_baud = false;
-        d->actual_baud = _calcAutoBaud(d);
+        d->cfg.baud = _calcAutoBaud(d);
 
         osiFifoReset(&d->rx_fifo);
         locked = true;
@@ -440,7 +439,7 @@ static bool _startConfig(drvUart_t *d)
     uart_conf.b.check = (d->cfg.parity == DRV_UART_NO_PARITY) ? 0 : 1;
     uart_conf.b.parity = (d->cfg.parity == DRV_UART_EVEN_PARITY) ? 0 : 1;
     uart_conf.b.stop_bit = (d->cfg.stop_bits == DRV_UART_STOP_BITS_1) ? 0 : 1;
-    uart_conf.b.at_enable = d->actual_baud ? 0 : 1;
+    uart_conf.b.at_enable = d->cfg.baud ? 0 : 1;
     // if at_enable, check should be closed, and resumed when baud locked
     if (uart_conf.b.at_enable)
         uart_conf.b.check = 0;
@@ -461,7 +460,7 @@ static bool _startConfig(drvUart_t *d)
     uart_conf.b.hwfc = (d->cfg.rts_enable || d->cfg.cts_enable) ? 1 : 0;
     if (d->cfg.rts_enable)
     {
-        uart_conf.b.tout_hwfc = 1;
+        uart_conf.b.tout_hwfc = 0;
         uart_conf.b.rx_trig_hwfc = 1;
     }
     d->hwp->uart_conf = uart_conf.v;
@@ -512,7 +511,7 @@ static bool _startConfig(drvUart_t *d)
 
     // when auto baud locked ,at_enable set 0 at status will be clean
     REG_ARM_UART_UART_AT_STATUS_T status = {d->hwp->uart_at_status};
-    d->auto_baud = (d->actual_baud == 0 && !status.b.auto_baud_locked);
+    d->auto_baud = (d->cfg.baud == 0 && !status.b.auto_baud_locked);
 
     osiIrqSetHandler(d->irqn, drvUartISR, d);
     osiIrqSetPriority(d->irqn, d->irq_priority);
@@ -649,7 +648,7 @@ static void drvUartISR(void *ctx)
         else
         {
             // when auto baud locked, change to fixed baud
-            _setBaud(d, d->actual_baud);
+            _setBaud(d, d->cfg.baud);
             osiFifoReset(&d->rx_fifo);
 
             REG_ARM_UART_UART_CONF_T config = {d->hwp->uart_conf};
@@ -843,11 +842,6 @@ int drvUartSendAll(drvUart_t *d, const void *data, size_t size, uint32_t timeout
     return total - size;
 }
 
-uint32_t drvUartActualBaudrate(drvUart_t *d)
-{
-    return d->actual_baud;
-}
-
 bool drvUartWaitTxFinish(drvUart_t *d, uint32_t timeout)
 {
     if (d == NULL)
@@ -928,7 +922,7 @@ static void _uartResume(void *ctx, osiSuspendMode_t mode, uint32_t source)
     if (mode == OSI_SUSPEND_PM2 || d->name != DRV_NAME_UART1)
     {
         _setHWRegs(d);
-        _setBaud(d, d->actual_baud);
+        _setBaud(d, d->cfg.baud);
         _startConfig(d);
     }
     osiExitCritical(critical);
@@ -1024,7 +1018,6 @@ bool drvUartOpen(drvUart_t *d)
 {
     if (!_setHWRegs(d))
         goto failed;
-    d->actual_baud = d->cfg.baud;
     if (!_setBaud(d, d->cfg.baud))
         goto failed;
     if (!_startConfig(d))

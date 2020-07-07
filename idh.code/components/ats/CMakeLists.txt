@@ -92,6 +92,8 @@ target_sources_if(CONFIG_AT_SPBLE_SUPPORT THEN ${target} PRIVATE bt/at_cmd_spble
 target_sources_if(CONFIG_AT_SPBLE_SUPPORT THEN ${target} PRIVATE bt/at_cmd_btmsg.c)
 target_sources_if(CONFIG_AT_BT_CLASSIC_SUPPORT THEN ${target} PRIVATE bt/at_cmd_bt_classic.c)
 target_sources_if(CONFIG_AT_BT_CLASSIC_SUPPORT THEN ${target} PRIVATE bt/at_cmd_btmsg.c)
+target_sources_if(CONFIG_AT_BTCOMM_SUPPORT THEN ${target} PRIVATE bt/at_cmd_btcomm.c)
+target_sources_if(CONFIG_AT_BTCOMM_SUPPORT THEN ${target} PRIVATE bt/at_cmd_btmsg.c)
 target_sources_if(CONFIG_AT_NEWFTP_SUPPORT THEN ${target} PRIVATE ftp/at_cmd_newftp.c)
 target_sources_if(CONFIG_AT_WIFISCAN_SUPPORT THEN ${target} PRIVATE wifi/at_cmd_wifi.c)
 

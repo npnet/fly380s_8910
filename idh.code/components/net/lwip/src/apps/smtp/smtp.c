@@ -530,7 +530,7 @@ smtp_send_mail_alloced(struct smtp_session *s)
 #else /* LWIP_DNS */
   err = ipaddr_aton(smtp_server, &addr) ? ERR_OK : ERR_ARG;
 #endif /* LWIP_DNS */
-  if (err == ERR_OK) {
+  if (err == ERR_OK || err == ERR_LOCAL_OK) {
     pcb = smtp_setup_pcb(s, &addr);
     if (pcb == NULL) {
       err = ERR_MEM;

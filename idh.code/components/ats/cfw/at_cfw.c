@@ -632,8 +632,17 @@ bool atCfwCcIsChannelActive(atCmdEngine_t *engine)
 
 bool atCfwCcIsPermitted(atCmdEngine_t *engine)
 {
-    return gAtCfwCtx.cc.state == AT_CHANNEL_CC_NONE ||
-           engine == gAtCfwCtx.cc.engine;
+    if (gAtCfwCtx.cc.engine != engine)
+    {
+        if (gAtCfwCtx.cc.engine != NULL)
+            atCmdDeceaseRef(gAtCfwCtx.cc.engine);
+        if (engine != NULL)
+            atCmdIncreaseRef(engine);
+
+        gAtCfwCtx.cc.engine = engine;
+    }
+
+    return true;
 }
 
 bool atCfwCcIsDialPermitted(atCmdEngine_t *engine)

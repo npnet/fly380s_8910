@@ -27,6 +27,7 @@ osi_timer_t *osi_timer_create(TIMER_TYPE_T type, unsigned int milli_seconds, tim
 int osi_timer_change(osi_timer_t *timerm, unsigned int milli_seconds);
 int osi_timer_cancel(osi_timer_t *timer);
 void osi_sleep(unsigned int milli_secondes);
+int osi_timer_reset(void);
 
 #endif /* __OSI_TIMER_H__ */
 

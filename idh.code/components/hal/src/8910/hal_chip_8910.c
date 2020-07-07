@@ -13,6 +13,7 @@
 #include "osi_api.h"
 #include "hwregs.h"
 #include "hal_chip.h"
+#include "hal_iomux.h"
 #include "cmsis_core.h"
 #include "osi_log.h"
 
@@ -142,7 +143,7 @@ void halCameraClockRequest(cameraUser_t user, cameraClk_t Mclk)
     else if (user == CLK_CAMA_USER_AUDIO && Mclk == CAMA_CLK_OUT_FREQ_26M)
     {
         // set camera clock 26M for audio codec
-        hwp_iomux->pad_camera_ref_clk_cfg_reg |= IOMUX_PAD_CAMERA_REF_CLK_SEL_V_FUN_CAMERA_REF_CLK_SEL;
+        halIomuxSetFunction(HAL_IOMUX_FUN_CAMERA_REF_CLK_PAD_CAMERA_REF_CLK);
 
         REG_SYS_CTRL_CLK_OTHERS_ENABLE_T clk_others_enable;
         clk_others_enable.v = hwp_sysCtrl->clk_others_enable;

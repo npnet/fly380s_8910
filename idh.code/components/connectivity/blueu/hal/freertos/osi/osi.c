@@ -10,3 +10,9 @@ int osi_init(void)
     return 0;
 }
 
+int osi_reset(void)
+{
+    osi_timer_reset();
+    return 0;
+}
+

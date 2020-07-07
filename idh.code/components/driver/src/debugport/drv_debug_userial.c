@@ -89,8 +89,8 @@
 
 #define TRACE_CONT_SIZE_MIN (1024)
 #define TRACE_TX_POLL_INTERVAL (20)
-#define SEND_PACKET_BY_TRACE_TIMEOUT (100)
-#define SEND_PACKET_DIRECT_TIMEOUT (10)
+#define SEND_PACKET_BY_TRACE_TIMEOUT (200)
+#define SEND_PACKET_DIRECT_TIMEOUT (50)
 
 typedef volatile struct
 {
@@ -113,7 +113,7 @@ typedef struct
     bool blue_screen_mode;      // whether in blue screen
     bool inited;                // whether initialized, just to avoid duplicated create
     bool trace_no_wait;         // not to wait at trace tx done
-    volatile bool tx_busy;      // whether tx is on going. TODO: check from xfer
+    osiMutex_t *lock;           // mutex for send packet
     osiTimer_t *tx_timer;       // timer to trigger tx again
     osiBuffer_t trace_buf;      // buffer fetch from trace
     unsigned rx_dma_size;       // rx dma size
@@ -169,7 +169,7 @@ static void prvUserialStartTxTimer(drvDebugUserialPort_t *d)
 }
 
 /**
- * Start tx transfer, and set tx_busy on success.
+ * Start tx transfer.
  */
 static bool prvUserialStartTxLocked(drvDebugUserialPort_t *d, const void *data, unsigned size, bool uncached)
 {
@@ -192,7 +192,6 @@ static bool prvUserialStartTxLocked(drvDebugUserialPort_t *d, const void *data, 
     if (ret < 0)
         return false;
 
-    d->tx_busy = true;
     return true;
 }
 
@@ -353,7 +352,6 @@ static void prvUserialTxDoneCb(usbEp_t *ep, usbXfer_t *xfer)
 {
     drvDebugUserialPort_t *d = (drvDebugUserialPort_t *)xfer->param;
 
-    d->tx_busy = false;
     if (!d->port.mode.trace_enable)
     {
         if (xfer->status != 0)
@@ -523,58 +521,23 @@ static void prvUserialStopLocked(drvDebugUserialPort_t *d)
 }
 
 /**
- * Send packet through debug usb serial.
+ * Send packet by trace, and wait finish
  */
-static bool prvUserialSendPacket(drvDebugPort_t *p, const void *data, unsigned size)
+static bool prvUserialSendPacketByTrace(drvDebugUserialPort_t *d, const void *data, unsigned size)
 {
-    drvDebugUserialPort_t *d = OSI_CONTAINER_OF(p, drvDebugUserialPort_t, port);
-
-    if (!d->port.mode.cmd_enable)
+    if (!osiTraceBufPutPacket(data, size))
         return false;
 
-    if (d->port.mode.trace_enable)
-    {
-        d->trace_no_wait = true;
-        if (!osiTraceBufPutPacket(data, size))
-        {
-            d->trace_no_wait = false;
-            return false;
-        }
-
-        unsigned critical = osiEnterCritical();
-        prvUserialTraceOutputLocked(d, OUTPUT_AT_TIMEOUT);
-        osiExitCritical(critical);
-
-        osiElapsedTimer_t timeout;
-        osiElapsedTimerStart(&timeout);
-
-        while (osiElapsedTimeUS(&timeout) < SEND_PACKET_BY_TRACE_TIMEOUT * 1000)
-        {
-            if (osiTraceBufPacketFinished(data))
-            {
-                d->trace_no_wait = false;
-                return true;
-            }
-
-            osiThreadSleepUS(2000);
-        }
-
-        d->trace_no_wait = false;
-        return false;
-    }
-
-    if (!d->port.status.usb_host_opened || d->tx_busy)
-        return false;
-
-    if (!prvUserialStartTxLocked(d, data, size, false))
-        return false;
+    unsigned critical = osiEnterCritical();
+    prvUserialTraceOutputLocked(d, d->blue_screen_mode ? OUTPUT_AT_BLUE_SCREEN : OUTPUT_AT_TIMEOUT);
+    osiExitCritical(critical);
 
     osiElapsedTimer_t timeout;
     osiElapsedTimerStart(&timeout);
 
-    while (osiElapsedTimeUS(&timeout) < SEND_PACKET_DIRECT_TIMEOUT * 1000)
+    while (osiElapsedTimeUS(&timeout) < SEND_PACKET_BY_TRACE_TIMEOUT * 1000)
     {
-        if (!d->tx_busy)
+        if (osiTraceBufPacketFinished(data))
             return true;
 
         if (d->blue_screen_mode)
@@ -582,7 +545,65 @@ static bool prvUserialSendPacket(drvDebugPort_t *p, const void *data, unsigned s
         else
             osiThreadSleepUS(2000);
     }
+
     return false;
+}
+
+/**
+ * Wait direct tx transfer finish
+ */
+static bool prvUserialWaitDirectTxFinish(drvDebugUserialPort_t *d)
+{
+    return OSI_LOOP_WAIT_POST_TIMEOUT_US(d->tx_xfer->status != -EINPROGRESS,
+                                         SEND_PACKET_DIRECT_TIMEOUT * 1000,
+                                         osiThreadSleepUS(2000));
+}
+
+/**
+ * Wait direct tx transfer finish in blue screen mode
+ */
+static bool prvUserialWaitDirectTxFinishBs(drvDebugUserialPort_t *d)
+{
+    return OSI_LOOP_WAIT_POST_TIMEOUT_US(d->tx_xfer->status != -EINPROGRESS,
+                                         SEND_PACKET_DIRECT_TIMEOUT * 1000,
+                                         udcGdbPollIntr(d->cdc->func->controller));
+}
+
+/**
+ * Send packet through debug usb serial.
+ */
+static bool prvUserialSendPacket(drvDebugPort_t *p, const void *data, unsigned size)
+{
+    drvDebugUserialPort_t *d = OSI_CONTAINER_OF(p, drvDebugUserialPort_t, port);
+
+    if (!d->port.mode.cmd_enable || !d->port.status.usb_host_opened)
+        return false;
+
+    if (d->blue_screen_mode)
+    {
+        return prvUserialWaitDirectTxFinishBs(d) &&
+               prvUserialStartTxLocked(d, data, size, false) &&
+               prvUserialWaitDirectTxFinishBs(d);
+    }
+
+    osiMutexLock(d->lock);
+
+    bool ok = false;
+    if (d->port.mode.trace_enable)
+    {
+        d->trace_no_wait = true;
+        ok = prvUserialSendPacketByTrace(d, data, size);
+        d->trace_no_wait = false;
+    }
+    else
+    {
+        ok = prvUserialWaitDirectTxFinish(d) &&
+             prvUserialStartTxLocked(d, data, size, false) &&
+             prvUserialWaitDirectTxFinish(d);
+    }
+
+    osiMutexUnlock(d->lock);
+    return ok;
 }
 
 /**
@@ -831,6 +852,8 @@ drvDebugPort_t *drvDebugUserialPortCreate(unsigned name, drvDebugPortMode_t mode
     d->port.mode = mode;
     d->blue_screen_mode = false;
     d->rx_cb = prvDummyRxCallback;
+    d->lock = osiMutexCreate();
+
     if (d->port.mode.cmd_enable && d->port.mode.protocol == DRV_DEBUG_PROTOCOL_HOST)
     {
         d->rx_dma_size = 512;

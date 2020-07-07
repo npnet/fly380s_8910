@@ -163,7 +163,7 @@ void bootStart(uint32_t param)
 {
     OSI_CLEAR_SECTION(bss);
 
-    halSpiFlashStatusCheck(0);
+    bootSpiFlashOpen(DRV_NAME_SPI_FLASH); // ensure accessible
     halClockInit();
     halRamInit();
 

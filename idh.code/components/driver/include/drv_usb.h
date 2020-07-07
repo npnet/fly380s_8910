@@ -113,6 +113,13 @@ bool drvUsbIsEnabled();
  */
 bool drvUsbRemoteWakeup();
 
+/**
+ * @brief set usb cable attached
+ *
+ * @param attach    usb cable attached
+ */
+void drvUsbSetAttach(bool attach);
+
 #ifdef __cplusplus
 }
 #endif

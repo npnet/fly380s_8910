@@ -273,6 +273,10 @@ static void MBEDTLS_TcpipRsp(void *param)
             {
                 Mbedsocket_ConnectEvent((TLSSOCK_HANDLE)tlssock_ptr, TLSSOCK_ERR_SOCK_CONNECT_FAIL);
             }
+            if (tlssock_ptr->state == TLSSOCK_STATE_CONNECTED)
+            {
+                Mbedsocket_CloseEvent((TLSSOCK_HANDLE)tlssock_ptr);
+            }
             MBEDSOCKET_TRACE("EV_CFW_TCPIP_ERR_IND:%s", string);
         }
         break;

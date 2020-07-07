@@ -23,6 +23,7 @@ extern "C" {
 #define FTP_RET_FTP_NOT_INITED -2
 #define FTP_RET_FTP_NOT_CONNECTED -3
 #define FTP_RET_FTP_HAD_CONNECTED -4
+#define FTP_RET_FTP_IS_BUSY -5
 
 #define FTP_RET_CMD_ERR -1000
 #define FTP_RET_CMD_CONNECT_FAIL (FTP_RET_CMD_ERR - 1)  //ftp command tcp connect failed
@@ -117,7 +118,8 @@ bool FTPLib_uninit(void);
 ftp_ret_t FTPLib_login(char *host, char *port, char *user, char *pass);
 ftp_ret_t FTPLib_logout();
 ftp_ret_t FTPLib_size(char *file, uint32_t *size);
-ftp_ret_t FTPLib_get(char *file, uint32_t offset, uint32_t size);
+ftp_ret_t FTPLib_getStart(char *file, uint32_t offset, uint32_t size);
+int32_t FTPLib_get(uint8_t *buf, uint32_t buflen);
 ftp_ret_t FTPLib_getStop();
 ftp_ret_t FTPLib_putStart(char *file);
 ftp_ret_t FTPLib_put(uint8_t *buf, uint32_t buflen);

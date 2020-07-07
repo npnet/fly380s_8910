@@ -37,4 +37,11 @@ config AT_BT_CLASSIC_SUPPORT
     help
         When enabled, CONFIG_AT_BT_CLASSIC_SUPPORT will be defined
 
+config AT_BTCOMM_SUPPORT
+    bool "AT_BTCOMM_SUPPORT enabled"
+    default n
+    select BLUEU_BT_ENABLE
+    help
+        When enabled, CONFIG_AT_BTCOMM_SUPPORT will be defined
+
 endmenu

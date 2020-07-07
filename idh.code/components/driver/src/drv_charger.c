@@ -92,16 +92,6 @@ static uint32_t _drvChargerVoltagePercentum(uint32_t voltage, chgState_e is_char
     }
 
 #define _CHG_COUNTER_DEC(c) (c--)
-#define _CHG_COUNTER_RELOAD(c, reload) \
-    {                                  \
-        if (c == 0)                    \
-            c = reload;                \
-    }
-#define _CHG_COUNTER_DEC_AND_AUTO_RELOAD(c, round) \
-    {                                              \
-        _CHG_COUNTER_DEC(c);                       \
-        _CHG_COUNTER_RELOAD(c, round);             \
-    }
 
 /**---------------------------------------------------------------------------*
  **                         Global Variables                                  *
@@ -113,6 +103,7 @@ static chgSwitPoiint_e hw_switch_point = CHG_SWITPOINT_15; //The lowest switchov
 static uint16_t cv_status_counter = 0;
 static uint16_t charge_endtime_counter = 0;
 static uint16_t warning_counter = 0;
+static bool charge_stop = false;
 //static uint16_t pulse_counter = 0;
 static uint16_t ovp_detect_counter = 0;
 static uint16_t ovp_detect_bat_cnt = 0;
@@ -315,6 +306,8 @@ static void _drvChargetPhyInit(void)
 static void _drvChargerTurnOn(void)
 {
     REG_RDA2720M_GLOBAL_CHGR_CTRL0_T chargCtrol0;
+    if (charge_stop == true)
+        return;
     halAdiBusBatchChange(
         &hwp_rda2720mGlobal->chgr_ctrl0, REG_FIELD_MASKVAL1(chargCtrol0, chgr_pd, 0),
         HAL_ADI_BUS_CHANGE_END);
@@ -603,6 +596,11 @@ static void _drvChargerVbatQueueInit(uint32_t vbat_vol, uint32_t queue_len)
     }
 
     module_state.bat_statistic_vol = vbat_vol;
+}
+
+uint16_t drvChargerGetBatteryVoltage()
+{
+    return module_state.bat_statistic_vol & 0xffff;
 }
 
 static void _drvChargerSetChargerCurrentAccordMode(chgAdapterType_e mode)
@@ -1625,4 +1623,15 @@ void drvChargerInit(void)
     _updateChargerStatus(p);
 
     OSI_LOGI(0, "chg: drvChargerInit end");
+}
+
+void drvChargeEnable(void)
+{
+    charge_stop = false;
+    _drvChargerTurnOn();
+}
+void drvChargeDisable(void)
+{
+    charge_stop = true;
+    _drvChargerTurnOff();
 }

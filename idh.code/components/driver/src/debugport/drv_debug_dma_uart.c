@@ -71,6 +71,7 @@ typedef struct
     drvDebugPort_t port;
     uintptr_t hwp_cfg_clk_uart;
     HWP_ARM_UART_T *hwp;
+    osiMutex_t *lock;
     osiPmSource_t *pm_source;
     bool blue_screen_mode;
     uint8_t tx_dma_source_id;
@@ -322,15 +323,10 @@ static void prvUartInit(drvDebugUartPort_t *d)
 }
 
 /**
- * Send out host/diag command result packet, in host/diag command thread.
+ * Send packet inside mutex.
  */
-static bool prvUartSendPacket(drvDebugPort_t *p, const void *data, unsigned size)
+static bool prvUartSendPacketLocked(drvDebugUartPort_t *d, const void *data, unsigned size)
 {
-    drvDebugUartPort_t *d = OSI_CONTAINER_OF(p, drvDebugUartPort_t, port);
-
-    if (d->blue_screen_mode)
-        return prvUartFifoWriteAll(d->hwp, data, size);
-
     if (!d->port.mode.trace_enable)
         return prvUartFifoWriteAll(d->hwp, data, size);
 
@@ -341,16 +337,25 @@ static bool prvUartSendPacket(drvDebugPort_t *p, const void *data, unsigned size
     prvUartTraceOutput(d, OUTPUT_AT_TIMEOUT);
     osiExitCritical(critical);
 
-    osiElapsedTimer_t timeout;
-    osiElapsedTimerStart(&timeout);
+    return OSI_LOOP_WAIT_POST_TIMEOUT_US(osiTraceBufPacketFinished(data),
+                                         TRACE_PACKET_TX_TIMEOUT * 1000,
+                                         osiThreadSleepUS(2000));
+}
 
-    while (osiElapsedTimeUS(&timeout) < TRACE_PACKET_TX_TIMEOUT * 1000)
-    {
-        if (osiTraceBufPacketFinished(data))
-            return true;
-        osiThreadSleepUS(2000);
-    }
-    return false;
+/**
+ * Send out host/diag command result packet.
+ */
+static bool prvUartSendPacket(drvDebugPort_t *p, const void *data, unsigned size)
+{
+    drvDebugUartPort_t *d = OSI_CONTAINER_OF(p, drvDebugUartPort_t, port);
+
+    if (d->blue_screen_mode)
+        return prvUartFifoWriteAll(d->hwp, data, size);
+
+    osiMutexLock(d->lock);
+    bool ok = prvUartSendPacketLocked(d, data, size);
+    osiMutexUnlock(d->lock);
+    return ok;
 }
 
 /**
@@ -474,6 +479,7 @@ drvDebugPort_t *drvDebugUartPortCreate(unsigned name, drvDebugPortMode_t mode)
     d->port.name = name;
     d->port.mode = mode;
     d->rx_cb = prvDummyRxCallback;
+    d->lock = osiMutexCreate();
     osiFifoInit(&d->rx_fifo, rxfifo_mem, RXFIFO_BUF_SIZE);
 
     switch (name)

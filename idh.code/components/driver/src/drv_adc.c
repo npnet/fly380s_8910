@@ -35,7 +35,7 @@
 #define ADC_EFUSE_CAL_NO_USE 0xffffffff
 #define RATIO(_n_, _d_) (_n_ << 16 | _d_)
 
-static osiSemaphore_t *adclock;
+static osiSemaphore_t *adclock = NULL;
 static uint32_t anaChipId;
 
 /**
@@ -863,6 +863,8 @@ static void _adcClosePmic26MclkAdc(void)
 
 void drvAdcInit(void)
 {
+    if (adclock != NULL)
+        return;
     adclock = osiSemaphoreCreate(1, 1);
 
     _adcEnable();

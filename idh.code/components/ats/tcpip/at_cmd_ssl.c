@@ -29,6 +29,7 @@
 #define ERR_SUCCESS 0
 
 static TLSSOCK_HANDLE s_sslSocket;
+static int g_sslstate = 0;
 static int s_sslSendSize = 0;
 static int ssl_socketconn = CFW_TCPIP_IPPROTO_TCP;
 
@@ -155,6 +156,7 @@ static void ssl_rsp(void *param)
         if (errorCode == 0)
         {
             MbedtlsSocket_SetReportFlag(sslSocket, 1);
+            g_sslstate = 1;
             strcpy(uaRspStr, "SSL CONNECT OK");
             atCmdRespInfoText(engine, uaRspStr);
             atCmdRespOK(engine);
@@ -175,6 +177,7 @@ static void ssl_rsp(void *param)
     {
 
         strcpy(uaRspStr, "SSL CLOSED");
+        g_sslstate = 0;
         mbedtlsSocket_Free(sslSocket);
         atCmdRespUrcText(engine, uaRspStr);
     }
@@ -198,8 +201,8 @@ static void ssl_rsp(void *param)
         {
             s_sslSendSize = 0;
             strcpy(uaRspStr, "SSL SEND OK");
-            atCmdRespInfoText(engine, uaRspStr);
-            atCmdRespOK(engine);
+            atCmdRespUrcText(engine, uaRspStr);
+            //atCmdRespOK(engine);
         }
     }
     break;
@@ -266,6 +269,11 @@ void AT_TCPIP_CmdFunc_SSLSTART(atCommand_t *pParam)
         {
             sprintf(aucBuffer, "CONNECT FAIL PDP error");
             AT_CMD_RETURN(atCmdRespErrorText(pParam->engine, aucBuffer));
+        }
+        if (g_sslstate == 1)
+        {
+            OSI_LOGI(0, "state error,g_sslstate=%d", g_sslstate);
+            AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_EXE_FAIL));
         }
         iResult = CFW_GethostbynameEX(host, &nIpAddr, nCid, nSim, NULL, NULL);
         if (iResult == RESOLV_QUERY_INVALID)
@@ -362,7 +370,7 @@ void AT_TCPIP_CmdFunc_SSLSTART(atCommand_t *pParam)
             AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_NO_MEMORY));
 
         memset(pRstStr, 0, 85);
-        strcpy(pRstStr, "+SSLSTART: (\"SSL\"), (\"(0-255).(0-255).(0-255).(0-255)\"), (0-65535)");
+        strcpy(pRstStr, "+SSLSTART:(\"(0-255).(0-255).(0-255).(0-255)\"), (0-65535)");
 
         atCmdRespInfoText(pParam->engine, pRstStr);
         atCmdRespOK(pParam->engine);
@@ -409,6 +417,8 @@ static void _tcpipSend(atCommand_t *cmd, uint8_t *send_data, uint32_t uLength)
 
     if (ssl_socketconn != CFW_TCPIP_IPPROTO_UDP)
     {
+        if (uLength <= 0)
+            AT_CMD_RETURN(atCmdRespOKText(cmd->engine, ""));
         iResult = mbedtlsSocket_Send(s_sslSocket, (uint8_t *)send_data, (uint16_t)uLength);
         char aucBuffer[40] = {0};
         if (iResult == SOCKET_ERROR)
@@ -444,9 +454,18 @@ static void _tcpipSend(atCommand_t *cmd, uint8_t *send_data, uint32_t uLength)
     }
 
     atCmdSetTimeoutHandler(cmd->engine, 120000, _timeoutabortTimeout);
-    if (iResult >= SOCKET_ERROR)
+
+    char aucBuffer[40] = {0};
+    if (iResult != SOCKET_ERROR)
     {
         s_sslSendSize = iResult;
+        AT_CMD_RETURN(atCmdRespOKText(cmd->engine, ""));
+    }
+    else
+    {
+        sprintf(aucBuffer, "SEND FAIL");
+
+        AT_CMD_RETURN(atCmdRespErrorText(cmd->engine, aucBuffer));
     }
 }
 
@@ -468,35 +487,17 @@ void AT_TCPIP_CmdFunc_SSLSEND(atCommand_t *pParam) //atCommand_t *cmd
 {
     OSI_LOGI(0x0, "AT+SSLSEND: enter");
 
-    if (AT_CMD_EXE == pParam->type || AT_CMD_SET == pParam->type)
+    if (AT_CMD_EXE == pParam->type)
     {
-        if (AT_CMD_EXE == pParam->type && pParam->param_count != 0)
+        if (pParam->param_count != 0)
         {
             OSI_LOGI(0, "AT+SSLSEND: pPara number is error");
             AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_PARAM_INVALID));
         }
-        if ((AT_CMD_SET == pParam->type) && ((pParam->param_count != 1)))
+        if (g_sslstate != 1)
         {
-            AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_PARAM_INVALID));
+            AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_EXE_FAIL));
         }
-        uint32_t uLength = 0;
-        bool paramok = true;
-
-        if (pParam->param_count > 0)
-        {
-            uLength = atParamUint(pParam->params[0], &paramok);
-            if (!paramok)
-            {
-                OSI_LOGI(0, "AT_TCPIP_CmdFunc_SSLSEND: get ref error");
-                AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_PARAM_INVALID));
-            }
-        }
-
-        if (1024 * 5 < uLength)
-        {
-            AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_PARAM_INVALID));
-        }
-
         tcpipAsyncCtx_t *async = (tcpipAsyncCtx_t *)malloc(sizeof(*async));
         if (async == NULL)
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_NO_MEMORY);
@@ -510,20 +511,6 @@ void AT_TCPIP_CmdFunc_SSLSEND(atCommand_t *pParam) //atCommand_t *cmd
         atCmdRespOutputPrompt(pParam->engine);
         atCmdSetPromptMode(pParam->engine, _tcpipDataPromptCB, pParam, async->data, TCPIP_DATA_MAX_SIZE);
     }
-    else if (AT_CMD_TEST == pParam->type)
-    {
-        char aucBuffer[40] = {0};
-        sprintf(aucBuffer, "+SSLSEND:<length>");
-        atCmdRespInfoText(pParam->engine, aucBuffer);
-        atCmdRespOK(pParam->engine);
-    }
-    else if (AT_CMD_READ == pParam->type)
-    {
-        char aucBuffer[40] = {0};
-        sprintf(aucBuffer, "+SSLSEND:<size>");
-        atCmdRespInfoText(pParam->engine, aucBuffer);
-        atCmdRespOK(pParam->engine);
-    }
     else
     {
         OSI_LOGI(0, "AT_TCPIP_CmdFunc_SSLSEND(), command type not allowed");
@@ -534,10 +521,16 @@ void AT_TCPIP_CmdFunc_SSLCLOSE(atCommand_t *pParam)
 {
     OSI_LOGI(0, "SSLCLOSE processing\n");
 
-    if (pParam->type == AT_CMD_EXE || pParam->type == AT_CMD_SET)
+    if (pParam->type == AT_CMD_EXE)
     {
-        char aucBuffer[40] = {0};
+        if (g_sslstate == 0)
+        {
+            AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_EXE_FAIL));
+        }
+
         mbedtlsSocket_Free(s_sslSocket);
+        g_sslstate = 0;
+        char aucBuffer[40] = {0};
         strcpy(aucBuffer, "SSL CLOSE OK");
         atCmdRespOKText(pParam->engine, aucBuffer);
     }

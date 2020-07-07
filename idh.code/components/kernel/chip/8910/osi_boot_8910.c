@@ -180,9 +180,6 @@ OSI_NO_RETURN void osiBootStart(uint32_t param)
     // sync cache after code copy
     L1C_InvalidateICacheAll();
 
-    // ensure flash is properly configured
-    halSpiFlashStatusCheck(0);
-
     halClockInit();
     halRamInit();
     _mmuInit();

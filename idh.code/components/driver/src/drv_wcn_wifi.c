@@ -167,7 +167,7 @@ static void prvWifiScan(void *p)
     {
         for (unsigned n = 0; n < d->context.round; ++n)
         {
-            for (uint8_t c = 0; c <= WIFI_CHANNEL_MAX; ++c)
+            for (uint8_t c = 1; c <= WIFI_CHANNEL_MAX; ++c)
                 prvWifiScanChannel(c, d->context.req->maxtimeout, d->context.req);
         }
     }

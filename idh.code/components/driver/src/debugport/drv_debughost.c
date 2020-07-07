@@ -110,6 +110,7 @@ typedef struct
     drvIfcChannel_t tx_ifc;
     osiBuffer_t trace_buf;
     osiTimer_t *tx_timer;
+    osiMutex_t *lock;
     osiPmSource_t *pm_source;
     unsigned ctrl_val;
     unsigned irq_mask_val;
@@ -282,6 +283,26 @@ static void prvDhostTraceTimeout(void *param)
 }
 
 /**
+ * Send packet inside mutex.
+ */
+static bool prvDhostSendPacketLocked(drvDhostPort_t *d, const void *data, unsigned size)
+{
+    if (!d->port.mode.trace_enable)
+        return prvDhostFifoWriteAll(data, size);
+
+    if (!osiTraceBufPutPacket(data, size))
+        return false;
+
+    unsigned critical = osiEnterCritical();
+    prvDhostTraceOutput(d, OUTPUT_AT_TIMEOUT);
+    osiExitCritical(critical);
+
+    return OSI_LOOP_WAIT_POST_TIMEOUT_US(osiTraceBufPacketFinished(data),
+                                         HOST_CMD_TX_TIMEOUT * 1000,
+                                         osiThreadSleepUS(2000));
+}
+
+/**
  * Send out host command result packet, in host command thread.
  */
 static bool prvDhostSendPacket(drvDebugPort_t *p, const void *packet, unsigned packet_len)
@@ -291,26 +312,10 @@ static bool prvDhostSendPacket(drvDebugPort_t *p, const void *packet, unsigned p
     if (d->blue_screen_mode)
         return prvDhostFifoWriteAll(packet, packet_len);
 
-    if (!d->port.mode.trace_enable)
-        return prvDhostFifoWriteAll(packet, packet_len);
-
-    if (!osiTraceBufPutPacket(packet, packet_len))
-        return false;
-
-    unsigned critical = osiEnterCritical();
-    prvDhostTraceOutput(d, OUTPUT_AT_TIMEOUT);
-    osiExitCritical(critical);
-
-    osiElapsedTimer_t timeout;
-    osiElapsedTimerStart(&timeout);
-
-    while (osiElapsedTimeUS(&timeout) < HOST_CMD_TX_TIMEOUT * 1000)
-    {
-        if (osiTraceBufPacketFinished(packet))
-            return true;
-        osiThreadSleepUS(2000);
-    }
-    return false;
+    osiMutexLock(d->lock);
+    bool ok = prvDhostSendPacketLocked(d, packet, packet_len);
+    osiMutexUnlock(d->lock);
+    return ok;
 }
 
 /**
@@ -468,6 +473,7 @@ drvDebugPort_t *drvDhostCreate(drvDebugPortMode_t mode)
     d->port.name = DRV_NAME_DEBUGUART;
     d->port.mode = mode;
     d->rx_cb = prvDummyRxCallback;
+    d->lock = osiMutexCreate();
     d->pm_source = osiPmSourceCreate(DRV_NAME_DEBUGUART, &gDhostPmOps, d);
 
     osiFifoInit(&d->rx_fifo, d->rx_buf, CONFIG_DEBUGHOST_RX_BUF_SIZE);

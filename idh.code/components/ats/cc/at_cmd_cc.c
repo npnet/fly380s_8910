@@ -293,6 +293,8 @@ uint8_t AT_CC_GetCCCount(uint8_t sim)
     CFW_CC_CURRENT_CALL_INFO call_info[AT_CC_MAX_NUM];
 
     CFW_CcGetCurrentCall(call_info, &cnt, sim);
+    OSI_LOGI(0, "SETVOLTE AT_CC_GetCCCount cnt = %d", cnt);
+
     return cnt;
 }
 
@@ -759,7 +761,10 @@ static void _onEV_CFW_CC_AUDIOON_IND(const osiEvent_t *event)
     gAudioOnFlag = 1;
 
     if (!gAtCfwCtx.cc.alert_flag)
+    {
         prvReportSounder(sim, 1);
+        audevPlayTone(AUDEV_TONE_DIAL, 1000);
+    }
 
     prvAlertStop();
 }
@@ -1078,6 +1083,8 @@ void atCmdHandleCLCC(atCommand_t *cmd)
         uint8_t cnt = 0;
 
         uint32_t nRet = CFW_CcGetCurrentCall(call_info, &cnt, sim);
+        OSI_LOGI(0, "atCmdHandleCLCC cnt = %d", cnt);
+
         if (nRet == ERR_CFW_NO_CALL_INPROGRESS || cnt == 0)
             RETURN_OK(cmd->engine);
         if (nRet != 0)
@@ -1505,7 +1512,8 @@ static void _athRspCB(atCommand_t *cmd, const osiEvent_t *event)
     {
         OSI_LOGI(0, "_athRspCB event error\n");
         cfwReleaseUTI(cmd->uti);
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
+        if (cmd->engine)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
         return;
     }
 
@@ -1534,7 +1542,8 @@ static void _athRspCB(atCommand_t *cmd, const osiEvent_t *event)
 
             atCfwCcSetOffline();
             cfwReleaseUTI(cmd->uti);
-            RETURN_OK(cmd->engine);
+            if (cmd->engine)
+                RETURN_OK(cmd->engine);
         }
     }
     else if (0xF0 == cfw_event->nType)
@@ -1548,7 +1557,8 @@ static void _athRspCB(atCommand_t *cmd, const osiEvent_t *event)
 
             atCfwCcSetOffline();
             cfwReleaseUTI(cmd->uti);
-            RETURN_OK(cmd->engine);
+            if (cmd->engine)
+                RETURN_OK(cmd->engine);
         }
 
         if (ctx->g_cc_h_cnt == 0)
@@ -1557,13 +1567,15 @@ static void _athRspCB(atCommand_t *cmd, const osiEvent_t *event)
 
             atCfwCcSetOffline();
             cfwReleaseUTI(cmd->uti);
-            RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
+            if (cmd->engine)
+                RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
         }
     }
     else
     {
         cfwReleaseUTI(cmd->uti);
-        RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
+        if (cmd->engine)
+            RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
     }
 }
 
@@ -1785,7 +1797,8 @@ static void _chldRspCB(atCommand_t *cmd, const osiEvent_t *event)
     {
         OSI_LOGI(0, "_chldRspCB event error\n");
         cfwReleaseUTI(cmd->uti);
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
+        if (cmd->engine)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
         return;
     }
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
@@ -1808,14 +1821,16 @@ static void _chldRspCB(atCommand_t *cmd, const osiEvent_t *event)
         {
             _voiceCallStateUpdate(cfw_event->nFlag);
             cfwReleaseUTI(cmd->uti);
-            RETURN_OK(cmd->engine);
+            if (cmd->engine)
+                RETURN_OK(cmd->engine);
         }
     }
     else
     {
         _voiceCallStateUpdate(cfw_event->nFlag);
         cfwReleaseUTI(cmd->uti);
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
+        if (cmd->engine)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
     }
 }
 
@@ -1826,7 +1841,8 @@ static void _chldvolteRspCB(atCommand_t *cmd, const osiEvent_t *event)
     {
         OSI_LOGI(0, "_chldvolteRspCB event error\n");
         cfwReleaseUTI(cmd->uti);
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
+        if (cmd->engine)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
         return;
     }
 
@@ -1846,7 +1862,8 @@ static void _chldvolteRspCB(atCommand_t *cmd, const osiEvent_t *event)
         {
             _voiceCallStateUpdate(cfw_event->nFlag);
             cfwReleaseUTI(cmd->uti);
-            RETURN_OK(cmd->engine);
+            if (cmd->engine)
+                RETURN_OK(cmd->engine);
         }
 
         //   atSetPendingIdCmd(cmd, EV_CFW_CC_CALL_SWAP_RSP, _chldvolteRspCB);
@@ -1855,7 +1872,8 @@ static void _chldvolteRspCB(atCommand_t *cmd, const osiEvent_t *event)
     {
         _voiceCallStateUpdate(cfw_event->nFlag);
         cfwReleaseUTI(cmd->uti);
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
+        if (cmd->engine)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
     }
 }
 #endif
@@ -2174,7 +2192,8 @@ static void _chccsRspCB(atCommand_t *cmd, const osiEvent_t *event)
     {
         OSI_LOGI(0, "_chccsRspCB event error\n");
         cfwReleaseUTI(cmd->uti);
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
+        if (cmd->engine)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
         return;
     }
     _athRspCB(cmd, event);
@@ -2526,11 +2545,16 @@ void atCmdHandleSETVOLTE(atCommand_t *cmd)
         bool paramok = true;
         uint8_t setvolte = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
         uint8_t count = AT_GprsGetActivePdpCount(sim);
-        OSI_LOGI(0, "SETVOLTE GetActivePdpCount= %d", count);
+        uint8_t cccnt = AT_CC_GetCCCount(sim);
+
+        OSI_LOGI(0, "SETVOLTE atCmdHandleSETVOLTE count = %d, cccnt = %d", count, cccnt);
+
         if (!paramok || cmd->param_count > 1)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-        if (count > 5)
+
+        if ((0 != cccnt) || count > 5)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+
         uint16_t uti = cfwRequestNoWaitUTI();
         if (CFW_ImsSetVolte(setvolte, uti, sim) != 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);

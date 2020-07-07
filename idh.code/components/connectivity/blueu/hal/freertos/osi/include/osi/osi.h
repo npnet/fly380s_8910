@@ -19,6 +19,7 @@
 
 
 int osi_init(void);
+int osi_reset(void);
 
 #define osi_assert(__e) assert(__e)
 

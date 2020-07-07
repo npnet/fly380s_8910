@@ -44,6 +44,7 @@ static uint8_t region = IOTX_HTTP_REGION_SHANGHAI;
 iotx_mqtt_param_t s_alic_param;
 static char s_alic_msg_buffer[AT_ALIC_INCOMING_MSG_LEN] = {0};
 iotx_dev_meta_info_t meta;
+bool is_alic_timeout = false;
 
 #define NV_ALIC_DNAME "/nvm/dm_alic_dname.nv"
 #define NV_ALIC_DSECRET "/nvm/dm_alic_dsecret.nv"
@@ -79,7 +80,13 @@ const char *iotx_alic_ca_crt =
         "-----END CERTIFICATE-----"};
 
 //static void at_alic_start_recv_loop(uint32_t delay);
-
+static void _timeoutalicTimeout(atCommand_t *pParam)
+{
+    OSI_LOGI(0, "ALICSUB/UNSUB/PUB request timeout!");
+    is_alic_timeout = true;
+    atCmdRespInfoText(pParam->engine, "ALICTIMEOUT: timeout");
+    RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
+}
 static int at_alic_auth(char *pkey, char *dname, char *dsecret)
 {
     int rest = 0;
@@ -98,6 +105,8 @@ static int at_alic_auth(char *pkey, char *dname, char *dsecret)
     // OSI_LOGXI(OSI_LOGPAR_SII, 0, "at_alic_auth psecret:%s  s_status: %d regision: %d", s_status, region);
 #endif
     memset(curTopicBuf, 0, AT_ALIC_TOPIC_LEN);
+    sprintf(curTopicBuf, "/%s/%s", meta.product_key, meta.device_name);
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "at_alic_auth curTopicBuf:%s", curTopicBuf);
     s_status = AT_ALIC_AUTH;
     return 0;
 }
@@ -111,6 +120,11 @@ static void at_alic_urc_at_cb(void *param)
 static void at_alic_ok_cb(void *param)
 {
     OSI_LOGI(0, "at_alic_ok_cb response operation succuss");
+    if (is_alic_timeout)
+    {
+        OSI_LOGI(0, "at_alic_ok_cb alic timeout had response");
+        return;
+    }
     RETURN_OK(gAlicEngine);
 }
 
@@ -118,6 +132,11 @@ static void at_alic_error_cb(void *param)
 {
 
     OSI_LOGI(0, " at_alic_error_cb response operation error");
+    if (is_alic_timeout)
+    {
+        OSI_LOGI(0, "at_alic_ok_cb alic timeout had response");
+        return;
+    }
     RETURN_CME_ERR(gAlicEngine, ERR_AT_CME_EXE_FAIL);
 }
 
@@ -325,8 +344,8 @@ static void at_alic_set_conn_param(uint16_t keepalive, uint8_t cleanversion)
     s_alic_param.clean_session = cleanversion;
     s_alic_param.keepalive_interval_ms = keepalive * 1000;
 
-    s_alic_param.read_buf_size = AT_ALIC_BUFFER_SIZE;
-    s_alic_param.write_buf_size = AT_ALIC_BUFFER_SIZE;
+    s_alic_param.read_buf_size = AT_ALIC_RX_BUFFER_SIZE;
+    s_alic_param.write_buf_size = AT_ALIC_RX_BUFFER_SIZE;
     s_alic_param.pub_key = iotx_alic_ca_crt;
 
     s_alic_param.handle_event.h_fp = at_alic_event_handle;
@@ -515,6 +534,12 @@ void AT_ALIC_CmdFunc_AUTH(atCommand_t *pParam)
             OSI_LOGI(0, "AT+ALICAUTH net error");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
         }
+        if ((s_status != AT_ALIC_INIT) && (s_status != AT_ALIC_DISCONNECTED) && (s_status != AT_ALIC_AUTH))
+        {
+            OSI_LOGI(0, "AT_ALIC_CmdFunc_AUTH before AUTH, CONNECTION must be disconnect");
+            //atCmdRespInfoText(pParam->engine, "ALIC is already Connected, please exe AT+ALICDISCONN first\n");
+            RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
+        }
         if (pParam->param_count != 4)
         {
             OSI_LOGI(0, "AT+ALICAUTH put param count error");
@@ -606,9 +631,13 @@ void AT_ALIC_CmdFunc_AUTH(atCommand_t *pParam)
         if (at_alic_auth(pkey, dname, dsecret) != 0)
         {
             OSI_LOGI(0, "AT+ALICAUTH at_alic_auth fail ");
+            if (authmode)
+                free(dsecret);
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
         }
         OSI_LOGI(0, "AT+ALICAUTH at_alic_auth succuss");
+        if (authmode)
+            free(dsecret);
         RETURN_OK(pParam->engine);
     }
     else if (AT_CMD_TEST == pParam->type)
@@ -688,6 +717,7 @@ void AT_ALIC_CmdFunc_CONN(atCommand_t *pParam)
         }
         gAlicEngine = pParam->engine;
         alic_shutdown = false;
+        is_alic_timeout = false;
         alicThread = osiThreadCreate("alic", alic_clientd, NULL, OSI_PRIORITY_NORMAL, 2048 * 8, 0);
         if (alicThread == NULL)
         {
@@ -763,11 +793,13 @@ void AT_ALIC_CmdFunc_SUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_SUB Wrong qos");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
+        is_alic_timeout = false;
         if (at_alic_subscribe(topic, qos) < 0)
         {
             OSI_LOGI(0, "AT_ALIC_CmdFunc_SUB at_alic_subscribe fail ");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
+        atCmdSetTimeoutHandler(pParam->engine, 60000, _timeoutalicTimeout);
     }
     else if (AT_CMD_TEST == pParam->type)
     {
@@ -828,11 +860,13 @@ void AT_ALIC_CmdFunc_UNSUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_UNSUB Wrong topic format");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
+        is_alic_timeout = false;
         if (IOT_MQTT_Unsubscribe(s_alic_client, topic) < 0)
         {
             OSI_LOGI(0, "AT_ALIC_CmdFunc_UNSUB IOT_MQTT_Unsubscribe fail");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
         }
+        atCmdSetTimeoutHandler(pParam->engine, 60000, _timeoutalicTimeout);
     }
     else if (AT_CMD_TEST == pParam->type)
     {
@@ -911,21 +945,27 @@ void AT_ALIC_CmdFunc_PUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB: cleanssion pParam error");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
+        if (AT_StrLen(msg) > AT_ALIC_OUT_MSG_LEN)
+        {
+            OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB Wrong MESSAGE LENGTH");
+            RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
+        }
         if (pParam->param_count >= 4)
         {
-            duplicate = atParamUintInRange(pParam->params[index++], 0, 1, &iResult);
+            duplicate = atParamDefUintInRange(pParam->params[index++], 0, 0, 1, &iResult);
             if (!iResult)
             {
                 OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB: duplicate pParam error");
                 RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
             }
-            retain = atParamUintInRange(pParam->params[index++], 0, 1, &iResult);
+            retain = atParamDefUintInRange(pParam->params[index++], 0, 0, 1, &iResult);
             if (!iResult)
             {
                 OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB: retain pParam error");
                 RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
             }
         }
+        is_alic_timeout = false;
         if (at_alic_publish(topic, msg, duplicate, qos, retain) < 0)
         {
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB at_alic_publish");
@@ -936,6 +976,7 @@ void AT_ALIC_CmdFunc_PUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB at_alic_publish no ack");
             RETURN_OK(pParam->engine);
         }
+        atCmdSetTimeoutHandler(pParam->engine, 60000, _timeoutalicTimeout);
     }
     else if (AT_CMD_TEST == pParam->type)
     {

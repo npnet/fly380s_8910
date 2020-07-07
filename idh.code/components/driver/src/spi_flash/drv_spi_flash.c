@@ -48,8 +48,7 @@ struct drvSpiFlash
     bool opened;
     bool xip_protect;
     unsigned name;
-    uintptr_t hwp;
-    halSpiFlashProp_t prop;
+    halSpiFlash_t flash;
     uintptr_t base_address;
     osiMutex_t *lock;           // suspend will cause thread switch
     uint32_t block_prohibit[8]; // 16M/64K/32bit_per_word
@@ -61,14 +60,14 @@ static drvSpiFlash_t gDrvSpiFlashCtx[] = {
         .opened = false,
         .xip_protect = true,
         .name = DRV_NAME_SPI_FLASH,
-        .hwp = (uintptr_t)hwp_spiFlash,
+        .flash.hwp = (uintptr_t)hwp_spiFlash,
         .base_address = CONFIG_NOR_PHY_ADDRESS,
     },
     {
         .opened = false,
         .xip_protect = true,
         .name = DRV_NAME_SPI_FLASH_EXT,
-        .hwp = (uintptr_t)hwp_spiFlash1,
+        .flash.hwp = (uintptr_t)hwp_spiFlash1,
         .base_address = CONFIG_NOR_EXT_PHY_ADDRESS,
     },
 };
@@ -80,7 +79,7 @@ static drvSpiFlash_t gDrvSpiFlashCtx[] = {
         .opened = false,
         .xip_protect = true,
         .name = DRV_NAME_SPI_FLASH,
-        .hwp = (uintptr_t)hwp_spiFlash,
+        .flash.hwp = (uintptr_t)hwp_spiFlash,
         .base_address = CONFIG_NOR_PHY_ADDRESS,
     },
 };
@@ -92,14 +91,14 @@ static drvSpiFlash_t gDrvSpiFlashCtx[] = {
         .opened = false,
         .xip_protect = true,
         .name = DRV_NAME_SPI_FLASH,
-        .hwp = (uintptr_t)hwp_spiFlash,
+        .flash.hwp = (uintptr_t)hwp_spiFlash,
         .base_address = CONFIG_NOR_PHY_ADDRESS,
     },
     {
         .opened = false,
         .xip_protect = true,
         .name = DRV_NAME_SPI_FLASH_EXT,
-        .hwp = (uintptr_t)hwp_spiFlashExt,
+        .flash.hwp = (uintptr_t)hwp_spiFlashExt,
         .base_address = CONFIG_NOR_EXT_PHY_ADDRESS,
     },
 };
@@ -111,14 +110,14 @@ static drvSpiFlash_t gDrvSpiFlashCtx[] = {
         .opened = false,
         .xip_protect = true,
         .name = DRV_NAME_SPI_FLASH,
-        .hwp = (uintptr_t)hwp_spiFlash,
+        .flash.hwp = (uintptr_t)hwp_spiFlash,
         .base_address = CONFIG_NOR_PHY_ADDRESS,
     },
     {
         .opened = false,
         .xip_protect = true,
         .name = DRV_NAME_SPI_FLASH_EXT,
-        .hwp = (uintptr_t)hwp_spiflashExt,
+        .flash.hwp = (uintptr_t)hwp_spiflashExt,
         .base_address = CONFIG_NOR_EXT_PHY_ADDRESS,
     },
 };
@@ -191,12 +190,12 @@ OSI_FORCE_INLINE static void prvDisableAhbRead(drvSpiFlash_t *d)
 #ifdef CONFIG_SOC_8910
     // not use AHB_READ_DISABLE feature
 #elif defined(CONFIG_SOC_8811)
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->hwp;
+    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->flash.hwp;
     REG_SPI_FLASH_AHB_FLASH_CTRL_T ahb_flash_ctrl;
     REG_FIELD_CHANGE1(hwp->ahb_flash_ctrl, ahb_flash_ctrl,
                       ahb_read, SPI_FLASH_AHB_READ_V_DISABLE);
 #else
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->hwp;
+    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->flash.hwp;
     REG_SPI_FLASH_SPI_CS_SIZE_T spi_cs_size;
     REG_FIELD_CHANGE1(hwp->spi_cs_size, spi_cs_size,
                       ahb_read_disable, 1);
@@ -215,12 +214,12 @@ OSI_FORCE_INLINE static void prvEnableAhbRead(drvSpiFlash_t *d)
     // performance impact is acceptable.
     L1C_InvalidateICacheAll();
 #elif defined(CONFIG_SOC_8811)
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->hwp;
+    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->flash.hwp;
     REG_SPI_FLASH_AHB_FLASH_CTRL_T ahb_flash_ctrl;
     REG_FIELD_CHANGE1(hwp->ahb_flash_ctrl, ahb_flash_ctrl,
                       ahb_read, SPI_FLASH_AHB_READ_V_ENABLE);
 #else
-    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->hwp;
+    HWP_SPI_FLASH_T *hwp = (HWP_SPI_FLASH_T *)d->flash.hwp;
     REG_SPI_FLASH_SPI_CS_SIZE_T spi_cs_size;
     REG_FIELD_CHANGE1(hwp->spi_cs_size, spi_cs_size,
                       ahb_read_disable, 0);
@@ -239,15 +238,15 @@ FLASHRAM_CODE static void prvPageProgram(
     osiProfileEnter(PROFCODE_FLASH_PROGRAM);
     prvDisableAhbRead(d);
 
-    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
-    halSpiFlashPageProgram(d->hwp, offset, data, size);
+    halSpiFlashPrepareEraseProgram(&d->flash, offset, size);
+    halSpiFlashPageProgram(&d->flash, offset, data, size);
     osiDelayUS(MIN_ERASE_PROGRAM_TIME); // Wait a while
 
     for (;;)
     {
-        if (halSpiFlashIsWipFinished(d->hwp))
+        if (halSpiFlashIsWipFinished(&d->flash))
         {
-            halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
+            halSpiFlashFinishEraseProgram(&d->flash);
             prvEnableAhbRead(d);
 
             osiProfileExit(PROFCODE_FLASH_PROGRAM);
@@ -255,12 +254,12 @@ FLASHRAM_CODE static void prvPageProgram(
             return;
         }
 
-        if (d->prop.suspend_en && osiIrqPending())
+        if (d->flash.suspend_en && osiIrqPending())
         {
-            halSpiFlashProgramSuspend(d->hwp);
+            halSpiFlashProgramSuspend(&d->flash);
 
             osiDelayUS(DELAY_AFTER_SUSPEND); // Wait a while
-            halSpiFlashWaitWipFinish(d->hwp);
+            halSpiFlashWaitWipFinish(&d->flash);
             prvEnableAhbRead(d);
             osiExitCritical(critical);
 
@@ -269,7 +268,7 @@ FLASHRAM_CODE static void prvPageProgram(
             critical = osiEnterCritical();
 
             prvDisableAhbRead(d);
-            halSpiFlashProgramResume(d->hwp);
+            halSpiFlashProgramResume(&d->flash);
             osiDelayUS(MIN_ERASE_PROGRAM_TIME); // Wait a while
         }
     }
@@ -285,15 +284,15 @@ FLASHRAM_CODE static void prvErase(drvSpiFlash_t *d, uint32_t offset, size_t siz
     osiProfileEnter(PROFCODE_FLASH_ERASE);
     prvDisableAhbRead(d);
 
-    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
-    halSpiFlashErase(d->hwp, offset, size);
+    halSpiFlashPrepareEraseProgram(&d->flash, offset, size);
+    halSpiFlashErase(&d->flash, offset, size);
     osiDelayUS(MIN_ERASE_PROGRAM_TIME); // Wait a while
 
     for (;;)
     {
-        if (halSpiFlashIsWipFinished(d->hwp))
+        if (halSpiFlashIsWipFinished(&d->flash))
         {
-            halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
+            halSpiFlashFinishEraseProgram(&d->flash);
             prvEnableAhbRead(d);
 
             osiProfileExit(PROFCODE_FLASH_ERASE);
@@ -301,12 +300,12 @@ FLASHRAM_CODE static void prvErase(drvSpiFlash_t *d, uint32_t offset, size_t siz
             return;
         }
 
-        if (d->prop.suspend_en && osiIrqPending())
+        if (d->flash.suspend_en && osiIrqPending())
         {
-            halSpiFlashEraseSuspend(d->hwp);
+            halSpiFlashEraseSuspend(&d->flash);
 
             osiDelayUS(DELAY_AFTER_SUSPEND); // Wait a while
-            halSpiFlashWaitWipFinish(d->hwp);
+            halSpiFlashWaitWipFinish(&d->flash);
             prvEnableAhbRead(d);
             osiExitCritical(critical);
 
@@ -315,7 +314,7 @@ FLASHRAM_CODE static void prvErase(drvSpiFlash_t *d, uint32_t offset, size_t siz
             critical = osiEnterCritical();
 
             prvDisableAhbRead(d);
-            halSpiFlashEraseResume(d->hwp);
+            halSpiFlashEraseResume(&d->flash);
             osiDelayUS(MIN_ERASE_PROGRAM_TIME); // Wait a while
         }
     }
@@ -327,10 +326,10 @@ FLASHRAM_CODE static void prvErase(drvSpiFlash_t *d, uint32_t offset, size_t siz
 FLASHRAM_CODE static void prvEraseNoXipLocked(drvSpiFlash_t *d, uint32_t offset, size_t size)
 {
     prvDisableAhbRead(d);
-    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
-    halSpiFlashErase(d->hwp, offset, size);
-    halSpiFlashWaitWipFinish(d->hwp);
-    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
+    halSpiFlashPrepareEraseProgram(&d->flash, offset, size);
+    halSpiFlashErase(&d->flash, offset, size);
+    halSpiFlashWaitWipFinish(&d->flash);
+    halSpiFlashFinishEraseProgram(&d->flash);
     prvEnableAhbRead(d);
 }
 
@@ -342,10 +341,10 @@ FLASHRAM_CODE static void prvPageProgramNoXipLocked(
     const uint8_t *data, size_t size)
 {
     prvDisableAhbRead(d);
-    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, offset, size);
-    halSpiFlashPageProgram(d->hwp, offset, data, size);
-    halSpiFlashWaitWipFinish(d->hwp);
-    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
+    halSpiFlashPrepareEraseProgram(&d->flash, offset, size);
+    halSpiFlashPageProgram(&d->flash, offset, data, size);
+    halSpiFlashWaitWipFinish(&d->flash);
+    halSpiFlashFinishEraseProgram(&d->flash);
     prvEnableAhbRead(d);
 }
 
@@ -362,18 +361,7 @@ FLASHRAM_API drvSpiFlash_t *drvSpiFlashOpen(uint32_t name)
 
     if (!d->opened)
     {
-        halSpiFlashStatusCheck(d->hwp);
-        d->prop.mid = halSpiFlashReadId(d->hwp);
-        halSpiFlashPropsByMid(d->prop.mid, &d->prop);
-
-        // !!! THESE FLASH ARE UNDER TEST, THOUGH IT SEEMS TO WORK.
-        if (d->prop.type == HAL_SPI_FLASH_TYPE_XTX ||
-            d->prop.type == HAL_SPI_FLASH_TYPE_XMCA)
-        {
-            osiExitCritical(critical);
-            return NULL;
-        }
-
+        halSpiFlashInit(&d->flash);
         d->opened = true;
         d->lock = osiMutexCreate();
     }
@@ -399,7 +387,7 @@ bool drvSpiFlashSetXipEnabled(drvSpiFlash_t *d, bool enable)
  */
 void drvSpiFlashSetRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32_t end)
 {
-    if (start > d->prop.capacity || end > d->prop.capacity)
+    if (start > d->flash.capacity || end > d->flash.capacity)
         return;
 
     unsigned block_start = OSI_ALIGN_UP(start, SIZE_64K) / SIZE_64K;
@@ -413,7 +401,7 @@ void drvSpiFlashSetRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32_t
  */
 void drvSpiFlashClearRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32_t end)
 {
-    if (start > d->prop.capacity || end > d->prop.capacity)
+    if (start > d->flash.capacity || end > d->flash.capacity)
         return;
 
     unsigned block_start = OSI_ALIGN_UP(start, SIZE_64K) / SIZE_64K;
@@ -427,7 +415,7 @@ void drvSpiFlashClearRangeWriteProhibit(drvSpiFlash_t *d, uint32_t start, uint32
  */
 uint32_t drvSpiFlashGetID(drvSpiFlash_t *d)
 {
-    return d->prop.mid;
+    return d->flash.mid;
 }
 
 /**
@@ -435,7 +423,7 @@ uint32_t drvSpiFlashGetID(drvSpiFlash_t *d)
  */
 uint32_t drvSpiFlashCapacity(drvSpiFlash_t *d)
 {
-    return d->prop.capacity;
+    return d->flash.capacity;
 }
 
 /**
@@ -443,7 +431,7 @@ uint32_t drvSpiFlashCapacity(drvSpiFlash_t *d)
  */
 const void *drvSpiFlashMapAddress(drvSpiFlash_t *d, uint32_t offset)
 {
-    if (offset >= d->prop.capacity)
+    if (offset >= d->flash.capacity)
         return NULL;
     return (const void *)REG_ACCESS_ADDRESS((uintptr_t)d->base_address + offset);
 }
@@ -455,7 +443,7 @@ bool drvSpiFlashRead(drvSpiFlash_t *d, uint32_t offset, void *data, uint32_t siz
 {
     if (size == 0)
         return true;
-    if (d == NULL || data == NULL || offset + size > d->prop.capacity)
+    if (d == NULL || data == NULL || offset + size > d->flash.capacity)
         return false;
 
     const void *fl = (const void *)REG_ACCESS_ADDRESS((uintptr_t)d->base_address + offset);
@@ -470,7 +458,7 @@ bool drvSpiFlashReadCheck(drvSpiFlash_t *d, uint32_t offset, const void *data, u
 {
     if (size == 0)
         return true;
-    if (d == NULL || data == NULL || offset + size > d->prop.capacity)
+    if (d == NULL || data == NULL || offset + size > d->flash.capacity)
         return false;
 
     const void *fl = (const void *)REG_ACCESS_ADDRESS((uintptr_t)d->base_address + offset);
@@ -485,7 +473,7 @@ FLASHRAM_API bool drvSpiFlashWrite(drvSpiFlash_t *d, uint32_t offset, const void
     uint32_t o_offset = offset;
     size_t o_size = size;
 
-    if (data == NULL || offset + size > d->prop.capacity)
+    if (data == NULL || offset + size > d->flash.capacity)
         return false;
 
     if (prvIsRangeWriteProhibit(d, offset, size))
@@ -532,7 +520,7 @@ FLASHRAM_API bool drvSpiFlashErase(drvSpiFlash_t *d, uint32_t offset, size_t siz
     uint32_t o_offset = offset;
     size_t o_size = size;
 
-    if (offset + size > d->prop.capacity ||
+    if (offset + size > d->flash.capacity ||
         !OSI_IS_ALIGNED(offset, SIZE_4K) ||
         !OSI_IS_ALIGNED(size, SIZE_4K))
         return false;
@@ -600,15 +588,15 @@ FLASHRAM_API bool drvSpiFlashErase(drvSpiFlash_t *d, uint32_t offset, size_t siz
  */
 FLASHRAM_API bool drvSpiFlashChipErase(drvSpiFlash_t *d)
 {
-    if (d == NULL || prvIsRangeWriteProhibit(d, 0, d->prop.capacity))
+    if (d == NULL || prvIsRangeWriteProhibit(d, 0, d->flash.capacity))
         return false;
 
     uint32_t critical = prvProtectAquire(d);
 
-    halSpiFlashPrepareEraseProgram(d->hwp, &d->prop, 0, d->prop.capacity);
-    halSpiFlashChipErase(d->hwp);
-    halSpiFlashWaitWipFinish(d->hwp);
-    halSpiFlashFinishEraseProgram(d->hwp, &d->prop);
+    halSpiFlashPrepareEraseProgram(&d->flash, 0, d->flash.capacity);
+    halSpiFlashChipErase(&d->flash);
+    halSpiFlashWaitWipFinish(&d->flash);
+    halSpiFlashFinishEraseProgram(&d->flash);
 
     prvProtectRelease(d, critical);
     return true;
@@ -623,7 +611,7 @@ FLASHRAM_API uint16_t drvSpiFlashReadSR(drvSpiFlash_t *d)
         return 0;
 
     uint32_t critical = prvProtectAquire(d);
-    uint16_t sr = d->prop.has_sr2 ? halSpiFlashReadSR12(d->hwp) : halSpiFlashReadSR1(d->hwp);
+    uint16_t sr = halSpiFlashReadSR(&d->flash);
     prvProtectRelease(d, critical);
     return sr;
 }
@@ -637,7 +625,7 @@ FLASHRAM_API void drvSpiFlashWriteSR(drvSpiFlash_t *d, uint16_t sr)
         return;
 
     uint32_t critical = prvProtectAquire(d);
-    halSpiFlashWriteSRByProp(d->hwp, &d->prop, sr);
+    halSpiFlashWriteSR(&d->flash, sr);
     prvProtectRelease(d, critical);
 }
 
@@ -647,7 +635,7 @@ FLASHRAM_API void drvSpiFlashWriteSR(drvSpiFlash_t *d, uint16_t sr)
 FLASHRAM_API void drvSpiFlashDeepPowerDown(drvSpiFlash_t *d)
 {
     uint32_t critical = prvProtectAquire(d);
-    halSpiFlashDeepPowerDown(d->hwp);
+    halSpiFlashDeepPowerDown(&d->flash);
     prvProtectRelease(d, critical);
 }
 
@@ -657,7 +645,7 @@ FLASHRAM_API void drvSpiFlashDeepPowerDown(drvSpiFlash_t *d)
 FLASHRAM_API void drvSpiFlashReleaseDeepPowerDown(drvSpiFlash_t *d)
 {
     uint32_t critical = prvProtectAquire(d);
-    halSpiFlashReleaseDeepPowerDown(d->hwp);
+    halSpiFlashReleaseDeepPowerDown(&d->flash);
     prvProtectRelease(d, critical);
 }
 
@@ -669,23 +657,8 @@ FLASHRAM_API int drvSpiFlashReadUniqueId(drvSpiFlash_t *d, uint8_t *id)
     if (d == NULL || id == NULL)
         return -1;
 
-    int size = -1;
     uint32_t critical = prvProtectAquire(d);
-    if (d->prop.uid_gd_en)
-    {
-        size = 8;
-        halSpiFlashReadUniqueId(d->hwp, id);
-    }
-    else if (d->prop.type == HAL_SPI_FLASH_TYPE_XMCA)
-    {
-        size = 12;
-        halSpiFlashReadSFDP(d->hwp, 0x80, id, 12);
-    }
-    else if (d->prop.type == HAL_SPI_FLASH_TYPE_XTX)
-    {
-        size = 16;
-        halSpiFlashReadSFDP(d->hwp, 0x194, id, 16);
-    }
+    int size = halSpiFlashReadUniqueId(&d->flash, id);
     prvProtectRelease(d, critical);
     return size;
 }
@@ -695,11 +668,11 @@ FLASHRAM_API int drvSpiFlashReadUniqueId(drvSpiFlash_t *d, uint8_t *id)
  */
 FLASHRAM_API uint16_t drvSpiFlashReadCpId(drvSpiFlash_t *d)
 {
-    if (d == NULL || !d->prop.cpid_en)
+    if (d == NULL)
         return 0;
 
     uint32_t critical = prvProtectAquire(d);
-    uint16_t id = halSpiFlashReadCpId(d->hwp);
+    uint16_t id = halSpiFlashReadCpId(&d->flash);
     prvProtectRelease(d, critical);
     return id;
 }
@@ -715,26 +688,21 @@ FLASHRAM_API bool drvSpiFlashReadSecurityRegister(
         return true;
     if (d == NULL || data == NULL)
         return false;
-    if (!d->prop.sreg_3_en && !d->prop.sreg_1_en)
-        return false;
-    if (address + size > d->prop.sreg_block_size)
-        return false;
-    if (d->prop.sreg_3_en && (num < 1 || num > 3))
-        return false;
-    if (d->prop.sreg_1_en && num != 0)
-        return false;
 
-    uint32_t saddr = d->prop.sreg_3_en ? ((num << 12) | address) : address;
-    while (size > 0)
+    unsigned address_end = address + size;
+    while (address < address_end)
     {
-        uint32_t read_size = OSI_MIN(uint32_t, size, 4);
+        uint32_t read_end = OSI_MIN(uint32_t, OSI_ALIGN_DOWN(address + 4, 4), address_end);
+        uint32_t read_size = OSI_MIN(uint32_t, read_end - address, 4);
 
         uint32_t critical = prvProtectAquire(d);
-        halSpiFlashReadSecurityRegister(d->hwp, saddr, data, read_size);
+        bool ok = halSpiFlashReadSecurityRegister(&d->flash, num, address, data, read_size);
         prvProtectRelease(d, critical);
 
-        saddr += read_size;
-        size -= read_size;
+        if (!ok)
+            return false;
+
+        address += read_size;
         data = (char *)data + read_size;
     }
     return true;
@@ -751,29 +719,24 @@ FLASHRAM_API bool drvSpiFlashProgramSecurityRegister(
         return true;
     if (d == NULL || data == NULL)
         return false;
-    if (!d->prop.sreg_3_en && !d->prop.sreg_1_en)
-        return false;
-    if (address + size > d->prop.sreg_block_size)
-        return false;
-    if (d->prop.sreg_3_en && (num < 1 || num > 3))
-        return false;
-    if (d->prop.sreg_1_en && num != 0)
-        return false;
 
-    uint32_t saddr = d->prop.sreg_3_en ? ((num << 12) | address) : address;
-    while (size > 0)
+    unsigned address_end = address + size;
+    while (address < address_end)
     {
-        unsigned block_size = OSI_MIN(unsigned, size, PAGE_SIZE);
+        uint32_t block_end = OSI_MIN(uint32_t, OSI_ALIGN_DOWN(address + 128, 128), address_end);
+        unsigned block_size = OSI_MIN(unsigned, block_end - address, 128);
 
         uint32_t critical = prvProtectAquire(d); // avoid read, and there are no suspend
-        halSpiFlashWriteEnable(d->hwp);
-        halSpiFlashProgramSecurityRegister(d->hwp, saddr, data, block_size);
-        halSpiFlashWaitWipFinish(d->hwp);
+        halSpiFlashWriteEnable(&d->flash);
+        bool ok = halSpiFlashProgramSecurityRegister(&d->flash, num, address, data, block_size);
+        halSpiFlashWaitWipFinish(&d->flash);
         prvProtectRelease(d, critical);
 
-        saddr += block_size;
+        if (!ok)
+            return false;
+
+        address += block_size;
         data = (char *)data + block_size;
-        size -= block_size;
     }
 
     return true;
@@ -786,20 +749,13 @@ FLASHRAM_API bool drvSpiFlashEraseSecurityRegister(drvSpiFlash_t *d, uint8_t num
 {
     if (d == NULL)
         return false;
-    if (!d->prop.sreg_3_en && !d->prop.sreg_1_en)
-        return false;
-    if (d->prop.sreg_3_en && (num < 1 || num > 3))
-        return false;
-    if (d->prop.sreg_1_en && num != 0)
-        return false;
 
-    uint32_t saddr = d->prop.sreg_3_en ? (num << 12) : 0;
     uint32_t critical = prvProtectAquire(d); // avoid read, and there are no suspend
-    halSpiFlashWriteEnable(d->hwp);
-    halSpiFlashEraseSecurityRegister(d->hwp, saddr);
-    halSpiFlashWaitWipFinish(d->hwp);
+    halSpiFlashWriteEnable(&d->flash);
+    bool ok = halSpiFlashEraseSecurityRegister(&d->flash, num);
+    halSpiFlashWaitWipFinish(&d->flash);
     prvProtectRelease(d, critical);
-    return true;
+    return ok;
 }
 
 /**
@@ -809,20 +765,25 @@ FLASHRAM_API bool drvSpiFlashLockSecurityRegister(drvSpiFlash_t *d, uint8_t num)
 {
     if (d == NULL)
         return false;
-    if (!d->prop.sreg_3_en && !d->prop.sreg_1_en)
-        return false;
-    if (d->prop.sreg_3_en && (num < 1 || num > 3))
-        return false;
-    if (d->prop.sreg_1_en && num != 0)
-        return false;
-
-    uint16_t mask = d->prop.sreg_1_en ? STREG_LB : (num == 1) ? STREG_LB1 : (num == 2) ? STREG_LB2 : STREG_LB3;
 
     uint32_t critical = prvProtectAquire(d);
-    uint32_t sr = halSpiFlashReadSR12(d->hwp);
-    halSpiFlashWriteSRByProp(d->hwp, &d->prop, sr | mask);
+    bool ok = halSpiFlashLockSecurityRegister(&d->flash, num);
     prvProtectRelease(d, critical);
-    return true;
+    return ok;
+}
+
+/**
+ * Is security register locked
+ */
+FLASHRAM_API bool drvSpiFlashIsSecurityRegisterLocked(drvSpiFlash_t *d, uint8_t num)
+{
+    if (d == NULL)
+        return false;
+
+    uint32_t critical = prvProtectAquire(d);
+    bool ok = halSpiFlashIsSecurityRegisterLocked(&d->flash, num);
+    prvProtectRelease(d, critical);
+    return ok;
 }
 
 /**
@@ -834,19 +795,40 @@ FLASHRAM_API bool drvSpiFlashReadSFDP(drvSpiFlash_t *d, unsigned address, void *
         return true;
     if (d == NULL || data == NULL)
         return false;
-    if (!d->prop.sfdp_en)
-        return false;
 
     uint32_t critical = prvProtectAquire(d);
-    halSpiFlashReadSFDP(d->hwp, address, data, size);
+    bool ok = halSpiFlashReadSFDP(&d->flash, address, data, size);
     prvProtectRelease(d, critical);
-    return true;
+    return ok;
 }
 
 /**
  * Get flash properties
  */
-halSpiFlashProp_t *drvSpiFlashGetProp(drvSpiFlash_t *d)
+halSpiFlash_t *drvSpiFlashGetProp(drvSpiFlash_t *d)
 {
-    return &d->prop;
+    return &d->flash;
+}
+
+/**
+ * Unique id length
+ */
+int drvSpiFlashUidLength(drvSpiFlash_t *d)
+{
+    switch (d->flash.uid_type)
+    {
+    case HAL_SPI_FLASH_UID_4BH_8:
+        return 8;
+
+    case HAL_SPI_FLASH_UID_SFDP_80H_12:
+        return 12;
+
+    case HAL_SPI_FLASH_UID_4BH_16:
+    case HAL_SPI_FLASH_UID_SFDP_94H_16:
+    case HAL_SPI_FLASH_UID_SFDP_194H_16:
+        return 16;
+
+    default:
+        return 0;
+    }
 }
