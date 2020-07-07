@@ -1119,7 +1119,7 @@ bool Http_getn_break(nHttp_info *http_info1)
             {
                 //sprintf(tmpString, "%d %d %d", i,count,(http_info1->BREAKEND-http_info1->BREAK));
                 // Http_WriteUart(tmpString, strlen(tmpString));
-                Http_WriteUart(http_info1->user_data, strlen(http_info1->user_data));
+                Http_WriteUart(http_info1->user_data, http_info1->content_length);
                 http_info1->breakFlag = true;
             }
             else

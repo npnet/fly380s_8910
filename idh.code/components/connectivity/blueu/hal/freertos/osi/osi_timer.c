@@ -115,6 +115,33 @@ int osi_timer_init(void)
     return 0;
 }
 
+int osi_timer_reset(void)
+{
+    list_node_t *node = NULL;
+    osi_timer_t *timer = NULL;
+//    osi_mutex_lock(&timer_mutex);
+    
+    if(os_timer_list == NULL)
+    {
+        return 0;
+    }
+
+    node = os_timer_list->head;
+    
+    while(node != NULL)
+    {
+        timer = (osi_timer_t*)node->data;
+        if(timer != NULL)
+            osi_timer_cancel(timer);
+
+        node = os_timer_list->head;
+    }
+
+    return 0;
+
+//    osi_mutex_unlock(&timer_mutex);
+}
+
 void osi_sleep(unsigned   int  milli_secondes)
 {
     vTaskDelay(milli_secondes);

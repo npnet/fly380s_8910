@@ -583,7 +583,8 @@ static void _pppAuthActDone(pppSession_t *ppp, int _iActiavedbyPPP)
         ip4_addr_t *wan_ip4_addr = (ip4_addr_t *)netif_ip4_addr(wan_netif);
         ip4_addr_t ip4;
         ip4_addr_t ip4_gw;
-        if ((wan_ip4_addr->addr & 0xff000000UL) != 0xc0000000UL) //192.xxx.xxx.xxx
+        OSI_LOGI(0x0, "_pppAuthActDone wan_ip4_addr 0x%x\n", wan_ip4_addr->addr);
+        if ((wan_ip4_addr->addr & 0xff) != 0xc0) //192.xxx.xxx.xxx
         {
             IP4_ADDR(&ip4, 192, 168, cId, 2 + netif_num);
             IP4_ADDR(&ip4_gw, 192, 168, cId, 1);
@@ -794,6 +795,10 @@ static void _pppAuthActReq(pppSession_t *ppp)
             memcpy(sPdpCont.pApnPwd, ppp->pcb->peer_response, ppp->pcb->len_response);
             OSI_LOGXI(OSI_LOGPAR_S, 0, "ppp->pcb->peer_response: %s", ppp->pcb->peer_response);
             sPdpCont.nApnPwdSize = ppp->pcb->len_response;
+
+            //backup authprot
+            if (ppp->retrycnt_attact == 3)
+                ppp->pcb->nAuthProt_bak = sPdpCont.nAuthProt;
             sPdpCont.nAuthProt = 1;
             OSI_LOGI(0, "sPdpCont.nApnUserSize: %d, sPdpCont.nApnPwdSize: %d sPdpCont.nAuthProt %d", sPdpCont.nApnUserSize, sPdpCont.nApnPwdSize, sPdpCont.nAuthProt);
         }
@@ -812,6 +817,9 @@ static void _pppAuthActReq(pppSession_t *ppp)
             OSI_LOGXI(OSI_LOGPAR_M, 0x0, "ppp->pcb->chap_challenge : %*s", dumplen, ppp->pcb->chap_challenge);
 
             sPdpCont.nApnPwdSize = ppp->pcb->len_response + ppp->pcb->chap_challenge_len;
+            //backup authprot
+            if (ppp->retrycnt_attact == 3)
+                ppp->pcb->nAuthProt_bak = sPdpCont.nAuthProt;
             sPdpCont.nAuthProt = 3;
             OSI_LOGI(0, "sPdpCont.nApnUserSize: %d, sPdpCont.nApnPwdSize: %d sPdpCont.nAuthProt %d", sPdpCont.nApnUserSize, sPdpCont.nApnPwdSize, sPdpCont.nAuthProt);
             dumplen = ppp->pcb->chap_challenge_len + ppp->pcb->len_response;
@@ -851,7 +859,18 @@ static void _pppAuthActRsp(pppSession_t *ppp, const osiEvent_t *event)
         _pppAuthActReq(ppp);
         return;
     }
-
+#if PPP_AUTHGPRS_SUPPORT
+    //restore nAuthProt
+    CFW_GPRS_PDPCONT_INFO_V2 sPdpCont;
+    memset(&sPdpCont, 0x00, sizeof(CFW_GPRS_PDPCONT_INFO_V2));
+    CFW_GprsGetPdpCxtV2(ppp->cid, &sPdpCont, ppp->sim);
+    sPdpCont.nAuthProt = ppp->pcb->nAuthProt_bak;
+    if (CFW_GprsSetPdpCxtV2(ppp->cid, &sPdpCont, ppp->sim) != 0)
+    {
+        OSI_LOGI(0, "CFW_GprsSetPdpCxtV2 nAuthProt fail!");
+        return;
+    }
+#endif
     if (cfw_event->nType != CFW_GPRS_ACTIVED)
     {
 #if PPP_AUTH_SUPPORT
@@ -1340,7 +1359,18 @@ void pppSessionDeleteByNetifDestoryed(uint8_t nSimId, uint8_t nCid)
     LOCK_TCPIP_CORE();
 #endif
     struct netif *netif;
-    netif = getGprsNetIf(nSimId, nCid);
+#if IP_NAT
+    if (get_nat_enabled(nSimId, nCid))
+    {
+        netif = getPPPNetIf(nSimId, nCid);
+    }
+    else
+    {
+#endif
+        netif = getGprsNetIf(nSimId, nCid);
+#if IP_NAT
+    }
+#endif
     if (netif == NULL)
     {
         OSI_LOGE(0x1000564b, "PPP delete netif is NULL");

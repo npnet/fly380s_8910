@@ -15,17 +15,16 @@
 
 #include <usb/usb_device.h>
 #include <usb/usb_composite_device.h>
-#include <osi_api.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "osi_api.h"
+#include "osi_compiler.h"
 
 #include "drv_if_ether.h"
 #include "usb_ether.h"
 #include "usb_utils.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+OSI_EXTERN_C_BEGIN
 
 /**
  * @brief struct of cdc ethernet
@@ -46,5 +45,7 @@ int rndisEtherBind(rndisData_t *ether);
 void rndisEtherUnbind(rndisData_t *ether);
 int rndisEtherEnable(rndisData_t *ether);
 void rndisEtherDisable(rndisData_t *ether);
+
+OSI_EXTERN_C_END
 
 #endif

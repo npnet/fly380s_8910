@@ -241,7 +241,6 @@ void bootStart(uint32_t param)
 {
     OSI_CLEAR_SECTION(bss);
 
-    halSpiFlashStatusCheck(0);
     halClockInit();
 
     __FPU_Enable();

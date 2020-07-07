@@ -1353,11 +1353,12 @@ void atCmdHandleCCFC(atCommand_t *cmd)
 
         // first and second parameter
         static const uint32_t list[] = {1, 255};
+        static const uint32_t NumTypeList[] = {CFW_TELNUMBER_TYPE_UNKNOWN, CFW_TELNUMBER_TYPE_INTERNATIONAL, CFW_TELNUMBER_TYPE_NATIONAL};
         bool paramok = true;
         uint8_t ucReason = atParamDefUintInRange(cmd->params[0], 0, 0, 5, &paramok);
         uint8_t ucMode = atParamDefUintInRange(cmd->params[1], 0, 0, 4, &paramok);
-        const char *tempNum = atParamStr(cmd->params[2], &paramok);
-        uint8_t ucNumType = atParamDefUint(cmd->params[3], CFW_TELNUMBER_TYPE_UNKNOWN, &paramok);
+        const char *tempNum = atParamOptStr(cmd->params[2], &paramok);
+        uint8_t ucNumType = atParamDefUintInList(cmd->params[3], CFW_TELNUMBER_TYPE_UNKNOWN, NumTypeList, 3, &paramok);
         uint8_t ucClass = atParamDefUintInList(cmd->params[4], 11, list, 2, &paramok);
         uint8_t ucTime = atParamDefUintInRange(cmd->params[7], 20, 1, 30, &paramok);
         size_t ucNumLen = strlen(tempNum);
@@ -1549,52 +1550,72 @@ void atCmdHandleCLIR(atCommand_t *cmd)
     }
 }
 
+// ////////////////////////////////////////////////////////////////////////////
+// Name:
+// Description: +CSSN=[<n>[,<m>]]
+// Supplementary service notifications,+CSSI messages,+CSSU messages
+// AT+CSSN=1,0
+// Parameter:   pParam, parsed command structure
+// Caller:
+// Called:      ATM
+// Return:      fail or succeed
+// Remark:      have on/off function to CC module
+//
+// ////////////////////////////////////////////////////////////////////////////
+
 void atCmdHandleCSSN(atCommand_t *cmd)
 {
+    uint8_t ucCSSI = 0;
+    uint8_t ucCSSU = 0;
+    char aucBuffer[20] = {0};
+    uint32_t uiRetVal = ERR_SUCCESS;
     uint8_t nSim = atCmdGetSim(cmd->engine);
-    char urc[32];
-    if (cmd->type == AT_CMD_SET)
+
+    OSI_LOGI(0, "CSSN: Come In atCmdHandleCSSN nSim=%d", nSim);
+    // call ATM function
+    if (AT_CMD_SET == cmd->type)
     {
-        // +CSSN=<n>[,<m>]
+        OSI_LOGI(0, "CSSN: param_count=%d", cmd->param_count);
+        if (cmd->param_count < 1 || cmd->param_count > 2)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         bool paramok = true;
-
-        uint8_t n;
-        uint8_t m;
-        if (CFW_CfgGetSSN(&n, &m, nSim) != 0)
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-
-        n = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
-        if (!paramok || (cmd->param_count != 1 && cmd->param_count != 2))
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
-        if (cmd->param_count == 2)
-        {
-            m = atParamUintInRange(cmd->params[1], 0, 1, &paramok);
-            if (!paramok)
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-            gAtSetting.sim[nSim].cssu = m;
-        }
-
-        gAtSetting.sim[nSim].cssi = n;
-        CFW_CfgSetSSN(n, m, nSim);
+        ucCSSI = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        ucCSSU = atParamDefUintInRange(cmd->params[1], 0, 0, 1, &paramok);
+        if (!paramok)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        OSI_LOGI(0, "CSSN:Parameter ucCSSI: %d  Parameter ucCSSU: %d\n", ucCSSI, ucCSSU);
+        gAtSetting.sim[nSim].cssi = ucCSSI;
+        gAtSetting.sim[nSim].cssu = ucCSSU;
+        // call CSW interface function
+        uiRetVal = CFW_CfgSetSSN(ucCSSI, ucCSSU, nSim);
+        OSI_LOGI(0x10004545, "CSSN set ret: %x\n", uiRetVal);
+        if (ERR_SUCCESS != uiRetVal)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
         RETURN_OK(cmd->engine);
     }
-    else if (cmd->type == AT_CMD_TEST)
+
+    else if (AT_CMD_TEST == cmd->type)
     {
-        sprintf(urc, "%s: (0-1),(0-1)", cmd->desc->name);
-        atCmdRespInfoText(cmd->engine, urc);
+        atCmdRespInfoText(cmd->engine, "+CSSN:(0-1),(0-1)");
         RETURN_OK(cmd->engine);
     }
-    else if (cmd->type == AT_CMD_READ)
+
+    else if (AT_CMD_READ == cmd->type)
     {
-        sprintf(urc, "%s: %d,%d", cmd->desc->name, gAtSetting.sim[nSim].cssi, gAtSetting.sim[nSim].cssu);
-        atCmdRespInfoText(cmd->engine, urc);
+        // call CSW interface function
+        uiRetVal = CFW_CfgGetSSN(&ucCSSI, &ucCSSU, nSim);
+        OSI_LOGI(0x10004546, "CSSN ret: %x ucCSSI=%d ucCSSU=%d\n", uiRetVal, ucCSSI, ucCSSU);
+        if (ERR_SUCCESS != uiRetVal)
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
+        // execute result return
+        //sprintf(aucBuffer, strRCSSN, gATCurrentucCSSI, gATCurrentucCSSU);
+        sprintf(aucBuffer, "+CSSN:%d,%d", ucCSSI, ucCSSU);
+        atCmdRespInfoText(cmd->engine, aucBuffer);
         RETURN_OK(cmd->engine);
     }
+
     else
-    {
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-    }
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
 }
 
 static void COLP_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)

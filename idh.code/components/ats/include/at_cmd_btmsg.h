@@ -17,7 +17,7 @@
 #define APP_BLE_MSG 1
 
 typedef void (*AppBtMsgHandler_t)(void *param);
-void AppRegisterBtMsgCB(uint32_t type, AppBtMsgHandler_t handler);
+bool AppRegisterBtMsgCB(uint32_t type, AppBtMsgHandler_t handler);
 
 //--------------------------------- Classic ------------------------------------
 

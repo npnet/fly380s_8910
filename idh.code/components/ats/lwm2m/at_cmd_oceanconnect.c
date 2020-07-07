@@ -134,7 +134,7 @@ static void cdp_server_ind_process(osiEvent_t *pEvent)
         {
             uint32_t msgid = result;
             char refstr[100] = {0};
-            sprintf(refstr, "+MIPLREAD:%d,%d,%d,%d,%d,%d", ref, msgid, param->objid, (short)param->insid, (short)param->resid, param->count);
+            sprintf(refstr, "+MIPLREAD:%d,%ld,%d,%d,%d,%d", ref, msgid, param->objid, (short)param->insid, (short)param->resid, param->count);
             atCmdRespUrcText(engine, refstr);
         }
 #endif
@@ -216,7 +216,7 @@ static void cdp_server_ind_process(osiEvent_t *pEvent)
     {
 #if DEBUG_CDP_EVENT
         char refstr[100] = {0};
-        sprintf(refstr, "+OBJ_OPERATE_RSP_IND:%d, %d, %d", ref, result_param1, (int)result);
+        sprintf(refstr, "+OBJ_OPERATE_RSP_IND:%d, %ld, %d", ref, result_param1, (int)result);
         atCmdRespInfoText(engine, refstr);
 #endif
         if ((int)result_param1 == -1)
@@ -278,7 +278,7 @@ static void cdp_server_ind_process(osiEvent_t *pEvent)
     {
 #if DEBUG_CDP_EVENT
         char refstr[50] = {0};
-        sprintf(refstr, "+UNPROCESS EVENT:%d", pEvent->nEventId);
+        sprintf(refstr, "+UNPROCESS EVENT:%ld", pEvent->id);
         atCmdRespUrcText(engine, refstr);
 #endif
     }

@@ -98,7 +98,7 @@ lwip_gethostbyname(const char *name)
 
   /* query host IP address */
   err = netconn_gethostbyname(name, &addr);
-  if (err != ERR_OK) {
+  if (err != ERR_OK && err != ERR_LOCAL_OK) {
     LWIP_DEBUGF(DNS_DEBUG, (0x100076c8, "lwip_gethostbyname failed, err=%d\n", err));
     h_errno = HOST_NOT_FOUND;
     return NULL;
@@ -198,7 +198,7 @@ lwip_gethostbyname_r(const char *name, struct hostent *ret, char *buf,
 
   /* query host IP address */
   err = netconn_gethostbyname(name, &h->addr);
-  if (err != ERR_OK) {
+  if (err != ERR_OK && err != ERR_LOCAL_OK) {
     LWIP_DEBUGF(DNS_DEBUG, (0x100076c8, "lwip_gethostbyname failed, err=%d\n",err));
     *h_errnop = HOST_NOT_FOUND;
     return -1;
@@ -335,7 +335,7 @@ lwip_getaddrinfo(const char *nodename, const char *servname,
       }
 #endif /* LWIP_IPV4 && LWIP_IPV6 */
       err = netconn_gethostbyname_addrtype(nodename, &addr, type);
-      if (err != ERR_OK) {
+      if (err != ERR_OK && err != ERR_LOCAL_OK) {
         return EAI_FAIL;
       }
     }

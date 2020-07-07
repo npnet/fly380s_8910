@@ -57,6 +57,12 @@ drvChargerType_t drvChargerGetType(void);
 
 void drvChargerGetInfo(uint8_t *nBcs, uint8_t *nBcl);
 
+void drvChargeEnable(void);
+
+void drvChargeDisable(void);
+
+uint16_t drvChargerGetBatteryVoltage();
+
 #ifdef __cplusplus
 }
 #endif

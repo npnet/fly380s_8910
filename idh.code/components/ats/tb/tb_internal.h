@@ -51,6 +51,13 @@ extern int tb_handle_Sms_Send_Rsp(const CFW_EVENT *cfw_event);
 extern int tb_handle_Sms_Delete_Rsp(const CFW_EVENT *cfw_event);
 extern int tb_handle_Sms_Read_Rsp(const CFW_EVENT *cfw_event);
 extern int tb_handle_New_Sms_Ind(const CFW_EVENT *pCfwEvent);
+extern int tb_handle_CC_Initiate_Speech_Call_Rsp(const CFW_EVENT *cfw_event);
+extern int tb_handle_CC_Accept_Call_Rsp(const CFW_EVENT *cfw_event);
+extern int tb_handle_CC_HungUp_Rsp(const CFW_EVENT *cfw_event);
+extern int tb_handle_CC_Speech_Call_Ind(const CFW_EVENT *pCfwEvent);
+extern int tb_handle_CC_Release_Call_Ind(const CFW_EVENT *pCfwEvent);
+extern int tb_handle_CC_Error_Call_Ind(const CFW_EVENT *pCfwEvent);
+extern int tb_handle_CC_Alerting_Call_Ind(const CFW_EVENT *cfw_event);
 
 #ifdef __cplusplus
 }

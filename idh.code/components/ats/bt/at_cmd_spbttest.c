@@ -14,6 +14,7 @@
 
 //----------------------------------------------------------
 //#define SPBTTEST
+#define SPBTTEST_MAX_CMD_NUM (16)
 
 #ifndef WIN32
 static uint32 rx_data_show_pkt_cnt = 0;
@@ -52,7 +53,7 @@ void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
     RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_NOT_SURPORT);
 #else
     unsigned int type_oper = 0;
-    const char *s_bttest_str[15] =
+    const char *s_bttest_str[SPBTTEST_MAX_CMD_NUM] =
         {
             "TESTMODE",
             "TESTADDRESS",
@@ -69,7 +70,7 @@ void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
             "RX",
             "RXDATA",
             "BTPTS",
-        };
+            "MAC"};
     int bttest_index;
     bool quiry_flag = false;
 #ifdef BT_NONSIG_SUPPORT
@@ -106,7 +107,7 @@ void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
             pParam->params[0]->value[pParam->params[0]->length] = '\0';
         }
 
-        for (bttest_index = 0; bttest_index < 14; bttest_index++)
+        for (bttest_index = 0; bttest_index < SPBTTEST_MAX_CMD_NUM; bttest_index++)
         {
             if (!strcmp((char *)pParam->params[0]->value, s_bttest_str[bttest_index]))
             {
@@ -766,6 +767,69 @@ void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
             break;
         }
 #endif
+        case 15: //"MAC"
+        {
+            BT_ADDRESS addr;
+            uint8_t addr_str[20] = {0};
+
+            if (quiry_flag)
+            {
+                BT_GetBdAddr(&addr);
+                sprintf((char *)addr_str, "%02x%02x%02x%02x%02x%02x", addr.addr[0], addr.addr[1], addr.addr[2], addr.addr[3], addr.addr[4], addr.addr[5]);
+                sprintf((char *)g_rsp_str, "+SPBTTEST:MAC=%s", (char *)addr_str);
+                atCmdRespInfoText(pParam->engine, g_rsp_str);
+                AT_CMD_RETURN(atCmdRespOK(pParam->engine));
+            }
+            else if ((pParam->param_count > 1) && (0 != pParam->params[1]->length))
+            {
+                unsigned char tmp_addr[12] = {0};
+                int i = 0;
+                int j = 0;
+
+                char outstring[64] = {
+                    0,
+                };
+                outstring[0] = '\0';
+                sprintf((char *)outstring, "bt addr: %s, len=%d", ((char *)pParam->params[1]->value), pParam->params[1]->length);
+                OSI_LOGI(0, outstring);
+                for (i = 0; i < pParam->params[1]->length; i++)
+                {
+                    if (pParam->params[1]->value[i] >= 'A' && pParam->params[1]->value[i] <= 'F')
+                    {
+                        tmp_addr[j] = (pParam->params[1]->value[i] - 55);
+                    }
+                    else if (pParam->params[1]->value[i] >= 'a' && pParam->params[1]->value[i] <= 'f')
+                    {
+                        tmp_addr[j] = (pParam->params[1]->value[i] - 87);
+                    }
+                    else if (pParam->params[1]->value[i] >= '0' && pParam->params[1]->value[i] <= '9')
+                    {
+                        tmp_addr[j] = (pParam->params[1]->value[i] - '0');
+                    }
+                    else
+                    {
+                        OSI_LOGI(0, "SPBTTEST: Param[1] error.");
+                        RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
+                    }
+                    OSI_LOGI(0, "tmp_addr=%x", tmp_addr[j]);
+                    ++j;
+                }
+
+                for (j = 0; j < 6; j++)
+                {
+                    addr.addr[j] = (tmp_addr[j * 2]) << 4 | (tmp_addr[j * 2 + 1]);
+                    OSI_LOGI(0, "set bt addr: %x", addr.addr[j]);
+                }
+
+                BT_SetBdAddr(&addr);
+                sprintf((char *)g_rsp_str, "%s", "+SPBTTEST:OK");
+            }
+
+            atCmdRespInfoText(pParam->engine, g_rsp_str);
+            AT_CMD_RETURN(atCmdRespOK(pParam->engine));
+            break;
+        }
+
         default: //Error input para
         {
             OSI_LOGI(0, "SPBTTEST: Param[0] error.");

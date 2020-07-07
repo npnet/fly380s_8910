@@ -65,6 +65,7 @@ typedef struct
 {
     drvDebugPort_t port;
     HWP_UART_T *hwp;
+    osiMutex_t *lock;
     bool blue_screen_mode;
     bool uart_is_lp;
     unsigned uart_divider;
@@ -201,23 +202,12 @@ static void prvUartTraceTimeout(void *param)
 }
 
 /**
- * Send out host/diag command result packet, in host/diag command thread.
+ * Send packet inside mutex.
  */
-static bool prvUartSendPacket(drvDebugPort_t *p, const void *data, unsigned size)
+static bool prvUartSendPacketLocked(drvDebugUartPort_t *d, const void *data, unsigned size)
 {
-    drvDebugUartPort_t *d = (drvDebugUartPort_t *)p;
-
-    if (d->blue_screen_mode)
-    {
-        prvUartFifoWriteAll(d->hwp, data, size);
-        return true;
-    }
-
     if (!d->port.mode.trace_enable)
-    {
-        prvUartFifoWriteAll(d->hwp, data, size);
-        return true;
-    }
+        return prvUartFifoWriteAll(d->hwp, data, size);
 
     if (!osiTraceBufPutPacket(data, size))
         return false;
@@ -226,16 +216,25 @@ static bool prvUartSendPacket(drvDebugPort_t *p, const void *data, unsigned size
     prvUartTraceOutput(d, OUTPUT_AT_TIMEOUT);
     osiExitCritical(critical);
 
-    osiElapsedTimer_t timeout;
-    osiElapsedTimerStart(&timeout);
+    return OSI_LOOP_WAIT_POST_TIMEOUT_US(osiTraceBufPacketFinished(data),
+                                         TRACE_PACKET_TX_TIMEOUT * 1000,
+                                         osiThreadSleepUS(2000));
+}
 
-    while (osiElapsedTimeUS(&timeout) < TRACE_PACKET_TX_TIMEOUT * 1000)
-    {
-        if (osiTraceBufPacketFinished(data))
-            return true;
-        osiThreadSleepUS(2000);
-    }
-    return false;
+/**
+ * Send out host/diag command result packet, in host/diag command thread.
+ */
+static bool prvUartSendPacket(drvDebugPort_t *p, const void *data, unsigned size)
+{
+    drvDebugUartPort_t *d = (drvDebugUartPort_t *)p;
+
+    if (d->blue_screen_mode)
+        return prvUartFifoWriteAll(d->hwp, data, size);
+
+    osiMutexLock(d->lock);
+    bool ok = prvUartSendPacketLocked(d, data, size);
+    osiMutexUnlock(d->lock);
+    return ok;
 }
 
 /**
@@ -372,6 +371,7 @@ drvDebugPort_t *drvDebugUartPortCreate(unsigned name, drvDebugPortMode_t mode)
     d->port.mode = mode;
     d->hwp = hwp;
     d->rx_cb = prvDummyRxCallback;
+    d->lock = osiMutexCreate();
     d->uart_divider = halCalcDivider24(52000000 / 4, UART_BAUD);
     d->uart_lp_divider = halCalcDivider24(26000000 / 4, UART_BAUD);
     d->uart_is_lp = prvUartIsLp(name);

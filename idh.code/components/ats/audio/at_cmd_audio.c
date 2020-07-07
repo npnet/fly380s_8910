@@ -37,6 +37,7 @@
 typedef struct
 {
     auPlayer_t *player;
+    audevPlayType_t type;
 } atAudioContext_t;
 
 static atAudioContext_t gAtAudioCtx;
@@ -918,7 +919,8 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
             if (format != AUSTREAM_FORMAT_PCM &&
                 format != AUSTREAM_FORMAT_WAVPCM &&
                 format != AUSTREAM_FORMAT_MP3 &&
-                format != AUSTREAM_FORMAT_AMRNB)
+                format != AUSTREAM_FORMAT_AMRNB &&
+                format != AUSTREAM_FORMAT_AMRWB)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
             if (gAtAudioCtx.player != NULL)
@@ -928,12 +930,14 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
             if (gAtAudioCtx.player == NULL)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
 
-            if (type == 1)
+            gAtAudioCtx.type = type;
+
+            if (gAtAudioCtx.type == 1)
             {
                 if (prvAudioRegisterCCEventCB(auLocalPlayerOnCCEventCB) == false)
                     RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
             }
-            else if (type == 2)
+            else if (gAtAudioCtx.type == 2)
             {
                 if (prvAudioRegisterCCEventCB(auCallPlayerOnCCEventCB) == false)
                     RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
@@ -969,6 +973,8 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
             if (!auPlayerPause(gAtAudioCtx.player))
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
 
+            prvAudioRegisterCCEventCB(NULL);
+
             RETURN_OK(cmd->engine);
         }
         else if (oper == 4)
@@ -980,6 +986,17 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
 
             if (!auPlayerResume(gAtAudioCtx.player))
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+            if (gAtAudioCtx.type == 1)
+            {
+                if (prvAudioRegisterCCEventCB(auLocalPlayerOnCCEventCB) == false)
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+            }
+            else if (gAtAudioCtx.type == 2)
+            {
+                if (prvAudioRegisterCCEventCB(auCallPlayerOnCCEventCB) == false)
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+            }
 
             RETURN_OK(cmd->engine);
         }
@@ -1019,6 +1036,7 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
 typedef struct
 {
     auRecorder_t *recorder;
+    audevRecordType_t type;
     int fd;
     osiPipe_t *pipe;
     osiTimer_t *timer;
@@ -1057,7 +1075,8 @@ static void prvRecordPipeRead(void *param)
         if (bytes <= 0)
             break;
 
-        vfs_write(d->fd, buf, bytes);
+        if (vfs_write(d->fd, buf, bytes) <= 0)
+            osiPipeSetEof(d->pipe);
     }
 }
 
@@ -1118,6 +1137,12 @@ static void prvRecordVoiceClosed(void *param)
 {
     prvRecordStop((atAudioRecordContext_t *)param);
     prvAudioRegisterCCEventCB(NULL);
+    char rsp[64];
+    int status = (gAtRecordCtx.recorder == NULL)
+                     ? AURECORDER_STATUS_IDLE
+                     : auRecorderGetStatus(gAtRecordCtx.recorder);
+    sprintf(rsp, "+CAUDREC: %d", status);
+    atCmdRespDefUrcText(rsp);
 }
 
 /**
@@ -1259,7 +1284,7 @@ static int prvRecordStart(atAudioRecordContext_t *d, audevRecordType_t type,
     if (d->recorder == NULL)
         goto failed_nomem;
 
-    if ((type == AUDEV_RECORD_TYPE_VOICE) || (type == AUDEV_RECORD_TYPE_VOICE_DUAL))
+    if ((type == AUDEV_RECORD_TYPE_VOICE) || (type == AUDEV_RECORD_TYPE_VOICE_DUAL) || (type == AUDEV_RECORD_TYPE_MIC))
     {
         auRecorderSetEventCallback(d->recorder, prvRecordEventCallback, d);
     }
@@ -1293,7 +1318,7 @@ void atCmdHandleCAUDREC(atCommand_t *cmd)
         // STOP:    AT+CMICREC=2
         // type:    1/mic 2/voice 3/voice dual 4/dump
         bool paramok = true;
-        unsigned oper = atParamUintInRange(cmd->params[0], 1, 2, &paramok);
+        unsigned oper = atParamUintInRange(cmd->params[0], 1, 4, &paramok);
         if (!paramok)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
@@ -1306,6 +1331,7 @@ void atCmdHandleCAUDREC(atCommand_t *cmd)
             if (!paramok || cmd->param_count > 5)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
+            gAtRecordCtx.type = type;
             int res = prvRecordStart(&gAtRecordCtx,
                                      (audevRecordType_t)type,    // enum matches
                                      (auEncodeQuality_t)quality, // enum matches
@@ -1321,6 +1347,43 @@ void atCmdHandleCAUDREC(atCommand_t *cmd)
             prvAudioRegisterCCEventCB(NULL);
             RETURN_OK_CME_ERR(cmd->engine, res);
         }
+        else if (oper == 3)
+        {
+            if (cmd->param_count > 1)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            if (gAtRecordCtx.recorder == NULL)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+
+            if (!auRecorderPause(gAtRecordCtx.recorder))
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+            prvAudioRegisterCCEventCB(NULL);
+
+            RETURN_OK(cmd->engine);
+        }
+        else if (oper == 4)
+        {
+            if (cmd->param_count > 1)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            if (gAtRecordCtx.recorder == NULL)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+
+            if (!auRecorderResume(gAtRecordCtx.recorder))
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+            if (gAtRecordCtx.type == AUDEV_RECORD_TYPE_MIC)
+            {
+                if (prvAudioRegisterCCEventCB(auLocalRecorderOnCCEventCB) == false)
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+            }
+            if (gAtRecordCtx.type != AUDEV_RECORD_TYPE_MIC)
+            {
+                if (prvAudioRegisterCCEventCB(auCallRecorderOnCCEventCB) == false)
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+            }
+            RETURN_OK(cmd->engine);
+        }
+
         else
         {
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
@@ -1328,10 +1391,13 @@ void atCmdHandleCAUDREC(atCommand_t *cmd)
     }
     else if (cmd->type == AT_CMD_READ)
     {
-        // +CAUDREC: (0,1)
+        // +CAUDREC: (0,1,2)
+        // 0/stop 1/record 2/pause (same as auRecorderStatus_t)
         char rsp[64];
-        bool started = (gAtRecordCtx.recorder != NULL);
-        sprintf(rsp, "%s: %d", cmd->desc->name, started ? 1 : 0);
+        int status = (gAtRecordCtx.recorder == NULL)
+                         ? AURECORDER_STATUS_IDLE
+                         : auRecorderGetStatus(gAtRecordCtx.recorder);
+        sprintf(rsp, "%s: %d", cmd->desc->name, status);
         atCmdRespInfoText(cmd->engine, rsp);
         RETURN_OK(cmd->engine);
     }
@@ -1578,6 +1644,10 @@ void atCmdHandleCDTMF(atCommand_t *cmd)
         size_t len = strlen(dtmf);
         if (!paramok || len == 0 || cmd->param_count > 2)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        //local DTMF play is not allowed,during call
+        if (prvIsAudioInCallMode() == true)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
 
         cdtmfAsyncContext_t *ctx = (cdtmfAsyncContext_t *)calloc(1, sizeof(*ctx) + len);
         if (ctx == NULL)
@@ -1873,6 +1943,49 @@ void atCmdHandleCALM(atCommand_t *cmd)
 }
 
 #endif
+void atCmdHandleSETVOS(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    uint8_t nVidoSurveillance = 0;
+    uint32_t ret = 0;
+    if (cmd->type == AT_CMD_SET)
+    {
+        bool paramok = true;
+        uint8_t nVidoSurveillance = atParamDefUintInRange(cmd->params[0], 0, 0, 1, &paramok);
+        if (!paramok || cmd->param_count != 1)
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
+
+        ret = CFW_SetVideoSurveillance(nVidoSurveillance, nSim);
+        if (0 != ret)
+        {
+            OSI_LOGI(0, "AT+SETVOS:Set VidoSurveillance error %d\n\r", ret);
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
+        }
+        atCmdRespOK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_READ)
+    {
+        char rsp[40] = {0};
+        ret = CFW_GetVideoSurveillance(&nVidoSurveillance, nSim);
+        if (0 != ret)
+        {
+            OSI_LOGI(0, "AT+SETVOS:Get VidoSurveillance error %d\n\r", ret);
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
+        }
+        sprintf(rsp, "+SETVOS: %d", nVidoSurveillance);
+        atCmdRespInfoText(cmd->engine, rsp);
+        atCmdRespOK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_TEST)
+    {
+        atCmdRespInfoText(cmd->engine, "+SETVOS:(0-1)");
+        atCmdRespOK(cmd->engine);
+    }
+    else
+    {
+        atCmdRespCmsError(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+    }
+}
 
 void atCmdHandleMMICG(atCommand_t *cmd)
 {
@@ -1899,6 +2012,7 @@ void atCmdHandleMMICG(atCommand_t *cmd)
         }
         else if (gAtRecordCtx.recorder != NULL)
         {
+            path = 1;
             mode = 2;
             ctrl = 6;
         }

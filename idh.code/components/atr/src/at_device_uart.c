@@ -147,25 +147,40 @@ static bool _setFlowCtrl(atDevice_t *th, atDeviceRXFC_t rxfc, atDeviceTXFC_t txf
     return result;
 }
 
+static void _setBaud(atDevice_t *th, size_t baud)
+{
+    atDeviceUart_t *uart = (atDeviceUart_t *)th;
+    // auto baud or baud change
+    if (baud == 0 || uart->config.baud != baud)
+    {
+        drvUartCfg_t cfg = *drvUartConfig(uart->drv);
+        cfg.baud = baud;
+        drvUartWaitTxFinish(uart->drv, UART_WAIT_TX_DONE_TIMEOUT);
+        drvUartClose(uart->drv);
+        bool r = drvUartReconfig(uart->drv, &cfg) && drvUartOpen(uart->drv);
+        if (r)
+        {
+            uart->config.baud = baud;
+        }
+        else
+        {
+            OSI_LOGE(0, "AT %4c set baud/%d fail", uart->config.name, baud);
+        }
+    }
+}
+
 // =============================================================================
 // Set baud, format and parity
 // =============================================================================
-static void _setFormat(atDevice_t *th, size_t baud, atDeviceFormat_t format, atDeviceParity_t parity)
+static void _setFormat(atDevice_t *th, atDeviceFormat_t format, atDeviceParity_t parity)
 {
     atDeviceUart_t *uart = (atDeviceUart_t *)th;
-    const drvUartCfg_t *ocfg = drvUartConfig(uart->drv);
-    drvUartCfg_t cfg = *ocfg;
+    drvUartCfg_t cfg = *drvUartConfig(uart->drv);
     _convFormat(&cfg, format, parity);
-    cfg.baud = baud;
 
-    if (0 == baud || // It's auto baud
-        uart->config.baud != baud ||
-        uart->config.format != format ||
-        uart->config.parity != parity)
+    if (uart->config.format != format || uart->config.parity != parity)
     {
-        drvUartCfg_t cfg = *drvUartConfig(uart->drv);
         _convFormat(&cfg, format, parity);
-        cfg.baud = baud;
 
         drvUartWaitTxFinish(uart->drv, UART_WAIT_TX_DONE_TIMEOUT);
         drvUartClose(uart->drv);
@@ -174,7 +189,6 @@ static void _setFormat(atDevice_t *th, size_t baud, atDeviceFormat_t format, atD
 
         if (r)
         {
-            uart->config.baud = baud;
             uart->config.format = format;
             uart->config.parity = parity;
         }
@@ -216,6 +230,7 @@ atDevice_t *atDeviceUartCreate(atDeviceUartConfig_t *cfg)
     uart->ops.read = _read;
     uart->ops.read_avail = _readAvail;
     uart->ops.write_avail = _writeAvail;
+    uart->ops.set_baud = _setBaud;
     uart->ops.set_format = _setFormat;
     uart->ops.set_flow_ctrl = _setFlowCtrl;
     uart->ops.set_auto_sleep = _setAutoSleep;

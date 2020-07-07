@@ -59,6 +59,8 @@ typedef s8_t err_t;
 
 /** Definitions for error constants. */
 typedef enum {
+/** find in local or hostname is octet notation . */
+  ERR_LOCAL_OK   = 1,
 /** No error, everything OK. */
   ERR_OK         = 0,
 /** Out of memory error.     */

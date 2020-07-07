@@ -1316,7 +1316,8 @@ extern void CFW_IotICCIDRefresh(void);
 
 uint64_t SatTimerManagement[CFW_SIM_COUNT][8] = {0};
 #define BIP_MAX_BUFFER_SIZE 2000
-
+#define BIP_RETRY_NUM 3
+static uint8_t bip_retry_num = 0;
 static uint8_t bip_cid = 0;
 static uint8_t bip_protocol = IPPROTO_TCP;
 static uint8_t bip_type = SOCK_STREAM;
@@ -1346,10 +1347,6 @@ enum bip_sm_status
 };
 static uint8_t bip_status = BIP_IDLE; // status variable of state machine
 
-#define BIP_GPRS_ATTACHING 0x55
-#define BIP_GPRS_ACTIVING 0xAA
-#define BIP_GPRS_DONE 0x00
-static uint8_t bip_gprs_status = BIP_GPRS_DONE;
 static uint8_t bip_command = 0;
 struct BIP_SEND_DATA
 {
@@ -1358,14 +1355,20 @@ struct BIP_SEND_DATA
 };
 struct BIP_SEND_DATA bip_sdata = {0, 0};
 
+struct receive_buffer
+{
+    struct receive_buffer *next;
+    uint16_t size;
+    uint16_t offset;
+    uint8_t buffer[0];
+};
 struct BIP_RECEVIE_DATA
 {
-    uint8_t buffer[256];
+    uint8_t buffer[238]; //used to send to uicc
     uint16_t total_len;
-    uint16_t offset;
-    int16_t room;
+    struct receive_buffer *first;
 };
-struct BIP_RECEVIE_DATA bip_rdata = {{0}, 0, 0, 0};
+struct BIP_RECEVIE_DATA bip_rdata = {{0}, 0, 0};
 
 struct BIP_USER
 {
@@ -1387,6 +1390,16 @@ struct BIP_PASSWD
     uint8_t length;
 };
 struct BIP_PASSWD bip_passwd = {0, 0};
+void at_bip_clean_receive_buffer(void)
+{
+    struct receive_buffer *p = bip_rdata.first;
+    while (p != NULL)
+    {
+        bip_rdata.first = p->next;
+        free(p);
+        p = bip_rdata.first;
+    }
+}
 
 void at_bip_response(uint8_t nError, CFW_SIM_ID nSimID)
 {
@@ -1418,15 +1431,75 @@ void at_bip_response(uint8_t nError, CFW_SIM_ID nSimID)
             room = 0xFF;
         CFW_SatResponse(SIM_SAT_SEND_DATA_COM, nError, 0, &room, 1, uti, nSimID);
     }
-    else
+    else if (bip_command == SIM_SAT_CLOSE_CHANNEL_COM)
+    {
+        CFW_SatResponse(SIM_SAT_CLOSE_CHANNEL_COM, nError, 0, 0, 0, uti, nSimID);
+    }
+    else if (CFW_SatGetCurCMD(nSimID) == SIM_SAT_REFRESH_COM)
         CFW_SatResponse(SIM_SAT_REFRESH_COM, nError, 0, 0, 0, uti, nSimID);
 }
 
-void callback_tcpip(atCommand_t *cmd, const osiEvent_t *event)
+void at_bip_reset(void)
 {
-    OSI_LOGI(0, "bip_response..., bip_cid = %d", bip_cid);
+    if (bip_apn.apn != 0)
+    {
+        free(bip_apn.apn);
+        bip_apn.apn = 0;
+        bip_apn.length = 0;
+    }
+    if (bip_user.user != 0)
+    {
+        free(bip_user.user);
+        bip_user.user = 0;
+        bip_user.length = 0;
+    }
+    if (bip_passwd.passwd != 0)
+    {
+        free(bip_passwd.passwd);
+        bip_passwd.passwd = 0;
+        bip_passwd.length = 0;
+    }
+
+    if (bip_sdata.pData != NULL)
+    {
+        free(bip_sdata.pData);
+        bip_sdata.pData = 0;
+        bip_sdata.nLength = 0;
+    }
+    at_bip_clean_receive_buffer();
+    bip_rdata.total_len = 0;
+
+    bip_status = BIP_IDLE;
+    bip_protocol = IPPROTO_TCP;
+    bip_type = SOCK_STREAM;
+    bip_bearer_type = 0;
+    bip_buffer_size = 0;
+    bip_channel_staus[0] = 0;
+    bip_channel_staus[1] = 0;
+    bip_addrtype = 0;
+    bip_qualifier = 0;
+
+    memset(&bip_addr.addr6, 0, sizeof(CFW_TCPIP_SOCKET_ADDR6));
+    if (bip_socket != 0)
+    {
+        if (CFW_TcpipSocketClose(bip_socket) != 0)
+            bip_socket = 0;
+    }
+    bip_retry_num = 0;
+}
+
+void callback_tcpip(const osiEvent_t *event)
+{
+    OSI_LOGI(0, "callback_tcpip: bip_cid = %d", bip_cid);
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t nSim = cfw_event->nFlag;
+
+    OSI_LOGI(0, "======cfw_event->nEventId=%X", cfw_event->nEventId);
+    OSI_LOGI(0, "======cfw_event->nParam1=%X", cfw_event->nParam1);
+    OSI_LOGI(0, "======cfw_event->nParam2=%X", cfw_event->nParam2);
+    OSI_LOGI(0, "======cfw_event->nFlag=%d, nSim = %d", cfw_event->nFlag, nSim);
+    OSI_LOGI(0, "======cfw_event->nType=%X", cfw_event->nType);
+
     uint8_t socket = (uint8_t)cfw_event->nParam1;
     uint16_t uti = cfwRequestNoWaitUTI();
     OSI_LOGI(0, "pParam->nEventId = %d", cfw_event->nEventId);
@@ -1463,7 +1536,7 @@ void callback_tcpip(atCommand_t *cmd, const osiEvent_t *event)
     case EV_CFW_TCPIP_CLOSE_IND:
         if (bip_socket != 0)
         {
-            CFW_TcpipSocketClose(socket);
+            CFW_TcpipSocketClose(bip_socket);
             //bip_protocol = IPPROTO_TCP;
             //bip_type = SOCK_STREAM;
             //bip_socket = 0;
@@ -1485,30 +1558,62 @@ void callback_tcpip(atCommand_t *cmd, const osiEvent_t *event)
         OSI_LOGI(0, "socket = %d, bip_socket = %d", socket, bip_socket);
         uint16_t uDataSize = (uint16_t)cfw_event->nParam2;
         OSI_LOGI(0, "uDataSize = %d, buffer len = %d", uDataSize, bip_rdata.total_len);
-#if 0
-//testing 
-            uint8_t* p = CSW_SIM_MALLOC(pParam->nParam2);
-            INT32 retval = CFW_TcpipSocketRecv(bip_socket, p, pParam->nParam2, 0);
-            if (SOCKET_ERROR == retval)
+
+        if (bip_rdata.total_len + uDataSize > BIP_MAX_BUFFER_SIZE)
+        {
+            OSI_LOGI(0, "no more memory to store tcp/udp data(%d, %d)", uDataSize + bip_rdata.total_len, BIP_MAX_BUFFER_SIZE);
+            return;
+        }
+        uint16_t size = sizeof(struct receive_buffer) + uDataSize;
+        struct receive_buffer *package = (struct receive_buffer *)malloc(size);
+        if (package == NULL)
+        {
+            OSI_LOGI(0, "no more memory, malloc memory failed(%d)", size);
+            return;
+        }
+        OSI_LOGI(0, "uDataSize store into 0x%X", package);
+        uint16_t offset = 0;
+        do
+        {
+            uint32_t ret = CFW_TcpipSocketRecv(bip_socket, package->buffer + offset, uDataSize - offset, 0);
+            if (SOCKET_ERROR == ret)
             {
-                COS_LOGI(0, "EV_CFW_TCPIP_REV_DATA_IND, CFW_TcpipSocketRecv error");
-              at_bip_response(0x20, nSim);
+                OSI_LOGI(0, "EV_CFW_TCPIP_REV_DATA_IND, CFW_TcpipSocketRecv error");
+                if (offset != 0) //previous operation has got some data, send event to UICC
+                    break;
+                free(package);
                 return;
             }
+            else if (0 == ret) //no more data to be read
+                break;
 
-            COS_LOGI(0, "retval = %d", retval);
-            CSW_TC_MEMBLOCK(10, p, retval, 16); 
+            OSI_LOGI(0, "ret = %d, offset = %d, total len = %d", ret, offset, bip_rdata.total_len);
+            //CSW_TC_MEMBLOCK(10, package->buffer + offset, ret, 16);
+            offset += ret;
+        } while (uDataSize - offset > 0);
+        if (offset == 0)
+        {
+            free(package);
+            return;
+        }
+        package->next = NULL;
+        package->size = offset;
+        package->offset = 0;
+        struct receive_buffer **p = &bip_rdata.first;
+        while (*p != NULL)
+            p = &(*p)->next;
+        *p = package;
+        bip_rdata.total_len += offset;
+        OSI_LOGI(0, "uDataSize store into 0x%X", package);
+        OSI_LOGI(0, "package->size = %d, total size = %d", package->size, bip_rdata.total_len);
+        //CSW_TC_MEMBLOCK(10, package->buffer, package->size, 16);
 
-//testing end
-#endif
         if (socket == bip_socket)
         {
             uint32_t event_list = CFW_SatGetEventList(nSim);
             OSI_LOGI(0, "event_list = %X", event_list);
             if (event_list & (1 << EVENT_DATA_AVAILABLE))
             {
-                bip_rdata.total_len += cfw_event->nParam2;
-                OSI_LOGI(0, "bip_rdata.total_len = %d", bip_rdata.total_len);
                 //string format: two byte channel status, one byte channel data length
                 uint8_t event_data[3];
                 event_data[0] = bip_cid | 0x80;
@@ -1516,6 +1621,14 @@ void callback_tcpip(atCommand_t *cmd, const osiEvent_t *event)
                 event_data[2] = bip_rdata.total_len > 0xFF ? 0xFF : (bip_rdata.total_len & 0xFF);
                 OSI_LOGI(0, "event_data = %X%X%X", event_data[0], event_data[1], event_data[2]);
                 CFW_SatResponse(SIM_SAT_EVENT_DOWNLOAD, 0, EVENT_DATA_AVAILABLE, event_data, 3, uti, nSim);
+            }
+            OSI_LOGI(0, "++++++++++++ BIP receive data ++++++++++++");
+            OSI_LOGI(0, "bip_rdata.first = %X", bip_rdata.first);
+            OSI_LOGI(0, "bip_rdata.total_len = %d", bip_rdata.total_len);
+            if (bip_rdata.first != NULL)
+            {
+                OSI_LOGI(0, "first node size = %d", bip_rdata.first->size);
+                OSI_LOGI(0, "first node offset = %d", bip_rdata.first->offset);
             }
         }
     }
@@ -1528,15 +1641,7 @@ void callback_tcpip(atCommand_t *cmd, const osiEvent_t *event)
     break;
     case EV_CFW_TCPIP_SOCKET_CLOSE_RSP:
         OSI_LOGI(0, "============ BIP recieve TCPIP_SOCKET_CLOSE_RSP ===========bip_socket=%d", bip_socket);
-        if (bip_socket != 0)
-        {
-            bip_rdata.offset = 0;
-            bip_rdata.room = 0;
-            bip_rdata.total_len = 0;
-            bip_protocol = IPPROTO_TCP;
-            bip_type = SOCK_STREAM;
-            bip_socket = 0;
-        }
+
         uint16_t uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_active, NULL);
         if (ERR_SUCCESS != CFW_GprsAct(CFW_GPRS_DEACTIVED, bip_cid, uti, nSim))
         {
@@ -1544,13 +1649,15 @@ void callback_tcpip(atCommand_t *cmd, const osiEvent_t *event)
         }
         OSI_LOGI(0, "GPRS Deactived!, bip_cid = %d", bip_cid);
         bip_status = BIP_ACTIVED;
-        bip_gprs_status = BIP_GPRS_ACTIVING;
         break;
+    default:
+        OSI_LOGI(0, "receive Event ID = %X", cfw_event->nEventId);
     }
     return;
 }
 
 struct netif *getGprsNetIf(uint8_t nSim, uint8_t nCid);
+void TCPIP_netif_create(uint8_t nCid, uint8_t nSimId);
 void callback_gprs_active(atCommand_t *cmd, const osiEvent_t *event)
 {
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
@@ -1562,6 +1669,25 @@ void callback_gprs_active(atCommand_t *cmd, const osiEvent_t *event)
 
         if (cfw_event->nType == CFW_GPRS_ACTIVED)
         {
+            //osiEvent_t net_event = *event;
+            //net_event.id = EV_TCPIP_CFW_GPRS_ACT;
+            //osiEventSend(netGetTaskID(), &net_event);
+            OSI_LOGI(0, "call TCPIP_netif_create");
+
+            TCPIP_netif_create(bip_cid, nSim);
+            OSI_LOGI(0, "default ip = %X", (netif_default->ip_addr));
+            //CFW_GprsHostAddress
+            uint8_t IPAddress[21] = {0};
+            uint8_t nLength = 0;
+            uint8_t nIPType = 0;
+
+            uint32_t retval = CFW_GprsHostAddress(IPAddress, &nLength, &nIPType, bip_cid, nSim);
+            if ((retval != ERR_SUCCESS) && (nLength != 0))
+            {
+                OSI_LOGI(0, "BIP netif ERROR!");
+                goto BIP_SOCKET_ERROR;
+            }
+
             OSI_LOGI(0, "GPRS Actived -- Done");
             uint8_t domain = AF_INET;
             if (bip_addrtype == BIP_IPv6)
@@ -1578,48 +1704,67 @@ void callback_gprs_active(atCommand_t *cmd, const osiEvent_t *event)
             OSI_LOGI(0, "1bip_socket = %d!", bip_socket);
             if ((bip_protocol == IPPROTO_UDP) || ((bip_apn.apn != NULL) && (bip_apn.length != 0)))
             {
-                struct netif *bit_netif = getGprsNetIf(nSim, bip_cid);
-                if (bit_netif == NULL)
+                OSI_LOGI(0, "nLength = %d, nIPType = %d, sizeof(ip4_addr_t) = %d, sizeof(ip6_addr_t) = %d", nLength, nIPType, sizeof(ip4_addr_t), sizeof(ip6_addr_t));
+                uint32_t *host = (uint32_t *)(IPAddress);
+#if 1
+                if ((nIPType & CFW_IPV4) != 0)
+                    OSI_LOGXI(OSI_LOGPAR_M, 0, "IPv4 :%*s", sizeof(ip4_addr_t), host);
+                if ((nIPType & CFW_IPV6) != 0)
                 {
-                    OSI_LOGI(0, "BIP netif ERROR!");
+                    if (nIPType == CFW_IPV6)
+                        OSI_LOGXI(OSI_LOGPAR_M, 0, "IPv6 :%*s", sizeof(ip6_addr_t), host);
+                    else
+                        OSI_LOGXI(OSI_LOGPAR_M, 0, "IPv6 :%*s", sizeof(ip6_addr_t), host + 4);
+                }
+#endif
+                OSI_LOGI(0, " ---------2------- ");
+
+                if ((bip_addrtype == BIP_IPv6) && (nIPType == CFW_IPV4))
+                {
+                    OSI_LOGI(0, "IP addresses don't matched(%d,%d)!", bip_addrtype, nIPType);
                     goto BIP_SOCKET_ERROR;
                 }
-                OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", sizeof(ip6_addr_t), (uint8_t *)&bit_netif->ip6_addr);
-                OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", sizeof(ip4_addr_t), (uint8_t *)&bit_netif->ip_addr);
-                if ((bip_addrtype == BIP_IPv6) && (bit_netif->pdnType == CFW_GPRS_PDP_TYPE_IP))
+                if ((bip_addrtype == BIP_IPv4) && (nIPType == CFW_IPV6))
                 {
-                    OSI_LOGI(0, "IP addresses don't matched(%d,%d)!", bip_addrtype, bit_netif->pdnType);
+                    OSI_LOGI(0, "IP addresses don't matched(%d,%d)!", bip_addrtype, nIPType);
                     goto BIP_SOCKET_ERROR;
                 }
-                if ((bip_addrtype == BIP_IPv4) && (bit_netif->pdnType == CFW_GPRS_PDP_TYPE_IPV6))
-                {
-                    OSI_LOGI(0, "IP addresses don't matched(%d,%d)!", bip_addrtype, bit_netif->pdnType);
-                    goto BIP_SOCKET_ERROR;
-                }
-                int8_t retval = 0;
+
+                OSI_LOGI(0, " ---------3------- ");
                 if (bip_addrtype == BIP_IPv4)
                 {
                     CFW_TCPIP_SOCKET_ADDR local_addr = {0};
                     local_addr.sin_family = AF_INET;
-                    local_addr.sin_addr.s_addr = bit_netif->ip_addr.u_addr.ip4.addr;
+                    local_addr.sin_addr.s_addr = *host;
                     local_addr.sin_len = sizeof(CFW_TCPIP_SOCKET_ADDR);
-                    OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", sizeof(CFW_TCPIP_SOCKET_ADDR), (uint8_t *)&local_addr);
+                    OSI_LOGXI(OSI_LOGPAR_I, 0, "IPv4 address: %X", local_addr.sin_addr.s_addr);
                     retval = CFW_TcpipSocketBind(bip_socket, &local_addr, sizeof(CFW_TCPIP_SOCKET_ADDR));
                 }
                 else if (bip_addrtype == BIP_IPv6)
                 {
                     CFW_TCPIP_SOCKET_ADDR6 local_addr = {0};
                     local_addr.sin6_family = AF_INET6;
-                    memcpy(local_addr.sin6_addr.un.u32_addr, &bit_netif->ip6_addr[0].u_addr.ip6.addr, 4);
+                    if (nIPType == CFW_IPV6)
+                        memcpy(local_addr.sin6_addr.un.u32_addr, IPAddress, 16);
+                    else
+                        memcpy(local_addr.sin6_addr.un.u32_addr, IPAddress + 4, 16);
                     local_addr.sin6_len = sizeof(CFW_TCPIP_SOCKET_ADDR6);
-                    OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", sizeof(CFW_TCPIP_SOCKET_ADDR), (uint8_t *)&local_addr);
+                    OSI_LOGXI(OSI_LOGPAR_I, 0, "IPv6 address: %X", local_addr.sin6_addr.un.u32_addr);
                     retval = CFW_TcpipSocketBind(bip_socket, (CFW_TCPIP_SOCKET_ADDR *)&local_addr, sizeof(CFW_TCPIP_SOCKET_ADDR6));
                 }
+
+                OSI_LOGI(0, " ---------5------- ");
                 if (SOCKET_ERROR == retval)
                 {
                     OSI_LOGI(0, "Socket bind ERROR(%d)!", retval);
                     goto BIP_SOCKET_ERROR;
                 }
+                if (bip_protocol == IPPROTO_UDP)
+                {
+                    at_bip_response(0, nSim);
+                    return;
+                }
+                OSI_LOGI(0, " ---------6------- ");
             }
             if (bip_protocol == CFW_TCPIP_IPPROTO_TCP)
             {
@@ -1630,7 +1775,7 @@ void callback_gprs_active(atCommand_t *cmd, const osiEvent_t *event)
                     retval = CFW_TcpipSocketConnect(bip_socket, (CFW_TCPIP_SOCKET_ADDR *)&bip_addr.addr6, sizeof(bip_addr.addr6));
                 if (retval == -1)
                 {
-                    OSI_LOGI(0, "Get OPEN CHANNEL ERROR!");
+                    OSI_LOGI(0, "Get OPEN CHANNEL ERROR!%d", netif_default);
                     at_bip_response(0x21, nSim);
                     return;
                 }
@@ -1650,11 +1795,22 @@ void callback_gprs_active(atCommand_t *cmd, const osiEvent_t *event)
                 CFW_ReleaseCID(bip_cid, nSim);
                 bip_cid = 0;
             }
+#if 1
+            if (CFW_SatGetCurCMD(nSim) == SIM_SAT_CLOSE_CHANNEL_COM)
+            {
+                uint16_t uti = cfwRequestNoWaitUTI();
+                CFW_SatResponse(SIM_SAT_CLOSE_CHANNEL_COM, 0, 0, 0, 0, uti, nSim);
+            }
+#else
+            OSI_LOGI(0, "GPRS deattached!");
             uint16_t uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_attach, NULL);
             if (ERR_SUCCESS != CFW_GprsAtt(CFW_GPRS_DETACHED, uti, nSim))
-                at_bip_response(0x21, nSim);
+            {
+                OSI_LOGI(0, "Detach failed!");
+                at_bip_response(0, nSim);
+            }
+#endif
             bip_status = BIP_ATTACHED;
-            bip_gprs_status = BIP_GPRS_ATTACHING;
         }
         else
         {
@@ -1671,7 +1827,7 @@ void callback_gprs_active(atCommand_t *cmd, const osiEvent_t *event)
         }
     }
 
-    OSI_LOGI(0, "GPRS:bip_gprs_status = %d, bip_status = %d, bip_cid = %d!", bip_status, bip_gprs_status, bip_cid);
+    OSI_LOGI(0, "GPRS:, bip_status = %d, bip_cid = %d!", bip_status, bip_cid);
     OSI_LOGI(0, "GPRS proc, bip_cid = %d", bip_cid);
 }
 
@@ -1750,7 +1906,7 @@ uint8_t callback_gprs_attach(atCommand_t *cmd, const osiEvent_t *event)
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t nSim = cfw_event->nFlag;
 
-    if (EV_CFW_GPRS_ATT_RSP == cfw_event->nType)
+    if (EV_CFW_GPRS_ATT_RSP == cfw_event->nEventId)
     {
         OSI_LOGI(0, "receive EV_CFW_GPRS_ATT_RSP event, cfw_event->nType = %d", cfw_event->nType);
 
@@ -1766,7 +1922,7 @@ uint8_t callback_gprs_attach(atCommand_t *cmd, const osiEvent_t *event)
                 }
             }
             OSI_LOGI(0, "cid = %d", bip_cid);
-            //            at_SetPdpCtx(nSim);
+            at_SetPdpCtx(nSim);
             uint16_t uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_active, NULL);
             int32_t retval = CFW_GprsAct(CFW_GPRS_ACTIVED, bip_cid, uti, nSim);
             if (ERR_SUCCESS != retval)
@@ -1776,45 +1932,34 @@ uint8_t callback_gprs_attach(atCommand_t *cmd, const osiEvent_t *event)
                 return ERR_SUCCESS;
             }
 
-            bip_gprs_status = BIP_GPRS_ACTIVING;
             OSI_LOGI(0, "GPRS Attached, to active GPRS");
         }
         else if (cfw_event->nType == 0)
         {
-            OSI_LOGI(0, "GPRS deattached, to NwDeRegister!");
             if (CFW_SatGetCurCMD(nSim) == SIM_SAT_REFRESH_COM)
             {
+                OSI_LOGI(0, "GPRS deattached, to NwDeRegister!");
                 uint16_t uti = cfwRequestUTI((osiEventCallback_t)callback_nw_deregister, NULL);
                 if (ERR_SUCCESS != CFW_NwDeRegister(uti, nSim))
-                {
-                    uint16_t uti = cfwRequestNoWaitUTI();
-                    CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
-                }
+                    at_bip_response(0x20, nSim);
+            }
+            else
+            {
+                OSI_LOGI(0, "Response to CLOSE CHANNEL!");
+                uint16_t uti = cfwRequestNoWaitUTI();
+                CFW_SatResponse(SIM_SAT_CLOSE_CHANNEL_COM, 0, 0, 0, 0, uti, nSim);
             }
             bip_status = BIP_IDLE;
-            bip_gprs_status = BIP_GPRS_DONE;
-            at_bip_response(0, nSim);
-            OSI_LOGI(0, "GPRS deattached!");
         }
         else // if(CFWEvent.nType == 0xF0)
         {
             at_bip_response(0x20, nSim);
             //bip_status = BIP_IDLE;
-            //bip_gprs_status = BIP_GPRS_DONE;
             OSI_LOGI(0, "GPRS attached failed!");
         }
     }
-    OSI_LOGI(0, "GPRS:bip_gprs_status = %d, bip_status = %d, bip_cid = %d!", bip_status, bip_gprs_status, bip_cid);
+    OSI_LOGI(0, "GPRS: bip_status = %d, bip_cid = %d!", bip_status, bip_cid);
     return ERR_SUCCESS;
-}
-
-uint8_t AT_BipTcpipStatus(uint8_t nCmdID, CFW_SIM_ID nSim, uint16_t nUTI)
-{
-    OSI_LOGI(0, "AT_BipTcpipStatus: bip_status = %d", bip_status);
-    if ((bip_status == BIP_CONNECTED) || (bip_status == BIP_SOCKET))
-        return ERR_SUCCESS;
-    else
-        return ~ERR_SUCCESS;
 }
 
 uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
@@ -1824,6 +1969,7 @@ uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
     OSI_LOGI(0, "AT_BipProcess: bip_status = %d, bip_cid = %d", bip_status, bip_cid);
     switch (bip_status)
     {
+    BIP_SOCKET_RETRY:
     case BIP_IDLE:
     {
         uint8_t nAttState = 0;
@@ -1832,7 +1978,6 @@ uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
         {
             uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_attach, NULL);
             CFW_GprsAtt(CFW_GPRS_ATTACHED, uti, nSim);
-            bip_gprs_status = BIP_GPRS_ATTACHING;
             break;
         }
     }
@@ -1870,24 +2015,22 @@ uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
             }
             OSI_LOGI(0, "BIP cid:%d", bip_cid);
 
-            //            at_SetPdpCtx(nSim);
+            at_SetPdpCtx(nSim);
             uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_active, NULL);
             if (ERR_CME_OPERATION_NOT_ALLOWED == CFW_GprsAct(CFW_GPRS_ACTIVED, bip_cid, uti, nSim))
             {
                 uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_attach, NULL);
                 CFW_GprsAtt(CFW_GPRS_ATTACHED, uti, nSim);
-                bip_gprs_status = BIP_GPRS_ATTACHING;
                 return ERR_SUCCESS;
             }
 
             bip_status = BIP_ATTACHED;
-            bip_gprs_status = BIP_GPRS_ACTIVING;
             OSI_LOGI(0, "GPRS Attached, to active GPRS");
             OSI_LOGI(0, "return ERR_SUCCESS;");
             return ERR_SUCCESS;
         }
         else
-            bip_gprs_status = BIP_GPRS_DONE;
+            bip_status = BIP_ACTIVED;
         OSI_LOGI(0, "case BIP_ATTACHED end");
     }
     case BIP_ACTIVED:
@@ -1917,7 +2060,20 @@ uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
             if (bit_netif == NULL)
             {
                 OSI_LOGI(0, "BIP netif ERROR!");
-                goto BIP_SOCKET_ERROR;
+                CFW_TcpipSocketClose(bip_socket);
+                if ((bip_qualifier & 0x02) == 0)
+                    goto BIP_SOCKET_ERROR;
+                else
+                {
+                    bip_status = BIP_IDLE;
+                    if (bip_retry_num++ < BIP_RETRY_NUM)
+                        goto BIP_SOCKET_RETRY;
+                    else
+                    {
+                        at_bip_response(0, nSim);
+                        return -1;
+                    }
+                }
             }
             OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", sizeof(ip6_addr_t), (uint8_t *)&bit_netif->ip6_addr);
             OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", sizeof(ip4_addr_t), (uint8_t *)&bit_netif->ip_addr);
@@ -1943,12 +2099,17 @@ uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
             }
             else if (bip_addrtype == BIP_IPv6)
             {
+#if LWIP_IPV6
                 CFW_TCPIP_SOCKET_ADDR6 local_addr = {0};
                 local_addr.sin6_family = AF_INET6;
-                memcpy(local_addr.sin6_addr.un.u32_addr, &bit_netif->ip_addr.u_addr.ip6.addr, 4);
+                memcpy(local_addr.sin6_addr.un.u32_addr, &bit_netif->ip_addr.u_addr.ip6.addr, 16);
                 local_addr.sin6_len = sizeof(CFW_TCPIP_SOCKET_ADDR6);
                 OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", sizeof(CFW_TCPIP_SOCKET_ADDR), (uint8_t *)&local_addr);
                 retval = CFW_TcpipSocketBind(bip_socket, (CFW_TCPIP_SOCKET_ADDR *)&local_addr, sizeof(CFW_TCPIP_SOCKET_ADDR6));
+#else
+                at_bip_response(0x30, nSim);
+                return -1;
+#endif
             }
 
             if (SOCKET_ERROR == retval)
@@ -1987,7 +2148,20 @@ uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
                 at_bip_response(0x21, nSim);
                 return -1;
             }
+            else if (retval != bip_sdata.nLength)
+            {
+                memcpy(bip_sdata.pData, bip_sdata.pData + retval, bip_sdata.nLength - retval);
+                bip_sdata.nLength -= retval;
+                OSI_LOGI(0, "------ UDP ------");
+                //CSW_TC_MEMBLOCK(10, bip_sdata.pData, bip_sdata.nLength, 16);
+            }
+            else
+            {
+                bip_sdata.nLength = 0;
+            }
+
             OSI_LOGI(0, "Response SEND DATA, bip_socket = %d!", bip_socket);
+            at_bip_response(0, nSim);
         }
     }
     break;
@@ -2003,26 +2177,23 @@ uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
                 at_bip_response(0x21, nSim);
                 return -1;
             }
+            else if (retval != bip_sdata.nLength)
+            {
+                memcpy(bip_sdata.pData, bip_sdata.pData + retval, bip_sdata.nLength - retval);
+                bip_sdata.nLength -= retval;
+                OSI_LOGI(0, "------ TCP ------");
+                //CSW_TC_MEMBLOCK(10, bip_sdata.pData, bip_sdata.nLength, 16);
+            }
+            else
+            {
+                bip_sdata.nLength = 0;
+            }
         }
     }
     default:
         break;
     }
     return ERR_SUCCESS;
-}
-
-uint8_t AT_BipGprsStatus(CFW_EVENT *pCfwEvent)
-{
-    switch (bip_gprs_status)
-    {
-    case BIP_GPRS_ATTACHING:
-    case BIP_GPRS_ACTIVING:
-    {
-        return ERR_SUCCESS;
-    }
-    default:
-        return 0xFF;
-    }
 }
 
 //extern uint8_t bSatSimInit;
@@ -2079,36 +2250,51 @@ static void callback_sim_close(atCommand_t *cmd, const osiEvent_t *event)
     OSI_LOGI(0, "receive EV_CFW_SIM_CLOSE_RSP...");
     uint8_t nCmd = 0;
     uint8_t nQualifier = 0;
+
+    uint16_t uti = cfwRequestNoWaitUTI();
     if (CFW_SatGetCurCMD(nSim) == SIM_SAT_REFRESH_COM)
     {
         if (false == CFW_SatGetCurrentCmd(&nCmd, &nQualifier, nSim))
         {
-            uint16_t uti = cfwRequestNoWaitUTI(); // cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
             CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x32, 0, 0, 0, uti, nSim);
             return;
         }
-        OSI_LOGI(0, "Current proactive command = %d, qualifier = %d", cmd, nQualifier);
-        if (nQualifier == 0x04)
+        OSI_LOGI(0, "Current proactive command = %d, qualifier = %d", nCmd, nQualifier);
+        SimSendStatusReq(0x02, nSim);
+        switch (nQualifier)
+        {
+        case 0x04:
         {
             OSI_LOGI(0, "CFW_ResetDevice ...");
-
-            //extern UINT8 nICCID[CFW_SIM_COUNT][ICCID_LENGTH];
-            //nICCID[nSim][0] = 0;
-            //SIM_SAT_PARAM *pSatGetInfo;
-            //CFW_CfgSimGetSatParam(&pSatGetInfo, nSim);
             CFW_SimInit(1, nSim);
-            //pSatGetInfo->nCurCmd = 0;
+            break;
         }
-        else
+        case 0x05:
         {
+            uint8_t aid[18];
+            uint8_t length = 18;
+            OSI_LOGI(0, "Reselect Application ...");
+            CFW_GetUsimAID(aid, &length, nSim);
+            uint32_t retval = SimSelectApplicationReq(aid, length, 0, nSim);
+            if (ERR_SUCCESS != retval)
+            {
+                OSI_LOGI(0, "ReselectApplicationReq return 0x%x \n", retval);
+                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
+                break;
+            }
+            //break;  DO NOT BREAK
+        }
+        case 0x06:
+        {
+            OSI_LOGI(0, "USIM Initiation ...");
             if (ERR_SUCCESS != CFW_SimInitStage1(nSim))
             {
-                OSI_LOGI(0, "REFRESH: CFW_SimInitStage1 ERROR");
-                if (ERR_SUCCESS != CFW_SimInitStage3(nSim))
-                {
-                    OSI_LOGI(0, "REFRESH: CFW_SimInitStage3 failed");
-                }
+                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
             }
+            break;
+        }
+        default:
+            OSI_LOGI(0, "Noting to DO!");
         }
     }
 }
@@ -2119,8 +2305,8 @@ static void callback_nw_deregister(atCommand_t *cmd, const osiEvent_t *event)
 
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t nSim = cfw_event->nFlag;
-
-    if (ERR_SUCCESS == CFW_SimClose(cfw_event->nUTI, nSim))
+    uint16_t uti = cfwRequestUTI((osiEventCallback_t)callback_sim_close, NULL);
+    if (ERR_SUCCESS == CFW_SimClose(uti, nSim))
     {
         CFW_InvalideTmsiPTmis(nSim);
         //gSimStage3Finish[nSim] = false;
@@ -2338,12 +2524,20 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
     {
         OSI_LOGI(0, "response SIM_SAT_SETUP_MENU_COM");
         CFW_SatResponse(SIM_SAT_SETUP_MENU_COM, 0, 0, 0, 0, uti, nSim);
-        OSI_LOGI(0, "response SIM_SAT_SETUP_MENU_COM2");
         break;
     }
     case SIM_SAT_REFRESH_COM:
     {
         OSI_LOGI(0x10004f4e, "SIM_SAT_REFRESH_COM");
+        CFW_NW_STATUS_INFO status;
+        uint32_t retval = CFW_NwGetStatus(&status, nSim);
+        if ((retval != ERR_SUCCESS) || ((status.nStatus != CFW_NW_STATUS_REGISTERED_HOME) &&
+                                        (status.nStatus != CFW_NW_STATUS_REGISTERED_ROAMING)))
+        {
+            OSI_LOGI(0, "The SIM card have not regitstered!");
+            CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x8, 0, 0, 0, uti, nSim);
+            return;
+        }
         uint8_t nFilesList[32] = {0};
         uint8_t nFileNum = 32;
         if (CFW_SatGetRefreshFilesList(nFilesList, &nFileNum, nSim) == false)
@@ -2354,28 +2548,35 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
         }
         switch (nQualifier)
         {
-        case 0x00:
         case 0x01:
-        case 0x02:
         {
+            OSI_LOGI(0, "nFileNum = %d", nFileNum);
+            for (uint8_t i = 0; i < nFileNum; i++)
+                OSI_LOGI(0, "nFilesList[%d] = %d", i, nFilesList[i]);
+
             uint16_t uti = cfwRequestNoWaitUTI();
             if (nFileNum != 0)
                 CFW_SimRefreshFiles(nFilesList, nFileNum, uti, nSim);
-            if (nQualifier == 0x01)
-                break;
+            OSI_LOGI(0, "REFRESH files, responed to UICC with 0x03");
+            CFW_SatResponse(0x01, 0x03, 0, 0, 0, 0, nSim);
+            break;
         }
+        case 0x00:
+        case 0x02:
         case 0x03:
         {
-            OSI_LOGI(0, "REFRESH: --- CFW_SimInitStage1 ---");
-            uti = cfwRequestUTI((osiEventCallback_t)callback_sim_close, cmd);
-            if (ERR_SUCCESS == CFW_SimClose(uti, nSim))
+#if 0
+            uti = cfwRequestUTI((osiEventCallback_t)callback_nw_deregister, cmd);
+            if (ERR_SUCCESS != CFW_NwDeRegister(uti, nSim))
             {
-                CFW_InvalideTmsiPTmis(nSim);
-                //gSimStage3Finish[nSim] = false;
-                //g_IMSI_INIT[nSim] = false;
-                //Write_esim_mask |= 0x40;
-                //OSI_LOGI(0, "Write_esim_mask2=%d", Write_esim_mask);
-                OSI_LOGI(0, "CFW_IotICCIDRefresh");
+                //uti = cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
+                uint16_t uti = cfwRequestNoWaitUTI();
+                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
+            }
+#endif
+            if (CFW_SimInitStage1(nSim) != ERR_SUCCESS)
+            {
+                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
             }
         }
         break;
@@ -2386,46 +2587,8 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                 if (CFW_TcpipSocketClose(bip_socket) != 0)
                     bip_socket = 0;
             }
-            if (bip_apn.apn != 0)
-            {
-                free(bip_apn.apn);
-                bip_apn.apn = 0;
-                bip_apn.length = 0;
-            }
-            if (bip_user.user != 0)
-            {
-                free(bip_user.user);
-                bip_user.user = 0;
-                bip_user.length = 0;
-            }
-            if (bip_passwd.passwd != 0)
-            {
-                free(bip_passwd.passwd);
-                bip_passwd.passwd = 0;
-                bip_passwd.length = 0;
-            }
-            bip_gprs_status = BIP_GPRS_DONE;
-
-            bip_status = BIP_IDLE;
+            at_bip_reset();
             CFW_SatSetEventList(0, nSim);
-
-            bip_protocol = IPPROTO_TCP;
-            bip_type = SOCK_STREAM;
-            if (bip_sdata.pData != NULL)
-            {
-                free(bip_sdata.pData);
-                bip_sdata.pData = 0;
-                bip_sdata.nLength = 0;
-            }
-            bip_bearer_type = 0;
-            bip_buffer_size = 0;
-            bip_channel_staus[0] = 0;
-            bip_channel_staus[1] = 0;
-            bip_addrtype = 0;
-            bip_qualifier = 0;
-
-            memset(&bip_addr.addr6, 0, sizeof(CFW_TCPIP_SOCKET_ADDR6));
-            bip_command = 0;
 
             for (uint8_t i = 0; i < 8; i++)
             {
@@ -2437,59 +2600,11 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                     osiTimerDelete(tms->tms_timer);
                 }
             }
-            //SimSendStatusReq(2, nSim);
-            uint8_t cid = 1;
-            uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_active, cmd);
-            for (; cid < 8; cid++)
-            {
-                OSI_LOGI(0, "get status of cid = %d!", cid);
-                uint8_t status = 0;
-                if (ERR_SUCCESS == CFW_GetGprsActState(cid, &status, nSim))
-                {
-                    OSI_LOGI(0, "cid %d status = %d", cid, status);
-                    if (status == CFW_GPRS_ACTIVED)
-                    {
-                        OSI_LOGI(0, "Deactivate cid %d", cid);
-                        if (ERR_SUCCESS != CFW_GprsAct(CFW_GPRS_DEACTIVED, bip_cid, uti, nSim))
-                        {
-                            //uti = cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
-                            uint16_t uti = cfwRequestNoWaitUTI();
-                            CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
-                            OSI_LOGI(0, "refresh: Deactivate cid %d failed", cid);
-                            return;
-                        }
-                        CFW_ReleaseCID(cid, nSim);
-                    }
-                }
-            }
-            uti = cfwRequestUTI((osiEventCallback_t)callback_nw_deregister, cmd);
-            if (ERR_SUCCESS != CFW_NwDeRegister(uti, nSim))
-            {
-                //uti = cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
-                uint16_t uti = cfwRequestNoWaitUTI();
-                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
-            }
         }
-        break;
+        //break;
         case 0x05:
-        {
-            uint8_t aid[18];
-            uint8_t length = 18;
-            CFW_GetUsimAID(aid, &length, nSim);
-            uint32_t retval = SimSelectApplicationReq(aid, length, 0, nSim);
-            if (ERR_SUCCESS != retval)
-            {
-                OSI_LOGI(0, "ReselectApplicationReq return 0x%x \n", retval);
-                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x21, 0, 0, 0, uti, nSim);
-            }
-            else
-                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0, 0, 0, 0, uti, nSim);
-        }
-        break;
         case 0x06:
         {
-            OSI_LOGI(0, "Process Refresh command qualifier 0x6");
-            //SimSendStatusReq(2, nSim);
             uint8_t cid = 1;
             uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_active, cmd);
             for (; cid < 8; cid++)
@@ -2521,17 +2636,12 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                 uint16_t uti = cfwRequestNoWaitUTI();
                 CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
             }
-            OSI_LOGI(0, "nFileNum = %d", nFileNum);
-            for (uint8_t i = 0; i < nFileNum; i++)
-                OSI_LOGI(0, "nFilesList[%d] = %d", i, nFilesList[i]);
-            uti = cfwRequestUTI((osiEventCallback_t)NULL, cmd);
-            CFW_SimRefreshFiles(nFilesList, nFileNum, uti, nSim);
         }
         break;
         default:
         {
             OSI_LOGI(0, "The parameter(%u) of REFRESH command is not supported!", nQualifier);
-            CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x32, 0, 0, 0, uti, nSim);
+            CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x30, 0, 0, 0, uti, nSim);
         }
         break;
         }
@@ -2545,7 +2655,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
         uint8_t buffer_size = 0;
         uint8_t bearer_type = 0;
         uint8_t trans_type = 0;
-        uint8_t trans_port = 0;
+        uint16_t trans_port = 0;
         if (false == CFW_SatGetOpenChannelNetInfo(&buffer_size, &bearer_type, &trans_type, &trans_port, nSim))
         {
             OSI_LOGI(0, "Open Channel ERROR: apn error!");
@@ -2604,8 +2714,28 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                     CFW_SatResponse(SIM_SAT_OPEN_CHANNEL_COM, 0x30, 0, 0, 0, uti, nSim);
                     return;
                 }
-                bip_apn.length = apn_length;
-                memcpy(bip_apn.apn, apn, apn_length);
+                //===========================================================
+                uint8_t i = 0;
+                uint8_t length = apn_length;
+                uint8_t *p = bip_apn.apn;
+                if (length < '0')
+                {
+                    if (apn[i] < length)
+                    {
+                        memcpy(p, apn + 1, length - 1);
+                        i = apn[i];
+                        for (; i < length - 1; i += apn[i + 1] + 1)
+                            if (p[i] < length - i)
+                                p[i] = '.';
+                        bip_apn.length = length - 1;
+                    }
+                }
+                if (i == 0)
+                {
+                    memcpy(bip_apn.apn, apn, length);
+                    bip_apn.length = length;
+                }
+                //===========================================================
                 OSI_LOGI(0, "bip_apn.length = %d!", bip_apn.length);
                 OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", bip_apn.length, bip_apn.apn);
             }
@@ -2740,49 +2870,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
     }
     case SIM_SAT_CLOSE_CHANNEL_COM:
     {
-        if (bip_socket != 0)
-        {
-            CFW_TcpipSocketClose(bip_socket);
-        }
-
-        if (bip_apn.apn != 0)
-        {
-            free(bip_apn.apn);
-            bip_apn.apn = 0;
-            bip_apn.length = 0;
-        }
-        if (bip_user.user != 0)
-        {
-            free(bip_user.user);
-            bip_user.user = 0;
-            bip_user.length = 0;
-        }
-        if (bip_passwd.passwd != 0)
-        {
-            free(bip_passwd.passwd);
-            bip_passwd.passwd = 0;
-            bip_passwd.length = 0;
-        }
-        if (bip_sdata.pData != NULL)
-        {
-            free(bip_sdata.pData);
-            bip_sdata.pData = 0;
-            bip_sdata.nLength = 0;
-        }
-
-        bip_bearer_type = 0;
-        bip_buffer_size = 0;
-        bip_channel_staus[0] = 0;
-        bip_channel_staus[1] = 0;
-
-        bip_addrtype = 0;
-        bip_qualifier = 0;
-        memset(&bip_addr.addr6, 0, sizeof(CFW_TCPIP_SOCKET_ADDR6));
-
-        OSI_LOGI(0, "Response to CLOSE CHANNEL!");
-        CFW_SatResponse(SIM_SAT_CLOSE_CHANNEL_COM, 0, 0, 0, 0, uti, nSim);
-        bip_command = 0;
-        break;
+        at_bip_reset();
     }
     case SIM_SAT_SEND_DATA_COM:
     {
@@ -2839,6 +2927,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                     retval = CFW_TcpipSocketSendto(bip_socket, bip_sdata.pData, bip_sdata.nLength, 0, (CFW_TCPIP_SOCKET_ADDR *)&bip_addr.addr4, sizeof(bip_addr.addr4));
                 else
                     retval = CFW_TcpipSocketSendto(bip_socket, bip_sdata.pData, bip_sdata.nLength, 0, (CFW_TCPIP_SOCKET_ADDR *)&bip_addr.addr6, sizeof(bip_addr.addr6));
+                at_bip_response(0, nSim);
             }
             OSI_LOGI(0, "retval = %d, bip_socket = %d, bip_addrtype = %X", retval, bip_socket, bip_addrtype);
             if (retval == SOCKET_ERROR)
@@ -2853,69 +2942,90 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
     break;
     case SIM_SAT_RECEIVE_DATA_COM:
     {
+        OSI_LOGI(0, "------------ BIP receive data ------------");
+        OSI_LOGI(0, "bip_rdata.first = %X", bip_rdata.first);
+        OSI_LOGI(0, "bip_rdata.total_len = %d", bip_rdata.total_len);
+        if (bip_rdata.first != NULL)
+        {
+            OSI_LOGI(0, "first node size = %d", bip_rdata.first->size);
+            OSI_LOGI(0, "first node offset = %d", bip_rdata.first->offset);
+        }
         bip_command = SIM_SAT_RECEIVE_DATA_COM;
-        OSI_LOGI(0, "Get RECEIVE DATA!, bip_command = %d, bip_rdata.total_len = %d", bip_command, bip_rdata.total_len);
         uint8_t data_length = 0;
         if (false == CFW_SatGetReceiveData(&data_length, nSim))
         {
             CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0x20, 0, 0, 0, uti, nSim);
             return;
         }
+        OSI_LOGI(0, "Get RECEIVE DATA!, data_length = %d, bip_rdata.total_len = %d", data_length, bip_rdata.total_len);
+
         if ((bip_rdata.total_len == 0) || (bip_rdata.total_len < data_length))
         {
             OSI_LOGI(0, "There is no enough data!");
             OSI_LOGI(0, "bip_rdata.total_len = %d, pReceiveData->ChannelDataLength = %d", bip_rdata.total_len, data_length);
-            CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0, 0, 0, 0, uti, nSim);
+            bip_rdata.buffer[0] = 0xFF;
+            CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0, 0, bip_rdata.buffer, 1, uti, nSim);
             return;
         }
         if ((bip_socket == 0) || (bip_cid == 0))
         {
             CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0x3A, 0, 0, 0, uti, nSim);
             bip_rdata.total_len = 0;
-            bip_rdata.offset = 0;
-            bip_rdata.room = 0;
             return;
         }
-
-        bip_rdata.room = data_length;
-        bip_rdata.offset = 0;
-
-        OSI_LOGI(0, "bip_rdata.room = %d, offset = %d, buffer len = %d", bip_rdata.room, bip_rdata.offset, bip_rdata.total_len);
-        do
+        if (bip_rdata.total_len == 0)
         {
-            retval = CFW_TcpipSocketRecv(bip_socket, bip_rdata.buffer + 1 + bip_rdata.offset, bip_rdata.room, 0);
-            if (SOCKET_ERROR == retval)
-            {
-                OSI_LOGI(0, "EV_CFW_TCPIP_REV_DATA_IND, CFW_TcpipSocketRecv error");
-                if (bip_rdata.offset != 0)
-                    break;
-                CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0x3A, 0, 0, 0, uti, nSim);
-                return;
-            }
-            else if (0 == retval)
-                break;
-
-            OSI_LOGI(0, "retval = %d, offset = %d, total len = %d", retval, bip_rdata.offset, bip_rdata.total_len);
-            OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", retval, bip_rdata.buffer + bip_rdata.offset + 1);
-
-            bip_rdata.offset += retval;
-            bip_rdata.room -= retval;
-        } while (bip_rdata.room > 0);
-        if (bip_rdata.offset == 0)
-        {
-            CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0x3A, 0, 0, 0, uti, nSim);
+            OSI_LOGI(0, "There is no enough data!");
+            OSI_LOGI(0, "bip_rdata.total_len = %d, pReceiveData->ChannelDataLength = %d", bip_rdata.total_len, data_length);
+            bip_rdata.buffer[0] = 0;
+            CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0, 0, bip_rdata.buffer, 1, uti, nSim);
             return;
         }
-        bip_rdata.total_len -= bip_rdata.offset;
+        struct receive_buffer **p = &bip_rdata.first;
+        if ((*p) == NULL)
+        {
+            bip_rdata.buffer[0] = 0;
+            CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0x02, 0, bip_rdata.buffer, 1, uti, nSim);
+            return;
+        }
+        OSI_LOGI(0, "bip_rdata.first = 0x%X", bip_rdata.first);
+        while ((*p)->next != NULL)
+        {
+            p = &(*p)->next;
+            OSI_LOGI(0, "*p = 0x%X", *p);
+        }
+
+        uint16_t length = (*p)->size - (*p)->offset;
+        OSI_LOGI(0, "length = %d, (*p)->size = %d, (*p)->offset = %d", length, (*p)->size, (*p)->offset);
+        if (length > data_length)
+            length = data_length;
+        if (length > 237)
+            length = 237;
+        OSI_LOGI(0, "length = %d", length);
+
+        memcpy(bip_rdata.buffer + 1, (*p)->buffer + (*p)->offset, length);
+        bip_rdata.total_len -= length;
         bip_rdata.buffer[0] = bip_rdata.total_len > 0xFF ? 0xFF : bip_rdata.total_len;
-        OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", bip_rdata.offset + 1, bip_rdata.buffer);
-        CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0, 0, bip_rdata.buffer, bip_rdata.offset + 1, uti, nSim);
+        //CSW_TC_MEMBLOCK(10, bip_rdata.buffer, length + 1, 16);
 
-        OSI_LOGI(0, "============ BIP recieve data ============");
-        OSI_LOGI(0, "bip_rdata.buffer[bip_rdata.offset]=%d", bip_rdata.buffer[bip_rdata.offset]);
+        CFW_SatResponse(SIM_SAT_RECEIVE_DATA_COM, 0, 0, bip_rdata.buffer, length + 1, uti, nSim);
+        if ((*p)->size - (*p)->offset == length)
+        {
+            OSI_LOGI(0, "Free node: 0x%X", *p);
+            free(*p);
+            (*p) = NULL;
+        }
+        else
+            (*p)->offset += length;
+
+        OSI_LOGI(0, "============ BIP receive data ============");
+        OSI_LOGI(0, "bip_rdata.first = %X", bip_rdata.first);
         OSI_LOGI(0, "bip_rdata.total_len = %d", bip_rdata.total_len);
-        OSI_LOGI(0, "bip_rdata.offset = %d", bip_rdata.offset);
-        OSI_LOGI(0, "bip_rdata.room = %d", bip_rdata.room);
+        if (bip_rdata.first != NULL)
+        {
+            OSI_LOGI(0, "first node size = %d", bip_rdata.first->size);
+            OSI_LOGI(0, "first node offset = %d", bip_rdata.first->offset);
+        }
     }
     break;
     case SIM_SAT_GET_CHANNEL_STATUS_COM:
@@ -3343,7 +3453,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
         if (CFW_SatGetSendSmsSCInfo(address, &addr_len, &type, nSim) == false)
             goto SMS_ERROR;
 
-        OSI_LOGI(0x10004f55, "data_len = %u, addr_len = %u", data_len, addr_len);
+        OSI_LOGI(0, "data_len = %u, addr_len = %u", data_len, addr_len);
         if (0 == addr_len)
             pPDUPacket = (uint8_t *)malloc(12 + data_len);
         else
@@ -3379,7 +3489,8 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
 
         CFW_CfgGetSmsFormat(&nFormat, nSim);
         CFW_CfgSetSmsFormat(0, nSim);
-        uint32_t ret = CFW_SmsSendMessage_V2(NULL, pPDUPacket, nLengthPDU, uti, nSim);
+        CFW_DIALNUMBER_V2 dummy;
+        uint32_t ret = CFW_SmsSendMessage_V2(&dummy, pPDUPacket, nLengthPDU, uti, nSim);
         CFW_CfgSetSmsFormat(nFormat, nSim);
         if (ret == ERR_SUCCESS)
         {
@@ -3699,6 +3810,7 @@ void atCmdHandleSTR(atCommand_t *cmd)
         uint16_t length = 0;
         if (data != 0)
             length = strlen((const char *)data);
+        OSI_LOGI(0, "length = %d", length);
 
         int scheme;
         if (cmd->param_count > 4)
@@ -3709,29 +3821,44 @@ void atCmdHandleSTR(atCommand_t *cmd)
         }
         else
             scheme = 0x04;
-        scheme = scheme;
-        OSI_LOGI(0, "length = %d", length);
+        OSI_LOGI(0, "scheme = %d", scheme);
+
+        uint8_t stk_cmd = 0;
+        uint8_t qualifier = 0;
+        if (CFW_SatGetCurrentCmd(&stk_cmd, &qualifier, nSim) == false)
+        {
+            OSI_LOGI(0, "AT call CFW_SatGetCurrentCmd failed");
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
+        if (stk_cmd != cmd_type)
+        {
+            OSI_LOGI(0, "User input command is %d, wait response command is %d", cmd_type, stk_cmd);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+        }
 
         uint8_t *cmd_data = NULL;
-        //TODO...
-        //if (CFW_SatGetInformation(cmd_type, (void **)&cmd_data, nSim) != ERR_SUCCESS)
-        //{
-        //    OSI_LOGI(0x100045e0, "CMD STR:ERROR!SatGetInformation is fail");
-        //    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-        //}
+        uint32_t retval = 0;
         cmd->uti = cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
-        if (cmd_type == SIM_SAT_SETUP_EVENT_LIST_COM)
+        if (cmd_type == SIM_SAT_SELECT_ITEM_COM)
         {
-            uint32_t retval = CFW_SatResponse(cmd_type, status, item, (void *)data, length, cmd->uti, nSim);
-            OSI_LOGI(0, "CFW_SatResponse: retval = %d", retval);
-            if (retval == ERR_SUCCESS)
-                RETURN_FOR_ASYNC();
-            else
+            retval = CFW_SatResponse(cmd_type, status, item, 0, 0, cmd->uti, nSim);
+            OSI_LOGI(0, "AT response SIM_SAT_SELECT_ITEM_COM");
+        }
+        else if (cmd_type == SIM_SAT_GET_INKEY_COM)
+        {
+            //          if(qualifier & 0x01) == 0)
+            uint8_t *inkey = malloc(length + 1);
+            if (inkey == NULL)
             {
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
             }
+            inkey[0] = scheme;
+            memcpy(inkey + 1, data, length);
+            length++;
+            retval = CFW_SatResponse(cmd_type, status, item, (void *)data, length, cmd->uti, nSim);
+            OSI_LOGI(0, "AT response SIM_SAT_GET_INKEY_COM");
         }
-        if (cmd_type == SIM_SAT_GET_INPUT_COM)
+        else if (cmd_type == SIM_SAT_GET_INPUT_COM)
         {
             uint8_t nMin, nMax;
             CFW_SAT_INPUT_RSP *pGetInput = (CFW_SAT_INPUT_RSP *)cmd_data;
@@ -3741,20 +3868,24 @@ void atCmdHandleSTR(atCommand_t *cmd)
             OSI_LOGI(0x100045e1, "max = %u,min=%u,Len=%u", nMax, nMin, length);
             if ((length > nMax) || (length < nMin))
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-            length++; //Plus one byte of sch
-        }
-        else if (cmd_type == SIM_SAT_PROVIDE_LOCAL_INFO_COM) //In this case, needn't provide sch, length = strlen(InString+1)
-        {
-            data++;
 
-            OSI_LOGI(0, "cmd_type = %d, status = %d, item = %d, length = %d", cmd_type, status, item, length);
-
-            cmd->uti = cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
-            uint32_t retval = CFW_SatResponse(cmd_type, status, item, (void *)data, length, cmd->uti, nSim);
-            if (retval != ERR_SUCCESS)
-                RETURN_FOR_ASYNC();
-            else
+            uint8_t *input = malloc(length + 1);
+            if (input == NULL)
+            {
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+            }
+            input[0] = scheme;
+            memcpy(input + 1, data, length);
+            length++; //Plus one byte of sch
+            retval = CFW_SatResponse(cmd_type, status, item, (void *)data, length, cmd->uti, nSim);
+            OSI_LOGI(0, "AT response SIM_SAT_GET_INKEY_COM");
+        }
+        OSI_LOGI(0, "CFW_SatResponse: retval = %d", retval);
+        if (retval == ERR_SUCCESS)
+            RETURN_FOR_ASYNC();
+        else
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
         }
     }
     case AT_CMD_TEST:

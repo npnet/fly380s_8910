@@ -25,6 +25,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef CONFIG_DIAG_BT_AUTOTEST_SUPPORT
+#include "bt_abs.h"
+#endif
+
 #define DIAG_CMD_PARAM(cmd, type) const type *param = (const type *)diagCmdData(cmd)
 
 #define NVITEM_MIN_ID 0
@@ -286,6 +290,12 @@ static uint16_t _diagNvDirectRead(const diagMsgHead_t *cmd, void *buffer, uint16
                 {
                     nvmReadItem(NVID_IMEI2, nvInfo->imei2, imei_len);
                 }
+#ifdef CONFIG_DIAG_BT_AUTOTEST_SUPPORT
+                else if (i == RM_CALI_NV_BT)
+                {
+                    BT_GetBdAddr((BT_ADDRESS *)(&(nvInfo->bt_add)));
+                }
+#endif
                 // TODO else
             }
         }
@@ -331,23 +341,32 @@ static bool _diagNvDirectWrite(const diagMsgHead_t *cmd)
             {
                 if (i == RM_CALI_NV_IMEI1)
                 {
-                    if (nvmWriteItem(NVID_IMEI1, nv_info->imei1, imei_len) > 0)
-                        return true;
+                    if (nvmWriteItem(NVID_IMEI1, nv_info->imei1, imei_len) < 0)
+                        return false;
                 }
                 else if (i == RM_CALI_NV_IMEI2)
                 {
-                    if (nvmWriteItem(NVID_IMEI2, nv_info->imei2, imei_len) > 0)
-                        return true;
+                    if (nvmWriteItem(NVID_IMEI2, nv_info->imei2, imei_len) < 0)
+                        return false;
                 }
+#ifdef CONFIG_DIAG_BT_AUTOTEST_SUPPORT
+                else if (i == RM_CALI_NV_BT)
+                {
+                    if (BT_SetBdAddr((BT_ADDRESS *)(&(nv_info->bt_add))) == BT_ERROR)
+                        return false;
+                }
+#endif
                 // TODO else
             }
         }
+        break;
 
     case DIAG_DIRECT_PHSCHK:
         if (datalen != sizeof(phaseCheckHead_t))
             return false;
-        if (!nvmWritePhaseCheck((const phaseCheckHead_t *)diagCmdData(cmd)))
-            return true;
+        if (nvmWritePhaseCheck((const phaseCheckHead_t *)diagCmdData(cmd)))
+            return false;
+        break;
 
     case DIAG_DIRECT_IMEINUM:
     case DIAG_DIRECT_RDVER:
@@ -355,7 +374,7 @@ static bool _diagNvDirectWrite(const diagMsgHead_t *cmd)
         break;
     }
 
-    return false;
+    return true;
 }
 
 static bool _diagNvDirectProcess(const diagMsgHead_t *cmd, void *ctx)

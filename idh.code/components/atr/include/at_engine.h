@@ -136,8 +136,10 @@ struct atDevice
     int (*read_avail)(atDevice_t *th);
     /** get write available space function */
     int (*write_avail)(atDevice_t *th);
+    /** set baudrate function */
+    void (*set_baud)(atDevice_t *th, size_t baud);
     /** set format function */
-    void (*set_format)(atDevice_t *th, size_t baud, atDeviceFormat_t format, atDeviceParity_t parity);
+    void (*set_format)(atDevice_t *th, atDeviceFormat_t format, atDeviceParity_t parity);
     /** set flow control */
     bool (*set_flow_ctrl)(atDevice_t *th, atDeviceRXFC_t rxfc, atDeviceTXFC_t txfc);
     /** set auto sleep timeout */
@@ -380,14 +382,21 @@ int atDeviceReadAvail(atDevice_t *th);
 int atDeviceWriteAvail(atDevice_t *th);
 
 /**
- * @brief set AT device charactor format
+ * @brief set AT device baudrate
  *
  * @param th        AT device, must be valid
  * @param baud      baud rate
+ */
+void atDeviceSetBaudrate(atDevice_t *th, size_t baud);
+
+/**
+ * @brief set AT device charactor format
+ *
+ * @param th        AT device, must be valid
  * @param format    refer to \p atDeviceFormat_t
  * @param parity    refer to \p atDeviceParity_t
  */
-void atDeviceSetFormat(atDevice_t *th, size_t baud, atDeviceFormat_t format, atDeviceParity_t parity);
+void atDeviceSetFormat(atDevice_t *th, atDeviceFormat_t format, atDeviceParity_t parity);
 
 /**
  * @brief set AT device flow control
@@ -763,6 +772,15 @@ bool atCmdSetPromptMode(atCmdEngine_t *th, atCmdPromptCB_t cb, void *cb_ctx, voi
  *      - false on invalid parameter
  */
 bool atCmdSetBypassMode(atCmdEngine_t *th, atCmdBypassCB_t cb, void *cb_ctx);
+
+/**
+ * @brief notify AT device baudrate is changed by AT command
+ *
+ * AT device flow control change commands: +IPR
+ *
+ * @param th        command mode engine, must be valid
+ */
+void atCmdDeviceSetBaudNeeded(atCmdEngine_t *th);
 
 /**
  * @brief notify AT device format is changed by AT command

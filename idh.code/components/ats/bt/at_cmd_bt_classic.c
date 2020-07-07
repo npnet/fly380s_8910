@@ -950,7 +950,11 @@ void AT_BTApp_CmdFunc_ONOFF(atCommand_t *cmd)
         {
             if (!BT_GetState())
             {
-                AppRegisterBtMsgCB(APP_BT_MSG, _AppBtMsgHandler);
+                if (!AppRegisterBtMsgCB(APP_BT_MSG, _AppBtMsgHandler))
+                {
+                    OSI_LOGI(0, "BT#ONOFF: register msg callback failed");
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                }
 
                 ret_val = BT_Start();
                 if (BT_PENDING == ret_val)

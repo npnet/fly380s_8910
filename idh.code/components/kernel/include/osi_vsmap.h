@@ -46,7 +46,7 @@ typedef struct
 } osiValueStrMap_t;
 
 /**
- * @brief function for comparison
+ * @brief function for uint32_t comparison
  *
  * In bsearch(3) and qsort(3), a comparison function is needed.
  * When the key for comparing struct is \p uint32_t and it is the
@@ -67,6 +67,33 @@ typedef struct
  *      - 1 if key > value, though positive can conform
  */
 int osiUintIdCompare(const void *key, const void *p);
+
+/**
+ * @brief function for uint16_t comparison
+ *
+ * @param key       key to be compared
+ * @param p         value to be compared
+ * @return
+ *      - -1 if key < value, though negative can conform
+ *      - 0 if key == value
+ *      - 1 if key > value, though positive can conform
+ */
+int osiUint16IdCompare(const void *key, const void *p);
+
+/**
+ * @brief check whether array is sorted
+ *
+ * The parameters follow \p bsearch.
+ *
+ * @param base      array base address
+ * @param nmemb     element count
+ * @param size      element size
+ * @return
+ *      - true if the array is sorted
+ *      - false if not sorted, or invalid parameters
+ */
+bool osiArrayIsSorted(const void *base, size_t nmemb, size_t size,
+                      int (*compar)(const void *, const void *));
 
 /**
  * @brief bsearch in value-string map

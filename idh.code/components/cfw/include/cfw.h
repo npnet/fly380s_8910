@@ -2176,6 +2176,14 @@ typedef struct _CFW_NW_NETWORK_INFO
     uint8_t nNwkNames[247];
 } CFW_NW_NETWORK_INFO;
 
+typedef struct _CFW_NW_MBS_CELL_INFO
+{
+    uint16_t nArfcn; // Abs Freq Number
+    uint8_t nBsic;   // Base Station Code
+    uint8_t nCellId[2];
+    uint8_t nLai[5];
+} CFW_NW_MBS_CELL_INFO;
+
 typedef struct _CFW_NW_JAMMING_DETECT_GET_IND
 {
     uint8_t nMode;    /*1: Jamming Detect Enabled; 0: Jamming Detect Disabled*/
@@ -4258,10 +4266,10 @@ typedef struct _CFW_SAT_RESPONSE
     uint8_t nSAT_Status; ///< command status
     uint8_t nSAT_ItemID;
     uint8_t nSAT_InnerProcess;
-    uint8_t nSAT_InputSch; ///< text code scheme.
-    uint8_t nSAT_InputLen; ///< text length
-    uint8_t padding;       ///< DON'T remove this byte, because the next member nSAT_InputStr should be aligned 4 bytes, it'll convert to a pointer.
-    uint8_t nSAT_InputStr[1];
+    uint8_t nSAT_InputSch;  ///< text code scheme.
+    uint16_t nSAT_InputLen; ///< text length
+    uint32_t padding;       ///< DON'T remove this byte, because the next member nSAT_InputStr should be aligned 4 bytes, it'll convert to a pointer.
+    uint8_t nSAT_InputStr[0];
 } CFW_SAT_RESPONSE;
 
 typedef struct _CFW_SAT_TERMINAL_ENVELOPE_CNF
@@ -4641,7 +4649,6 @@ typedef struct _CFW_SAT_POLL_INTERVAL_RSP ///< for proactive command 0x21
     uint8_t nComQualifier;
     uint8_t nTimeUnit;
     uint8_t nTimeInterval;
-    uint8_t nPending[2];
 } CFW_SAT_POLL_INTERVAL_RSP;
 
 typedef struct _CFW_SAT_INPUT_RSP ///< for proactive command 0x23
@@ -5968,7 +5975,7 @@ uint32_t CFW_SatResponse(
     uint8_t nStatus,
     uint8_t nItemId,
     void *pInputString,
-    uint8_t InputStrLen,
+    uint16_t InputStrLen,
     uint16_t nUTI,
     CFW_SIM_ID nSimID);
 
@@ -9023,8 +9030,14 @@ uint8_t CFW_SmsGetSmsType(CFW_SIM_ID nSimID);
 uint32_t CFW_SwitchPort(uint8_t nFlag);
 
 uint32_t CFW_GetRFTemperature(uint32_t *temp);
+
 uint32_t CFW_SetLTEFreqPwrRange(uint16_t freqlow, uint16_t freqhigh, uint16_t power);
 uint32_t CFW_SetRFFreqPwrRange(uint16_t mode, uint16_t band, uint16_t powerlow, uint16_t powerhigh);
+
+uint32_t CFW_SetVideoSurveillance(uint8_t iEnable, CFW_SIM_ID nSimID);
+
+uint32_t CFW_GetVideoSurveillance(uint8_t *iEnable, CFW_SIM_ID nSimID);
+
 typedef struct _CFW_APNS_UNAME_UPWD
 {
     char apn[50];
@@ -9090,7 +9103,10 @@ bool CFW_SatGetSendData(uint8_t *pData, uint8_t *pDataLength, CFW_SIM_ID nSimID)
 bool CFW_SatGetOpenChannelUserInfo(uint8_t *pUser, uint8_t *pUserLen, uint8_t *pPasswd, uint8_t *pPasswdLen, CFW_SIM_ID nSimID);
 bool CFW_SatGetOpenChannelAPN(uint8_t *pAPN, uint8_t *pApnLen, CFW_SIM_ID nSimID);
 bool CFW_SatGetOpenChannelDestAddress(uint8_t *pAddress, uint8_t *pAddressLen, uint8_t *pAddressType, CFW_SIM_ID nSimID);
-bool CFW_SatGetOpenChannelNetInfo(uint8_t *pBuffer, uint8_t *pBearerType, uint8_t *pTranType, uint8_t *pTranPort, CFW_SIM_ID nSimID);
+bool CFW_SatGetOpenChannelNetInfo(uint8_t *pBuffer, uint8_t *pBearerType, uint8_t *pTranType, uint16_t *pTranPort, CFW_SIM_ID nSimID);
+
+uint32_t CFW_SimGetEID(uint16_t nUTI, CFW_SIM_ID nSimID);
+uint32_t CFW_GprsHostAddress(uint8_t *pIPAddress, uint8_t *nLength, uint8_t *nIPType, uint8_t nCid, CFW_SIM_ID nSimID);
 
 uint32_t CFW_SendMtSmsAckPPError(uint8_t nCause, CFW_SIM_ID nSimID);
 
@@ -9131,5 +9147,6 @@ uint32_t CFW_SetPdnDeactTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO pdnTimerAnd
 uint32_t CFW_GetPdnDeactTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO *pdnTimerAndMaxCount, uint8_t nRat, CFW_SIM_ID nSimID);
 
 extern uint32_t CSW_SetAndGetMicGain(uint8_t *resultcode, uint8_t *hasMsg, uint8_t *resultMsg, uint8_t mode, uint8_t nPath, uint8_t nCtrl, uint8_t *nParam, uint16_t nParamLength);
+uint32_t SimSendStatusReq(uint8_t nMode, CFW_SIM_ID nSimID);
 
 #endif

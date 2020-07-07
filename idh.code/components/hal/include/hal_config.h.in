@@ -846,4 +846,20 @@
  */
 #cmakedefine CONFIG_FS_EXT_ENABLED
 
+/**
+ * whether support ims delta nv
+ */
+#cmakedefine CONFIG_SUPPORT_IMS_DELTA_NV
+
+/**
+ * whether gpio is used for Vbat_RF switch
+ */
+#cmakedefine CONFIG_GPIO_USED_FOR_VBAT_RF_SWITCH
+
+/**
+ * Used gpio x as Vbat_RF swtich
+ *
+ */
+#cmakedefine CONFIG_GPIO_X_USED_FOR_VBAT_RF @CONFIG_GPIO_X_USED_FOR_VBAT_RF@
+
 #endif

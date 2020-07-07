@@ -564,7 +564,7 @@ uint32_t CFW_TcpipSocketGetpeername(SOCKET nSocket, CFW_TCPIP_SOCKET_ADDR *pName
 uint32_t CFW_Gethostbyname(char *hostname, ip_addr_t *addr, uint8_t nCid, CFW_SIM_ID nSimID)
 {
     int ret = netconn_gethostbyname_ext(hostname, addr, nSimID << 8 | nCid, getRequestTaskHandle(), 0, 0);
-    if (ret == ERR_OK)
+    if (ret == ERR_OK || ret == ERR_LOCAL_OK)
         return RESOLV_COMPLETE;
     else if (ret == ERR_INPROGRESS)
         return RESOLV_QUERY_QUEUED;
@@ -581,7 +581,7 @@ uint32_t CFW_GethostbynameEX(char *hostname, ip_addr_t *addr, uint8_t nCid, CFW_
     if (func == NULL)
         taskHandle = 0;
     int ret = netconn_gethostbyname_ext(hostname, addr, nSimID << 8 | nCid, taskHandle, (u32_t)func, (u32_t)param);
-    if (ret == ERR_OK)
+    if (ret == ERR_OK || ret == ERR_LOCAL_OK)
         return RESOLV_COMPLETE;
     else if (ret == ERR_INPROGRESS)
         return RESOLV_QUERY_QUEUED;
@@ -598,7 +598,7 @@ uint32_t CFW_GetallhostbynameEX(char *hostname, ip_addr_t *addr, uint8_t nCid, C
     if (func == NULL)
         taskHandle = 0;
     int ret = netconn_getallhostbyname_ext(hostname, addr, nSimID << 8 | nCid, taskHandle, (u32_t)func, (u32_t)param);
-    if (ret == ERR_OK)
+    if (ret == ERR_OK || ret == ERR_LOCAL_OK)
         return RESOLV_COMPLETE;
     else if (ret == ERR_INPROGRESS)
         return RESOLV_QUERY_QUEUED;

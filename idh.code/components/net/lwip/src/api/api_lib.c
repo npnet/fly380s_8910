@@ -1183,7 +1183,7 @@ netconn_gethostbyname_ext(const char *name, ip_addr_t *addr, u16_t simcid, u32_t
   *addr = msg->addr[0];
   err = msg->err;
 #endif /* LWIP_MPU_COMPATIBLE */
-  if (err != ERR_INPROGRESS)
+  if (err == ERR_ARG || err == ERR_LOCAL_OK)
     API_VAR_FREE(MEMP_DNS_API_MSG, msg);
   return err;
 }
@@ -1263,7 +1263,7 @@ netconn_getallhostbyname_ext(const char *name, ip_addr_t *addr, u16_t simcid, u3
   }
   err = msg->err;
 #endif /* LWIP_MPU_COMPATIBLE */
-  if (err != ERR_INPROGRESS)
+  if (err == ERR_ARG || err == ERR_LOCAL_OK)
     API_VAR_FREE(MEMP_DNS_API_MSG, msg);
   return err;
 }

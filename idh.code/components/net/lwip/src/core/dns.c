@@ -1635,7 +1635,8 @@ dns_gethostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_call
 #if LWIP_HAVE_LOOPIF
   if (strcmp(hostname, "localhost") == 0) {
     ip_addr_set_loopback(LWIP_DNS_ADDRTYPE_IS_IPV6(dns_addrtype), addr);
-    return ERR_OK;
+    LWIP_DEBUGF(DNS_DEBUG, (0,"hostname=localhost"));
+    return ERR_LOCAL_OK;
   }
 #endif /* LWIP_HAVE_LOOPIF */
 
@@ -1646,12 +1647,14 @@ dns_gethostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_call
         (IP_IS_V4(addr) && (dns_addrtype != LWIP_DNS_ADDRTYPE_IPV6)))
 #endif /* LWIP_IPV4 && LWIP_IPV6 */
     {
-      return ERR_OK;
+       LWIP_DEBUGF(DNS_DEBUG,(0,"hostname is octet notation"));
+      return ERR_LOCAL_OK;
     }
   }
   /* already have this address cached? */
   if (dns_lookup(hostname, addr LWIP_DNS_ADDRTYPE_ARG(dns_addrtype)) == ERR_OK) {
-    return ERR_OK;
+    LWIP_DEBUGF(DNS_DEBUG, (0,"hostname has cached"));
+    return ERR_LOCAL_OK;
   }
 #if LWIP_IPV4 && LWIP_IPV6
   if ((dns_addrtype == LWIP_DNS_ADDRTYPE_IPV4_IPV6) || (dns_addrtype == LWIP_DNS_ADDRTYPE_IPV6_IPV4)) {
@@ -1663,7 +1666,8 @@ dns_gethostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_call
       fallback = LWIP_DNS_ADDRTYPE_IPV4;
     }
     if (dns_lookup(hostname, addr LWIP_DNS_ADDRTYPE_ARG(fallback)) == ERR_OK) {
-      return ERR_OK;
+      LWIP_DEBUGF(DNS_DEBUG, (0,"hostname has cached in 2nd"));
+      return ERR_LOCAL_OK;
     }
   }
 #else /* LWIP_IPV4 && LWIP_IPV6 */
@@ -1682,13 +1686,15 @@ dns_gethostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_call
   {
     /* prevent calling found callback if no server is set, return error instead */
     if (ip_addr_isany_val(dns_servers[0])) {
-      return ERR_VAL;
+      LWIP_DEBUGF(DNS_DEBUG,(0,"dns_servers[0] is 0.0.0.0"));
+      return ERR_ARG;
     }
   }
 
   if(netif_default == NULL)
   {
-    return ERR_VAL;
+    LWIP_DEBUGF(DNS_DEBUG, (0,"netif is null"));
+    return ERR_ARG;
   }
 
   /* queue query with specified callback */
@@ -1725,7 +1731,8 @@ dns_getallhostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_c
 #if LWIP_HAVE_LOOPIF
   if (strcmp(hostname, "localhost") == 0) {
     ip_addr_set_loopback(LWIP_DNS_ADDRTYPE_IS_IPV6(dns_addrtype), addr);
-    return ERR_OK;
+    LWIP_DEBUGF(DNS_DEBUG, (0,"hostname=localhost"));
+    return ERR_LOCAL_OK;
   }
 #endif /* LWIP_HAVE_LOOPIF */
 
@@ -1736,12 +1743,14 @@ dns_getallhostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_c
         (IP_IS_V4(addr) && (dns_addrtype != LWIP_DNS_ADDRTYPE_IPV6)))
 #endif /* LWIP_IPV4 && LWIP_IPV6 */
     {
-      return ERR_OK;
+      LWIP_DEBUGF(DNS_DEBUG,(0,"hostname is octet notation"));
+      return ERR_LOCAL_OK;
     }
   }
   /* already have this address cached? */
   if (dns_lookupall(hostname, addr LWIP_DNS_ADDRTYPE_ARG(dns_addrtype)) == ERR_OK) {
-    return ERR_OK;
+    LWIP_DEBUGF(DNS_DEBUG, (0,"hostname has cached"));
+    return ERR_LOCAL_OK;
   }
 #if LWIP_IPV4 && LWIP_IPV6
   if ((dns_addrtype == LWIP_DNS_ADDRTYPE_IPV4_IPV6) || (dns_addrtype == LWIP_DNS_ADDRTYPE_IPV6_IPV4)) {
@@ -1753,7 +1762,8 @@ dns_getallhostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_c
       fallback = LWIP_DNS_ADDRTYPE_IPV4;
     }
     if (dns_lookupall(hostname, addr LWIP_DNS_ADDRTYPE_ARG(fallback)) == ERR_OK) {
-      return ERR_OK;
+      LWIP_DEBUGF(DNS_DEBUG, (0,"hostname has cached in 2nd"));
+      return ERR_LOCAL_OK;
     }
   }
 #else /* LWIP_IPV4 && LWIP_IPV6 */
@@ -1772,7 +1782,8 @@ dns_getallhostbyname_addrtype(const char *hostname, ip_addr_t *addr, dns_found_c
   {
     /* prevent calling found callback if no server is set, return error instead */
     if (ip_addr_isany_val(dns_servers[0])) {
-      return ERR_VAL;
+      LWIP_DEBUGF(DNS_DEBUG,(0,"dns_servers[0] is 0.0.0.0"));
+      return ERR_ARG;
     }
   }
 

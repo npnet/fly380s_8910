@@ -32,10 +32,13 @@ config PARTINFO_JSON_PATH
         There are no default value, each target should specify the
         partition information file.
 
-config PINMUX_CSV_PATH
-    string "pinfunc defination csv file path"
+config PINMUX_JSON_PATH
+    string "pinfunc defination json file path"
     default ""
 
+config SUPPORT_IMS_DELTA_NV
+    bool "ims delta nv enable"
+    default n
 config PWRKEY_POWERUP
     bool "power key power up enable"
     default y
@@ -93,6 +96,19 @@ if SOC_8910
     config CAMA_CLK_FOR_AUDIO
         bool "open camera clock for audio"
         default n
+
+    config GPIO_X_USED_FOR_VBAT_RF
+        int "GPIO x is used for Vbat_RF switch"
+        default 8
+        help
+            Then set gpio used for Vbat_RF switch.
+
+    config GPIO_USED_FOR_VBAT_RF_SWITCH
+        bool "Whether GPIO x is used for Vbat_RF switch"
+        default y
+        help
+            Then set gpio used for Vbat_RF switch.
+
 endif
 
 endmenu

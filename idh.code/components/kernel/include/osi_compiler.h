@@ -217,21 +217,27 @@ typedef struct
 // is busy to react CPU register read, and other operations are affected.
 #define OSI_POLL_WAIT(cond) OSI_DO_WHILE0(while (!(cond)) { OSI_NOP; OSI_NOP; OSI_NOP; OSI_NOP; })
 
-// Wait until condition is true, and return false when cond2 becomes false
-#define OSI_LOOP_WAIT_IF(cond, cond2) \
-    ({                                \
-        bool _waited = false;         \
-        do                            \
-        {                             \
-            if (cond)                 \
-            {                         \
-                _waited = true;       \
-                break;                \
-            }                         \
-        } while (cond2);              \
-        _waited;                      \
+// Loop wait. Return true if cont_true is meet, return false if cond_false is meet.
+#define OSI_LOOP_WAIT_IF(cond_true, cond_false) \
+    ({                                          \
+        bool _waited;                           \
+        for (;;)                                \
+        {                                       \
+            if (cond_true)                      \
+            {                                   \
+                _waited = true;                 \
+                break;                          \
+            }                                   \
+            if (cond_false)                     \
+            {                                   \
+                _waited = false;                \
+                break;                          \
+            }                                   \
+        }                                       \
+        _waited;                                \
     })
 
+// Loop wait with timeout
 #define OSI_LOOP_WAIT_TIMEOUT_US(cond, us)            \
     ({                                                \
         bool _waited = false;                         \
@@ -246,6 +252,30 @@ typedef struct
                 break;                                \
             }                                         \
         } while (osiElapsedTimeUS(&_timeout) <= _us); \
+        _waited;                                      \
+    })
+
+// Loop wait with timeout, also post will be executed for each loop
+#define OSI_LOOP_WAIT_POST_TIMEOUT_US(cond, us, post) \
+    ({                                                \
+        bool _waited = false;                         \
+        unsigned _us = (us);                          \
+        osiElapsedTimer_t _timeout;                   \
+        osiElapsedTimerStart(&_timeout);              \
+        for (;;)                                      \
+        {                                             \
+            if (cond)                                 \
+            {                                         \
+                _waited = true;                       \
+                break;                                \
+            }                                         \
+            if (osiElapsedTimeUS(&_timeout) > _us)    \
+            {                                         \
+                _waited = false;                      \
+                break;                                \
+            }                                         \
+            (void)(post);                             \
+        }                                             \
         _waited;                                      \
     })
 
@@ -293,9 +323,13 @@ typedef struct
 #define OSI_FROM_BE16(v) __builtin_bswap16(v)
 #define OSI_FROM_BE32(v) __builtin_bswap32(v)
 
-// macro for 32bits register read and write
+// macro for 32bits/16bits/8bits register read and write
 #define OSI_REG32_WRITE(address, value) *(volatile uint32_t *)(address) = (value)
 #define OSI_REG32_READ(address) (*(volatile uint32_t *)(address))
+#define OSI_REG16_WRITE(address, value) *(volatile uint16_t *)(address) = (value)
+#define OSI_REG16_READ(address) (*(volatile uint16_t *)(address))
+#define OSI_REG8_WRITE(address, value) *(volatile uint8_t *)(address) = (value)
+#define OSI_REG8_READ(address) (*(volatile uint8_t *)(address))
 
 // macros for easier writing
 #define OSI_KB(n) ((unsigned)(n) * (unsigned)(1024))

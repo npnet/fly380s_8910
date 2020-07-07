@@ -266,14 +266,6 @@ const drvUartCfg_t *drvUartConfig(drvUart_t *uart);
 bool drvUartReconfig(drvUart_t *uart, drvUartCfg_t *cfg);
 
 /**
-* @brief get uart actual baudrate
-*
-* @param uart      the UART driver
-* @return          the actual baudrate
-*/
-uint32_t drvUartActualBaudrate(drvUart_t *uart);
-
-/**
  * @brief wait tx data send finished
  *
  * @param uart      the UART driver

@@ -769,7 +769,7 @@ void BT_SetCmdEventFlag(BT_CMD_EVENT_T event, BOOLEAN flag);
  ******************************************************************************/
 typedef void (*BT_CALLBACK)(const BT_MSG_T *msg);
 typedef void (*BT_CALLBACK_STACK)(unsigned int msg_id, char status, void *data_ptr);
-
+typedef void (*BLE_WRITE_UART_CALLBACK)(short dlen, uint8 *data);
 /******************************************************************************
  * BT Config
  *  slot_number: 0 or 1 or 2
@@ -2507,6 +2507,41 @@ BT_STATUS BT_SetVisibility(BT_SCAN_E visible);
  *      None.
  ******************************************************************************/
 BT_SCAN_E BT_GetVisibility(void);
+/******************************************************************************
+ * FUNCTION:        BT_SetVisibilityUni
+ *
+ * DESCRIPTION:
+ *
+ * PARAMETERS:
+ *      visible -
+ *
+ * RETURNS:
+ *      BT_PENDING - 
+ * 
+ * MESSAGES:
+ *      ID_STATUS_DISCOVER_REQ
+ *          status
+ *
+ *      ID_STATUS_UN_DISCOVER_REQ
+ *          status
+ ******************************************************************************/
+BT_STATUS BT_SetVisibilityUni(BT_SCAN_E visible);
+/******************************************************************************
+ * FUNCTION:        BT_GetVisibilityUni
+ *
+ * DESCRIPTION:
+ *
+ * PARAMETERS:
+ *      None.
+ *
+ * RETURNS:
+ *      TRUE  -
+ *      FALSE -
+ *
+ * MESSAGES:
+ *      None.
+ ******************************************************************************/
+BT_SCAN_E BT_GetVisibilityUni(void);
 
 /******************************************************************************
  * FUNCTION:        BT_SetLocalName
@@ -3054,6 +3089,23 @@ void BT_GetBdAddr(BT_ADDRESS *addr);
  
 ******************************************************************************/
 PUBLIC BOOLEAN BT_SppConnectStatus(void);
+/******************************************************************************
+ *  NAME
+ *     BT_SppConnectStatusUni()
+ *  
+ *  PARAMETERS
+ *     Void
+ *     
+ *  DESCRIPTION:
+ *     Get the status of spp connect. 
+ *       
+ *  RETURNS
+ *     True  : Connected
+ *     False : Disconnected
+ 
+******************************************************************************/
+PUBLIC BOOLEAN BT_SppConnectStatusUni(const BT_ADDRESS *addr);
+
 /*----------------------------------------------------------------------------*
  *  NAME
  *      BT_SppConnect
@@ -4622,6 +4674,8 @@ int GATT_Tester_Connect(bdaddr_t address, UINT8 addr_type);
 int gatt_tester_disconnect(bdaddr_t address);
 void BT_BLE_SetAtCmdState(uint32 at_cmd_state);
 uint32 BT_BLE_GetAtCmdState(void);
+void BLE_RegisterWriteUartCallback(BLE_WRITE_UART_CALLBACK callback);
+uint8 BLE_SendTpData(uint16 datalen, uint8 *data);
 
 /**********************************************************************************************/
 #endif /* BT_ABS_H */

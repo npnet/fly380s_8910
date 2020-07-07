@@ -128,7 +128,7 @@ OSI_UNUSED static int prvUartFifoWrite(HWP_UART_T *hwp, const void *data, unsign
 /**
  * fifo write all by loop
  */
-OSI_UNUSED static void prvUartFifoWriteAll(HWP_UART_T *hwp, const void *data, unsigned size)
+OSI_UNUSED static bool prvUartFifoWriteAll(HWP_UART_T *hwp, const void *data, unsigned size)
 {
     while (size > 0)
     {
@@ -139,5 +139,6 @@ OSI_UNUSED static void prvUartFifoWriteAll(HWP_UART_T *hwp, const void *data, un
             size -= bytes;
         }
     }
+    return true;
 }
 #endif

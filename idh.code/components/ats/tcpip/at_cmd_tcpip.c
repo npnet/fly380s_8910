@@ -2073,7 +2073,7 @@ void AT_TCPIP_CmdFunc_CIPCLOSE(atCommand_t *cmd)
         if (iRetValue == ERR_SUCCESS)
         {
             OSI_LOGI(0x10003f63, "AT+IPCLOSE: close success");
-            if (isQuickClose)
+            if (isQuickClose || tcpipParas->engine != cmd->engine)
             {
                 char uaRspStr[60] = {
                     0,

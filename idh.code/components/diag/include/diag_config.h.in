@@ -55,4 +55,9 @@
  */
 #cmakedefine CONFIG_DIAG_DEBUG_SUPPORT
 
+/**
+  * diag bt autotest support
+  */
+#cmakedefine CONFIG_DIAG_BT_AUTOTEST_SUPPORT
+
 #endif

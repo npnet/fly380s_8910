@@ -51,13 +51,11 @@ void atCmdHandleSWJTAG(atCommand_t *cmd)
         if (strcasecmp(mode, "AP") == 0)
         {
 #if defined(CONFIG_SOC_8910)
-            halIomuxRequestBatch(
-                PINFUNC_AP_JTAG_TCK,
-                PINFUNC_AP_JTAG_TDI,
-                PINFUNC_AP_JTAG_TDO,
-                PINFUNC_AP_JTAG_TMS,
-                PINFUNC_AP_JTAG_TRST,
-                HAL_IOMUX_REQUEST_END);
+            halIomuxSetFunction(HAL_IOMUX_FUN_AP_JTAG_TCK);
+            halIomuxSetFunction(HAL_IOMUX_FUN_AP_JTAG_TDI);
+            halIomuxSetFunction(HAL_IOMUX_FUN_AP_JTAG_TDO);
+            halIomuxSetFunction(HAL_IOMUX_FUN_AP_JTAG_TMS);
+            halIomuxSetFunction(HAL_IOMUX_FUN_AP_JTAG_TRST);
 #endif
         }
         else

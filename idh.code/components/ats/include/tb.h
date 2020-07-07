@@ -168,6 +168,37 @@ typedef enum
     TB_SMS_STORAGE_NS,
 } tb_wms_storage_type;
 
+typedef enum
+{
+    TB_VOICE_REPORT_CALL_INFO = 0,
+    TB_VOICE_REPORT_MSD_TRANSMISSION_STATUS = 1,
+} tb_voice_report_event_e;
+
+typedef enum
+{
+    TB_VOICE_CALL_TYPE_VOICE,
+    TB_VOICE_CALL_TYPE_VIDEO
+} tb_voice_call_type;
+
+typedef enum
+{
+    TB_VOICE_NOTIFY_CALL_START = 0,
+    TB_VOICE_NOTIFY_CALL_INCOMING,
+    TB_VOICE_NOTIFY_CALL_FAILED,
+    TB_VOICE_NOTIFY_CALL_CONNECTING,
+    TB_VOICE_NOTIFY_CALL_CONNECTED,
+    TB_VOICE_NOTIFY_CALL_ENDED,
+    TB_VOICE_NOTIFY_CALL_STATUS_MAX
+} tb_voice_notify_call_status;
+
+typedef enum
+{
+    TB_VOICE_PRESENTATION_NAME_PRESENTATION_ALLOWED = 0x00,
+    TB_VOICE_PRESENTATION_NAME_PRESENTATION_RESTRICTED = 0x01,
+    TB_VOICE_PRESENTATION_NAME_UNAVAILABLE = 0x02,
+    TB_VOICE_PRESENTATION_NAME_NAME_PRESENTATION_RESTRICTED = 0x03,
+} tb_voice_pi_name_type;
+
 //struct
 typedef struct
 {
@@ -267,12 +298,37 @@ typedef struct
     struct tb_sms_message *next;
 } tb_sms_message;
 
+typedef struct
+{
+    tb_voice_pi_name_type name_pi;
+    unsigned char coding_scheme;
+    unsigned int name_len;
+    char name[182];
+} tb_voice_remote_party_name_type;
+
+typedef struct
+{
+    tb_voice_notify_call_status call_state;
+    tb_voice_call_type call_type;
+    int is_call_of_callsession;
+    char number[32];
+    tb_voice_remote_party_name_type remote_party_name;
+    unsigned char remote_party_name_valid;
+    int dial_result;
+    int connect_result;
+    int hungup_result;
+} tb_voice_notify_call_state_number_info;
+
 //type
 typedef void (*tb_wan_network_info_cb)(tb_wan_notify_type_e type, const char *value);
 typedef void (*tb_data_callback_fun)(tb_data_profile_id cid, tb_data_dial_status status);
 typedef void (*tb_sim_callback_fun)(tb_sim_status type);
 typedef void (*tb_sms_callback_fun)(tb_sms_status type, int value);
 typedef void (*tb_sms_received_contents_cb)(tb_sms_message *received_sms_message);
+typedef void (*tb_voice_callback_fun)(tb_voice_report_event_e event, void *voice_report_info);
+
+typedef osiTimer_t *tb_timer_p;
+typedef void (*tb_timer_callbck)(void *ctx);
 
 //api
 //Nw module
@@ -303,6 +359,25 @@ extern int tb_sms_send_sms(tb_sms_msg_type *msg);
 extern int tb_sms_delete_sms(int MessageIndex);
 extern int tb_sms_get_sms_withid(int id);
 
+// Voice module
+extern int tb_voice_reg_callback(tb_voice_callback_fun fun);
+extern int tb_voice_dial_call(char *call_number);
+extern int tb_voice_answer_call();
+extern int tb_voice_hungup_call();
+extern int tb_voice_switch_audio_channel(int audio_channel);
+
+//device info
+extern int tb_device_get_modemserialnumber(char *msn, int size);
+extern int tb_device_get_hwversion(char *hdver, int size);
+extern int tb_device_getversion(char *ver, int size);
+extern int tb_device_get_iccid(char *iccid, int size);
+extern int tb_device_set_rtc_timer(unsigned long seconds, tb_timer_callbck pCallback, tb_timer_p *pTimer);
+extern int tb_device_cancel_timer(tb_timer_p pTimer);
+extern int tb_device_shutdown_system(void);
+extern int tb_device_reboot_system(void);
+extern int tb_device_get_update_result(void);
+extern int tb_device_start_update_firmware(void);
+
 //cfw event handle
 extern int tb_handle_cfw_event(const osiEvent_t *event);
 
@@ -329,6 +404,20 @@ extern void tbtest_sms_get_contents_fun(tb_sms_message *received_message);
 extern void tbtest_send_message();
 extern void tbtest_sms_get_sms_withid();
 extern void tbtest_sms_delete_sms();
+extern void tbtest_voice_callback_fun(tb_voice_report_event_e event, void *voice_report_info);
+extern void tbtest_voice_dial_call();
+extern void tbtest_voice_connect_call();
+extern void tbtest_voice_hungup_call();
+extern void tbtest_voice_switch_audio_channel0();
+extern void tbtest_voice_switch_audio_channel1();
+extern void tbtest_device_get_modemserialnumber();
+extern void tbtest_device_get_hwversion();
+extern void tbtest_device_getversion();
+extern void tbtest_device_get_iccid();
+extern void tbtest_device_set_rtc_timer(void);
+extern void tbtest_device_cancel_timer(void);
+extern void tbtest_device_shutdown_system(void);
+extern void tbtest_device_reboot_system(void);
 
 #ifdef __cplusplus
 }

@@ -15,6 +15,7 @@
 
 #include "srv_sim_detect.h"
 #include "hal_config.h"
+#include "hal_iomux.h"
 #include "drv_gpio.h"
 #include "osi_api.h"
 #include "osi_log.h"
@@ -96,6 +97,11 @@ static bool _simDetectInit(simDetect_t *sd, int gpio_id)
     sd->gpio = drvGpioOpen(gpio_id, &cfg, _simDetectCB, sd);
     if (sd->gpio == NULL)
         goto gpio_open_fail;
+
+    // Force pull none is needed for sim detect. Though it should be
+    // configured by iomux function properties, call it again here.
+    halIomuxSetPadPull(HAL_IOMUX_FUN_GPIO(gpio_id), HAL_IOMUX_FORCE_PULL_NONE);
+
     sd->connected = drvGpioRead(sd->gpio);
     (gSysnvSimHotPlug == true) ? (cfg.intr_enabled = true) : (cfg.intr_enabled = false);
     if (drvGpioReconfig(sd->gpio, &cfg))

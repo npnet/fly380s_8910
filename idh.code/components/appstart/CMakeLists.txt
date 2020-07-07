@@ -15,7 +15,7 @@ add_definitions(-DBUILD_IDENTIFY=\"${BUILD_TARGET}-${BUILD_RELEASE_TYPE}-${BUILD
 set(target appstart)
 
 if(CONFIG_SOC_8910)
-    add_library(${target} STATIC src/app_start.c src/app_keypad.c)
+    add_library(${target} STATIC src/app_start.c)
     target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_APPSTART)
     set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
     target_include_targets(${target} PRIVATE

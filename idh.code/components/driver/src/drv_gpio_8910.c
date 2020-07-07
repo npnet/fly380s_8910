@@ -157,8 +157,7 @@ drvGpio_t *drvGpioOpen(uint32_t id, drvGpioConfig_t *cfg, drvGpioIntrCB_t cb, vo
     drvGpioReconfig(d, cfg);
 
     // GPIO must be contiguous
-    uint32_t pinfunc = PINFUNC_GPIO_0 + id;
-    halIomuxRequest(pinfunc);
+    halIomuxSetFunction(HAL_IOMUX_FUN_GPIO_0 + id);
 
     osiExitCritical(critical);
     return d;

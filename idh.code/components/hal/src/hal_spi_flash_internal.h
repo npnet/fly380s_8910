@@ -35,6 +35,55 @@ enum
 #define EXTCMD_QRX(opcode) (((opcode) << 8) | (1 << 16) | (1 << 17)) // rx quad mode
 #define TX_QUAD_MASK (1 << 8)
 
+/**
+ * \brief flag to indicate tx data will be sent in quad mode
+ */
+#define HAL_SPI_FLASH_TX_QUAD (1 << 0)
+
+/**
+ * \brief flag to indicate using readback for rx
+ */
+#define HAL_SPI_FLASH_RX_READBACK (1 << 1)
+
+/**
+ * \brief flag to indicate 2nd tx data will be sent in quad mode
+ */
+#define HAL_SPI_FLASH_TX_QUAD2 (1 << 2)
+
+/**
+ * \brief generic flash command
+ *
+ * \param hwp flash controller address
+ * \param cmd flash command, see above macros
+ * \param cmd flash command
+ * \param tx_data tx data
+ * \param tx_size tx data size
+ * \param rx_data rx data to be read
+ * \param rx_size rx data size
+ * \param flags TX_QUAD, RX_READBACK
+ */
+void halSpiFlashCmd(uintptr_t hwp, uint32_t cmd, const void *tx_data, unsigned tx_size,
+                    void *rx_data, unsigned rx_size, unsigned flags);
+
+/**
+ * \brief generic flash command, with dual tx memory
+ *
+ * The data to be send are located in two memory pointer, and the property
+ * of quad send can be different.
+ *
+ * \param hwp flash controller address
+ * \param cmd flash command, see above macros
+ * \param cmd flash command
+ * \param tx_data tx data
+ * \param tx_size tx data size
+ * \param rx_data rx data to be read
+ * \param rx_size rx data size
+ * \param flags TX_QUAD, RX_READBACK, TX_QUAD2
+ */
+void halSpiFlashCmdDualTx(uintptr_t hwp, uint32_t cmd, const void *tx_data, unsigned tx_size,
+                          const void *tx_data2, unsigned tx_size2,
+                          void *rx_data, unsigned rx_size, unsigned flags);
+
 static OSI_FORCE_INLINE void prvWaitNotBusy(uintptr_t d)
 {
 #if defined(CONFIG_SOC_8910)
@@ -178,6 +227,12 @@ static OSI_FORCE_INLINE void prvReadFifo8(uintptr_t d, uint8_t *data, unsigned s
 FLASHRAM_CODE OSI_UNUSED static void prvCmdNoRx(uintptr_t hwp, uint32_t cmd, const void *tx_data, unsigned tx_size)
 {
     halSpiFlashCmd(hwp, cmd, tx_data, tx_size, NULL, 0, 0);
+}
+
+// Send command (basic or extended), with additional tx data, without rx data
+FLASHRAM_CODE OSI_UNUSED static void prvCmdNoRxDualTx(uintptr_t hwp, uint32_t cmd, const void *tx_data, unsigned tx_size, const void *tx_data2, unsigned tx_size2)
+{
+    halSpiFlashCmdDualTx(hwp, cmd, tx_data, tx_size, tx_data2, tx_size2, NULL, 0, 0);
 }
 
 // Send command (basic or extended), without additional tx data, without rx data

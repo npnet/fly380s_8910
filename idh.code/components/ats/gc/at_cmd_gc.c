@@ -1,4 +1,4 @@
-ï»¿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -1413,7 +1413,7 @@ void atCmdHandleIPR(atCommand_t *cmd)
             atCfgSave(gAtSetting.profile, chsetting);
         }
 
-        atCmdDeviceSetFormatNeeded(cmd->engine);
+        atCmdDeviceSetBaudNeeded(cmd->engine);
         atCmdRespOK(cmd->engine);
 #else
         bool paramok = true;
@@ -1422,7 +1422,7 @@ void atCmdHandleIPR(atCommand_t *cmd)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
         gAtSetting.ipr = baud;
-        atCmdDeviceSetFormatNeeded(cmd->engine);
+        atCmdDeviceSetBaudNeeded(cmd->engine);
         atCmdRespOK(cmd->engine);
 #endif
     }
@@ -2537,13 +2537,13 @@ void atCmdHandleNCESIM(atCommand_t *cmd)
 #endif
 /*
 ************************************************************************************************
-*  possible input from ATM:      set LTE frequency range max power                                                              *
+*  possible input from ATM:      set LTE frequency range max power                             *
 *  AT+SETRFFRP=?        -->not support                                                         *
 *  AT+SETRFFRP?         -->not support                                                         *
-*  AT+SETRFFRP=<X1>,<X2>,<X3> -->set                                                      *
-    <X1>         freqlow:                                                             *                                                                               *
+*  AT+SETRFFRP=<X1>,<X2>,<X3> -->set                                                           *
+    <X1>         freqlow:                                                                      *
     <X2>         freqhigh:
-*   <X3>         power£º 3~69, step=1dBm; 69 == 23dBm  46==0dBm¡£3 = -43dBm¡£
+*   <X3>         power: 3~69, step=1dBm; 69 == 23dBm  46==0dBm 3 = -43dBm
  ***********************************************************************************************
 */
 void atCmdHandleSETLTEFRP(atCommand_t *cmd)
@@ -2586,13 +2586,13 @@ void atCmdHandleSETLTEFRP(atCommand_t *cmd)
 *  AT+SETRFFRP?         -->not support                                                         *
 *  AT+SETRFFRP=<X1>,<X2>,<X3>,<X4> -->set                                                      *
     <X1>         mode: 0=GSM, 1=LTE                                                            *
-*   mode = GSM£º                                                                               *
-    <X2>         band:0=850M£¬1=900M£¬2=1800M£¬3=1900M
-*   <X3>         powerlow£ºmaxpwr_pcl: max pwr pcl 850/900:5~19;1800/1900:0~15
-*   <X4>         powerhigh£ºminpwr_pcl: min pwr pcl 850/900:5~19;1800/1900:0~15
-*   mode = LTE£º
-*   <X2>         band: LTE BAND£¬
-                 if band == 28A£¬input value == 0x28A;if band == 28B£¬input value == 0x28B
+*   mode = GSM:                                                                                *
+    <X2>         band:0=850M, 1=900M, 2=1800M, 3=1900M
+*   <X3>         powerlow: maxpwr_pcl: max pwr pcl 850/900:5~19;1800/1900:0~15
+*   <X4>         powerhigh: minpwr_pcl: min pwr pcl 850/900:5~19;1800/1900:0~15
+*   mode = LTE:
+*   <X2>         band: LTE BAND,
+                 if band == 28A, input value == 0x28A;if band == 28B, input value == 0x28B
 *   <X3> <X4>    powerlow,powerhigh:0~69, step=1dBm; 69-> 23dBm, 46->0dBm, 3->-43dBm, 0~2->-43dBm.
  ***********************************************************************************************
 */

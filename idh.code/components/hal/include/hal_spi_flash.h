@@ -23,234 +23,138 @@ extern "C" {
 #endif
 
 /**
- * \brief flash properties
+ * \brief flash instance
  *
  * The preperty is derived from manufacture ID. It is found that even
  * for the same manufacture ID, the property may be different, for
  * example, security register block size. In this case, user can
  * override the perperty.
  */
-typedef struct halSpiFlashProp
+typedef struct halSpiFlash
 {
+    /** hardware controller register base */
+    uintptr_t hwp;
     /** manufacture id */
     unsigned mid;
     /** capacity in bytes */
     unsigned capacity;
-    /** internal flash type */
-    uint8_t type;
-    /** unique id length */
-    uint8_t uid_len;
-    /** security register block size */
+    /** security register block size, 0 for not support */
     uint16_t sreg_block_size;
+    /** internal flash type */
+    uint8_t type : 4;
+    /** status register wp type */
+    uint8_t wp_type : 4;
+    /** read uid type */
+    uint8_t uid_type : 4;
+    /** whether cpid is supported */
+    uint8_t cpid_type : 4;
+    /** minimal security register number */
+    uint8_t sreg_min_num : 4;
+    /** maximum security register number */
+    uint8_t sreg_max_num : 4;
     /** whether volatile sr is supported */
     bool volatile_sr_en : 1;
-    /** whether GD compatible BP0/1/2/3/4/CMP supported */
-    bool wp_gd_en : 1;
-    /** whether XMCA compatible SR.2/3/4/5 supported */
-    bool wp_xmca_en : 1;
-    /** whether GD compatible unique id supported */
-    bool uid_gd_en : 1;
-    /** whether GD compatible cpid supported */
-    bool cpid_en : 1;
-    /** whether GD compatible QE bit supported */
-    bool qe_gd_en : 1;
-    /** whether 75H/7AH suspend and resume supported */
+    /** whether suspend resume is supported */
     bool suspend_en : 1;
     /** whether 5AH to read SFDP supported */
     bool sfdp_en : 1;
-    /** 3 security registers (1~3), A15-12, LB1/LB2/LB3 */
-    bool sreg_3_en : 1;
-    /** 1 security registers (0), LB BIT10 */
-    bool sreg_1_en : 1;
-    /** whether 01H can write SR1 and SR2 */
+    /** whether 01H can write both SR1 and SR2 */
     bool write_sr12 : 1;
     /** whether 35H can read SR2 */
     bool has_sr2 : 1;
-    /** whether it is known how to set initial SR */
-    bool init_sr_check : 1;
-} halSpiFlashProp_t;
-
-/**
- * \brief flag to indicate tx data will be sent in quad mode
- */
-#define HAL_SPI_FLASH_TX_QUAD (1 << 0)
-
-/**
- * \brief flag to indicate using readback for rx
- */
-#define HAL_SPI_FLASH_RX_READBACK (1 << 1)
-
-/**
- * \brief flag to indicate 2nd tx data will be sent in quad mode
- */
-#define HAL_SPI_FLASH_TX_QUAD2 (1 << 2)
-
-/**
- * \brief generic flash command
- *
- * \param hwp flash controller address
- * \param cmd flash command, see above macros
- * \param cmd flash command
- * \param tx_data tx data
- * \param tx_size tx data size
- * \param rx_data rx data to be read
- * \param rx_size rx data size
- * \param flags TX_QUAD, RX_READBACK
- */
-void halSpiFlashCmd(uintptr_t hwp, uint32_t cmd, const void *tx_data, unsigned tx_size,
-                    void *rx_data, unsigned rx_size, unsigned flags);
-
-/**
- * \brief generic flash command, with dual tx memory
- *
- * The data to be send are located in two memory pointer, and the property
- * of quad send can be different.
- *
- * \param hwp flash controller address
- * \param cmd flash command, see above macros
- * \param cmd flash command
- * \param tx_data tx data
- * \param tx_size tx data size
- * \param rx_data rx data to be read
- * \param rx_size rx data size
- * \param flags TX_QUAD, RX_READBACK, TX_QUAD2
- */
-void halSpiFlashCmdDualTx(uintptr_t hwp, uint32_t cmd, const void *tx_data, unsigned tx_size,
-                          const void *tx_data2, unsigned tx_size2,
-                          void *rx_data, unsigned rx_size, unsigned flags);
-
-/**
- * \brief read manufacture/device id
- *
- * \param hwp hardware register base
- * \return 3 bytes manufacture id and device id
- */
-uint32_t halSpiFlashReadId(uintptr_t hwp);
+    /** whether has GD_SR_SUS1 */
+    bool has_sus1 : 1;
+    /** whether has GD_SR_SUS2 */
+    bool has_sus2 : 1;
+} halSpiFlash_t;
 
 /**
  * \brief write enable
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashWriteEnable(uintptr_t hwp);
+void halSpiFlashWriteEnable(const halSpiFlash_t *d);
 
 /**
  * \brief write disable
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashWriteDisable(uintptr_t hwp);
+void halSpiFlashWriteDisable(const halSpiFlash_t *d);
 
 /**
  * \brief program suspend
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashProgramSuspend(uintptr_t hwp);
+void halSpiFlashProgramSuspend(const halSpiFlash_t *d);
 
 /**
  * \brief erase suspend
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashEraseSuspend(uintptr_t hwp);
+void halSpiFlashEraseSuspend(const halSpiFlash_t *d);
 
 /**
  * \brief program resume
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashProgramResume(uintptr_t hwp);
+void halSpiFlashProgramResume(const halSpiFlash_t *d);
 
 /**
  * \brief erase resume
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashEraseResume(uintptr_t hwp);
+void halSpiFlashEraseResume(const halSpiFlash_t *d);
 
 /**
  * \brief chip erase
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashChipErase(uintptr_t hwp);
+void halSpiFlashChipErase(const halSpiFlash_t *d);
 
 /**
  * \brief reset enable
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashResetEnable(uintptr_t hwp);
+void halSpiFlashResetEnable(const halSpiFlash_t *d);
 
 /**
  * \brief reset
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashReset(uintptr_t hwp);
+void halSpiFlashReset(const halSpiFlash_t *d);
 
 /**
- * \brief read status register-1
+ * \brief read status register
  *
- * \param hwp hardware register base
- * \return status register-1
- */
-uint8_t halSpiFlashReadSR1(uintptr_t hwp);
-
-/**
- * \brief read status register-2
+ * When only one SR is supported, it will return the SR. When two SR are
+ * supported, it will return 16bits SR, SR-1 at LSB and SR-2 at MSB.
  *
- * \param hwp hardware register base
- * \return status register-2
+ * \param d hal spi flash instance
+ * \return status register
  */
-uint8_t halSpiFlashReadSR2(uintptr_t hwp);
-
-/**
- * \brief read status register-1 and 2
- *
- * \param hwp hardware register base
- * \return status register-1 in LSB and 2
- */
-uint16_t halSpiFlashReadSR12(uintptr_t hwp);
-
-/**
- * \brief write enable for volatile status register
- *
- * \param hwp hardware register base
- */
-void halSpiFlashWriteVolatileSREnable(uintptr_t hwp);
+uint16_t halSpiFlashReadSR(const halSpiFlash_t *d);
 
 /**
  * \brief write status register
  *
- * This will write 2 status register in one command. Not all flash support
- * this command.
+ * The implementation will depend on flash property, one status register,
+ * two status registers with one command, or two status registers with
+ * separated commands.
  *
- * \param hwp hardware register base
- * \param status status register value, register 1 in LSB
+ * Inside, it will send write enable command, and wait write finish.
+ *
+ * \param d hal spi flash instance
+ * \param sr status register value
  */
-void halSpiFlashWriteSR12(uintptr_t hwp, uint16_t status);
-
-/**
- * \brief write status register 1
- *
- * This will write status register 1. Not all flash support this command.
- *
- * \param hwp hardware register base
- * \param status status register 1 value
- */
-void halSpiFlashWriteSR1(uintptr_t hwp, uint8_t status);
-
-/**
- * \brief write status register 2
- *
- * This will write status register 2. Not all flash support this command.
- *
- * \param hwp hardware register base
- * \param status status register 2 value
- */
-void halSpiFlashWriteSR2(uintptr_t hwp, uint8_t status);
+void halSpiFlashWriteSR(const halSpiFlash_t *d, uint16_t sr);
 
 /**
  * \brief page program
@@ -258,211 +162,193 @@ void halSpiFlashWriteSR2(uintptr_t hwp, uint8_t status);
  * \p data shouldn't be allocated in flash. \p size should be less than
  * hardware TX fifo size.
  *
- * \param hwp hardware register base
+ * It will only send program command, write enable and wait finish shall
+ * be considered by caller.
+ *
+ * \param d hal spi flash instance
  * \param offset flash address
  * \param data data to be programmed
  * \param size data size
  */
-void halSpiFlashPageProgram(uintptr_t hwp, uint32_t offset, const void *data, uint32_t size);
-
-/**
- * \brief sector erase
- *
- * \p offset should be 4K aligned.
- *
- * \param hwp hardware register base
- * \param offset flash address
- */
-void halSpiFlashErase4K(uintptr_t hwp, uint32_t offset);
-
-/**
- * \brief 32K block erase
- *
- * \p offset should be 32K aligned.
- *
- * \param hwp hardware register base
- * \param offset flash address
- */
-void halSpiFlashErase32K(uintptr_t hwp, uint32_t offset);
-
-/**
- * \brief 64K block erase
- *
- * \p offset should be 64K aligned.
- *
- * \param hwp hardware register base
- * \param offset flash address
- */
-void halSpiFlashErase64K(uintptr_t hwp, uint32_t offset);
+void halSpiFlashPageProgram(const halSpiFlash_t *d, uint32_t offset, const void *data, uint32_t size);
 
 /**
  * \brief 4K/32K/64K erase
  *
  * \p size can only be 4K, 32K or 64K. \p offset should be \p size aligned.
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  * \param offset flash address
  * \param size erase size
  */
-void halSpiFlashErase(uintptr_t hwp, uint32_t offset, uint32_t size);
+void halSpiFlashErase(const halSpiFlash_t *d, uint32_t offset, uint32_t size);
 
 /**
  * \brief read unique id number
  *
- * The unique id is 8 bytes.
+ * Not all flash supports unique id, and the unique id size is different even
+ * supported. \p uid should be large enough.
  *
- * \param hwp hardware register base
- * \param id unique id
+ * \param d hal spi flash instance
+ * \param uid unique id
+ * \return
+ *      - unique id size
+ *      - 0 if unique id is not supported
  */
-void halSpiFlashReadUniqueId(uintptr_t hwp, uint8_t uid[8]);
+int halSpiFlashReadUniqueId(const halSpiFlash_t *d, uint8_t *uid);
 
 /**
  * \brief read cp id
  *
- * This is only for Giga Device.
+ * Not all flash support cp id.
  *
- * \param hwp hardware register base
- * \return cp id
+ * \param d hal spi flash instance
+ * \return
+ *      - cp id
+ *      - 0 if not supported
  */
-uint16_t halSpiFlashReadCpId(uintptr_t hwp);
+uint16_t halSpiFlashReadCpId(const halSpiFlash_t *d);
 
 /**
  * \brief deep power down
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashDeepPowerDown(uintptr_t hwp);
+void halSpiFlashDeepPowerDown(const halSpiFlash_t *d);
 
 /**
  * \brief release from deep power down
  *
  * There are delay inside, to make sure flash is accessible at return.
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashReleaseDeepPowerDown(uintptr_t hwp);
-
-/**
- * \brief read security register
- *
- * Refer to datasheet about the format of \p address.
- *
- * The maximum \p size is 4. When more bytes are needed, caller should
- * use loop for multiple read.
- *
- * \param hwp hardware register base
- * \param address security register address
- * \param data pointer to output data
- * \param size read size
- */
-void halSpiFlashReadSecurityRegister(uintptr_t hwp, uint32_t address, void *data, uint32_t size);
-
-/**
- * \brief program security register
- *
- * Refer to datasheet about the format of \p address.
- *
- * \p data shouldn't be allocated in flash. \p size should be less than
- * hardware TX fifo size.
- *
- * \param hwp hardware register base
- * \param address security register address
- * \param data data to be programed
- * \param size program size
- */
-void halSpiFlashProgramSecurityRegister(uintptr_t hwp, uint32_t address, const void *data, uint32_t size);
-
-/**
- * \brief erase security register
- *
- * Refer to datasheet about the format of \p address.
- *
- * \param hwp hardware register base
- * \param address security register address
- */
-void halSpiFlashEraseSecurityRegister(uintptr_t hwp, uint32_t address);
+void halSpiFlashReleaseDeepPowerDown(const halSpiFlash_t *d);
 
 /**
  * \brief read SFDP
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  * \param address SFDP address
  * \param data data to be read
  * \param size read size
+ * \return
+ *      - true on success
+ *      - false of the feature is not supported
  */
-void halSpiFlashReadSFDP(uintptr_t hwp, uint32_t address, void *data, uint32_t size);
+bool halSpiFlashReadSFDP(const halSpiFlash_t *d, uint32_t address, void *data, uint32_t size);
 
 /**
  * \brief read status register and check WIP bit
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  * \return
  *      - true if WIP is not set in status register
  *      - false WIP is set in status register
  */
-bool halSpiFlashIsWipFinished(uintptr_t hwp);
+bool halSpiFlashIsWipFinished(const halSpiFlash_t *d);
 
 /**
  * \brief wait WIP bit in status register unset
  *
- * \param hwp hardware register base
+ * \param d hal spi flash instance
  */
-void halSpiFlashWaitWipFinish(uintptr_t hwp);
+void halSpiFlashWaitWipFinish(const halSpiFlash_t *d);
 
 /**
- * \brief status register value to allow range program/erase
+ * \brief read security register
  *
- * For a given range to be program/erasse, this will return status register
- * value allowing range program erase and protect as more as possible.
+ * Not all flash supports security register, and the valid \p num and
+ * \p address is different even supported.
  *
- * Write protection may be different for various flash model. So, \p mid
- * parameter is needed.
+ * The maximum \p size is 4. When more bytes are needed, caller should
+ * use loop for multiple read.
  *
- * \param prop flash properties
- * \param status original status register value
- * \param offset range start to be program/erase
- * \param size range size to be program/erase
- * \return status register value, allow range program/erase, and write protect
- * as more as possible
+ * \param d hal spi flash instance
+ * \param num securerity register number
+ * \param address security register address
+ * \param data pointer to output data
+ * \param size read size
+ * \return
+ *      - true on success
+ *      - false on failed, invalid parameter or not support
  */
-uint16_t halSpiFlashStatusWpRange(const halSpiFlashProp_t *prop, uint16_t status, uint32_t offset, uint32_t size);
+bool halSpiFlashReadSecurityRegister(const halSpiFlash_t *d, uint8_t num, uint16_t address, void *data, uint32_t size);
 
 /**
- * \brief the actual write protected offset
+ * \brief program security register
  *
- * Status register can't set write protection for arbitrary region. This matches
- * the method of \p halSpiFlashStatusWpRange to return the real protected range.
+ * Not all flash supports security register, and the valid \p num and
+ * \p address is different even supported.
  *
- * \param prop flash properties
+ * \p data shouldn't be allocated in flash. \p size should be less than
+ * (can't be equal to) hardware TX fifo size.
+ *
+ * \param d hal spi flash instance
+ * \param num securerity register number
+ * \param address security register address
+ * \param data data to be programed
+ * \param size program size
+ * \return
+ *      - true on success
+ *      - false on failed, invalid parameter or not support
+ */
+bool halSpiFlashProgramSecurityRegister(const halSpiFlash_t *d, uint8_t num, uint16_t address, const void *data, uint32_t size);
+
+/**
+ * \brief erase security register
+ *
+ * Not all flash supports security register, and the valid \p num is
+ * different even supported.
+ *
+ * \param d hal spi flash instance
+ * \param num securerity register number
+ * \return
+ *      - true on success
+ *      - false on failed, invalid parameter or not support
+ */
+bool halSpiFlashEraseSecurityRegister(const halSpiFlash_t *d, uint8_t num);
+
+/**
+ * \brief lock security register
+ *
+ * Not all flash supports security register, and the valid \p num is
+ * different even supported.
+ *
+ * \param d hal spi flash instance
+ * \param num securerity register number
+ * \return
+ *      - true on success
+ *      - false on failed, invalid parameter or not support
+ */
+bool halSpiFlashLockSecurityRegister(const halSpiFlash_t *d, uint8_t num);
+
+/**
+ * \brief whether security register is locked
+ *
+ * Not all flash supports security register, and the valid \p num is
+ * different even supported.
+ *
+ * \param d hal spi flash instance
+ * \param num securerity register number
+ * \return
+ *      - true if \p num is valid and locked
+ *      - false if not locked, or invalid parameter
+ */
+bool halSpiFlashIsSecurityRegisterLocked(const halSpiFlash_t *d, uint8_t num);
+
+/**
+ * \brief the actual write protected region
+ *
+ * Status register can't set write protection for arbitrary region. This returns
+ * the real protected region.
+ *
+ * \param d hal spi flash instance
  * \param offset range start
  * \param size range size
  * \return real protected range
  */
-osiUintRange_t halSpiFlashWpRange(const halSpiFlashProp_t *prop, uint32_t offset, uint32_t size);
-
-/**
- * \brief status register value for protect all
- *
- * Write protection may be different for various flash model. So, \p mid
- * parameter is needed.
- *
- * \param prop flash properties
- * \param status original status register value
- * \return status register value, write protect all
- */
-uint16_t halSpiFlashStatusWpAll(const halSpiFlashProp_t *prop, uint16_t status);
-
-/**
- * \brief status register value for protect none
- *
- * Write protection may be different for various flash model. So, \p mid
- * parameter is needed.
- *
- * \param prop flash properties
- * \param status original status register value
- * \return status register value, write protect none
- */
-uint16_t halSpiFlashStatusWpNone(const halSpiFlashProp_t *prop, uint16_t status);
+osiUintRange_t halSpiFlashWpRange(const halSpiFlash_t *prop, uint32_t offset, uint32_t size);
 
 /**
  * \brief handling before program/erase
@@ -470,15 +356,14 @@ uint16_t halSpiFlashStatusWpNone(const halSpiFlashProp_t *prop, uint16_t status)
  * Check status register to ensure the range is not write protected, and
  * send write enable command.
  *
- * Write protection may be different for various flash model. So, \p mid
- * parameter is needed.
+ * When volatile status register feature is not supported, it won't change
+ * status register.
  *
- * \param hwp hardware register base
- * \param prop flash properties
+ * \param d hal spi flash instance
  * \param offset range start to be program/erase
  * \param size range size to be program/erase
  */
-void halSpiFlashPrepareEraseProgram(uintptr_t hwp, const halSpiFlashProp_t *prop, uint32_t offset, uint32_t size);
+void halSpiFlashPrepareEraseProgram(const halSpiFlash_t *prop, uint32_t offset, uint32_t size);
 
 /**
  * \brief handling after program/erase is completed
@@ -486,54 +371,41 @@ void halSpiFlashPrepareEraseProgram(uintptr_t hwp, const halSpiFlashProp_t *prop
  * After program/erase is completed, status register will be set to
  * protect all.
  *
- * Write protection may be different for various flash model. So, \p mid
- * parameter is needed.
+ * When volatile status register feature is not supported, it won't change
+ * status register.
  *
- * \param hwp hardware register base
- * \param prop flash properties
+ * \param d hal spi flash instance
  */
-void halSpiFlashFinishEraseProgram(uintptr_t hwp, const halSpiFlashProp_t *prop);
-
-/**
- * \brief write status register 1 and status register 2
- *
- * The command used to write 2 status registers depends on flash. When 01H
- * supports to write both status register, one command will be sent.
- * Otherwise, 2 commands will be sent.
- *
- * Write enable and wait finish will be handled inside.
- *
- * \param hwp hardware register base
- * \param prop flash properties
- * \param status status register, register 1 in LSB
- */
-void halSpiFlashWriteSRByProp(uintptr_t hwp, const halSpiFlashProp_t *prop, uint16_t status);
+void halSpiFlashFinishEraseProgram(const halSpiFlash_t *d);
 
 /**
  * \brief check status register
  *
  * Check status register:
- * - QE should be 1
- * - WP ALL
  * - When there are suspend bits, reset
+ * - QE should be 1
+ * - reasonable WP setting
  *
- * It should be called at the begining of boot to make sure flash is
- * in desired status.
- *
- * When \p hwp is 0, the default flash controller hardware register
- * base will be used. It will simplify header include.
- *
- * \param hwp hardware register base, 0 for default flash
+ * \param d hal spi flash instance
  */
-void halSpiFlashStatusCheck(uintptr_t hwp);
+void halSpiFlashStatusCheck(const halSpiFlash_t *d);
 
 /**
- * \brief fill flash properties by manufacture id
+ * \brief initialize flash
  *
- * \param mid manufacture id and device id
- * \param prop flash properties
+ * \p d->hwp should be valid flash controller base address. Inside, flash ID
+ * will be read, and properties inside \p d will be set based on flash ID.
+ *
+ * If flash ID is unknown, it will panic inside.
+ *
+ * Also \p halSpiFlashStatusCheck will be called inside to ensure status
+ * register is reasonable.
+ *
+ * It should be called before configure quad read in flash controller.
+ *
+ * \param d hal spi flash instance
  */
-void halSpiFlashPropsByMid(unsigned mid, halSpiFlashProp_t *prop);
+void halSpiFlashInit(halSpiFlash_t *d);
 
 #ifdef __cplusplus
 }

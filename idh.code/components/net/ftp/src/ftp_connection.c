@@ -26,6 +26,7 @@ typedef enum _ftp_conn_msg_t
     FTP_CONN_MSG_CONNECT = 1000,
     FTP_CONN_MSG_DISCONNECT,
     FTP_CONN_MSG_DESTROY,
+    FTP_CONN_MSG_SELECT,
 } ftp_conn_msg_t;
 
 typedef struct _ftp_connection_param_t
@@ -53,9 +54,24 @@ typedef struct _ftp_ipaddr_t
 #define IPC_DEFAULT_PORT 10100
 #define TRANS_DEBUG 0
 
+#define FTP_CONN_LOCK(conn)           \
+    do                                \
+    {                                 \
+        if (conn->lock)               \
+            osiMutexLock(conn->lock); \
+    } while (0)
+
+#define FTP_CONN_UNLOCK(conn)           \
+    do                                  \
+    {                                   \
+        if (conn->lock)                 \
+            osiMutexUnlock(conn->lock); \
+    } while (0)
+
 static ftp_connection_t *gFtpCon = NULL;
 
 extern int gettimeofday(struct timeval *tv, void *tz);
+static void initCacheData(ftp_sock_t *sockset);
 uint32_t ftp_check_Recvtimeout(ftp_connection_t *con, uint32_t def);
 
 static ftp_ipaddr_t *AddrtoStr(struct sockaddr_storage *sa)
@@ -150,6 +166,12 @@ static int _do_connect(ftp_sock_t *sockset, sa_family_t family)
         FTPLOGI(FTPLOG_CON, "socket() failed");
         return -1;
     }
+    sockset->enable = true;
+
+    // initial the available buffer and size
+    FTP_CONN_LOCK(gFtpCon);
+    initCacheData(sockset);
+    FTP_CONN_UNLOCK(gFtpCon);
 
     // set the socket works with unblock mode default
     if (ioctl(sock, FIONBIO, &NBIO) < 0)
@@ -187,6 +209,128 @@ EXIT:
     return sock;
 }
 
+static bool _do_select(ftp_sock_t *sockset)
+{
+    ftpEvent_t event = {0};
+
+    FTPLOGI(FTPLOG_CON, "send select msg to ftp clinetd");
+
+    ftp_connection_t *con = gFtpCon;
+    if (!con || !con->threadConn || con->sockset[FTP_IPC_SOCK].sock == -1 || sockset->sock == -1)
+        return false;
+
+    event.id = FTP_CONN_MSG_SELECT;
+    event.param1 = (uint32_t)sockset;
+
+    struct sockaddr_in to4 = {0};
+    to4.sin_len = sizeof(to4);
+    to4.sin_family = AF_INET;
+    to4.sin_port = htons(IPC_DEFAULT_PORT);
+    to4.sin_addr.s_addr = PP_HTONL(INADDR_LOOPBACK);
+    sendto(con->sockset[FTP_IPC_SOCK].sock, (const void *)&event, sizeof(event), 0, (const struct sockaddr *)&to4, sizeof(to4));
+
+    return true;
+}
+
+static void initSocketSet(ftp_sock_t *sockset)
+{
+    sockset->context = NULL;
+    sockset->errcode = 0;
+    sockset->status = FTP_CON_NONE;
+    sockset->enable = false;
+    memset((void *)&(sockset->handler), 0, sizeof(ftp_net_callback_t));
+    sockset->recvTimeout = 0;
+    sockset->recvTimestamp = 0;
+    sockset->addrLen = 0;
+    memset((void *)&(sockset->addr), 0, sizeof(struct sockaddr_storage));
+}
+
+static void initCacheData(ftp_sock_t *sockset)
+{
+    if (sockset->availBuf != NULL)
+    {
+        free(sockset->availBuf);
+        sockset->availBuf = NULL;
+    }
+    sockset->availableSize = 0;
+    sockset->availableoffset = 0;
+}
+
+static bool notifyDataInd(ftp_sock_t *sockset)
+{
+    uint32_t availSize = 0;
+
+    lwip_ioctl(sockset->sock, FIONREAD, &availSize);
+
+    if ((availSize != 0) && sockset->handler.onRead)
+    {
+        sockset->availableSize = availSize;
+        sockset->handler.onRead(FTP_RECV_SUCC, sockset->context, NULL, availSize);
+        sockset->enable = false;
+        return true;
+    }
+
+    return false;
+}
+
+static void getMoreData(ftp_sock_t *sockset)
+{
+    uint32_t availSize = 0;
+
+    if (sockset->availableSize != 0)
+        return;
+
+    lwip_ioctl(sockset->sock, FIONREAD, &availSize);
+
+    if ((availSize != 0) && sockset->handler.onRead)
+    {
+        sockset->availableSize = availSize;
+        sockset->handler.onRead(FTP_RECV_SUCC, sockset->context, NULL, availSize);
+    }
+    else
+    {
+        _do_select(sockset);
+    }
+}
+
+static void getRemainData(ftp_sock_t *sockset)
+{
+    uint32_t numBytes = 0;
+    struct sockaddr_storage addr;
+    socklen_t addrLen;
+    addrLen = sizeof(addr);
+
+    if (sockset->availableSize != 0)
+    {
+        FTPLOGI(FTPLOG_CON, "read data remaining when disconnect");
+        if (sockset->availBuf != NULL)
+        {
+            free(sockset->availBuf);
+            sockset->availBuf = NULL;
+        }
+
+        sockset->availBuf = malloc(sockset->availableSize);
+        if (sockset->availBuf != NULL)
+        {
+            numBytes = recvfrom(sockset->sock, (void *)sockset->availBuf, sockset->availableSize, 0, (struct sockaddr *)&addr, &addrLen);
+            if (numBytes > 0)
+            {
+                sockset->availableSize = numBytes;
+                sockset->availableoffset = 0;
+            }
+            else
+            {
+                FTPLOGI(FTPLOG_CON, "read data remaining failed");
+                free(sockset->availBuf);
+                sockset->availBuf = NULL;
+            }
+        }
+        else
+        {
+            FTPLOGI(FTPLOG_CON, "malloc to read data remaining failed");
+        }
+    }
+}
 static void ftp_conn_clientd(void *param)
 {
     int i = 0;
@@ -212,7 +356,7 @@ static void ftp_conn_clientd(void *param)
 
         for (i = 0; i < FTP_MAX_SOCK; i++)
         {
-            if (sockset[i].sock != -1)
+            if (sockset[i].sock != -1 && sockset[i].enable)
             {
                 FD_SET(sockset[i].sock, &readfds);
                 if (sockset[i].status == FTP_CON_CONNECTING)
@@ -249,9 +393,6 @@ static void ftp_conn_clientd(void *param)
         }
         else if (result > 0)
         {
-            uint8_t buffer[MAX_PACKET_SIZE] = {0};
-            int numBytes = 0;
-
             /*
 			* If an exception event happens on the socket, 
 			* 1. cfun = 0
@@ -283,8 +424,8 @@ static void ftp_conn_clientd(void *param)
                         close(sockset[i].sock);
                     }
 
-                    memset((void *)(sockset + i), 0, sizeof(ftp_sock_t));
                     sockset[i].sock = -1;
+                    initSocketSet(&sockset[i]);
                 }
             }
 
@@ -306,10 +447,11 @@ static void ftp_conn_clientd(void *param)
                             {
                                 FTPLOGI(FTPLOG_CON, "connect() failed on socket[%d], error: %d(%s)", i, errno, strerror(errno));
                                 close(sockset[i].sock);
+                                sockset[i].sock = -1;
                                 if (sockset[i].handler.onConnect)
                                     sockset[i].handler.onConnect(sockset[i].context, false);
-                                memset((void *)(sockset + i), 0, sizeof(ftp_sock_t));
-                                sockset[i].sock = -1;
+
+                                initSocketSet(&sockset[i]);
                                 continue;
                             }
                         }
@@ -327,20 +469,33 @@ static void ftp_conn_clientd(void *param)
             {
                 if (sockset[i].sock != -1 && FD_ISSET(sockset[i].sock, &readfds))
                 {
-                    if (i == FTP_IPC_SOCK || sockset[i].status == FTP_CON_CONNECTED)
+                    if (sockset[i].status == FTP_CON_CONNECTED)
                     {
+                        bool ret = false;
+                        uint8_t buffer[MAX_PACKET_SIZE] = {0};
+                        int numBytes = 0;
                         struct sockaddr_storage addr;
                         socklen_t addrLen;
 
                         addrLen = sizeof(addr);
+#if 1
+                        if (i == FTP_DATA_SOCK)
+                        {
+                            FTP_CONN_LOCK(gFtpCon);
+                            ret = notifyDataInd(&sockset[i]);
+                            FTP_CONN_UNLOCK(gFtpCon);
+                            if (ret)
+                                continue;
+                        }
+#endif
 
                         /*
-        				* We retrieve the data received, 
+        				* We retrieve the data received,
         				* return -1 means receive failed
         				* return receive bytes number when success
         				* return 0 means connection closed
         				*/
-                        numBytes = recvfrom(sockset[i].sock, (char *)buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
+                        numBytes = recvfrom(sockset[i].sock, (void *)buffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&addr, &addrLen);
                         if (numBytes < 0)
                         {
                             FTPLOGI(FTPLOG_CON, "recvfrom() failed on socket[%d], errno: %d(%s)", i, errno, strerror(errno));
@@ -352,10 +507,11 @@ static void ftp_conn_clientd(void *param)
                             if (errno == 113)
                             {
                                 close(sockset[i].sock);
+                                sockset[i].sock = -1;
                                 if (sockset[i].handler.onDisconnect)
                                     sockset[i].handler.onDisconnect(sockset[i].context);
-                                memset((void *)(sockset + i), 0, sizeof(ftp_sock_t));
-                                sockset[i].sock = -1;
+
+                                initSocketSet(&sockset[i]);
                             }
                         }
                         else if (numBytes > 0)
@@ -394,11 +550,14 @@ static void ftp_conn_clientd(void *param)
                         else
                         {
                             FTPLOGI(FTPLOG_CON, "connection closed by peer on socket[%d]", i);
+
                             close(sockset[i].sock);
+                            sockset[i].sock = -1;
+
                             if (sockset[i].handler.onDisconnect)
                                 sockset[i].handler.onDisconnect(sockset[i].context);
-                            memset((void *)(sockset + i), 0, sizeof(ftp_sock_t));
-                            sockset[i].sock = -1;
+
+                            initSocketSet(&sockset[i]);
                         }
                     }
                 }
@@ -455,8 +614,8 @@ void ftp_ipc_onRead(ftp_recv_ret_e ret, void *context, uint8_t *buf, uint32_t bu
                 {
                     if (sockset->handler.onConnect)
                         sockset->handler.onConnect(sockset->context, false);
-                    memset((void *)sockset, 0, sizeof(ftp_sock_t));
-                    sockset->sock = -1;
+
+                    initSocketSet(sockset);
                 }
                 if ((sockset->sock > 0) && sockset->status == FTP_CON_CONNECTED)
                 {
@@ -473,7 +632,11 @@ void ftp_ipc_onRead(ftp_recv_ret_e ret, void *context, uint8_t *buf, uint32_t bu
             sockset = &(connP->sockset[event->param1]);
             if (sockset->sock > 0)
             {
+                FTP_CONN_LOCK(gFtpCon);
+                getRemainData(sockset);
                 close(sockset->sock);
+                sockset->sock = -1;
+                FTP_CONN_UNLOCK(gFtpCon);
 
                 if (sockset->status == FTP_CON_CONNECTING && sockset->handler.onConnect)
                     sockset->handler.onConnect(sockset->context, false);
@@ -481,8 +644,7 @@ void ftp_ipc_onRead(ftp_recv_ret_e ret, void *context, uint8_t *buf, uint32_t bu
                 if (sockset->status == FTP_CON_CONNECTED && sockset->handler.onDisconnect)
                     sockset->handler.onDisconnect(sockset->context);
 
-                memset((void *)sockset, 0, sizeof(ftp_sock_t));
-                sockset->sock = -1;
+                initSocketSet(sockset);
             }
             else
             {
@@ -499,12 +661,18 @@ void ftp_ipc_onRead(ftp_recv_ret_e ret, void *context, uint8_t *buf, uint32_t bu
                 if (sockset->sock > 0)
                 {
                     close(sockset->sock);
-                    memset((void *)sockset, 0, sizeof(ftp_sock_t));
                     sockset->sock = -1;
+                    initSocketSet(sockset);
                 }
             }
 
             connP->threadEnable = false;
+        }
+        else if (event->id == FTP_CONN_MSG_SELECT)
+        {
+            FTPLOGI(FTPLOG_CON, "IPC receive select message");
+            ftp_sock_t *sockset = (ftp_sock_t *)event->param1;
+            sockset->enable = true;
         }
         else
         {
@@ -609,18 +777,21 @@ bool ftp_conn_create()
         if (connP->sem == NULL)
         {
             FTPLOGI(FTPLOG_CON, "create sem failed");
-            free(connP);
-            connP = NULL;
-            goto EXIT;
+            goto FAILED;
+        }
+
+        connP->lock = osiMutexCreate();
+        if (connP->lock == NULL)
+        {
+            FTPLOGI(FTPLOG_CON, "create lock failed");
+            goto FAILED;
         }
 
         ipc_socket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (ipc_socket < 0)
         {
             FTPLOGI(FTPLOG_CON, "create socket failed");
-            free(connP);
-            connP = NULL;
-            goto EXIT;
+            goto FAILED;
         }
         struct sockaddr_in to4;
         memset((void *)&to4, 0, sizeof(struct sockaddr_in));
@@ -631,32 +802,58 @@ bool ftp_conn_create()
         if (bind(ipc_socket, (const struct sockaddr *)&to4, sizeof(to4)) < 0)
         {
             FTPLOGI(FTPLOG_CON, "bind socket failed");
-            close(ipc_socket);
-            free(connP);
-            connP = NULL;
-            goto EXIT;
+            goto FAILED;
         }
         connP->sockset[FTP_IPC_SOCK].sock = ipc_socket;
+        connP->sockset[FTP_IPC_SOCK].enable = true;
         connP->sockset[FTP_IPC_SOCK].context = (void *)connP;
         connP->sockset[FTP_IPC_SOCK].handler.onRead = ftp_ipc_onRead;
+        connP->sockset[FTP_IPC_SOCK].status = FTP_CON_CONNECTED;
 
         connP->threadEnable = true;
         connP->threadConn = osiThreadCreate("ftp clientd", ftp_conn_clientd, connP, OSI_PRIORITY_NORMAL, 2048 * 4, 32);
         if (connP->threadConn == NULL)
         {
-            close(ipc_socket);
-            free(connP);
-            connP = NULL;
+            FTPLOGI(FTPLOG_CON, "create ftp task failed");
+            goto FAILED;
         }
+
+        gFtpCon = connP;
+        return true;
     }
 
-EXIT:
+FAILED:
+    if (connP->sem)
+    {
+        osiSemaphoreDelete(connP->sem);
+        connP->sem = NULL;
+    }
+
+    if (connP->lock)
+    {
+        osiMutexDelete(connP->lock);
+        connP->lock = NULL;
+    }
+
+    if (ipc_socket > 0)
+    {
+        close(ipc_socket);
+        ipc_socket = -1;
+    }
+
+    if (connP != NULL)
+    {
+        free(connP);
+        connP = NULL;
+    }
+
     gFtpCon = connP;
-    return (gFtpCon != NULL);
+    return false;
 }
 
 void ftp_conn_destroy()
 {
+    uint32_t i = 0;
     ftpEvent_t event = {0};
     ftp_connection_t *conP = gFtpCon;
 
@@ -677,6 +874,11 @@ void ftp_conn_destroy()
         FTPLOGI(FTPLOG_CON, "waiting for ftp clientd exit...");
         osiSemaphoreAcquire(conP->sem);
 
+        for (i = 0; i < FTP_MAX_SOCK; i++)
+        {
+            initCacheData(&(conP->sockset[i]));
+        }
+
         if (conP->sockset[FTP_IPC_SOCK].sock != -1)
         {
             close(conP->sockset[FTP_IPC_SOCK].sock);
@@ -687,6 +889,12 @@ void ftp_conn_destroy()
         {
             osiSemaphoreDelete(conP->sem);
             conP->sem = NULL;
+        }
+
+        if (conP->lock)
+        {
+            osiMutexDelete(conP->lock);
+            conP->lock = NULL;
         }
 
         free(conP);
@@ -745,14 +953,14 @@ bool ftp_conn_disconnect(ftp_sock_e flag)
 {
     ftpEvent_t event = {0};
 
-    FTPLOGI(FTPLOG_CON, "send disconnect msg to ftp clinetd");
-
     if (flag != FTP_CTRL_SOCK && flag != FTP_DATA_SOCK)
         return false;
 
     ftp_connection_t *con = gFtpCon;
     if (!con || !con->threadConn || con->sockset[FTP_IPC_SOCK].sock == -1 || con->sockset[flag].sock == -1)
         return false;
+
+    FTPLOGI(FTPLOG_CON, "send disconnect msg to ftp clinetd");
 
     event.id = FTP_CONN_MSG_DISCONNECT;
     event.param1 = (uint32_t)flag;
@@ -770,7 +978,6 @@ bool ftp_conn_disconnect(ftp_sock_e flag)
 bool ftp_conn_send(uint8_t *buf, uint32_t buflen, ftp_sock_e flag)
 {
     int nbSent = 0;
-    uint32_t offset = 0;
 
 #if TRANS_DEBUG
 #ifdef LWIP_IPV6_ON
@@ -818,19 +1025,100 @@ bool ftp_conn_send(uint8_t *buf, uint32_t buflen, ftp_sock_e flag)
         FTPLOGI(FTPLOG_CON, "sending %d bytes to %s:%d", buflen, s, ntohs(port));
 #endif
 
-    while (offset != buflen)
+    int size = CFW_TcpipAvailableBuffer(sockset->sock);
+    if (size < buflen)
     {
-        nbSent = send(sockset->sock, buf + offset, buflen - offset, 0);
-        if (nbSent == -1)
-        {
-            FTPLOGI(FTPLOG_CON, "send() failed, error: %d(%s)", errno, strerror(errno));
-            sockset->errcode = errno;
-            return false;
-        }
-        offset += nbSent;
+        FTPLOGI(FTPLOG_CON, "send() failed, available %d size isn't enough", size);
+        return false;
+    }
+
+    nbSent = send(sockset->sock, buf, buflen, 0);
+    if (nbSent == -1)
+    {
+        FTPLOGI(FTPLOG_CON, "send() failed, error: %d(%s)", errno, strerror(errno));
+        sockset->errcode = errno;
+        return false;
     }
 
     return true;
+}
+
+int32_t ftp_conn_read(uint8_t *buf, uint32_t buflen, ftp_sock_e flag)
+{
+    int numBytes = 0;
+    uint32_t Readsize = 0;
+    struct sockaddr_storage addr;
+    socklen_t addrLen;
+    addrLen = sizeof(addr);
+
+    ftp_connection_t *con = gFtpCon;
+
+    if (!buf || buflen == 0)
+        return -1;
+
+    if (!con || !con->threadConn)
+        return -1;
+
+    if (flag != FTP_DATA_SOCK)
+        return -1;
+
+    ftp_sock_t *sockset = &(con->sockset[flag]);
+
+    FTP_CONN_LOCK(gFtpCon);
+
+    if ((sockset->availableSize == 0) && (sockset->sock != -1))
+    {
+        getMoreData(sockset);
+        FTP_CONN_UNLOCK(gFtpCon);
+        return 0;
+    }
+
+    Readsize = (buflen > sockset->availableSize ? sockset->availableSize : buflen);
+
+    if (sockset->sock != -1)
+    {
+        numBytes = recvfrom(sockset->sock, (void *)buf, Readsize, 0, (struct sockaddr *)&addr, &addrLen);
+        if (numBytes > 0)
+        {
+            sockset->availableSize -= numBytes;
+            if (sockset->availableSize == 0)
+                getMoreData(sockset);
+
+            FTP_CONN_UNLOCK(gFtpCon);
+            return numBytes;
+        }
+        else
+        {
+            FTPLOGI(FTPLOG_CON, "read data failed, errno: %d(%s)", errno, strerror(errno));
+        }
+    }
+    else
+    {
+        if (sockset->availBuf != NULL)
+        {
+            if (sockset->availableoffset + Readsize <= sockset->availableSize)
+            {
+                memcpy(buf, sockset->availBuf + sockset->availableoffset, Readsize);
+                sockset->availableSize -= Readsize;
+                sockset->availableoffset += Readsize;
+                FTP_CONN_UNLOCK(gFtpCon);
+                return Readsize;
+            }
+            else
+            {
+                FTPLOGI(FTPLOG_CON, "available buffer read over flow, offset(%d), Readsize(%d), availableSize(%d)", sockset->availableoffset, Readsize, sockset->availableSize);
+            }
+        }
+        else
+        {
+            FTPLOGI(FTPLOG_CON, "no available buffer when socket is close");
+        }
+    }
+
+    FTP_CONN_UNLOCK(gFtpCon);
+    ftp_conn_disconnect(flag);
+
+    return -1;
 }
 
 #endif

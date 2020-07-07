@@ -993,8 +993,7 @@ static void _onEV_CFW_GPRS_STATUS_IND(const osiEvent_t *event)
     else
 #endif
     {
-        if ((gAtSetting.sim[nSim].cgreg != 0 && PsStatus != gAtCfwCtx.sim[nSim].cgreg_val) ||
-            cfw_event.nParam2 == 0xFFFFFFF2)
+        if (gAtSetting.sim[nSim].cgreg != 0)
         {
             char rsp[32];
             sprintf(rsp, "+CGREG: %d", PsStatus);
@@ -1387,6 +1386,18 @@ void atCmdHandleCGDCONT(atCommand_t *cmd)
         pdp_cont.nApnSize = strlen(apn);
         if (pdp_cont.nApnSize > THE_APN_MAX_LEN)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        uint8_t i = 0;
+        for (i = 0; i < strlen(apn); i++)
+        {
+            if ((*(apn + i) < 0x2D) ||
+                (*(apn + i) > 0x2D && *(apn + i) < 0x30) ||
+                (*(apn + i) > 0x39 && *(apn + i) < 0x41) ||
+                (*(apn + i) > 0x5A && *(apn + i) < 0x61) ||
+                (*(apn + i) > 0x7A)) //not "A-Z"(0X41-5A) "a-z"(0X61-7A) "0-9" "-"(0X2D)
+            {
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            }
+        }
         memcpy(pdp_cont.pApn, apn, pdp_cont.nApnSize);
         uint8_t pdp_addr_len = strlen(pdp_addr);
         OSI_LOGI(0, "cgdcont:pdp_addr_len==%d", pdp_addr_len);
@@ -1626,12 +1637,47 @@ void atCmdHandleCFGIMSPDN(atCommand_t *cmd)
         pdp_cont.nApnSize = strlen(apn);
         if (pdp_cont.nApnSize > THE_APN_MAX_LEN)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-        memcpy(pdp_cont.pApn, apn, pdp_cont.nApnSize);
-        if (_pdpAddressFromStr(pdp_cont.nPdpType, pdp_addr) != 0)
+        uint8_t i = 0;
+        for (i = 0; i < strlen(apn); i++)
+        {
+            if ((*(apn + i) < 0x2D) ||
+                (*(apn + i) > 0x2D && *(apn + i) < 0x30) ||
+                (*(apn + i) > 0x39 && *(apn + i) < 0x41) ||
+                (*(apn + i) > 0x5A && *(apn + i) < 0x61) ||
+                (*(apn + i) > 0x7A)) //not "A-Z"(0X41-5A) "a-z"(0X61-7A) "0-9" "-"(0X2D)
+            {
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            }
+        }
+        if (pdp_cont.nApnSize > 0)
+            memcpy(pdp_cont.pApn, apn, pdp_cont.nApnSize);
+
+        pdp_cont.nPdpAddrSize = strlen(pdp_addr);
+        if (pdp_cont.nPdpAddrSize > 0 && _pdpAddressFromStr(pdp_cont.nPdpType, pdp_addr) != 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        if (pdp_cont.nPdpAddrSize > 0)
+        {
+#if LWIP_IPV6
+            if (pdp_cont.nPdpType == CFW_GPRS_PDP_TYPE_IPV6)
+            {
+                ip6_addr_t dns1_ip6;
+                ip6addr_aton(pdp_addr, &dns1_ip6);
+                memcpy(&pdp_cont.pPdpAddr[4], &dns1_ip6.addr[0], 16);
+                pdp_cont.nPdpAddrSize = 16;
+            }
+#endif
+            if (pdp_cont.nPdpType == CFW_GPRS_PDP_TYPE_IP)
+            {
+                uint32_t Pro_DnsIp1 = (uint32_t)inet_addr((const char *)pdp_addr);
+                pdp_cont.pPdpAddr[0] = Pro_DnsIp1;
+                pdp_cont.pPdpAddr[1] = Pro_DnsIp1 >> 8;
+                pdp_cont.pPdpAddr[2] = Pro_DnsIp1 >> 16;
+                pdp_cont.pPdpAddr[3] = Pro_DnsIp1 >> 24;
+                pdp_cont.nPdpAddrSize = 4;
+            }
+        }
         pdp_cont.nDComp = dcomp;
         pdp_cont.nHComp = hcomp;
-        //     pdp_cont.nNSLPI = nslpi;
         if (CFW_GprsSetInternalPdpCtx(PDP_CTX_TYPE_IMS, &pdp_cont, nSim) != 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
 
@@ -2633,8 +2679,8 @@ void atCmdHandleCGTFT(atCommand_t *cmd)
 
         if (cmd->param_count > 7)
         {
-            const char *ipsec = atParamOptStr(cmd->params[7], &paramok);
-            if (!paramok)
+            const char *ipsec = atParamStr(cmd->params[7], &paramok);
+            if (!paramok || ipsec == NULL)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             uint32_t ipsec_index = 0;
             uint8_t hex_len;
@@ -2657,7 +2703,7 @@ void atCmdHandleCGTFT(atCommand_t *cmd)
 
         if (cmd->param_count > 8)
         {
-            const char *type_of_service = atParamOptStr(cmd->params[8], &paramok);
+            const char *type_of_service = atParamStr(cmd->params[8], &paramok);
             if (!paramok)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             if ((NULL != type_of_service) && strcmp(type_of_service, ""))
@@ -2670,7 +2716,7 @@ void atCmdHandleCGTFT(atCommand_t *cmd)
 
         if (cmd->param_count > 9)
         {
-            const char *FlowLabel = atParamOptStr(cmd->params[9], &paramok);
+            const char *FlowLabel = atParamStr(cmd->params[9], &paramok);
             if (!paramok)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             OSI_LOGXI(OSI_LOGPAR_S, 0x100052b5, "CGTFT: FlowLabel  = %s", FlowLabel);
@@ -2706,7 +2752,7 @@ void atCmdHandleCGTFT(atCommand_t *cmd)
 
         if (cmd->param_count > 11)
         {
-            const char *SourceMask = atParamOptStr(cmd->params[11], &paramok);
+            const char *SourceMask = atParamStr(cmd->params[11], &paramok);
             if (!paramok)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             int count = 1;
@@ -4323,7 +4369,7 @@ void atCmdHandlePDNACTINFO(atCommand_t *cmd)
     }
     else if (AT_CMD_TEST == cmd->type)
     {
-        atCmdRespInfoText(cmd->engine, "^PDNACTINFO:(0-1),(0-1),(act:5-30 deact:2-8),(2-4)");
+        atCmdRespInfoText(cmd->engine, "^PDNACTINFO:(0-1),(0-1),(GSM:[act:5-30 deact:2-8]/LTE:[act:5-8 deact:2-6]),(2-4)");
         RETURN_OK(cmd->engine);
     }
     else
@@ -4655,6 +4701,12 @@ static int _pppDataToAt(void *param, uint8_t *data, uint32_t size)
 static int _pppAtFlowControl(void *param)
 {
     atDispatch_t *ch = (atDispatch_t *)param;
+    if (ch == NULL)
+    {
+        OSI_LOGE(0, "failed to get PPP dispatch");
+        return 2;
+    }
+
     atDevice_t *device = atDispatchGetDevice(ch);
     if (device == NULL)
     {
@@ -5941,13 +5993,16 @@ void atCmdHandleCGEQOS(atCommand_t *cmd)
         // Though cid is optional in 3GPP, it is handled as required
 
         bool paramok = true;
-        uint8_t nActState;
         unsigned cid = atParamUintInRange(cmd->params[0], AT_PDPCID_MIN, AT_PDPCID_MAX, &paramok);
         unsigned qci = atParamDefInt(cmd->params[1], 0, &paramok);
         unsigned dl_gbr = atParamDefUintInRange(cmd->params[2], 0, 0, 10000, &paramok);
         unsigned ul_gbr = atParamDefUintInRange(cmd->params[3], 0, 0, 5000, &paramok);
         unsigned dl_mbr = atParamDefUintInRange(cmd->params[4], 0, 0, 10000, &paramok);
         unsigned ul_mbr = atParamDefUintInRange(cmd->params[5], 0, 0, 5000, &paramok);
+
+        AT_Gprs_CidInfo *pinfo = &gAtCfwCtx.sim[nSim].cid_info[cid];
+        if (0 == pinfo->uCid)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
 
         if (osiIsUintInList(qci, qci_unsupported, OSI_ARRAY_SIZE(qci_unsupported)))
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_GPRS_UNSUPPORTED_QCI_VALUE);
@@ -5960,12 +6015,6 @@ void atCmdHandleCGEQOS(atCommand_t *cmd)
 
         //if (gAtCfwCtx.sim[nSim].cid_info[cid].uCid == 0)
         //    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
-        CFW_GetGprsActState(cid, &nActState, nSim);
-        if (nActState == CFW_GPRS_ACTIVED)
-        {
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-        }
 
         sEqos.nQci = qci;
         sEqos.nDlGbr = dl_gbr;
@@ -9691,6 +9740,19 @@ void atCmdHandleCFGDFTPDN(atCommand_t *cmd)
             {
                 errCode = ERR_INVALID_PARAMETER;
                 goto cfgdftpdn_fail;
+            }
+            uint8_t i = 0;
+            for (i = 0; i < strlen(apn); i++)
+            {
+                if ((*(apn + i) < 0x2D) ||
+                    (*(apn + i) > 0x2D && *(apn + i) < 0x30) ||
+                    (*(apn + i) > 0x39 && *(apn + i) < 0x41) ||
+                    (*(apn + i) > 0x5A && *(apn + i) < 0x61) ||
+                    (*(apn + i) > 0x7A)) //not "A-Z"(0X41-5A) "a-z"(0X61-7A) "0-9" "-"(0X2D)
+                {
+                    errCode = ERR_INVALID_PARAMETER;
+                    goto cfgdftpdn_fail;
+                }
             }
         }
 
