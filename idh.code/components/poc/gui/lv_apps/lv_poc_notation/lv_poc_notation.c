@@ -224,11 +224,21 @@ void lv_poc_notation_refresh(void)
 	}
 	else if(notationwindows_size == 2)//2行消息
 	{
-		//重新设置消息框原点															//消息框拉高		LV_VER_RES / 3(中间)
-		lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 3/ 80, LV_VER_RES / 4);//（空白的中间）
-		//重新设置消息框高度
-		lv_obj_set_height(lv_poc_notationwindow_obj,LV_VER_RES / 2);
+		if(label_1_length == 4 && label_2_length == 2)
+		{//切换群主选项
+			//重新设置消息框原点
+			lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80, LV_VER_RES / 3);
+			//重新设置消息框宽度
+			lv_obj_set_width(lv_poc_notationwindow_obj,LV_HOR_RES * 27/ 40);
+		}
+		else
+		{
+			//重新设置消息框原点															//消息框拉高		LV_VER_RES / 3(中间)
+			lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 3/ 80, LV_VER_RES / 4);//（空白的中间）
+			//重新设置消息框高度
+			lv_obj_set_height(lv_poc_notationwindow_obj,LV_VER_RES / 2);
 
+		}
 		//设置文本框
 		lv_obj_align(label_1, lv_poc_notationwindow_obj, LV_ALIGN_IN_TOP_MID, 0, 10);
 		lv_obj_align(label_2, lv_poc_notationwindow_obj, LV_ALIGN_IN_BOTTOM_MID, 0, -10);

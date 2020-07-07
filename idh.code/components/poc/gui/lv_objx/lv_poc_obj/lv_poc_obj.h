@@ -1,4 +1,4 @@
-
+﻿
 #ifndef __INCLUDE_LV_INTER_PHONE_OBJ__
 #define  __INCLUDE_LV_INTER_PHONE_OBJ__
 
@@ -375,6 +375,7 @@ typedef struct _lv_poc_activity_t{
 	bool                               has_stabar;   //只标注是否显示状态栏，不代表状态栏的存在性
 	bool                               has_control;     //标注该窗口是否有控制栏
 	lv_obj_t                        *  base;            //activity基础，不要调用，只在创建和删除用到
+	lv_obj_t                 *  bg_blur_obj;    //背景虚化对象
 	lv_poc_status_bar_t      *  status_bar;     //即使该窗口没有状态栏，该成员也会指向状态栏，因为状态栏唯一
 	lv_poc_control_t         *  control;        //指向控制栏
 	lv_poc_display_t         *  display;        //指向显示区域
@@ -817,6 +818,15 @@ void lv_poc_member_list_cb_set_active(lv_poc_Activity_Id_t activity_id, bool ena
 void lv_poc_group_list_cb_set_active(lv_poc_Activity_Id_t activity_id, bool enable);
 
 extern nv_poc_setting_msg_t * poc_setting_conf;
+
+/*
+	  name : lv_poc_anim_note
+	 param : none
+	author : wangls
+  describe : 动画虚拟背景
+	  date : 2020-07-06
+*/
+void lv_poc_anim_note(lv_obj_t *obj);
 
 #ifdef __cplusplus
 }
