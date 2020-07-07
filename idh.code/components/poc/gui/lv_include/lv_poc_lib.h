@@ -106,6 +106,8 @@ typedef int (*lv_poc_member_list_get_information_cb)(lv_poc_member_list_t *membe
 
 typedef void (*lv_poc_member_list_refresh_cb)(lv_task_t *task);
 
+typedef void (*lv_poc_member_list_refresh_with_data_cb)(lv_poc_member_list_t *member_list_obj);
+
 typedef lv_poc_status_t (*lv_poc_member_list_move_top_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 
 typedef lv_poc_status_t (*lv_poc_member_list_move_bottom_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
@@ -128,6 +130,8 @@ typedef void (*lv_poc_group_list_remove_cb)(lv_poc_group_list_t *group_list_obj,
 typedef int (*lv_poc_group_list_get_information_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void *** information);
 
 typedef void (*lv_poc_group_list_refresh_cb)(lv_task_t *task);
+
+typedef void (*lv_poc_group_list_refresh_with_data_cb)(lv_poc_group_list_t *group_list_obj);
 
 typedef lv_poc_status_t (*lv_poc_group_list_move_top_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 
@@ -169,7 +173,8 @@ typedef struct _lv_poc_activity_attribute_cb_set
 		lv_poc_member_list_remove_cb remove;
 		lv_poc_member_list_clear_cb clear;
 		lv_poc_member_list_get_information_cb get_info;
-		lv_poc_member_list_refresh_cb refresh;
+		lv_poc_member_list_refresh_with_data_cb refresh;
+		lv_poc_member_list_refresh_with_data_cb refresh_with_data;
 		lv_poc_member_list_move_top_cb move_to_top;
 		lv_poc_member_list_move_bottom_cb move_to_bottom;
 		lv_poc_member_list_move_up_cb move_up;
@@ -183,7 +188,8 @@ typedef struct _lv_poc_activity_attribute_cb_set
 		lv_poc_group_list_add_cb add;
 		lv_poc_group_list_remove_cb remove;
 		lv_poc_group_list_get_information_cb get_info;
-		lv_poc_group_list_refresh_cb refresh;
+		lv_poc_group_list_refresh_with_data_cb refresh;
+		lv_poc_group_list_refresh_with_data_cb refresh_with_data;
 		lv_poc_group_list_move_top_cb move_to_top;
 		lv_poc_group_list_move_bottom_cb move_to_bottom;
 		lv_poc_group_list_move_up_cb move_up;
