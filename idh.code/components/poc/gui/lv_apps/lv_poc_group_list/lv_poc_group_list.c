@@ -46,6 +46,9 @@ static lv_poc_group_list_item_info_t * lv_poc_group_current_lock_info = NULL;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_current_info = NULL;
 
+lv_poc_group_info_t *lv_poc_group_list_get_member_list_info = NULL;
+
+
 static lv_area_t display_area;
 
 lv_poc_activity_t * poc_group_list_activity;
@@ -76,6 +79,7 @@ static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
 static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 {
 	lv_poc_group_list_cb_set_active(ACT_ID_POC_GROUP_LIST, false);
+	lv_poc_group_list_get_member_list_info = NULL;
 	activity_list = NULL;
 	if(group_list != NULL)
 	{
@@ -229,6 +233,7 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 			memset((void *)member_list, 0, sizeof(lv_poc_member_list_t));
 			strcpy(lv_poc_group_member_list_title, (const char *)p_element->name);
 			member_list->hide_offline = true;
+			lv_poc_group_list_get_member_list_info = (lv_poc_group_info_t *)p_element->information;
 			lv_poc_get_member_list((lv_poc_group_info_t)p_element->information,
 				member_list,
 				2,
@@ -400,6 +405,7 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 				}
 				lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
 				lv_poc_group_current_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
+				lv_poc_group_lock_info = lv_poc_group_current_info;
 			}
 
 			lv_poc_group_list_item_info_t *group_info = lv_poc_group_current_info;
@@ -699,6 +705,30 @@ void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * 
     }
 }
 
+void lv_poc_group_list_clear(lv_poc_group_list_t *group_list_obj)
+{
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return;
+	}
+
+	list_element_t * cur_p = group_list_obj->group_list;
+	list_element_t * temp_p;
+	while(cur_p != NULL)
+	{
+		temp_p = cur_p;
+		cur_p =cur_p->next;
+		//lv_obj_del(temp_p->list_item);
+		lv_mem_free(temp_p);
+	}
+	group_list_obj->group_list = NULL;
+}
+
 int lv_poc_group_list_get_information(lv_poc_group_list_t *group_list_obj, const char * name, void *** information)
 {
 	if(group_list_obj == NULL)
@@ -870,6 +900,22 @@ void lv_poc_group_list_refresh(lv_task_t * task)
         p_cur = p_cur->next;
         p_group_info++;
     }
+}
+
+void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
+{
+	if(group_list_obj == NULL)
+	{
+		group_list_obj = group_list;
+	}
+
+	if(group_list_obj == NULL)
+	{
+		return;
+	}
+	lv_poc_group_list_clear(group_list_obj);
+
+	lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb);
 }
 
 

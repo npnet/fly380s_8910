@@ -340,10 +340,13 @@ void callback_IDT_GUStatusInd(GU_STATUSGINFO_s *pStatus)
 
     IDT_TRACE("callback_IDT_GUStatusInd: usNum=%d", pStatus->usNum);
 
-	static GU_STATUSGINFO_s gu_status = {0};
+	GU_STATUSGINFO_s *gu_status = (GU_STATUSGINFO_s *)malloc(sizeof(GU_STATUSGINFO_s));
 
-    memcpy(&gu_status, (const void *)pStatus, sizeof(GU_STATUSGINFO_s));
-    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GU_STATUS_REP, (void *)&gu_status);
+	if(gu_status != NULL)
+	{
+	    memcpy(gu_status, (const void *)pStatus, sizeof(GU_STATUSGINFO_s));
+	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GU_STATUS_REP, (void *)gu_status);
+    }
 }
 
 //--------------------------------------------------------------------------------
@@ -895,10 +898,8 @@ static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
 
 static void LvGuiIdtCom_get_member_list_timer_cb(void *ctx)
 {
-	OSI_LOGI(0, "[song]timer cb enter!");
 	if(!pocIdtAttr.isPocMemberListBuf)
 	{
-		OSI_LOGI(0, "[song]start to obtain member information!");
 		if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_CUR_GROUP, NULL))
 		{
 			return;
@@ -911,9 +912,13 @@ static void LvGuiIdtCom_get_group_list_timer_cb(void *ctx)
 {
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL))
 	{
-		osiTimerStart(pocIdtAttr.get_group_list_timer, 1000);
+		if(pocIdtAttr.isReady)
+		{
+			osiTimerStart(pocIdtAttr.get_group_list_timer, 1000);
+		}
 		return;
 	}
+	osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 10000);
 	osiTimerStart(pocIdtAttr.get_group_list_timer, 1000 * 60 * 5);
 }
 
@@ -921,16 +926,18 @@ static void LvGuiIdtCom_get_lock_group_status_timer_cb(void *ctx)
 {
 	if(pocIdtAttr.lockGroupOpt > LV_POC_GROUP_OPRATOR_TYPE_NONE)
 	{
-		osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 500);
+		osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 1000);
 		return;
 	}
 
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_LOCK_GROUP_STATUS_IND, NULL))
 	{
-		osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 1000);
+		if(pocIdtAttr.isReady)
+		{
+			osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 2000);
+		}
 		return;
 	}
-	osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 1000 * 60 * 5);
 }
 
 //--------------------------------------------------------------------------------
@@ -1127,7 +1134,6 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 			    m_IdtUser.m_status = UT_STATUS_OFFLINE;
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
 				osiTimerStop(pocIdtAttr.get_group_list_timer);
-				osiTimerStop(pocIdtAttr.get_member_list_timer);
 				osiTimerStop(pocIdtAttr.get_lock_group_status_timer);
 			    pocIdtAttr.isReady = false;
 				break;
@@ -1145,7 +1151,6 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 			LvGuiIdtCom_self_info_json_parse_status();
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
 			osiTimerStart(pocIdtAttr.get_group_list_timer, 500);
-			osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 3000);
 			break;
 		}
 
@@ -1454,7 +1459,7 @@ static void prvPocGuiIdtTaskHandleGroupList(uint32_t id, uint32_t ctx)
 		        checked_current = true;
 		    }
 
-		    lv_poc_activity_func_cb_set.group_list.refresh(NULL);
+		    lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
 
 		    if(!pocIdtAttr.isPocMemberListBuf)
 		    {
@@ -1811,9 +1816,21 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 				{
 					if(workinfo_cjson == NULL || m_IdtUser.m_Group.m_Group_Num < 1)
 					{
-						osiTimerStop(pocIdtAttr.get_lock_group_status_timer);
-						osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 2000);
-						OSI_LOGI(0, "don't parse lock group cjson string, try again in 2s\n");
+						static int check_self_workinfo_count = 0;
+						if(check_self_workinfo_count < 5)
+						{
+							osiTimerStop(pocIdtAttr.get_lock_group_status_timer);
+							osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 2000);
+							OSI_LOGI(0, "don't parse lock group cjson string, try again in 2s\n");
+							check_self_workinfo_count++;
+						}
+						else
+						{
+							osiTimerStop(pocIdtAttr.get_lock_group_status_timer);
+							osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 1000 * 60 * 1);
+							OSI_LOGI(0, "don't parse lock group cjson string, try again in 1min\n");
+							check_self_workinfo_count = 0;
+						}
 						break;
 					}
 
@@ -2167,29 +2184,52 @@ static void prvPocGuiIdtTaskHandleGuStatus(uint32_t id, uint32_t ctx)
 			GU_STATUSGINFO_s *pStatus = (GU_STATUSGINFO_s *)ctx;
 
 			Msg_GROUP_MEMBER_s *member = NULL;
+			#if 0
 			CGroup *group = NULL;
+			#endif
+			bool isUpdateGroup = false;
+			bool isUpdateMemberList = false;
 
 		    for (int i = 0; i < pStatus->usNum; i++)
 		    {
 			    if (pStatus->stStatus[i].ucType == 1)
 				{
+					member = NULL;
 					for(unsigned long k = 0; k < pocIdtAttr.pPocMemberList->dwNum; k++)
 					{
 						if(0 == strcmp((const char *)pStatus->stStatus[i].ucNum, (const char *)pocIdtAttr.pPocMemberList->member[k].ucNum))
 						{
 							member = &pocIdtAttr.pPocMemberList->member[k];
+							if(member->ucStatus == pStatus->stStatus[i].Status.ucStatus)
+							{
+								member = NULL;
+							}
+							else
+							{
+								if(pStatus->stStatus[i].Status.ucStatus > UT_STATUS_OFFLINE)
+								{
+									member->ucStatus = UT_STATUS_ONLINE;
+								}
+								else
+								{
+									member->ucStatus = UT_STATUS_OFFLINE;
+								}
+							}
 							break;
 						}
 					}
 
 					if(member != NULL)
 					{
-						lv_poc_activity_func_cb_set.member_list.set_state(NULL, (const char *)member->ucName, (void *)member, pStatus->stStatus[i].Status.ucStatus);
-						member = NULL;
+						isUpdateMemberList = true;
+						lv_poc_activity_func_cb_set.member_list.set_state(NULL, (const char *)member->ucName, (void *)member, member->ucStatus);
 					}
 				}
 				else if (pStatus->stStatus[i].ucType == 2)
 				{
+					isUpdateGroup = true;
+					#if 0
+					group = NULL;
 					for(unsigned long k = 0; k < m_IdtUser.m_Group.m_Group_Num; k++)
 					{
 						if(0 == strcmp((const char *)pStatus->stStatus[i].ucNum, (const char *)m_IdtUser.m_Group.m_Group[k].m_ucGNum))
@@ -2212,10 +2252,23 @@ static void prvPocGuiIdtTaskHandleGuStatus(uint32_t id, uint32_t ctx)
 							lv_poc_activity_func_cb_set.group_list.add(NULL, (const char *)group->m_ucGName, (void *)group);
 							lv_poc_activity_func_cb_set.group_list.refresh(NULL);
 						}
-						group = NULL;
 					}
+					#endif
 				}
 		    }
+		    free(pStatus);
+
+		    if(isUpdateGroup)
+		    {
+			    osiTimerStop(pocIdtAttr.get_group_list_timer);
+			    osiTimerStart(pocIdtAttr.get_group_list_timer, 100);
+		    }
+
+		    if(isUpdateMemberList)
+		    {
+			    lv_poc_activity_func_cb_set.member_list.refresh(NULL);
+		    }
+
 			break;
 		}
 
@@ -2276,7 +2329,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 						pocIdtAttr.isPocMemberListBuf = false;
 					}
 
-					lv_poc_activity_func_cb_set.member_list.refresh(NULL);
+					lv_poc_activity_func_cb_set.member_list.refresh_with_data(NULL);
 				}
 			}
 			else if (OPT_G_ADD == grop->dwOptCode)
@@ -2327,7 +2380,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 			        checked_current = true;
 			    }
 
-			    lv_poc_activity_func_cb_set.group_list.refresh(NULL);
+			    lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
 
 			    if(!pocIdtAttr.isPocMemberListBuf)
 			    {

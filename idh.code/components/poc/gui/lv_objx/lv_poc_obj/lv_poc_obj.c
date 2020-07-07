@@ -114,7 +114,8 @@ static lv_poc_status_t prv_lv_poc_member_list_add(lv_poc_member_list_t *member_l
 static void prv_lv_poc_member_list_remove(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 static void prv_lv_poc_member_list_clear(lv_poc_member_list_t *member_list_obj);
 static int prv_lv_poc_member_list_get_information(lv_poc_member_list_t *member_list_obj, const char * name, void *** information);
-static void prv_lv_poc_member_list_refresh(lv_task_t *task);
+static void prv_lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj);
+static void prv_lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj);
 static lv_poc_status_t prv_lv_poc_member_list_move_top(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 static lv_poc_status_t prv_lv_poc_member_list_move_bottom(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 static lv_poc_status_t prv_lv_poc_member_list_move_up(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
@@ -127,7 +128,8 @@ static lv_poc_status_t prv_lv_poc_member_list_get_state(lv_poc_member_list_t *me
 static lv_poc_status_t prv_lv_poc_group_list_add(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 static void prv_lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 static int prv_lv_poc_group_list_get_information(lv_poc_group_list_t *group_list_obj, const char * name, void *** information);
-static void prv_lv_poc_group_list_refresh(lv_task_t *task);
+static void prv_lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj);
+static void prv_lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj);
 static lv_poc_status_t prv_lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 static lv_poc_status_t prv_lv_poc_group_list_move_bottom(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 static lv_poc_status_t prv_lv_poc_group_list_move_up(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
@@ -152,6 +154,7 @@ static __attribute__((unused)) lv_poc_activity_attribute_cb_set_obj prv_lv_poc_a
 			.clear = lv_poc_member_list_clear,
 			.get_info = lv_poc_member_list_get_information,
 			.refresh = lv_poc_member_list_refresh,
+			.refresh_with_data = lv_poc_member_list_refresh_with_data,
 			.move_to_top = lv_poc_member_list_move_top,
 			.move_to_bottom = lv_poc_member_list_move_bottom,
 			.move_up = lv_poc_member_list_move_up,
@@ -168,7 +171,8 @@ static __attribute__((unused)) lv_poc_activity_attribute_cb_set_obj prv_lv_poc_a
 			.remove = lv_poc_member_call_remove,
 			.clear = lv_poc_member_call_clear,
 			.get_info = lv_poc_member_call_get_information,
-			//.refresh = lv_poc_member_call_refresh,
+			.refresh = NULL,
+			.refresh_with_data = NULL,
 			.move_to_top = lv_poc_member_call_move_top,
 			.move_to_bottom = lv_poc_member_call_move_bottom,
 			.move_up = lv_poc_member_call_move_up,
@@ -185,7 +189,8 @@ static __attribute__((unused)) lv_poc_activity_attribute_cb_set_obj prv_lv_poc_a
 			.remove = lv_poc_build_group_remove,
 			.clear = lv_poc_build_group_clear,
 			.get_info = lv_poc_build_group_get_information,
-			.refresh = lv_poc_build_group_refresh,
+			.refresh = NULL,
+			.refresh_with_data = NULL,
 			.move_to_top = lv_poc_build_group_move_top,
 			.move_to_bottom = lv_poc_build_group_move_bottom,
 			.move_up = lv_poc_build_group_move_up,
@@ -218,6 +223,7 @@ static __attribute__((unused)) lv_poc_activity_attribute_cb_set_obj prv_lv_poc_a
 			.remove = lv_poc_group_list_remove,
 			.get_info = lv_poc_group_list_get_information,
 			.refresh = lv_poc_group_list_refresh,
+			.refresh_with_data = lv_poc_group_list_refresh_with_data,
 			.move_to_top = lv_poc_group_list_move_top,
 			.move_to_bottom = lv_poc_group_list_move_bottom,
 			.move_up = lv_poc_group_list_move_up,
@@ -255,6 +261,7 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 		.clear = prv_lv_poc_member_list_clear,
 		.get_info = prv_lv_poc_member_list_get_information,
 		.refresh = prv_lv_poc_member_list_refresh,
+		.refresh_with_data = prv_lv_poc_member_list_refresh_with_data,
 		.move_to_top = prv_lv_poc_member_list_move_top,
 		.move_to_bottom = prv_lv_poc_member_list_move_bottom,
 		.move_up = prv_lv_poc_member_list_move_up,
@@ -269,6 +276,7 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 		.remove = prv_lv_poc_group_list_remove,
 		.get_info = prv_lv_poc_group_list_get_information,
 		.refresh = prv_lv_poc_group_list_refresh,
+		.refresh_with_data = prv_lv_poc_group_list_refresh_with_data,
 		.move_to_top = prv_lv_poc_group_list_move_top,
 		.move_to_bottom = prv_lv_poc_group_list_move_bottom,
 		.move_up = prv_lv_poc_group_list_move_up,
@@ -1585,7 +1593,7 @@ static int prv_lv_poc_member_list_get_information(lv_poc_member_list_t *member_l
 	 return ret;
 }
 
-static void prv_lv_poc_member_list_refresh(lv_task_t *task)
+static void prv_lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
 {
 	 lv_poc_activity_attribute_cb_set_obj * cb_set_obj = lv_poc_get_activity_attribute_cb_set_obj();
 
@@ -1595,7 +1603,24 @@ static void prv_lv_poc_member_list_refresh(lv_task_t *task)
 		 {
 			if(cb_set_obj->member_list[i].refresh != NULL)
 			{
-				cb_set_obj->member_list[i].refresh(task);
+				lv_task_t *onece_task = lv_task_create(cb_set_obj->member_list[i].refresh, 10, LV_TASK_PRIO_HIGHEST, member_list_obj);
+				lv_task_once(onece_task);
+			}
+		 }
+	 }
+}
+
+static void prv_lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj)
+{
+	 lv_poc_activity_attribute_cb_set_obj * cb_set_obj = lv_poc_get_activity_attribute_cb_set_obj();
+
+	 for(int i = 0; i < LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE; i++)
+	 {
+		 if(cb_set_obj->member_list[i].active == true && cb_set_obj->member_list[i].activity_id > 0)
+		 {
+			if(cb_set_obj->member_list[i].refresh_with_data != NULL)
+			{
+				cb_set_obj->member_list[i].refresh_with_data(member_list_obj);
 			}
 		 }
 	 }
@@ -1789,7 +1814,7 @@ static int prv_lv_poc_group_list_get_information(lv_poc_group_list_t *group_list
 	 return ret;
 }
 
-static void prv_lv_poc_group_list_refresh(lv_task_t *task)
+static void prv_lv_poc_group_list_refresh(lv_poc_group_list_t *group_list_obj)
 {
 	 lv_poc_activity_attribute_cb_set_obj * cb_set_obj = lv_poc_get_activity_attribute_cb_set_obj();
 
@@ -1799,7 +1824,24 @@ static void prv_lv_poc_group_list_refresh(lv_task_t *task)
 		 {
 			if(cb_set_obj->group_list[i].refresh != NULL)
 			{
-				cb_set_obj->group_list[i].refresh(task);
+				lv_task_t *onece_task = lv_task_create(cb_set_obj->group_list[i].refresh, 10, LV_TASK_PRIO_HIGHEST, group_list_obj);
+				lv_task_once(onece_task);
+			}
+		 }
+	 }
+}
+
+static void prv_lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
+{
+	 lv_poc_activity_attribute_cb_set_obj * cb_set_obj = lv_poc_get_activity_attribute_cb_set_obj();
+
+	 for(int i = 0; i < LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE; i++)
+	 {
+		 if(cb_set_obj->group_list[i].active == true && cb_set_obj->group_list[i].activity_id > 0)
+		 {
+			if(cb_set_obj->group_list[i].refresh_with_data != NULL)
+			{
+				cb_set_obj->group_list[i].refresh_with_data(group_list_obj);
 			}
 		 }
 	 }

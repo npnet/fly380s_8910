@@ -20,6 +20,8 @@ int lv_poc_member_list_get_information(lv_poc_member_list_t *member_list_obj, co
 
 void lv_poc_member_list_refresh(lv_task_t * task);
 
+void lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj);
+
 lv_poc_status_t lv_poc_member_list_move_top(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 
 lv_poc_status_t lv_poc_member_list_move_bottom(lv_poc_member_list_t *member_list_obj, const char * name, void * information);

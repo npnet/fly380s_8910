@@ -424,6 +424,7 @@ typedef struct _lv_poc_activity_attribute_cb_set_obj
 		lv_poc_member_list_clear_cb clear;
 		lv_poc_member_list_get_information_cb get_info;
 		lv_poc_member_list_refresh_cb refresh;
+		lv_poc_member_list_refresh_with_data_cb refresh_with_data;
 		lv_poc_member_list_move_top_cb move_to_top;
 		lv_poc_member_list_move_bottom_cb move_to_bottom;
 		lv_poc_member_list_move_up_cb move_up;
@@ -440,6 +441,7 @@ typedef struct _lv_poc_activity_attribute_cb_set_obj
 		lv_poc_group_list_remove_cb remove;
 		lv_poc_group_list_get_information_cb get_info;
 		lv_poc_group_list_refresh_cb refresh;
+		lv_poc_group_list_refresh_with_data_cb refresh_with_data;
 		lv_poc_group_list_move_top_cb move_to_top;
 		lv_poc_group_list_move_bottom_cb move_to_bottom;
 		lv_poc_group_list_move_up_cb move_up;

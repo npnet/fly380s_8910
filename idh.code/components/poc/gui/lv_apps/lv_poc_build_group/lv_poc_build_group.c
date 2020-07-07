@@ -478,7 +478,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 
         btn_checkbox = lv_cb_create(btn, NULL);
 		lv_cb_set_text(btn_checkbox, "");
-		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_online.header.w);
+		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_online.header.w - 5);
 		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
@@ -510,7 +510,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 
         btn_checkbox = lv_cb_create(btn, NULL);
 		lv_cb_set_text(btn_checkbox, "");
-		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_offline.header.w);
+		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_offline.header.w - 5);
 		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
@@ -526,6 +526,22 @@ void lv_poc_build_group_refresh(lv_task_t * task)
         	lv_list_set_btn_selected(activity_list, btn);
         }
     }
+}
+
+void lv_poc_build_group_refresh_with_data(lv_poc_member_list_t *member_list_obj)
+{
+	if(member_list_obj == NULL)
+	{
+		member_list_obj = lv_poc_build_group_member_list;
+	}
+
+	if(member_list_obj == NULL)
+	{
+		return;
+	}
+	lv_poc_build_group_clear(lv_poc_build_group_member_list);
+
+	lv_poc_get_member_list(NULL, member_list_obj, 1, lv_poc_build_group_get_list_cb);
 }
 
 lv_poc_status_t lv_poc_build_group_move_top(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
@@ -600,7 +616,80 @@ lv_poc_status_t lv_poc_build_group_set_state(lv_poc_member_list_t *member_list_o
         return POC_OPERATE_FAILD;
 	}
 
-	return lv_poc_member_list_set_state(member_list_obj, name, information, is_online);
+    list_element_t * p_cur = NULL;
+    lv_poc_status_t status = lv_poc_member_list_is_exists(member_list_obj, name, information);
+    if(status == POC_OPERATE_FAILD || status == POC_MEMBER_NONENTITY)
+    {
+        return status;
+    }
+
+    if(true == is_online)
+    {
+        p_cur = member_list_obj->offline_list;
+        if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+        {
+        	member_list_obj->offline_list = p_cur->next;
+            p_cur->next = member_list_obj->online_list;
+            member_list_obj->online_list = p_cur;
+            goto LV_POC_BUILD_GROUP_SET_STATE_SUCCESS;
+        }
+
+        p_cur = p_cur->next;
+        while(p_cur)
+        {
+            if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+            {
+            	member_list_obj->offline_list = p_cur->next;
+                p_cur->next = member_list_obj->online_list;
+                member_list_obj->online_list = p_cur;
+                goto LV_POC_BUILD_GROUP_SET_STATE_SUCCESS;
+            }
+            p_cur = p_cur->next;
+        }
+    }
+    else
+    {
+        p_cur = member_list_obj->online_list;
+        if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+        {
+        	member_list_obj->online_list = p_cur->next;
+            p_cur->next = member_list_obj->offline_list;
+            member_list_obj->offline_list = p_cur;
+            goto LV_POC_BUILD_GROUP_SET_STATE_SUCCESS;
+        }
+
+        p_cur = p_cur->next;
+        while(p_cur)
+        {
+            if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+            {
+            	member_list_obj->online_list = p_cur->next;
+                p_cur->next = member_list_obj->offline_list;
+                member_list_obj->offline_list = p_cur;
+                goto LV_POC_BUILD_GROUP_SET_STATE_SUCCESS;
+            }
+            p_cur = p_cur->next;
+        }
+    }
+
+    return POC_UNKNOWN_FAULT;
+
+    LV_POC_BUILD_GROUP_SET_STATE_SUCCESS:
+	if(p_cur != NULL && p_cur->list_item != NULL)
+	{
+		lv_obj_t *btn_item = (lv_obj_t *)p_cur->list_item;
+		lv_obj_t *btn_img = lv_list_get_btn_img(btn_item);
+
+		if(is_online)
+		{
+			lv_img_set_src(btn_img, &ic_member_online);
+		}
+		else
+		{
+			lv_img_set_src(btn_img, &ic_member_offline);
+		}
+	}
+	return POC_OPERATE_SECCESS;
 }
 
 lv_poc_status_t lv_poc_build_group_is_exists(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
