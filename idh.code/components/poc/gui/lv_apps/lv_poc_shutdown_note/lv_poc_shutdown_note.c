@@ -63,14 +63,14 @@ void lv_poc_shutdown_note_activity_area(void)
 	//屏幕弹跳消息框
 	msg_display_area.x1 = 15;
 	msg_display_area.x2 = 145;
-	msg_display_area.y1 = 20;
-	msg_display_area.y2 = 118;
+	msg_display_area.y1 = 24;
+	msg_display_area.y2 = 122;
 
 	//消息框内容框大小
 	shutdown_display_area.x1 = 15;
 	shutdown_display_area.x2 = 145;
-	shutdown_display_area.y1 = 20;
-	shutdown_display_area.y2 = 118;
+	shutdown_display_area.y1 = 24;
+	shutdown_display_area.y2 = 122;
 }
 
 /*
@@ -413,7 +413,7 @@ void lv_poc_shutdown_note_power_off_warning_create(lv_task_t * task)
 	char *title = "关机";
 	char *context = "您的对讲机将会\n关机。";
 	char *opt_left_str = "            确定            ";//28格才能填满
-	lv_area_t warnningarea = {15, 20, 145, 118};//提示框大小
+	lv_area_t warnningarea = {15, 24, 145, 122};//提示框大小
 
 	//新建提示框
 	lv_poc_warnning_open(title, context, opt_left_str,lv_poc_power_off_warning_apply_event_handler,
@@ -468,7 +468,7 @@ void lv_poc_shutdown_note_reboot_warning_create(lv_task_t * task)
 	char *title = "重新启动";
 	char *context = "您确定需要重新\n启动对讲机吗？";
 	char *opt_left_str = "            确定            ";//28格才能填满
-	lv_area_t warnningarea = {15, 20, 145, 118};//提示框大小
+	lv_area_t warnningarea = {15, 24, 145, 122};//提示框大小
 
 	//新建提示框
 	lv_poc_warnning_open(title, context, opt_left_str,lv_poc_reboot_warning_apply_event_handler,

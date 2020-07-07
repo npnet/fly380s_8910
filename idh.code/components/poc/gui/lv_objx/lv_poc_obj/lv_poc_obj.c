@@ -2619,13 +2619,37 @@ lv_poc_activity_t *lv_poc_create_mini_activity(lv_poc_activity_ext_t *activity_e
     activity->activity_ext.create = activity_ext->create;
     activity->activity_ext.prepare_destory = activity_ext->prepare_destory;
 
-    activity->base = lv_img_create(lv_scr_act(), NULL);
+	//背景虚化功能
+	static lv_style_t BackgroundBlur_style;
+
+	lv_style_copy(&BackgroundBlur_style, &lv_style_plain_color);
+
+	BackgroundBlur_style.body.main_color = BackgroundBlur_style.body.grad_color = LV_COLOR_BLACK;
+	BackgroundBlur_style.body.opa = LV_OPA_70;//透明度
+	BackgroundBlur_style.body.radius = 0;//弧度
+
+	activity->bg_blur_obj = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(activity->bg_blur_obj, &BackgroundBlur_style);
+	if(act_area->y2 <= 105)//默认弹窗大小
+	{
+		lv_obj_set_size(activity->bg_blur_obj, LV_HOR_RES - 0, LV_VER_RES - act_area->y1 + 15);
+	}
+	else
+	{
+		lv_obj_set_size(activity->bg_blur_obj, LV_HOR_RES - 0, LV_VER_RES - act_area->y1 + 8);
+	}
+	lv_obj_set_pos(activity->bg_blur_obj, 0, 18);
+	lv_obj_set_opa_scale_enable(activity->bg_blur_obj, true);
+	lv_obj_invalidate(activity->bg_blur_obj);
+
+	/*信息框*/
+    activity->base = lv_img_create(activity->bg_blur_obj, NULL);
     lv_img_set_auto_size(activity->base, false);
     lv_obj_set_size(activity->base, act_area->x2 - act_area->x1, act_area->y2 - act_area->y1);
-    lv_obj_set_pos(activity->base, act_area->x1, act_area->y1);
-    //lv_img_set_src(activity->base,&ic_launcher_bg);
-
+    lv_obj_set_pos(activity->base, act_area->x1, act_area->y1 - 18);
+    lv_img_set_src(activity->base,&ic_launcher_bg);
     lv_obj_set_style(activity->base, poc_display_style);
+
     activity->display = activity->base;
 
     lv_obj_set_signal_cb(activity->display, lv_poc_signal_cb);
@@ -2646,10 +2670,14 @@ lv_poc_activity_t *lv_poc_create_mini_activity(lv_poc_activity_ext_t *activity_e
     {
         activity->ext_data = (void *)activity->activity_ext.create(activity->display);
     }
+
+	lv_poc_anim_note(activity->bg_blur_obj);
+
     OSI_LOGI(0, "[poc_activity] create a mini activity\n");
 
     return activity;
 }
+
 
 /*******************
 *     NAME:    lv_poc_get_user_obj
@@ -2706,6 +2734,12 @@ bool lv_poc_del_activity(lv_poc_activity_t *activity)
     lv_indev_reset(poc_keypad_dev);
     lv_group_remove_obj(activity->display);
     lv_obj_del(activity->base);
+
+	if(activity->bg_blur_obj != NULL)
+	{
+		lv_obj_del(activity->bg_blur_obj);
+	}
+
     lv_obj_invalidate(pre_activity->base);
     //lv_obj_invalidate(pre_activity->display);
 
@@ -3206,6 +3240,25 @@ void lv_poc_group_list_cb_set_active(lv_poc_Activity_Id_t activity_id, bool enab
 	}
 }
 
+/*
+	  name : lv_poc_anim_note
+	 param : none
+	author : wangls
+  describe : 动画虚拟背景
+	  date : 2020-07-06
+*/
+void lv_poc_anim_note(lv_obj_t *obj)
+{
+	//动画
+	lv_anim_t lv_anim_obj;
+
+	lv_anim_init(&lv_anim_obj);
+	lv_anim_set_time(&lv_anim_obj, 500, 0);
+	lv_anim_set_values(&lv_anim_obj, LV_OPA_TRANSP, LV_OPA_COVER);
+	lv_anim_set_exec_cb(&lv_anim_obj, obj, (lv_anim_exec_xcb_t)lv_obj_set_opa_scale);
+
+	lv_anim_create(&lv_anim_obj);
+}
 
 #ifdef __cplusplus
 }
