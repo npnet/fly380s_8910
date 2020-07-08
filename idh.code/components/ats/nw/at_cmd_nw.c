@@ -60,7 +60,6 @@ extern uint32_t CFW_SimWritePreferPLMN(uint8_t index, uint8_t *operator, uint8_t
 extern uint32_t CFW_SimReadPreferPLMN(uint16_t nUTI, CFW_SIM_ID nSimID);
 extern uint32_t CFW_NwGetLteSignalQuality(uint8_t *pSignalLevel, uint8_t *pBitError, CFW_SIM_ID nSimID);
 extern uint32_t CFW_CfgNwSetDetectMBS(uint8_t nMode);
-extern uint32_t CFW_CfgNwGetDetectMBS(uint8_t *pMode);
 bool AT_EMOD_CCED_ProcessData(uint8_t nSim, CFW_TSM_CURR_CELL_INFO *pCurrCellInfo,
                               CFW_TSM_ALL_NEBCELL_INFO *pNeighborCellInfo, char *nStrPosiList);
 uint8_t Mapping_Creg_From_PsType(uint8_t pstype);
@@ -565,20 +564,6 @@ static void _onEV_CFW_NW_JAMMING_DETECT_IND(const osiEvent_t *event)
         OSI_LOGI(0, "_onEV_CFW_NW_JAMMING_DETECT_IND ERROR:nMode: %d", p->nMode);
     }
 }
-static void _onEV_CFW_MBS_CALL_INFO_IND(const osiEvent_t *event)
-{
-    char rsp[100] = {
-        0,
-    };
-    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
-    CFW_NW_MBS_CELL_INFO *p = (CFW_NW_MBS_CELL_INFO *)cfw_event->nParam1;
-
-    atMemFreeLater(p);
-    sprintf(rsp, "+MBS_INFO:%d,%d,\"%X%X\",\"%X%X%X%X%X\"",
-            p->nArfcn, p->nBsic, p->nCellId[0], p->nCellId[1],
-            p->nLai[0], p->nLai[1], p->nLai[2], p->nLai[3], p->nLai[4]);
-    atCmdRespDefUrcText(rsp);
-}
 
 static void _onEV_CFW_ERRC_CONNSTATUS_IND(const osiEvent_t *event)
 {
@@ -946,18 +931,6 @@ static void _copsGetAvailRsp(atCommand_t *cmd, const osiEvent_t *event)
 }
 
 // 7.3 PLMN selection +COPS
-#define AT_NW_CHECK_SIM_STATUS(nSim) \
-    ({uint8_t nSimStatus = CFW_GetSimStatus(nSim);                \
-    if (CFW_SIM_ABSENT == nSimStatus)                             \
-    {                                                             \
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_SIM_NOT_INSERTED); \
-    }                                                             \
-    else if (CFW_SIM_ABNORMAL == nSimStatus)                      \
-    {                                                             \
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_SIM_WRONG);        \
-    }                                                             \
-    OSI_LOGI(0, "atCmdHandleCOPS sim check:%d", nSimStatus); })
-
 void atCmdHandleCOPS(atCommand_t *cmd)
 {
     uint8_t nSim = atCmdGetSim(cmd->engine);
@@ -979,7 +952,6 @@ void atCmdHandleCOPS(atCommand_t *cmd)
         if (AcT == 9)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 #endif
-        AT_NW_CHECK_SIM_STATUS(nSim);
         gAtSetting.sim[nSim].cops_act = AcT;
         if ((mode == COPS_MODE_AUTOMATIC && cmd->param_count > 2) ||
             (mode == COPS_MODE_DEREGISTER && cmd->param_count > 1) ||
@@ -1086,7 +1058,7 @@ void atCmdHandleCOPS(atCommand_t *cmd)
         }
         if (CFW_DISABLE_COMM == nFM)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-        AT_NW_CHECK_SIM_STATUS(nSim);
+
         cmd->uti = cfwRequestUTI((osiEventCallback_t)_copsGetAvailRsp, cmd);
         atCmdSetTimeoutHandler(cmd->engine, 1000 * 60 * 3, _copsGetAvailRspTimeOutCB);
         if ((res = CFW_NwGetAvailableOperators(cmd->uti, nSim)) != 0)
@@ -5189,7 +5161,6 @@ void atCfwNwInit(void)
 #endif
         EV_CFW_NW_JAMMING_DETECT_IND, _onEV_CFW_NW_JAMMING_DETECT_IND,
         EV_CFW_EMC_NUM_LIST_IND, _onEV_CFW_EMC_NUM_LIST_IND,
-        EV_CFW_MBS_CALL_INFO_IND, _onEV_CFW_MBS_CALL_INFO_IND,
 
         0);
 }
@@ -5362,52 +5333,5 @@ void atCmdHandleT3302(atCommand_t *cmd)
     else
     {
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
-    }
-}
-//Set Pseudo base station identification
-void atCmdHandleSDMBS(atCommand_t *cmd)
-{
-    bool paramok = true;
-    uint8_t uDMBS = 0;
-    uint32_t uRet = 0;
-    char rsp[20] = {
-        0x00,
-    };
-
-    switch (cmd->type)
-    {
-    case AT_CMD_SET:
-        if (cmd->param_count > 1)
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
-        uDMBS = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
-        if (!paramok)
-            atCmdRespCmeError(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
-        else
-        {
-            uRet = CFW_CfgNwSetDetectMBS(uDMBS);
-            if (uRet != ERR_SUCCESS)
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-            atCmdRespOK(cmd->engine);
-        }
-        break;
-
-    case AT_CMD_READ:
-        uRet = CFW_CfgNwGetDetectMBS(&uDMBS);
-        if (uRet != ERR_SUCCESS)
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-        sprintf(rsp, "+SDMBS: %d", uDMBS);
-        atCmdRespInfoText(cmd->engine, rsp);
-        atCmdRespOK(cmd->engine);
-        break;
-
-    case AT_CMD_TEST:
-        atCmdRespInfoText(cmd->engine, "+SDMBS:(0,1)");
-        atCmdRespOK(cmd->engine);
-        break;
-
-    default:
-        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
-        break;
     }
 }

@@ -1750,10 +1750,6 @@ void atCmdHandleCCID(atCommand_t *cmd)
     {
         CFW_SIM_STATUS status = CFW_GetSimStatus(nSim);
         OSI_LOGI(0, "CCID get sim status: %d", status);
-        if (status == CFW_SIM_ABSENT)
-        {
-            RETURN_CME_CFW_ERR(cmd->engine, ERR_AT_CME_SIM_NOT_INSERTED);
-        }
 
         uint8_t *pICCID = CFW_GetICCID(nSim);
         if (pICCID != NULL)
@@ -5018,7 +5014,7 @@ void atCmdHandleCSVM(atCommand_t *cmd)
         memset(&updateVoiceMailInfo, 0, sizeof(CFW_SIM_INFO_VOICEMAIL));
 
         int length = cfwDialStringToBcd(number, strlen(number), updateVoiceMailInfo.mailbox_number);
-        if (length < 0)
+        if (updateVoiceMailInfo.mailbox_number_len < 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         updateVoiceMailInfo.mailbox_number_len = length;
 

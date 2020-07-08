@@ -42,14 +42,6 @@ enum
     NVID_SIM_LOCK_CUSTOMIZE_DATA = 0x1f0,
     NVID_SIM_LOCK_USER_DATA = 0x1f1,
     NVID_SIM_LOCK_CONTROL_KEY_ID = 0x1f2,
-    // ims nv
-    NVID_IMS_CSM_NV = 0x800,
-    NVID_IMS_SAPP_NV = 0x801,
-    NVID_IMS_ISIM_NV = 0x813,
-    NVID_SIM_DELTA_NV = 0x870,
-    NVID_SIM_DELTA_CARD2_NV = 0x871,
-    NVID_PLMN_DELTA_NV = 0x872,
-    NVID_PLMN_DELTA_CARD2_NV = 0x873,
 };
 
 /**
@@ -95,30 +87,6 @@ typedef struct
     uint8_t imei4[8]; /*imei4 number 8byte*/
     uint8_t reserved[16];
 } refNVDirect_t;
-
-typedef struct
-{
-    uint32_t ims_csm_addr;
-    uint32_t ims_csm_len;
-
-    uint32_t ims_sapp_addr;
-    uint32_t ims_sapp_len;
-
-    uint32_t ims_isim_addr;
-    uint32_t ims_isim_len;
-
-    uint32_t ims_sim1_delta_addr;
-    uint32_t ims_sim1_delta_len;
-
-    uint32_t ims_sim2_delta_addr;
-    uint32_t ims_sim2_delta_len;
-
-    uint32_t ims_plmn1_delta_addr;
-    uint32_t ims_plmn1_delta_len;
-
-    uint32_t ims_plmn2_delta_addr;
-    uint32_t ims_plmn2_delta_len;
-} imsNVInfo_t;
 
 /**
  * \brief initialize nvm

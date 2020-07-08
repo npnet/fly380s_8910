@@ -46,6 +46,7 @@
 #include "diag.h"
 #include "diag_runmode.h"
 #include "diag_auto_test.h"
+#include "app_internal.h"
 #include "srv_bt_trace.h"
 #include "srv_rf_param.h"
 #include "fupdate.h"
@@ -57,13 +58,6 @@
 #include "connectivity_config.h"
 #include "tts_player.h"
 #include "srv_simlock.h"
-#include "srv_power_manage.h"
-#include "srv_keypad.h"
-#include "srv_usb.h"
-
-#ifdef CONFIG_HEADSET_DETECT_SUPPORT
-#include "drv_headset.h"
-#endif
 
 #ifdef CONFIG_BLUEU_BT_ENABLE
 extern void bt_porting_interface_test(void);
@@ -214,8 +208,61 @@ static void prvTraceInit(void)
 #endif
 }
 
-static void prvPowerOn(void *arg)
+void osiAppStart(void)
 {
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "application start (%s)", gBuildRevision);
+
+#ifdef CONFIG_WDT_ENABLE
+    srvWdtInit(CONFIG_APP_WDT_MAX_INTERVAL, CONFIG_APP_WDT_FEED_INTERVAL);
+#endif
+
+    osiInvokeGlobalCtors();
+    prvSetFlashWriteProhibit();
+
+    mlInit();
+    if (!fsMountAll())
+        osiPanic();
+
+#ifdef CONFIG_FS_MOUNT_SDCARD
+    bool mount_sd = fsMountSdcard();
+    OSI_LOGI(0, "application mount sd card %d", mount_sd);
+#endif
+
+    // besure ap nvm directory exist
+    vfs_mkdir(CONFIG_FS_AP_NVM_DIR, 0);
+
+    osiSysnvLoad();
+    drvAxidmaInit();
+    prvTraceInit();
+    nvmInit();
+
+    fupdateStatus_t fup_status = fupdateGetStatus();
+    if (fup_status == FUPDATE_STATUS_FINISHED)
+    {
+        char *old_version = NULL;
+        char *new_version = NULL;
+        if (fupdateGetVersion(&old_version, &new_version))
+        {
+            OSI_LOGXI(OSI_LOGPAR_SS, 0, "FUPDATE: %s -> %s",
+                      old_version, new_version);
+            free(old_version);
+            free(new_version);
+        }
+        //fupdateInvalidate(true);
+    }
+
+    if (!halShareMemRegionLoad())
+        osiPanic();
+
+    osiPsmRestore();
+
+    drvGpioInit();
+    drvPmicIntrInit();
+    drvRtcInit();
+    drvAdcInit();
+    drvChargerInit();
+    drvUsbInit();
+
     ipcInit();
     drvNvmIpcInit();
 
@@ -223,12 +270,6 @@ static void prvPowerOn(void *arg)
 
     ipc_at_init();
     drvPsPathInit();
-
-#ifdef CONFIG_FS_MOUNT_SDCARD
-    bool mount_sd = fsMountSdcard();
-    OSI_LOGI(0, "application mount sd card %d", mount_sd);
-#endif
-
 #ifdef CONFIG_SRV_SIMLOCK_ENABLE
     srvSimlockInit();
 #endif
@@ -313,7 +354,7 @@ static void prvPowerOn(void *arg)
         osiPanic();
 
     audevInit();
-
+    appKeypadInit();
 #ifdef CONFIG_TTS_SUPPORT
     ttsPlayerInit();
 #endif
@@ -347,72 +388,12 @@ static void prvPowerOn(void *arg)
 #ifdef CONFIG_BLUEU_BT_ENABLE
     bt_porting_interface_test();
 #endif
+    // wait a while for PM source created
+    osiThreadSleep(10);
+    osiPmStart();
 
     // HACK: Now CP will change hwp_debugUart->irq_mask. After CP is changed,
     // the followings should be removed.
     osiThreadSleep(1000);
     drvDhostRestoreConfig();
-#ifdef CONFIG_HEADSET_DETECT_SUPPORT
-    drvHandsetInit();
-#endif
-}
-
-void osiAppStart(void)
-{
-    OSI_LOGXI(OSI_LOGPAR_S, 0, "application start (%s)", gBuildRevision);
-
-#ifdef CONFIG_WDT_ENABLE
-    srvWdtInit(CONFIG_APP_WDT_MAX_INTERVAL, CONFIG_APP_WDT_FEED_INTERVAL);
-#endif
-
-    osiInvokeGlobalCtors();
-    prvSetFlashWriteProhibit();
-
-    mlInit();
-    if (!fsMountAll())
-        osiPanic();
-
-    // besure ap nvm directory exist
-    vfs_mkdir(CONFIG_FS_AP_NVM_DIR, 0);
-
-    osiSysnvLoad();
-    drvAxidmaInit();
-    prvTraceInit();
-    nvmInit();
-
-    fupdateStatus_t fup_status = fupdateGetStatus();
-    if (fup_status == FUPDATE_STATUS_FINISHED)
-    {
-        char *old_version = NULL;
-        char *new_version = NULL;
-        if (fupdateGetVersion(&old_version, &new_version))
-        {
-            OSI_LOGXI(OSI_LOGPAR_SS, 0, "FUPDATE: %s -> %s",
-                      old_version, new_version);
-            free(old_version);
-            free(new_version);
-        }
-        // fupdateInvalidate(true);
-    }
-
-    if (!halShareMemRegionLoad())
-        osiPanic();
-
-    osiPsmRestore();
-
-    drvGpioInit();
-    drvPmicIntrInit();
-    drvRtcInit();
-    drvAdcInit();
-    drvChargerInit();
-    srvKeypadInit();
-    if (!srvPmInit(prvPowerOn, NULL))
-        osiPanic();
-
-    srvUsbInit();
-    srvPmRun();
-
-    // wait a while for PM source created
-    osiThreadSleep(10);
-    osiPmStart();
 }

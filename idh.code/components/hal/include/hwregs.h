@@ -66,8 +66,6 @@ extern "C" {
 #include "hwregs/8910/rda2720m_psm.h"
 #include "hwregs/8910/rda2720m_wdg.h"
 #include "hwregs/8910/rda2720m_bltc.h"
-#include "hwregs/8910/rda2720m_aud_codec.h"
-#include "hwregs/8910/rda2720m_aud.h"
 #include "hwregs/8910/sdmmc.h"
 #include "hwregs/8910/gouda.h"
 #include "hwregs/8910/usbc.h"

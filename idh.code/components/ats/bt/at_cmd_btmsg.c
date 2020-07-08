@@ -12,7 +12,7 @@
 
 #include "ats_config.h"
 
-#if defined(CONFIG_AT_BT_CLASSIC_SUPPORT) || defined(CONFIG_AT_SPBLE_SUPPORT) || defined(CONFIG_AT_BTCOMM_SUPPORT)
+#if defined(CONFIG_AT_BT_CLASSIC_SUPPORT) || defined(CONFIG_AT_SPBLE_SUPPORT)
 #include "stdlib.h"
 #include "osi_api.h"
 #include "osi_log.h"
@@ -28,7 +28,7 @@ typedef struct _app_bt_msg_t
 } app_bt_msg_t;
 
 static app_bt_msg_t gBtMsgTable[] = {
-#if defined(CONFIG_AT_BT_CLASSIC_SUPPORT) || defined(CONFIG_AT_BTCOMM_SUPPORT)
+#ifdef CONFIG_AT_BT_CLASSIC_SUPPORT
     {ID_STATUS_BT_ON_RES, APP_BT_ME_ON_CNF},
     {ID_STATUS_BT_OFF_RES, APP_BT_ME_OFF_CNF},
     {ID_STATUS_CM_VISIBLE_RES, APP_BT_VISIBILE_CNF},

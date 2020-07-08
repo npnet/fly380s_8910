@@ -386,73 +386,24 @@ static bool prvSetVoiceConfig(void)
  */
 static bool prvSetPlayConfig(void)
 {
-    SND_SPK_LEVEL_T FadeStartLevel, FadeEndLevel;
     audevContext_t *d = &gAudevCtx;
-    FadeStartLevel = (d->play.level.spkLevel);
-    FadeEndLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute);
-    OSI_LOGI(0, "audio device prvSetPlayConfig , old Level/%d new Level/%d",
-             FadeStartLevel, FadeEndLevel);
-
-    if (FadeStartLevel == FadeEndLevel)
-        return true;
 
     AUD_LEVEL_T level = {
-        .spkLevel = FadeEndLevel,
+        .spkLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute),
         .micLevel = SND_MIC_ENABLE,
         .sideLevel = SND_SIDE_VOL_15,
         .toneLevel = SND_TONE_0DB,
         .appMode = SND_APP_MODE_MUSIC,
     };
 
-    bool isIncrease = (FadeEndLevel > FadeStartLevel) ? true : false;
+    if (!DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level))
+        return false;
 
-#define STEPLEVEL (1)
-    while (1)
-    {
-        if (isIncrease)
-        {
-            FadeStartLevel = FadeStartLevel + STEPLEVEL;
-            level.spkLevel = OSI_MIN(unsigned, FadeStartLevel, FadeEndLevel);
-            level.spkLevel = OSI_MIN(unsigned, AUDIO_LEVEL_MAX, level.spkLevel);
-            OSI_LOGI(0, "audio device prvSetPlayConfig , level.spkLevel/%d ", level.spkLevel);
-            if (DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level) != 0)
-                return false;
+    if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
+        return false;
 
-            if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
-                return false;
-
-            //update para in play
-            d->play.level.spkLevel = level.spkLevel;
-
-            if ((level.spkLevel == AUDIO_LEVEL_MAX) || (level.spkLevel == FadeEndLevel))
-                break;
-
-            osiDelayUS(1000);
-        }
-        else
-        {
-            FadeStartLevel = (FadeStartLevel < STEPLEVEL) ? 0 : (FadeStartLevel - STEPLEVEL);
-            level.spkLevel = OSI_MAX(unsigned, FadeStartLevel, FadeEndLevel);
-            OSI_LOGI(0, "audio device prvSetPlayConfig , level.spkLevel/%d ", level.spkLevel);
-
-            if (DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level) != 0)
-                return false;
-
-            if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
-                return false;
-
-            //update para in play
-            d->play.level.spkLevel = level.spkLevel;
-
-            if ((level.spkLevel == 0) || (level.spkLevel == FadeEndLevel))
-                break;
-
-            osiDelayUS(1000);
-        }
-    }
-
-    OSI_LOGI(0, "audio device prvSetPlayConfig , d->play.level.spkLevel/%d",
-             d->play.level.spkLevel);
+    //update para in play
+    d->play.level.spkLevel = level.spkLevel;
 
     return true;
 }
@@ -1022,9 +973,6 @@ bool audevSetInput(audevInput_t dev)
     d->cfg.indev = dev;
     prvSetDeviceExt();
 
-    if (d->clk_users & AUDEV_CLK_USER_VOICE)
-        prvSetVoiceConfig();
-
     audevSetting_t cfg = d->cfg;
     osiMutexUnlock(d->lock);
 
@@ -1198,11 +1146,8 @@ bool audevStartVoice(void)
 
     osiMutexLock(d->lock);
 
-    if ((d->clk_users & ~AUDEV_CLK_USER_VOICE) != 0) // disable when any other users is working
+    if (d->clk_users != 0) // disable when any user is working
         goto failed;
-
-    if (d->clk_users & AUDEV_CLK_USER_VOICE)
-        goto success;
 
     prvEnableAudioClk(AUDEV_CLK_USER_VOICE);
     if (!prvSetVoiceConfig())
@@ -1214,7 +1159,6 @@ bool audevStartVoice(void)
     if (!prvWaitStatus(CODEC_VOIS_START_DONE))
         goto failed_disable_clk;
 
-success:
     osiMutexUnlock(d->lock);
     return true;
 
@@ -2002,28 +1946,5 @@ void audSetLdoVB(uint32_t en)
     audevContext_t *d = &gAudevCtx;
     osiMutexLock(d->lock);
     aud_SetLdoVB(en);
-    osiMutexUnlock(d->lock);
-}
-
-bool audIsCodecOpen(void)
-{
-    audevContext_t *d = &gAudevCtx;
-    return (d->clk_users != 0);
-}
-
-void audHeadsetdepop_en(bool en, uint8_t mictype)
-{
-    audevContext_t *d = &gAudevCtx;
-    osiMutexLock(d->lock);
-    if (en)
-    {
-        //four seg heaset set 1,three seg headset set 2
-        if ((mictype == 2) || (mictype == 3))
-            aud_HeadsetConfig(1, 0);
-        else
-            aud_HeadsetConfig(2, 0);
-    }
-    else
-        aud_HeadsetConfig(0, 0);
     osiMutexUnlock(d->lock);
 }

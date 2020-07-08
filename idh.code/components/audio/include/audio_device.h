@@ -492,15 +492,5 @@ bool audevStopPlayTest(void);
  */
 void audSetLdoVB(uint32_t en);
 
-/**
- * Get audCodec Open status
- */
-bool audIsCodecOpen(void);
-
-/**
- * headset plug depop
- */
-void audHeadsetdepop_en(bool en, uint8_t mictype);
-
 OSI_EXTERN_C_END
 #endif

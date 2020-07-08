@@ -96,7 +96,7 @@ static bool prvRxProcess(diagRunModeContext_t *d, unsigned timeout)
                 }
             }
         }
-        osiThreadSleepUS(100);
+        osiThreadSleepUS(2000);
     }
     return false;
 }
@@ -106,7 +106,7 @@ static bool prvDeviceReady(diagRunModeContext_t *d, unsigned ms)
     if (!drvDebugPortIsUsb(d->port))
         return true;
 
-#ifdef CONFIG_DIAG_DEVICE_USRL_SUPPORT
+#ifdef CONFIG_DIAG_DEFAULT_USERIAL
     if (gSysnvUsbDetMode == USB_DETMODE_CHARGER &&
         drvChargerGetType() == DRV_CHARGER_TYPE_NONE)
         return false;
@@ -123,7 +123,7 @@ static bool prvDeviceReady(diagRunModeContext_t *d, unsigned ms)
         if (drvDebugPortIsUsbHostOpened(d->port))
             return true;
 
-        osiThreadSleepUS(100);
+        osiThreadSleepUS(2000);
     }
 
     drvUsbDisable();

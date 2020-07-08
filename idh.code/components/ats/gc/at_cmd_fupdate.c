@@ -104,19 +104,6 @@ void atCmdHandleUPDATE(atCommand_t *cmd)
         atCmdSetBypassMode(cmd->engine, _updateCB, cmd);
         RETURN_FOR_ASYNC();
     }
-    else if (cmd->type == AT_CMD_EXE)
-    {
-        // To check current version, pass the current version string
-        // as parameter.
-        if (!fupdateSetReady(NULL))
-        {
-            OSI_LOGE(0, "Fota Error: not ready");
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-        }
-
-        atCmdRespOK(cmd->engine);
-        osiShutdown(OSI_SHUTDOWN_RESET);
-    }
     else
     {
         //+UPDATE,+UPDATE?,UPDATE=? is not support

@@ -15,9 +15,9 @@
 
 // Auto generated (v1.0-22-ge2f5f70). Don't edit it manually!
 
-
-#define LOW_KEY_NB (32)
-#define HIGH_KEY_NB (32)
+#define KEY_NB (36)
+#define LOW_KEY_NB (30)
+#define HIGH_KEY_NB (6)
 
 #if defined(REG_ADDRESS_FOR_GGE)
 #define REG_KEYPAD_BASE (0x05106000)

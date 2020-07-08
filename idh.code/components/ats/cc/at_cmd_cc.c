@@ -293,8 +293,6 @@ uint8_t AT_CC_GetCCCount(uint8_t sim)
     CFW_CC_CURRENT_CALL_INFO call_info[AT_CC_MAX_NUM];
 
     CFW_CcGetCurrentCall(call_info, &cnt, sim);
-    OSI_LOGI(0, "SETVOLTE AT_CC_GetCCCount cnt = %d", cnt);
-
     return cnt;
 }
 
@@ -761,10 +759,7 @@ static void _onEV_CFW_CC_AUDIOON_IND(const osiEvent_t *event)
     gAudioOnFlag = 1;
 
     if (!gAtCfwCtx.cc.alert_flag)
-    {
         prvReportSounder(sim, 1);
-        audevPlayTone(AUDEV_TONE_DIAL, 1000);
-    }
 
     prvAlertStop();
 }
@@ -1083,8 +1078,6 @@ void atCmdHandleCLCC(atCommand_t *cmd)
         uint8_t cnt = 0;
 
         uint32_t nRet = CFW_CcGetCurrentCall(call_info, &cnt, sim);
-        OSI_LOGI(0, "atCmdHandleCLCC cnt = %d", cnt);
-
         if (nRet == ERR_CFW_NO_CALL_INPROGRESS || cnt == 0)
             RETURN_OK(cmd->engine);
         if (nRet != 0)
@@ -2545,16 +2538,11 @@ void atCmdHandleSETVOLTE(atCommand_t *cmd)
         bool paramok = true;
         uint8_t setvolte = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
         uint8_t count = AT_GprsGetActivePdpCount(sim);
-        uint8_t cccnt = AT_CC_GetCCCount(sim);
-
-        OSI_LOGI(0, "SETVOLTE atCmdHandleSETVOLTE count = %d, cccnt = %d", count, cccnt);
-
+        OSI_LOGI(0, "SETVOLTE GetActivePdpCount= %d", count);
         if (!paramok || cmd->param_count > 1)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
-        if ((0 != cccnt) || count > 5)
+        if (count > 5)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-
         uint16_t uti = cfwRequestNoWaitUTI();
         if (CFW_ImsSetVolte(setvolte, uti, sim) != 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);

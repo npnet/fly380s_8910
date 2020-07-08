@@ -109,6 +109,20 @@ static inline void _vbusDebounceStart(DrvUsb *d)
         osiTimerStart(d->mTimerDebounce, d->mDebounceTimeMs);
 }
 
+static void _usbVbusIsr(void *ctx, bool plugged)
+{
+    DrvUsb *d = (DrvUsb *)ctx;
+    if (plugged)
+    {
+        d->changeState(DrvUsbState::DEBOUNCE);
+        _vbusDebounceStart(d);
+    }
+    else
+    {
+        _chargerOff(d);
+    }
+}
+
 static void _startUsb(DrvUsb *d)
 {
     d->changeState(DrvUsbState::CONNECT_WIP);
@@ -165,6 +179,8 @@ static void _udcEventNotifier(void *ctx, udcEvent_t event)
 
 DrvUsb::~DrvUsb()
 {
+    drvChargerSetCB(nullptr, nullptr);
+
     osiTimerStop(mTimerDebounce);
     osiTimerDelete(mTimerDebounce);
     osiWorkDelete(mWorkChargerOn);
@@ -216,6 +232,7 @@ bool DrvUsb::init(uint32_t name, int detmode)
     else
     {
         mState = DrvUsbState::IDLE;
+        drvChargerSetCB(_usbVbusIsr, this);
     }
     return true;
 }
@@ -456,21 +473,4 @@ bool drvUsbRemoteWakeup()
         return udcRemoteWakeup(d->mUdc);
     }
     return false;
-}
-
-void drvUsbSetAttach(bool attach)
-{
-    auto d = gDrvUsb;
-    if (d->mDetMode == USB_DETMODE_AON)
-        return;
-
-    if (attach)
-    {
-        d->changeState(DrvUsbState::DEBOUNCE);
-        _vbusDebounceStart(d);
-    }
-    else
-    {
-        _chargerOff(d);
-    }
 }

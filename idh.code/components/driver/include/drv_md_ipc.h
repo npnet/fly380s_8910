@@ -180,22 +180,6 @@ int ipc_ch_read(struct smd_ch *ch, void *data, uint32_t len);
 int ipc_ch_write(struct smd_ch *ch, const void *data, uint32_t len);
 
 /**
- * @brief write to IPC channel, not trigger peer interrupt
- *
- * It is similar to \p ipc_ch_write, just not to trigger peer interrupt.
- *
- * @param ch        IPC channel, must be valid
- * @param data      data to be written
- * @param len       data length
- * @return
- *      - actual written
- *      - 0 for no space, and won't set peer's interrupt
- *      - -ENODEV if the uplink channel is not openned
- *      - -EINVAL for invalid parameters
- */
-int ipc_ch_write_noint(struct smd_ch *ch, const void *data, uint32_t len);
-
-/**
  * @brief channel available read space
  *
  * The meaning of the return unit depends on channel type:
@@ -362,21 +346,6 @@ void ipc_register_rfParam_notify(rfParamNotify_t notify, void *param);
  * @brief cp rf param init function
  */
 void ipc_cpRfParamInit(uint32_t v0, uint32_t v1, uint32_t v2, uint32_t v3, uint32_t v4);
-
-/*
-* @brief ipc get delta nv addr
-*/
-uint8_t *ipc_get_deltanv_addr(void);
-
-/*
-* @brief ipc get ims nv addr and send sysmail
-*/
-uint8_t *ipc_get_ims_nv_addr(void);
-
-/*
-* @brief ipc set delta addr and size send sysmail
-*/
-void ipc_set_deltanv_bin(uint32_t addr, uint32_t len);
 
 #ifdef __cplusplus
 }

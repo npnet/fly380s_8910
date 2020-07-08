@@ -29,21 +29,6 @@
 OSI_EXTERN_C_BEGIN
 
 /**
- * \brief helper for GPIO function
- *
- * It will be ensured that GPIO function macros are contiguous.
- */
-#define HAL_IOMUX_FUN_GPIO(n) (HAL_IOMUX_FUN_GPIO_0 + (n))
-
-/**
- * \brief helper for GPIO pad
- *
- * It will be ensured that GPIO pad macros are contiguous. The shift is
- * magic, due to pad index is start from bit12.
- */
-#define HAL_IOMUX_PAD_GPIO(n) (HAL_IOMUX_PAD_GPIO_0 + ((n) << 12))
-
-/**
  * \brief force pull up/down options
  *
  * Each function has default pull up/down property. In most cases, the

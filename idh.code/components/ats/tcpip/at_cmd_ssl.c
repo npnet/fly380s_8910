@@ -370,7 +370,7 @@ void AT_TCPIP_CmdFunc_SSLSTART(atCommand_t *pParam)
             AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_NO_MEMORY));
 
         memset(pRstStr, 0, 85);
-        strcpy(pRstStr, "+SSLSTART:(\"(0-255).(0-255).(0-255).(0-255)\"), (0-65535)");
+        strcpy(pRstStr, "+SSLSTART: (\"SSL\"), (\"(0-255).(0-255).(0-255).(0-255)\"), (0-65535)");
 
         atCmdRespInfoText(pParam->engine, pRstStr);
         atCmdRespOK(pParam->engine);
@@ -510,6 +510,20 @@ void AT_TCPIP_CmdFunc_SSLSEND(atCommand_t *pParam) //atCommand_t *cmd
         async->uMuxIndex = 0;
         atCmdRespOutputPrompt(pParam->engine);
         atCmdSetPromptMode(pParam->engine, _tcpipDataPromptCB, pParam, async->data, TCPIP_DATA_MAX_SIZE);
+    }
+    else if (AT_CMD_TEST == pParam->type)
+    {
+        char aucBuffer[40] = {0};
+        sprintf(aucBuffer, "+SSLSEND:<length>");
+        atCmdRespInfoText(pParam->engine, aucBuffer);
+        atCmdRespOK(pParam->engine);
+    }
+    else if (AT_CMD_READ == pParam->type)
+    {
+        char aucBuffer[40] = {0};
+        sprintf(aucBuffer, "+SSLSEND:<size>");
+        atCmdRespInfoText(pParam->engine, aucBuffer);
+        atCmdRespOK(pParam->engine);
     }
     else
     {

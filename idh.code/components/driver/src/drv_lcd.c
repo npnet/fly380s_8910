@@ -796,11 +796,6 @@ bool drvLcdInit(void)
     {
         lcdLock = osiSemaphoreCreate(1, 1);
     }
-    else
-    {
-        OSI_LOGI(0, "lcd:  drvLcd already Init");
-        return true;
-    }
     s_lcd_spec_info_ptr = drvLcdGetSpecInfo();
     if (NULL != s_lcd_spec_info_ptr)
     {

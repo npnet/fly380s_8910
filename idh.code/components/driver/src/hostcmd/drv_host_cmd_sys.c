@@ -24,7 +24,6 @@
 #include "osi_sysnv.h"
 #include "osi_byte_buf.h"
 #include "osi_clock.h"
-#include "osi_profile.h"
 #include "vfs.h"
 #include "calclib/crc32.h"
 #include "app_loader.h"
@@ -159,30 +158,6 @@ close_exit:
     free(ent);
     vfs_closedir(dir);
     return -1;
-}
-
-static int prvListPartition(uint8_t *result, unsigned size)
-{
-    int part_count = vfs_mount_count();
-    char **mps = alloca(part_count * sizeof(char *));
-    vfs_mount_points(mps, part_count);
-
-    uint8_t *result_start = result;
-    for (int n = 0; n < part_count; n++)
-    {
-        struct statvfs st;
-        if (vfs_statvfs(mps[n], &st) != 0)
-            continue;
-
-        int mps_len = strlen(mps[n]);
-        OSI_STRM_WMEM(result, mps[n], mps_len + 1);
-        OSI_STRM_WLE32(result, st.f_bsize);
-        OSI_STRM_WLE32(result, st.f_blocks);
-        OSI_STRM_WLE32(result, st.f_bfree);
-        OSI_STRM_WLE32(result, st.f_bavail);
-        OSI_STRM_WLE32(result, st.f_flag);
-    }
-    return OSI_PTR_DIFF(result, result_start);
 }
 
 void drvHostSyscmdHandler(drvHostCmdEngine_t *cmd, uint8_t *packet, unsigned packet_len)
@@ -371,12 +346,6 @@ void drvHostSyscmdHandler(drvHostCmdEngine_t *cmd, uint8_t *packet, unsigned pac
         uint16_t error = (vfs_rename(src, dst) < 0) ? 0xffff : 0;
         drvHostCmdSendResultCode(cmd, packet, error);
     }
-    else if (cmd_code == HOST_SYSCMD_LISTPARTION)
-    {
-        int size = prvListPartition(payload + 2, PAYLOAD_MAX - 2);
-        osiBytesPutLe16(payload, size);
-        drvHostCmdSendResponse(cmd, packet, PACKET_OVERHEAD + 2 + size);
-    }
 #ifdef CONFIG_APPIMG_LOAD_FLASH
     else if (cmd_code == HOST_SYSCMD_APPIMG_FLASH_GET)
     {
@@ -461,12 +430,6 @@ void drvHostSyscmdHandler(drvHostCmdEngine_t *cmd, uint8_t *packet, unsigned pac
         drvHostCmdSendResultCode(cmd, packet, 0xffff);
     }
 #endif
-    else if (cmd_code == HOST_SYSCMD_PROFILEMODE)
-    {
-        osiProfileMode_t mode = (osiProfileMode_t)osiBytesGet8(payload);
-        osiProfileSetMode(mode);
-        drvHostCmdSendResultCode(cmd, packet, 0);
-    }
     else
     {
         drvHostInvalidCmd(cmd, packet, packet_len);

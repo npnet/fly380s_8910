@@ -66,7 +66,6 @@ typedef struct osiShutdownReg
 typedef struct
 {
     bool started;
-    osiBootMode_t boot_mode;
     osiPmSourceHead_t resume_list;
     osiPmSourceHead_t active_list;
     osiPmSourceHead_t inactive_list;
@@ -74,6 +73,7 @@ typedef struct
     osiShutdownRegHead_t shutdown_reg_list;
 
     uint32_t boot_causes;
+    osiBootMode_t boot_mode;
     uint32_t sleep32k_flags;
 } osiPmContext_t;
 
@@ -491,13 +491,17 @@ static void prvLightSleep(osiPmContext_t *d, uint32_t idle_tick)
         osiTimerWakeupProcess();
 }
 
-static void prvSleepLocked(uint32_t idle_tick)
+void osiPmSleep(uint32_t idle_tick)
 {
+    uint32_t critical = osiEnterCritical();
     osiPmContext_t *d = &gOsiPmCtx;
     osiSuspendMode_t mode = DEBUG_SUSPEND_MODE;
 
     if (osiIsSleepAbort())
+    {
+        osiExitCritical(critical);
         return;
+    }
 
     if (gOsiPmCtx.sleep32k_flags != 0)
     {
@@ -507,6 +511,7 @@ static void prvSleepLocked(uint32_t idle_tick)
             if (deep_sleep_ms > SUSPEND_MIN_TIME)
             {
                 prv32KSleep(d, deep_sleep_ms);
+                osiExitCritical(critical);
                 return;
             }
         }
@@ -519,18 +524,13 @@ static void prvSleepLocked(uint32_t idle_tick)
             if (deep_sleep_ms > SUSPEND_MIN_TIME)
             {
                 prvSuspend(d, mode, deep_sleep_ms);
+                osiExitCritical(critical);
                 return;
             }
         }
     }
 
     prvLightSleep(d, idle_tick);
-}
-
-void osiPmSleep(uint32_t idle_tick)
-{
-    uint32_t critical = osiEnterCritical();
-    prvSleepLocked(idle_tick);
     osiExitCritical(critical);
 }
 

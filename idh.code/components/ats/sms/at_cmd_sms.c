@@ -154,7 +154,7 @@ static char *_generateRealNumberForCmgsAndCmgwInUcs2(const char *da, uint8_t *da
     char *number = malloc(length);
     if (number == NULL)
     {
-        *errorCode = ERR_AT_CMS_MEM_FAIL;
+        *errorCode = ERR_AT_CME_NO_MEMORY;
         return NULL;
     }
     memset(number, 0x00, length);
@@ -965,16 +965,20 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
                         pTextWithHead->scts.uSecond, pTextWithHead->scts.iZone);
             }
 
-            if (urcScaNumber)
-                free(urcScaNumber);
-            if (urcOaNumber)
+            if (urcOaNumber != NULL)
                 free(urcOaNumber);
+
+            if (urcScaNumber != NULL)
+                free(urcScaNumber);
 
             atCmdRespSimUrcText(nSim, rsp);
             char *data = _smsNodeDataStr(pNewMsgNode->node.nType, &pNewMsgNode->info, nSim);
+
             if (data != NULL)
+            {
                 atCmdRespSimUrcText(nSim, data);
-            free(data);
+                free(data);
+            }
 
             if (CFW_GetSmsSeviceMode() && ((nMt == 3 && isClass3) || (nMt == 2 && isClass3) || (nMt == 2 && isClass1)))
             {
@@ -1020,7 +1024,6 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
             char *urcScaNumber = NULL;
             if (gAtSetting.cscs == cs_ucs2)
                 urcScaNumber = generateUrcUcs2Data(raNumber, strlen(raNumber));
-            atMemFreeLater(urcScaNumber);
 
             sprintf(rsp, "+CDS: %u,%u,\"%s\",%u,\"%u/%02u/%02u,%02u:%02u:%02u%+03d\",\"%u/%02u/%02u,%02u:%02u:%02u%+03d\",%u",
                     pTextWithHeadSR->fo, pTextWithHeadSR->mr, urcScaNumber ? urcScaNumber : raNumber,
@@ -1031,9 +1034,6 @@ static void _onEV_CFW_NEW_SMS_IND(const osiEvent_t *event)
                     pTextWithHeadSR->dt.uMinute, pTextWithHeadSR->dt.uSecond, pTextWithHeadSR->dt.iZone,
                     pTextWithHeadSR->st);
             atCmdRespSimUrcText(nSim, rsp);
-
-            if (urcScaNumber)
-                free(urcScaNumber);
         }
         break;
 
@@ -2036,10 +2036,7 @@ static void CMGS_TextCmdSet(atCommand_t *cmd)
     // +CMGS=<da>[,<toda>]<CR>text is entered<ctrl-Z/ESC>
     bool paramok = true;
     const char *da = atParamStr(cmd->params[0], &paramok);
-    uint8_t toda = CFW_TELNUMBER_TYPE_UNKNOWN;
-    static const uint32_t number_type_list[3] = {CFW_TELNUMBER_TYPE_UNKNOWN, CFW_TELNUMBER_TYPE_INTERNATIONAL, CFW_TELNUMBER_TYPE_NATIONAL};
-    if (cmd->param_count == 2)
-        toda = atParamUintInList(cmd->params[1], number_type_list, sizeof(number_type_list) / sizeof(number_type_list[0]), &paramok);
+    uint8_t toda = atParamDefUint(cmd->params[1], CFW_TELNUMBER_TYPE_UNKNOWN, &paramok);
 
     if (!paramok || cmd->param_count > 2)
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
@@ -2051,17 +2048,13 @@ static void CMGS_TextCmdSet(atCommand_t *cmd)
         uint32_t errorCode;
         number = _generateRealNumberForCmgsAndCmgwInUcs2(da, &da_len, &errorCode);
         if (errorCode != 0)
-        {
-            if (number != NULL)
-                free(number);
             RETURN_CMS_ERR(cmd->engine, errorCode);
-        }
     }
     else
     {
         number = malloc(da_len);
         if (number == NULL)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
         memset(number, 0x00, da_len);
         memcpy(number, da, da_len);
     }
@@ -2070,7 +2063,7 @@ static void CMGS_TextCmdSet(atCommand_t *cmd)
     if (async == NULL)
     {
         free(number);
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
     }
 
     memset(async, 0, sizeof(*async));
@@ -2080,7 +2073,7 @@ static void CMGS_TextCmdSet(atCommand_t *cmd)
     if (async->data == NULL)
     {
         free(number);
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
     }
 
     bool bIsInternational = false;
@@ -2099,7 +2092,7 @@ static void CMGS_TextCmdSet(atCommand_t *cmd)
 
     if (da_len > 20)
     {
-        free(tempNumber);
+        free(number);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
     }
 
@@ -2110,7 +2103,7 @@ static void CMGS_TextCmdSet(atCommand_t *cmd)
         toda != CFW_TELNUMBER_TYPE_NATIONAL &&
         toda != CFW_TELNUMBER_TYPE_UNKNOWN)
     {
-        free(tempNumber);
+        free(number);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
     }
 
@@ -2207,14 +2200,14 @@ static void CMGS_PduCmdSet(atCommand_t *cmd)
 
     cmgsAsyncContext_t *async = (cmgsAsyncContext_t *)calloc(1, sizeof(*async));
     if (async == NULL)
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
 
     cmd->async_ctx = async;
     cmd->async_ctx_destroy = CMGS_AsyncCtxDestroy;
     async->pdu_length = length;
     async->data = (uint8_t *)malloc(SMS_MAX_SIZE);
     if (async->data == NULL)
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
 
     // display in the screen, and need input
     atCmdRespOutputPrompt(cmd->engine);
@@ -2813,7 +2806,7 @@ static void CMGW_TextCmdSet(atCommand_t *cmd)
 
     cmgwAsyncCtx_t *async = (cmgwAsyncCtx_t *)calloc(1, sizeof(*async) + SMS_MAX_SIZE);
     if (async == NULL)
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
 
     char *number = NULL;
     uint8_t da_len = strlen(da);
@@ -2822,16 +2815,13 @@ static void CMGW_TextCmdSet(atCommand_t *cmd)
         uint32_t errorCode;
         number = _generateRealNumberForCmgsAndCmgwInUcs2(da, &da_len, &errorCode);
         if (errorCode != 0)
-        {
-            free(number);
             RETURN_CMS_ERR(cmd->engine, errorCode);
-        }
     }
     else
     {
         number = malloc(da_len);
         if (number == NULL)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
         memset(number, 0x00, da_len);
         memcpy(number, da, da_len);
     }
@@ -2843,10 +2833,7 @@ static void CMGW_TextCmdSet(atCommand_t *cmd)
 
     bool bIsInternational = false;
     if (!AT_SMS_IsValidPhoneNumber(number, da_len, &bIsInternational))
-    {
-        free(number);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_CHAR);
-    }
 
     char *tempNumber = number;
     if (bIsInternational)
@@ -2856,10 +2843,7 @@ static void CMGW_TextCmdSet(atCommand_t *cmd)
     }
 
     if (da_len > 20)
-    {
-        free(tempNumber);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
-    }
 
     // can't fail due to it is checked.
     async->number.nDialNumberSize = cfwDialStringToBcd(number, da_len, async->number.pDialNumber);
@@ -2867,10 +2851,7 @@ static void CMGW_TextCmdSet(atCommand_t *cmd)
     if (toda != CFW_TELNUMBER_TYPE_INTERNATIONAL &&
         toda != CFW_TELNUMBER_TYPE_NATIONAL &&
         toda != CFW_TELNUMBER_TYPE_UNKNOWN)
-    {
-        free(tempNumber);
         RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_PARAM);
-    }
 
     /* according to spec, we check dial number first */
     if (bIsInternational)
@@ -2911,7 +2892,7 @@ static void CMGW_PduCmdSet(atCommand_t *cmd)
 
     cmgwAsyncCtx_t *async = (cmgwAsyncCtx_t *)calloc(1, sizeof(*async));
     if (async == NULL)
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
     async->stat = CFW_SMS_STORED_STATUS_UNSENT; // set default value of status
 
     uint32_t pdu_stat = 0;
@@ -3263,9 +3244,6 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                         pType1Data->scts.iZone);
             }
 
-            if (urcOaNumber)
-                free(urcOaNumber);
-
             atCmdRespInfoText(cmd->engine, rsp);
 
             /* Chinese message list */
@@ -3274,7 +3252,6 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                 RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_ME_FAIL);
 
             atCmdRespInfoText(cmd->engine, data);
-            free(data);
         }
         else if (node.node.nType == 3) // text mode, show param, state =sent/unsent msg
         {
@@ -3330,9 +3307,6 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                         urcOaNumber ? urcOaNumber : number);
             }
 
-            if (urcOaNumber)
-                free(urcOaNumber);
-
             atCmdRespInfoText(cmd->engine, rsp);
 
             char *data = _smsNodeDataStr(node.node.nType, &node.info, nSim);
@@ -3340,7 +3314,6 @@ static void CMGL_ListRspCB(atCommand_t *cmd, const osiEvent_t *event)
                 RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_ME_FAIL);
 
             atCmdRespInfoText(cmd->engine, data);
-            free(data);
         }
         else if (node.node.nType == 7) // PDU mode, pp msg
         {
@@ -3413,7 +3386,7 @@ void atCmdHandleCMGL(atCommand_t *cmd)
              sStorageInfo.unReadRecords, sStorageInfo.readRecords, sStorageInfo.sentRecords,
              sStorageInfo.unsentRecords, sStorageInfo.unknownRecords);
 
-    if (cmd->type == AT_CMD_SET)
+    if (cmd->type == AT_CMD_SET || cmd->type == AT_CMD_EXE)
     {
         // +CMGL[=<stat>]
         bool paramok = true;
@@ -3811,7 +3784,7 @@ static void CMGR_ReadRspCB(atCommand_t *cmd, const osiEvent_t *event)
     char *rsp = NULL;
     rsp = malloc(1024);
     if (rsp == NULL)
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
+        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
     memset(rsp, 0x00, 1024);
     atMemFreeLater(rsp);
 
@@ -3854,10 +3827,11 @@ static void CMGR_ReadRspCB(atCommand_t *cmd, const osiEvent_t *event)
                     pType1Data->scts.uMinute, pType1Data->scts.uSecond, pType1Data->scts.iZone);
         }
 
-        if (urcScaNumber)
-            free(urcScaNumber);
-        if (urcOaNumber)
+        if (urcOaNumber != NULL)
             free(urcOaNumber);
+
+        if (urcScaNumber != NULL)
+            free(urcScaNumber);
 
         atCmdRespInfoText(cmd->engine, rsp);
 
@@ -4116,7 +4090,6 @@ void atCmdHandleCSMP(atCommand_t *cmd)
         sInfo.vp = vp;
         sInfo.pid = pid;
         sInfo.dcs = dcs;
-        sInfo.nSaveToSimFlag = 0;
         if (CFW_CfgSetSmsParam(&sInfo, 0 /*pParam->nDLCI*/, nSim) != 0)
             RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_MEM_FAIL);
         RETURN_OK(cmd->engine);

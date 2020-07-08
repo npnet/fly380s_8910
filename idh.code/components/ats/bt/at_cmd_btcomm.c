@@ -147,31 +147,6 @@ static void AppConvertBtNametoString(uint16_t *name, uint8_t name_arr_len, uint8
     }
 }
 
-static void AppConvertBtNametoString_Ex(uint16_t *name, uint8_t name_arr_len, uint8_t *name_str_ptr, uint8_t name_str_arr_len)
-{
-    uint8_t i = 0;
-    uint8_t j = 0;
-
-    OSI_LOGXI(OSI_LOGPAR_M, 0x10005236, "Dump : %*s", name_arr_len * 2, (void *)name);
-
-    while (name[j] != 0 && j < name_arr_len && i < name_str_arr_len)
-    {
-        if (name[j] < 0x0080)
-        {
-            name_str_ptr[i++] = name[j];
-        }
-        else
-        {
-            name_str_ptr[i++] = *((uint8_t *)(name + j) + 1);
-            name_str_ptr[i++] = *((uint8_t *)(name + j));
-        }
-
-        j++;
-    }
-
-    OSI_LOGXI(OSI_LOGPAR_M, 0x10005236, "Dump : %*s", name_str_arr_len, (void *)name_str_ptr);
-}
-
 /*****************************************************************************/
 //  convert to double byte ascii;
 /*****************************************************************************/
@@ -689,7 +664,6 @@ void AT_BTApp_CmdFunc_BtComm(atCommand_t *pParam)
     uint8_t profile[AT_BT_PROFILE_MAX_SIZE + 1] = {0};
     uint8_t bt_addr[AT_BT_ADDR_MAX_SIZE + 1] = {0};
     uint8_t local_name[AT_BT_NAME_MAX_SIZE + 1] = {0};
-    uint8_t bond_name[BT_DEVICE_NAME_SIZE * 2 + 1] = {0};
     uint16_t bt_name[AT_BT_NAME_MAX_SIZE + 1] = {0};
     BT_SCAN_E ScanMode = BT_NONE_ENABLE;
     uint32_t service_type = BT_SERVICE_ALL;
@@ -1425,10 +1399,9 @@ void AT_BTApp_CmdFunc_BtComm(atCommand_t *pParam)
                 if (BT_GetPairedDeviceInfo(BT_SERVICE_ALL, index, &dev) == BT_SUCCESS)
                 {
                     //+LISTBOND:11:22:33:44:55:66,devName1,00000408
-                    memset(bond_name, 0, sizeof(bond_name));
                     AppConvertBtAddrtoString(dev.addr.addr, bt_addr);
-                    AppConvertBtNametoString_Ex(dev.name, BT_DEVICE_NAME_SIZE, bond_name, sizeof(bond_name));
-                    sprintf((char *)rsp, "%s%s%s%s%s%08x", "+LISTBOND:", (char *)bt_addr, ",", (char *)bond_name, ",", (unsigned int)dev.dev_class);
+                    AppConvertBtNametoString(dev.name, AT_BT_NAME_MAX_SIZE, local_name, AT_BT_NAME_MAX_SIZE);
+                    sprintf((char *)rsp, "%s%s%s%s%s%08x", "+LISTBOND:", (char *)bt_addr, ",", (char *)local_name, ",", (unsigned int)dev.dev_class);
                     atCmdRespInfoText(pParam->engine, (char *)rsp);
                 }
             }

@@ -2176,14 +2176,6 @@ typedef struct _CFW_NW_NETWORK_INFO
     uint8_t nNwkNames[247];
 } CFW_NW_NETWORK_INFO;
 
-typedef struct _CFW_NW_MBS_CELL_INFO
-{
-    uint16_t nArfcn; // Abs Freq Number
-    uint8_t nBsic;   // Base Station Code
-    uint8_t nCellId[2];
-    uint8_t nLai[5];
-} CFW_NW_MBS_CELL_INFO;
-
 typedef struct _CFW_NW_JAMMING_DETECT_GET_IND
 {
     uint8_t nMode;    /*1: Jamming Detect Enabled; 0: Jamming Detect Disabled*/
@@ -9030,14 +9022,8 @@ uint8_t CFW_SmsGetSmsType(CFW_SIM_ID nSimID);
 uint32_t CFW_SwitchPort(uint8_t nFlag);
 
 uint32_t CFW_GetRFTemperature(uint32_t *temp);
-
 uint32_t CFW_SetLTEFreqPwrRange(uint16_t freqlow, uint16_t freqhigh, uint16_t power);
 uint32_t CFW_SetRFFreqPwrRange(uint16_t mode, uint16_t band, uint16_t powerlow, uint16_t powerhigh);
-
-uint32_t CFW_SetVideoSurveillance(uint8_t iEnable, CFW_SIM_ID nSimID);
-
-uint32_t CFW_GetVideoSurveillance(uint8_t *iEnable, CFW_SIM_ID nSimID);
-
 typedef struct _CFW_APNS_UNAME_UPWD
 {
     char apn[50];
@@ -9147,6 +9133,5 @@ uint32_t CFW_SetPdnDeactTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO pdnTimerAnd
 uint32_t CFW_GetPdnDeactTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO *pdnTimerAndMaxCount, uint8_t nRat, CFW_SIM_ID nSimID);
 
 extern uint32_t CSW_SetAndGetMicGain(uint8_t *resultcode, uint8_t *hasMsg, uint8_t *resultMsg, uint8_t mode, uint8_t nPath, uint8_t nCtrl, uint8_t *nParam, uint16_t nParamLength);
-uint32_t SimSendStatusReq(uint8_t nMode, CFW_SIM_ID nSimID);
 
 #endif

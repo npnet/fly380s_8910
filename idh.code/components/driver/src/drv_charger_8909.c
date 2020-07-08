@@ -38,8 +38,3 @@ drvChargerType_t drvChargerGetType(void)
 void drvChargerSetCB(drvChargerPlugCB_t cb, void *ctx) {}
 
 void drvChargerInit(void) {}
-
-uint16_t drvChargerGetBatteryVoltage()
-{
-    return 4000;
-}

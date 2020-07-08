@@ -708,5 +708,20 @@ void halIomuxInit(void)
     halIomuxSetPadPull(HAL_IOMUX_PAD_KEYIN_2, HAL_IOMUX_FORCE_PULL_UP_1);
 #endif
 
+#if defined(CONFIG_BOARD_SUPPORT_SIM1_DETECT) && (CONFIG_BOARD_SIM1_DETECT_GPIO == 4)
+    halIomuxSetFunction(HAL_IOMUX_FUN_GPIO_4);
+    halIomuxSetPadPull(HAL_IOMUX_FUN_GPIO_4, HAL_IOMUX_FORCE_PULL_NONE);
+#endif
+
+#if defined(CONFIG_BOARD_SUPPORT_SIM1_DETECT) && (CONFIG_BOARD_SIM1_DETECT_GPIO == 10)
+    halIomuxSetFunction(HAL_IOMUX_FUN_GPIO_10);
+    halIomuxSetPadPull(HAL_IOMUX_FUN_GPIO_10, HAL_IOMUX_FORCE_PULL_NONE);
+#endif
+
+#if defined(CONFIG_BOARD_SUPPORT_SIM2_DETECT) && (CONFIG_BOARD_SIM2_DETECT_GPIO == 11)
+    halIomuxSetFunction(HAL_IOMUX_FUN_GPIO_11);
+    halIomuxSetPadPull(HAL_IOMUX_FUN_GPIO_11, HAL_IOMUX_FORCE_PULL_NONE);
+#endif
+
     (void)osiPmSourceCreate(DRV_NAME_IOMUX, &gIomuxPmOps, NULL);
 }

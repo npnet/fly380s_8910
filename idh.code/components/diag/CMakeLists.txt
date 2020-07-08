@@ -36,8 +36,6 @@ if(CONFIG_DIAG_ENABLED)
     )
 endif()
 
-target_include_targets_if(CONFIG_DIAG_BT_AUTOTEST_SUPPORT THEN ${target} PRIVATE blueu)
-
 relative_glob(srcs include/*.h src/*.[ch] src/8910/*.c)
 list(FILTER srcs EXCLUDE REGEX ".*/calibration.h")
 list(FILTER srcs EXCLUDE REGEX ".*/cmddef.h")

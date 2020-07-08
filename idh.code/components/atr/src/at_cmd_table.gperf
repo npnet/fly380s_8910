@@ -168,7 +168,6 @@ S0,             atCmdHandleS0, 0            // (6.3.8) Automatic answer
 +CCFC,          atCmdHandleCCFC, 0          // 7.11 Call forwarding number and conditions
 +CCED,          atCmdHandleCCED, 0
 +MJDC,          atCmdHandleMJDC, 0          //Detect the jamming.
-+SDMBS,         atCmdHandleSDMBS, 0         //Set Pseudo base station identification.
 
 
 +CTEC,          atCmdHandleCTEC, 0          // Change RAT
@@ -607,7 +606,6 @@ $MYSYSMODE,     atCmdHandleMYSYSMODE, 0
 +RFTEMPERATURE,   atCmdHandleRFTEMPERATURE, 0
 +SETLTEFRP,       atCmdHandleSETLTEFRP, 0
 +SETRFFRP,        atCmdHandleSETRFFRP, 0
-+SETVOS,          atCmdHandleSETVOS, 0
 #endif
 
 #ifdef CONFIG_SOC_8910
