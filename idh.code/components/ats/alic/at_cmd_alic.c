@@ -631,13 +631,9 @@ void AT_ALIC_CmdFunc_AUTH(atCommand_t *pParam)
         if (at_alic_auth(pkey, dname, dsecret) != 0)
         {
             OSI_LOGI(0, "AT+ALICAUTH at_alic_auth fail ");
-            if (authmode)
-                free(dsecret);
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
         }
         OSI_LOGI(0, "AT+ALICAUTH at_alic_auth succuss");
-        if (authmode)
-            free(dsecret);
         RETURN_OK(pParam->engine);
     }
     else if (AT_CMD_TEST == pParam->type)
@@ -945,20 +941,15 @@ void AT_ALIC_CmdFunc_PUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB: cleanssion pParam error");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
-        if (AT_StrLen(msg) > AT_ALIC_OUT_MSG_LEN)
-        {
-            OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB Wrong MESSAGE LENGTH");
-            RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
-        }
         if (pParam->param_count >= 4)
         {
-            duplicate = atParamDefUintInRange(pParam->params[index++], 0, 0, 1, &iResult);
+            duplicate = atParamUintInRange(pParam->params[index++], 0, 1, &iResult);
             if (!iResult)
             {
                 OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB: duplicate pParam error");
                 RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
             }
-            retain = atParamDefUintInRange(pParam->params[index++], 0, 0, 1, &iResult);
+            retain = atParamUintInRange(pParam->params[index++], 0, 1, &iResult);
             if (!iResult)
             {
                 OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB: retain pParam error");

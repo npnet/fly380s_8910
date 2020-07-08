@@ -110,10 +110,5 @@ config DIAG_DEBUG_SUPPORT
     bool "Support Diag Port Debug"
     default y
 
-config DIAG_BT_AUTOTEST_SUPPORT
-    bool "Support Diag BT Autotest"
-    default n
-    select BLUEU_BT_ENABLE
-
 endif
 endmenu

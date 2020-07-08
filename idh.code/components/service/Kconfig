@@ -74,16 +74,4 @@ config SRV_SIMLOCK_ENABLE
     help
         Enbale simlock service.
 
-config SRV_POWER_ON_VOLTAGE
-    int "Power on voltage"
-    default 3400
-
-config SRV_POWER_OFF_VOLTAGE
-    int "Power off voltage"
-    default 3250
-
-config SRV_POWER_OFF_CHARGE_SUPPORT
-    bool "Power off charge support"
-    default n
-
 endmenu

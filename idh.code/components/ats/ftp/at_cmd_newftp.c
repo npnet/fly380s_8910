@@ -440,74 +440,69 @@ static void ftp_get_MsgHandler(void *param)
         if (buflen == 0)
             return;
 
-        if (gAtFtpCtx->getstop)
+        atDispatch_t *ch = atCmdGetDispatch(gAtFtpCtx->FTPengine);
+        if (ch == NULL)
         {
-            FTPLOGI(FTPLOG_AT, "discard this ftp download data");
-            gAtFtpCtx->req_getDelay = false;
+            FTPLOGI(FTPLOG_AT, "failed to get dispatch from ftp engine");
+            return;
         }
-        else
+
+        atDevice_t *device = atDispatchGetDevice(ch);
+        if (device == NULL)
         {
-            atDispatch_t *ch = atCmdGetDispatch(gAtFtpCtx->FTPengine);
-            if (ch == NULL)
-            {
-                FTPLOGI(FTPLOG_AT, "failed to get dispatch from ftp engine");
-                return;
-            }
+            FTPLOGI(FTPLOG_AT, "failed to get device from ftp dispatch");
+            return;
+        }
 
-            atDevice_t *device = atDispatchGetDevice(ch);
-            if (device == NULL)
-            {
-                FTPLOGI(FTPLOG_AT, "failed to get device from ftp dispatch");
-                return;
-            }
+        int writeAvail = atDeviceWriteAvail(device);
+        getLen = (writeAvail < buflen ? writeAvail : buflen);
+        if (getLen <= 0)
+        {
+            FTPLOGI(FTPLOG_AT, "failed %d bytes is available in uart", getLen);
+            gAtFtpCtx->req_getDelay = true;
+            ftp_msg_handler(FTP_MSG_TRANSFER_DATA, FTP_RET_SUCCESS, (uint32_t)NULL, buflen);
+            return;
+        }
 
-            int writeAvail = atDeviceWriteAvail(device);
-            getLen = (writeAvail < buflen ? writeAvail : buflen);
-            if (getLen <= 0)
+        pbuffer = malloc(getLen);
+        if (pbuffer != NULL)
+        {
+            ByteNum = FTPLib_get(pbuffer, getLen);
+            if (ByteNum > 0)
             {
-                FTPLOGI(FTPLOG_AT, "failed %d bytes is available in uart", getLen);
-                gAtFtpCtx->req_getDelay = true;
-                ftp_msg_handler(FTP_MSG_TRANSFER_DATA, FTP_RET_SUCCESS, (uint32_t)NULL, buflen);
-                return;
-            }
-
-            pbuffer = malloc(getLen);
-            if (pbuffer != NULL)
-            {
-                ByteNum = FTPLib_get(pbuffer, getLen);
-                if (ByteNum > 0)
+                if (!gAtFtpCtx->getstop)
                 {
                     sprintf(rsp, "^FTPGET:2,%ld", ByteNum);
                     ftp_ReportInfo(rsp);
                     atCmdWrite(gAtFtpCtx->FTPengine, pbuffer, ByteNum);
                     ftp_ReportInfo("\r\n");
-                    free(pbuffer);
                 }
-                else
-                {
-                    FTPLOGI(FTPLOG_AT, "failed to get download data from ftplib");
-                    gAtFtpCtx->req_getDelay = false;
-                    free(pbuffer);
-                    return;
-                }
-            }
-
-            if (ByteNum != buflen)
-            {
-                gAtFtpCtx->req_getDelay = true;
-                ftp_msg_handler(FTP_MSG_TRANSFER_DATA, FTP_RET_SUCCESS, (uint32_t)NULL, buflen - ByteNum);
+                free(pbuffer);
             }
             else
             {
+                FTPLOGI(FTPLOG_AT, "failed to get download data from ftplib");
                 gAtFtpCtx->req_getDelay = false;
+                free(pbuffer);
+                return;
             }
+        }
+
+        if (ByteNum != buflen)
+        {
+            gAtFtpCtx->req_getDelay = true;
+            ftp_msg_handler(FTP_MSG_TRANSFER_DATA, FTP_RET_SUCCESS, (uint32_t)NULL, buflen - ByteNum);
+        }
+        else
+        {
+            gAtFtpCtx->req_getDelay = false;
         }
     }
     else if (nEventId == FTP_MSG_GET)
     {
         if (gAtFtpCtx->req_getDelay)
         {
-            FTPLOGI(FTPLOG_AT, "delay to close the transfer when data is available");
+            FTPLOGI(FTPLOG_AT, "delay get close message when data is available");
             ftp_msg_handler(nEventId, nResult, nParam1, nParam2);
             return;
         }
@@ -625,16 +620,14 @@ static void ftp_msg_handler(uint32_t nEventId, uint32_t nResult, uint32_t nParam
         return;
     }
 
-    if (gAtMsgHandler[gAtFtpCtx->FTPCmd] != NULL)
-    {
-        osiEvent_t *ev = (osiEvent_t *)malloc(sizeof(osiEvent_t));
-        ev->id = nEventId;
-        ev->param1 = (uint32_t)nResult;
-        ev->param2 = (uint32_t)nParam1;
-        ev->param3 = (uint32_t)nParam2;
+    osiEvent_t *ev = (osiEvent_t *)malloc(sizeof(osiEvent_t));
+    ev->id = nEventId;
+    ev->param1 = (uint32_t)nResult;
+    ev->param2 = (uint32_t)nParam1;
+    ev->param3 = (uint32_t)nParam2;
 
+    if (gAtMsgHandler[gAtFtpCtx->FTPCmd] != NULL)
         osiThreadCallback(atEngineGetThreadId(), (osiCallback_t)gAtMsgHandler[gAtFtpCtx->FTPCmd], (void *)ev);
-    }
 }
 
 static bool ftp_gethostport(char *url, char **host, char **port)
@@ -1193,7 +1186,6 @@ void AT_FTP_CmdFunc_GET(atCommand_t *pParam)
     case AT_CMD_TEST:
         atCmdRespInfoText(pParam->engine, "^FTPGET: <mode> [,<0>]");
         atCmdRespOK(pParam->engine);
-        break;
     default:
         RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         break;

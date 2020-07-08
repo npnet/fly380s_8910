@@ -978,6 +978,7 @@ bool ftp_conn_disconnect(ftp_sock_e flag)
 bool ftp_conn_send(uint8_t *buf, uint32_t buflen, ftp_sock_e flag)
 {
     int nbSent = 0;
+    uint32_t offset = 0;
 
 #if TRANS_DEBUG
 #ifdef LWIP_IPV6_ON
@@ -1025,19 +1026,16 @@ bool ftp_conn_send(uint8_t *buf, uint32_t buflen, ftp_sock_e flag)
         FTPLOGI(FTPLOG_CON, "sending %d bytes to %s:%d", buflen, s, ntohs(port));
 #endif
 
-    int size = CFW_TcpipAvailableBuffer(sockset->sock);
-    if (size < buflen)
+    while (offset != buflen)
     {
-        FTPLOGI(FTPLOG_CON, "send() failed, available %d size isn't enough", size);
-        return false;
-    }
-
-    nbSent = send(sockset->sock, buf, buflen, 0);
-    if (nbSent == -1)
-    {
-        FTPLOGI(FTPLOG_CON, "send() failed, error: %d(%s)", errno, strerror(errno));
-        sockset->errcode = errno;
-        return false;
+        nbSent = send(sockset->sock, buf + offset, buflen - offset, 0);
+        if (nbSent == -1)
+        {
+            FTPLOGI(FTPLOG_CON, "send() failed, error: %d(%s)", errno, strerror(errno));
+            sockset->errcode = errno;
+            return false;
+        }
+        offset += nbSent;
     }
 
     return true;

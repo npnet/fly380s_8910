@@ -22,6 +22,7 @@ struct rndis_params
 {
     int confignr;
     uint8_t used;
+    uint16_t saved_filter;
     enum rndis_state state;
     uint32_t medium;
     uint32_t speed;
@@ -141,10 +142,19 @@ static int gen_ndis_query_resp(struct rndis_params *params, uint32_t OID, uint8_
     int retval = -1;
     uint32_t length = 4; /* usually */
     uint32_t *outbuf;
+    uint32_t *tmp_buf;
     int i, count;
+    rndis_query_cmplt_type *resp;
+    drvEther_t *ether;
 
-#ifdef VERBOSE_DEBUG
-    uint32_t *tmp_buf = (uint32_t *)buf;
+    if (!r)
+        return -ENOMEM;
+    resp = (rndis_query_cmplt_type *)r->buf;
+
+    if (!resp)
+        return -ENOMEM;
+
+    tmp_buf = (uint32_t *)buf;
     if (buf_len && rndis_debug > 1)
     {
         OSI_LOGD(0, "query OID %08x value, len %d:\n", OID, buf_len);
@@ -157,13 +167,11 @@ static int gen_ndis_query_resp(struct rndis_params *params, uint32_t OID, uint8_
                      tmp_buf[i + 12]);
         }
     }
-#endif
 
     /* response goes here, right after the header */
-    drvEther_t *ether = params->ether->eth;
-    rndis_query_cmplt_type *resp = (rndis_query_cmplt_type *)r->buf;
     outbuf = (uint32_t *)&resp[1];
     resp->InformationBufferOffset = cpu_to_le32(16);
+    ether = params->ether->eth;
     const drvEthStats_t *status = drvEtherStatus(ether);
 
     switch (OID)
@@ -357,7 +365,7 @@ static int gen_ndis_query_resp(struct rndis_params *params, uint32_t OID, uint8_
 
     /* mandatory */
     case RNDIS_OID_GEN_RCV_NO_BUFFER:
-        OSI_LOGD(0, "RNDIS_OID_GEN_RCV_NO_BUFFER\n");
+        //OSI_LOGD(0, "RNDIS_OID_GEN_RCV_NO_BUFFER\n");
         if (ether)
         {
             *outbuf = cpu_to_le32(status->rx_dropped);
@@ -450,16 +458,22 @@ static int gen_ndis_query_resp(struct rndis_params *params, uint32_t OID, uint8_
 }
 
 static int gen_ndis_set_resp(struct rndis_params *params, uint32_t OID,
-                             uint8_t *buf, uint32_t buf_len)
+                             uint8_t *buf, uint32_t buf_len, rndisResp_t *r)
 {
-    int retval = 0;
+    rndis_set_cmplt_type *resp;
+    int i, retval = -1;
     uint32_t *tmp_buf = (uint32_t *)buf;
 
-#ifdef VERBOSE_DEBUG
+    if (!r)
+        return -ENOMEM;
+    resp = (rndis_set_cmplt_type *)r->buf;
+    if (!resp)
+        return -ENOMEM;
+
     if (buf_len && rndis_debug > 1)
     {
         OSI_LOGD(0, "set OID %08x value, len %d:\n", OID, buf_len);
-        for (int i = 0; i < buf_len; i += 16)
+        for (i = 0; i < buf_len; i += 16)
         {
             OSI_LOGD(0, "%03d: %08x %08x %08x %08x\n", i,
                      tmp_buf[i],
@@ -468,7 +482,6 @@ static int gen_ndis_set_resp(struct rndis_params *params, uint32_t OID,
                      tmp_buf[i + 12]);
         }
     }
-#endif
 
     switch (OID)
     {
@@ -481,12 +494,13 @@ static int gen_ndis_set_resp(struct rndis_params *params, uint32_t OID,
 		 *	MULTICAST, ALL_MULTICAST, BROADCAST
 		 */
         *params->filter = (uint16_t)tmp_buf[0];
-        OSI_LOGI(0, "RNDIS_OID_GEN_CURRENT_PACKET_FILTER %08x", *params->filter);
+        OSI_LOGD(0, "RNDIS_OID_GEN_CURRENT_PACKET_FILTER %08x\n", *params->filter);
 
         /* this call has a significant side effect:  it's
 		 * what makes the packet flow start and stop, like
 		 * activating the CDC Ethernet altsetting.
 		 */
+        retval = 0;
         if (*params->filter)
         {
             params->state = RNDIS_DATA_INITIALIZED;
@@ -506,12 +520,12 @@ static int gen_ndis_set_resp(struct rndis_params *params, uint32_t OID,
 
     case RNDIS_OID_802_3_MULTICAST_LIST:
         /* I think we can ignore this */
-        OSI_LOGI(0, "RNDIS_OID_802_3_MULTICAST_LIST\n");
+        OSI_LOGD(0, "RNDIS_OID_802_3_MULTICAST_LIST\n");
+        retval = 0;
         break;
 
     default:
-        OSI_LOGW(0, "set unknown OID 0x%08X, size %d\n", OID, buf_len);
-        retval = -EINVAL;
+        OSI_LOGD(0, "set unknown OID 0x%08X, size %d\n", OID, buf_len);
     }
 
     return retval;
@@ -527,11 +541,11 @@ static void rndis_notify_response_available(rndisParams_t *params, rndisResp_t *
  * Response Functions
  */
 
-static int rndis_init_response(struct rndis_params *params, rndis_init_msg_type *buf)
+static int rndis_init_response(struct rndis_params *params,
+                               rndis_init_msg_type *buf)
 {
-    OSI_LOGI(0, "RNDIS_MSG_INIT");
     if (!params->ether)
-        return -ENOTSUP;
+        return -1;
 
     rndisResp_t *r = rndis_alloc_response(params, sizeof(rndis_init_cmplt_type));
     if (!r)
@@ -560,9 +574,8 @@ static int rndis_init_response(struct rndis_params *params, rndis_init_msg_type 
 
 static int rndis_query_response(struct rndis_params *params, rndis_query_msg_type *buf)
 {
-    OSI_LOGI(0, "RNDIS_MSG_QUERY, %x/%x", buf->RequestID, buf->OID);
     if (!params->ether)
-        return -ENOTSUP;
+        return -1;
 
     /*
      * we need more memory:
@@ -597,15 +610,17 @@ static int rndis_query_response(struct rndis_params *params, rndis_query_msg_typ
     return 0;
 }
 
-static int rndis_set_response(struct rndis_params *params, rndis_set_msg_type *buf)
+static int rndis_set_response(struct rndis_params *params,
+                              rndis_set_msg_type *buf)
 {
-    uint32_t BufLength = buf->InformationBufferLength;
-    uint32_t BufOffset = buf->InformationBufferOffset;
+    uint32_t BufLength, BufOffset;
     rndisResp_t *r = rndis_alloc_response(params, sizeof(rndis_set_cmplt_type));
-    OSI_LOGI(0, "RNDIS_MSG_SET, %x/%x/%u/%u/%p", buf->RequestID, buf->OID,
-             BufLength, BufOffset, r);
     if (!r)
         return -ENOMEM;
+
+    rndis_set_cmplt_type *resp = (rndis_set_cmplt_type *)r->buf;
+    BufLength = buf->InformationBufferLength;
+    BufOffset = buf->InformationBufferOffset;
 
 #ifdef VERBOSE_DEBUG
     OSI_LOGD(0, "Length: %d\n", BufLength);
@@ -620,11 +635,10 @@ static int rndis_set_response(struct rndis_params *params, rndis_set_msg_type *b
     OSI_LOGD(0, "\n");
 #endif
 
-    rndis_set_cmplt_type *resp = (rndis_set_cmplt_type *)r->buf;
     resp->MessageType = cpu_to_le32(RNDIS_MSG_SET_C);
     resp->MessageLength = cpu_to_le32(16);
     resp->RequestID = buf->RequestID; /* Still LE in msg buffer */
-    if (gen_ndis_set_resp(params, buf->OID, ((uint8_t *)buf) + 8 + BufOffset, BufLength))
+    if (gen_ndis_set_resp(params, buf->OID, ((uint8_t *)buf) + 8 + BufOffset, BufLength, r))
         resp->Status = cpu_to_le32(RNDIS_STATUS_NOT_SUPPORTED);
     else
         resp->Status = cpu_to_le32(RNDIS_STATUS_SUCCESS);
@@ -633,9 +647,10 @@ static int rndis_set_response(struct rndis_params *params, rndis_set_msg_type *b
     return 0;
 }
 
-static int rndis_reset_response(struct rndis_params *params, rndis_reset_msg_type *buf)
+static int rndis_reset_response(struct rndis_params *params,
+                                rndis_reset_msg_type *buf)
 {
-    OSI_LOGI(0, "RNDIS_MSG_RESET");
+    rndis_reset_cmplt_type *resp;
     rndisResp_t *r;
     while ((r = rndis_get_next_response(params)))
         rndis_free_response(params, r);
@@ -643,7 +658,7 @@ static int rndis_reset_response(struct rndis_params *params, rndis_reset_msg_typ
     r = rndis_alloc_response(params, sizeof(rndis_reset_cmplt_type));
     if (!r)
         return -ENOMEM;
-    rndis_reset_cmplt_type *resp = (rndis_reset_cmplt_type *)r->buf;
+    resp = (rndis_reset_cmplt_type *)r->buf;
 
     resp->MessageType = cpu_to_le32(RNDIS_MSG_RESET_C);
     resp->MessageLength = cpu_to_le32(16);
@@ -658,13 +673,14 @@ static int rndis_reset_response(struct rndis_params *params, rndis_reset_msg_typ
 static int rndis_keepalive_response(struct rndis_params *params,
                                     rndis_keepalive_msg_type *buf)
 {
-    OSI_LOGD(0, "RNDIS_MSG_KEEPALIVE");
+    rndis_keepalive_cmplt_type *resp;
+
     /* host "should" check only in RNDIS_DATA_INITIALIZED state */
     rndisResp_t *r = rndis_alloc_response(params, sizeof(rndis_keepalive_cmplt_type));
     if (!r)
         return -ENOMEM;
+    resp = (rndis_keepalive_cmplt_type *)r->buf;
 
-    rndis_keepalive_cmplt_type *resp = (rndis_keepalive_cmplt_type *)r->buf;
     resp->MessageType = cpu_to_le32(RNDIS_MSG_KEEPALIVE_C);
     resp->MessageLength = cpu_to_le32(16);
     resp->RequestID = buf->RequestID; /* Still LE in msg buffer */
@@ -732,15 +748,18 @@ void rndis_set_host_mac(struct rndis_params *params, const uint8_t *addr)
  */
 int rndis_msg_parser(struct rndis_params *params, uint8_t *buf)
 {
-    if (!params)
-        return -ENODEV;
+    uint32_t MsgType, MsgLength;
+    uint32_t *tmp;
 
     if (!buf)
         return -ENOMEM;
 
-    uint32_t *tmp = (uint32_t *)buf;
-    uint32_t type = *tmp++;
-    uint32_t length = *tmp++;
+    tmp = (uint32_t *)buf;
+    MsgType = *tmp++;
+    MsgLength = *tmp++;
+
+    if (!params)
+        return -1;
 
     /* NOTE: RNDIS is *EXTREMELY* chatty ... Windows constantly polls for
 	 * rx/tx statistics and link status, in addition to KEEPALIVE traffic
@@ -748,9 +767,10 @@ int rndis_msg_parser(struct rndis_params *params, uint8_t *buf)
 	 */
 
     /* For USB: responses may take up to 10 seconds */
-    switch (type)
+    switch (MsgType)
     {
     case RNDIS_MSG_INIT:
+        OSI_LOGI(0, "RNDIS_MSG_INIT\n");
         params->state = RNDIS_INITIALIZED;
         return rndis_init_response(params, (rndis_init_msg_type *)buf);
 
@@ -762,15 +782,22 @@ int rndis_msg_parser(struct rndis_params *params, uint8_t *buf)
         return 0;
 
     case RNDIS_MSG_QUERY:
-        return rndis_query_response(params, (rndis_query_msg_type *)buf);
+        OSI_LOGD(0, "RNDIS_MSG_QUERY\n");
+        return rndis_query_response(params,
+                                    (rndis_query_msg_type *)buf);
 
     case RNDIS_MSG_SET:
+        OSI_LOGI(0, "RNDIS_MSG_SET\n");
         return rndis_set_response(params, (rndis_set_msg_type *)buf);
 
     case RNDIS_MSG_RESET:
+        OSI_LOGI(0, "RNDIS_MSG_RESET\n");
         return rndis_reset_response(params, (rndis_reset_msg_type *)buf);
 
     case RNDIS_MSG_KEEPALIVE:
+        /* For USB: host does this every 5 seconds */
+        if (rndis_debug > 1)
+            OSI_LOGI(0, "RNDIS_MSG_KEEPALIVE\n");
         return rndis_keepalive_response(params, (rndis_keepalive_msg_type *)buf);
 
     default:
@@ -778,7 +805,7 @@ int rndis_msg_parser(struct rndis_params *params, uint8_t *buf)
 		 * In one case those messages seemed to relate to the host
 		 * suspending itself.
 		 */
-        OSI_LOGE(0, "unknown RNDIS message 0x%08X len %d", type, length);
+        OSI_LOGE(0, "unknown RNDIS message 0x%08X len %d\n", MsgType, MsgLength);
 
         break;
     }
@@ -838,7 +865,7 @@ int rndis_set_param_dev(struct rndis_params *params, rndisData_t *ether, uint16_
 {
     OSI_LOGD(0, "rndis_set_param_dev");
     if (ether == NULL || params == NULL || cdc_filter == NULL)
-        return -EINVAL;
+        return -1;
 
     uint32_t critical = osiEnterCritical();
     params->ether = ether;

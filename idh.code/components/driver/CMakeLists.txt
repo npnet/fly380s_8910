@@ -11,26 +11,16 @@
 
 configure_file(include/drv_config.h.in ${out_inc_dir}/drv_config.h)
 
-if(NOT ${CONFIG_KEYPAD_CSV_PATH} STREQUAL "")
-    set(keypadcfg_h ${CMAKE_CURRENT_BINARY_DIR}/drv_keypad_def.h)
-    set(csv_keypad ${SOURCE_TOP_DIR}/${CONFIG_KEYPAD_CSV_PATH})
-    add_custom_command(OUTPUT ${keypadcfg_h}
-        COMMAND python3 ${keypadgen_py} ${csv_keypad} ${keypadcfg_h}
-        DEPENDS ${keypadgen_py} ${csv_keypad}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-endif()
-
 set(target driver)
 add_app_libraries($<TARGET_FILE:${target}>)
 
-add_library(${target} STATIC ${dummy_c_file} ${keypadcfg_h})
+add_library(${target} STATIC ${dummy_c_file})
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_DRIVER)
 target_include_directories(${target} PUBLIC include)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} src)
 target_include_targets(${target} PRIVATE hal kernel fs fsmount nanopb diag)
-target_include_targets(${target} PRIVATE nvm net calclib apploader audio)
+target_include_targets(${target} PRIVATE nvm net calclib apploader)
 
 nanopbgen(src/rtc/drv_rtc.proto)
 
@@ -73,8 +63,6 @@ target_sources_if(CONFIG_SOC_8910 THEN ${target} PRIVATE
     src/drv_aes.c
     src/drv_secure.c
     src/drv_sdmmc.c
-    src/drv_headset.c
-    src/drv_pmic_codec.c
     src/drv_usb.cpp
     src/usb/usb_composite_device.c
     src/usb/usb_serial.c

@@ -37,7 +37,6 @@
 #define NV_CMD_READ 3
 #define NV_CMD_WRITE 4
 #define NV_CMD_CALIB 5
-#define NV_CMD_IWRITE 6
 
 // NV process result
 #define NV_CMD_SUCCESS 0
@@ -108,7 +107,7 @@ static void _nvmCommand(struct ipc_cmd *cmd)
         {
             if (nvmReadItem(nvid, (void *)nv_paddr, nv_len) < 0)
             {
-                OSI_LOGXE(OSI_LOGPAR_SIII, 0, "NVM: read failed, name/%s address/0x%x size/0x%x nvid/0x%x",
+                OSI_LOGXE(OSI_LOGPAR_SII, 0, "NVM: read failed, name/%s address/0x%x size/0x%x nvid/0x%x",
                           region->name, nv_paddr, nv_len, nvid);
                 _nvmResponse(cmd, false);
                 return;
@@ -118,7 +117,7 @@ static void _nvmCommand(struct ipc_cmd *cmd)
         {
             if (nvmWriteItem(nvid, (void *)nv_paddr, nv_len) < 0)
             {
-                OSI_LOGXE(OSI_LOGPAR_SIII, 0, "NVM: write failed, name/%s address/0x%x size/0x%x nvid/0x%x",
+                OSI_LOGXE(OSI_LOGPAR_SII, 0, "NVM: write failed, name/%s address/0x%x size/0x%x nvid/0x%x",
                           region->name, nv_paddr, nv_len, nvid);
                 _nvmResponse(cmd, false);
                 return;
@@ -127,29 +126,6 @@ static void _nvmCommand(struct ipc_cmd *cmd)
 
         _nvmResponse(cmd, true);
         return;
-    }
-
-    if (nv_ops == NV_CMD_IWRITE)
-    {
-        // write ims nv, needn't response when sucess
-        // sharemem ap_cp_sm, nvitemid offset size
-        const halShmemRegion_t *region = halShmemGetRegion(MEM_AP_CP_SM_NAME);
-        if (nv_paddr > region->size)
-        {
-            OSI_LOGE(0, "NVM: failed to get region for offset 0x%x", nv_paddr);
-            _nvmResponse(cmd, false);
-            return;
-        }
-        unsigned ims_nv_addr = region->address + nv_paddr;
-        if (nvmWriteItem(nv_id, (void *)ims_nv_addr, nv_len) < 0)
-        {
-            OSI_LOGXE(OSI_LOGPAR_SIII, 0, "NVM: write failed, name/%s address/0x%x size/0x%x nvid/0x%x",
-                      region->name, ims_nv_addr, nv_len, nv_id);
-            _nvmResponse(cmd, false);
-            return;
-        }
-
-        // At success, it is not needed and shouldn't response to CP.
     }
 
     OSI_LOGE(0, "NVM: invalid ops");

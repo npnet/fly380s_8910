@@ -872,9 +872,6 @@ static bool ftp_state_transfer_resp(ftpctx_t *ctx, int ftpcode)
     if (ctx->state == FTP_DATA_TRANSFER)
     {
         state(ctx, FTP_DATA_WAIT_CLOSE);
-
-        if (gFTPLibCtx->dataCmd != FTP_DATA_GET)
-            gFTPLibCtx->ftpCon.op->setTimeout(10, FTP_DATA_SOCK);
     }
 
     return result;
@@ -1198,7 +1195,6 @@ static void ftp_ctrl_onDisconnect(void *context)
     case FTP_PASV:
     case FTP_DATA_WAIT_CLOSE:
     case FTP_DATA_WAIT_CONNECT:
-    case FTP_DATA_TRANSFER:
     case FTP_DATA_WAIT_RETR:
     case FTP_DATA_WAIT_226:
     case FTP_RETR_SIZE:
@@ -1312,12 +1308,6 @@ static void ftp_data_onConnect(void *context, bool ret)
         return;
     }
 
-    if (ctx->state == FTP_STOP)
-    {
-        FTPLOGI(FTPLOG_LIB, "[onConnect][DATA]: ftplib is stop.");
-        return;
-    }
-
     FTPLOGI(FTPLOG_LIB, "[onConnect][DATA]: %s", (ret ? "success" : "failure"));
 
     ftp_result_output(ctx, FTP_MSG_CONNECT_DATA, (ret ? FTP_RET_SUCCESS : FTP_RET_DATA_CONNECT_FAIL), 0, 0);
@@ -1348,12 +1338,6 @@ static void ftp_data_onDisconnect(void *context)
     if (!ctx)
     {
         FTPLOGI(FTPLOG_LIB, "[onDisconnect][DATA]: ftplib is not initialized.");
-        return;
-    }
-
-    if (ctx->state == FTP_STOP)
-    {
-        FTPLOGI(FTPLOG_LIB, "[onDisconnect][DATA]: ftplib is stop.");
         return;
     }
 
@@ -1446,12 +1430,6 @@ static void ftp_data_onRead(ftp_recv_ret_e ret, void *context, uint8_t *buf, uin
         return;
     }
 
-    if (ctx->state == FTP_STOP)
-    {
-        FTPLOGI(FTPLOG_LIB, "[onRead][DATA]: ftplib is stop.");
-        return;
-    }
-
     switch (ret)
     {
     case FTP_RECV_SUCC:
@@ -1504,12 +1482,6 @@ static void ftp_data_onException(void *context)
     if (!ctx)
     {
         FTPLOGI(FTPLOG_LIB, "[onException][DATA]: ftplib is not initialized.");
-        return;
-    }
-
-    if (ctx->state == FTP_STOP)
-    {
-        FTPLOGI(FTPLOG_LIB, "[onException][DATA]: ftplib is stop.");
         return;
     }
 

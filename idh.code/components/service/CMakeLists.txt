@@ -24,7 +24,6 @@ target_sources_if(CONFIG_SOC_8910 THEN ${target} PRIVATE
     src/srv_2line_wakeup.c
     src/srv_rf_param.c
     src/srv_bt_trace.c
-    src/srv_keypad.cpp
     src/simlock/src/simlock.c
     src/simlock/src/simlock_aescrypt.c
     src/simlock/src/srv_simlock.c
@@ -34,11 +33,6 @@ target_sources_if(CONFIG_SOC_8910 THEN ${target} PRIVATE
     src/simlock/library/source/rsa.c
     src/simlock/library/source/sha1.c
     src/simlock/library/source/sha2.c
-    src/srv_usb.cpp
-    src/power_manage/srv_power_manage_api.cpp
-    src/power_manage/srv_pm.cpp
-    src/power_manage/pon_process.cpp
-    src/power_manage/poff_charge_process.cpp
 )
 
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
@@ -46,8 +40,5 @@ target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_SRV)
 target_include_directories(${target} PUBLIC include src/simlock/include src/simlock/library/include)
 target_include_targets(${target} PRIVATE kernel driver hal fs calclib apploader nvm)
 
-relative_glob(srcs include/*.h src/*.c src/*.cc src/*.cpp src/*.h
-              src/trace/*.h src/trace/*.c
-              src/power_manage/*.cpp src/power_manage/*.hpp
-              src/simlock/include/*.h src/simlock/src/*.c)
+relative_glob(srcs include/*.h src/*.c src/*.h src/trace/*.h src/trace/*.c src/simlock/include/*.h src/simlock/src/*.c)
 beautify_c_code(${target} ${srcs})

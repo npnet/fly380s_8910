@@ -993,7 +993,8 @@ static void _onEV_CFW_GPRS_STATUS_IND(const osiEvent_t *event)
     else
 #endif
     {
-        if (gAtSetting.sim[nSim].cgreg != 0)
+        if ((gAtSetting.sim[nSim].cgreg != 0 && PsStatus != gAtCfwCtx.sim[nSim].cgreg_val) ||
+            cfw_event.nParam2 == 0xFFFFFFF2)
         {
             char rsp[32];
             sprintf(rsp, "+CGREG: %d", PsStatus);
@@ -1386,18 +1387,6 @@ void atCmdHandleCGDCONT(atCommand_t *cmd)
         pdp_cont.nApnSize = strlen(apn);
         if (pdp_cont.nApnSize > THE_APN_MAX_LEN)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-        uint8_t i = 0;
-        for (i = 0; i < strlen(apn); i++)
-        {
-            if ((*(apn + i) < 0x2D) ||
-                (*(apn + i) > 0x2D && *(apn + i) < 0x30) ||
-                (*(apn + i) > 0x39 && *(apn + i) < 0x41) ||
-                (*(apn + i) > 0x5A && *(apn + i) < 0x61) ||
-                (*(apn + i) > 0x7A)) //not "A-Z"(0X41-5A) "a-z"(0X61-7A) "0-9" "-"(0X2D)
-            {
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-            }
-        }
         memcpy(pdp_cont.pApn, apn, pdp_cont.nApnSize);
         uint8_t pdp_addr_len = strlen(pdp_addr);
         OSI_LOGI(0, "cgdcont:pdp_addr_len==%d", pdp_addr_len);
@@ -1637,18 +1626,6 @@ void atCmdHandleCFGIMSPDN(atCommand_t *cmd)
         pdp_cont.nApnSize = strlen(apn);
         if (pdp_cont.nApnSize > THE_APN_MAX_LEN)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-        uint8_t i = 0;
-        for (i = 0; i < strlen(apn); i++)
-        {
-            if ((*(apn + i) < 0x2D) ||
-                (*(apn + i) > 0x2D && *(apn + i) < 0x30) ||
-                (*(apn + i) > 0x39 && *(apn + i) < 0x41) ||
-                (*(apn + i) > 0x5A && *(apn + i) < 0x61) ||
-                (*(apn + i) > 0x7A)) //not "A-Z"(0X41-5A) "a-z"(0X61-7A) "0-9" "-"(0X2D)
-            {
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-            }
-        }
         if (pdp_cont.nApnSize > 0)
             memcpy(pdp_cont.pApn, apn, pdp_cont.nApnSize);
 
@@ -1656,28 +1633,10 @@ void atCmdHandleCFGIMSPDN(atCommand_t *cmd)
         if (pdp_cont.nPdpAddrSize > 0 && _pdpAddressFromStr(pdp_cont.nPdpType, pdp_addr) != 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         if (pdp_cont.nPdpAddrSize > 0)
-        {
-#if LWIP_IPV6
-            if (pdp_cont.nPdpType == CFW_GPRS_PDP_TYPE_IPV6)
-            {
-                ip6_addr_t dns1_ip6;
-                ip6addr_aton(pdp_addr, &dns1_ip6);
-                memcpy(&pdp_cont.pPdpAddr[4], &dns1_ip6.addr[0], 16);
-                pdp_cont.nPdpAddrSize = 16;
-            }
-#endif
-            if (pdp_cont.nPdpType == CFW_GPRS_PDP_TYPE_IP)
-            {
-                uint32_t Pro_DnsIp1 = (uint32_t)inet_addr((const char *)pdp_addr);
-                pdp_cont.pPdpAddr[0] = Pro_DnsIp1;
-                pdp_cont.pPdpAddr[1] = Pro_DnsIp1 >> 8;
-                pdp_cont.pPdpAddr[2] = Pro_DnsIp1 >> 16;
-                pdp_cont.pPdpAddr[3] = Pro_DnsIp1 >> 24;
-                pdp_cont.nPdpAddrSize = 4;
-            }
-        }
+            memcpy(pdp_cont.pPdpAddr, pdp_addr, pdp_cont.nPdpAddrSize);
         pdp_cont.nDComp = dcomp;
         pdp_cont.nHComp = hcomp;
+        //     pdp_cont.nNSLPI = nslpi;
         if (CFW_GprsSetInternalPdpCtx(PDP_CTX_TYPE_IMS, &pdp_cont, nSim) != 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
 
@@ -4701,12 +4660,6 @@ static int _pppDataToAt(void *param, uint8_t *data, uint32_t size)
 static int _pppAtFlowControl(void *param)
 {
     atDispatch_t *ch = (atDispatch_t *)param;
-    if (ch == NULL)
-    {
-        OSI_LOGE(0, "failed to get PPP dispatch");
-        return 2;
-    }
-
     atDevice_t *device = atDispatchGetDevice(ch);
     if (device == NULL)
     {
@@ -5999,10 +5952,6 @@ void atCmdHandleCGEQOS(atCommand_t *cmd)
         unsigned ul_gbr = atParamDefUintInRange(cmd->params[3], 0, 0, 5000, &paramok);
         unsigned dl_mbr = atParamDefUintInRange(cmd->params[4], 0, 0, 10000, &paramok);
         unsigned ul_mbr = atParamDefUintInRange(cmd->params[5], 0, 0, 5000, &paramok);
-
-        AT_Gprs_CidInfo *pinfo = &gAtCfwCtx.sim[nSim].cid_info[cid];
-        if (0 == pinfo->uCid)
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
 
         if (osiIsUintInList(qci, qci_unsupported, OSI_ARRAY_SIZE(qci_unsupported)))
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_GPRS_UNSUPPORTED_QCI_VALUE);
@@ -9740,19 +9689,6 @@ void atCmdHandleCFGDFTPDN(atCommand_t *cmd)
             {
                 errCode = ERR_INVALID_PARAMETER;
                 goto cfgdftpdn_fail;
-            }
-            uint8_t i = 0;
-            for (i = 0; i < strlen(apn); i++)
-            {
-                if ((*(apn + i) < 0x2D) ||
-                    (*(apn + i) > 0x2D && *(apn + i) < 0x30) ||
-                    (*(apn + i) > 0x39 && *(apn + i) < 0x41) ||
-                    (*(apn + i) > 0x5A && *(apn + i) < 0x61) ||
-                    (*(apn + i) > 0x7A)) //not "A-Z"(0X41-5A) "a-z"(0X61-7A) "0-9" "-"(0X2D)
-                {
-                    errCode = ERR_INVALID_PARAMETER;
-                    goto cfgdftpdn_fail;
-                }
             }
         }
 

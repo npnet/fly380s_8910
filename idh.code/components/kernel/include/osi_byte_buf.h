@@ -421,15 +421,6 @@ static inline void osiBytesPutLe64(void *ptr, uint64_t v)
  */
 #define OSI_STRM_WLE64(p, v) ({ void *_orig = (void*)(p); (p) += 8; osiBytesPutLe64(_orig, v); })
 
-/**
- * \brief write memory to stream, and increase pointer afterward
- *
- * \param p     pointer, which can be <tt>char*, uintptr_t</tt>
- * \param v     memory pointer
- * \param s     memory size
- */
-#define OSI_STRM_WMEM(p, v, s) ({ unsigned _s = (s); memcpy((void*)p, (v), _s); (p) += _s; })
-
 #ifdef __cplusplus
 }
 #endif

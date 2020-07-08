@@ -60,7 +60,7 @@ static unsigned int bitrate(udc_t *udc)
         return 19 * 64 * 1 * 1000 * 8;
 }
 
-#define RNDIS_STATUS_INTERVAL_MS 16
+#define RNDIS_STATUS_INTERVAL_MS 9
 #define STATUS_BYTECOUNT 8 /* 8 bytes data */
 
 /* string descriptors: */
@@ -295,6 +295,7 @@ static void _rndisCommandComplete(usbEp_t *ep, usbXfer_t *xfer)
 static int _rndisBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
 {
     rndis_t *rndis = _f2rndis(f);
+    int retval;
 
     f->controller = udc;
     rndis->cdev = cops;
@@ -304,7 +305,7 @@ static int _rndisBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
     rndis->data_channel.rndis_open = prvRndisOpenCB;
     rndis->data_channel.rndis_close = prvRndisCloseCB;
 
-    int retval = rndisEtherBind(&rndis->data_channel);
+    retval = rndisEtherBind(&rndis->data_channel);
     if (retval < 0)
     {
         OSI_LOGE(0, "rndisEtherBind failed\n");
@@ -460,7 +461,7 @@ static int _rndisSetup(copsFunc_t *f, const usb_device_request_t *ctrl)
 
     default:
     invalid:
-        OSI_LOGE(0, "invalid control %02x/%02x value/%04x index/%04x length/%u\n",
+        OSI_LOGE(0, "invalid control req%02x.%02x v%04x i%04x l%d\n",
                  ctrl->bmRequestType, ctrl->bRequest,
                  w_value, w_index, w_length);
         return -1;

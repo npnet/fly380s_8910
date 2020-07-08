@@ -1353,12 +1353,11 @@ void atCmdHandleCCFC(atCommand_t *cmd)
 
         // first and second parameter
         static const uint32_t list[] = {1, 255};
-        static const uint32_t NumTypeList[] = {CFW_TELNUMBER_TYPE_UNKNOWN, CFW_TELNUMBER_TYPE_INTERNATIONAL, CFW_TELNUMBER_TYPE_NATIONAL};
         bool paramok = true;
         uint8_t ucReason = atParamDefUintInRange(cmd->params[0], 0, 0, 5, &paramok);
         uint8_t ucMode = atParamDefUintInRange(cmd->params[1], 0, 0, 4, &paramok);
-        const char *tempNum = atParamOptStr(cmd->params[2], &paramok);
-        uint8_t ucNumType = atParamDefUintInList(cmd->params[3], CFW_TELNUMBER_TYPE_UNKNOWN, NumTypeList, 3, &paramok);
+        const char *tempNum = atParamStr(cmd->params[2], &paramok);
+        uint8_t ucNumType = atParamDefUint(cmd->params[3], CFW_TELNUMBER_TYPE_UNKNOWN, &paramok);
         uint8_t ucClass = atParamDefUintInList(cmd->params[4], 11, list, 2, &paramok);
         uint8_t ucTime = atParamDefUintInRange(cmd->params[7], 20, 1, 30, &paramok);
         size_t ucNumLen = strlen(tempNum);

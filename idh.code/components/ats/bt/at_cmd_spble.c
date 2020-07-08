@@ -22,30 +22,6 @@
 #define TRACE_HEAD "SPBLE"
 static atCmdEngine_t *g_atCmdEngine = NULL;
 
-static bool AppCheckBTNameValid(unsigned char ch)
-{
-    if (ch >= '0' && ch <= '9') // digital 0 - 9
-    {
-        return true;
-    }
-    else if (ch >= 'a' && ch <= 'z') // a - z
-    {
-        return true;
-    }
-    else if (ch >= 'A' && ch <= 'Z') // A - Z
-    {
-        return true;
-    }
-    else if (ch == '_') // _
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
 /*****************************************************************************/
 //  Description :convert the bt name double byte ascii 0030 to ascii 30
 //  Global resource dependence : rsp
@@ -383,20 +359,6 @@ static void _AppBleNotResponseHandler(atCommand_t *cmd)
     AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_NETWORK_TIMOUT));
 }
 
-static void _AppBleRecvTpDataCb(short _length, unsigned char *_data)
-{
-    if (_length > 255)
-    {
-        atCmdRespInfoText(g_atCmdEngine, "Ble receive tp data,but data length is too long.");
-    }
-    else
-    {
-        atCmdWrite(g_atCmdEngine, _data, _length);
-    }
-
-    return;
-}
-
 void _AppBleMsgHandler(void *param)
 {
     char TraceBuf[64] = {
@@ -417,12 +379,12 @@ void _AppBleMsgHandler(void *param)
 
     switch (pEvent->id)
     {
-    //COMM
     case APP_BLE_SET_PUBLIC_ADDR:
     case APP_BLE_SET_RANDOM_ADDR:
     case APP_BLE_ADD_WHITE_LIST:
     case APP_BLE_REMOVE_WHITE_LIST:
     case APP_BLE_CLEAR_WHITE_LIST:
+    case APP_BLE_CONNECT:
     case APP_BLE_DISCONNECT:
     case APP_BLE_UPDATA_CONNECT:
     {
@@ -436,22 +398,9 @@ void _AppBleMsgHandler(void *param)
         }
         break;
     }
-    case APP_BLE_CONNECT:
-    {
-        if (0 == ((int)pEvent->param1))
-        {
-            atCmdRespOKText(g_atCmdEngine, "+BLECOMM:OK");
-            BLE_RegisterWriteUartCallback(_AppBleRecvTpDataCb);
-        }
-        else
-        {
-            atCmdRespErrorText(g_atCmdEngine, "+BLECOMM:ERR=error");
-        }
-        break;
-    }
-    //ADV
     case APP_BLE_SET_ADV_PARA:
     case APP_BLE_SET_ADV_DATA:
+    case APP_BLE_SET_ADV_ENABLE:
     case APP_BLE_SET_ADV_SCAN_RSP:
     {
         if (0 == ((int)pEvent->param1))
@@ -464,20 +413,6 @@ void _AppBleMsgHandler(void *param)
         }
         break;
     }
-    case APP_BLE_SET_ADV_ENABLE:
-    {
-        if (0 == ((int)pEvent->param1))
-        {
-            atCmdRespOKText(g_atCmdEngine, "+BLEADV:OK");
-            BLE_RegisterWriteUartCallback(_AppBleRecvTpDataCb);
-        }
-        else
-        {
-            atCmdRespErrorText(g_atCmdEngine, "+BLEADV:ERR=error");
-        }
-        break;
-    }
-    //SCAN
     case APP_BLE_SET_SCAN_PARA:
     case APP_BLE_SET_SCAN_ENABLE:
     case APP_BLE_SET_SCAN_DISENABLE:
@@ -531,7 +466,7 @@ void AT_SPBLE_CmdFunc_COMM(atCommand_t *pParam)
     };
     int Index = 0;
     //#define CMD_MAX_NUM (16)
-    const char *CmdStr[17] =
+    const char *CmdStr[16] =
         {
             "GETVERSION",
             "SETPUBLICADDR",
@@ -548,8 +483,7 @@ void AT_SPBLE_CmdFunc_COMM(atCommand_t *pParam)
             "DISCONNECT",
             "CONNECTION?",
             "CONNECTIONLIST?",
-            "UPDATECONN",
-            "SENDDATA"};
+            "UPDATECONN"};
 
     switch (pParam->type)
     {
@@ -931,7 +865,6 @@ void AT_SPBLE_CmdFunc_COMM(atCommand_t *pParam)
         }
         case 9: //"SETNAME"
         {
-            unsigned char i = 0;
             char *Name = NULL;
             uint8_t name_type = ATC_BT_NAME_ASCII;
             uint16_t local_name[BT_DEVICE_NAME_SIZE] = {0};
@@ -968,17 +901,6 @@ void AT_SPBLE_CmdFunc_COMM(atCommand_t *pParam)
 
             pParam->params[1]->value[pParam->params[1]->length] = '\0';
             Name = (char *)pParam->params[1]->value;
-            for (i = 0; i < strlen(Name); i++)
-            {
-                if (false == AppCheckBTNameValid(Name[i]))
-                {
-                    TraceBuf[0] = '\0';
-                    sprintf(TraceBuf, "%s %s(%d): %s set name valid.", TRACE_HEAD, __func__, __LINE__, CmdStr[Index]);
-                    OSI_LOGI(0, TraceBuf);
-                    atCmdRespErrorText(pParam->engine, "+BLECOMM:ERR=error");
-                    return;
-                }
-            }
             TraceBuf[0] = '\0';
             sprintf(TraceBuf, "%s %s(%d): %s name is %s.", TRACE_HEAD, __func__, __LINE__, CmdStr[Index], Name);
             OSI_LOGI(0, TraceBuf);
@@ -1256,52 +1178,6 @@ void AT_SPBLE_CmdFunc_COMM(atCommand_t *pParam)
             // call bt api update connect
             BLE_UpdateConnect((unsigned short)Handle, (unsigned short)MinInterval, (unsigned short)MaxInterval, (unsigned short)Latency, (unsigned short)Timeout);
             atCmdSetTimeoutHandler(pParam->engine, TIMEOUT_NOT_RESPONSE, _AppBleNotResponseHandler);
-
-            return;
-            break;
-        }
-        case 16: //"SENDDATA"
-        {
-            char *DataBuf = NULL;
-            int DataLength = 0;
-            if (!BT_GetState())
-            {
-                TraceBuf[0] = '\0';
-                sprintf(TraceBuf, "%s %s(%d): %s Bt is not start.", TRACE_HEAD, __func__, __LINE__, CmdStr[Index]);
-                OSI_LOGI(0, TraceBuf);
-
-                atCmdRespErrorText(pParam->engine, "+BLECOMM:ERR=error");
-                return;
-            }
-
-            if (2 != pParam->param_count)
-            {
-                TraceBuf[0] = '\0';
-                sprintf(TraceBuf, "%s %s(%d): %s param. count error.", TRACE_HEAD, __func__, __LINE__, CmdStr[Index]);
-                OSI_LOGI(0, TraceBuf);
-
-                atCmdRespErrorText(pParam->engine, "+BLECOMM:ERR=error");
-                return;
-            }
-
-            DataLength = pParam->params[1]->length;
-            if (DataLength > 244)
-            {
-                TraceBuf[0] = '\0';
-                sprintf(TraceBuf, "%s %s(%d): %s param[1]. length error.", TRACE_HEAD, __func__, __LINE__, CmdStr[Index]);
-                OSI_LOGI(0, TraceBuf);
-
-                atCmdRespErrorText(pParam->engine, "+BLECOMM:ERR=error");
-                return;
-            }
-
-            pParam->params[1]->value[pParam->params[1]->length] = '\0';
-            DataBuf = (char *)pParam->params[1]->value;
-            atCmdWrite(pParam->engine, DataBuf, DataLength);
-
-            // call bt api send data.
-            BLE_SendTpData((short)DataLength, (unsigned char *)DataBuf);
-            atCmdRespOKText(pParam->engine, "+BLECOMM:OK");
 
             return;
             break;

@@ -919,8 +919,7 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
             if (format != AUSTREAM_FORMAT_PCM &&
                 format != AUSTREAM_FORMAT_WAVPCM &&
                 format != AUSTREAM_FORMAT_MP3 &&
-                format != AUSTREAM_FORMAT_AMRNB &&
-                format != AUSTREAM_FORMAT_AMRWB)
+                format != AUSTREAM_FORMAT_AMRNB)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
             if (gAtAudioCtx.player != NULL)
@@ -1137,12 +1136,6 @@ static void prvRecordVoiceClosed(void *param)
 {
     prvRecordStop((atAudioRecordContext_t *)param);
     prvAudioRegisterCCEventCB(NULL);
-    char rsp[64];
-    int status = (gAtRecordCtx.recorder == NULL)
-                     ? AURECORDER_STATUS_IDLE
-                     : auRecorderGetStatus(gAtRecordCtx.recorder);
-    sprintf(rsp, "+CAUDREC: %d", status);
-    atCmdRespDefUrcText(rsp);
 }
 
 /**
@@ -1943,49 +1936,6 @@ void atCmdHandleCALM(atCommand_t *cmd)
 }
 
 #endif
-void atCmdHandleSETVOS(atCommand_t *cmd)
-{
-    uint8_t nSim = atCmdGetSim(cmd->engine);
-    uint8_t nVidoSurveillance = 0;
-    uint32_t ret = 0;
-    if (cmd->type == AT_CMD_SET)
-    {
-        bool paramok = true;
-        uint8_t nVidoSurveillance = atParamDefUintInRange(cmd->params[0], 0, 0, 1, &paramok);
-        if (!paramok || cmd->param_count != 1)
-            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
-
-        ret = CFW_SetVideoSurveillance(nVidoSurveillance, nSim);
-        if (0 != ret)
-        {
-            OSI_LOGI(0, "AT+SETVOS:Set VidoSurveillance error %d\n\r", ret);
-            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
-        }
-        atCmdRespOK(cmd->engine);
-    }
-    else if (cmd->type == AT_CMD_READ)
-    {
-        char rsp[40] = {0};
-        ret = CFW_GetVideoSurveillance(&nVidoSurveillance, nSim);
-        if (0 != ret)
-        {
-            OSI_LOGI(0, "AT+SETVOS:Get VidoSurveillance error %d\n\r", ret);
-            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
-        }
-        sprintf(rsp, "+SETVOS: %d", nVidoSurveillance);
-        atCmdRespInfoText(cmd->engine, rsp);
-        atCmdRespOK(cmd->engine);
-    }
-    else if (cmd->type == AT_CMD_TEST)
-    {
-        atCmdRespInfoText(cmd->engine, "+SETVOS:(0-1)");
-        atCmdRespOK(cmd->engine);
-    }
-    else
-    {
-        atCmdRespCmsError(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-    }
-}
 
 void atCmdHandleMMICG(atCommand_t *cmd)
 {
@@ -2012,7 +1962,6 @@ void atCmdHandleMMICG(atCommand_t *cmd)
         }
         else if (gAtRecordCtx.recorder != NULL)
         {
-            path = 1;
             mode = 2;
             ctrl = 6;
         }

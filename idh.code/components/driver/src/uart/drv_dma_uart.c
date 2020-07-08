@@ -43,7 +43,7 @@
 #define UART_TX_TRIG_FIFO_MODE (0)
 #define UART_RX_TRIG_FIFO_MODE (64)
 #define UART_TX_TRIG_DMA_MODE (1)
-#define UART_RX_TRIG_DMA_MODE (112)
+#define UART_RX_TRIG_DMA_MODE (64)
 
 // The source IDs should match hardware
 #define AD_SOURCE_UART1RX 0
@@ -460,7 +460,7 @@ static bool _startConfig(drvUart_t *d)
     uart_conf.b.hwfc = (d->cfg.rts_enable || d->cfg.cts_enable) ? 1 : 0;
     if (d->cfg.rts_enable)
     {
-        uart_conf.b.tout_hwfc = 0;
+        uart_conf.b.tout_hwfc = 1;
         uart_conf.b.rx_trig_hwfc = 1;
     }
     d->hwp->uart_conf = uart_conf.v;

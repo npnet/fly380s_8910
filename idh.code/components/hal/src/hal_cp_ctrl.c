@@ -24,7 +24,6 @@
 #include "calclib/crc32.h"
 #include "hal_iomux.h"
 #include "nvm.h"
-#include "drv_md_ipc.h"
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -55,8 +54,6 @@
 #define CP_BBAT_BOOT_MODE (3)
 #define CP_PSM_WAKE_BOOT_MODE (4)
 #define CP_CALIBRATION_POST_MODE (5)
-#define MODEMNV_DIR CONFIG_FS_MODEM_MOUNT_POINT "/nvm"
-#define DELTANV_FMAME MODEMNV_DIR "/ims_delta_nv.bin"
 
 #ifdef SUPPORT_SOFTLZMA
 static bool _loadRegionLzma(const char *name, void *output)
@@ -160,82 +157,6 @@ static bool _loadRegion(const char *name, void *output, uint32_t flags)
     return _loadRegionPlain(name, output);
 }
 
-#ifdef CONFIG_SUPPORT_IMS_DELTA_NV
-static int readImsNvBuf(uint16_t nvid, void *buf)
-{
-    int nvsize = nvmReadItem(nvid, NULL, 0);
-    if (nvsize <= 0)
-        return nvsize;
-    return nvmReadItem(nvid, buf, nvsize);
-}
-
-static void prvLoadImsDeltaNv(void)
-{
-
-    int len = 0, size = 0;
-
-    uint8_t *ims_delta_nv_addr = ipc_get_deltanv_addr();
-    imsNVInfo_t *ims_nv_addr_info = (imsNVInfo_t *)ipc_get_ims_nv_addr();
-
-    len = readImsNvBuf(NVID_IMS_CSM_NV, ims_delta_nv_addr);
-    if (len > 0)
-    {
-        ims_nv_addr_info->ims_csm_addr = (uint32_t)ims_delta_nv_addr;
-        ims_nv_addr_info->ims_csm_len = len;
-        ims_delta_nv_addr += len;
-    }
-    len = readImsNvBuf(NVID_IMS_SAPP_NV, ims_delta_nv_addr);
-    if (len > 0)
-    {
-        ims_nv_addr_info->ims_sapp_addr = (uint32_t)ims_delta_nv_addr;
-        ims_nv_addr_info->ims_sapp_len = len;
-        ims_delta_nv_addr += len;
-    }
-    len = readImsNvBuf(NVID_IMS_ISIM_NV, ims_delta_nv_addr);
-    if (len > 0)
-    {
-        ims_nv_addr_info->ims_isim_addr = (uint32_t)ims_delta_nv_addr;
-        ims_nv_addr_info->ims_isim_len = len;
-        ims_delta_nv_addr += len;
-    }
-    len = readImsNvBuf(NVID_SIM_DELTA_NV, ims_delta_nv_addr);
-    if (len > 0)
-    {
-        ims_nv_addr_info->ims_sim1_delta_addr = (uint32_t)ims_delta_nv_addr;
-        ims_nv_addr_info->ims_sim1_delta_len = len;
-        ims_delta_nv_addr += len;
-    }
-    len = readImsNvBuf(NVID_SIM_DELTA_CARD2_NV, ims_delta_nv_addr);
-    if (len > 0)
-    {
-        ims_nv_addr_info->ims_sim2_delta_addr = (uint32_t)ims_delta_nv_addr;
-        ims_nv_addr_info->ims_sim2_delta_len = len;
-        ims_delta_nv_addr += len;
-    }
-    len = readImsNvBuf(NVID_PLMN_DELTA_NV, ims_delta_nv_addr);
-    if (len > 0)
-    {
-        ims_nv_addr_info->ims_plmn1_delta_addr = (uint32_t)ims_delta_nv_addr;
-        ims_nv_addr_info->ims_plmn1_delta_len = len;
-        ims_delta_nv_addr += len;
-    }
-    len = readImsNvBuf(NVID_PLMN_DELTA_CARD2_NV, ims_delta_nv_addr);
-    if (len > 0)
-    {
-        ims_nv_addr_info->ims_plmn2_delta_addr = (uint32_t)ims_delta_nv_addr;
-        ims_nv_addr_info->ims_plmn2_delta_len = len;
-        ims_delta_nv_addr += len;
-    }
-
-    // read delta nv in /modem/nvm
-    size = vfs_sfile_size(DELTANV_FMAME);
-    if (size > 0)
-    {
-        vfs_sfile_read(DELTANV_FMAME, ims_delta_nv_addr, size);
-        ipc_set_deltanv_bin((uint32_t)ims_delta_nv_addr, size);
-    }
-}
-#endif
 bool halCpLoad(void)
 {
     OSI_LOGI(0, "load CP");
@@ -252,14 +173,11 @@ bool halCpLoad(void)
         if ((r->flags & HAL_SHARE_MEM_FLAG_CPNEED) == 0)
             continue;
 
-        OSI_LOGXD(OSI_LOGPAR_SI, 0, "cpneed: %s / %d", r->name, r->size);
         int nvid = nvmGetIdFromFileName(r->name);
         if (nvid >= 0)
         {
             memset((void *)r->address, 0, r->size);
-            int readnv = nvmReadItem(nvid, (void *)r->address, r->size);
-
-            OSI_LOGD(0, "read to sharemem: %x / %d/%d", nvid, r->size, readnv);
+            nvmReadItem(nvid, (void *)r->address, r->size);
         }
         else
         {
@@ -277,15 +195,6 @@ bool halCpLoad(void)
         if (strcmp(r->name, MEM_CP_BIN_NAME) == 0)
             cp_address = r->address;
     }
-
-#ifdef CONFIG_SUPPORT_IMS_DELTA_NV
-    OSI_LOGI(0, "load ims delta nv");
-    prvLoadImsDeltaNv();
-#endif
-
-#ifdef CONFIG_GPIO_USED_FOR_VBAT_RF_SWITCH
-    halPmuSwitchPower(HAL_POWER_VBAT_RF, true, false);
-#endif
 
     halShmemUpdateRamAccess();
 

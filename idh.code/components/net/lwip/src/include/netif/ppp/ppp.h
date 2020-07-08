@@ -358,7 +358,6 @@ struct ppp_pcb_s {
     uint8_t len_username;
     uint8_t len_response; 
     uint8_t auth_type;//  1/pap ;2/chap
-    uint8_t nAuthProt_bak;
     uint8_t id;
     char msg[256];
 #endif

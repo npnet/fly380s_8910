@@ -17,6 +17,7 @@
  * @brief initialize diag auto test mode
  */
 void diagAutoTestInit(void);
+void drvSetPBkeyStatus(uint32_t key_status);
 void diagCalibPostInit(void);
 
 #endif // _DIAG_AUTO_TEST_
