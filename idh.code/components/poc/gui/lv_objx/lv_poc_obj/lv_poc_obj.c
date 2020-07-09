@@ -2276,7 +2276,7 @@ static unsigned short lv_poc_get_sim_state_code(POC_SIM_ID sim_id)
         sim_state_code = sim_state_code | 0x01;
         sim_state_code = sim_state_code | (((unsigned short)poc_get_signal_bar_strenth(sim_id)) << 1);
 
-        poc_get_operator_req(POC_SIM_1, (int8_t *)operator, &rat);
+        poc_get_operator_network_type_req(POC_SIM_1, (int8_t *)operator, &rat);
         if(MMI_MODEM_PLMN_RAT_LTE == rat)
         {
             sim_state_code = sim_state_code | ( 0x04 << 5);
@@ -2289,6 +2289,10 @@ static unsigned short lv_poc_get_sim_state_code(POC_SIM_ID sim_id)
         {
             sim_state_code = sim_state_code | ( 0x02 << 5);
         }
+		else if(MMI_MODEM_PLMN_RAT_NO_SERVICE == rat)
+		{
+			sim_state_code = sim_state_code | ( 0x06 << 5);
+		}
         else
         {
             sim_state_code = sim_state_code | ( 0x00 << 5);
@@ -2421,15 +2425,15 @@ void lv_poc_update_stabar_sim_img(void)
                 switch((sim_state_code[k] & 0xe0) >> 5)   //判断是什么类型的信号
                 {
                 case 1:
-                case 2:
-                {
-                    lv_img_set_src(obj3, &stat_sys_data_connected_e_sprd);
+                case 2://2G网络
+                {	//显示G
+                    lv_img_set_src(obj3, &stat_sys_data_connected_2g_sprd);
                     break;
                 }
 
-                case 3:
+                case 3://3G网络
                 {
-                    lv_img_set_src(obj3, &stat_sys_data_connected_3g_sprd);
+                    lv_img_set_src(obj3, &stat_sys_data_fully_connected_3g_sprd_reliance);
                     break;
                 }
 
@@ -2439,15 +2443,20 @@ void lv_poc_update_stabar_sim_img(void)
                     lv_img_set_src(obj3, &stat_sys_data_connected_4g_sprd);
                     break;
                 }
+				case 6://显示无服务
+				{
+					lv_img_set_src(obj3, &ic_signal_no_server);
+					break;
 
+				}
                 default:
                 {
                     OSI_LOGI(0, "FUNC:%s  get a error net type", __func__);
-                    //lv_poc_stabar_sim_clean(sim_cont[k]);
+					//lv_img_set_src(obj3, &stat_sys_no_sim_sprd_cucc);//未注册网络图标
+//                    lv_poc_stabar_sim_clean(sim_cont[k]);
                     lv_obj_del(obj3);
                     old_sim_state_code[k] = sim_state_code[k];
                     continue;
-                    //break;
                 }
                 }
                 lv_obj_align(obj3, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);

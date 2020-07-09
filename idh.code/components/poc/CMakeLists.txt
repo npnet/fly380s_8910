@@ -117,6 +117,10 @@ add_library(${target} STATIC
 	gui/resource/image/signal/stat_sys_signal_in_sprd.c
 	gui/resource/image/signal/stat_sys_signal_inout_sprd.c
 	gui/resource/image/signal/stat_sys_signal_out_sprd.c
+	gui/resource/image/signal/stat_sys_no_sim_sprd_cucc.c
+	gui/resource/image/signal/stat_sys_data_fully_connected_3g_sprd_reliance.c
+	gui/resource/image/signal/ic_signal_no_server.c
+	gui/resource/image/signal/stat_sys_data_connected_2g_sprd.c
 	gui/resource/image/poweron/img_poweron_poc_logo_unicom.c
 	gui/resource/image/poweron/img_poweron_poc_logo_sprd.c
 	gui/resource/image/poweroff/img_poweroff_poc_logo_unicom.c

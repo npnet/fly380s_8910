@@ -676,6 +676,16 @@ lv_poc_get_lock_group(void);
 bool
 lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, void (*func)(lv_poc_group_oprator_type opt));
 
+/*
+	  name : poc_get_operator_network_type_req
+	 param : none
+	author : wangls
+  describe : 获取网络类型
+	  date : 2020-07-07
+*/
+void
+poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT POC_MMI_MODEM_PLMN_RAT * rat);
+
 #ifdef __cplusplus
 }
 #endif

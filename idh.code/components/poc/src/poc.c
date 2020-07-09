@@ -50,8 +50,6 @@ static void pocIdtStartHandleTask(void * ctx)
 	poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, true);
 	osiThreadSleep(2000);
 	lvPocGuiIdtCom_log();
-	/*网络校时*/
-	lv_poc_sntp_Update_Time();
 	osiThreadExit();
 }
 
@@ -87,6 +85,8 @@ static void pocStartAnimation(void *ctx)
 	osiThreadSleep(200);
 	lv_obj_del(poc_power_on_backgroup_image);
 	lvGuiUpdateLastActivityTime();
+	/*网络校时*/
+	lv_poc_sntp_Update_Time();
 	lvGuiReleaseScreenOn(3);
 	osiThreadExit();
 }

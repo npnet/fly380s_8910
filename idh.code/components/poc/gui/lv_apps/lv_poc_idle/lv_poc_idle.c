@@ -323,7 +323,7 @@ static void lv_poc_idle_time_task(void)
 
 	if(isCreatedPocTask == false)
 	{
-		poc_get_operator_req(poc_setting_conf->main_SIM, net_type_name, &network_type);
+		poc_get_operator_network_type_req(poc_setting_conf->main_SIM, net_type_name, &network_type);
 		if(network_type == MMI_MODEM_PLMN_RAT_LTE || network_type == MMI_MODEM_PLMN_RAT_GSM || network_type == MMI_MODEM_PLMN_RAT_UMTS)
 		{
 			isCreatedPocTask = true;
