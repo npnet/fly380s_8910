@@ -60,8 +60,12 @@ LV_IMG_DECLARE(stat_sys_signal_in_sprd);
 LV_IMG_DECLARE(stat_sys_signal_out_sprd);
 LV_IMG_DECLARE(stat_sys_data_connected_4g_sprd);
 LV_IMG_DECLARE(stat_sys_data_connected_3g_sprd);
+LV_IMG_DECLARE(stat_sys_data_connected_2g_sprd);
 LV_IMG_DECLARE(stat_sys_data_connected_e_sprd);
 LV_IMG_DECLARE(stat_sys_data_connected_1x_sprd);
+LV_IMG_DECLARE(stat_sys_no_sim_sprd_cucc);
+LV_IMG_DECLARE(stat_sys_data_fully_connected_3g_sprd_reliance);
+LV_IMG_DECLARE(ic_signal_no_server);
 
 
 LV_IMG_DECLARE(stat_sys_battery_100);

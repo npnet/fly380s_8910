@@ -181,7 +181,8 @@ typedef enum
     MMI_MODEM_PLMN_RAT_GSM = 0,                                                 // GSM network
     MMI_MODEM_PLMN_RAT_UMTS,                                                    // UTRAN network
     MMI_MODEM_PLMN_RAT_LTE,                                                     // LTE network
-    MMI_MODEM_PLMN_RAT_UNKNOW
+	MMI_MODEM_PLMN_RAT_NO_SERVICE,  											// 无服务 network
+	MMI_MODEM_PLMN_RAT_UNKNOW
 } POC_MMI_MODEM_PLMN_RAT;
 
 typedef enum

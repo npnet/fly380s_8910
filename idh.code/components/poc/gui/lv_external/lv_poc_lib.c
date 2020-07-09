@@ -829,7 +829,7 @@ poc_get_operator_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT POC_MMI_MODEM_P
 	uint32_t ret = 0;
 	uint8_t _rat = 0;
 	uint8_t nSim = POC_SIM_1;
-	static POC_MMI_MODEM_PLMN_RAT _signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;
+	static POC_MMI_MODEM_PLMN_RAT _signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//网络类型
 	if(operat == NULL || rat == NULL) return;
 
 	CFW_COMM_MODE nFM = CFW_DISABLE_COMM;
@@ -853,6 +853,85 @@ poc_get_operator_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT POC_MMI_MODEM_P
 			strcpy((char *)operat, "GSM");
 			_signal_type = MMI_MODEM_PLMN_RAT_GSM;
 		}
+	}
+
+LV_POC_GET_SIGNAL_TYPR_ENDLE:
+	*rat = _signal_type;
+}
+
+/*
+	  name : poc_get_operator_network_type_req
+	 param : none
+	author : wangls
+  describe : 获取网络类型
+	  date : 2020-07-07
+*/
+extern uint8_t Mapping_Creg_From_PsType(uint8_t pstype);
+
+void
+poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT POC_MMI_MODEM_PLMN_RAT * rat)
+{
+	CFW_NW_STATUS_INFO nStatusInfo;
+	uint8_t nSim = POC_SIM_1;
+
+	static POC_MMI_MODEM_PLMN_RAT _signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//网络类型
+	if(operat == NULL || rat == NULL) return;
+
+	uint8_t nCurrRat = CFW_NWGetStackRat(nSim);
+	* rat = Mapping_Creg_From_PsType(nCurrRat);
+
+	if (CFW_NwGetStatus(&nStatusInfo, nSim) != 0)//检索GSM的网络状态
+	{
+		//OSI_LOGI(0, "[song]Failed to retrieve the status of the GSM network!");//检索网络失败
+		strcpy((char *)operat, "UN");
+		_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;
+		goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
+	}
+
+	//检索SIM卡有没有注册上GPRS
+	uint8_t ret;
+	uint8_t uState;
+
+	ret = CFW_GetGprsAttState(&uState, nSim);
+	if (ret != 0)
+	{
+	    //OSI_LOGI(0, "[song]SIM ACTIVED ERROR!");//检索网络失败
+	}
+	if(uState == 0)
+	{
+		//OSI_LOGI(0, "[song]SIM card Detach!");//sim卡未注册上GPRS数据网络
+		strcpy((char *)operat, "NOS");
+		_signal_type = MMI_MODEM_PLMN_RAT_NO_SERVICE;
+		goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
+
+	}
+
+
+	if(nStatusInfo.nStatus == 0
+		|| nStatusInfo.nStatus == 3
+		|| nStatusInfo.nStatus == 4)
+	{
+		//OSI_LOGI(0, "[song]Failure to register or refusal to register!");
+		strcpy((char *)operat, "UN");
+		_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//sim卡未注册上GSM网络
+		goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
+	}
+
+	if(* rat == 0 || * rat == 1 || * rat == 3)//2G
+	{
+		strcpy((char *)operat, "GSM");
+		_signal_type = MMI_MODEM_PLMN_RAT_GSM;
+
+	}
+	else if(* rat == 2 || * rat == 4 || * rat == 5 || * rat == 6)//3G
+	{
+		strcpy((char *)operat, "UMTS");
+		_signal_type = MMI_MODEM_PLMN_RAT_UMTS;
+	}
+	else if(* rat == 7)//4G
+	{
+		strcpy((char *)operat, "LTE");
+		_signal_type = MMI_MODEM_PLMN_RAT_LTE;
 	}
 
 LV_POC_GET_SIGNAL_TYPR_ENDLE:
