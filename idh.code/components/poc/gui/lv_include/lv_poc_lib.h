@@ -686,6 +686,14 @@ lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, 
 void
 poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT POC_MMI_MODEM_PLMN_RAT * rat);
 
+/*
+	  name : lv_poc_delete_group
+	  param :
+	  date : 2020-07-09
+*/
+bool
+lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type));
+
 #ifdef __cplusplus
 }
 #endif

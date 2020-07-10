@@ -188,6 +188,7 @@ public:
 	poc_build_group_cb       pocBuildGroupCb;
 	poc_set_member_call_status_cb pocMemberCallCb;
 	void (*pocLockGroupCb)(lv_poc_group_oprator_type opt);
+	void (*pocDeleteGroupcb)(int result_type);
 	Msg_GData_s *pPocMemberList;//组成员结构体
 	Msg_GData_s *pPocMemberListBuf;//组成员结构体,间隔一段时间更新一次
 	CGroup *pLockGroup;
@@ -2380,7 +2381,19 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 			        checked_current = true;
 			    }
 
-			    lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
+				bool isRefreshGroupList = true;
+			    if(pocIdtAttr.pocDeleteGroupcb != NULL)
+			    {
+				    pocIdtAttr.pocDeleteGroupcb(1);
+				    pocIdtAttr.pocDeleteGroupcb = NULL;
+				    isRefreshGroupList = false;
+				    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP, NULL);
+			    }
+
+				if(isRefreshGroupList)
+				{
+				    lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
+			    }
 
 			    if(!pocIdtAttr.isPocMemberListBuf)
 			    {
@@ -2390,6 +2403,10 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 				{
 					osiTimerStart(pocIdtAttr.get_member_list_timer, 1000);
 				}
+			}
+			else if (OPT_G_DEL == grop->dwOptCode)
+			{
+				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP, grop);
 			}
 			break;
 		}
@@ -2541,6 +2558,82 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 
 		default:
 			break;
+	}
+}
+
+static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
+{
+	switch(id)
+	{
+		case LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+
+			LvPocGuiIdtCom_delete_group_t *del_group = (LvPocGuiIdtCom_delete_group_t *)ctx;
+			if(del_group->cb == NULL || del_group->group_info == NULL)
+			{
+				if(del_group->cb != NULL)
+				{
+					del_group->cb(0);
+				}
+				break;
+			}
+
+			unsigned int i = 0;
+			CGroup *group_info = (CGroup *)del_group->group_info;
+
+			for(i = 0; i < m_IdtUser.m_Group.m_Group_Num; i++)
+			{
+				if(strcmp((const char *)m_IdtUser.m_Group.m_Group[i].m_ucGNum,(const char *)group_info->m_ucGNum) == 0)
+				{
+					break;
+				}
+			}
+
+			if(i >= m_IdtUser.m_Group.m_Group_Num)
+			{
+				del_group->cb(0);
+				break;
+			}
+
+			pocIdtAttr.pocDeleteGroupcb = del_group->cb;
+
+			if(IDT_GDel(i, group_info->m_ucGNum) == -1)
+			{
+				pocIdtAttr.pocDeleteGroupcb(0);
+				pocIdtAttr.pocDeleteGroupcb = NULL;
+			}
+			break;
+		}
+
+		case LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+			LvPocGuiIdtCom_Group_Operator_t *grop = (LvPocGuiIdtCom_Group_Operator_t *)ctx;
+
+			if(grop->wRes != CAUSE_ZERO)
+			{
+				if(pocIdtAttr.pocDeleteGroupcb != NULL)
+				{
+					pocIdtAttr.pocDeleteGroupcb(0);
+					pocIdtAttr.pocDeleteGroupcb = NULL;
+				}
+				break;
+			}
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
 	}
 }
 
@@ -2751,6 +2844,13 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			case LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_REP:
 			{
 				prvPocGuiIdtTaskHandleLockGroup(event.param1, event.param2);
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND:
+			case LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP:
+			{
+				prvPocGuiIdtTaskHandleDeleteGroup(event.param1, event.param2);
 				break;
 			}
 

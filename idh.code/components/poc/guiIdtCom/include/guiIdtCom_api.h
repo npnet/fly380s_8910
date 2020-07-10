@@ -97,6 +97,9 @@ typedef enum
     LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_IND,
     LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_REP,
 
+    LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND,
+    LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP,
+
     LVPOCGUIIDTCOM_SIGNAL_END,
 } LvPocGuiIdtCom_SignalType_t;
 
@@ -112,6 +115,12 @@ typedef struct
 	void *group_info;
 	void (*cb)(lv_poc_group_oprator_type opt);
 } LvPocGuiIdtCom_lock_group_t;
+
+typedef struct
+{
+	void *group_info;
+	void (*cb)(int result_type);
+} LvPocGuiIdtCom_delete_group_t;
 
 void lvPocGuiIdtCom_Init(void);
 
