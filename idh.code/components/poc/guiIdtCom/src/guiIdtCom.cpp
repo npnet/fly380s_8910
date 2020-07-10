@@ -648,6 +648,11 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 	    }
 		m_IdtUser.m_iRxCount = 0;
 		m_IdtUser.m_iTxCount = 0;
+	    if(pocIdtAttr.delay_close_listen_timer_running)
+	    {
+		    osiTimerStop(pocIdtAttr.delay_close_listen_timer);
+		    pocIdtAttr.delay_close_listen_timer_running = false;
+	    }
 		osiTimerStop(pocIdtAttr.check_listen_timer);
 		pocIdtAttr.check_listen_count = 40;
 		osiTimerStartPeriodic(pocIdtAttr.check_listen_timer, 20);
@@ -1244,13 +1249,43 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				else
 				{
 					srv_type = SRV_TYPE_CONF;
-					dest_num = (char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum;
 					strcpy((char *)pocIdtAttr.speaker_group.m_ucGName, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGName);
 					strcpy((char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum);
+					dest_num = (char *)pocIdtAttr.speaker_group.m_ucGNum;
 					user_mark = (char *)GUIIDTCOM_GROUP_CALL_MARK;
 				}
 
 				IDT_TRACE("call %s\n", dest_num);
+
+				m_IdtUser.m_iCallId = IDT_CallMakeOut(dest_num,
+					srv_type,
+					&pocIdtAttr.attr,
+					NULL,
+					NULL,
+					1,
+					0,
+					1,
+					user_mark);
+			}
+			else if(!pocIdtAttr.is_member_call && strcmp((const char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum) != 0)
+			{
+				if(0 == IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO))
+				{
+					osiThreadSleep(500);
+					m_IdtUser.m_iCallId = -1;
+				}
+
+				char *dest_num = NULL;
+				char *user_mark = NULL;
+				memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
+				pocIdtAttr.attr.ucAudioSend = 1;
+				SRV_TYPE_e srv_type = SRV_TYPE_NONE;
+				srv_type = SRV_TYPE_CONF;
+				strcpy((char *)pocIdtAttr.speaker_group.m_ucGName, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGName);
+				strcpy((char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum);
+				dest_num = (char *)pocIdtAttr.speaker_group.m_ucGNum;
+				user_mark = (char *)GUIIDTCOM_GROUP_CALL_MARK;
+				IDT_TRACE("restart call %s\n", dest_num);
 
 				m_IdtUser.m_iCallId = IDT_CallMakeOut(dest_num,
 					srv_type,
@@ -1275,8 +1310,22 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
 			if(m_IdtUser.m_status == USER_OPRATOR_SPEAKING)
 			{
-				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, "正在讲话", "");
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"正在讲话", (const uint8_t *)"");
+				char speak_name[100] = "";
+				strcpy((char *)speak_name, (const char *)"主讲:");
+				strcat((char *)speak_name, (const char *)pocIdtAttr.self_info.ucName);
+				if(!pocIdtAttr.is_member_call)
+				{
+					char group_name[100] = "";
+					strcpy((char *)group_name, (const char *)"群组:");
+					strcat((char *)group_name, (const char *)pocIdtAttr.speaker_group.m_ucGName);
+					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, speak_name, group_name);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)speak_name, (const uint8_t *)group_name);
+				}
+				else
+				{
+					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, speak_name, "");
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)speak_name, (const uint8_t *)"");
+				}
 			}
 			break;
 		}
@@ -2121,9 +2170,8 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			        bool is_member_call = pocIdtAttr.is_member_call;
 					pocIdtAttr.is_member_call = false;
 					pocIdtAttr.member_call_dir = 0;
-					if(is_member_call && m_IdtUser.m_iCallId != -1)
+					if(is_member_call && m_IdtUser.m_iCallId != -1 && 0 == IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO))
 					{
-						IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO);
 						osiThreadSleep(500);
 						m_IdtUser.m_iCallId = -1;
 					}
