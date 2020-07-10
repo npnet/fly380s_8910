@@ -245,11 +245,11 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 		{
 			memset((void *)member_list, 0, sizeof(lv_poc_member_list_t));
 			strcpy(lv_poc_group_member_list_title, (const char *)p_element->name);
-			member_list->hide_offline = true;
+			member_list->hide_offline = false;
 			lv_poc_group_list_get_member_list_info = (lv_poc_group_info_t *)p_element->information;
 			lv_poc_get_member_list((lv_poc_group_info_t)p_element->information,
 				member_list,
-				2,
+				1,
 				lv_poc_group_list_get_membet_list_cb);
 		}
 	}

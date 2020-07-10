@@ -679,7 +679,7 @@ void lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj)
 	else if(lv_poc_member_list_get_member_type == 2 && lv_poc_group_list_get_member_list_info != NULL)
 	{
 		lv_poc_member_list_clear(member_list_obj);
-		lv_poc_get_member_list(lv_poc_group_list_get_member_list_info, member_list_obj, 2,lv_poc_member_list_get_list_cb);
+		lv_poc_get_member_list(lv_poc_group_list_get_member_list_info, member_list_obj, 1,lv_poc_member_list_get_list_cb);
 	}
 }
 
