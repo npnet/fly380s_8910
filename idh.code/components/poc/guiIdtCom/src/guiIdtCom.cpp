@@ -206,11 +206,13 @@ public:
 	unsigned int mic_ctl;
 	DWORD current_group;
 	DWORD query_group;
+	int check_listen_count;
 	osiTimer_t * delay_close_listen_timer;
 	osiTimer_t * get_member_list_timer;
 	osiTimer_t * get_group_list_timer;
 	osiTimer_t * start_speak_voice_timer;
 	osiTimer_t * get_lock_group_status_timer;
+	osiTimer_t * check_listen_timer;
 	bool delay_close_listen_timer_running;
 	bool start_speak_voice_timer_running;
 	char self_info_cjson_str[GUIIDTCOM_SELF_INFO_SZIE];
@@ -570,6 +572,8 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 	    m_IdtUser.m_iRxCount = m_IdtUser.m_iRxCount + 1;
 
 		pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pucBuf, iLen);
+
+		pocIdtAttr.check_listen_count++;
 		if(m_IdtUser.m_iRxCount == 10)
 		{
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
@@ -612,11 +616,14 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 				    osiTimerStop(pocIdtAttr.delay_close_listen_timer);
 				    pocIdtAttr.delay_close_listen_timer_running = false;
 			    }
+			    pocIdtAttr.check_listen_count = 0;
+			    osiTimerStop(pocIdtAttr.check_listen_timer);
 			    osiTimerStart(pocIdtAttr.delay_close_listen_timer, 560);
 			    pocIdtAttr.delay_close_listen_timer_running = true;
 		    }
 		    else
 		    {
+			    osiTimerStop(pocIdtAttr.check_listen_timer);
 			    if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
 			    {
 				    m_IdtUser.m_status = UT_STATUS_ONLINE;
@@ -641,6 +648,9 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 	    }
 		m_IdtUser.m_iRxCount = 0;
 		m_IdtUser.m_iTxCount = 0;
+		osiTimerStop(pocIdtAttr.check_listen_timer);
+		pocIdtAttr.check_listen_count = 40;
+		osiTimerStartPeriodic(pocIdtAttr.check_listen_timer, 20);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Listen, true);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_START_REP, NULL);
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_SPEAKER_REP, NULL);
@@ -939,6 +949,31 @@ static void LvGuiIdtCom_get_lock_group_status_timer_cb(void *ctx)
 		}
 		return;
 	}
+}
+
+static void LvGuiIdtCom_check_listen_timer_cb(void *ctx)
+{
+	if(pocIdtAttr.check_listen_count < 1
+		|| m_IdtUser.m_status < USER_OPRATOR_START_LISTEN
+		|| m_IdtUser.m_status > USER_OPRATOR_LISTENNING)
+	{
+		if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
+		{
+			m_IdtUser.m_status = UT_STATUS_ONLINE;
+		}
+
+	    if(pocIdtAttr.delay_close_listen_timer_running)
+	    {
+		    osiTimerStop(pocIdtAttr.delay_close_listen_timer);
+		    pocIdtAttr.delay_close_listen_timer_running = false;
+	    }
+	    osiTimerStart(pocIdtAttr.delay_close_listen_timer, 460);
+	    pocIdtAttr.delay_close_listen_timer_running = true;
+		pocIdtAttr.check_listen_count = 0;
+		osiTimerStop(pocIdtAttr.check_listen_timer);
+		return;
+	}
+	pocIdtAttr.check_listen_count--;
 }
 
 //--------------------------------------------------------------------------------
@@ -2888,6 +2923,7 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.get_member_list_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_get_member_list_timer_cb, NULL);
 	pocIdtAttr.get_group_list_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_get_group_list_timer_cb, NULL);
 	pocIdtAttr.get_lock_group_status_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_get_lock_group_status_timer_cb, NULL);
+	pocIdtAttr.check_listen_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_check_listen_timer_cb, NULL);
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
