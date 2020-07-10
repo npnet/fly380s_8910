@@ -28,6 +28,8 @@ static void lv_poc_get_group_list_cb(int result_type);
 static void lv_poc_group_list_title_refr(lv_task_t * task);
 static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt);
 
+static void lv_poc_group_delete_oprator_cb(int result_type);
+
 static void lv_poc_lock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
 
 static void lv_poc_lock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
@@ -36,11 +38,17 @@ static void lv_poc_unlock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
 
 static void lv_poc_unlock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
 
+static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
+
+static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
+
 static lv_obj_t * activity_list;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_list_info = NULL;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_lock_info = NULL;
+
+static lv_poc_group_list_item_info_t * lv_poc_group_delete_info = NULL;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_current_lock_info = NULL;
 
@@ -55,6 +63,8 @@ lv_poc_activity_t * poc_group_list_activity;
 
 char group_member_list_is_open = 0;
 
+static int prv_group_list_cur_opt = 0;
+
 
 static char lv_poc_group_member_list_title[LIST_ELEMENT_NAME_MAX_LENGTH];
 
@@ -64,6 +74,8 @@ static const char * lv_poc_lockgroupwindow_label_lock_text = "锁组";
 static const char * lv_poc_lockgroupwindow_label_unlock_text = "解锁";
 static const char * lv_poc_lockgroupwindow_label_lock_question_text = "是否锁组？";
 static const char * lv_poc_lockgroupwindow_label_unlock_question_text = "是否解锁？";
+static const char * lv_poc_lockgroupwindow_label_delete_group_text = "删除";
+static const char * lv_poc_lockgroupwindow_label_delete_group_question_text = "确认删除吗？";
 static const char * lv_poc_lockgroupwindow_label_OK_text = "          确定          ";
 
 static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
@@ -80,6 +92,7 @@ static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 {
 	lv_poc_group_list_cb_set_active(ACT_ID_POC_GROUP_LIST, false);
 	lv_poc_group_list_get_member_list_info = NULL;
+	prv_group_list_cur_opt = 0;
 	activity_list = NULL;
 	if(group_list != NULL)
 	{
@@ -242,33 +255,48 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 	}
 	else if(LV_EVENT_LONG_PRESSED == event)
 	{
-		if(lv_poc_group_list_info == NULL)
+		if(prv_group_list_cur_opt == 1)
 		{
-			return;
-		}
+			if(lv_poc_group_list_info == NULL)
+			{
+				return;
+			}
 
-		if(lv_poc_get_lock_group() != NULL)  //解锁组
+			if(lv_poc_get_lock_group() != NULL)  //解锁组
+			{
+				lv_poc_group_lock_info = NULL;
+				lv_poc_warnning_open(lv_poc_lockgroupwindow_label_unlock_text,
+					lv_poc_lockgroupwindow_label_unlock_question_text,
+					lv_poc_lockgroupwindow_label_OK_text,
+					lv_poc_unlock_group_question_OK_cb,
+					NULL,
+					lv_poc_unlock_group_question_CANCEL_cb,
+					lock_window_area);
+			}
+			else  //锁组
+			{
+				lv_poc_group_lock_info = p_info;
+				lv_poc_warnning_open(lv_poc_lockgroupwindow_label_lock_text,
+					lv_poc_lockgroupwindow_label_lock_question_text,
+					lv_poc_lockgroupwindow_label_OK_text,
+					lv_poc_lock_group_question_OK_cb,
+					NULL,
+					lv_poc_lock_group_question_CANCEL_cb,
+					lock_window_area);
+			}
+		}
+		else if(prv_group_list_cur_opt == 2)
 		{
-			lv_poc_group_lock_info = NULL;
-			lv_poc_warnning_open(lv_poc_lockgroupwindow_label_unlock_text,
-				lv_poc_lockgroupwindow_label_unlock_question_text,
+			lv_poc_group_delete_info = p_info;
+			lv_poc_warnning_open(lv_poc_lockgroupwindow_label_delete_group_text,
+				lv_poc_lockgroupwindow_label_delete_group_question_text,
 				lv_poc_lockgroupwindow_label_OK_text,
-				lv_poc_unlock_group_question_OK_cb,
+				lv_poc_delete_group_question_OK_cb,
 				NULL,
-				lv_poc_unlock_group_question_CANCEL_cb,
+				lv_poc_delete_group_question_CANCEL_cb,
 				lock_window_area);
 		}
-		else  //锁组
-		{
-			lv_poc_group_lock_info = p_info;
-			lv_poc_warnning_open(lv_poc_lockgroupwindow_label_lock_text,
-				lv_poc_lockgroupwindow_label_lock_question_text,
-				lv_poc_lockgroupwindow_label_OK_text,
-				lv_poc_lock_group_question_OK_cb,
-				NULL,
-				lv_poc_lock_group_question_CANCEL_cb,
-				lock_window_area);
-		}
+		prv_group_list_cur_opt = 0;
 	}
 }
 
@@ -346,6 +374,22 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 			{
 				case LV_GROUP_KEY_MB:
 				{
+					if(prv_group_list_cur_opt > 0)
+					{
+						break;
+					}
+					prv_group_list_cur_opt = 1;
+					lv_signal_send(activity_list, LV_SIGNAL_LONG_PRESS, NULL);
+					break;
+				}
+
+				case LV_GROUP_KEY_GP:
+				{
+					if(prv_group_list_cur_opt > 0)
+					{
+						break;
+					}
+					prv_group_list_cur_opt = 2;
 					lv_signal_send(activity_list, LV_SIGNAL_LONG_PRESS, NULL);
 					break;
 				}
@@ -489,6 +533,40 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 	}
 }
 
+static void lv_poc_group_delete_oprator_cb(int result_type)
+{
+	if(poc_group_list_activity == NULL)
+	{
+		return;
+	}
+
+	if(result_type == 1)
+	{
+		if(lv_poc_group_delete_info == NULL)
+		{
+			return;
+		}
+
+		if(group_list != NULL)
+		{
+			lv_list_clean(activity_list);
+
+			lv_poc_group_list_clear(group_list);
+
+			if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
+			{
+				poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, true);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
+			}
+		}
+	}
+	else
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"删除群组失败", NULL);
+	}
+	lv_poc_group_delete_info = NULL;
+}
+
 static void lv_poc_lock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
 {
 	if(event == LV_EVENT_APPLY)
@@ -531,7 +609,26 @@ static void lv_poc_unlock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t ev
 	}
 }
 
+static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
+{
+	if(event == LV_EVENT_APPLY)
+	{
+		if(lv_poc_group_delete_info == NULL)
+		{
+			return;
+		}
+		list_element_t * item_info = (list_element_t *)lv_poc_group_delete_info->item_information;
+		lv_poc_group_info_t * group_info = (lv_poc_group_info_t)item_info->information;
+		lv_poc_delete_group((lv_poc_group_info_t)group_info, lv_poc_group_delete_oprator_cb);
+	}
+}
 
+static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event)
+{
+	if(event == LV_EVENT_CANCEL)
+	{
+	}
+}
 
 
 void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
@@ -913,6 +1010,7 @@ void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
 	{
 		return;
 	}
+	lv_list_clean(activity_list);
 	lv_poc_group_list_clear(group_list_obj);
 
 	lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb);

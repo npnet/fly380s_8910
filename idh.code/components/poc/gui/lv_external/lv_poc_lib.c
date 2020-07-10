@@ -2050,4 +2050,34 @@ lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, 
 	return true;
 }
 
+/*
+	  name : lv_poc_delete_group
+	  param :
+	  date : 2020-07-09
+*/
+bool
+lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
+{
+	if(group == NULL || func == NULL)
+	{
+		if(func != NULL)
+		{
+			func(0);
+		}
+		return false;
+	}
+
+	static LvPocGuiIdtCom_delete_group_t del_group = {0};
+	del_group.cb = func;
+	del_group.group_info = (void *)group;
+
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND, (void *)&del_group))
+	{
+		memset(&del_group, 0, sizeof(LvPocGuiIdtCom_delete_group_t));
+		func(0);
+		return false;
+	}
+	return true;
+}
+
 

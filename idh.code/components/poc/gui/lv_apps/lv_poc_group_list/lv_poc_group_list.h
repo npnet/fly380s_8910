@@ -18,6 +18,8 @@ lv_poc_status_t lv_poc_group_list_add(lv_poc_group_list_t *group_list_obj, const
 
 void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 
+void lv_poc_group_list_clear(lv_poc_group_list_t *group_list_obj);
+
 int lv_poc_group_list_get_information(lv_poc_group_list_t *group_list_obj, const char * name, void *** information);
 
 void lv_poc_group_list_refresh(lv_task_t * task);

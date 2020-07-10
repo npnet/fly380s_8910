@@ -475,7 +475,7 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
 				lv_group_send_data(g, data->key);
 				if(indev_reset_check(&i->proc)) return;
 			}
-			else if(data->key == 44)/*锁组*/
+			else if(data->key == 44 || data->key == 43)/*锁组,删除组*/
 			{
 				static uint32_t long_key = 0;
 				long_key = data->key;
