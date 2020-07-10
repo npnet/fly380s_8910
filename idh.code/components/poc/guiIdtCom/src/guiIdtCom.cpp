@@ -2384,7 +2384,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 				bool isRefreshGroupList = true;
 			    if(pocIdtAttr.pocDeleteGroupcb != NULL)
 			    {
-				    pocIdtAttr.pocDeleteGroupcb(1);
+				    pocIdtAttr.pocDeleteGroupcb(0);
 				    pocIdtAttr.pocDeleteGroupcb = NULL;
 				    isRefreshGroupList = false;
 				    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP, NULL);
@@ -2577,13 +2577,20 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 			{
 				if(del_group->cb != NULL)
 				{
-					del_group->cb(0);
+					del_group->cb(1);
 				}
 				break;
 			}
 
 			unsigned int i = 0;
 			CGroup *group_info = (CGroup *)del_group->group_info;
+			CGroup *current_group_info = (CGroup *)lvPocGuiIdtCom_get_current_group_info();
+
+			if(m_IdtUser.m_Group.m_Group_Num < 2 || GROUP_EQUATION(group_info->m_ucGName, current_group_info->m_ucGName, group_info, current_group_info, NULL))
+			{
+				del_group->cb(3);
+				break;
+			}
 
 			for(i = 0; i < m_IdtUser.m_Group.m_Group_Num; i++)
 			{
@@ -2595,7 +2602,7 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 
 			if(i >= m_IdtUser.m_Group.m_Group_Num)
 			{
-				del_group->cb(0);
+				del_group->cb(4);
 				break;
 			}
 
@@ -2603,7 +2610,7 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 
 			if(IDT_GDel(i, group_info->m_ucGNum) == -1)
 			{
-				pocIdtAttr.pocDeleteGroupcb(0);
+				pocIdtAttr.pocDeleteGroupcb(5);
 				pocIdtAttr.pocDeleteGroupcb = NULL;
 			}
 			break;
@@ -2621,7 +2628,7 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 			{
 				if(pocIdtAttr.pocDeleteGroupcb != NULL)
 				{
-					pocIdtAttr.pocDeleteGroupcb(0);
+					pocIdtAttr.pocDeleteGroupcb(grop->wRes);
 					pocIdtAttr.pocDeleteGroupcb = NULL;
 				}
 				break;

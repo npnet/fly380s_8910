@@ -2062,7 +2062,7 @@ lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
 	{
 		if(func != NULL)
 		{
-			func(0);
+			func(1);
 		}
 		return false;
 	}
@@ -2074,7 +2074,7 @@ lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND, (void *)&del_group))
 	{
 		memset(&del_group, 0, sizeof(LvPocGuiIdtCom_delete_group_t));
-		func(0);
+		func(2);
 		return false;
 	}
 	return true;

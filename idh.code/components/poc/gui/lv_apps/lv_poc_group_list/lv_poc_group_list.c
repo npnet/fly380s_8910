@@ -540,7 +540,7 @@ static void lv_poc_group_delete_oprator_cb(int result_type)
 		return;
 	}
 
-	if(result_type == 1)
+	if(result_type == 0)
 	{
 		if(lv_poc_group_delete_info == NULL)
 		{
@@ -562,6 +562,7 @@ static void lv_poc_group_delete_oprator_cb(int result_type)
 	}
 	else
 	{
+		OSI_LOGI(0, "delete group fail, cause:%d\n", result_type);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"删除群组失败", NULL);
 	}
 	lv_poc_group_delete_info = NULL;
