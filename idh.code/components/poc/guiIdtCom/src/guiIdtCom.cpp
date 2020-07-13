@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -578,7 +578,7 @@ int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName
 		{
 			IDT_CallMicCtrl(m_IdtUser.m_iCallId, false);
 		}
-	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_REP, (void *)1);
+	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP, NULL);
 	}
 
 	if(m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)
@@ -611,9 +611,23 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 {
     IDT_TRACE("callback_IDT_CallIn: ID=%d, pcMyNum=%s, pcPeerNum=%s, pcPeerName=%s, SrvType=%s(%d), Attr=ARx(%d):ATx(%d), pcUserMark=%s, pcUserCallRef=%s",
         ID, pcMyNum, pcPeerNum, pcPeerName, GetSrvTypeStr(SrvType), SrvType, pAttr->ucAudioRecv, pAttr->ucAudioSend, pcUserMark, pcUserCallRef);
+    bool is_member_call = LvGuiIdtCom_self_is_member_call(pcUserMark);
 	if(m_IdtUser.m_iCallId != -1)
 	{
-		return 0;
+		if(SrvType == SRV_TYPE_CONF && is_member_call)
+		{
+			if(IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO) == -1)
+			{
+				IDT_CallRel(ID, NULL, CAUSE_CALL_CONFLICT);
+				return 0;
+			}
+			m_IdtUser.m_iCallId = -1;
+		}
+		else
+		{
+			IDT_CallRel(ID, NULL, CAUSE_HAVE_CONF);
+			return 0;
+		}
 	}
 
     m_IdtUser.m_iCallId = ID;
@@ -621,7 +635,6 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
     m_IdtUser.m_iTxCount = 0;
     memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
     pocIdtAttr.attr.ucAudioRecv = 1;
-    bool is_member_call = LvGuiIdtCom_self_is_member_call(pcUserMark);
 
     switch (SrvType)
     {
@@ -645,7 +658,7 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 					}
 					else
 					{
-					member_call_obj.ucName[0] = 0;
+						member_call_obj.ucName[0] = 0;
 					}
 
 			        if(pcPeerNum != NULL)
@@ -730,7 +743,7 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 
     if(pocIdtAttr.is_member_call)
     {
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_REP, (void *)0);
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP, (void *)uiCause);
     }
     return 0;
 }
@@ -1474,7 +1487,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			{
 				if(0 == IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO))
 				{
-					osiThreadSleep(500);
 					m_IdtUser.m_iCallId = -1;
 				}
 
@@ -2085,6 +2097,36 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 
 			LvPocGuiIdtCom_User_Operator_t * UOpt = (LvPocGuiIdtCom_User_Operator_t *)ctx;
 
+			Msg_GData_s *pPocMemberList = pocIdtAttr.pPocMemberList;
+			for(unsigned int i = 0; i < pPocMemberList->dwNum; i++)
+			{
+				if(strcmp((const char *)pPocMemberList->member[i].ucNum, (const char *)UOpt->pUser.ucNum) == 0)
+				{
+					strcpy((char *)pPocMemberList->member[i].ucName, (char *)UOpt->pUser.ucName);
+					strcpy((char *)pPocMemberList->member[i].ucNum, (char *)UOpt->pUser.ucNum);
+					pPocMemberList->member[i].ucPrio = UOpt->pUser.ucPriority;
+					pPocMemberList->member[i].ucAttr = UOpt->pUser.ucAttr;
+					pPocMemberList->member[i].ucChanNum = UOpt->pUser.ucChanNum;
+					pPocMemberList->member[i].ucStatus = UOpt->pUser.ucStatus;//用户状态
+					break;
+				}
+			}
+
+			pPocMemberList = pocIdtAttr.pPocMemberListBuf;
+			for(unsigned int i = 0; i < pPocMemberList->dwNum; i++)
+			{
+				if(strcmp((const char *)pPocMemberList->member[i].ucNum, (const char *)UOpt->pUser.ucNum) == 0)
+				{
+					strcpy((char *)pPocMemberList->member[i].ucName, (char *)UOpt->pUser.ucName);
+					strcpy((char *)pPocMemberList->member[i].ucNum, (char *)UOpt->pUser.ucNum);
+					pPocMemberList->member[i].ucPrio = UOpt->pUser.ucPriority;
+					pPocMemberList->member[i].ucAttr = UOpt->pUser.ucAttr;
+					pPocMemberList->member[i].ucChanNum = UOpt->pUser.ucChanNum;
+					pPocMemberList->member[i].ucStatus = UOpt->pUser.ucStatus;//用户状态
+					break;
+				}
+			}
+
 			if(pocIdtAttr.pocGetMemberStatusCb != NULL)
 			{
 				if(UOpt->haveUser != true || UOpt->wRes != CAUSE_ZERO)
@@ -2301,12 +2343,11 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 		    {
 			    break;
 		    }
-		    pocIdtAttr.pocMemberCallCb = member_call_config->func;
 
 		    if(member_call_config->enable && member_call_obj == NULL)
 		    {
-				pocIdtAttr.pocMemberCallCb(false, true);
-				pocIdtAttr.pocMemberCallCb = NULL;
+			    lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"错误参数", NULL);
+				member_call_config->func(2, 2);
 				break;
 		    }
 
@@ -2328,8 +2369,8 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 
 						if(k >= pocIdtAttr.pPocMemberList->dwNum)
 						{
-							pocIdtAttr.pocMemberCallCb(false, true);
-							pocIdtAttr.pocMemberCallCb = NULL;
+						    lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"请稍后再试", NULL);
+							member_call_config->func(2, 2);
 							break;
 						}
 					}
@@ -2343,7 +2384,6 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 						if(m_IdtUser.m_iCallId != -1)
 						{
 							IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO);
-							osiThreadSleep(500);
 							m_IdtUser.m_iCallId = -1;
 						}
 
@@ -2360,12 +2400,20 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 																	0,
 																	1,
 																	user_mark);
+
+						if(m_IdtUser.m_iCallId != -1)
+						{
+						    pocIdtAttr.pocMemberCallCb = member_call_config->func;
+					    }
+					    else
+					    {
+						    member_call_config->func(1, 1);
+					    }
 					}
 					else
 					{
 						pocIdtAttr.is_member_call = true;
-						pocIdtAttr.pocMemberCallCb(true, true);
-						pocIdtAttr.pocMemberCallCb = NULL;
+						member_call_config->func(0, 0);
 					}
 			    }
 			    else
@@ -2375,32 +2423,44 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 					pocIdtAttr.member_call_dir = 0;
 					if(is_member_call && m_IdtUser.m_iCallId != -1 && 0 == IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO))
 					{
-						osiThreadSleep(500);
 						m_IdtUser.m_iCallId = -1;
 					}
-					pocIdtAttr.pocMemberCallCb(false, false);
-					pocIdtAttr.pocMemberCallCb = NULL;
+
+					member_call_config->func(1, 1);
 			    }
 		    }while(0);
 			break;
 		}
 
-		case LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_REP:
+		case LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP:
 		{
-			if(ctx == 0)   //对方或者服务器释放或者拒绝了单呼通话
+			 //对方同意了单呼通话
+		    if(pocIdtAttr.pocMemberCallCb != NULL)
+		    {
+			    pocIdtAttr.pocMemberCallCb(0, 0);
+			    pocIdtAttr.pocMemberCallCb = NULL;
+		    }
+			break;
+		}
+
+		case LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP:
+		{
+			//对方或者服务器释放或者拒绝了单呼通话
+			pocIdtAttr.is_member_call = false;
+			pocIdtAttr.member_call_dir = 0;
+
+			OSI_LOGI(0, "poc_check_member_call close LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_REP");
+
+			if(ctx != CAUSE_ZERO)
 			{
-				pocIdtAttr.is_member_call = false;
-				pocIdtAttr.member_call_dir = 0;
-				lv_poc_activity_func_cb_set.member_call_close();
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)LvPocGetCauseStr(ctx), NULL);
 			}
-			else if(ctx == 1)  //对方同意了单呼通话
+			else
 			{
-			    if(pocIdtAttr.pocMemberCallCb != NULL)
-			    {
-				    pocIdtAttr.pocMemberCallCb(true, true);
-				    pocIdtAttr.pocMemberCallCb = NULL;
-			    }
+				poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Member_Call, true);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
 			}
+			lv_poc_activity_func_cb_set.member_call_close();
 			break;
 		}
 
@@ -3099,7 +3159,8 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			}
 
 			case LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_IND:
-			case LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_REP:
+			case LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP:
+			case LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP:
 			{
 				prvPocGuiIdtTaskHandleMemberCall(event.param1, event.param2);
 				break;

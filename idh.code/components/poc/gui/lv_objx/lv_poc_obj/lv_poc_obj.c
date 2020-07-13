@@ -141,6 +141,9 @@ static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_
 
 static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx);
 
+static void prv_lv_poc_member_call_open(void * information);
+
+static void prv_lv_poc_member_call_close(void);
 
 static bool prv_lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
 
@@ -288,8 +291,8 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 	.window_note = prv_lv_poc_notation_msg,
 	.idle_note = prv_lv_poc_idle_set_page2_note_func,
 	.status_led = prv_lvPocLedIdtCom_Msg_func,
-	.member_call_open = lv_poc_member_call_open,
-	.member_call_close = lv_poc_member_call_close,
+	.member_call_open = prv_lv_poc_member_call_open,
+	.member_call_close = prv_lv_poc_member_call_close,
 };
 
 /*电池图标*/
@@ -1981,6 +1984,29 @@ static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_
 static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx)
 {
 	return lvPocLedIdtCom_Msg(signal, ctx);
+}
+
+static void prv_lv_poc_member_call_open_cb(lv_task_t *task)
+{
+	void *infomation = (void *)task->user_data;
+	lv_poc_member_call_open(infomation);
+}
+
+static void prv_lv_poc_member_call_open(void * information)
+{
+	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_open_cb, 5, LV_TASK_PRIO_HIGH, information);
+	lv_task_once(once_task);
+}
+
+static void prv_lv_poc_member_call_close_cb(lv_task_t *task)
+{
+	lv_poc_member_call_close();
+}
+
+static void prv_lv_poc_member_call_close(void)
+{
+	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_close_cb, 5, LV_TASK_PRIO_HIGH, NULL);
+	lv_task_once(once_task);
 }
 
 static bool prv_lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2)
