@@ -11,7 +11,7 @@ extern "C" {
 
 static void lv_poc_shutdown_charge_power_on_logo(void);
 static void lv_poc_shutdown_charge_Animation_Task(void *ctx);
-static void lv_poc_charge_poweron_battery_refresh(void);
+static void lv_poc_charge_poweron_battery_refresh(lv_task_t *task);
 static void lv_poc_charge_power_outages_shutdown_task(lv_task_t * task);
 
 static lv_style_t lv_poc_shutdown_charge_style = {0};
@@ -53,9 +53,11 @@ void lv_poc_shutdown_charge_Animation_Task(void *ctx)
 {
 	lv_poc_shutdown_charge_power_on_logo();
 	poc_charge_poweron_status = true;//为充电开机
+	//lv刷新图标
+	lv_task_create(lv_poc_charge_poweron_battery_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_800
+	, LV_TASK_PRIO_HIGH, NULL);
 	while(1)
 	{
-		lv_poc_charge_poweron_battery_refresh();
 		osiThreadSleep(1000);
 	}
 }
@@ -86,7 +88,7 @@ void lv_poc_shutdown_charge_power_on_logo(void)
 	poc_setting_conf = lv_poc_setting_conf_read();//获取字体
 	memset(&lv_poc_shutdown_charge_style, 0, sizeof(lv_style_t));
 	lv_style_copy(&lv_poc_shutdown_charge_style, &lv_style_pretty_color);
-	lv_poc_shutdown_charge_style.body.main_color = LV_COLOR_BLACK;
+	lv_poc_shutdown_charge_style.body.main_color = LV_COLOR_BLACK;//LV_COLOR_BLACK;
 	lv_poc_shutdown_charge_style.body.grad_color = LV_COLOR_BLACK;
 	lv_poc_shutdown_charge_style.body.opa = 255;
 	lv_poc_shutdown_charge_style.body.radius = 0;
@@ -197,7 +199,7 @@ lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 	  date : 2020-06-24
 */
 static
-void lv_poc_charge_poweron_battery_refresh(void)
+void lv_poc_charge_poweron_battery_refresh(lv_task_t *task)
 {
 	static lv_img_dsc_t * pre_battery_img = NULL;
 	lv_img_dsc_t * cur_battery_img = lv_poc_power_on_charge_get_battery_img();

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -70,6 +70,206 @@ static int LvGuiIdtCom_self_info_json_parse_status(void);
 static bool LvGuiIdtCom_self_is_member_call(char * info);
 static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx);
 static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx);
+static void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_str);
+
+char *LvPocGetCauseStr(USHORT usCause)
+{
+    static char cBuf[32];
+//    if (CAUSE_TIMER_EXPIRY == (usCause & 0xff))
+//    {
+//        WORD ucSrc = (usCause & 0xc000);
+//        UCHAR ucH = (usCause & 0x3f00) >> 8;
+//        switch (ucSrc)
+//        {
+//        case CAUSE_EXPIRE_IDT://IDT定时器超时
+//            snprintf(cBuf, sizeof(cBuf), "定时器超时:IDT-%s", GetIdtTmStr(ucH));
+//            break;
+//        case CAUSE_EXPIRE_MC://MC定时器超时
+//            snprintf(cBuf, sizeof(cBuf), "定时器超时:MC-%s", GetMcTmStr(ucH));
+//            break;
+//        case CAUSE_EXPIRE_MG://MG定时器超时
+//            snprintf(cBuf, sizeof(cBuf), "定时器超时:MG-%s", GetMgTmStr(ucH));
+//            break;
+//        default:
+//            snprintf(cBuf, sizeof(cBuf), "定时器超时:%d-%d", ucSrc, ucH);
+//            break;
+//        }
+//        return cBuf;
+//    }
+
+    switch (usCause)
+    {
+    case CAUSE_ZERO:
+        return (char*)"错误0";
+    case CAUSE_UNASSIGNED_NUMBER:
+        return (char*)"未分配号码";
+    case CAUSE_NO_ROUTE_TO_DEST:
+        return (char*)"无目的路由";
+    case CAUSE_USER_BUSY:
+        return (char*)"用户忙";
+    case CAUSE_ALERT_NO_ANSWER:
+        return (char*)"用户无应答(人不应答)";
+    case CAUSE_CALL_REJECTED:
+        return (char*)"呼叫被拒绝";
+    case CAUSE_ROUTING_ERROR:
+        return (char*)"路由错误";
+    case CAUSE_FACILITY_REJECTED:
+        return (char*)"设备拒绝";
+    case CAUSE_NORMAL_UNSPECIFIED:
+        return (char*)"通常,未指定";
+    case CAUSE_TEMPORARY_FAILURE:
+        return (char*)"临时错误";
+    case CAUSE_RESOURCE_UNAVAIL:
+        return (char*)"资源不可用";
+    case CAUSE_INVALID_CALL_REF:
+        return (char*)"不正确的呼叫参考号";
+    case CAUSE_MANDATORY_IE_MISSING:
+        return (char*)"必选信息单元丢失";
+    case CAUSE_TIMER_EXPIRY:
+        return (char*)"定时器超时";
+    case CAUSE_CALL_REJ_BY_USER:
+        return (char*)"被用户拒绝";
+    case CAUSE_CALLEE_STOP:
+        return (char*)"被叫停止";
+    case CAUSE_USER_NO_EXIST:
+        return (char*)"用户不存在";
+    case CAUSE_MS_UNACCESSAVLE:
+        return (char*)"不可接入";
+    case CAUSE_MS_POWEROFF:
+        return (char*)"用户关机";
+    case CAUSE_FORCE_RELEASE:
+        return (char*)"强制拆线";
+    case CAUSE_HO_RELEASE:
+        return (char*)"切换拆线";
+    case CAUSE_CALL_CONFLICT:
+        return (char*)"呼叫冲突";
+    case CAUSE_TEMP_UNAVAIL:
+        return (char*)"暂时无法接通";
+    case CAUSE_AUTH_ERROR:
+        return (char*)"鉴权错误";
+    case CAUSE_NEED_AUTH:
+        return (char*)"需要鉴权";
+    case CAUSE_SDP_SEL:
+        return (char*)"SDP选择错误";
+    case CAUSE_MS_ERROR:
+        return (char*)"媒体资源错误";
+    case CAUSE_INNER_ERROR:
+        return (char*)"内部错误";
+    case CAUSE_PRIO_ERROR:
+        return (char*)"优先级不够";
+    case CAUSE_SRV_CONFLICT:
+        return (char*)"业务冲突";
+    case CAUSE_NOTREL_RECALL:
+        return (char*)"由于业务要求,不释放,启动重呼定时器";
+    case CAUSE_NO_CALL:
+        return (char*)"呼叫不存在";
+    case CAUSE_ERROR_IPADDR:
+        return (char*)"错误IP地址过来的业务请求";
+    case CAUSE_DUP_REG:
+        return (char*)"重复注册";
+    case CAUSE_MG_OFFLINE:
+        return (char*)"MG离线";
+    case CAUSE_DS_REQ_QUITCALL:
+        return (char*)"调度员要求退出呼叫";
+    case CAUSE_DB_ERROR:
+        return (char*)"数据库操作错误";
+    case CAUSE_TOOMANY_USER:
+        return (char*)"用户数太多";
+    case CAUSE_SAME_USERNUM:
+        return (char*)"相同的用户号码";
+    case CAUSE_SAME_USERIPADDR:
+        return (char*)"相同的固定IP地址";
+    case CAUSE_PARAM_ERROR:
+        return (char*)"参数错误";
+    case CAUSE_SAME_GNUM:
+        return (char*)"相同的组号码";
+    case CAUSE_TOOMANY_GROUP:
+        return (char*)"太多的组";
+    case CAUSE_NO_GROUP:
+        return (char*)"没有这个组";
+    case CAUSE_SAME_USERNAME:
+        return (char*)"相同的用户名字";
+    case CAUSE_OAM_OPT_ERROR:
+        return (char*)"OAM操作错误";
+    case CAUSE_INVALID_NUM_FORMAT:
+        return (char*)"不正确的地址格式";
+    case CAUSE_INVALID_DNSIP:
+        return (char*)"DNS或IP地址错误";
+    case CAUSE_SRV_NOTSUPPORT:
+        return (char*)"不支持的业务";
+    case CAUSE_MEDIA_NOTDATA:
+        return (char*)"没有媒体数据";
+    case CAUSE_RECALL:
+        return (char*)"重新呼叫";
+    case CAUSE_LINK_DISC:
+        return (char*)"断链";
+    case CAUSE_ORG_RIGHT:
+        return (char*)"组织越权";
+    case CAUSE_SAME_ORGNUM:
+        return (char*)"相同的组织号码";
+    case CAUSE_SAME_ORGNAME:
+        return (char*)"相同的组织名字";
+    case CAUSE_UNASSIGNED_ORG:
+        return (char*)"未分配的组织号码";
+    case CAUSE_INOTHER_ORG:
+        return (char*)"在其他组织中";
+    case CAUSE_HAVE_GCALL:
+        return (char*)"已经有组呼存在";
+    case CAUSE_HAVE_CONF:
+        return (char*)"已经有会议存在";
+    case CAUSE_SEG_FORMAT:
+        return (char*)"错误的号段格式";
+    case CAUSE_USEG_CONFLICT:
+        return (char*)"用户号码段冲突";
+    case CAUSE_GSEG_CONFLICT:
+        return (char*)"组号码段冲突";
+    case CAUSE_NOTIN_SEG:
+        return (char*)"不在号段内";
+    case CAUSE_USER_IN_TOOMANY_GROUP:
+        return (char*)"用户所在组太多";
+    case CAUSE_DSSEG_CONFLICT:
+        return (char*)"调度台号段冲突";
+    case CAUSE_OUTNETWORK_NUM:
+        return (char*)"外网用户";
+    case CAUSE_CFU:
+        return (char*)"无条件呼叫前转";
+    case CAUSE_CFB:
+        return (char*)"遇忙呼叫前转";
+    case CAUSE_CFNRc:
+        return (char*)"不可及呼叫前转";
+    case CAUSE_CFNRy:
+        return (char*)"无应答呼叫前转";
+    case CAUSE_MAX_FWDTIME:
+        return (char*)"最大前转次数";
+    case CAUSE_OAM_RIGHT:
+        return (char*)"OAM操作无权限";
+    case CAUSE_DGT_ERROR:
+        return (char*)"号码错误";
+    case CAUSE_RESOURCE_NOTENOUGH:
+        return (char*)"资源不足";
+    case CAUSE_ORG_EXPIRE:
+        return (char*)"组织到期";
+    case CAUSE_USER_EXPIRE:
+        return (char*)"用户到期";
+    case CAUSE_SAME_ROUTENAME:
+        return (char*)"相同的路由名字";
+    case CAUSE_UNASSIGNED_ROUTE:
+        return (char*)"未分配的路由";
+    case CAUSE_OAM_FWD:
+        return (char*)"OAM消息前转";
+    case CAUSE_UNCFG_MAINNUM:
+        return (char*)"未配置主号码";
+    case CAUSE_G_NOUSER:
+        return (char*)"组中没有用户";
+    case CAUSE_U_LOCK_G:
+        return (char*)"用户锁定在其他组";
+    case CAUSE_U_OFFLINE_G:
+        return (char*)"组中没有在线用户";
+    default:
+        snprintf(cBuf, sizeof(cBuf), "CAUSE=%d", usCause);
+        return cBuf;
+    }
+}
 
 //--------------------------------------------------------------------------------
 //      TRACE小函数
@@ -517,6 +717,9 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
     {
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)status);
+
+		/*发送呼叫原因*/
+		lvPocGuiIdtCase_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE, (void *)uiCause, LvPocGetCauseStr(uiCause));
     }
 
     if(status >= USER_OPRATOR_START_LISTEN && status <= USER_OPRATOR_LISTENNING)
@@ -2953,6 +3156,12 @@ static void pocGuiIdtComTaskEntry(void *argument)
 				break;
 			}
 
+			case LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE://获取对讲原因
+			{
+				prvPocGuiIdtTaskHandleCallFailed(event.param1, event.param2, event.param3);
+				break;
+			}
+
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");
 				break;
@@ -3069,6 +3278,92 @@ extern "C" void *lvPocGuiIdtCom_get_current_lock_group(void)
 		return NULL;
 	}
 	return pocIdtAttr.pLockGroup;
+}
+
+/*
+	  name : lvPocGuiIdtCase_Msg
+	 param : signal：枚举信号类型
+			 ctx：参数
+	 		 cause_str：参数
+	author : wangls
+  describe : 发送发言原因
+	  date : 2020-07-09
+*/
+extern "C" bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str)
+{
+    if (pocIdtAttr.thread == NULL || pocIdtAttr.isReady == false)
+    {
+	    return false;
+    }
+
+	static osiEvent_t event = {0};
+
+	uint32_t critical = osiEnterCritical();
+
+	memset(&event, 0, sizeof(osiEvent_t));
+	event.id = 100;
+	event.param1 = signal;
+	event.param2 = (uint32_t)ctx;
+	event.param3 = (uint32_t)cause_str;
+
+	osiExitCritical(critical);
+
+	return osiEventSend(pocIdtAttr.thread, &event);
+}
+
+/*
+	  name : lvPocGuiIdtCase_Msg
+	 param : id：消息类型
+	 		 ctx：失败枚举原因
+	 		 cause_str：当前失败的字符串原因
+	author : wangls
+  describe : 处理对讲失败消息
+	  date : 2020-07-09
+*/
+static
+void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_str)
+{
+
+	switch(id)
+	{
+		case LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE:
+		{
+			switch(ctx)
+			{
+				case CAUSE_U_OFFLINE_G://组中没有在线成员
+				{
+					OSI_LOGI(0, "[song]no member offline in group");
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+
+					break;
+				}
+				case CAUSE_U_LOCK_G://用户锁定在其他组
+				{
+					OSI_LOGI(0, "[song]user lock in other group");
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+
+					break;
+				}
+				case CAUSE_G_NOUSER://组中没有用户
+				{
+					OSI_LOGI(0, "[song]no member in this group");
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+
+					break;
+				}
+				default:
+				{
+					/*此处可以显示所有异常状态*/
+					//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+
+					break;
+				}
+
+			}
+
+			break;
+		}
+	}
 }
 
 

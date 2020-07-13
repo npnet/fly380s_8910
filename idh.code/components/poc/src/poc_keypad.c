@@ -26,6 +26,8 @@
 #include "lv_include/lv_poc_lib.h"
 #include "guiIdtCom_api.h"
 #include "lv_include/lv_poc.h"
+#include "lv_gui_main.h"
+
 
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
@@ -33,6 +35,8 @@ static lv_indev_state_t prvPttKeyState = 0xff;
 static lv_indev_state_t prvPowerKeyState = 0xff;
 static osiTimer_t * prvPowerTimer = NULL;
 static bool isReadyPowerOff = false;
+
+static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
 
 static void prvPowerKeyCb(void *ctx)
 {
@@ -98,7 +102,14 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		            else
 		            {
 						osiTimerStop(prvPowerTimer);
-						poc_set_lcd_status(!poc_get_lcd_status());
+						 if(lv_poc_charge_poweron_status())//充电开机
+						{
+							poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
+						}
+						 else
+						{
+							poc_set_lcd_status(!poc_get_lcd_status());
+						}
 		            }
 				}
 			}
@@ -116,5 +127,26 @@ bool pocGetPttKeyState(void)
 	return prvPttKeyState == KEY_STATE_PRESS ? true : false;
 }
 
+/*
+	  name : poc_power_on_charge_set_lcd_status
+	 param : none
+	author : wangls
+  describe : 充电时开关屏幕
+	  date : 2020-07-10
+*/
+static
+void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus)
+{
+
+	if(lcdstatus != 0)
+	{
+		lvGuiChargeScreenOn();
+	}
+	else
+	{
+		lvGuiScreenOff();
+	}
+
+}
 
 #endif
