@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -113,6 +113,11 @@ bool lvGuiReleaseScreenOn(uint8_t id);
  * When screen is already turned on, it will do nothing.
  */
 void lvGuiScreenOn(void);
+
+/**
+ * charge turn on screen
+ */
+void lvGuiChargeScreenOn(void);
 
 /**
  * \brief turn off screen

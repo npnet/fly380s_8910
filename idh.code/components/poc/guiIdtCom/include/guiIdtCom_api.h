@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -100,6 +100,8 @@ typedef enum
     LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND,
     LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP,
 
+	LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE,
+
     LVPOCGUIIDTCOM_SIGNAL_END,
 } LvPocGuiIdtCom_SignalType_t;
 
@@ -137,6 +139,8 @@ void *lvPocGuiIdtCom_get_current_group_info(void);
 int lvPocGuiIdtCom_listen_status(void);
 
 void *lvPocGuiIdtCom_get_current_lock_group(void);
+
+bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str);
 
 OSI_EXTERN_C_END
 

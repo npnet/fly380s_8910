@@ -474,6 +474,27 @@ void lvGuiScreenOn(void)
 }
 
 /**
+ * charge turn on screen
+ */
+void lvGuiChargeScreenOn(void)
+{
+    lvGuiContext_t *d = &gLvGuiCtx;
+
+    if (d->screen_on)
+        return;
+
+    drvLcdWakeup(d->lcd);
+    prvDispForceFlush();
+	drvLcdSetBackLightEnable(d->lcd, false);
+	poc_set_lcd_blacklight(0);
+	osiThreadSleep(500);
+
+	drvLcdSetBackLightEnable(d->lcd, true);
+	poc_set_lcd_blacklight(6);
+    d->screen_on = true;
+}
+
+/**
  * set screen off timeout at inactive
  */
 void lvGuiSetInactiveTimeout(unsigned timeout)
