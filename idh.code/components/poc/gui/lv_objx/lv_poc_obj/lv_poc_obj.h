@@ -830,6 +830,15 @@ extern nv_poc_setting_msg_t * poc_setting_conf;
 */
 void lv_poc_anim_note(lv_obj_t *obj);
 
+/*******************
+*     NAME:    lv_poc_get_battery_cnt
+*   AUTHOR:    wangls
+* DESCRIPT:    获取当前电量基值
+*     DATE:    2020-07-20
+********************/
+uint8_t lv_poc_get_battery_cnt(OUT battery_values_t *values);
+
+
 #ifdef __cplusplus
 }
 #endif

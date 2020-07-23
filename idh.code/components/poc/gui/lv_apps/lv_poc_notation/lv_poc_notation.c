@@ -184,10 +184,10 @@ void lv_poc_notation_refresh(void)
 			label_2_length = lv_poc_txt_utf8_get_length((char *)lv_poc_notationwindow_label_2_text);
     	}
     }
-
+#if 0
 	OSI_LOGI(0,"[song]label_1_length = %d,label_2_length = %d",
 	label_1_length,label_2_length);
-
+#endif
 	if(label_1_length > 4 || label_2_length > 4)//文本长度 大于4个汉字
 	{
 		//重新设置消息框原点                                                 13/80
@@ -330,6 +330,10 @@ lv_obj_t * lv_poc_notation_normal_msg(const int8_t * text_1, const int8_t * text
 	{
 		lv_poc_notation_create();
 	}
+	else//防止界面重叠 若上次的窗口未消失就不弹出新窗口了
+	{
+		return NULL;
+	}
 
 	if(text_1 != NULL && text_1[0] != 0)
 	{
@@ -369,6 +373,9 @@ static void lv_poc_notation_normal_msg_delay_close_task(lv_task_t * task)
 
 static void lv_poc_notation_task_cb(lv_task_t * task)
 {
+	//static lv_poc_notation_msg_type_t before_opt = LV_POC_NOTATION_DESTORY;
+	//static lv_obj_t *old_obj = NULL;
+
 	if(lv_poc_notation_delay_close_task_running == true)
 	{
 		return;
@@ -376,12 +383,20 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 	lv_poc_notation_task_msg_t * notation_msg = &lv_poc_notation_task_queue[lv_poc_notation_task_queue_reader];
 	lv_poc_notation_msg_type_t   msg_type = notation_msg->msg_type;
-	if(msg_type == LV_POC_NOTATION_NONE)
+	if(msg_type == LV_POC_NOTATION_NONE)//&& lv_poc_notationwindow_obj != NULL)
 	{
+//		lv_obj_t *obj = lv_scr_act();
+//
+//		if(before_opt != LV_POC_NOTATION_DESTORY && old_obj != obj)
+//		{
+//			old_obj = obj;
+//			lv_obj_set_parent(lv_poc_notationwindow_obj, old_obj);
+//		}
 		return;
 	}
 	notation_msg->msg_type = LV_POC_NOTATION_NONE;
 	lv_poc_notation_task_queue_reader = (lv_poc_notation_task_queue_reader + 1) % LV_POC_NOTATION_TASK_QUEUE_SIZE;
+	//before_opt = msg_type;
 
 	switch(msg_type)
 	{

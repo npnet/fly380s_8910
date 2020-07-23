@@ -18,6 +18,8 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 
 static bool lv_poc_build_group_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
+static void lv_poc_build_group_success_refresh(lv_task_t *tsak);
+
 static lv_obj_t * activity_list;
 
 static lv_poc_build_group_item_info_t * lv_poc_build_group_info = NULL;
@@ -258,9 +260,7 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_KEY_ESC:
 				{
-					lv_poc_build_group_operator(lv_poc_build_group_info,
-						lv_poc_build_group_member_list->offline_number + lv_poc_build_group_member_list->online_number,
-						lv_poc_build_group_selected_num);
+					lv_poc_refr_task_once(lv_poc_build_group_success_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
 					//lv_poc_del_activity(poc_build_group_activity);
 					break;
 				}
@@ -626,14 +626,14 @@ lv_poc_status_t lv_poc_build_group_set_state(lv_poc_member_list_t *member_list_o
     if(true == is_online)
     {
         p_cur = member_list_obj->offline_list;
-        if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+        if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
         	member_list_obj->offline_list = p_cur->next;
             p_cur->next = member_list_obj->online_list;
             member_list_obj->online_list = p_cur;
             goto LV_POC_BUILD_GROUP_SET_STATE_SUCCESS;
         }
-
+		if(p_cur != NULL)
         p_cur = p_cur->next;
         while(p_cur)
         {
@@ -650,14 +650,14 @@ lv_poc_status_t lv_poc_build_group_set_state(lv_poc_member_list_t *member_list_o
     else
     {
         p_cur = member_list_obj->online_list;
-        if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+        if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
         	member_list_obj->online_list = p_cur->next;
             p_cur->next = member_list_obj->offline_list;
             member_list_obj->offline_list = p_cur;
             goto LV_POC_BUILD_GROUP_SET_STATE_SUCCESS;
         }
-
+		if(p_cur != NULL)
         p_cur = p_cur->next;
         while(p_cur)
         {
@@ -720,6 +720,21 @@ lv_poc_status_t lv_poc_build_group_get_state(lv_poc_member_list_t *member_list_o
 	}
 
 	return lv_poc_member_list_get_state(member_list_obj, name, information);
+}
+
+/*
+	  name : lv_poc_build_group_success_refresh
+	 param : none
+	author : wangls
+  describe : 新建群组成功后刷新(lv-刷新)
+	  date : 2020-07-22
+*/
+static
+void lv_poc_build_group_success_refresh(lv_task_t *tsak)
+{
+	lv_poc_build_group_operator(lv_poc_build_group_info,
+							lv_poc_build_group_member_list->offline_number + lv_poc_build_group_member_list->online_number,
+							lv_poc_build_group_selected_num);
 }
 
 #ifdef __cplusplus

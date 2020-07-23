@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -417,6 +417,7 @@ public:
 	bool start_speak_voice_timer_running;
 	char self_info_cjson_str[GUIIDTCOM_SELF_INFO_SZIE];
 	cJSON * self_info_cjson;
+	bool   listen_status;/*返回接听状态*/
 } PocGuiIIdtComAttr_t;
 
 typedef struct
@@ -435,19 +436,16 @@ typedef struct
 	UData_s pUser;
 } LvPocGuiIdtCom_User_Operator_t;
 
-//按键音标志(是否处于对讲状态)
-typedef struct Listen_Status
-{
-    bool   listen_status;
-}Lv_Listen_Sta;
-
-
 CIdtUser m_IdtUser;
 static PocGuiIIdtComAttr_t pocIdtAttr = {0};
 
-
-
-
+static uint8_t  audio_voice_buff[]=
+{
+	0x52, 0x49, 0x46, 0x46, 0x24, 0xa6, 0x0e, 0x00, 0x57, 0x41, 0x56,//0x24, 0xa6, 0x0e,
+	0x45, 0x66, 0x6d, 0x74, 0x20, 0x10, 0x00, 0x00, 0x00, 0x01, 0x00,
+	0x01, 0x00, 0x40, 0x1f, 0x00, 0x00, 0x80, 0x3e, 0x00, 0x00, 0x02,
+	0x00, 0x10, 0x00  , 0x64, 0x61, 0x74, 0x61, 0x00, 0xa6, 0x0e, 0x00,//0x00, 0xa6, 0x0e,
+};
 
 
 int Func_GQueryU(DWORD dwSn, UCHAR *pucGNum)
@@ -787,6 +785,11 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 	{
 	    m_IdtUser.m_iRxCount = m_IdtUser.m_iRxCount + 1;
 
+		if(m_IdtUser.m_iRxCount == 1)
+		{
+			pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)audio_voice_buff, 44);
+		}
+
 		pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pucBuf, iLen);
 
 		pocIdtAttr.check_listen_count++;
@@ -848,6 +851,7 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 			    m_IdtUser.m_iTxCount = 0;
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
+				pocIdtAttr.listen_status = false;
 		    }
 	    }
 	    return 0;
@@ -858,6 +862,8 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
     pocIdtAttr.speaker.ucStatus = UT_STATUS_ONLINE;
     if(m_IdtUser.m_status < USER_OPRATOR_START_LISTEN || m_IdtUser.m_status > USER_OPRATOR_LISTENNING)
     {
+		pocIdtAttr.listen_status = true;
+
 	    if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
 	    {
 		    m_IdtUser.m_status = USER_OPRATOR_START_LISTEN;
@@ -871,6 +877,7 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 	    }
 		osiTimerStop(pocIdtAttr.check_listen_timer);
 		pocIdtAttr.check_listen_count = 40;
+		pocAudioPlayerReset(pocIdtAttr.player);
 		osiTimerStartPeriodic(pocIdtAttr.check_listen_timer, 20);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Listen, true);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_START_REP, NULL);
@@ -1124,6 +1131,7 @@ static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx)
 static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
 {
 	pocIdtAttr.start_speak_voice_timer_running = false;
+    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
 }
@@ -1387,7 +1395,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 				{//当前未登录
 					poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, true);
 				}
-
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_1500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 			    m_IdtUser.m_status = UT_STATUS_OFFLINE;
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
 				osiTimerStop(pocIdtAttr.get_group_list_timer);
@@ -1400,6 +1408,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 	        IDT_StatusSubs((char*)"###", GU_STATUSSUBS_BASIC);
 	        if(m_IdtUser.m_status < UT_STATUS_ONLINE)//登录成功
 	        {
+				//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 				poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Login, true);
 	        }
 	        m_IdtUser.m_status = UT_STATUS_ONLINE;
@@ -1446,6 +1455,8 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			}
 
 			m_IdtUser.m_status = USER_OPRATOR_START_SPEAK;
+
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Speak, true);
 
 			if(m_IdtUser.m_iCallId == -1)
 			{
@@ -1521,8 +1532,10 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP:
 		{
-			//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "开始对讲", NULL);
-			//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
+			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "开始对讲", NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
+			/*开始闪烁*/
+			//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 			if(m_IdtUser.m_status == USER_OPRATOR_SPEAKING)
 			{
 				char speak_name[100] = "";
@@ -1560,7 +1573,9 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 		{
 			if(ctx == USER_OPRATOR_SPEAKING)
 			{
-				poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Stop_Listen, true);
+				/*恢复run闪烁*/
+				//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+				poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Stop_Speak, true);
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, "停止对讲", NULL);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"停止对讲", NULL);
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, NULL, NULL);
@@ -1618,8 +1633,6 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				{
 					m_IdtUser.m_iRxCount = 0;
 					m_IdtUser.m_iTxCount = 0;
-					//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "获得话权", NULL);
-					poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Listen, true);
 
 				    if(pocIdtAttr.start_speak_voice_timer != NULL)
 				    {
@@ -2271,6 +2284,7 @@ static void prvPocGuiIdtTaskHandlePlay(uint32_t id, uint32_t ctx)
 		case LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND:
 		{
 			pocAudioPlayerStop(pocIdtAttr.player);
+			audevStopPlay();
 			break;
 		}
 
@@ -2282,6 +2296,8 @@ static void prvPocGuiIdtTaskHandlePlay(uint32_t id, uint32_t ctx)
 			    m_IdtUser.m_iTxCount = 0;
 				break;
 			}
+
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, true);
 			pocAudioPlayerStart(pocIdtAttr.player);
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
 			break;
@@ -2482,6 +2498,9 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP:
 		{
+			pocIdtAttr.listen_status = false;
+			/*恢复run闪烁*/
+			//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, "停止聆听", "");
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)"停止聆听", (const uint8_t *)"");
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, NULL, NULL);
@@ -2497,6 +2516,9 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			memset(speaker_name, 0, sizeof(char) * 100);
 			strcpy(speaker_name, (const char *)pocIdtAttr.speaker.ucName);
 			strcat(speaker_name, (const char *)"正在讲话");
+			/*开始闪烁*/
+			//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+
 			//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "正在聆听", NULL);
 			//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在聆听", NULL);
 			if(!pocIdtAttr.is_member_call)
@@ -3384,6 +3406,7 @@ extern "C" bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * c
 static
 void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_str)
 {
+	OSI_LOGI(0, "[song]case is = %d",ctx);
 
 	switch(id)
 	{
@@ -3391,6 +3414,7 @@ void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_
 		{
 			switch(ctx)
 			{
+
 				case CAUSE_U_OFFLINE_G://组中没有在线成员
 				{
 					OSI_LOGI(0, "[song]no member offline in group");
@@ -3416,7 +3440,6 @@ void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_
 				{
 					/*此处可以显示所有异常状态*/
 					//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
-
 					break;
 				}
 
@@ -3427,6 +3450,17 @@ void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_
 	}
 }
 
+/*
+	  name : lvPocGuiIdtCom_listen_status
+	 param : none
+	author : wangls
+  describe : 返回是否在接听状态下
+	  date : 2020-07-09
+*/
+bool lvPocGuiIdtCom_listen_status(void)
+{
+	return pocIdtAttr.listen_status;
+}
 
 #endif
 

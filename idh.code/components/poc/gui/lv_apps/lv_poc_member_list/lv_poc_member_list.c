@@ -153,20 +153,23 @@ void prv_lv_poc_member_list_change_to_offline(lv_task_t *task)
 
 static void lv_poc_member_list_get_member_status_cb(int status)
 {
-	if(status == 1)
+	if(lv_poc_member_call_obj != NULL || lv_poc_member_call_obj_information != NULL)
 	{
-		lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, true);
-		lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_online, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
-		lv_task_once(once_task);
-		lv_poc_activity_func_cb_set.member_call_open(lv_poc_member_call_obj_information);
-	}
-	else
-	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, true);
-		lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, false);
-		lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_offline, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
-		lv_task_once(once_task);
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
+		if(status == 1)
+		{
+			lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, true);
+			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_online, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
+			lv_task_once(once_task);
+			lv_poc_activity_func_cb_set.member_call_open(lv_poc_member_call_obj_information);
+		}
+		else
+		{
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, true);
+			lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, false);
+			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_offline, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
+			lv_task_once(once_task);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
+		}
 	}
 	lv_poc_member_call_obj_information = NULL;
 	lv_poc_member_call_obj = NULL;
@@ -464,7 +467,7 @@ void lv_poc_member_list_remove(lv_poc_member_list_t *member_list_obj, const char
     if(NULL != member_list_obj->online_list)
     {
         p_cur = member_list_obj->online_list;
-        if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+        if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
         	member_list_obj->online_list = p_cur->next;
             lv_obj_del(p_cur->list_item);
@@ -473,6 +476,7 @@ void lv_poc_member_list_remove(lv_poc_member_list_t *member_list_obj, const char
             return;
         }
         p_prv = p_cur;
+		if(p_cur != NULL)
         p_cur = p_cur->next;
         while(p_cur)
         {
@@ -493,7 +497,7 @@ void lv_poc_member_list_remove(lv_poc_member_list_t *member_list_obj, const char
     if(NULL != member_list_obj->offline_list)
     {
         p_cur = member_list_obj->offline_list;
-        if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+        if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
         	member_list_obj->offline_list = p_cur->next;
             lv_obj_del(p_cur->list_item);
@@ -502,6 +506,7 @@ void lv_poc_member_list_remove(lv_poc_member_list_t *member_list_obj, const char
             return;
         }
         p_prv = p_cur;
+		if(p_cur != NULL)
         p_cur = p_cur->next;
         while(p_cur)
         {
@@ -750,12 +755,13 @@ lv_poc_status_t lv_poc_member_list_move_top(lv_poc_member_list_t *member_list_ob
     }
 
     p_cur = member_list_obj->online_list;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -771,12 +777,13 @@ lv_poc_status_t lv_poc_member_list_move_top(lv_poc_member_list_t *member_list_ob
     }
 
     p_cur = member_list_obj->offline_list;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -818,13 +825,14 @@ lv_poc_status_t lv_poc_member_list_move_bottom(lv_poc_member_list_t *member_list
 
     p_cur = member_list_obj->online_list;
     p_scr = p_cur;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         is_find = true;
         p_scr = p_cur;
         member_list_obj->online_list = p_cur->next;
     }
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -850,13 +858,14 @@ lv_poc_status_t lv_poc_member_list_move_bottom(lv_poc_member_list_t *member_list
     }
 
     p_cur = member_list_obj->offline_list;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         is_find = true;
         p_scr = p_cur;
         member_list_obj->offline_list = p_cur->next;
     }
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -906,14 +915,15 @@ lv_poc_status_t lv_poc_member_list_move_up(lv_poc_member_list_t *member_list_obj
     }
 
     p_cur = member_list_obj->online_list;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         p_prv->next = p_cur->next;
         p_cur->next = p_prv;
@@ -923,6 +933,7 @@ lv_poc_status_t lv_poc_member_list_move_up(lv_poc_member_list_t *member_list_obj
 
     p_prv_prv = p_prv;
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -939,14 +950,15 @@ lv_poc_status_t lv_poc_member_list_move_up(lv_poc_member_list_t *member_list_obj
     }
 
     p_cur = member_list_obj->offline_list;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         p_prv->next = p_cur->next;
         p_cur->next = p_prv;
@@ -956,6 +968,7 @@ lv_poc_status_t lv_poc_member_list_move_up(lv_poc_member_list_t *member_list_obj
 
     p_prv_prv = p_prv;
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -995,8 +1008,8 @@ lv_poc_status_t lv_poc_member_list_move_down(lv_poc_member_list_t *member_list_o
         return status;
     }
 
-    p_cur = member_list_obj->online_list;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    p_cur = member_list_obj->online_list;/*p_cur != NULL 防止内存泄露*/
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         if(NULL != p_cur->next)
         {
@@ -1009,6 +1022,7 @@ lv_poc_status_t lv_poc_member_list_move_down(lv_poc_member_list_t *member_list_o
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -1029,8 +1043,8 @@ lv_poc_status_t lv_poc_member_list_move_down(lv_poc_member_list_t *member_list_o
         p_cur = p_cur->next;
     }
 
-    p_cur = member_list_obj->offline_list;
-    if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    p_cur = member_list_obj->offline_list;/*p_cur != NULL 防止内存泄露*/
+    if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         if(NULL != p_cur->next)
         {
@@ -1043,6 +1057,7 @@ lv_poc_status_t lv_poc_member_list_move_down(lv_poc_member_list_t *member_list_o
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -1087,16 +1102,18 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
 
     if(true == is_online)
     {
-        p_cur = member_list_obj->offline_list;
-        if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+        p_cur = member_list_obj->offline_list;/*p_cur != NULL 解决进入群组后单呼死机问题*/
+        if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
         	member_list_obj->offline_list = p_cur->next;
             p_cur->next = member_list_obj->online_list;
             member_list_obj->online_list = p_cur;
-            goto LV_POC_MEMBER_LIST_SET_STATE_SUCCESS;
+            return POC_OPERATE_SECCESS;
         }
-
-        p_cur = p_cur->next;
+		if(p_cur != NULL)
+		{
+        	p_cur = p_cur->next;
+		}
         while(p_cur)
         {
             if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
@@ -1104,7 +1121,7 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
             	member_list_obj->offline_list = p_cur->next;
                 p_cur->next = member_list_obj->online_list;
                 member_list_obj->online_list = p_cur;
-                goto LV_POC_MEMBER_LIST_SET_STATE_SUCCESS;
+                return POC_OPERATE_SECCESS;
             }
             p_cur = p_cur->next;
         }
@@ -1112,15 +1129,18 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
     else
     {
         p_cur = member_list_obj->online_list;
-        if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+        if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
         	member_list_obj->online_list = p_cur->next;
             p_cur->next = member_list_obj->offline_list;
             member_list_obj->offline_list = p_cur;
-            goto LV_POC_MEMBER_LIST_SET_STATE_SUCCESS;
+            return POC_OPERATE_SECCESS;
         }
 
-        p_cur = p_cur->next;
+		if(p_cur != NULL)
+		{
+        	p_cur = p_cur->next;
+		}
         while(p_cur)
         {
             if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
@@ -1128,7 +1148,7 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
             	member_list_obj->online_list = p_cur->next;
                 p_cur->next = member_list_obj->offline_list;
                 member_list_obj->offline_list = p_cur;
-                goto LV_POC_MEMBER_LIST_SET_STATE_SUCCESS;
+                return POC_OPERATE_SECCESS;
             }
             p_cur = p_cur->next;
         }
@@ -1136,7 +1156,7 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
 
     return POC_UNKNOWN_FAULT;
 
-    LV_POC_MEMBER_LIST_SET_STATE_SUCCESS:
+    //LV_POC_MEMBER_LIST_SET_STATE_SUCCESS:
     #if 0
 	if(p_cur != NULL && p_cur->list_item != NULL)
 	{

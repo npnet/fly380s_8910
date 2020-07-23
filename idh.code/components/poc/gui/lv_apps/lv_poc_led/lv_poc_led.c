@@ -32,8 +32,10 @@ typedef struct _LED_CALLBACK_s
 typedef struct _PocLedIdtComAttr_t
 {
 	osiThread_t *thread;
+	osiThread_t *jumpThread;
 	bool        isReady;
 	uint16_t    jumpperiod;
+	uint16_t	jumpcount;
 	bool        ledstatus;
 } PocLedIdtComAttr_t;
 
@@ -54,9 +56,9 @@ void poc_Status_Led_Task(void)
 	lv_poc_led_status_callback(NULL);//注销回调
 
 	/*LED MSG TASK*/
-	pocLedIdtAttr.thread=osiThreadCreate("status led", poc_Led_Entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
+	pocLedIdtAttr.thread = osiThreadCreate("status led", poc_Led_Entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
 	/*JUMP TASK*/
-	osiThreadCreate("jump led task", poc_Led_Jump_Entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
+	pocLedIdtAttr.jumpThread = osiThreadCreate("jump led task", poc_Led_Jump_Entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
 }
 
 /*
@@ -67,9 +69,10 @@ void poc_Status_Led_Task(void)
 static void poc_Led_Entry(void *param)
 {
 	osiEvent_t event;
+	bool isValid = true;
 	lv_poc_led_status_all_close();
-
 	pocLedIdtAttr.isReady = true;
+
 	while(1)
 	{
 		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 200))
@@ -83,70 +86,57 @@ static void poc_Led_Entry(void *param)
 
 		if(event.param2)
 			pocLedIdtAttr.jumpperiod = (uint16_t)event.param2;//提取周期
+		if(event.param3)
+			pocLedIdtAttr.jumpcount = (uint16_t)event.param3;//提取周期
 
 		switch(event.param1)
 		{
-			case LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS://正常状态
-				//add you fuc
-				pocLedIdtAttr.jumpperiod = 1000;//恢复闪烁线程周期
-				lv_poc_led_status_all_close();
+			case LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS:
 
-				Led_CallBack.pf_poc_led_jump_status = NULL;//注销循环回调
+				pocLedIdtAttr.jumpperiod = 1000;/*恢复闪烁线程周期*/
+				lv_poc_led_status_all_close();
+				Led_CallBack.pf_poc_led_jump_status = NULL;
 
 				break;
 
-			case LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS://对讲状态
-				//add you fuc
-				//注册回调
+			case LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
+
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
 
 				break;
 
-			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS://充电状态
-				//add you fuc
+			case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
+
+				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
+
+				break;
+
+			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_CONNECT_NETWORK_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_SUCCESS_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_SUCCESS_STATUS:
+
 				lv_poc_red_close_green_open();
 
 				break;
 
-			case LVPOCLEDIDTCOM_SIGNAL_CONNECT_NETWORK_STATUS://注册上网络
-				//add you fuc
-				lv_poc_red_close_green_open();
+			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_FAIL_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_FAIL_STATUS:
 
-				break;
-
-			case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS://低电量状态
-				//add you fuc
 				lv_poc_red_open_green_close();
 
 				break;
 
-			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_SUCCESS_STATUS://获取成员列表成功
-				//add you fuc
-				lv_poc_red_close_green_open();
+			case LVPOCLEDIDTCOM_SIGNAL_FAIL_STATUS:
 
-				break;
-
-			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_FAIL_STATUS://获取成员列表失败
-				//add you fuc
-				lv_poc_red_open_green_close();
-
-				break;
-
-			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_SUCCESS_STATUS://获取群组列表成功
-				//add you fuc
-				lv_poc_red_close_green_open();
-
-				break;
-
-			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_FAIL_STATUS://获取群组列表失败
-				//add you fuc
-				lv_poc_red_open_green_close();
-
-				break;
-
-			case LVPOCLEDIDTCOM_SIGNAL_FAIL_STATUS://错误消息
-				//add you fuc
-				lv_poc_led_status_all_open();//TEST
+				lv_poc_led_status_all_open();
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_open_green_jump;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_open_red_jump;
@@ -154,10 +144,20 @@ static void poc_Led_Entry(void *param)
 
 				pocLedIdtAttr.isReady = false;
 				osiThreadExit();
-				break;
+				return;
 
-			default:break;
+			default:
+				isValid = false;
+				break;
 		}
+
+		if (isValid)
+		{
+			osiEvent_t event_temp = {0};
+			osiEventTrySend(pocLedIdtAttr.jumpThread, &event_temp, 100);
+		}
+
+		isValid = true;
 	}
 }
 
@@ -168,19 +168,22 @@ static void poc_Led_Entry(void *param)
 */
 static void poc_Led_Jump_Entry(void *param)
 {
+	osiEvent_t event = {0};
 
 	while(1)
 	{
-		if(pocLedIdtAttr.jumpperiod == 0 || Led_CallBack.pf_poc_led_jump_status == NULL)
+
+		if(pocLedIdtAttr.jumpperiod == 0 || Led_CallBack.pf_poc_led_jump_status == NULL || pocLedIdtAttr.jumpcount == 0)
 		{
 			osiThreadSleep(100);
 			continue;
 		}
+		if(pocLedIdtAttr.jumpcount <= 9) pocLedIdtAttr.jumpcount--;
 
+		osiEventTryWait(pocLedIdtAttr.jumpThread , &event, pocLedIdtAttr.jumpperiod);
 		//查询回调
 		lv_poc_led_status_callback_check(Led_CallBack.pf_poc_led_jump_status);
 
-		osiThreadSleep(pocLedIdtAttr.jumpperiod);
 	}
 }
 
@@ -190,7 +193,7 @@ static void poc_Led_Jump_Entry(void *param)
 	  date : 2020-06-02
 */
 bool
-lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx)
+lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count)
 {
 	if (pocLedIdtAttr.thread == NULL || pocLedIdtAttr.isReady == false)
 	{
@@ -202,6 +205,7 @@ lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t
 	event.id = 200;
 	event.param1 = signal;
 	event.param2 = (LVPOCIDTCOM_Led_Period_t)ctx;
+	event.param3 = (LVPOCIDTCOM_Led_Jump_Count_t)count;
 	return osiEventSend(pocLedIdtAttr.thread, &event);
 }
 
@@ -213,8 +217,8 @@ lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t
 static void
 lv_poc_led_status_all_close(void)
 {
+	Led_CallBack.pf_poc_led_jump_status = NULL;
 	poc_set_green_status(false);
-	osiThreadSleep(5);//不加延时驱动不成功
 	poc_set_red_status(false);
 }
 
@@ -226,8 +230,8 @@ lv_poc_led_status_all_close(void)
 static void
 lv_poc_led_status_all_open(void)
 {
+	Led_CallBack.pf_poc_led_jump_status = NULL;
 	poc_set_green_status(true);
-	osiThreadSleep(5);//不加延时驱动不成功
 	poc_set_red_status(true);
 }
 
@@ -239,8 +243,8 @@ lv_poc_led_status_all_open(void)
 static void
 lv_poc_red_open_green_close(void)
 {
+	Led_CallBack.pf_poc_led_jump_status = NULL;
 	poc_set_green_status(false);
-	osiThreadSleep(5);//不加延时驱动不成功
 	poc_set_red_status(true);
 }
 
@@ -252,8 +256,8 @@ lv_poc_red_open_green_close(void)
 static void
 lv_poc_red_close_green_open(void)
 {
+	Led_CallBack.pf_poc_led_jump_status = NULL;
 	poc_set_green_status(true);
-	osiThreadSleep(5);//不加延时驱动不成功
 	poc_set_red_status(false);
 }
 
@@ -265,10 +269,9 @@ lv_poc_red_close_green_open(void)
 static void
 callback_lv_poc_red_close_green_jump(osiEvent_t *event)
 {
+	poc_set_red_status(false);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
 	poc_set_green_status(pocLedIdtAttr.ledstatus);
-	osiThreadSleep(5);//不加延时驱动不成功
-	poc_set_red_status(false);
 }
 
 /*
@@ -279,10 +282,9 @@ callback_lv_poc_red_close_green_jump(osiEvent_t *event)
 static void
 callback_lv_poc_red_open_green_jump(osiEvent_t *event)
 {
+	poc_set_red_status(true);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
 	poc_set_green_status(pocLedIdtAttr.ledstatus);
-	osiThreadSleep(5);//不加延时驱动不成功
-	poc_set_red_status(true);
 }
 
 /*
@@ -293,10 +295,9 @@ callback_lv_poc_red_open_green_jump(osiEvent_t *event)
 static void
 callback_lv_poc_green_close_red_jump(osiEvent_t *event)
 {
+	poc_set_green_status(false);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
 	poc_set_red_status(pocLedIdtAttr.ledstatus);
-	osiThreadSleep(5);//不加延时驱动不成功
-	poc_set_green_status(false);
 }
 
 /*
@@ -307,10 +308,9 @@ callback_lv_poc_green_close_red_jump(osiEvent_t *event)
 static void
 callback_lv_poc_green_open_red_jump(osiEvent_t *event)
 {
+	poc_set_green_status(true);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
 	poc_set_red_status(pocLedIdtAttr.ledstatus);
-	osiThreadSleep(5);//不加延时驱动不成功
-	poc_set_green_status(true);
 }
 
 /*
@@ -324,7 +324,6 @@ callback_lv_poc_green_jump_red_jump(osiEvent_t *event)
 {
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
 	poc_set_red_status(pocLedIdtAttr.ledstatus);
-	osiThreadSleep(5);//不加延时驱动不成功
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
 	poc_set_green_status(pocLedIdtAttr.ledstatus);
 }
