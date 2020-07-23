@@ -1244,4 +1244,3 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	}
 	return activity_idle;
 }
-

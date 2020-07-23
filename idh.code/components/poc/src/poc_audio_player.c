@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -348,6 +348,8 @@ int pocAudioPlayerReset(POCAUDIOPLAYER_HANDLE player_id)
 	player->writer->pos = 0;
 
 	player->reader->pos = 0;
+
+	memset(player->writer->buf, 0, player->writer->max_size);
 
 	player->restart = false;
 

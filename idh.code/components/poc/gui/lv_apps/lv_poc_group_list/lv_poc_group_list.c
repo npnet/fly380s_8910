@@ -777,7 +777,7 @@ void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * 
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         group_list_obj->group_list = p_cur->next;
         lv_obj_del(p_cur->list_item);
@@ -786,6 +786,7 @@ void lv_poc_group_list_remove(lv_poc_group_list_t *group_list_obj, const char * 
         return;
     }
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -1039,12 +1040,13 @@ lv_poc_status_t lv_poc_group_list_move_top(lv_poc_group_list_t *group_list_obj, 
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -1086,13 +1088,14 @@ lv_poc_status_t lv_poc_group_list_move_bottom(lv_poc_group_list_t *group_list_ob
 
     p_cur = group_list_obj->group_list;
     p_scr = p_cur;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_scr != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         is_find = true;
         p_scr = p_cur;
         group_list_obj->group_list = p_cur->next;
     }
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -1142,14 +1145,15 @@ lv_poc_status_t lv_poc_group_list_move_up(lv_poc_group_list_t *group_list_obj, c
     }
 
     p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         return POC_OPERATE_SECCESS;
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         p_prv->next = p_cur->next;
         p_cur->next = p_prv;
@@ -1159,6 +1163,7 @@ lv_poc_status_t lv_poc_group_list_move_up(lv_poc_group_list_t *group_list_obj, c
 
     p_prv_prv = p_prv;
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {
@@ -1198,8 +1203,8 @@ lv_poc_status_t lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj,
         return status;
     }
 
-    p_cur = group_list_obj->group_list;
-    if(GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+    p_cur = group_list_obj->group_list;/*p_cur != NULL 防止内存泄露*/
+    if(p_cur != NULL && GROUP_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         if(NULL != p_cur->next)
         {
@@ -1212,6 +1217,7 @@ lv_poc_status_t lv_poc_group_list_move_down(lv_poc_group_list_t *group_list_obj,
     }
 
     p_prv = p_cur;
+	if(p_cur != NULL)
     p_cur = p_cur->next;
     while(p_cur)
     {

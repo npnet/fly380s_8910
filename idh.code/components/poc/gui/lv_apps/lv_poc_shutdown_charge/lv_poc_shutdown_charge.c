@@ -6,8 +6,8 @@ extern "C" {
 #include <stdlib.h>
 #include "lv_gui_main.h"
 
-//掉电多长时间后关机
-#define POC_CHARGE_POWER_DOWN_TIME 2000
+/*掉电多长时间后关机*/
+#define POC_CHARGE_POWER_DOWN_TIME 20/*2000*/
 
 static void lv_poc_shutdown_charge_power_on_logo(void);
 static void lv_poc_shutdown_charge_Animation_Task(void *ctx);
@@ -56,6 +56,7 @@ void lv_poc_shutdown_charge_Animation_Task(void *ctx)
 	//lv刷新图标
 	lv_task_create(lv_poc_charge_poweron_battery_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_800
 	, LV_TASK_PRIO_HIGH, NULL);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 	while(1)
 	{
 		osiThreadSleep(1000);
@@ -121,9 +122,19 @@ static
 lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 {
 	const lv_img_dsc_t * battery_img = NULL;
-	static uint8_t battery_img_cur = 0;
+	static uint8_t battery_img_cur = 100;
 	battery_values_t battery_t;
 	poc_battery_get_status(&battery_t);
+
+	if(battery_img_cur == 100)
+	{
+		battery_img_cur = lv_poc_get_battery_cnt(&battery_t);
+		if(battery_img_cur < 7)
+		{
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+		}
+	}
+
     if(!battery_t.battery_status)
     {
         battery_img = &no_battery_charging_shutdown;
@@ -139,6 +150,8 @@ lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 	{
 		if(battery_t.battery_value >= 100)
 		{
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+
 			battery_img = charge_battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)

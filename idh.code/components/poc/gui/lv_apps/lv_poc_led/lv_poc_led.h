@@ -1,4 +1,4 @@
-#ifndef __LV_POC_LED_H_
+﻿#ifndef __LV_POC_LED_H_
 #define __LV_POC_LED_H_
 
 
@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 void poc_Status_Led_Task(void);
-bool lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx);
+bool lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count);
 
 #ifdef __cplusplus
 }

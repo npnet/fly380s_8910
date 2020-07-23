@@ -641,7 +641,7 @@ poc_play_voice_one_time(IN       LVPOCAUDIO_Type_e voice_type, IN bool isBreak)
 
 	if(prv_play_voice_one_time_thread == NULL)
 	{
-		prv_play_voice_one_time_thread = osiThreadCreate("play_voice", prv_play_voice_one_time_thread_callback, NULL, OSI_PRIORITY_LOW, 1024*3, 64);
+		prv_play_voice_one_time_thread = osiThreadCreate("play_voice", prv_play_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024*3, 64);
 		if(prv_play_voice_one_time_thread == NULL)
 	{
 			return;
@@ -971,6 +971,7 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 
 	if(!poc_check_sim_prsent(POC_SIM_1))
 	{
+		//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, false);
 		return false;
 	}
@@ -978,12 +979,14 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	if (CFW_CfgGetNwStatus(&status, nSim) != 0 ||
 		CFW_NwGetStatus(&nStatusInfo, nSim) != 0)
 	{
+		//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, false);
 		return false;
 	}
 
 	if(nStatusInfo.nStatus == 0 || nStatusInfo.nStatus == 2 || nStatusInfo.nStatus == 4)
 	{
+		//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, false);
 		return false;
 	}
