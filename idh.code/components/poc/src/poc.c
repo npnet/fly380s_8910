@@ -47,6 +47,9 @@ static void pocIdtStartHandleTask(void * ctx)
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
 	//登录任务
 	poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, true);
+	#if 0
+	pocAudioPlayerSound();/*new player test*/
+	#endif
 	osiThreadSleep(2000);
 	lvPocGuiIdtCom_log();
 	osiThreadExit();

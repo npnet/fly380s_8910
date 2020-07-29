@@ -373,8 +373,8 @@ static void lv_poc_notation_normal_msg_delay_close_task(lv_task_t * task)
 
 static void lv_poc_notation_task_cb(lv_task_t * task)
 {
-	//static lv_poc_notation_msg_type_t before_opt = LV_POC_NOTATION_DESTORY;
-	//static lv_obj_t *old_obj = NULL;
+//	static lv_poc_notation_msg_type_t before_opt = LV_POC_NOTATION_DESTORY;
+//	static lv_obj_t *old_obj = NULL;
 
 	if(lv_poc_notation_delay_close_task_running == true)
 	{
@@ -383,7 +383,7 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 	lv_poc_notation_task_msg_t * notation_msg = &lv_poc_notation_task_queue[lv_poc_notation_task_queue_reader];
 	lv_poc_notation_msg_type_t   msg_type = notation_msg->msg_type;
-	if(msg_type == LV_POC_NOTATION_NONE)//&& lv_poc_notationwindow_obj != NULL)
+	if(msg_type == LV_POC_NOTATION_NONE)// && lv_poc_notationwindow_obj != NULL)
 	{
 //		lv_obj_t *obj = lv_scr_act();
 //
@@ -396,7 +396,8 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 	}
 	notation_msg->msg_type = LV_POC_NOTATION_NONE;
 	lv_poc_notation_task_queue_reader = (lv_poc_notation_task_queue_reader + 1) % LV_POC_NOTATION_TASK_QUEUE_SIZE;
-	//before_opt = msg_type;
+//	/*记录*/
+//	before_opt = msg_type;
 
 	switch(msg_type)
 	{

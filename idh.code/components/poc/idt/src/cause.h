@@ -92,6 +92,8 @@ extern "C" {
 #define CAUSE_G_NOUSER                  80      //组中没有用户
 #define CAUSE_U_LOCK_G                  81      //用户锁定在其他组
 #define CAUSE_U_OFFLINE_G               82      //组中没有在线用户
+#define CAUSE_REG_FWD                   83      //注册前转
+#define CAUSE_PROTOCOL                  84      //协议错误
 
 #define CAUSE_MAX                       0x1fff
 
@@ -108,7 +110,5 @@ extern "C" {
 #endif
 
 #endif //
-
-
 
 

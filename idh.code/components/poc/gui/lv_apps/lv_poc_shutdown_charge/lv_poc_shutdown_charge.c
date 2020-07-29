@@ -7,17 +7,23 @@ extern "C" {
 #include "lv_gui_main.h"
 
 /*掉电多长时间后关机*/
-#define POC_CHARGE_POWER_DOWN_TIME 20/*2000*/
+#define POC_CHARGE_POWER_DOWN_TIME 1/*2000*/
 
 static void lv_poc_shutdown_charge_power_on_logo(void);
 static void lv_poc_shutdown_charge_Animation_Task(void *ctx);
 static void lv_poc_charge_poweron_battery_refresh(lv_task_t *task);
 static void lv_poc_charge_power_outages_shutdown_task(lv_task_t * task);
+static void lv_poc_show_sprd_image(lv_task_t *task);
+#if 0
+static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
+#endif
 
 static lv_style_t lv_poc_shutdown_charge_style = {0};
 static lv_obj_t *lv_poc_shutdown_charge_obj = NULL;//背景框
 static lv_obj_t *poc_charge_battery_image = NULL;
 static bool poc_charge_poweron_status = false;
+static lv_obj_t *poc_power_on_backgroup_sprd_image;
+
 
 /*充电开机电池图标*/
 const lv_img_dsc_t *charge_battery_img_dispaly[8] = { &indeterminate0
@@ -73,16 +79,13 @@ void lv_poc_shutdown_charge_Animation_Task(void *ctx)
 static
 void lv_poc_shutdown_charge_power_on_logo(void)
 {
+	lvGuiReleaseScreenOn(3);//开屏
+
+	//魔方图片
+	lv_poc_refr_task_once(lv_poc_show_sprd_image, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGHEST);
+	osiThreadSleep(3000);
 	//熄屏时间
 	lvGuiSetInactiveTimeout(8000);
-
-	lvGuiRequestSceenOn(3);//开屏
-	//魔方图片
-	lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
-	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
-	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
-	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
-	osiThreadSleep(4000);
 	lv_obj_del(poc_power_on_backgroup_sprd_image);
 
 	//背景框
@@ -247,6 +250,47 @@ void lv_poc_charge_power_outages_shutdown_task(lv_task_t * task)
 {
 	osiShutdown(OSI_SHUTDOWN_POWER_OFF);//关机
 }
+
+/*
+	  name : lv_poc_show_sprd_image
+	 param : none
+	author : wangls
+  describe : 播放魔方图片
+	  date : 2020-07-28
+*/
+static
+void lv_poc_show_sprd_image(lv_task_t *task)
+{
+	poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
+	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
+	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
+	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+}
+
+#if 0
+/*
+	  name : poc_power_on_charge_set_lcd_status
+	 param : none
+	author : wangls
+  describe : 充电时开关屏幕
+	  date : 2020-07-28
+*/
+static
+void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus)
+{
+
+	if(lcdstatus != 0)
+	{
+		lvGuiChargeScreenOn();
+	}
+	else
+	{
+		lvGuiScreenOff();
+	}
+
+}
+#endif
+
 
 #ifdef __cplusplus
 }
