@@ -971,7 +971,7 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 
 	if(!poc_check_sim_prsent(POC_SIM_1))
 	{
-		//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, false);
 		return false;
 	}
@@ -979,14 +979,14 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	if (CFW_CfgGetNwStatus(&status, nSim) != 0 ||
 		CFW_NwGetStatus(&nStatusInfo, nSim) != 0)
 	{
-		//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, false);
 		return false;
 	}
 
 	if(nStatusInfo.nStatus == 0 || nStatusInfo.nStatus == 2 || nStatusInfo.nStatus == 4)
 	{
-		//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, false);
 		return false;
 	}
@@ -1407,6 +1407,7 @@ poc_set_ext_pa_status(bool open)
 	{
 		drvGpioWrite(poc_ext_pa_gpio, false);
 	}
+
 	return open;
 }
 
@@ -1516,12 +1517,12 @@ poc_set_green_status(bool ledstatus)
 {
 #if 1
 	//reg
-	hwp_gpio1->gpio_oen_val&=~(1<<poc_green_led);//set gpio direction
-	hwp_gpio1->gpio_oen_set_out|=(1<<poc_green_led);//set gpio output
+	hwp_gpio1->gpio_oen_val &=~ (1<<poc_green_led);//set gpio direction
+	hwp_gpio1->gpio_oen_set_out |= (1<<poc_green_led);//set gpio output
     if(ledstatus)
-	hwp_gpio1->gpio_set_reg|=(1<<poc_green_led);//open status
+	hwp_gpio1->gpio_set_reg = (1<<poc_green_led);//open status
 	else
-	hwp_gpio1->gpio_clr_reg|=(1<<poc_green_led);//close status
+	hwp_gpio1->gpio_clr_reg = (1<<poc_green_led);//close status
 #endif
 
 #if 0
@@ -1742,13 +1743,19 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 			prv_member_list->online_number++;//计算在线人数
 			if(prv_member_list->online_list != NULL)
 			{
-				p_cur->next = p_element;
-				p_cur = p_cur->next;
+				if(p_element != NULL)/*NULL point*/
+				{
+					p_cur->next = p_element;
+					p_cur = p_cur->next;
+				}
 			}
 			else
 			{
-				prv_member_list->online_list = p_element;
-				p_cur = p_element;
+				if(p_element != NULL)/*NULL point*/
+				{
+					prv_member_list->online_list = p_element;
+					p_cur = p_element;
+				}
 			}
 		}
 
@@ -1759,13 +1766,19 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 			prv_member_list->offline_number++;//计算离线人数
 			if(prv_member_list->offline_list != NULL)
 			{
-				p_cur->next = p_element;
-				p_cur = p_cur->next;
+				if(p_element != NULL)/*NULL point*/
+				{
+					p_cur->next = p_element;
+					p_cur = p_cur->next;
+				}
 			}
 			else
 			{
-				prv_member_list->offline_list = p_element;
-				p_cur = p_element;
+				if(p_element != NULL)/*NULL point*/
+				{
+					prv_member_list->offline_list = p_element;
+					p_cur = p_element;
+				}
 			}
 		}
 		p_element = NULL;

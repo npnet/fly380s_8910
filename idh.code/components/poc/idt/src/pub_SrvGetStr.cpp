@@ -64,7 +64,7 @@ enum
 #endif
 char* GetMcTmStr(WORD wTm)
 {
-    static char cBuf[32];
+    static char cBuf[64];
 
     switch (wTm)
     {
@@ -249,7 +249,7 @@ char* GetMgTmStr(WORD wTm)
 
 char *GetCauseStr(USHORT usCause)
 {
-    static char cBuf[32];
+    static char cBuf[96];
     if (CAUSE_TIMER_EXPIRY == (usCause & 0xff))
     {
         WORD ucSrc = (usCause & 0xc000);
@@ -440,6 +440,12 @@ char *GetCauseStr(USHORT usCause)
         return (char*)"用户锁定在其他组";
     case CAUSE_U_OFFLINE_G:
         return (char*)"组中没有在线用户";
+    case CAUSE_REG_FWD:
+        return (char*)"注册前转";
+    case CAUSE_PROTOCOL:
+        return (char*)"协议错误";
+    case CAUSE_SRV_RIGHT:
+        return (char*)"无业务权限";
     default:
         snprintf(cBuf, sizeof(cBuf), "CAUSE=%d", usCause);
         return cBuf;
@@ -2023,6 +2029,5 @@ char *GetInfoStr(DWORD dwInfo)
     }
     return cBuf;
 }
-
 
 

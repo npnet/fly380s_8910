@@ -987,7 +987,7 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task)
 					}
 					else
 					{
-						dest_msg = &page2_msg->msg_speak;
+						dest_msg = &page2_msg->msg_listen;
 					}
 				}
 			}

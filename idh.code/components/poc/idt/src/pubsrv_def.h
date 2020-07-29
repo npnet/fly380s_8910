@@ -27,6 +27,7 @@ typedef UCHAR UC_IPPORTSTR[22]; //xxx.xxx.xxx.xxx:xxxxx
 //组/用户内网网类型,最高位表示
 #define GU_TYPE_LOCAL       0x00
 #define GU_TYPE_CROSS       0x80
+#define GU_TYPE_MASK        0x7F
 
 //组类型
 #define G_TYPE_FOMAL        1       //正式组
@@ -64,6 +65,8 @@ typedef UCHAR UC_IPPORTSTR[22]; //xxx.xxx.xxx.xxx:xxxxx
 #define UT_TYPE_BTX         0x65    //BTX布控球                     101
 #define UT_TYPE_TDWY        0x66    //天地伟业                      102
 #define UT_TYPE_DH          0x67    //大华                          103
+#define UT_TYPE_RTSP        0x68    //RTSP接口                      104
+#define UT_TYPE_RTMP        0x69    //RTMP接口                      105
 
 //内部使用的终端类型，不在接口体现,0x70~0x7f
 #define UT_TYPE_WEBRTC      0x70    //标准WEBRTC接口                240
@@ -297,7 +300,7 @@ typedef struct _GROUP_MEMBER_s
 
     UC_32           ucNum;              //号码
     UC_64           ucName;             //名字
-    UC_32           ucAGNum;            //关联组信息
+    UC_64           ucAGNum;            //关联组信息
     UCHAR           ucGType;            //组类型,G_TYPE_FOMAL
     UCHAR           ucChanNum;          //摄像头通道个数
     UCHAR           ucStatus;           //主状态 UT_STATUS_OFFLINE之类
@@ -433,7 +436,7 @@ typedef struct _ROUTECFG_s
     UC_32           ucPeerZone;         //对端区号                  ""表示默认路由,不属于本局的所有号码,在路由表中查不到其他信息,都走到这里
     UC_32           ucPeerOrg;          //对端组织号码
     NUM_SEG_s       CalledSeg;          //被叫号码段
-    UC_32           ucMyZone;           //本端区号
+    UC_32           ucMyZone;           //本端区号                  "-"表示不带区号,空表示带默认区号,其他为呼出带的区号.主叫号码添加
     UC_32           ucMyOrg;            //本端组织号码              空表示所有组织都能看到这个路由,有值表示特定组织的路由
     NUM_SEG_s       CallingSeg;         //主叫号码段
     UC_32           ucSwitchBoard;      //本端总机号码              对端如果拨打这个号码,就进入"请拨打分机号"               "x" "X" "." 表示呼入任何号码,都进入"请拨分机号"
@@ -617,6 +620,7 @@ typedef struct _SDP_VINFO_s
 #define SRV_INFO_CALLREF    24          //呼叫流水号,主叫是自己,被叫是主叫,查看是对端
 #define SRV_INFO_MICMODIFY  25          //话筒修改
 #define SRV_INFO_NUM_DTMF   26          //号码          DTMF
+#define SRV_INFO_JSON_STR   27          //JSON字符串
 
 //摄像头上下左右聚焦等控制
 #define SRV_CAMCTRL_UP          1       //上            速度(0~0x3f)            标准
@@ -701,6 +705,7 @@ typedef struct _SDP_VINFO_s
 #define IM_TYPE_DISP_CMD_RSP    0x8D    //调度命令响应              不需要文件          事物号*命令号*目标号码      (%d*%d*%s)
 #define IM_TYPE_PHONE_SOS       0x91    //手机往群组发送sos消息
 #define IM_TYPE_UPVIDEO_NOTIFY  0x92    //手机通知别的用户上传视频
+#define IM_TYPE_UPDATE_WHITE_LIST 0x93  //调度台通知终端更新白名单
 
 #define IM_TYPE_AUS_AUTH_REQ    0xa0    //授权请求                  不需要文件          终端->AUS   {"MyId":"MyId1", "OrgNum":"201910251439090", "AudioId":"AudioId1", "Imei":"Imei1", "HardType":"HardType1", "OsVer":"OsVer1", "IdsIp":"192.168.0.225:10022", "IdsNum":"1132"}
 #define IM_TYPE_AUS_AUTH_RSP    0xa1    //授权响应                  不需要文件          AUS->终端   {"MyId":"xxxxxxx", "Cause":0}

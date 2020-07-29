@@ -37,6 +37,7 @@ typedef struct _PocLedIdtComAttr_t
 	uint16_t    jumpperiod;
 	uint16_t	jumpcount;
 	bool        ledstatus;
+	uint8_t 	charge_status;
 } PocLedIdtComAttr_t;
 
 static PocLedIdtComAttr_t pocLedIdtAttr = {0};
@@ -75,7 +76,7 @@ static void poc_Led_Entry(void *param)
 
 	while(1)
 	{
-		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 200))
+		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 300))
 		{
 			continue;
 		}
@@ -87,7 +88,7 @@ static void poc_Led_Entry(void *param)
 		if(event.param2)
 			pocLedIdtAttr.jumpperiod = (uint16_t)event.param2;//提取周期
 		if(event.param3)
-			pocLedIdtAttr.jumpcount = (uint16_t)event.param3;//提取周期
+			pocLedIdtAttr.jumpcount = (uint16_t)event.param3;//提取次数
 
 		switch(event.param1)
 		{
@@ -101,10 +102,38 @@ static void poc_Led_Entry(void *param)
 
 			case LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
 
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
+
+				break;
+
+			case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
+
+				switch(pocLedIdtAttr.charge_status)
+				{
+					case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
+					{
+						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
+						break;
+					}
+					case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
+					{
+						lv_poc_red_open_green_close();
+						break;
+					}
+					case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
+					{
+						lv_poc_red_close_green_open();
+						break;
+					}
+					case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
+					{
+						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
+						break;
+					}
+				}
+
 
 				break;
 
@@ -113,11 +142,31 @@ static void poc_Led_Entry(void *param)
 			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
 
+				pocLedIdtAttr.charge_status = LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
 
 				break;
 
+			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
+
+				pocLedIdtAttr.charge_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS;
+				lv_poc_red_open_green_close();
+
+				break;
+			case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
+
+				pocLedIdtAttr.charge_status = LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS;
+				lv_poc_led_status_all_close();
+
+				break;
+
 			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
+
+				pocLedIdtAttr.charge_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS;
+				lv_poc_red_close_green_open();
+
+				break;
+
 			case LVPOCLEDIDTCOM_SIGNAL_CONNECT_NETWORK_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_SUCCESS_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_SUCCESS_STATUS:
@@ -126,7 +175,6 @@ static void poc_Led_Entry(void *param)
 
 				break;
 
-			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_FAIL_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_FAIL_STATUS:
 
@@ -154,6 +202,7 @@ static void poc_Led_Entry(void *param)
 		if (isValid)
 		{
 			osiEvent_t event_temp = {0};
+			event_temp.param1 = pocLedIdtAttr.jumpperiod;
 			osiEventTrySend(pocLedIdtAttr.jumpThread, &event_temp, 100);
 		}
 
@@ -172,17 +221,18 @@ static void poc_Led_Jump_Entry(void *param)
 
 	while(1)
 	{
-
-		if(pocLedIdtAttr.jumpperiod == 0 || Led_CallBack.pf_poc_led_jump_status == NULL || pocLedIdtAttr.jumpcount == 0)
+		if(osiEventTryWait(pocLedIdtAttr.jumpThread , &event, pocLedIdtAttr.jumpperiod))
 		{
-			osiThreadSleep(100);
-			continue;
-		}
-		if(pocLedIdtAttr.jumpcount <= 9) pocLedIdtAttr.jumpcount--;
 
-		osiEventTryWait(pocLedIdtAttr.jumpThread , &event, pocLedIdtAttr.jumpperiod);
-		//查询回调
-		lv_poc_led_status_callback_check(Led_CallBack.pf_poc_led_jump_status);
+		}
+		else//查询回调
+		{
+			if(pocLedIdtAttr.jumpcount != 0 && pocLedIdtAttr.jumpperiod != 0)
+			{
+				if(pocLedIdtAttr.jumpcount <= 9) pocLedIdtAttr.jumpcount--;
+				lv_poc_led_status_callback_check(Led_CallBack.pf_poc_led_jump_status);
+			}
+		}
 
 	}
 }

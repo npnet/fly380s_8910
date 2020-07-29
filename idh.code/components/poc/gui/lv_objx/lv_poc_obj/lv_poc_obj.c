@@ -2220,8 +2220,9 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
     {
 		if(charge_status == true)
 		{
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 			charge_status = false;
-			//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		}
 
         if(battery_t.battery_value >= 100)
@@ -2257,7 +2258,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
             battery_img = &stat_sys_battery_0;
             if(low_battery_check_count < 1)
             {
-				//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, false);
             }
             low_battery_check_count = (low_battery_check_count + 1) % 60;
@@ -2881,7 +2882,7 @@ bool lv_poc_del_activity(lv_poc_activity_t *activity)
         //lv_obj_del(ctl->left_button);
         //lv_obj_del(ctl->middle_button);
         //lv_obj_del(ctl->right_button);
-
+		if(ctl)/*返回新建群组空指针*/
         lv_obj_del(ctl->background);
     }
 

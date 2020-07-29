@@ -85,7 +85,7 @@ typedef struct _GData_s
 {
     UCHAR           ucNum[32];                  //组号码
     UCHAR           ucName[64];                 //组名字
-    UCHAR           ucAGNum[32];                //关联组,摄像头组
+    UCHAR           ucAGNum[64];                //关联组,摄像头组
     UCHAR           ucPriority;                 //优先级
     DWORD           dwNum;                      //用户个数
     GROUP_MEMBER_s  member[GROUP_MAX_MEMBER];   //组成员
@@ -198,11 +198,12 @@ IDT_API int IDT_CallAnswer(int ID, MEDIAATTR_s *pAttr, void *pUsrCtx, void *pSdp
 //      ID:             IDT的呼叫ID
 //      pUsrCtx:        用户上下文,通常不用这个,但启动主叫后,没有收到主叫应答
 //      uiCause:        释放原因值
+//      pcCause:        释放字符串,最大256字节.默认为空
 //  返回:
 //      0:              成功
 //      -1:             失败
 //--------------------------------------------------------------------------------
-IDT_API int IDT_CallRel(int ID, void *pUsrCtx, UINT uiCause);
+IDT_API int IDT_CallRel(int ID, void *pUsrCtx, UINT uiCause, char *pcCause = NULL);
 //--------------------------------------------------------------------------------
 //      对方或IDT内部释放呼叫
 //  输入:
