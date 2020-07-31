@@ -44,6 +44,8 @@ static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t ev
 
 static void lv_poc_set_current_group_informartion_task(lv_task_t * task);
 
+static void lv_poc_group_list_notation(lv_task_t * task);
+
 static lv_obj_t * activity_list;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_list_info = NULL;
@@ -335,10 +337,10 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 		case LV_SIGNAL_FOCUS:
 		{
 			/*可以解决白屏问题，但是锁组死机*/
-//			#if 1
-//			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
-//				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
-//			#endif
+			#if 1
+			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
+				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
+			#endif
 			break;
 		}
 
@@ -428,31 +430,22 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 					return;
 				}
 				lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
-				if(cur_btn == NULL)
-					return;/*解决群组里长时间待机时间问题*/
-
 				lv_poc_group_current_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
-				if(lv_poc_group_current_info == NULL) return;
 				lv_poc_group_lock_info = lv_poc_group_current_info;
-				if(lv_poc_group_lock_info == NULL) return;
 			}
 
 			lv_poc_group_list_item_info_t *group_info = lv_poc_group_current_info;
-			if(group_info == NULL)return;
 			list_element_t * group_item = (list_element_t *)group_info->item_information;
-			if(group_item == NULL)return;/*锁组死机*/
 			lv_obj_t *btn_label = lv_list_get_btn_label(group_item->list_item);
 			lv_label_set_text(btn_label, lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
 			lv_img_set_src(group_info->lock_img, &unlock);
 			group_info->is_lock = false;
 
-			if(group_info == NULL) return;
 			group_info = lv_poc_group_lock_info;
 			lv_poc_group_current_lock_info = lv_poc_group_lock_info;
 			lv_poc_group_current_info = lv_poc_group_lock_info;
 			lv_poc_group_lock_info = NULL;
 			group_item = (list_element_t *)group_info->item_information;
-			if(group_item == NULL)return;/*锁组死机*/
 			btn_label = lv_list_get_btn_label(group_item->list_item);
 	    	strcpy(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
 	    	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
@@ -1343,11 +1336,12 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 				lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_LOCK, (lv_poc_group_info_t)group_item->information, lv_poc_group_lock_oprator_cb);
 			}
 		}
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
+		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
+		lv_poc_refr_task_once(lv_poc_group_list_notation, LVPOCLISTIDTCOM_LIST_PERIOD_300, LV_TASK_PRIO_LOW);
 	}
 	else if(result_type == 2)
 	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
+		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
 	}
 	else
 	{
@@ -1355,6 +1349,20 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 	}
 
 }
+
+/*
+	  name : lv_poc_group_list_notation
+	 param : none
+	author : wangls
+  describe : 延时弹框
+	  date : 2020-07-30
+*/
+static
+void lv_poc_group_list_notation(lv_task_t * task)
+{
+	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
+}
+
 
 #ifdef __cplusplus
 }

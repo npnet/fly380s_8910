@@ -36,7 +36,13 @@ static drvGpio_t * poc_torch_gpio = NULL;
 static drvGpio_t * poc_keypad_led_gpio = NULL;
 static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
+static drvGpio_t * poc_ear_ppt_gpio = NULL;
+static drvGpioConfig_t * poc_ear_pptconfig = NULL;
+
 drvGpioConfig_t* configport = NULL;
+
+static void poc_ear_ppt_irq(void *ctx);
+
 
 
 
@@ -1517,8 +1523,8 @@ poc_set_green_status(bool ledstatus)
 {
 #if 1
 	//reg
-	hwp_gpio1->gpio_oen_val &=~ (1<<poc_green_led);//set gpio direction
-	hwp_gpio1->gpio_oen_set_out |= (1<<poc_green_led);//set gpio output
+	hwp_gpio1->gpio_oen_val = (0<<poc_green_led);//set gpio direction
+	hwp_gpio1->gpio_oen_set_out = (1<<poc_green_led);//set gpio output
     if(ledstatus)
 	hwp_gpio1->gpio_set_reg = (1<<poc_green_led);//open status
 	else
@@ -1537,6 +1543,69 @@ poc_set_green_status(bool ledstatus)
 
 	return ledstatus;
 }
+
+/*
+	  name : lv_poc_ear_ppt_key_init
+	 param : none
+	author : wangls
+  describe : 耳机ppt配置
+	  date : 2020-07-30
+*/
+void lv_poc_ear_ppt_key_init(void)
+{
+	/*配置earppt IO*/
+
+	if(poc_ear_ppt_gpio != NULL) return;
+
+	if(poc_ear_pptconfig == NULL)
+	{
+		poc_ear_pptconfig = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
+		if(poc_ear_pptconfig == NULL)
+		{
+			return;
+		}
+		memset(poc_ear_pptconfig, 0, sizeof(drvGpioConfig_t));
+		poc_ear_pptconfig->mode = DRV_GPIO_INPUT;
+		poc_ear_pptconfig->falling = true;
+		poc_ear_pptconfig->intr_enabled = true;
+		poc_ear_pptconfig->intr_level = false;
+		poc_ear_pptconfig->debounce = false;
+		poc_ear_pptconfig->rising = false;
+	}
+	poc_ear_ppt_gpio = drvGpioOpen(8, poc_ear_pptconfig, poc_ear_ppt_irq, NULL);
+
+}
+
+/*
+	  name : lv_poc_ear_ppt_key_init
+	 param : none
+	author : wangls
+  describe : 耳机ppt中断
+	  date : 2020-07-30
+*/
+static
+void poc_ear_ppt_irq(void *ctx)
+{
+	OSI_LOGI(0, "[song]key is irq");
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+}
+
+/*
+	  name : lv_poc_read_headset_ppt_key
+	 param : none
+	author : wangls
+  describe : 耳机ppt读取
+	  date : 2020-07-30
+*/
+bool
+lv_poc_read_ear_ppt_key(void)
+{
+	lv_poc_ear_ppt_key_init();
+	if(poc_ear_ppt_gpio == NULL) return false;
+	return drvGpioRead(poc_ear_ppt_gpio);
+}
+
+
 
 static lv_poc_group_list_t * prv_group_list = NULL;
 static get_group_list_cb   prv_group_list_cb = NULL;
@@ -2056,7 +2125,7 @@ lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, 
 			return false;
 		}
 	}
-	else
+	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
 	{
 		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_IND, &group_info))
 		{

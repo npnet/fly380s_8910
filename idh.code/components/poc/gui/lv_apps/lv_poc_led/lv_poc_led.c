@@ -52,7 +52,10 @@ static LV_POC_LED_CALLBACK Led_CallBack = {0};
 void poc_Status_Led_Task(void)
 {
 	memset(&pocLedIdtAttr, 0, sizeof(PocLedIdtComAttr_t));
+
 	pocLedIdtAttr.jumpperiod = 1000;//默认周期1s
+
+	lv_poc_ear_ppt_key_init();
 
 	lv_poc_led_status_callback(NULL);//注销回调
 
