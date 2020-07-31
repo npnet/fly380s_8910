@@ -18,6 +18,7 @@ enum {
 	poc_red_led     = 10,//IO redled
 	poc_green_led   = 13,//IO greenled
 	poc_horn_sound  = 9,//IO horn
+	poc_head_set  = 8,//IO headset
 };
 
 //字符串长度:
@@ -693,6 +694,17 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 */
 bool
 lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type));
+
+void lv_poc_ear_ppt_key_init(void);
+
+/*
+	  name : lv_poc_read_headset_ppt_key
+	 param : none
+	author : wangls
+  describe : 耳机ppt
+	  date : 2020-07-30
+*/
+bool lv_poc_read_ear_ppt_key(void);
 
 #ifdef __cplusplus
 }

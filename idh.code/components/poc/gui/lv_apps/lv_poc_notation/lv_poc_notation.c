@@ -59,7 +59,7 @@ lv_obj_t * lv_poc_notation_create(void)
     lv_poc_notation_style.text.opa = 255;
     lv_poc_notation_style.body.main_color = LV_COLOR_SILVER;
     lv_poc_notation_style.body.grad_color = LV_COLOR_SILVER;
-    lv_poc_notation_style.body.opa = 150;
+    lv_poc_notation_style.body.opa = 220;/*更改背景透明度*/
 	lv_poc_notation_style.text.letter_space = 1;//字间隔
 	//lv_poc_notation_style.text.line_space = 2;//行间隔
 
