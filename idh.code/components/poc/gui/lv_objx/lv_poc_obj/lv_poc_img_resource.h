@@ -117,7 +117,7 @@ LV_IMG_DECLARE(indeterminate4);
 LV_IMG_DECLARE(indeterminate5);
 LV_IMG_DECLARE(indeterminate6);
 
-
+LV_IMG_DECLARE(ic_gps_on);
 
 #ifdef __cplusplus
 }

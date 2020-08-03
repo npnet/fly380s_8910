@@ -420,6 +420,9 @@ public:
 	bool   speak_status;/*是否正在讲话状态*/
 	bool   record_fist;/*记录第一包数据*/
 	uint16_t   membercall_count;/*记录第一次进入单呼*/
+	int runcount;/*记录次数，当延时使用*/
+	uint16_t loginstatus_t;/*记录登陆状态*/
+	osiTimer_t * try_login_timer;/*尝试登录定时器*/
 } PocGuiIIdtComAttr_t;
 
 typedef struct
@@ -1236,8 +1239,8 @@ static void LvGuiIdtCom_get_group_list_timer_cb(void *ctx)
 		}
 		return;
 	}
-	osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 10000);
-	osiTimerStart(pocIdtAttr.get_group_list_timer, 1000 * 60 * 5);
+	osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 100);
+	//osiTimerStart(pocIdtAttr.get_group_list_timer, 1000 * 60 * 5);
 }
 
 static void LvGuiIdtCom_get_lock_group_status_timer_cb(void *ctx)
@@ -1281,6 +1284,15 @@ static void LvGuiIdtCom_check_listen_timer_cb(void *ctx)
 		return;
 	}
 	pocIdtAttr.check_listen_count--;
+}
+
+static void LvGuiIdtCom_try_login_timer_cb(void *ctx)
+{
+	if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
+	{
+		osiTimerStop(pocIdtAttr.try_login_timer);
+	}
+	osiTimerStop(pocIdtAttr.try_login_timer);
 }
 
 //--------------------------------------------------------------------------------
@@ -1472,17 +1484,24 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 				if(login_info->cause == 33)
 				{//账号在别处被登录
 					poc_play_voice_one_time(LVPOCAUDIO_Type_This_Account_Already_Logined, true);
+  					pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED;
 				}
 				else
 				{//当前未登录
 					poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, true);
+					pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED;
 				}
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_1500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 			    m_IdtUser.m_status = UT_STATUS_OFFLINE;
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
 				osiTimerStop(pocIdtAttr.get_group_list_timer);
 				osiTimerStop(pocIdtAttr.get_lock_group_status_timer);
+				/*默认不重复登陆*/
+				#if 0
 			    pocIdtAttr.isReady = false;
+				#else/*可重复登陆*/
+				pocIdtAttr.isReady = true;
+				#endif
 				break;
 		    }
 		    pocIdtAttr.isReady = true;
@@ -1492,6 +1511,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 	        {
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 				poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Login, true);
+				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS;
 	        }
 	        m_IdtUser.m_status = UT_STATUS_ONLINE;
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "成功登录");
@@ -1531,6 +1551,23 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 	{
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND:
 		{
+
+			if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED)/*加入尝试登录中功能*/
+			{
+				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING;/*登陆中*/
+				poc_play_voice_one_time(LVPOCAUDIO_Type_Try_To_Login, true);
+				/*提示框*/
+				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "尝试登陆中...");
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"尝试登陆中...", (const uint8_t *)"");
+				osiTimerStart(pocIdtAttr.try_login_timer, 3000);/*为了播放语音加的延时登陆功能*/
+				break;
+			}/*尝试登陆中*/
+			if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING)
+			{
+				OSI_LOGI(0, "[song]relogin ing[3]\n");
+				break;
+			}
+
 			if(m_IdtUser.m_status < UT_STATUS_ONLINE)
 			{
 				break;
@@ -2819,7 +2856,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 					}
 
 					OSI_LOGI(0,"[song]group---member have updated!");
-
+					/*上电先填充组数据*/
 					//lv_poc_activity_func_cb_set.member_list.refresh_with_data(NULL);
 				}
 			}
@@ -3037,6 +3074,7 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 			if(pocIdtAttr.pocLockGroupCb != NULL)
 			{
 				pocIdtAttr.pocLockGroupCb(opt);
+				pocIdtAttr.pocLockGroupCb = NULL;
 			}
 
 			break;
@@ -3082,6 +3120,7 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 				if(pocIdtAttr.pocLockGroupCb != NULL)
 				{
 					pocIdtAttr.pocLockGroupCb(opt);
+					pocIdtAttr.pocLockGroupCb = NULL;
 				}
 
 				pocIdtAttr.lockGroupOpt = LV_POC_GROUP_OPRATOR_TYPE_NONE;
@@ -3253,6 +3292,19 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			{
 
 			}
+
+			#if 0
+			if(pocIdtAttr.runcount % 50 == 0)/*若未登陆，5s扫描一次是否有网，尝试登录*/
+			{
+				pocIdtAttr.runcount = 0;
+
+			}
+			else
+			{
+				pocIdtAttr.runcount++;
+			}
+			#endif
+
 			continue;
 		}
 
@@ -3436,6 +3488,7 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.get_group_list_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_get_group_list_timer_cb, NULL);
 	pocIdtAttr.get_lock_group_status_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_get_lock_group_status_timer_cb, NULL);
 	pocIdtAttr.check_listen_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_check_listen_timer_cb, NULL);
+	pocIdtAttr.try_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_try_login_timer_cb, NULL);/*注册尝试登录定时器*/
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)

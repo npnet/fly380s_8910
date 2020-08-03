@@ -29,6 +29,15 @@ static lv_poc_rb_t * bright_time_rb;
 
 lv_poc_activity_t * bright_time_activity;
 
+static char *bright_time_notation[8]={"亮屏时间:5秒",
+									  "亮屏时间:15秒",
+									  "亮屏时间:30秒",
+									  "亮屏时间:1分钟",
+									  "亮屏时间:2分钟",
+									  "亮屏时间:5分钟",
+									  "亮屏时间:10分钟",
+									  "亮屏时间:30分钟"};
+
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
@@ -271,6 +280,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 				case LV_GROUP_KEY_ESC:
 				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)bright_time_notation[poc_setting_conf->screen_bright_time], NULL);
 					lv_poc_del_activity(bright_time_activity);
 					break;
 				}
