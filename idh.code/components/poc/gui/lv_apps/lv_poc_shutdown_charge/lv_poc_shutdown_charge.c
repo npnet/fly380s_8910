@@ -79,7 +79,7 @@ void lv_poc_shutdown_charge_Animation_Task(void *ctx)
 static
 void lv_poc_shutdown_charge_power_on_logo(void)
 {
-	lvGuiReleaseScreenOn(3);//开屏
+	lvGuiRequestSceenOn(3);//开屏
 
 	//魔方图片
 	lv_poc_refr_task_once(lv_poc_show_sprd_image, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGHEST);

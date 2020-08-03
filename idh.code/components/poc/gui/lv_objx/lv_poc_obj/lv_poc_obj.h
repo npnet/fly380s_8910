@@ -297,6 +297,18 @@ typedef struct _lv_poc_status_bar_sim_obj_t
 } lv_poc_status_bar_sim_obj_t;
 
 /*******************
+*     NAME:   lv_poc_status_bar_sim_obj_t
+*   AUTHOR:   lugj
+* DESCRIPT:   status bar of the inter phone
+*     DATE:   2020-1-20
+********************/
+typedef struct lv_poc_status_bar_gps_obj_t
+{
+	lv_obj_t ** align_l_obj, ** align_r_obj;	//对齐对象
+	lv_obj_t * gps_location_img;	//gps信息图标
+} lv_poc_status_bar_gps_obj_t;
+
+/*******************
 *     NAME:   lv_poc_statuc_bar_t
 *   AUTHOR:   lugj
 * DESCRIPT:   status bar of the inter phone
@@ -319,6 +331,7 @@ typedef struct _lv_poc_status_bar_fptr_t{
 	lv_obj_t                    *time_label;
     lv_obj_t                    *signal_type_label;
     lv_obj_t                    *signal_intensity_img;
+	lv_poc_status_bar_gps_obj_t *gps_img;
 } lv_poc_status_bar_fptr_t;
 
 
@@ -838,6 +851,13 @@ void lv_poc_anim_note(lv_obj_t *obj);
 ********************/
 uint8_t lv_poc_get_battery_cnt(OUT battery_values_t *values);
 
+/*******************
+*	  NAME:    lv_poc_stabar_show_gps_img
+*	AUTHOR:    wangls
+* DESCRIPT:    打开或关闭GPS图标
+*	  DATE:    2020-08-03
+********************/
+bool lv_poc_stabar_show_gps_img(bool enable);
 
 #ifdef __cplusplus
 }

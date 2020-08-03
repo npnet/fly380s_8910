@@ -37,9 +37,11 @@ static drvGpio_t * poc_keypad_led_gpio = NULL;
 static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
+static drvGpio_t * poc_green_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 
+static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
 
 
@@ -1521,24 +1523,26 @@ poc_set_red_status(bool ledstatus)
 bool
 poc_set_green_status(bool ledstatus)
 {
-#if 1
+#if 0
 	//reg
-	hwp_gpio1->gpio_oen_val = (0<<poc_green_led);//set gpio direction
-	hwp_gpio1->gpio_oen_set_out = (1<<poc_green_led);//set gpio output
+	hwp_gpio1->gpio_oen_val &= (0<<poc_green_led);//set gpio direction
+	hwp_gpio1->gpio_oen_set_out |= (1<<poc_green_led);//set gpio output
     if(ledstatus)
 	hwp_gpio1->gpio_set_reg = (1<<poc_green_led);//open status
 	else
 	hwp_gpio1->gpio_clr_reg = (1<<poc_green_led);//close status
 #endif
 
-#if 0
-	REG_IOMUX_PAD_GPIO_13_CFG_REG_T  *gpio_13_t = NULL;
-	//config
-	gpio_13_t->b.pad_gpio_13_sel=0;//gpio13
-	gpio_13_t->b.pad_gpio_13_pull_dn=1;//pull down
-	gpio_13_t->b.pad_gpio_13_oen_reg=0;//set output mode
-	gpio_13_t->b.pad_gpio_13_out_reg=ledstatus;//open or close
+#if 1
+	/*配置green IO*/
+    drvGpioConfig_t cfg = {
+        .mode = DRV_GPIO_OUTPUT,
+		.debounce = true,
+        .out_level = false,
+    };
 
+	poc_green_gpio = drvGpioOpen(poc_green_led, &cfg, NULL, NULL);
+	drvGpioWrite(poc_green_gpio, ledstatus);
 #endif
 
 	return ledstatus;
@@ -1585,8 +1589,30 @@ void lv_poc_ear_ppt_key_init(void)
 static
 void poc_ear_ppt_irq(void *ctx)
 {
-	OSI_LOGI(0, "[song]key is irq\n");
+	if(drvGpioRead(poc_ear_ppt_gpio))/*release*/
+	{
+		poc_earkey_state = false;
+		OSI_LOGI(0, "[song]key is release,stop speak\n");
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+	}
+	else/*press*/
+	{
+		poc_earkey_state = true;
+		OSI_LOGI(0, "[song]key is press,start speak\n");
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+	}
+}
 
+/*
+	  name : lv_poc_get_earppt_state
+	 param : none
+	author : wangls
+  describe : 获取耳机ppt
+	  date : 2020-08-03
+*/
+bool lv_poc_get_earppt_state(void)
+{
+	return poc_earkey_state == 1 ? true : false;
 }
 
 /*
