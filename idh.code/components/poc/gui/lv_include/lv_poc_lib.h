@@ -695,16 +695,14 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 bool
 lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type));
 
-void lv_poc_ear_ppt_key_init(void);
-
 /*
-	  name : lv_poc_read_headset_ppt_key
+	  name : lv_poc_ear_ppt_key_init
 	 param : none
 	author : wangls
-  describe : 耳机ppt
+  describe : 耳机ppt配置
 	  date : 2020-07-30
 */
-bool lv_poc_read_ear_ppt_key(void);
+void lv_poc_ear_ppt_key_init(void);
 
 #ifdef __cplusplus
 }

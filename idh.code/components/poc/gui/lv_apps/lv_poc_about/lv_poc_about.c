@@ -57,11 +57,12 @@ typedef struct
 
 
 static char lv_poc_about_text_account[64] = {0};
-static char lv_poc_about_text_imei_str[20] = {0};
+//static char lv_poc_about_text_imei_str[16] = {0};
 static char lv_poc_about_text_iccid_str[20] = {0};
 static char lv_poc_about_text_model[64] = {0};
 static char lv_poc_about_text_version[64] = {0};
 static char lv_poc_about_text_update[64] = {0};
+static char lv_poc_about_imei_str[16] = {0};
 
 lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
 	{
@@ -73,7 +74,7 @@ lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
 	{
 		NULL,
 		"IMEI"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_imei_str, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_about_imei_str, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
@@ -129,11 +130,8 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 		lv_poc_about_text_account[0] = 0;
 	}
 
-    lv_poc_about_text_imei_str[0] = 0;
-    poc_get_device_imei_rep((int8_t *)lv_poc_about_text_imei_str);
-
-    lv_poc_about_text_iccid_str[0] = 0;
-    poc_get_device_iccid_rep((int8_t *)lv_poc_about_text_iccid_str);
+	lv_poc_about_imei_str[0] = 0;
+    poc_get_device_imei_rep((int8_t *)lv_poc_about_imei_str);
 
 	lv_poc_about_text_model[0] = 0;
 	strcpy(lv_poc_about_text_model, "FLY380S");
@@ -143,6 +141,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 
 	lv_poc_about_text_update[0] = 0;
 	strcpy(lv_poc_about_text_update, "检查更新");
+
+	lv_poc_about_text_iccid_str[0] = 0;
+    poc_get_device_iccid_rep((int8_t *)lv_poc_about_text_iccid_str);
 
     for(int i = 0; i < label_array_size; i++)
     {

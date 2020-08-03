@@ -423,6 +423,7 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 	{
 		if(lv_poc_group_current_info != NULL)
 		{
+			#if 0/*以下代码死机*/
 			if(lv_poc_group_lock_info == NULL)
 			{
 				if(activity_list == NULL)
@@ -431,6 +432,7 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 				}
 				lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
 				lv_poc_group_current_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
+				if(lv_poc_group_current_info == NULL) return;
 				lv_poc_group_lock_info = lv_poc_group_current_info;
 			}
 
@@ -452,7 +454,7 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
 			lv_img_set_src(group_info->lock_img, &locked);
 			group_info->is_lock = true;
-			#if 1/*解决刷新缺口*/
+			#else/*解决锁组死机*/
 			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
 				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_LOWEST, NULL);
 			#endif
@@ -494,7 +496,7 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 				OSI_LOGI(0, "lock an empty group\n");
 				break;
 			}
-			OSI_LOGI(0, "lock group success\n");
+			OSI_LOGI(0, "[song]lock group success\n");
 			lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_LOCK);
 			lv_task_once(fresh_task);
 			break;
@@ -513,7 +515,7 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 				OSI_LOGI(0, "unlock an empty group\n");
 				break;
 			}
-			OSI_LOGI(0, "unlock group success\n");
+			OSI_LOGI(0, "[song]unlock group success\n");
 			lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_UNLOCK);
 			lv_task_once(fresh_task);
 			break;
@@ -962,8 +964,8 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	        && GROUP_EQUATION((void *)p_cur->name, (void *)current_group_name, (void *)p_cur->information, (void *)current_group, NULL))
         {
 	        is_set_current_group = 0;
-        	strcpy(lv_poc_group_list_current_group_title, (const char *)p_cur->name);
-        	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+        	strcpy(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+        	strcat(lv_poc_group_list_current_group_title, (const char *)p_cur->name);
         	lv_label_set_text(btn_label, (const char *)lv_poc_group_list_current_group_title);
         	lv_poc_group_current_info = p_group_info;
 		}

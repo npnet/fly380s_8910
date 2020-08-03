@@ -76,11 +76,24 @@ static void poc_Led_Entry(void *param)
 	bool isValid = true;
 	lv_poc_led_status_all_close();
 	pocLedIdtAttr.isReady = true;
-
+	#if 0
+	int count = 0;
+	#endif
 	while(1)
 	{
 		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 300))
 		{
+			#if 0
+			int status;
+			count++;
+			status = lv_poc_ear_ppt_key_init();
+
+			if(count % 10 == 0)
+			{
+				OSI_LOGI(0, "[song]key status is = %d", status);
+				count = 0;
+			}
+			#endif
 			continue;
 		}
 		if(event.id != 200)
@@ -110,8 +123,13 @@ static void poc_Led_Entry(void *param)
 
 				break;
 
+		    case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
+
+				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
+
+				break;
+
 			case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
 
 				switch(pocLedIdtAttr.charge_status)
 				{
@@ -137,13 +155,12 @@ static void poc_Led_Entry(void *param)
 					}
 				}
 
-
 				break;
 
 			case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
+			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
 
 				pocLedIdtAttr.charge_status = LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;

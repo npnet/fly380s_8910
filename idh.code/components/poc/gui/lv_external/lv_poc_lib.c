@@ -37,7 +37,6 @@ static drvGpio_t * poc_keypad_led_gpio = NULL;
 static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
-static drvGpioConfig_t * poc_ear_pptconfig = NULL;
 
 drvGpioConfig_t* configport = NULL;
 
@@ -1193,6 +1192,7 @@ poc_get_device_imei_rep(OUT int8_t * imei)
     {
 	    memcpy(imei, (const void *)nImei, nImeiLen);
 	}
+	OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]imei %s", imei);
 }
 
 /*
@@ -1215,7 +1215,7 @@ poc_get_device_iccid_rep(int8_t * iccid)
     {
 		memset(ICCID, 0, 21);
     }
-    OSI_LOGI(0, "[poc][ext_lib][trace] %s %s", ICCID, pICCID);
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]iccid %s", ICCID);
     strcpy((char *)iccid, (const char *)ICCID);
 }
 
@@ -1554,26 +1554,25 @@ poc_set_green_status(bool ledstatus)
 void lv_poc_ear_ppt_key_init(void)
 {
 	/*配置earppt IO*/
+    drvGpioConfig_t cfg = {
+        .mode = DRV_GPIO_INPUT,
+        .intr_enabled = true,
+        .intr_level = false,
+        .rising = true,
+        .falling = true,
+        .debounce = true,
+    };
 
-	if(poc_ear_ppt_gpio != NULL) return;
+	poc_ear_ppt_gpio = drvGpioOpen(8, &cfg, poc_ear_ppt_irq, NULL);
 
-	if(poc_ear_pptconfig == NULL)
+	if(poc_ear_ppt_gpio == NULL)
 	{
-		poc_ear_pptconfig = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
-		if(poc_ear_pptconfig == NULL)
-		{
-			return;
-		}
-		memset(poc_ear_pptconfig, 0, sizeof(drvGpioConfig_t));
-		poc_ear_pptconfig->mode = DRV_GPIO_INPUT;
-		poc_ear_pptconfig->falling = true;
-		poc_ear_pptconfig->intr_enabled = true;
-		poc_ear_pptconfig->intr_level = false;
-		poc_ear_pptconfig->debounce = false;
-		poc_ear_pptconfig->rising = false;
+		OSI_LOGI(0, "[song]ear gpio open failed\n");
 	}
-	poc_ear_ppt_gpio = drvGpioOpen(8, poc_ear_pptconfig, poc_ear_ppt_irq, NULL);
-
+	else
+	{
+		OSI_LOGI(0, "[song]ear gpio open success\n");
+	}
 }
 
 /*
@@ -1586,8 +1585,8 @@ void lv_poc_ear_ppt_key_init(void)
 static
 void poc_ear_ppt_irq(void *ctx)
 {
-	OSI_LOGI(0, "[song]key is irq");
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+	OSI_LOGI(0, "[song]key is irq\n");
+
 }
 
 /*
