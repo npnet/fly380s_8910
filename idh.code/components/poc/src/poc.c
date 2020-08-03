@@ -69,7 +69,14 @@ static void pocStartAnimation(void *ctx)
 	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
 	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
 	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
-	osiThreadSleep(4000);
+	osiThreadSleep(2000);
+
+	/*打开屏幕，除去花屏问题*/
+	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+	drvLcdSetBackLightEnable(lcd, true);
+
+	poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
+	osiThreadSleep(3000);
 	lv_obj_del(poc_power_on_backgroup_sprd_image);
 	//开机图片
 	lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
@@ -78,7 +85,7 @@ static void pocStartAnimation(void *ctx)
 	extern lv_img_dsc_t img_poweron_poc_logo_unicom;
 	lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
 
-	lv_poc_setting_init();
+	lv_poc_setting_init();/*开机配置*/
 	osiThreadSleep(4000);
 	osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 	osiThreadSleep(2800);
@@ -127,7 +134,7 @@ void pocStart(void *ctx)
 	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
     drvLcdOpenV2(lcd);
     drvLcdFill(lcd, 0, NULL, true);
-    drvLcdSetBackLightEnable(lcd, true);
+    drvLcdSetBackLightEnable(lcd, false);
 
 	//获取开机方式
 	uint32_t boot_causes = osiGetBootCauses();
@@ -137,7 +144,6 @@ void pocStart(void *ctx)
 		//设备为充电启动||设备充电启动并且从PSM唤醒启动
 	{
 		OSI_LOGI(0, "[song]poc boot mode is charge power on");
-		poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
 		lvGuiInit(pocLvgl_ShutdownCharge_Start);
 	}else//设备重启或正常开机
 	{

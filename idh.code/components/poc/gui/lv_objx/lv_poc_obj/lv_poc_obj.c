@@ -517,6 +517,14 @@ static void lv_poc_stabar_signal_task(void);
 ********************/
 static void lv_exec_task(lv_task_t * task);
 
+/*******************
+*     NAME:    lv_poc_init_stabar_gps_img
+*   AUTHOR:    wangls
+* DESCRIPT:    初始化状态栏GPS图标
+*     DATE:    2020-08-03
+********************/
+static bool lv_poc_init_stabar_gps_img(void);
+
 /*************************************************
 *
 *                  EXTERN
@@ -883,7 +891,6 @@ static bool lv_poc_status_bar_init(void)
     lv_obj_set_size(lv_poc_status_bar, LV_POC_STATUS_BAR_HOR_RES, LV_POC_STATUS_BAR_VER_RES);
     lv_obj_set_pos(lv_poc_status_bar, LV_POC_STATUS_BAR_POSITION_X, LV_POC_STATUS_BAR_POSITION_Y);
     lv_obj_set_style(lv_poc_status_bar, poc_stabar_style);
-    //lv_refr_now(NULL);
 
     lv_poc_status_bar_fptr = (lv_poc_status_bar_fptr_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_fptr_t));
     memset(lv_poc_status_bar_fptr, 0, sizeof(lv_poc_status_bar_fptr_t));
@@ -895,7 +902,7 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_init_stabar_sim2_img();
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
-
+	lv_poc_init_stabar_gps_img();/*GPS图标*/
 
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
@@ -1001,6 +1008,63 @@ static bool lv_poc_init_stabar_battery_img(void)
     lv_obj_set_opa_scale_enable(obj, false);
     lv_obj_align(obj, lv_poc_status_bar, LV_ALIGN_IN_RIGHT_MID, 0, 0);
     return ret_val;
+}
+
+/*******************
+*     NAME:    lv_poc_init_stabar_gps_img
+*   AUTHOR:    wangls
+* DESCRIPT:    初始化状态栏GPS图标
+*     DATE:    2020-08-03
+********************/
+static bool lv_poc_init_stabar_gps_img(void)
+{
+    bool ret_val = true;
+
+   	lv_poc_status_bar_fptr->gps_img    = (lv_poc_status_bar_gps_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_gps_obj_t));
+    memset(lv_poc_status_bar_fptr->gps_img, 0, sizeof(lv_poc_status_bar_gps_obj_t));
+
+	/*在SIM1左边*/
+	lv_poc_status_bar_fptr->gps_img->align_r_obj = lv_poc_status_bar_fptr->sim1->align_l_obj;
+	lv_poc_status_bar_fptr->gps_img->align_l_obj = lv_poc_status_bar_fptr->gps_img->align_r_obj;
+
+	lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+
+	/*获取GPS开关状态*/
+	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
+
+	lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_gps_on);
+	/*在SIM1左边*/
+	lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+
+	if(gps_config->GPS_switch == 1){
+
+		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, false);
+
+	}else{
+
+		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, true);
+
+	}
+    return ret_val;
+}
+
+/*******************
+*     NAME:    lv_poc_stabar_show_gps_img
+*   AUTHOR:    wangls
+* DESCRIPT:    打开或关闭GPS图标
+*     DATE:    2020-08-03
+********************/
+bool lv_poc_stabar_show_gps_img(bool enable)
+{
+	if(enable == true)
+	{
+		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, false);
+	}
+	else
+	{
+		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, true);
+	}
+	return true;
 }
 
 /*******************
@@ -2153,32 +2217,32 @@ uint8_t lv_poc_get_battery_cnt(OUT battery_values_t *values)
 
     if(values->battery_value >= 100)
     {
-		battery_img_cnt = 7;
+		battery_img_cnt = 6;
     }
     else if(values->battery_value >= 85)
     {
-		battery_img_cnt=6;
+		battery_img_cnt=5;
     }
     else if(values->battery_value >= 71)
     {
-		battery_img_cnt=5;
+		battery_img_cnt=4;
     }
     else if(values->battery_value >= 57)
     {
-		battery_img_cnt=4;
+		battery_img_cnt=3;
     }
     else if(values->battery_value >= 43)
     {
-		battery_img_cnt=3;
+		battery_img_cnt=2;
     }
     else if(values->battery_value >= 28)
     {
-		battery_img_cnt=2;
-    }
-    else if(values->battery_value >= 15)
-    {
 		battery_img_cnt=1;
     }
+//    else if(values->battery_value >= 15)
+//    {
+//		battery_img_cnt=1;
+//    }
     else if(values->battery_value >= 0)
     {
 		battery_img_cnt=0;
@@ -2250,10 +2314,10 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         {
             battery_img = &stat_sys_battery_28;
         }
-        else if(battery_t.battery_value >= 15)
-        {
-            battery_img = &stat_sys_battery_15;
-        }
+//        else if(battery_t.battery_value >= 15)
+//        {
+//            battery_img = &stat_sys_battery_15;
+//        }
         else if(battery_t.battery_value >= 0)
         {
             battery_img = &stat_sys_battery_0;

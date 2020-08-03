@@ -57,12 +57,11 @@ typedef struct
 
 
 static char lv_poc_about_text_account[64] = {0};
-//static char lv_poc_about_text_imei_str[16] = {0};
+static char lv_poc_about_imei_str[16] = {0};
 static char lv_poc_about_text_iccid_str[20] = {0};
 static char lv_poc_about_text_model[64] = {0};
 static char lv_poc_about_text_version[64] = {0};
 static char lv_poc_about_text_update[64] = {0};
-static char lv_poc_about_imei_str[16] = {0};
 
 lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
 	{
@@ -102,6 +101,25 @@ lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
 	},
 };
 
+char *lv_poc_about_label_title[6] =
+{
+	"账号",
+	"IMEI",
+	"ICCID",
+	"型号",
+	"版本",
+	"软件"
+};
+
+char *lv_poc_about_label_content[6] =
+{
+	lv_poc_about_text_account,
+	lv_poc_about_imei_str,
+	lv_poc_about_text_iccid_str,
+	lv_poc_about_text_model,
+	lv_poc_about_text_version,
+	lv_poc_about_text_update
+};
 
 static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 {
@@ -145,10 +163,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_poc_about_text_iccid_str[0] = 0;
     poc_get_device_iccid_rep((int8_t *)lv_poc_about_text_iccid_str);
 
-    for(int i = 0; i < label_array_size; i++)
+    for(int i = 0; i < 3; i++)
     {
-	    lv_poc_about_label_struct_t * label_obj = (lv_poc_about_label_struct_t *)&lv_poc_about_label_array[i];
-	    btn = lv_list_add_btn(list, label_obj->ic, label_obj->title);
+	    btn = lv_list_add_btn(list, NULL, lv_poc_about_label_title[i]);
 	    btn_array[i] = btn;
 	    lv_btn_set_fit(btn, LV_FIT_NONE);
 	    lv_obj_set_height(btn, btn_height);
@@ -156,38 +173,78 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 		label = lv_label_create(btn, NULL);
 		btn->user_data = (void *)label;
 
-		lv_label_set_text(label, label_obj->content);
+		lv_label_set_text(label, lv_poc_about_label_content[i]);
 
-		lv_label_set_long_mode(btn_label, label_obj->title_long_mode);
-		lv_label_set_align(btn_label, label_obj->title_text_align);
-		lv_label_set_long_mode(label, label_obj->content_long_mode);
-		lv_label_set_align(label, label_obj->content_text_align);
+		lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
+		lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
+		lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
+		lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
 
 		lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
 
-		if(label_obj->ic == NULL)
-		{
-			lv_obj_set_width(btn_label, btn_width/4);
-			lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
-
-			lv_obj_align(btn_label, btn, label_obj->title_align, 0, 0);
-			lv_obj_align(label, btn_label, label_obj->content_align, label_obj->content_align_x, label_obj->content_align_y);
-		}
-		else
-		{
-			lv_obj_t * btn_ic = lv_list_get_btn_img(btn);
-			lv_obj_set_width(btn_ic, btn_width/24*7);
-			lv_obj_set_width(btn_label, btn_width/24*7);
-			lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label) - lv_obj_get_width(btn_ic));
-
-			lv_obj_align(btn_ic, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-			lv_obj_align(btn_label, btn_ic, label_obj->title_align, 0, 0);
-			lv_obj_align(label, btn_label, label_obj->content_align, label_obj->content_align_x, label_obj->content_align_y);
-		}
+		lv_obj_set_width(btn_label, btn_width/4);
+		lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
+		lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
+		lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
     }
 
+    btn = lv_list_add_btn(list, NULL, "型号");
+    btn_array[3] = btn;
+    lv_btn_set_fit(btn, LV_FIT_NONE);
+    lv_obj_set_height(btn, btn_height);
+    btn_label = lv_list_get_btn_label(btn);
+	label = lv_label_create(btn, NULL);
+	btn->user_data = (void *)label;
+	lv_label_set_text(label, "FLY380S");
+	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
+	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
+	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
+	lv_obj_set_width(btn_label, btn_width/4);
+	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
+	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
+	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
+
+	btn = lv_list_add_btn(list, NULL, "版本");
+	btn_array[4] = btn;
+	lv_btn_set_fit(btn, LV_FIT_NONE);
+	lv_obj_set_height(btn, btn_height);
+	btn_label = lv_list_get_btn_label(btn);
+	label = lv_label_create(btn, NULL);
+	btn->user_data = (void *)label;
+	lv_label_set_text(label, "V1.0");
+	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
+	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
+	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
+	lv_obj_set_width(btn_label, btn_width/4);
+	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
+	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
+	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
+
+
+	btn = lv_list_add_btn(list, NULL, "软件");
+	btn_array[5] = btn;
+	lv_btn_set_fit(btn, LV_FIT_NONE);
+	lv_obj_set_height(btn, btn_height);
+	btn_label = lv_list_get_btn_label(btn);
+	label = lv_label_create(btn, NULL);
+	btn->user_data = (void *)label;
+	lv_label_set_text(label, "检查更新");
+	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
+	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
+	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
+	lv_obj_set_width(btn_label, btn_width/4);
+	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
+	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
+	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
+
+
     lv_list_set_btn_selected(list, btn_array[0]);
-    lv_mem_free(btn_array);
 }
 
 

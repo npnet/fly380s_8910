@@ -1752,7 +1752,7 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				break;
 			}
 			unsigned int mic_ctl = (unsigned int)ctx;
-			bool pttStatus = pocGetPttKeyState();
+			bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
 
 			if(mic_ctl > 1 && pocIdtAttr.mic_ctl <= 1 && m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)  //获得话权
 			{

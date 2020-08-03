@@ -704,6 +704,15 @@ lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type));
 */
 void lv_poc_ear_ppt_key_init(void);
 
+/*
+	  name : lv_poc_get_earppt_state
+	 param : none
+	author : wangls
+  describe : 获取耳机ppt
+	  date : 2020-08-03
+*/
+bool lv_poc_get_earppt_state(void);
+
 #ifdef __cplusplus
 }
 #endif
