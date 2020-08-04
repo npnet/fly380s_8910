@@ -2325,7 +2325,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, false);
             }
-            low_battery_check_count = (low_battery_check_count + 1) % 60;
+            low_battery_check_count = (low_battery_check_count + 1) % (60*5);/*5min提示一次*/
             return (lv_img_dsc_t *)battery_img;
         }
         low_battery_check_count = 0;

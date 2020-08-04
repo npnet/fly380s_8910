@@ -188,10 +188,7 @@ static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 
 		/*获取该列表单呼对象是不是自己*/
 		lv_obj_t * sigal_member_list;
-		//char sigal_member_list_text[20] = {0};
 		sigal_member_list = lv_list_get_btn_selected(activity_list);
-		/*使用下面这个函数就死机*/
-		//strcpy((char *)sigal_member_list_text, lv_list_get_btn_text(sigal_member_list));
 		if(NULL != strstr(lv_list_get_btn_text(sigal_member_list),"我"))//如果是自己
 		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Unable_To_Call_Yourself, true);

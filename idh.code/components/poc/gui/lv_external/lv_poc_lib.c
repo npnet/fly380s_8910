@@ -1937,7 +1937,7 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 {
 	Msg_GROUP_MEMBER_s *info1 = (Msg_GROUP_MEMBER_s *)C;
 	Msg_GROUP_MEMBER_s *info2 = (Msg_GROUP_MEMBER_s *)D;
-	bool ret1 = false, ret2 = false;
+	bool ret1 = true, ret2 = false;
 
 	if(info1 != NULL && info2 != NULL)
 	{
@@ -1945,7 +1945,7 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 		{
 			return true;
 		}
-		ret1 = (0 == strcmp((const char *)info1->ucName, (const char *)info2->ucName));
+		//ret1 = (0 == strcmp((const char *)info1->ucName, (const char *)info2->ucName));
 		ret2 = (0 == strcmp((const char *)info1->ucNum, (const char *)info2->ucNum));
 	}
 
