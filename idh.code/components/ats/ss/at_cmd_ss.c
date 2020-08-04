@@ -350,7 +350,7 @@ uint32_t AT_SS_QUERYERR(uint8_t nType, uint16_t nErrCode)
             break;
         }
     }
-    else if (0xfb == nType) // Nwk returned a return error
+    else if (0xfb == nType || 0xfe == nType) // Nwk returned a return error
     {
         uiErrCode = ERR_AT_CME_OPERATION_NOT_SUPPORTED;
     }
@@ -470,7 +470,7 @@ void AT_SS_AsyncEventProcess(atCommand_t *cmd, const osiEvent_t *event)
     uint8_t nSim = cfw_event->nFlag;
 
     if (NULL == cfw_event)
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_MEMORY_FAILURE);
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_MEMORY_FAILURE);
 
 #ifdef AT_SS_DEBUG
     OSI_LOGI(0x1000450e, "Event structure:EventId: %d Para1: %d Para2: %d Type: %d Flag: %d UTI: %d\n",
@@ -671,7 +671,7 @@ void AT_SS_AsyncEventProcess(atCommand_t *cmd, const osiEvent_t *event)
             uint32_t uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
             // ERROR return
             if (ERR_SUCCESS != uiErrCode)
-                RETURN_CMS_ERR(cmd->engine, uiErrCode);
+                RETURN_CME_ERR(cmd->engine, uiErrCode);
         }
     }
 
@@ -1059,13 +1059,38 @@ void AT_SS_AsyncEventProcess(atCommand_t *cmd, const osiEvent_t *event)
 
     return;
 }
-
 #endif
+
+// ATss class -> CFW class
+uint8_t SS_ClassToCFWClass(uint8_t nclass)
+{
+    OSI_LOGI(0, "SS_ClassToCFWClass nclass=%d", nclass);
+    switch (nclass)
+    {
+    case 1: // vioce
+        nclass = 11;
+        break;
+    case 2: // data
+        nclass = 20;
+        break;
+    case 4: // fax
+        nclass = 13;
+        break;
+    case 8: // sms
+        nclass = 16;
+        break;
+    default:
+        nclass = 11;
+        break;
+    }
+    return nclass;
+    OSI_LOGI(0, "SS_ClassToCFWClass End nclass=%d", nclass);
+}
 
 static void CCWA_QueryRspCB(atCommand_t *cmd, const osiEvent_t *event)
 {
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
-
+    OSI_LOGI(0, "CCWA_QueryRspCB:nType=%d nParam2=%d", cfw_event->nType, cfw_event->nParam2);
     if (0 == cfw_event->nType) // success  VOICE DATA FAX SMS ...
     {
         char rsp[32];
@@ -1079,13 +1104,10 @@ static void CCWA_QueryRspCB(atCommand_t *cmd, const osiEvent_t *event)
         }
         atCmdRespOK(cmd->engine);
     }
-    else
+    else //type:0xfa:LocalError 0xfb:NwkReturnError 0xfc:Nwk Rej
     {
         unsigned err_code = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
-        if (err_code != 0)
-            RETURN_CME_ERR(cmd->engine, err_code);
-
-        atCmdRespOK(cmd->engine);
+        RETURN_CME_ERR(cmd->engine, err_code);
     }
 }
 
@@ -1095,6 +1117,8 @@ static void CCWA_SetRspCB(atCommand_t *cmd, const osiEvent_t *event)
 
     if (0 == cfw_event->nType) // success  VOICE DATA FAX SMS ...
     {
+        if (cfw_event->nParam2 == 0x05)
+            OSI_LOGI(0, "there is an active 4g call,the 4g ccwa is set success,2g ccwa set faild");
         atCmdRespOK(cmd->engine);
     }
     else
@@ -1116,38 +1140,25 @@ void atCmdHandleCCWA(atCommand_t *cmd)
     {
         // +CCWA=[<n>[,<mode>[,<class>]]]
         bool paramok = true;
-        uint8_t n = atParamDefUint(cmd->params[0], 0, &paramok);
-        uint8_t mode = atParamDefUint(cmd->params[1], 0, &paramok);
-        uint8_t nclass = atParamDefUint(cmd->params[2], 1, &paramok);
+        uint8_t n = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
         if (!paramok || cmd->param_count > 3)
+        {
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
+        }
         // set URC control value
         gAtSetting.sim[nSim].ccwa = n;
-
         if (cmd->param_count <= 1)
-            RETURN_OK(cmd->engine);
-
-        // class -> CFW class
-        switch (nclass)
         {
-        case 1: // vioce
-            nclass = 11;
-            break;
-        case 2: // data
-            nclass = 20;
-            break;
-        case 4: // fax
-            nclass = 13;
-            break;
-        case 8: // sms
-            nclass = 16;
-            break;
-        default:
-            nclass = 11;
-            break;
+            RETURN_OK(cmd->engine);
         }
 
+        uint8_t mode = atParamUintInRange(cmd->params[1], 0, 2, &paramok);
+        uint8_t nclass = atParamDefUintInRange(cmd->params[2], 1, 1, 1, &paramok);
+        if (!paramok)
+        {
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        }
+        nclass = SS_ClassToCFWClass(nclass);
         if (mode == 2)
         {
             cmd->uti = cfwRequestUTI((osiEventCallback_t)CCWA_QueryRspCB, cmd);
@@ -1228,6 +1239,14 @@ void AT_SsClassConvert2Ccfc(uint8_t ucSrcClass, uint8_t *pucDestClass)
     }
 }
 
+static void _CcfcRspTimeOutCB(atCommand_t *cmd)
+{
+    OSI_LOGI(0, "CCFC: _CcfcRspTimeOutCB: uti=%d", cmd->uti);
+    if (AT_CFW_UTI_INVALID != cmd->uti)
+        cfwReleaseUTI(cmd->uti);
+    AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_SEND_TIMEOUT));
+}
+
 static void CCFC_QueryCallForwardCallBack(atCommand_t *cmd, const osiEvent_t *event)
 {
     //EV_CFW_SS_QUERY_CALL_FORWARDING_RSP  // EV_CSW_SS_QUERY_CF_RSP
@@ -1289,6 +1308,7 @@ static void CCFC_QueryCallForwardCallBack(atCommand_t *cmd, const osiEvent_t *ev
             sprintf(aucBufferTemp, "+CCFC:%u,%u", aucStatus, ucDestClass);
         // OK retrun
         atCmdRespInfoText(cmd->engine, aucBufferTemp);
+        atMemFreeLater((void *)cfw_event->nParam1);
         RETURN_OK(cmd->engine);
     }
     else
@@ -1296,7 +1316,7 @@ static void CCFC_QueryCallForwardCallBack(atCommand_t *cmd, const osiEvent_t *ev
         uint32_t uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
         // ERROR return
         if (ERR_SUCCESS != uiErrCode)
-            RETURN_CMS_ERR(cmd->engine, uiErrCode);
+            RETURN_CME_ERR(cmd->engine, uiErrCode);
     }
 }
 
@@ -1308,6 +1328,7 @@ static void CCFC_SetCallForwardCallBack(atCommand_t *cmd, const osiEvent_t *even
 
     if (0 == cfw_event->nType) // success
     {
+        atMemFreeLater((void *)cfw_event->nParam1);
         RETURN_OK(cmd->engine);
     }
     else // if (0xfa == stCfwEvent.nType || (0xfc == stCfwEvent.nType)) //  Local Error /net work reject
@@ -1315,7 +1336,7 @@ static void CCFC_SetCallForwardCallBack(atCommand_t *cmd, const osiEvent_t *even
         uint32_t uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
         if (ERR_SUCCESS != uiErrCode)
         {
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_OPER_NOT_ALLOWED);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CMS_OPER_NOT_ALLOWED);
         }
     }
 }
@@ -1352,32 +1373,44 @@ void atCmdHandleCCFC(atCommand_t *cmd)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
         // first and second parameter
-        static const uint32_t list[] = {1, 255};
+        static const uint32_t NumTypeList[] = {CFW_TELNUMBER_TYPE_UNKNOWN, CFW_TELNUMBER_TYPE_INTERNATIONAL, CFW_TELNUMBER_TYPE_NATIONAL};
         bool paramok = true;
-        uint8_t ucReason = atParamDefUintInRange(cmd->params[0], 0, 0, 5, &paramok);
-        uint8_t ucMode = atParamDefUintInRange(cmd->params[1], 0, 0, 4, &paramok);
-        const char *tempNum = atParamStr(cmd->params[2], &paramok);
-        uint8_t ucNumType = atParamDefUint(cmd->params[3], CFW_TELNUMBER_TYPE_UNKNOWN, &paramok);
-        uint8_t ucClass = atParamDefUintInList(cmd->params[4], 11, list, 2, &paramok);
+        uint8_t ucReason = atParamUintInRange(cmd->params[0], 0, 5, &paramok);
+        uint8_t ucMode = atParamUintInRange(cmd->params[1], 0, 4, &paramok);
+        const char *tempNum = atParamOptStr(cmd->params[2], &paramok);
+        uint8_t ucNumType = atParamDefUintInList(cmd->params[3], CFW_TELNUMBER_TYPE_UNKNOWN, NumTypeList, 3, &paramok);
+        static const uint32_t class_list[] = {1, 2, 4, 8};
+        uint8_t ucClass = atParamDefUintInList(cmd->params[4], 1, class_list, 4, &paramok);
         uint8_t ucTime = atParamDefUintInRange(cmd->params[7], 20, 1, 30, &paramok);
         size_t ucNumLen = strlen(tempNum);
         if (!paramok)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         bool bIsInternational = false;
-        if (!AT_SS_IsValidPhoneNumber(tempNum, ucNumLen, &bIsInternational))
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_CHAR);
+        if (!AT_SS_IsValidPhoneNumber(tempNum, ucNumLen, &bIsInternational) && (ucMode != 2))
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CMS_INVALID_TXT_CHAR);
         if (bIsInternational)
         {
             tempNum++;
             ucNumLen--;
-            ucNumType = CFW_TELNUMBER_TYPE_INTERNATIONAL;
+            if (ucNumType != CFW_TELNUMBER_TYPE_INTERNATIONAL)
+            {
+                OSI_LOGI(0, "CCFC: International,phonenumber and Numtype Mismatch");
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            }
         }
         else
-            ucNumType = CFW_TELNUMBER_TYPE_UNKNOWN;
-        if (ucNumLen > 20)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
-        uint8_t ucNumSize = SUL_AsciiToGsmBcd(tempNum, ucNumLen, ucNum);
+        {
+            if (ucNumType != CFW_TELNUMBER_TYPE_UNKNOWN)
+            {
+                OSI_LOGI(0, "CCFC: phonenumber and Numtype Mismatch");
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            }
+        }
 
+        if (ucNumLen > 20)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CMS_INVALID_LEN);
+        uint8_t ucNumSize = SUL_AsciiToGsmBcd(tempNum, ucNumLen, ucNum);
+        ucClass = SS_ClassToCFWClass(ucClass);
         // output debug information
         OSI_LOGXI(OSI_LOGPAR_SII, 0, "CCFC:tempNum=%s ucNumLen=%d ucNumSize=%d", tempNum, ucNumLen, ucNumSize);
         // eighth parameter: time
@@ -1387,12 +1420,13 @@ void atCmdHandleCCFC(atCommand_t *cmd)
             OSI_LOGI(0, "CCFC: event EV_CFW_SS_QUERY_CALL_FORWARDING_RSP ucMode=%d", ucMode);
             //EV_CFW_SS_QUERY_CALL_FORWARDING_RSP
             cmd->uti = cfwRequestUTI((osiEventCallback_t)CCFC_QueryCallForwardCallBack, cmd);
+            atCmdSetTimeoutHandler(cmd->engine, 1000 * 60, _CcfcRspTimeOutCB);
             uiRetVal = CFW_SsQueryCallForwarding(ucReason, ucClass, cmd->uti, nSim);
             OSI_LOGI(0x10004533, "CCFC:uiRetVal:0x%x reason=%d,   class=%d\n", uiRetVal, ucReason, ucClass);
             if (uiRetVal != ERR_SUCCESS)
             {
                 cfwReleaseUTI(cmd->uti);
-                RETURN_CMS_ERR(cmd->engine, atCfwToCmsError(uiRetVal));
+                RETURN_CME_ERR(cmd->engine, atCfwToCmsError(uiRetVal));
             }
             RETURN_FOR_ASYNC();
         }
@@ -1417,11 +1451,12 @@ void atCmdHandleCCFC(atCommand_t *cmd)
             //EV_CFW_SS_SET_CALL_FORWARDING_RSP
             OSI_LOGI(0, "CCFC:event set EV_CFW_SS_SET_CALL_FORWARDING_RSP ucMode:%d\n", ucMode);
             cmd->uti = cfwRequestUTI((osiEventCallback_t)CCFC_SetCallForwardCallBack, cmd);
+            atCmdSetTimeoutHandler(cmd->engine, 1000 * 60, _CcfcRspTimeOutCB);
             uiRetVal = CFW_SsSetCallForwarding(&sSetCCFC, cmd->uti, nSim);
             if (uiRetVal != ERR_SUCCESS)
             {
                 cfwReleaseUTI(cmd->uti);
-                RETURN_CMS_ERR(cmd->engine, atCfwToCmsError(uiRetVal));
+                RETURN_CME_ERR(cmd->engine, atCfwToCmsError(uiRetVal));
             }
             RETURN_FOR_ASYNC();
         }
@@ -1576,12 +1611,12 @@ void atCmdHandleCSSN(atCommand_t *cmd)
     {
         OSI_LOGI(0, "CSSN: param_count=%d", cmd->param_count);
         if (cmd->param_count < 1 || cmd->param_count > 2)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         bool paramok = true;
         ucCSSI = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
         ucCSSU = atParamDefUintInRange(cmd->params[1], 0, 0, 1, &paramok);
         if (!paramok)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         OSI_LOGI(0, "CSSN:Parameter ucCSSI: %d  Parameter ucCSSU: %d\n", ucCSSI, ucCSSU);
         gAtSetting.sim[nSim].cssi = ucCSSI;
         gAtSetting.sim[nSim].cssu = ucCSSU;
@@ -1589,7 +1624,7 @@ void atCmdHandleCSSN(atCommand_t *cmd)
         uiRetVal = CFW_CfgSetSSN(ucCSSI, ucCSSU, nSim);
         OSI_LOGI(0x10004545, "CSSN set ret: %x\n", uiRetVal);
         if (ERR_SUCCESS != uiRetVal)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
         RETURN_OK(cmd->engine);
     }
 
@@ -1605,7 +1640,7 @@ void atCmdHandleCSSN(atCommand_t *cmd)
         uiRetVal = CFW_CfgGetSSN(&ucCSSI, &ucCSSU, nSim);
         OSI_LOGI(0x10004546, "CSSN ret: %x ucCSSI=%d ucCSSU=%d\n", uiRetVal, ucCSSI, ucCSSU);
         if (ERR_SUCCESS != uiRetVal)
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PHONE_FAILURE);
         // execute result return
         //sprintf(aucBuffer, strRCSSN, gATCurrentucCSSI, gATCurrentucCSSU);
         sprintf(aucBuffer, "+CSSN:%d,%d", ucCSSI, ucCSSU);
@@ -1614,7 +1649,7 @@ void atCmdHandleCSSN(atCommand_t *cmd)
     }
 
     else
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
 }
 
 static void COLP_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)
@@ -1660,12 +1695,16 @@ void atCmdHandleCOLP(atCommand_t *cmd)
     if (AT_CMD_SET == cmd->type)
     {
         bool paramok = true;
-        uint8_t n = atParamInt(cmd->params[0], &paramok);
-
-        // call CSW interface function
+        if (cmd->param_count > 1)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        uint8_t n = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        if (!paramok)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            // call CSW interface function
 #ifdef CFW_VOLTE_SUPPORT
         cmd->uti = cfwRequestNoWaitUTI();
         CFW_SsSetColp(n, cmd->uti, nSim);
+        OSI_LOGI(0, "COLP: n====%d", n);
 #endif
         uiRetVal = CFW_CfgSetColp(n, nSim);
         if (ERR_SUCCESS == uiRetVal)
@@ -1690,7 +1729,7 @@ void atCmdHandleCOLP(atCommand_t *cmd)
         if (ERR_SUCCESS != uiRetVal)
         {
             cfwReleaseUTI(cmd->uti);
-            RETURN_CMS_ERR(cmd->engine, atCfwToCmsError(uiRetVal));
+            RETURN_CME_ERR(cmd->engine, atCfwToCmsError(uiRetVal));
         }
         RETURN_FOR_ASYNC();
     }
@@ -1789,11 +1828,6 @@ static void CUSD_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)
         CFW_SS_USSD_IND_INFO_V2 *pstSsUssdIndInfo = NULL;
         uint8_t aucDestUsd[2 * MAX_LENGTH_STRING_USSD + 2] = {0}; // 140
         uint8_t nUSSDDCS = 0xff;
-
-        if (cfw_event->nEventId != EV_CFW_SS_SEND_USSD_RSP)
-        {
-            RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
-        }
         OSI_LOGI(0, "CUSD: CUSD_RspCallBack cfw_event->nParam1=%d", cfw_event->nParam1);
         if (cfw_event->nParam1 == 0)
         {
@@ -1808,11 +1842,12 @@ static void CUSD_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)
         }
 
         pstSsUssdIndInfo = (CFW_SS_USSD_IND_INFO_V2 *)cfw_event->nParam1;
+        atMemFreeLater(pstSsUssdIndInfo);
         if (pstSsUssdIndInfo == NULL)
         {
-            RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
         }
-        OSI_LOGI(0, "CUSD: CUSD_RspCallBack nOption=%d", pstSsUssdIndInfo->nOption);
+        OSI_LOGI(0, "CUSD: CUSD_RspCallBack nOption=%d nStingSize=%d", pstSsUssdIndInfo->nOption, pstSsUssdIndInfo->nStingSize);
 
         if (pstSsUssdIndInfo->nOption != 0 && pstSsUssdIndInfo->nOption != 1)
             AT_SS_SetUSSDNum(cfw_event->nUTI);
@@ -1830,7 +1865,7 @@ static void CUSD_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)
                 }
                 else
                 {
-                    RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
                 }
 
                 //nUSSDDCS = AT_CBS_CheckDCS(pstSsUssdIndInfo->nDcs);
@@ -1848,18 +1883,18 @@ static void CUSD_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)
                 totalLen = strlen("+CUSD: %u") + 1;
             }
 
-            aucBuffer = malloc(totalLen);
+            aucBuffer = (char *)malloc(totalLen);
             if (aucBuffer == NULL)
-                RETURN_CMS_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
             memset(aucBuffer, 0x00, totalLen);
             if (isStingSize)
-                sprintf(aucBuffer, "+CUSD: %u", pstSsUssdIndInfo->nOption);
-            else
                 sprintf(aucBuffer, "+CUSD: %u, \"%s\" ,%u", pstSsUssdIndInfo->nOption, aucDestUsd,
                         pstSsUssdIndInfo->nDcs);
+            else
+                sprintf(aucBuffer, "+CUSD: %u", pstSsUssdIndInfo->nOption);
 
             atCmdRespInfoText(cmd->engine, aucBuffer);
-            memset(aucBuffer, 0x00, totalLen);
+            //memset(aucBuffer, 0x00, totalLen);
             free(aucBuffer);
             aucBuffer = NULL;
             RETURN_OK(cmd->engine);
@@ -1870,16 +1905,18 @@ static void CUSD_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)
             RETURN_CME_CFW_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
         }
     }
-    else // if (0xfa == stCfwEvent.nType || (0xfc == stCfwEvent.nType)) //  Local Error /net work reject
+    else if (0xfa == cfw_event->nType || (0xfc == cfw_event->nType)) //  Local Error /net work reject
     {
         OSI_LOGXI(OSI_LOGPAR_SI, 0, "SS func: %s nType = %x", __FUNCTION__, cfw_event->nType);
         OSI_LOGI(0, "CUSD:CUSD_RspCallBack cfw_event->nParam2=%d", cfw_event->nParam2);
         if (cfw_event->nEventId == EV_CFW_SS_SEND_USSD_RSP)
         {
+#if 0
             if ((cfw_event->nParam2 == 0x24) || (cfw_event->nParam2 == 0x22))
             {
                 RETURN_OK(cmd->engine);
             }
+#endif
             uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
             RETURN_CME_CFW_ERR(cmd->engine, uiErrCode);
         }
@@ -1895,6 +1932,18 @@ static void CUSD_RspCallBack(atCommand_t *cmd, const osiEvent_t *event)
             uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
             RETURN_CME_CFW_ERR(cmd->engine, uiErrCode);
         }
+    }
+    else if (0xfb == cfw_event->nType || (0xfe == cfw_event->nType))
+    {
+        OSI_LOGI(0, "CUSD_RspCallBack: NetWork return error");
+        OSI_LOGI(0, "CUSD:CUSD_RspCallBack cfw_event->nParam2=%d", cfw_event->nParam2);
+        uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
+        RETURN_CME_CFW_ERR(cmd->engine, uiErrCode);
+    }
+    else
+    {
+        uiErrCode = AT_SS_QUERYERR(cfw_event->nType, cfw_event->nParam2 & 0xffff);
+        RETURN_CME_CFW_ERR(cmd->engine, uiErrCode);
     }
 }
 
@@ -1915,7 +1964,7 @@ void atCmdHandleCUSD(atCommand_t *cmd)
     uint32_t uiRetVal = 0;
     uint8_t nSim = atCmdGetSim(cmd->engine);
 
-    OSI_LOGI(0, "CUSD: Come In atCmdHandleCUSD nSim=%d", nSim);
+    OSI_LOGI(0, "CUSD: Come In atCmdHandleCUSD nSim[%d]", nSim);
     if (AT_CMD_SET == cmd->type)
     {
         uint8_t ucOption = 3; // MS originate USSD service
@@ -1923,17 +1972,17 @@ void atCmdHandleCUSD(atCommand_t *cmd)
             0,
         },
                 u7bitLen = 0;
-        OSI_LOGI(0, "CUSD: param_count=%d", cmd->param_count);
+        OSI_LOGI(0, "CUSD: param_count[%d]", cmd->param_count);
 
         bool paramok = true;
         uint8_t ucPara1 = atParamUintInRange(cmd->params[0], 0, 2, &paramok);
         const char *aucPara2 = atParamOptStr(cmd->params[1], &paramok);
-        uint8_t ucDcs = atParamDefUint(cmd->params[2], 0, &paramok);
+        uint8_t ucDcs = atParamDefUintInRange(cmd->params[2], 0, 0, 128, &paramok);
         size_t aucPara2len = strlen(aucPara2);
-        if (!paramok)
+        if (!paramok || aucPara2len > MAX_LENGTH_STRING_USSD)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
-        OSI_LOGXI(OSI_LOGPAR_ISI, 0x1000453f, "CUSD:Parameter 1: %d  string: %s ucDcs: %d\n", ucPara1, aucPara2, ucDcs);
+        OSI_LOGXI(OSI_LOGPAR_ISI, 0, "CUSD:Parameter1: %d  string: %s ucDcs: %d\n", ucPara1, aucPara2, ucDcs);
         //
         // [[hameina[mod] 2008-4-14 for bug 8005: if send USSD string failed, the first param can also be changed.
         if (cmd->param_count == 1 && ucPara1 != 2) // hameina[+]07.10.16
@@ -1968,9 +2017,9 @@ void atCmdHandleCUSD(atCommand_t *cmd)
                 g_ss_ussdVer = 2;
                 ucOption = 3;
                 rst = SUL_Encode7Bit(aucPara2, u7bitStr, aucPara2len);
-                OSI_LOGI(0x10004540, "CUSD:rst= %u \n", rst);
+                OSI_LOGI(0, "CUSD:rst= %u \n", rst);
                 u7bitLen = (aucPara2len % 8) ? (aucPara2len * 7 / 8 + 1) : (aucPara2len * 7 / 8);
-                OSI_LOGI(0x10004541, "CUSD:u7bitLen = %u \n", u7bitLen);
+                OSI_LOGI(0, "CUSD:u7bitLen = %u \n", u7bitLen);
                 u7bitStr[u7bitLen] = '\0';
             }
             else
@@ -1982,19 +2031,17 @@ void atCmdHandleCUSD(atCommand_t *cmd)
         OSI_LOGXI(OSI_LOGPAR_S, 0, "CUSD:u7bitStr=%s", u7bitStr);
         OSI_LOGXI(OSI_LOGPAR_SI, 0, "CUSD:aucPara2=%s aucPara2len=%d", aucPara2, aucPara2len);
 
-        OSI_LOGI(0x10004542, "CUSD: u7bitLen=%d ucDcs= %d, u7bitStr[0]=0x%d, u7bitStr[1]=0x%d\n",
+        OSI_LOGI(0, "CUSD: u7bitLen=%d ucDcs= %d, u7bitStr[0]=0x%d, u7bitStr[1]=0x%d\n",
                  u7bitLen, ucDcs, u7bitStr[0], u7bitStr[1]);
-
         OSI_LOGI(0, "CUSD2: u7bitLen=%d ucDcs= %d, u7bitStr[0]=0%d, u7bitStr[1]=0%d\n",
                  u7bitLen, ucDcs, u7bitStr[0], u7bitStr[1]);
 
         memcpy(at_ussdstring[nSim].ussd_input, u7bitStr, MAX_LENGTH_STRING_USSD);
         at_ussdstring[nSim].b_used = false;
-#if 1
+
         if (AT_SS_GetUSSDState())
         {
-            //EV_CFW_SS_SEND_USSD_RSP
-            OSI_LOGI(0x10004543, "USSD: ucOption=%d, uiRetVal=0x%x\n", ucOption, uiRetVal);
+            OSI_LOGI(0, "CUSD: ucOption=%d, uiRetVal=0x%x\n", ucOption, uiRetVal);
             cmd->uti = cfwRequestUTI((osiEventCallback_t)CUSD_RspCallBack, cmd);
             OSI_LOGI(0, "CUSD: cmd->uti=%d AT_SS_GetUSSDNum=%d", cmd->uti, AT_SS_GetUSSDNum());
             if ((uiRetVal = CFW_SsSendUSSD_V2(u7bitStr, u7bitLen, ucOption, ucDcs, cmd->uti, AT_SS_GetUSSDNum(), nSim)) != 0)
@@ -2008,11 +2055,9 @@ void atCmdHandleCUSD(atCommand_t *cmd)
             RETURN_FOR_ASYNC();
         }
         else
-#endif
         {
-            //EV_CFW_SS_SEND_USSD_RSP
             OSI_LOGXI(OSI_LOGPAR_S, 0, "CUSD: req uti u7bitStr=%s", u7bitStr);
-            OSI_LOGI(0, "USSD 2: ucOption=%d, ucDcs=%d\n", ucOption, ucDcs);
+            OSI_LOGI(0, "CUSD 2: ucOption=%d, ucDcs=%d\n", ucOption, ucDcs);
 
             cmd->uti = cfwRequestUTI((osiEventCallback_t)CUSD_RspCallBack, cmd);
             if (ucDcs == 0)
@@ -2035,13 +2080,11 @@ void atCmdHandleCUSD(atCommand_t *cmd)
             RETURN_FOR_ASYNC();
         }
     }
-
     else if (AT_CMD_TEST == cmd->type)
     {
         atCmdRespInfoText(cmd->engine, "+CUSD:(0,1,2)");
         RETURN_OK(cmd->engine);
     }
-
     else if (AT_CMD_READ == cmd->type)
     {
         char uOutString[20];

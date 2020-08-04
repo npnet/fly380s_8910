@@ -313,18 +313,18 @@ static void upap_input(ppp_pcb *pcb, u_char *inpacket, int l) {
      */
     inp = inpacket;
     if (l < UPAP_HEADERLEN) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x10007839, "pap_input: rcvd short header."));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x10007839, "pap_input: rcvd short header."));
 	return;
     }
     GETCHAR(code, inp);
     GETCHAR(id, inp);
     GETSHORT(len, inp);
     if (len < UPAP_HEADERLEN) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000783a, "pap_input: rcvd illegal length."));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000783a, "pap_input: rcvd illegal length."));
 	return;
     }
     if (len > l) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000783b, "pap_input: rcvd short packet."));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000783b, "pap_input: rcvd short packet."));
 	return;
     }
     len -= UPAP_HEADERLEN;
@@ -367,7 +367,7 @@ static void upap_rauthreq(ppp_pcb *pcb, u_char *inp, int id, int len) {
     const char *msg;
     int msglen;
 
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0, "pap_rauth: rcvd short packet."));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0, "pap_rauth: rcvd short packet."));
 
 	ppp_notice("pcb-len %d", len);
     if (pcb->upap.us_serverstate < UPAPSS_LISTEN)
@@ -390,13 +390,13 @@ static void upap_rauthreq(ppp_pcb *pcb, u_char *inp, int id, int len) {
      * Parse user/passwd.
      */
     if (len < 1) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000783c, "pap_rauth: rcvd short packet."));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000783c, "pap_rauth: rcvd short packet."));
 	return;
     }
     GETCHAR(ruserlen, inp);
     len -= sizeof (u_char) + ruserlen + sizeof (u_char);
     if (len < 0) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000783c, "pap_rauth: rcvd short packet."));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000783c, "pap_rauth: rcvd short packet."));
 	return;
     }
 	ppp_notice("222 pcb-len %d", len);
@@ -404,7 +404,7 @@ static void upap_rauthreq(ppp_pcb *pcb, u_char *inp, int id, int len) {
     INCPTR(ruserlen, inp);
     GETCHAR(rpasswdlen, inp);
     if (len < rpasswdlen) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000783c, "pap_rauth: rcvd short packet."));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000783c, "pap_rauth: rcvd short packet."));
 	return;
     }
 	ppp_notice("333 pcb->ruserlen %d", ruserlen);
@@ -422,7 +422,7 @@ static void upap_rauthreq(ppp_pcb *pcb, u_char *inp, int id, int len) {
 	ppp_notice("PAP peer authentication retcode %d", retcode);
 	if (retcode == UPAP_AUTHACK)
 	{	
-		if(pcb->acted == 0)
+		if(pcb->acted == 0 && ((pppSession_t *)pcb->ppp_session->uti_attact != 0xff))
 		{
 			/* save user name */
 			//if (ruserlen > (char)(sizeof(pcb->peer_username) - 1))
@@ -534,13 +534,13 @@ static void upap_rauthack(ppp_pcb *pcb, u_char *inp, int id, int len) {
      * Parse message.
      */
     if (len < 1) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000783d, "pap_rauthack: ignoring missing msg-length."));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000783d, "pap_rauthack: ignoring missing msg-length."));
     } else {
 	GETCHAR(msglen, inp);
 	if (msglen > 0) {
 	    len -= sizeof (u_char);
 	    if (len < msglen) {
-		LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000783e, "pap_rauthack: rcvd short packet."));
+		LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000783e, "pap_rauthack: rcvd short packet."));
 		return;
 	    }
 	    msg = (char *) inp;
@@ -569,13 +569,13 @@ static void upap_rauthnak(ppp_pcb *pcb, u_char *inp, int id, int len) {
      * Parse message.
      */
     if (len < 1) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000783f, "pap_rauthnak: ignoring missing msg-length."));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000783f, "pap_rauthnak: ignoring missing msg-length."));
     } else {
 	GETCHAR(msglen, inp);
 	if (msglen > 0) {
 	    len -= sizeof (u_char);
 	    if (len < msglen) {
-		LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x10007840, "pap_rauthnak: rcvd short packet."));
+		LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x10007840, "pap_rauthnak: rcvd short packet."));
 		return;
 	    }
 	    msg = (char *) inp;

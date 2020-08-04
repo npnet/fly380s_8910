@@ -651,7 +651,7 @@ int sha2_self_test( int verbose )
 
         if( j == 5 || j == 6 )
         {
-            memset( buf, '\xAA', buflen = 131 );
+            memset( buf, (unsigned char)'\xAA', buflen = 131 );
             sha2_hmac_starts( &ctx, buf, buflen, k );
         }
         else

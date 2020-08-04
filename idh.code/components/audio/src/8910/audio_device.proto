@@ -22,4 +22,5 @@ message pbAudev
     optional uint32 out_mute = 6;
     optional uint32 sample_rate = 7;
     optional uint32 sample_interval = 8;
+    optional uint32 ext_i2s_en = 9;
 }

@@ -60,4 +60,11 @@ config AUDIO_AMRWB_ENC_ENABLE
     help
         AMR-WB encoder will need ~10500 bytes of stack.
 
+if AUDIO_ENABLE
+config AUDIO_EXT_I2S_ENABLE
+    bool "ext i2s enable"
+    default n
+    help
+        ext i2s chip config by i2c.
+endif
 endmenu

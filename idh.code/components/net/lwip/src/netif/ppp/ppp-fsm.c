@@ -377,24 +377,24 @@ void fsm_input(fsm *f, u_char *inpacket, int l) {
      */
     inp = inpacket;
     if (l < HEADERLEN) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000784a, "fsm_input(%x): Rcvd short header.", f->protocol));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000784a, "fsm_input(%x): Rcvd short header.", f->protocol));
 	return;
     }
     GETCHAR(code, inp);
     GETCHAR(id, inp);
     GETSHORT(len, inp);
     if (len < HEADERLEN) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000784b, "fsm_input(%x): Rcvd illegal length.", f->protocol));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000784b, "fsm_input(%x): Rcvd illegal length.", f->protocol));
 	return;
     }
     if (len > l) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000784c, "fsm_input(%x): Rcvd short packet.", f->protocol));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000784c, "fsm_input(%x): Rcvd short packet.", f->protocol));
 	return;
     }
     len -= HEADERLEN;		/* subtract header length */
 
     if( f->state == PPP_FSM_INITIAL || f->state == PPP_FSM_STARTING ){
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x1000784d, "fsm_input(%x): Rcvd packet in state %d.",
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x1000784d, "fsm_input(%x): Rcvd packet in state %d.",
 		  f->protocol, f->state));
 	return;
     }

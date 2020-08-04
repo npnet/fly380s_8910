@@ -141,6 +141,7 @@ message pbAtProfileCfg
     optional uint32 mcuNotifySleepDelayMs = 59;
     optional uint32 csta = 60;
     optional uint32 csvm = 61;
+    optional uint32 detectMBS = 62;
 }
 
 message pbAtSimAutoSaveCfg

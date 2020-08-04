@@ -196,22 +196,32 @@ void AT_SPBLE_CmdFunc_TEST(atCommand_t *cmd)
             {
                 OSI_LOGI(0, "SPBLETEST: enter EUT");
                 BT_SetTestMode(BT_TESTMODE_SIG);
-                BT_Start();
-                osiThreadSleep(1000); //wait BT init
-                bt_handle_adv_enable(FALSE);
-                osiThreadSleep(100);
-                UART_SetControllerBqbMode(TRUE);
-                //BT_SetTestMode(BT_TESTMODE_SIG);
+                if (BT_PENDING == BT_Start())
+                {
+                    osiThreadSleep(1000); //wait BT init
+                    bt_handle_adv_enable(FALSE);
+                    osiThreadSleep(100);
+                    UART_SetControllerBqbMode(TRUE);
+                }
+                else
+                {
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL); //init not complete, after waiting a miniate,retry
+                }
             }
             else if (2 == type_oper) // enter nonSignal mode
             {
                 OSI_LOGI(0, "SPBLETEST: start Non Sig Test");
                 BT_SetTestMode(BT_TESTMODE_NONSIG);
-                BT_Start();
-                osiThreadSleep(1000); //wait BT init
-                bt_handle_adv_enable(FALSE);
-                osiThreadSleep(100);
-                //BT_SetTestMode(BT_TESTMODE_NONSIG);
+                if (BT_PENDING == BT_Start())
+                {
+                    osiThreadSleep(1000); //wait BT init
+                    bt_handle_adv_enable(FALSE);
+                    osiThreadSleep(100);
+                }
+                else
+                {
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL); //init not complete, after waiting a miniate,retry
+                }
             }
             else
             {

@@ -35,7 +35,7 @@
 #define ADC_EFUSE_CAL_NO_USE 0xffffffff
 #define RATIO(_n_, _d_) (_n_ << 16 | _d_)
 
-static osiSemaphore_t *adclock;
+static osiSemaphore_t *adclock = NULL;
 static uint32_t anaChipId;
 
 /**
@@ -74,9 +74,9 @@ static struct rda_adc_cal small_sclae_cal = {
 
 static struct rda_adc_cal headmic_sclae_cal = {
     1000,
-    833,
+    3380,
     100,
-    80,
+    360,
     ADC_NO_CAL,
 };
 
@@ -408,10 +408,10 @@ static uint32_t _adcHeadmicTovol(uint16_t adcvalue)
 {
     int32_t vol;
 
-    vol = small_sclae_cal.p0_vol - small_sclae_cal.p1_vol;
-    vol = vol * (adcvalue - small_sclae_cal.p0_adc);
-    vol = vol / (small_sclae_cal.p0_adc - small_sclae_cal.p1_adc);
-    vol = vol + small_sclae_cal.p0_vol;
+    vol = headmic_sclae_cal.p0_vol - headmic_sclae_cal.p1_vol;
+    vol = vol * (adcvalue - headmic_sclae_cal.p0_adc);
+    vol = vol / (headmic_sclae_cal.p0_adc - headmic_sclae_cal.p1_adc);
+    vol = vol + headmic_sclae_cal.p0_vol;
     if (vol < 0)
         vol = 0;
 
@@ -863,6 +863,8 @@ static void _adcClosePmic26MclkAdc(void)
 
 void drvAdcInit(void)
 {
+    if (adclock != NULL)
+        return;
     adclock = osiSemaphoreCreate(1, 1);
 
     _adcEnable();
@@ -949,5 +951,20 @@ int32_t drvAdcGetChannelVolt(uint32_t channel, int32_t scale)
     value = _adcChangAdcToVol(channel, scale, 0, adc);
 
     OSI_LOGD(0, "adc: channel= %d,vol= %dmv", channel, value);
+    return value;
+}
+
+int32_t drvAdcGetHMicChannelVolt(int32_t scale, int32_t con_mode)
+{
+    int32_t value, adc;
+    if (scale > ADC_SCALE_MAX)
+        return -1;
+
+    adc = _drvGetAdcAverage(ADC_CHANNEL_HEADMIC, scale);
+    if (adc == -1)
+        return -1;
+    value = _adcChangAdcToVol(ADC_CHANNEL_HEADMIC, scale, con_mode, adc);
+
+    OSI_LOGD(0, "hmic adc: con_mode= %d,vol= %dmv", con_mode, value);
     return value;
 }

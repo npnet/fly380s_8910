@@ -140,7 +140,7 @@ coap_split_uri(const unsigned char *str_var, size_t len, coap_uri_t *uri) {
 	uri_port = uri_port * 10 + (*p++ - '0');
 
       /* check if port number is in allowed range */
-      if (uri_port > 65535) {
+      if (uri_port > 65535 || uri_port < 0) {
 	res = -4;
 	goto error;
       }

@@ -13,51 +13,58 @@
 #ifndef _DRV_EFUSE_H_
 #define _DRV_EFUSE_H_
 
-#include <stdint.h>
+#include "osi_compiler.h"
+#include "hal_efuse.h"
 #include <stdbool.h>
-#include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
+OSI_EXTERN_C_BEGIN
+
+#define DRV_EFUSE_ACCESS_END (0xEFEFEFEF)
+
+/**
+ * \brief batch read EFUSE
+ *
+ * \param double_block  access DOUBLE BLOCK or not
+ * \param index         efuse block index
+ * \param value         room to store result
+ * \return
+ *      - true on success else false
+ */
+bool drvEfuseBatchRead(bool double_block, uint32_t index, uint32_t *value, ...);
+
+/**
+ * \brief batch write EFUSE
+ *
+ * \param double_block  access DOUBLE BLOCK or not
+ * \param index         efuse block index
+ * \param value         value to write
+ * \return
+ *      - true on success else false
+ */
+bool drvEfuseBatchWrite(bool double_block, uint32_t index, uint32_t value, ...);
+
+/**
+ * \brief read one EFUSE block
+ *
+ * \param double_block  access DOUBLE BLOCK or not
+ * \param index         efuse block index
+ * \param value         room to store result
+ * \return
+ *      - true on success else false
+ */
+bool drvEfuseRead(bool double_block, uint32_t index, uint32_t *value);
+
+/**
+ * \brief write one EFUSE
+ *
+ * \param double_block  access DOUBLE BLOCK or not
+ * \param index         efuse block index
+ * \param value         value to write
+ * \return
+ *      - true on success else false
+ */
+bool drvEfuseWrite(bool double_block, uint32_t index, uint32_t value);
+
+OSI_EXTERN_C_END
+
 #endif
-
-/**
- * @brief open the 8910 efuse module.
- * It should be called before reading or writing efuse.
- */
-void drvEfuseOpen(void);
-
-/**
- * @brief close the 8910 efuse module.
- * It should be called when finsh reading or writing efuse.
- */
-void drvEfuseClose(void);
-
-/**
- * @brief read the 8910 efuse.
- *
- * @block_index The index of efuse block. The ranges is from 0 to 81.
- * @val The pointer of the data reading form the block.
- *
- * @return
- *      - true          success
- *      - false         fail
- */
-bool drvEfuseRead(int32_t block_index, uint32_t *val);
-
-/**
- * @brief write the 8910 efuse.
- *
- * @block_index The index of efuse block. The ranges is from 0 to 81.
- * @val The value will write to the efuse.
- *
- * @return
- *      - true          success
- *      - false         fail
- */
-bool drvEfuseWrite(int32_t block_index, uint32_t val);
-
-#ifdef __cplusplus
-}
-#endif
-#endif /* _DRV_EFUSE_H_ */

@@ -50,9 +50,11 @@ typedef struct
 struct composite_func_s
 {
     uint32_t name;
-    udc_t *controller;
     copsFuncOpt_t ops;
     TAILQ_ENTRY(composite_func_s) anchor;
+    // will be set on function add to composite device
+    cops_t *cops;
+    udc_t *controller;
 };
 
 /**
@@ -259,6 +261,16 @@ copsFunc_t *createRndisFunc(void);
  *      - other the rndis function
  */
 copsFunc_t *createEcmFunc();
+
+/**
+ * @brief Create a CCID function instance
+ *
+ * @param name  device name
+ * @return
+ *      - NULL  fail
+ *      - other the CCID function
+ */
+copsFunc_t *createCCIDFunc(uint32_t name);
 
 /**
  * @brief Assign an interface number

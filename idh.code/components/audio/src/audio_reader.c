@@ -349,7 +349,7 @@ done:
 /**
  * Read buffer skip
  */
-void auReadBufSkip(auReadBuf_t *d, auReader_t *reader, unsigned size)
+bool auReadBufSkip(auReadBuf_t *d, auReader_t *reader, unsigned size)
 {
     d->file_pos += size;
     if (auReadBufSize(d) >= size)
@@ -359,8 +359,10 @@ void auReadBufSkip(auReadBuf_t *d, auReader_t *reader, unsigned size)
     else
     {
         // coverity[check_return] return value ignored intentionally
-        auReaderDrop(reader, size - (d->size - d->pos));
+        if (auReaderDrop(reader, size - (d->size - d->pos)) < 0)
+            return false;
         d->size = 0;
         d->pos = 0;
     }
+    return true;
 }

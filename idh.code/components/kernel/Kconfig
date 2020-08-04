@@ -176,6 +176,17 @@ config KERNEL_PROFILE_CLOCK2M
 endchoice
 endif
 
+config KERNEL_PROFILE_BUF_SIZE
+    hex "Profile buffer size"
+    default 0x1000 if SOC_8811
+    default 0xc000
+    help
+        Profile buffer size. Each profile record will use 4 bytes. So, the
+        profile record count is buffer size divided by 4.
+
+        When it is 0, profile will be disabled, though the profile related
+        APIs still exist.
+
 choice
     prompt "Trace packet format"
     default KERNEL_HOST_TRACE

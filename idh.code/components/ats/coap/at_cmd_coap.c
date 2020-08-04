@@ -25,6 +25,7 @@ static osiMutex_t *g_pstMutex = NULL;
 #define DATA_TIMEOUT_DEF (90)
 #define DATA_TIMEOUT_MAX (120)
 #define DATA_MANUL_LEN_MAX (1024)
+#define AT_URL_LENG_MAX (60)
 #define AT_CMDLINE_LENG_MAX (128)
 
 typedef struct
@@ -404,7 +405,7 @@ void AT_COAP_CmdFunc_GET(atCommand_t *pParam)
     if (AT_CMD_SET == pParam->type)
     {
         bool paramok = true;
-        uint8_t def_seconds = 95;
+        uint8_t def_seconds = DATA_TIMEOUT_DEF;
 
         if (pParam->param_count < 2 || pParam->param_count > 3) //bugfix 989024 by SUN Wei
         {
@@ -415,6 +416,13 @@ void AT_COAP_CmdFunc_GET(atCommand_t *pParam)
         }
 
         const char *url = atParamStr(pParam->params[0], &paramok);
+        if (strlen(url) > AT_URL_LENG_MAX)
+        {
+            osiMutexLock(g_pstMutex);
+            g_bCoapDoing = false;
+            osiMutexUnlock(g_pstMutex);
+            goto ParamInvalid;
+        }
         const char *cmdline = atParamStr(pParam->params[1], &paramok);
         if (pParam->param_count > 2)
         {
@@ -508,7 +516,7 @@ void AT_COAP_CmdFunc_PUT(atCommand_t *pParam)
     if (AT_CMD_SET == pParam->type)
     {
         bool paramok = true;
-        uint8_t def_seconds = 85;
+        uint8_t def_seconds = DATA_TIMEOUT_DEF;
         bool has_payload = true;
 
         if (pParam->param_count < 2 || pParam->param_count > 4) //bugfix 989062 by SUN Wei
@@ -520,6 +528,13 @@ void AT_COAP_CmdFunc_PUT(atCommand_t *pParam)
         }
 
         const char *url = atParamStr(pParam->params[0], &paramok);
+        if (strlen(url) > AT_URL_LENG_MAX)
+        {
+            osiMutexLock(g_pstMutex);
+            g_bCoapDoing = false;
+            osiMutexUnlock(g_pstMutex);
+            goto ParamInvalid;
+        }
         const char *cmdline = atParamStr(pParam->params[1], &paramok);
         if (strlen(cmdline) > AT_CMDLINE_LENG_MAX)
         {
@@ -602,12 +617,11 @@ End:
     return;
 }
 
-#define DEF_TIMEOUT (90)
 void AT_COAP_CmdFunc_POST(atCommand_t *pParam)
 {
     bool bParamOk = true;
     bool bPayloadFlag = true;
-    unsigned char ucTimeout = DEF_TIMEOUT;
+    unsigned char ucTimeout = DATA_TIMEOUT_DEF;
     char sTimeout[10] = {0};
     const char *pcUrl = NULL;
     const char *pcCmdline = NULL;
@@ -635,6 +649,13 @@ void AT_COAP_CmdFunc_POST(atCommand_t *pParam)
     case AT_CMD_SET:
     {
         pcUrl = atParamStr(pParam->params[0], &bParamOk);
+        if (strlen(pcUrl) > AT_URL_LENG_MAX)
+        {
+            osiMutexLock(g_pstMutex);
+            g_bCoapDoing = false;
+            osiMutexUnlock(g_pstMutex);
+            goto ParamInvalid;
+        }
         pcCmdline = atParamStr(pParam->params[1], &bParamOk);
         if (strlen(pcCmdline) > AT_CMDLINE_LENG_MAX)
         {
@@ -771,6 +792,13 @@ void AT_COAP_CmdFunc_DELETE(atCommand_t *pParam)
         bool paramok = true;
         uint8_t def_seconds = DATA_TIMEOUT_DEF;
         const char *url = atParamStr(pParam->params[0], &paramok);
+        if (strlen(url) > AT_URL_LENG_MAX)
+        {
+            osiMutexLock(g_pstMutex);
+            g_bCoapDoing = false;
+            osiMutexUnlock(g_pstMutex);
+            goto ParamInvalid;
+        }
         const char *cmdline = atParamStr(pParam->params[1], &paramok);
 
         if (pParam->param_count < 2 || pParam->param_count > 3)

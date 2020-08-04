@@ -605,4 +605,7 @@ PUBLIC VOID hal_AifSetAif2Flag(BOOL flag);
 
 PUBLIC HAL_ERR_T hal_newAifSetSampleRate(CONST HAL_AIF_CONFIG_T *config, HAL_AIF_FREQ_T sampleRate, BOOL isPlay);
 
+PUBLIC VOID hal_AifIrqHandler(UINT32 direction);
+PUBLIC VOID hal_AifIrqClrStatus(UINT32 direction);
+PUBLIC VOID hal_AifSetI2sGpio(VOID);
 #endif // _HAL_AIF_H_

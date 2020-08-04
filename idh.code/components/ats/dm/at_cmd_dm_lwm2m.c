@@ -224,6 +224,7 @@ static void dm_event_ind_process(void *param)
             memset(newNode->param.asExec.buffer, 0, newNode->param.asExec.length);
             free(newNode->param.asExec.buffer);
             free(newNode);
+            break;
         }
 
         sprintf(refstr, "+MIPLEXECUTE:%d,%ld,%d,%d,%d,%ld,\"%s\"", 0, mid, uri.objectId, uri.instanceId, uri.resourceId, length, buffer);

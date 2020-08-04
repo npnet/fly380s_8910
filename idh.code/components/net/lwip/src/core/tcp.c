@@ -149,7 +149,11 @@ void
 tcp_init(void)
 {
 #ifdef LWIP_RAND
+  uint32_t srand_ = sys_get_srand();
+  LWIP_DEBUGF(TCP_DEBUG, (0x0, "tcp_init: srand :%ld ", srand_));
+  srand(srand_);
   tcp_port = TCP_ENSURE_LOCAL_PORT_RANGE(LWIP_RAND());
+  LWIP_DEBUGF(TCP_DEBUG, (0x0, "tcp_init: tcp_port :%d ", tcp_port));
 #endif /* LWIP_RAND */
 }
 

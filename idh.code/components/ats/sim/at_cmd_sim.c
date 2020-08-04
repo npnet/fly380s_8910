@@ -308,9 +308,63 @@ uint32_t ATGetRealCurrIndex(uint16_t nFileID, uint16_t nCurrentIndex, CFW_SIM_ID
 }
 #endif
 
-void atCfwSimHotPlugCB(int num, bool connect)
+static uint32_t _parseSw1Sw2ErrorCode(uint32_t errorCode)
 {
+    OSI_LOGI(0, "_parseSw1Sw2ErrorCode errorCode: %x", errorCode);
+    switch (errorCode)
+    {
+    case ERR_CME_SIM_VERIFY_FAIL:
+        return ERR_AT_CME_SIM_VERIFY_FAIL;
+    case ERR_CME_SIM_UNBLOCK_FAIL:
+        return ERR_AT_CME_SIM_UNBLOCK_FAIL;
+    case ERR_CME_SIM_CONDITION_NO_FULLFILLED:
+        return ERR_AT_CME_SIM_CONDITION_NO_FULLFILLED;
+    case ERR_CME_SIM_UNBLOCK_FAIL_NO_LEFT:
+        return ERR_AT_CME_SIM_UNBLOCK_FAIL_NO_LEFT;
+    case ERR_CME_SIM_VERIFY_FAIL_NO_LEFT:
+        return ERR_AT_CME_SIM_VERIFY_FAIL_NO_LEFT;
+    case ERR_CME_SIM_INVALID_PARAMETER:
+        return ERR_AT_CME_SIM_INVALID_PARAMETER;
+    case ERR_CME_SIM_UNKNOW_COMMAND:
+        return ERR_AT_CME_SIM_UNKNOW_COMMAND;
+    case ERR_CME_SIM_WRONG_CLASS:
+        return ERR_AT_CME_SIM_WRONG_CLASS;
+    case ERR_CME_SIM_TECHNICAL_PROBLEM:
+        return ERR_AT_CME_SIM_TECHNICAL_PROBLEM;
+    case ERR_CME_SIM_CHV_NEED_UNBLOCK:
+        return ERR_AT_CME_SIM_CHV_NEED_UNBLOCK;
+    case ERR_CME_SIM_NOEF_SELECTED:
+        return ERR_AT_CME_SIM_NOEF_SELECTED;
+    case ERR_CME_SIM_FILE_UNMATCH_COMMAND:
+        return ERR_AT_CME_SIM_FILE_UNMATCH_COMMAND;
+    case ERR_CME_SIM_CONTRADICTION_CHV:
+        return ERR_AT_CME_SIM_CONTRADICTION_CHV;
+    case ERR_CME_SIM_CONTRADICTION_INVALIDATION:
+        return ERR_AT_CME_SIM_CONTRADICTION_INVALIDATION;
+    case ERR_CME_SIM_MAXVALUE_REACHED:
+        return ERR_AT_CME_SIM_MAXVALUE_REACHED;
+    case ERR_CME_SIM_PATTERN_NOT_FOUND:
+        return ERR_AT_CME_SIM_PATTERN_NOT_FOUND;
+    case ERR_CME_SIM_FILEID_NOT_FOUND:
+        return ERR_AT_CME_SIM_FILEID_NOT_FOUND;
+    case ERR_CME_SIM_STK_BUSY:
+        return ERR_AT_CME_SIM_STK_BUSY;
+    case ERR_CME_SIM_UNKNOW:
+        return ERR_AT_CME_SIM_UNKNOW;
+    case ERR_CME_SIM_PROFILE_ERROR:
+        return ERR_AT_CME_SIM_PROFILE_ERROR;
+    default:
+        return ERR_AT_CME_SIM_UNKNOW;
+    }
+}
+
+void atCfwSimHotPlugProc(osiEvent_t *event)
+{
+    int num;
+    bool connect;
     char rsp[15] = {0};
+    num = event->param1;
+    connect = event->param2;
     OSI_LOGI(0, "num = %d, connect = %d ", num, connect);
 
     sprintf(rsp, "+SIMSTAT: %d", connect);
@@ -321,7 +375,19 @@ void atCfwSimHotPlugCB(int num, bool connect)
     atCmdRespSimUrcText(1, rsp);
 #endif
 
-    ipc_notify_sim_detect(num, connect);
+    osiBootMode_t boot_mode = osiGetBootMode();
+    if (boot_mode != OSI_BOOTMODE_CALIB)
+        ipc_notify_sim_detect(num, connect);
+    free(event);
+}
+
+void atCfwSimHotPlugCB(int num, bool connect)
+{
+    osiEvent_t *ev = malloc(sizeof(osiEvent_t));
+    ev->param1 = num;
+    ev->param2 = connect;
+
+    osiThreadCallback(atEngineGetThreadId(), (osiCallback_t)atCfwSimHotPlugProc, ev);
 }
 
 typedef struct
@@ -1750,6 +1816,10 @@ void atCmdHandleCCID(atCommand_t *cmd)
     {
         CFW_SIM_STATUS status = CFW_GetSimStatus(nSim);
         OSI_LOGI(0, "CCID get sim status: %d", status);
+        if (status == CFW_SIM_ABSENT)
+        {
+            RETURN_CME_CFW_ERR(cmd->engine, ERR_AT_CME_SIM_NOT_INSERTED);
+        }
 
         uint8_t *pICCID = CFW_GetICCID(nSim);
         if (pICCID != NULL)
@@ -3153,23 +3223,24 @@ void atCmdHandleCSIM(atCommand_t *cmd)
             OSI_LOGI(0, "CSIM:ERROR! the command parameter is error.");
             goto CSIM_ERROR;
         }
-        if (length > 530)
+        if ((length > 520) || (length < 10) || (length % 2))
         {
             OSI_LOGI(0, "CSIM:ERROR! Length parameter is error.");
             goto CSIM_ERROR;
         }
         uint8_t tpdu[265] = {0};
-        uint32_t retval = cfwHexStrToBytes(command, length, tpdu);
-        if (retval == 0)
+        int32_t retval = cfwHexStrToBytes(command, length, tpdu);
+        if (retval == 0 || retval == -1)
         {
             OSI_LOGI(0, "CSIM: parameter error = %d !", retval);
             goto CSIM_ERROR;
         }
         //CSW_TC_MEMBLOCK(0, tpdu, retval, 16);
 
-        OSI_LOGI(0, "CSIM: CFW_SimTPDUCommand, nSim = %d", nSim);
+        OSI_LOGI(0, "CSIM: CFW_SimTPDUCommand, retval = %d, nSim = %d", retval, nSim);
         cmd->uti = cfwRequestUTI((osiEventCallback_t)_csimRspCB, cmd);
-        retval = CFW_SimTPDUCommand(tpdu, retval, 0, cmd->uti, nSim);
+        uint8_t channel = tpdu[0] & 0x0F;
+        retval = CFW_SimTPDUCommand(tpdu, retval, channel, cmd->uti, nSim);
         if (ERR_SUCCESS != retval)
         {
             OSI_LOGI(0, "CSIM: ERR_AT_CME_EXE_FAIL = %d !", retval);
@@ -4963,29 +5034,28 @@ void atCmdHandleSIMCNT(atCommand_t *cmd)
 static void CSVM_SetRspCB(atCommand_t *cmd, const osiEvent_t *event)
 {
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
-
-    OSI_LOGI(0, "CSVM_SetRspCB cfw_event->nType: %x", cfw_event->nType);
-
     if (cfw_event->nType == 0xF0)
-        RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
-
+    {
+        atCmdRespCmeError(cmd->engine, _parseSw1Sw2ErrorCode(cfw_event->nParam1));
+        return;
+    }
     RETURN_OK(cmd->engine);
 }
 
 static void CSVM_GetRspCB(atCommand_t *cmd, const osiEvent_t *event)
 {
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
-
-    OSI_LOGI(0, "CSVM_GetRspCB cfw_event->nType: %x", cfw_event->nType);
-
     if (cfw_event->nType == 0xF0)
-        RETURN_CME_CFW_ERR(cmd->engine, cfw_event->nParam1);
+    {
+        atCmdRespCmeError(cmd->engine, _parseSw1Sw2ErrorCode(cfw_event->nParam1));
+        return;
+    }
 
     CFW_SIM_INFO_VOICEMAIL *pVoicemail = (CFW_SIM_INFO_VOICEMAIL *)cfw_event->nParam1;
     if (pVoicemail != NULL)
     {
         char rsp[64];
-        char number[32];
+        char number[32] = {0};
         cfwBcdToDialString(pVoicemail->mailbox_number, pVoicemail->mailbox_number_len, number);
         sprintf(rsp, "%s: %d,\"%s\"", cmd->desc->name, gAtSetting.csvm, number);
         atCmdRespInfoText(cmd->engine, rsp);
@@ -5009,12 +5079,14 @@ void atCmdHandleCSVM(atCommand_t *cmd)
             RETURN_OK(cmd->engine);
 
         const char *number = atParamDefStr(cmd->params[1], "", &paramok);
+        if (!paramok || strlen(number) > 20)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
         CFW_SIM_INFO_VOICEMAIL updateVoiceMailInfo = {0};
         memset(&updateVoiceMailInfo, 0, sizeof(CFW_SIM_INFO_VOICEMAIL));
 
         int length = cfwDialStringToBcd(number, strlen(number), updateVoiceMailInfo.mailbox_number);
-        if (updateVoiceMailInfo.mailbox_number_len < 0)
+        if (length < 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         updateVoiceMailInfo.mailbox_number_len = length;
 
@@ -5042,7 +5114,7 @@ void atCmdHandleCSVM(atCommand_t *cmd)
     else if (cmd->type == AT_CMD_TEST)
     {
         char rsp[64];
-        sprintf(rsp, "%s: (0-1),", cmd->desc->name);
+        sprintf(rsp, "%s: (0-1),<number>", cmd->desc->name);
         atCmdRespInfoText(cmd->engine, rsp);
         RETURN_OK(cmd->engine);
     }

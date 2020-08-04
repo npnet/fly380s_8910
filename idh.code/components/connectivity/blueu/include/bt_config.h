@@ -390,5 +390,5 @@ typedef struct
 #define BT_POWEROFF_CONTROLLER
 
 #define UIS8910_BT_PLATFORM
-
+//#define CONFIG_AT_BT_SCANMODE_SELECT   //∆¡±Œ π”√scanmod AT
 #endif

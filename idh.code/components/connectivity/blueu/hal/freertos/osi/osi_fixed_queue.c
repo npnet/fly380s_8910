@@ -10,7 +10,7 @@
 
 fixed_queue_t *fixed_queue_new(size_t capacity)
 {
-    fixed_queue_t *ret = osi_calloc(sizeof(fixed_queue_t));
+    fixed_queue_t *ret = osi_malloc(sizeof(fixed_queue_t));
 
     if (!ret)
     {
@@ -78,6 +78,11 @@ void fixed_queue_free(fixed_queue_t *queue, fixed_queue_free_cb free_cb)
     }
 
     list_free(queue->list);
+    #if 1
+    // bug memory leek -- 8910
+    osi_free(queue->list);
+    // bug -- end
+    #endif
     osi_sem_free(&queue->enqueue_sem);
     osi_sem_free(&queue->dequeue_sem);
     osi_mutex_free(&queue->lock);

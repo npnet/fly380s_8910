@@ -363,6 +363,7 @@ typedef struct usb_devcap_container_id_descriptor
 #define UDCLASS_MASS_STORAGE	0x08
 #define	UDCLASS_HUB		0x09
 #define UDCLASS_CDC_DATA	0x0a
+#define UDCLASS_CCID	0x0b
 #define	UDCLASS_DIAGNOSTIC	0xdc
 #define UDCLASS_VIDEO	0xe0
 #define	UDCLASS_WIRELESS	0xe0

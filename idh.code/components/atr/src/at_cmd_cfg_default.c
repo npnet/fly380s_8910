@@ -175,6 +175,7 @@ const atSetting_t gAtDefaultSetting = {
     .mcuNotifySleepDelayMs = 120,
     .csta = CFW_TELNUMBER_TYPE_UNKNOWN,
     .csvm = 0,
+    .detectMBS = 0,
 #ifdef CONFIG_ATR_TB_API_SUPPORT
     .tbDataStatistics = {
         [0] = {

@@ -13,6 +13,7 @@
 // #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
 #include "drv_debug_port.h"
+#include "drv_debug_port_imp.h"
 #include "drv_config.h"
 #include "drv_ifc.h"
 #include "hwregs.h"
@@ -192,7 +193,7 @@ static void prvDhostStartTxTimer(drvDhostPort_t *d)
  */
 static void prvDhostTraceOutput(drvDhostPort_t *d, unsigned whence)
 {
-    if (!d->port.mode.trace_enable || !gTraceEnabled)
+    if (!d->port.mode.trace_enable)
         return;
 
     if (whence == OUTPUT_AT_TXDONE)
@@ -359,6 +360,7 @@ static void prvDhostBsEnter(void *param)
         if (d->trace_buf.size != 0)
             osiTraceBufHandled();
     }
+    osiDebugEvent(GDB_EVENT);
 }
 
 /**

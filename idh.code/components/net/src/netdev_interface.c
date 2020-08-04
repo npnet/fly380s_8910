@@ -86,6 +86,11 @@ static void prvEthUploadDataCB(drvEthPacket_t *pkt, uint32_t size, void *ctx)
     {
         OSI_LOGE(0x1000756d, "prvEthUploadDataCB data size: %d", size - ETH_HLEN);
         uint8_t *ipData = pkt->data;
+#ifdef CONFIG_NET_TRACE_IP_PACKET
+        uint8_t *ipdata = ipData;
+        uint16_t identify = (ipdata[4] << 8) + ipdata[5];
+        OSI_LOGI(0x0, "prvEthUploadDataCB identify %04x", identify);
+#endif
         sys_arch_dump(ipData, size - ETH_HLEN);
     }
 
@@ -142,6 +147,11 @@ static void prvNdevProcessPsData(void *ctx)
         if (rsize > 0)
         {
             nif->u32RndisDLSize += rsize;
+#ifdef CONFIG_NET_TRACE_IP_PACKET
+            uint8_t *ipdata = rdata;
+            uint16_t identify = (ipdata[4] << 8) + ipdata[5];
+            OSI_LOGI(0x0, "prvNdevProcessPsData identify %04x", identify);
+#endif
             OSI_LOGE(0x1000756f, "PsIntfRead %d", rsize);
             if (!drvEtherTxReqSubmit(nc->ether, tx_req, rsize))
             {
@@ -180,6 +190,8 @@ static bool prvNdevDataToPs(netSession_t *session, const void *data, size_t size
     if (written < 0)
     {
         OSI_LOGI(0x10007571, "written: %d will osiPanic", written);
+        //osiThreadSleep(2);
+        //osiPanic();
         return false;
     }
     else
@@ -229,8 +241,9 @@ void netdevConnect()
 #endif
         OSI_LOGI(0x10007576, "netdevConnect timer start.");
         netdevIntf_t *nc = &gNetIntf;
-        if (nc->connect_timer == NULL)
-            nc->connect_timer = osiTimerCreate(netGetTaskID(), prvProcessNdevConnect, nc);
+        if (nc->connect_timer != NULL)
+            osiTimerDelete(nc->connect_timer);
+        nc->connect_timer = osiTimerCreate(netGetTaskID(), prvProcessNdevConnect, nc);
         osiTimerStart(nc->connect_timer, 500);
 #if IP_NAT
     }

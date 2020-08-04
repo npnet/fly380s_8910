@@ -11,13 +11,6 @@
 
 configure_file(include/hal_config.h.in ${out_inc_dir}/hal_config.h)
 
-if(NOT ${CONFIG_KEYPAD_CSV_PATH} STREQUAL "")
-    set(keypadcfg_h ${out_inc_dir}/hal_keypad_def.h)
-    set(csv_keypad ${SOURCE_TOP_DIR}/${CONFIG_KEYPAD_CSV_PATH})
-    execute_process(COMMAND python3 ${keypadgen_py} ${csv_keypad} ${keypadcfg_h})
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${csv_keypad})
-endif()
-
 set(hal_spi_flash_prop_csv ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_spi_flash_prop.csv)
 set(hal_spi_flash_prop_h ${CMAKE_CURRENT_BINARY_DIR}/hal_spi_flash_prop.h)
 add_custom_command(OUTPUT ${hal_spi_flash_prop_h}
@@ -53,6 +46,7 @@ target_sources_if(CONFIG_SOC_8910 THEN ${target} PRIVATE
     src/8910/hal_clock_init.c
     src/8910/hal_chip_8910.c
     src/8910/hal_pmu_8910.c
+    src/8910/hal_efuse_8910.c
     src/8910/hal_aes.c
     src/hal_delay.c
     src/hal_hw_map.c

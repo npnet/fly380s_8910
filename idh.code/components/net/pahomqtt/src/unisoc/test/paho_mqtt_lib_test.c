@@ -290,6 +290,13 @@ finish:
     cOutstr[0] = '\0';
     sprintf(cOutstr, "%s%s(%d):Test connection finish of paho mqtt lib. rc=%d", LOG_HEAD, __func__, __LINE__, rc);
     OSI_LOGI(0, cOutstr);
+
+	if (NULL != pcUrl)
+	{
+		free(pcUrl);
+		pcUrl = NULL;
+	}
+        
 	return rc;
 }
 

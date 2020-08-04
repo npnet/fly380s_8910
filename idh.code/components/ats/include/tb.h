@@ -327,6 +327,9 @@ typedef void (*tb_sms_callback_fun)(tb_sms_status type, int value);
 typedef void (*tb_sms_received_contents_cb)(tb_sms_message *received_sms_message);
 typedef void (*tb_voice_callback_fun)(tb_voice_report_event_e event, void *voice_report_info);
 
+typedef osiTimer_t *tb_timer_p;
+typedef void (*tb_timer_callbck)(void *ctx);
+
 //api
 //Nw module
 extern int tb_wan_reg_callback(tb_wan_network_info_cb wan_network_info_func);
@@ -363,6 +366,21 @@ extern int tb_voice_answer_call();
 extern int tb_voice_hungup_call();
 extern int tb_voice_switch_audio_channel(int audio_channel);
 
+//device info
+extern int tb_device_get_modemserialnumber(char *msn, int size);
+extern int tb_device_get_hwversion(char *hdver, int size);
+extern int tb_device_getversion(char *ver, int size);
+extern int tb_device_get_iccid(char *iccid, int size);
+extern int tb_device_set_rtc_timer(unsigned long seconds, tb_timer_callbck pCallback, tb_timer_p *pTimer);
+extern int tb_device_cancel_timer(tb_timer_p pTimer);
+extern int tb_device_shutdown_system(void);
+extern int tb_device_reboot_system(void);
+extern int tb_device_get_update_result(void);
+extern int tb_device_start_update_firmware(void);
+extern int tb_device_query_hu_ipaddr(char *hu_ipaddr, int ipaddr_buf_len);
+extern int tb_device_modem_wakeup_mcu(uint32_t gpio_num);
+extern int tb_device_enable_sleep(bool enable);
+
 //cfw event handle
 extern int tb_handle_cfw_event(const osiEvent_t *event);
 
@@ -395,6 +413,14 @@ extern void tbtest_voice_connect_call();
 extern void tbtest_voice_hungup_call();
 extern void tbtest_voice_switch_audio_channel0();
 extern void tbtest_voice_switch_audio_channel1();
+extern void tbtest_device_get_modemserialnumber();
+extern void tbtest_device_get_hwversion();
+extern void tbtest_device_getversion();
+extern void tbtest_device_get_iccid();
+extern void tbtest_device_set_rtc_timer(void);
+extern void tbtest_device_cancel_timer(void);
+extern void tbtest_device_shutdown_system(void);
+extern void tbtest_device_reboot_system(void);
 
 #ifdef __cplusplus
 }

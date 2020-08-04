@@ -19,7 +19,7 @@ set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_di
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_AUDIO)
 target_include_directories(${target} PUBLIC include)
 target_include_directories(${target} PRIVATE ${out_rpc_dir})
-target_include_targets(${target} PRIVATE kernel driver hal fs nanopb)
+target_include_targets(${target} PRIVATE kernel driver hal fs nanopb cfw)
 
 target_sources(${target} PRIVATE
     src/audio_types.c
@@ -33,6 +33,7 @@ if(CONFIG_SOC_8910)
     target_sources(${target} PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}/audio_device.pb.c
         src/8910/audio_device.c
+        src/8910/hal_aif.c
     )
     add_dependencies(${target} rpc)
     target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

@@ -151,7 +151,11 @@ void vApplicationIRQHandler(uint32_t ulICCIAR)
 {
     uint32_t irqn = ulICCIAR & 0x3FFUL;
     if (irqn >= IRQ_GIC_LINE_COUNT)
+    {
+        osiProfileIrqEnter(IRQ_GIC_LINE_COUNT);
+        osiProfileIrqExit(IRQ_GIC_LINE_COUNT);
         return;
+    }
 
     osiProfileIrqEnter(irqn);
     __enable_irq();

@@ -293,6 +293,8 @@ uint8_t AT_CC_GetCCCount(uint8_t sim)
     CFW_CC_CURRENT_CALL_INFO call_info[AT_CC_MAX_NUM];
 
     CFW_CcGetCurrentCall(call_info, &cnt, sim);
+    OSI_LOGI(0, "SETVOLTE AT_CC_GetCCCount cnt = %d", cnt);
+
     return cnt;
 }
 
@@ -430,6 +432,7 @@ PFN_AT_CC_CB pAT_CC_CALL_TI_ASSIGNED_IND_CB = NULL;
 PFN_AT_CC_CB pAT_CC_AUDIO_RESTART_IND_CB = NULL;
 PFN_AT_CC_CB pAT_CC_INITIATE_SPEECH_CALL_RSP_CB = NULL;
 PFN_AT_CC_CB pAT_CC_RELEASE_CALL_RSP_CB = NULL;
+PFN_AT_CC_CB pAT_CC_CALL_HOLD_MULTIPARTY_RSP_CB = NULL;
 
 #define URI_MAX_NUMBER 21
 #define SIP_STR "sip:"
@@ -756,10 +759,19 @@ static void _onEV_CFW_CC_AUDIOON_IND(const osiEvent_t *event)
     OSI_LOGI(0, "_onEV_CFW_CC_AUDIOON_IND event");
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t sim = cfw_event->nFlag;
-    gAudioOnFlag = 1;
+    uint8_t index = cfw_event->nParam1;
+    uint8_t cnt = 0;
+    CFW_CC_CURRENT_CALL_INFO call_info[AT_CC_MAX_NUM];
 
-    if (!gAtCfwCtx.cc.alert_flag)
+    gAudioOnFlag = 1;
+    CFW_CcGetCurrentCall(call_info, &cnt, sim);
+
+    if ((!gAtCfwCtx.cc.alert_flag) &&
+        (CFW_CM_STATUS_INCOMING == call_info[index].status || CFW_CM_STATUS_WAITING == call_info[index].status))
+    {
         prvReportSounder(sim, 1);
+        audevPlayTone(AUDEV_TONE_DIAL, 1000);
+    }
 
     prvAlertStop();
 }
@@ -1078,6 +1090,8 @@ void atCmdHandleCLCC(atCommand_t *cmd)
         uint8_t cnt = 0;
 
         uint32_t nRet = CFW_CcGetCurrentCall(call_info, &cnt, sim);
+        OSI_LOGI(0, "atCmdHandleCLCC cnt = %d", cnt);
+
         if (nRet == ERR_CFW_NO_CALL_INPROGRESS || cnt == 0)
             RETURN_OK(cmd->engine);
         if (nRet != 0)
@@ -1408,7 +1422,7 @@ void atCmdHandleD(atCommand_t *cmd)
 
     if (bcd_len < 0)
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_INVALID_CHAR_INDIAL);
-    if (bcd_len > 50 /*SIM_PBK_NUMBER_SIZE*/)
+    if (bcd_len > TEL_NUMBER_MAX_LEN)
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_DAIL_STR_LONG);
 
     dnum.nDialNumberSize = bcd_len;
@@ -1786,6 +1800,10 @@ static void _chldAsyncContextDelete(atCommand_t *cmd)
 
 static void _chldRspCB(atCommand_t *cmd, const osiEvent_t *event)
 {
+
+    if (pAT_CC_CALL_HOLD_MULTIPARTY_RSP_CB)
+        (*pAT_CC_CALL_HOLD_MULTIPARTY_RSP_CB)(event);
+
     if (!atCheckCfwEvent(event, EV_CFW_CC_CALL_HOLD_MULTIPARTY_RSP))
     {
         OSI_LOGI(0, "_chldRspCB event error\n");
@@ -2538,11 +2556,16 @@ void atCmdHandleSETVOLTE(atCommand_t *cmd)
         bool paramok = true;
         uint8_t setvolte = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
         uint8_t count = AT_GprsGetActivePdpCount(sim);
-        OSI_LOGI(0, "SETVOLTE GetActivePdpCount= %d", count);
+        uint8_t cccnt = AT_CC_GetCCCount(sim);
+
+        OSI_LOGI(0, "SETVOLTE atCmdHandleSETVOLTE count = %d, cccnt = %d", count, cccnt);
+
         if (!paramok || cmd->param_count > 1)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-        if (count > 5)
+
+        if ((0 != cccnt) || count > 5)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+
         uint16_t uti = cfwRequestNoWaitUTI();
         if (CFW_ImsSetVolte(setvolte, uti, sim) != 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
@@ -2603,6 +2626,7 @@ static int generateCeerRCCode(uint32_t cause)
     case CFW_CC_CAUSE_NOUSED_CAUSE:
     case CFW_CC_CAUSE_USER_ALERTING_NO_ANSWER:
     case CFW_CC_CAUSE_RECOVERY_ON_TIMER_EXPIRY:
+    case CFW_CC_CAUSE_DESTINATION_OUT_OF_ORDER:
         code = CMD_RC_NOANSWER;
         break;
     case CFW_CC_CAUSE_NORMAL_CALL_CLEARING:

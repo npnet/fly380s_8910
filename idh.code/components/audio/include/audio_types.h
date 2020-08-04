@@ -106,7 +106,7 @@ typedef struct
     uint32_t chunk_size;     ///< file size minus 8
     uint32_t format_id;      ///< AUDIO_WAV_WAVE_ID
     uint32_t chunk_fmt_id;   ///< AUDIO_WAV_FMT_ID
-    uint32_t chunk_fmt_size; ///< 16
+    uint32_t chunk_fmt_size; ///< 16,18
     uint16_t audio_fmt;      ///< 1: PCM
     uint16_t channels;       ///< channel number
     uint32_t sample_rate;    ///< sample rate in Hz

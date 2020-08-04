@@ -233,6 +233,7 @@ int atCfgProfileEncode(const atSetting_t *p, void *buf, size_t size)
     PB_OPT_ENC_ASSIGN(p->mcuNotifySleepDelayMs, mcuNotifySleepDelayMs);
     PB_OPT_ENC_ASSIGN(p->csta, csta);
     PB_OPT_ENC_ASSIGN(p->csvm, csvm);
+    PB_OPT_ENC_ASSIGN(p->detectMBS, detectMBS);
     return pbEncodeToMem(fields, pbs, buf, size);
 }
 
@@ -280,6 +281,7 @@ bool atCfgProfileDecode(atSetting_t *p, const void *buf, size_t size)
     PB_OPT_DEC_ASSIGN(p->mcuNotifySleepDelayMs, mcuNotifySleepDelayMs);
     PB_OPT_DEC_ASSIGN(p->csta, csta);
     PB_OPT_DEC_ASSIGN(p->csvm, csvm);
+    PB_OPT_DEC_ASSIGN(p->detectMBS, detectMBS);
     return true;
 }
 

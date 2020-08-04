@@ -146,10 +146,20 @@ drvGpio_t *drvGpioOpen(uint32_t id, drvGpioConfig_t *cfg, drvGpioIntrCB_t cb, vo
         osiExitCritical(critical);
         return NULL;
     }
+
     if (p->gpios[id] != NULL)
+    {
+        osiExitCritical(critical);
         return p->gpios[id];
+    }
 
     drvGpio_t *d = (drvGpio_t *)calloc(1, sizeof(drvGpio_t));
+    if (d == NULL)
+    {
+        osiExitCritical(critical);
+        return NULL;
+    }
+
     d->id = id;
     d->cb = cb;
     d->cb_ctx = cb_ctx;
@@ -234,7 +244,8 @@ void drvGpioClose(drvGpio_t *d)
     hwp->gpint_mode_clr_reg = (1 << lid);
 
     hwp->gpio_oen_set_in = (1 << lid);
-    p->gpios[d->id] = NULL;
+    free(d);
+    p->gpios[lid] = NULL;
     osiExitCritical(critical);
 }
 

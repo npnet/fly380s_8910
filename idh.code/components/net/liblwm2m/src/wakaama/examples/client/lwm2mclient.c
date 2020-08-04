@@ -1109,6 +1109,9 @@ int lwm2mclient_main(int argc, char *argv[])
     char * psk = NULL;
     uint16_t pskLen = 0;
     char * pskBuffer = NULL;
+    char serverUri[50];
+    int serverId = 1;
+    lwm2m_object_t * objArray[7] = {NULL};
 
     /*
      * The function start by setting up the command line interface (which may or not be useful depending on your project)
@@ -1380,9 +1383,6 @@ int lwm2mclient_main(int argc, char *argv[])
     }
 #endif
 
-    char serverUri[50];
-    int serverId = 1;
-    lwm2m_object_t * objArray[7] = {NULL};
 #if(defined WITH_TINYDTLS) || (defined WITH_MBEDDTLS)
     if (psk != NULL || pskId != NULL)
         sprintf (serverUri, "coaps://%s:%s", server, serverPort);

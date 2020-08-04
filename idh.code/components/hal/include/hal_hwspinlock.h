@@ -28,6 +28,11 @@ extern "C" {
 #define HAL_HWSPINLOCK_ID_ADIBUS 0
 
 /**
+ * reserved HW spinlock ID for EFUSE access
+ */
+#define HAL_HWSPINLOCK_ID_EFUSE 8
+
+/**
  * reserved HW spinlock ID for IPC
  */
 #define HAL_HWSPINLOCK_ID_IPC 9

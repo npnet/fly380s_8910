@@ -759,6 +759,8 @@ int WebSocket_receiveFrame(networkHandles *net,
 				if ( !b || len == 0u )
 				{
 					rc = TCPSOCKET_INTERRUPTED;
+                                   if(res != NULL)
+                                       free( res );
 					goto exit;
 				}
 
@@ -776,6 +778,8 @@ int WebSocket_receiveFrame(networkHandles *net,
 				       opcode < WebSocket_OP_CLOSE ) )
 				{
 					rc = SOCKET_ERROR;
+                                   if(res != NULL)
+                                       free( res );
 					goto exit;
 				}
 
@@ -791,6 +795,8 @@ int WebSocket_receiveFrame(networkHandles *net,
 					if ( !b || len == 0u )
 					{
 						rc = TCPSOCKET_INTERRUPTED;
+                                          if(res != NULL)
+                                               free( res );
 						goto exit;
 					}
 					/* convert from big endian 16 to host */
@@ -803,6 +809,8 @@ int WebSocket_receiveFrame(networkHandles *net,
 					if ( !b || len == 0u )
 					{
 						rc = TCPSOCKET_INTERRUPTED;
+                                          if(res != NULL)
+                                              free( res );
 						goto exit;
 					}
 					/* convert from big-endian 64 to host */
@@ -816,6 +824,8 @@ int WebSocket_receiveFrame(networkHandles *net,
 					if ( !b || len == 0u )
 					{
 						rc = TCPSOCKET_INTERRUPTED;
+                                          if(res != NULL)
+                                              free( res );
 						goto exit;
 					}
 					memcpy( &mask[0], b, sizeof(uint32_t));
@@ -827,6 +837,8 @@ int WebSocket_receiveFrame(networkHandles *net,
 				if ( !b || len == 0u )
 				{
 					rc = TCPSOCKET_INTERRUPTED;
+                                   if(res != NULL)
+                                       free( res );
 					goto exit;
 				}
 

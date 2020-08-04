@@ -161,4 +161,12 @@
  */
 #cmakedefine CONFIG_KERNEL_BLUE_SCREEN_HANDLER_COUNT @CONFIG_KERNEL_BLUE_SCREEN_HANDLER_COUNT@
 
+/**
+ * whether to enable watchdog
+ *
+ * By default, watchdog will be enabled when \p BUILD_RELEASE_TYPE is
+ * "release".
+ */
+#cmakedefine CONFIG_WDT_ENABLE
+
 #endif

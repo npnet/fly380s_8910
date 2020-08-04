@@ -178,7 +178,10 @@ void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
                 {
                     OSI_LOGI(0, "SPBTTEST: enter EUT");
                     //MNPHONE_SetDisablePowerSweep(true);
-                    BT_EnterEutMode();
+                    if (BT_ERROR == BT_EnterEutMode())
+                    {
+                        RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL); //init not complete, after waiting a miniate,retry
+                    }
                 }
                 else if (2 == type_oper) // enter nonSignal mode
                 {
@@ -186,8 +189,14 @@ void AT_SPBT_CmdFunc_TEST(atCommand_t *pParam)
 
                     BT_SetTestMode(BT_TESTMODE_NONSIG);
 
-                    BT_Start();
-                    osiThreadSleep(700); //wait BT init
+                    if (BT_PENDING == BT_Start())
+                    {
+                        osiThreadSleep(700); //wait BT init
+                    }
+                    else
+                    {
+                        RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL); //init not complete, after waiting a miniate,retry
+                    }
                 }
                 else
                 {

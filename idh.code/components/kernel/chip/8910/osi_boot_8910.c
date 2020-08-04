@@ -42,7 +42,6 @@
 #define SUSPEND_DEBUG hwp_idle->idle_res9 = __LINE__
 #endif
 
-#define DELAYUS(us) halApplyRegisters(REG_APPLY_UDELAY(us), REG_APPLY_END)
 #define IDLE_SLEEP_ENABLE_MAGIC 0x49444c45
 #define AP_WAKEUP_JUMP_MAGIC 0xD8E5BEAF
 #define PMIC_PWR_PROT_MAGIC 0x6e7f
@@ -66,18 +65,20 @@ typedef struct
     uint32_t cpsr_sys;
     uint32_t ttbr0;
     uint32_t dacr;
+    uint32_t sys_ctrl_cfg_misc_cfg;
     uint8_t sram[CONFIG_APP_SRAM_SIZE - CONFIG_STACK_BOTTOM];
     uint8_t sram_shmem[CONFIG_APP_SRAM_SHMEM_SIZE];
 } cpuSuspendContext_t;
 
 static cpuSuspendContext_t gCpuSuspendCtx;
 
-extern void WakeupPm1_Handler(void);
-extern void WakeupPm2_Handler(void);
-extern int SaveContext(void *ctx, void (*post)(void));
-extern OSI_NO_RETURN void RestoreContext(void *ctx);
+extern void osiWakePm1Entry(void);
+extern void osiWakePm2Entry(void);
 
-static void _sramBackup(void)
+/**
+ * Backup SRAM to PSRAM, due to SRAM will be power off during suspend.
+ */
+static void prvSramBackup(void)
 {
     extern uint32_t AP_SRAM_BACKUP_START_SYM;
     extern uint32_t AP_SRAM_BACKUP_END_SYM;
@@ -85,7 +86,10 @@ static void _sramBackup(void)
     memcpy(gCpuSuspendCtx.sram_shmem, (void *)AP_SRAM_SHMEM_START, CONFIG_APP_SRAM_SHMEM_SIZE);
 }
 
-static void _sramRestore(void)
+/**
+ * Restore SRAM from PSRAM
+ */
+static void prvSramRestore(void)
 {
     extern uint32_t AP_SRAM_BACKUP_START_SYM;
     extern uint32_t AP_SRAM_BACKUP_END_SYM;
@@ -93,7 +97,43 @@ static void _sramRestore(void)
     memcpy((void *)AP_SRAM_SHMEM_START, gCpuSuspendCtx.sram_shmem, CONFIG_APP_SRAM_SHMEM_SIZE);
 }
 
-static inline void _mmuInit(void)
+/**
+ * Save context (r4-r14) to specified memory, and switch stack to
+ * SRAM, and call specified function. If \p post returns, this will
+ * return true, to indicate suspend fail.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type"
+__attribute__((naked, target("arm"))) static bool prvInvokeSuspendPost(void *ctx, void (*post)(void))
+{
+    asm volatile("stmia  r0, {r4-r14}\n"
+                 "mov    r2, sp\n"
+                 "ldr    sp, =__svc_stack_top\n"
+                 "push   {r2, lr}\n"
+                 "blx    r1\n"
+                 "pop    {r2, lr}\n"
+                 "mov    sp, r2\n"
+                 "mov    r0, #1\n"
+                 "bx     lr\n");
+}
+#pragma GCC diagnostic pop
+
+/**
+ * Restore context from specified memory, and return to \p lr in the
+ * context, rather then caller of this. The return value for \p lr
+ * (not for caller) is false, to indicate resume.
+ */
+__attribute__((naked, target("arm"))) static void prvRestoreContext(void *ctx)
+{
+    asm volatile("ldmia   r0, {r4-r14}\n"
+                 "mov     r0, #0\n"
+                 "bx      lr");
+}
+
+/**
+ * MMU initialization for cold boot
+ */
+static inline void prvMmuInit(void)
 {
     // Invalidate entire Unified TLB
     __set_TLBIALL(0);
@@ -123,7 +163,10 @@ static inline void _mmuInit(void)
     L1C_EnableBTAC();
 }
 
-static void _mmuWakeInit(void)
+/**
+ * MMU initialization for wakeup. TTB is restored from RAM.
+ */
+static void prvMmuWakeInit(void)
 {
     // Invalidate entire Unified TLB
     __set_TLBIALL(0);
@@ -138,10 +181,10 @@ static void _mmuWakeInit(void)
     __DSB();
     __ISB();
 
-    //  Invalidate data cache
+    // Invalidate data cache
     L1C_InvalidateDCacheAll();
 
-    // Create Translation Table
+    // Restore Translation Table
     __set_TTBR0(gCpuSuspendCtx.ttbr0);
     __ISB();
     __set_DACR(gCpuSuspendCtx.dacr);
@@ -155,7 +198,10 @@ static void _mmuWakeInit(void)
     L1C_EnableBTAC();
 }
 
-static void _heapInit(void)
+/**
+ * Initialize heap
+ */
+static void prvHeapInit(void)
 {
     extern uint32_t __heap_start;
     extern uint32_t __heap_end;
@@ -169,6 +215,9 @@ static void _heapInit(void)
     OSI_LOGI(0, "ram heap start/%p size/%d pool/%p", heap_start, heap_size, ram_heap);
 }
 
+/**
+ * Cold boot, called from \p Reset_Handler.
+ */
 OSI_NO_RETURN void osiBootStart(uint32_t param)
 {
     // I cache is enabled, and D cache is disabled
@@ -182,7 +231,7 @@ OSI_NO_RETURN void osiBootStart(uint32_t param)
 
     halClockInit();
     halRamInit();
-    _mmuInit();
+    prvMmuInit();
 
     OSI_LOAD_SECTION(ramtext);
     OSI_LOAD_SECTION(data);
@@ -200,7 +249,7 @@ OSI_NO_RETURN void osiBootStart(uint32_t param)
     osiTraceBufInit();
     osiProfileInit();
     osiPmInit();
-    _heapInit();
+    prvHeapInit();
 
     halIomuxInit();
     halAdiBusInit();
@@ -210,6 +259,10 @@ OSI_NO_RETURN void osiBootStart(uint32_t param)
     osiKernelStart();
 }
 
+/**
+ * PM1 wakeup, it is called from \p osiWakePm1Entry. Clock settings
+ * are kept in PM1.
+ */
 OSI_NO_RETURN void osiWakePm1(void)
 {
     // now: I cache is enabled, D cache is disabled
@@ -222,19 +275,25 @@ OSI_NO_RETURN void osiWakePm1(void)
                       REG_APPLY_END);
 
     halRamWakeInit();
-    _mmuWakeInit();
+    prvMmuWakeInit();
     __FPU_Enable();
 
-    _sramRestore();
+    prvSramRestore();
 
     // sync cache after code copy
     L1C_CleanDCacheAll();
     __DSB();
     __ISB();
 
-    RestoreContext(gCpuSuspendCtx.reg_sys);
+    prvRestoreContext(gCpuSuspendCtx.reg_sys);
+
+    OSI_DEAD_LOOP; // shouldn't come here
 }
 
+/**
+ * PM1 wakeup, it is called from \p osiWakePm2Entry. Clock settings
+ * are lost in PM2.
+ */
 OSI_NO_RETURN void osiWakePm2(void)
 {
     // now: I cache is enabled, D cache is disabled
@@ -245,20 +304,25 @@ OSI_NO_RETURN void osiWakePm2(void)
 
     halClockInit();
     halRamWakeInit();
-    _mmuWakeInit();
+    prvMmuWakeInit();
     __FPU_Enable();
 
-    _sramRestore();
+    prvSramRestore();
 
     // sync cache after code copy
     L1C_CleanDCacheAll();
     __DSB();
     __ISB();
 
-    RestoreContext(gCpuSuspendCtx.reg_sys);
+    prvRestoreContext(gCpuSuspendCtx.reg_sys);
+
+    OSI_DEAD_LOOP; // shouldn't come here
 }
 
-static uint32_t _clearWakeSource(bool aborted)
+/**
+ * Get wake source, and clear wake source
+ */
+static uint32_t prvGetClearWakeSource(bool aborted)
 {
     REG_CP_IDLE_IDL_AWK_ST_T awk_st = {hwp_idle->idl_awk_st};
     REG_CP_IDLE_IDL_AWK_ST_T awk_st_clr = {
@@ -299,26 +363,43 @@ static uint32_t _clearWakeSource(bool aborted)
     return source;
 }
 
-static void _suspendPost(void)
+/**
+ * Suspend after stack is switched to SRAM
+ */
+static void prvSuspendPost(void)
 {
     osiSuspendMode_t mode = gCpuSuspendCtx.mode;
 
     if (mode == OSI_SUSPEND_PM1)
     {
         halPmuEnterPm1();
-        AP_WAKEUP_JUMP_ADDR_REG = (uint32_t)WakeupPm1_Handler;
+        AP_WAKEUP_JUMP_ADDR_REG = (uint32_t)osiWakePm1Entry;
     }
     else
     {
         halPmuEnterPm2();
-        AP_WAKEUP_JUMP_ADDR_REG = (uint32_t)WakeupPm2_Handler;
+        AP_WAKEUP_JUMP_ADDR_REG = (uint32_t)osiWakePm2Entry;
     }
 
-    _sramBackup();
+    prvSramBackup();
 
     // go to sleep, really
-    L1C_CleanDCacheAll();
+    L1C_CleanInvalidateDCacheAll();
     __DSB();
+
+#if defined(CONFIG_USE_PSRAM) && defined(CONFIG_PSRAM_LP_HALF_SLEEP)
+    // When half sleep is enabled, PSRAM can't be accessed from here.
+    // CP shouldn't access PSRAM also. It can't work by just disable
+    // CP clock.
+
+    unsigned sctlr = __get_SCTLR();
+    sctlr &= ~SCTLR_Z_Msk; // disable branch prediction
+    sctlr &= ~SCTLR_M_Msk; // disable MMU, due to TTB is on PSRAM
+    __set_SCTLR(sctlr);
+    __ISB();
+
+    halRamSuspend();
+#endif
 
     hwp_idle->idl_ctrl_sys2 = IDLE_SLEEP_ENABLE_MAGIC;
     AP_WAKEUP_JUMP_MAGIC_REG = AP_WAKEUP_JUMP_MAGIC;
@@ -326,62 +407,96 @@ static void _suspendPost(void)
     __DSB();
     __ISB();
     __WFI();
+
+    // Delay a while. There are no clear reason. Not sure whether it will
+    // happen: CPU exit WFI, and then system enter PM1.
+    osiDelayLoops(50);
+
+    // come here when suspend failed.
+    hwp_idle->idl_awk_self = 1;
+    OSI_POLL_WAIT(hwp_idle->idl_ctrl_sys2 == 0);
+
+    hwp_idle->idl_awk_self = 0;
+    AP_WAKEUP_JUMP_MAGIC_REG = 0;
+
+#if defined(CONFIG_USE_PSRAM) && defined(CONFIG_PSRAM_LP_HALF_SLEEP)
+    halRamSuspendAbort();
+
+    sctlr = __get_SCTLR();
+    sctlr |= SCTLR_Z_Msk; // enable branch prediction
+    sctlr |= SCTLR_M_Msk; // enable MMU
+    sctlr |= SCTLR_AFE_Msk;
+    sctlr &= ~SCTLR_TRE_Msk;
+    __set_SCTLR(sctlr);
+    __ISB();
+#endif
 }
 
+/**
+ * Process after suspend fail (must be no-inline), return wake source.
+ */
+OSI_NO_INLINE static uint32_t prvSuspendFailed(void)
+{
+    // come here when suspend failed.
+    uint32_t source = prvGetClearWakeSource(true);
+    source |= OSI_RESUME_ABORT;
+
+    if (gCpuSuspendCtx.mode == OSI_SUSPEND_PM1)
+        halPmuAbortPm1();
+    else
+        halPmuAbortPm2();
+    return source;
+}
+
+/**
+ * Process after wakeup (must be no-inline), return wake source.
+ */
+OSI_NO_INLINE static uint32_t prvSuspendResume(void)
+{
+    // come here from wakeup handler
+    __set_CPSR(gCpuSuspendCtx.cpsr_sys);
+
+    hwp_idle->idl_osw2_en = 0; // disable it
+
+    if (gCpuSuspendCtx.mode == OSI_SUSPEND_PM1)
+        halPmuExitPm1();
+    else
+        halPmuExitPm2();
+
+    if (gCpuSuspendCtx.mode == OSI_SUSPEND_PM2)
+    {
+        hwp_sysCtrl->cfg_misc_cfg = gCpuSuspendCtx.sys_ctrl_cfg_misc_cfg;
+    }
+    return prvGetClearWakeSource(false);
+}
+
+/**
+ * CPU suspend. It may return either from suspend fail, or from resume.
+ */
 uint32_t osiPmCpuSuspend(osiSuspendMode_t mode, int64_t sleep_ms)
 {
     gCpuSuspendCtx.mode = mode;
     gCpuSuspendCtx.cpsr_sys = __get_CPSR();
     gCpuSuspendCtx.ttbr0 = __get_TTBR0();
     gCpuSuspendCtx.dacr = __get_DACR();
+    gCpuSuspendCtx.sys_ctrl_cfg_misc_cfg = hwp_sysCtrl->cfg_misc_cfg;
 
     REG_CP_IDLE_IDL_OSW2_EN_T idl_osw2_en = {};
     if (sleep_ms != INT64_MAX)
     {
-        uint32_t ticks = OSI_MS_TO_TICK16K(sleep_ms);
+        int64_t ticks = OSI_MS_TO_TICK16K(sleep_ms);
 
         idl_osw2_en.b.osw2_en = 1;
         idl_osw2_en.b.osw2_time = (ticks >= 0x7fffffff) ? 0x7fffffff : ticks;
     }
     hwp_idle->idl_osw2_en = idl_osw2_en.v;
 
-    if (SaveContext(gCpuSuspendCtx.reg_sys, _suspendPost) == 1)
-    {
-        // come here when suspend failed.
-        hwp_idle->idl_awk_self = 1;
-        OSI_POLL_WAIT(hwp_idle->idl_ctrl_sys2 == 0);
+    bool failed = prvInvokeSuspendPost(gCpuSuspendCtx.reg_sys, prvSuspendPost);
 
-        hwp_idle->idl_awk_self = 0;
-        AP_WAKEUP_JUMP_MAGIC_REG = 0;
-
-        uint32_t source = _clearWakeSource(true);
-        source |= OSI_RESUME_ABORT;
-
-        if (mode == OSI_SUSPEND_PM1)
-            halPmuAbortPm1();
-        else
-            halPmuAbortPm2();
-        return source;
-    }
-
-    // come here from wakeup handler
-    __DMB();
-
-    __set_CPSR(gCpuSuspendCtx.cpsr_sys);
-
-    hwp_idle->idl_osw2_en = 0; // disable it
-
-    if (mode == OSI_SUSPEND_PM1)
-        halPmuExitPm1();
-    else
-        halPmuExitPm2();
-
-    uint32_t source = _clearWakeSource(false);
-    if (gCpuSuspendCtx.mode == OSI_SUSPEND_PM2)
-    {
-        hwp_sysCtrl->cfg_misc_cfg |= (1 << 12); // ap_uart_out_sel
-    }
-    return source;
+    // We come here either from suspend fail, or from wakeup. To avoid
+    // unwanted compiler optimization, no-inline functions are used.
+    OSI_BARRIER();
+    return failed ? prvSuspendFailed() : prvSuspendResume();
 }
 
 uint64_t osiCpDeepSleepTime()

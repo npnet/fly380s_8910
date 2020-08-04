@@ -726,7 +726,10 @@ void atCmdHandleCCLK(atCommand_t *cmd)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
         if (has_zz)
+        {
             gAtSetting.timezone = timezone;
+            Cfw_SetTimezone(timezone);
+        }
 
         set_etime = osiSetEpochTime((mktime(&tm) - timezone * CFW_TIME_ZONE_SECOND) * 1000LL);
         if (!set_etime)
@@ -1428,7 +1431,7 @@ void atCmdHandleIPR(atCommand_t *cmd)
     }
     else if (cmd->type == AT_CMD_TEST)
     {
-        atCmdRespInfoText(cmd->engine, "+IPR: (0,2400,4800,9600,14400,19200,28800,33600,38400,57600,115200),(230400,460800,921600)");
+        atCmdRespInfoText(cmd->engine, "+IPR: (0,2400,4800,9600,14400,19200,28800,33600,38400,57600,115200,230400,460800,921600)");
         atCmdRespOK(cmd->engine);
     }
     else if (cmd->type == AT_CMD_READ)

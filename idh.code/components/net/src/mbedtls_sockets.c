@@ -118,6 +118,7 @@ static void Mbedsocket_TaskEntry(void *pData);
 static void Mbedsocket_InternalRxTimerFun(uint8_t);
 int32_t mbedtls_connect(TLSSOCK_HANDLE handle);
 static void Mbedsocket_ConnectEvent(TLSSOCK_HANDLE handle, int32_t error_code);
+static void tcpip_rsp(osiEvent_t *pEvent);
 
 static int8_t Mbedsocket_GetSSIDBySocket(SOCKET nSocket)
 {
@@ -232,9 +233,10 @@ static void MBEDTLS_TcpipRsp(void *param)
         if (tlssock_ptr->server_fd.fd == uSocket)
         {
             int ret;
-            CFW_TcpipSocketSetParam(uSocket, NULL, 0);
+            CFW_TcpipSocketSetParam(uSocket, NULL, (TLSSOCK_HANDLE)tlssock_ptr);
 
             ret = mbedtls_connect((TLSSOCK_HANDLE)tlssock_ptr);
+            CFW_TcpipSocketSetParam(uSocket, (osiCallback_t)tcpip_rsp, (TLSSOCK_HANDLE)tlssock_ptr);
 
             Mbedsocket_ConnectEvent((TLSSOCK_HANDLE)tlssock_ptr, ret);
             ssid = (int32_t)Mbedsocket_GetSSIDByHandle((TLSSOCK_HANDLE)tlssock_ptr);

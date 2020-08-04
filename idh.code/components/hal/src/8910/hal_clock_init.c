@@ -17,8 +17,17 @@
 #include "osi_api.h"
 #include "connectivity_config.h"
 
-
-#define DELAYUS(us) halApplyRegisters(REG_APPLY_UDELAY(us), REG_APPLY_END)
+#define MR0 (0)
+#define MR1 (1)
+#define MR2 (2)
+#define MR3 (3)
+#define MR4 (4)
+#define MR5 (5)
+#define MR6 (6)
+#define MR7 (7)
+#define MR8 (8)
+#define DMC_MR_WRITE_CMD(mr, val) (DMC400_DIRECT_CMD_MRS | ((val) << 8) | (mr))
+#define DMC_MR_READ_CMD(mr, val) (DMC400_DIRECT_CMD_MRR | (mr))
 
 typedef struct
 {
@@ -355,7 +364,7 @@ void halRamInit(void)
     if (memc_status.b.memc_status != 0)
     {
         memc_cmd.b.memc_cmd = 0; // CONFIG
-        DELAYUS(10);
+        osiDelayUS(10);
         hwp_dmcCtrl->memc_cmd = memc_cmd.v;
     }
 
@@ -367,9 +376,52 @@ void halRamInit(void)
     hwp_sysreg->ddr_slp_ctrl_enable = 1;
 }
 
+/**
+ * PSRAM exit half sleep, a low pulse of CE with width tXHPS, and wait tXHS.
+ */
+#if defined(CONFIG_USE_PSRAM) && defined(CONFIG_PSRAM_LP_HALF_SLEEP)
+static void prvPsramExitHalfSleep(void)
+{
+    // select iomux for software
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_oe_wr_ads0 = 0x00110000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_oe_wr_ads1 = 0x00110000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_out_wr_ads0 = 0x00100000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_out_wr_ads1 = 0x00100000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_sel_wr_ads0 = 0x00110000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_sel_wr_ads1 = 0x00110000;
+
+    // exit half sleep
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_out_wr_ads0 = 0x00000000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_out_wr_ads1 = 0x00000000;
+
+    osiDelayUS(4); // tXPHS
+
+    // release clock
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_out_wr_ads0 = 0x00100000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_out_wr_ads1 = 0x00100000;
+
+    osiDelayUS(150); // tXHS
+
+    // select iomux for hardware
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_sel_wr_ads0 = 0x00000000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_sel_wr_ads1 = 0x00000000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_oe_wr_ads0 = 0x00000000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_oe_wr_ads1 = 0x00000000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_out_wr_ads0 = 0x00000000;
+    hwp_psramPhy->psram_rf_cfg_phy_iomux_out_wr_ads1 = 0x00000000;
+
+    osiDelayUS(2);
+}
+#endif
+
 void halRamWakeInit(void)
 {
     hwp_sysreg->ddr_slp_ctrl_enable = 0;
+
+#if defined(CONFIG_USE_PSRAM) && defined(CONFIG_PSRAM_LP_HALF_SLEEP)
+    hwp_pwrctrl->ddr_hold_ctrl = 0;
+    hwp_idle->ddr_latch = 0;
+    hwp_psramPhy->psram_drf_t_phywrlat = 0;
 
     dllTrain_t dll_train_value;
     halRamDllTrain(&dll_train_value);
@@ -381,16 +433,96 @@ void halRamWakeInit(void)
     if (memc_status.b.memc_status != 0)
     {
         memc_cmd.b.memc_cmd = 0; // CONFIG
-        DELAYUS(10);
+        osiDelayUS(10);
+        hwp_dmcCtrl->memc_cmd = memc_cmd.v;
+    }
+
+    _dmc400QosConfig();
+    halApplyRegisterList(ramDmcCfg);
+    prvPsramExitHalfSleep();
+
+    hwp_dmcCtrl->direct_cmd = DMC_MR_WRITE_CMD(MR4, 0x80);
+    osiDelayUS(2);
+
+    hwp_dmcCtrl->memc_cmd = DMC400_MEMC_CMD_GO;
+    osiDelayUS(2);
+
+    hwp_pwrctrl->ddr_slp_req_hwen = 1;
+#else
+    dllTrain_t dll_train_value;
+    halRamDllTrain(&dll_train_value);
+    halApplyRegisterList(ramPhyPadCfg);
+    halWriteDllTrain(&dll_train_value);
+
+    REG_DMC400_MEMC_STATUS_T memc_status = {hwp_dmcCtrl->memc_status};
+    REG_DMC400_MEMC_CMD_T memc_cmd = {};
+    if (memc_status.b.memc_status != 0)
+    {
+        memc_cmd.b.memc_cmd = 0; // CONFIG
+        osiDelayUS(10);
         hwp_dmcCtrl->memc_cmd = memc_cmd.v;
     }
 
     _dmc400QosConfig();
     halApplyRegisterList(ramDmcCfg);
     halApplyRegisterList(ramDmcWakeCfg);
+#endif
 
     hwp_sysreg->ddr_slp_wait_number = 2000;
     hwp_sysreg->ddr_slp_ctrl_enable = 1;
+}
+
+void halRamSuspend(void)
+{
+#if defined(CONFIG_USE_PSRAM) && defined(CONFIG_PSRAM_LP_HALF_SLEEP)
+    hwp_dmcCtrl->memc_cmd = DMC400_MEMC_CMD_CONFIG;
+    OSI_LOOP_WAIT(hwp_dmcCtrl->memc_status == DMC400_MEMC_STATUS_CONFIG);
+
+    hwp_psramPhy->psram_drf_t_phywrlat = 2;
+    hwp_psramPhy->psram_drf_t_cph_wr = 1;
+    hwp_psramPhy->psram_drf_t_cph_rd = 1;
+
+    hwp_dmcCtrl->direct_cmd = DMC_MR_WRITE_CMD(MR4, 0x88);
+    osiDelayUS(2);
+    hwp_dmcCtrl->direct_cmd = DMC_MR_WRITE_CMD(MR6, 0xf0);
+    osiDelayUS(2);
+
+    hwp_psramPhy->psram_rf_cfg_clock_gate = 0;
+    hwp_idle->ddr_latch = 3;
+
+    // DDR lower power bypass. Without this, system can't sleep immediately.
+    // It will try to get ACK from DMC, and DMC can't (maybe) return ACK
+    // in config mode. Only after the timeout, system can sleep.
+    //
+    // Also, it should be set to 1 before normal work mode. It will try to
+    // gate DDR clock when there are no transactions.
+    hwp_pwrctrl->ddr_slp_req_hwen = 0;
+#endif
+}
+
+void halRamSuspendAbort(void)
+{
+#if defined(CONFIG_USE_PSRAM) && defined(CONFIG_PSRAM_LP_HALF_SLEEP)
+    hwp_dmcCtrl->memc_cmd = DMC400_MEMC_CMD_CONFIG;
+    OSI_LOOP_WAIT(hwp_dmcCtrl->memc_status == DMC400_MEMC_STATUS_CONFIG);
+
+    hwp_idle->ddr_latch = 0;
+    hwp_psramPhy->psram_rf_cfg_clock_gate = 0x1f;
+
+    prvPsramExitHalfSleep();
+
+    hwp_dmcCtrl->direct_cmd = DMC_MR_WRITE_CMD(MR4, 0x80);
+    osiDelayUS(2);
+
+    hwp_psramPhy->psram_drf_t_cph_wr = 6;
+    hwp_psramPhy->psram_drf_t_cph_rd = 0x12;
+    hwp_psramPhy->psram_drf_t_phywrlat = 0;
+
+    hwp_dmcCtrl->memc_cmd = DMC400_MEMC_CMD_GO;
+    osiDelayUS(2);
+
+    hwp_pwrctrl->ddr_slp_req_hwen = 1;
+#endif
 }
 
 void halClockInit(void)
@@ -428,7 +560,7 @@ void halClockInit(void)
     hwp_analogReg->sdm_apll_reg1 = _pllDividerByFreq(CONFIG_DEFAULT_CPUPLL_FREQ);
 
     // wait a while for frequency stable
-    DELAYUS(300);
+    osiDelayUS(300);
 
     // enable MEMPLL, in case it is not enabled for unknown reason
     REG_SYS_CTRL_CFG_MISC1_CFG_T cfg_misc1 = {hwp_sysCtrl->cfg_misc1_cfg};

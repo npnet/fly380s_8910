@@ -710,6 +710,16 @@
 #cmakedefine CONFIG_VCORE_LDO_LP @CONFIG_VCORE_LDO_LP@
 
 /**
+ * Power down flash in low power mode (8910)
+ */
+#cmakedefine CONFIG_FLASH_LP_POWER_DOWN
+
+/**
+ * PSRAM enter half sleep in low power mode (8910)
+ */
+#cmakedefine CONFIG_PSRAM_LP_HALF_SLEEP
+
+/**
  * force pull up for tst_h in iomux (8910)
  */
 #cmakedefine CONFIG_TST_H_GROUND
@@ -845,5 +855,21 @@
  * whether there are file system on external flash
  */
 #cmakedefine CONFIG_FS_EXT_ENABLED
+
+/**
+ * whether support ims delta nv
+ */
+#cmakedefine CONFIG_SUPPORT_IMS_DELTA_NV
+
+/**
+ * whether gpio is used for Vbat_RF switch
+ */
+#cmakedefine CONFIG_GPIO_USED_FOR_VBAT_RF_SWITCH
+
+/**
+ * Used gpio x as Vbat_RF swtich
+ *
+ */
+#cmakedefine CONFIG_GPIO_X_USED_FOR_VBAT_RF @CONFIG_GPIO_X_USED_FOR_VBAT_RF@
 
 #endif

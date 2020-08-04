@@ -42,6 +42,19 @@ typedef struct
 
 static atAudioContext_t gAtAudioCtx;
 
+typedef struct
+{
+    auRecorder_t *recorder;
+    audevRecordType_t type;
+    int fd;
+    osiPipe_t *pipe;
+    osiTimer_t *timer;
+    osiNotify_t *notify;
+    auStreamFormat_t format;
+    char *fname;
+} atAudioRecordContext_t;
+static atAudioRecordContext_t gAtRecordCtx;
+#define AT_RECORD_PIPE_SIZE (16000)
 void atCmdHandleCACCP(atCommand_t *pParam)
 {
     char urcBuffer[1024] = {0};
@@ -742,6 +755,24 @@ extern PFN_AT_CC_CB pAT_CC_CALL_TI_ASSIGNED_IND_CB;
 extern PFN_AT_CC_CB pAT_CC_AUDIO_RESTART_IND_CB;
 extern PFN_AT_CC_CB pAT_CC_INITIATE_SPEECH_CALL_RSP_CB;
 extern PFN_AT_CC_CB pAT_CC_RELEASE_CALL_RSP_CB;
+extern PFN_AT_CC_CB pAT_CC_CALL_HOLD_MULTIPARTY_RSP_CB;
+
+typedef enum
+{
+    AT_APP_PLAYER_LOCAL,
+    AT_APP_PLAYER_CALL,
+    AT_APP_RECORDER_LOCAL,
+    AT_APP_RECORDER_CALL,
+    AT_APP_QTY
+} atAudioAppId_t;
+
+typedef struct atCcEventWaiter
+{
+    bool active;
+    PFN_AT_CC_CB cb;
+} atCcEventWaiter_t;
+
+atCcEventWaiter_t gAtCcEventWaiterCtx[AT_APP_QTY];
 
 /*
 Check if Call is running,
@@ -758,15 +789,42 @@ static bool prvIsAudioInCallMode()
         return false;
 }
 
-static bool prvAudioRegisterCCEventCB(PFN_AT_CC_CB pAT_CC_CB)
+uint32_t atCcEventCb(const osiEvent_t *event)
 {
-    if (pAT_CC_CB)
+    for (int i = 0; i < AT_APP_QTY; i++)
     {
-        if ((pAT_CC_SPEECH_CALL_IND_CB != NULL) || (pAT_CC_RELEASE_CALL_IND_CB != NULL) || (pAT_CC_PROGRESS_IND_CB != NULL) || (pAT_CC_ERROR_IND_CB != NULL) || (pAT_CC_CALL_INFO_IND_CB != NULL) || (pAT_CC_CRSSINFO_IND_CB != NULL) || (pAT_CC_AUDIOON_IND_CB != NULL) || (pAT_CC_ALERT_IND_CB != NULL) || (pAT_CC_ACCEPT_SPEECH_CALL_RSP_CB != NULL) || (pAT_CC_CALL_PATH_IND_CB != NULL) || (pAT_CC_CALL_TI_ASSIGNED_IND_CB != NULL) || (pAT_CC_AUDIO_RESTART_IND_CB != NULL) || (pAT_CC_INITIATE_SPEECH_CALL_RSP_CB != NULL) || (pAT_CC_RELEASE_CALL_RSP_CB != NULL))
-            return false;
+        if (gAtCcEventWaiterCtx[i].active)
+            gAtCcEventWaiterCtx[i].cb(event);
+    }
+    return 0;
+}
+
+bool atCcEventWaiterSetCB(atAudioAppId_t id, PFN_AT_CC_CB pAT_CC_CB)
+{
+    if (id >= AT_APP_QTY)
+        return false;
+
+    if (pAT_CC_CB != NULL)
+    {
+        gAtCcEventWaiterCtx[id].cb = pAT_CC_CB;
+        gAtCcEventWaiterCtx[id].active = true;
+    }
+    else
+    {
+        gAtCcEventWaiterCtx[id].cb = NULL;
+        gAtCcEventWaiterCtx[id].active = false;
+    }
+    return true;
+}
+
+static bool prvAtRegisterCcCb(PFN_AT_CC_CB pAT_CC_CB)
+{
+    for (int i = 0; i < AT_APP_QTY; i++)
+    {
+        gAtCcEventWaiterCtx[i].active = false;
+        gAtCcEventWaiterCtx[i].cb = NULL;
     }
 
-    //when call mt or call mo,stop local player
     pAT_CC_SPEECH_CALL_IND_CB = pAT_CC_CB;
     pAT_CC_RELEASE_CALL_IND_CB = pAT_CC_CB;
     pAT_CC_PROGRESS_IND_CB = pAT_CC_CB;
@@ -781,6 +839,7 @@ static bool prvAudioRegisterCCEventCB(PFN_AT_CC_CB pAT_CC_CB)
     pAT_CC_AUDIO_RESTART_IND_CB = pAT_CC_CB;
     pAT_CC_INITIATE_SPEECH_CALL_RSP_CB = pAT_CC_CB;
     pAT_CC_RELEASE_CALL_RSP_CB = pAT_CC_CB;
+    pAT_CC_CALL_HOLD_MULTIPARTY_RSP_CB = pAT_CC_CB;
     return true;
 }
 
@@ -788,8 +847,11 @@ static void prvPlayFinish(void *param)
 {
     if (gAtAudioCtx.player == NULL)
         return;
-    prvAudioRegisterCCEventCB(NULL);
     auPlayerStop(gAtAudioCtx.player);
+    if (gAtAudioCtx.type == 1)
+        atCcEventWaiterSetCB(AT_APP_PLAYER_LOCAL, NULL);
+    if (gAtAudioCtx.type == 2)
+        atCcEventWaiterSetCB(AT_APP_PLAYER_CALL, NULL);
     auPlayerDelete(gAtAudioCtx.player);
     gAtAudioCtx.player = NULL;
 }
@@ -812,6 +874,11 @@ static int prvPlayerStop(atAudioContext_t *d)
     if (!auPlayerStop(d->player))
         return ERR_AT_CME_EXE_FAIL;
 
+    if (d->type == 1)
+        atCcEventWaiterSetCB(AT_APP_PLAYER_LOCAL, NULL);
+    if (d->type == 2)
+        atCcEventWaiterSetCB(AT_APP_PLAYER_CALL, NULL);
+
     auPlayerDelete(d->player);
     d->player = NULL;
     return 0;
@@ -823,13 +890,11 @@ uint32_t auLocalPlayerOnCCEventCB(const osiEvent_t *event)
     if (atCheckCfwEvent(event, EV_CFW_CC_SPEECH_CALL_IND))
     {
         prvPlayerStop(&gAtAudioCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop LocalPlayer when call is outgoing
     if (atCheckCfwEvent(event, EV_CFW_CC_CALL_TI_ASSIGNED_IND))
     {
         prvPlayerStop(&gAtAudioCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
 
     return 0;
@@ -841,41 +906,50 @@ uint32_t auCallPlayerOnCCEventCB(const osiEvent_t *event)
     if (atCheckCfwEvent(event, EV_CFW_CC_SPEECH_CALL_IND))
     {
         prvPlayerStop(&gAtAudioCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop CallPlayer when call is outgoing
     if (atCheckCfwEvent(event, EV_CFW_CC_CALL_TI_ASSIGNED_IND))
     {
         prvPlayerStop(&gAtAudioCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop CallPlayer when ATD stop call
     if (atCheckCfwEvent(event, EV_CFW_CC_RELEASE_CALL_RSP))
     {
         prvPlayerStop(&gAtAudioCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop CallPlayer when remote stop call
     if (atCheckCfwEvent(event, EV_CFW_CC_RELEASE_CALL_IND))
     {
         prvPlayerStop(&gAtAudioCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop CallPlayer when call error
     if (atCheckCfwEvent(event, EV_CFW_CC_ERROR_IND))
     {
         prvPlayerStop(&gAtAudioCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop CallPlayer when volte call switch to gsm
     if (atCheckCfwEvent(event, EV_CFW_CC_AUDIO_RESTART_IND))
     {
         prvPlayerStop(&gAtAudioCtx);
-        prvAudioRegisterCCEventCB(NULL);
+    }
+    //check if multiparty call all release and stop play
+    if (atCheckCfwEvent(event, EV_CFW_CC_CALL_HOLD_MULTIPARTY_RSP))
+    {
+        if (prvIsAudioInCallMode() == false)
+            prvPlayerStop(&gAtAudioCtx);
     }
 
     return 0;
 }
+
+static bool prvIsPlayerWorking(void)
+{
+    int status = (gAtAudioCtx.player == NULL)
+                     ? AUPLAYER_STATUS_IDLE
+                     : auPlayerGetStatus(gAtAudioCtx.player);
+    return (((status == AUPLAYER_STATUS_PLAY) || (status == AUPLAYER_STATUS_FINISHED)) ? true : false);
+}
+static bool prvIsRecordWorking(void);
 
 void atCmdHandleCAUDPLAY(atCommand_t *cmd)
 {
@@ -906,6 +980,13 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
                     RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             }
 
+            int status = (gAtRecordCtx.recorder == NULL)
+                             ? AURECORDER_STATUS_IDLE
+                             : auRecorderGetStatus(gAtRecordCtx.recorder);
+            if ((status == AURECORDER_STATUS_PAUSE) && (strcmp(gAtRecordCtx.fname, fname) == 0))
+            {
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+            }
             //local play is not allowed,during call
             if ((prvIsAudioInCallMode() == true) && (type == 1))
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
@@ -919,7 +1000,8 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
             if (format != AUSTREAM_FORMAT_PCM &&
                 format != AUSTREAM_FORMAT_WAVPCM &&
                 format != AUSTREAM_FORMAT_MP3 &&
-                format != AUSTREAM_FORMAT_AMRNB)
+                format != AUSTREAM_FORMAT_AMRNB &&
+                format != AUSTREAM_FORMAT_AMRWB)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
             if (gAtAudioCtx.player != NULL)
@@ -933,21 +1015,25 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
 
             if (gAtAudioCtx.type == 1)
             {
-                if (prvAudioRegisterCCEventCB(auLocalPlayerOnCCEventCB) == false)
+                if (atCcEventWaiterSetCB(AT_APP_PLAYER_LOCAL, auLocalPlayerOnCCEventCB) == false)
                     RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
             }
             else if (gAtAudioCtx.type == 2)
             {
-                if (prvAudioRegisterCCEventCB(auCallPlayerOnCCEventCB) == false)
+                if (atCcEventWaiterSetCB(AT_APP_PLAYER_CALL, auCallPlayerOnCCEventCB) == false)
                     RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
             }
 
             auPlayerSetEventCallback(gAtAudioCtx.player, prvPlayEventCallback, NULL);
             if (!auPlayerStartFileV2(gAtAudioCtx.player, (audevPlayType_t)type, format, NULL, fname))
             {
+                if (gAtAudioCtx.type == 1)
+                    atCcEventWaiterSetCB(AT_APP_PLAYER_LOCAL, NULL);
+                if (gAtAudioCtx.type == 2)
+                    atCcEventWaiterSetCB(AT_APP_PLAYER_CALL, NULL);
+
                 auPlayerDelete(gAtAudioCtx.player);
                 gAtAudioCtx.player = NULL;
-                prvAudioRegisterCCEventCB(NULL);
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
             }
 
@@ -959,7 +1045,6 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
             int res = prvPlayerStop(&gAtAudioCtx);
-            prvAudioRegisterCCEventCB(NULL);
             RETURN_OK_CME_ERR(cmd->engine, res);
         }
         else if (oper == 3)
@@ -972,8 +1057,6 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
             if (!auPlayerPause(gAtAudioCtx.player))
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
 
-            prvAudioRegisterCCEventCB(NULL);
-
             RETURN_OK(cmd->engine);
         }
         else if (oper == 4)
@@ -982,20 +1065,11 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             if (gAtAudioCtx.player == NULL)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+            if (prvIsRecordWorking() == true)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
 
             if (!auPlayerResume(gAtAudioCtx.player))
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
-
-            if (gAtAudioCtx.type == 1)
-            {
-                if (prvAudioRegisterCCEventCB(auLocalPlayerOnCCEventCB) == false)
-                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-            }
-            else if (gAtAudioCtx.type == 2)
-            {
-                if (prvAudioRegisterCCEventCB(auCallPlayerOnCCEventCB) == false)
-                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-            }
 
             RETURN_OK(cmd->engine);
         }
@@ -1031,21 +1105,6 @@ void atCmdHandleCAUDPLAY(atCommand_t *cmd)
 }
 
 // ============================================================================
-
-typedef struct
-{
-    auRecorder_t *recorder;
-    audevRecordType_t type;
-    int fd;
-    osiPipe_t *pipe;
-    osiTimer_t *timer;
-    osiNotify_t *notify;
-    auStreamFormat_t format;
-} atAudioRecordContext_t;
-
-static atAudioRecordContext_t gAtRecordCtx = {};
-
-#define AT_RECORD_PIPE_SIZE (4096)
 
 /**
  * Pipe reader callback, executed in audio thread
@@ -1116,6 +1175,15 @@ static int prvRecordStop(atAudioRecordContext_t *d)
     if (!auRecorderStop(d->recorder))
         return ERR_AT_CME_EXE_FAIL;
 
+    if (d->type == AUDEV_RECORD_TYPE_MIC)
+        atCcEventWaiterSetCB(AT_APP_RECORDER_LOCAL, NULL);
+    if (d->type != AUDEV_RECORD_TYPE_MIC)
+        atCcEventWaiterSetCB(AT_APP_RECORDER_CALL, NULL);
+    if (d->fname != NULL)
+    {
+        free(d->fname);
+        d->fname = NULL;
+    }
     prvRecordDelete(d);
     return 0;
 }
@@ -1126,7 +1194,6 @@ static int prvRecordStop(atAudioRecordContext_t *d)
 static void prvRecordTimeout(void *param)
 {
     prvRecordStop((atAudioRecordContext_t *)param);
-    prvAudioRegisterCCEventCB(NULL);
 }
 
 /**
@@ -1135,7 +1202,12 @@ static void prvRecordTimeout(void *param)
 static void prvRecordVoiceClosed(void *param)
 {
     prvRecordStop((atAudioRecordContext_t *)param);
-    prvAudioRegisterCCEventCB(NULL);
+    char rsp[64];
+    int status = (gAtRecordCtx.recorder == NULL)
+                     ? AURECORDER_STATUS_IDLE
+                     : auRecorderGetStatus(gAtRecordCtx.recorder);
+    sprintf(rsp, "+CAUDREC: %d", status);
+    atCmdRespDefUrcText(rsp);
 }
 
 /**
@@ -1153,13 +1225,11 @@ uint32_t auLocalRecorderOnCCEventCB(const osiEvent_t *event)
     if (atCheckCfwEvent(event, EV_CFW_CC_SPEECH_CALL_IND))
     {
         prvRecordStop(&gAtRecordCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop LocalRecorder when call is outgoing
     if (atCheckCfwEvent(event, EV_CFW_CC_CALL_TI_ASSIGNED_IND))
     {
         prvRecordStop(&gAtRecordCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     return 0;
 }
@@ -1170,31 +1240,26 @@ uint32_t auCallRecorderOnCCEventCB(const osiEvent_t *event)
     if (atCheckCfwEvent(event, EV_CFW_CC_SPEECH_CALL_IND))
     {
         prvRecordStop(&gAtRecordCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop LocalRecorder when call is outgoing
     if (atCheckCfwEvent(event, EV_CFW_CC_CALL_TI_ASSIGNED_IND))
     {
         prvRecordStop(&gAtRecordCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop LocalRecorder when ATD stop call
     if (atCheckCfwEvent(event, EV_CFW_CC_RELEASE_CALL_RSP))
     {
         prvRecordStop(&gAtRecordCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop LocalRecorder when remote stop call
     if (atCheckCfwEvent(event, EV_CFW_CC_RELEASE_CALL_IND))
     {
         prvRecordStop(&gAtRecordCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //stop LocalRecorder when call error
     if (atCheckCfwEvent(event, EV_CFW_CC_ERROR_IND))
     {
         prvRecordStop(&gAtRecordCtx);
-        prvAudioRegisterCCEventCB(NULL);
     }
     //restart voicerecord when volte call switch to gsm
     if (atCheckCfwEvent(event, EV_CFW_CC_AUDIO_RESTART_IND))
@@ -1202,10 +1267,24 @@ uint32_t auCallRecorderOnCCEventCB(const osiEvent_t *event)
         if (audevRestartVoiceRecord() == false)
         {
             prvRecordStop(&gAtRecordCtx);
-            prvAudioRegisterCCEventCB(NULL);
         }
     }
+    //check if multiparty call all release and stop record
+    if (atCheckCfwEvent(event, EV_CFW_CC_CALL_HOLD_MULTIPARTY_RSP))
+    {
+        if (prvIsAudioInCallMode() == false)
+            prvRecordStop(&gAtRecordCtx);
+    }
     return 0;
+}
+
+static bool prvIsRecordWorking(void)
+{
+    int status = (gAtRecordCtx.recorder == NULL)
+                     ? AURECORDER_STATUS_IDLE
+                     : auRecorderGetStatus(gAtRecordCtx.recorder);
+
+    return (((status == AURECORDER_STATUS_RECORD) || (status == AURECORDER_STATUS_FINISHED)) ? true : false);
 }
 
 /**
@@ -1227,12 +1306,12 @@ static int prvRecordStart(atAudioRecordContext_t *d, audevRecordType_t type,
     //set call event callback handle
     if (type == AUDEV_RECORD_TYPE_MIC)
     {
-        if (prvAudioRegisterCCEventCB(auLocalRecorderOnCCEventCB) == false)
+        if (atCcEventWaiterSetCB(AT_APP_RECORDER_LOCAL, auLocalRecorderOnCCEventCB) == false)
             return ERR_AT_CME_OPERATION_NOT_ALLOWED;
     }
     if (type != AUDEV_RECORD_TYPE_MIC)
     {
-        if (prvAudioRegisterCCEventCB(auCallRecorderOnCCEventCB) == false)
+        if (atCcEventWaiterSetCB(AT_APP_RECORDER_CALL, auCallRecorderOnCCEventCB) == false)
             return ERR_AT_CME_OPERATION_NOT_ALLOWED;
     }
 
@@ -1291,13 +1370,19 @@ static int prvRecordStart(atAudioRecordContext_t *d, audevRecordType_t type,
     return 0;
 
 failed_nomem:
+    if (type == AUDEV_RECORD_TYPE_MIC)
+        atCcEventWaiterSetCB(AT_APP_RECORDER_LOCAL, NULL);
+    if (type != AUDEV_RECORD_TYPE_MIC)
+        atCcEventWaiterSetCB(AT_APP_RECORDER_CALL, NULL);
     prvRecordDelete(d);
-    prvAudioRegisterCCEventCB(NULL);
     return ERR_AT_CME_NO_MEMORY;
 
 failed:
+    if (type == AUDEV_RECORD_TYPE_MIC)
+        atCcEventWaiterSetCB(AT_APP_RECORDER_LOCAL, NULL);
+    if (type != AUDEV_RECORD_TYPE_MIC)
+        atCcEventWaiterSetCB(AT_APP_RECORDER_CALL, NULL);
     prvRecordDelete(d);
-    prvAudioRegisterCCEventCB(NULL);
     return ERR_AT_CME_EXE_FAIL;
 }
 
@@ -1325,6 +1410,13 @@ void atCmdHandleCAUDREC(atCommand_t *cmd)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
             gAtRecordCtx.type = type;
+            gAtRecordCtx.fname = (char *)malloc(strlen(fname) + 1);
+            if (gAtRecordCtx.fname == NULL)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+            memset(gAtRecordCtx.fname, 0x00, strlen(fname) + 1);
+            memcpy(gAtRecordCtx.fname, (char *)fname, strlen(fname));
+
             int res = prvRecordStart(&gAtRecordCtx,
                                      (audevRecordType_t)type,    // enum matches
                                      (auEncodeQuality_t)quality, // enum matches
@@ -1337,7 +1429,11 @@ void atCmdHandleCAUDREC(atCommand_t *cmd)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
             int res = prvRecordStop(&gAtRecordCtx);
-            prvAudioRegisterCCEventCB(NULL);
+            if (gAtRecordCtx.fname != NULL)
+            {
+                free(gAtRecordCtx.fname);
+                gAtRecordCtx.fname = NULL;
+            }
             RETURN_OK_CME_ERR(cmd->engine, res);
         }
         else if (oper == 3)
@@ -1350,8 +1446,6 @@ void atCmdHandleCAUDREC(atCommand_t *cmd)
             if (!auRecorderPause(gAtRecordCtx.recorder))
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
 
-            prvAudioRegisterCCEventCB(NULL);
-
             RETURN_OK(cmd->engine);
         }
         else if (oper == 4)
@@ -1360,20 +1454,12 @@ void atCmdHandleCAUDREC(atCommand_t *cmd)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             if (gAtRecordCtx.recorder == NULL)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+            if (prvIsPlayerWorking() == true)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
 
             if (!auRecorderResume(gAtRecordCtx.recorder))
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
 
-            if (gAtRecordCtx.type == AUDEV_RECORD_TYPE_MIC)
-            {
-                if (prvAudioRegisterCCEventCB(auLocalRecorderOnCCEventCB) == false)
-                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-            }
-            if (gAtRecordCtx.type != AUDEV_RECORD_TYPE_MIC)
-            {
-                if (prvAudioRegisterCCEventCB(auCallRecorderOnCCEventCB) == false)
-                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-            }
             RETURN_OK(cmd->engine);
         }
 
@@ -1397,7 +1483,7 @@ void atCmdHandleCAUDREC(atCommand_t *cmd)
     else if (cmd->type == AT_CMD_TEST)
     {
         char rsp[48];
-        sprintf(rsp, "%s: (1,2),<filename>,(1,2),(0-3),<time>", cmd->desc->name);
+        sprintf(rsp, "%s: (1-4),<filename>,(1,2),(0-3),<time>", cmd->desc->name);
         atCmdRespInfoText(cmd->engine, rsp);
         RETURN_OK(cmd->engine);
     }
@@ -1831,11 +1917,13 @@ void atCmdHandleMAI2SY(atCommand_t *cmd)
         uint8_t master = atParamUintInRange(cmd->params[0], 1, 1, &paramok);
         uint8_t tran_mode = atParamUintInRange(cmd->params[1], 0, 1, &paramok);
         uint8_t sample = atParamUintInRange(cmd->params[2], 0, 4, &paramok);
-        // uint8_t width = atParamUintInRange(cmd->params[3], 0, 0, &paramok);
+        uint8_t width = atParamUintInRange(cmd->params[3], 0, 0, &paramok);
         if (cmd->param_count != 4 || !paramok)
         {
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         }
+
+        (void)width;
 
         HAL_CODEC_CFG_T halCodecCfg = {0};
         int ret = nvmReadAudioCodec(&halCodecCfg, sizeof(HAL_CODEC_CFG_T));
@@ -1936,6 +2024,49 @@ void atCmdHandleCALM(atCommand_t *cmd)
 }
 
 #endif
+void atCmdHandleSETVOS(atCommand_t *cmd)
+{
+    uint8_t nSim = atCmdGetSim(cmd->engine);
+    uint8_t nVidoSurveillance = 0;
+    uint32_t ret = 0;
+    if (cmd->type == AT_CMD_SET)
+    {
+        bool paramok = true;
+        uint8_t nVidoSurveillance = atParamDefUintInRange(cmd->params[0], 0, 0, 1, &paramok);
+        if (!paramok || cmd->param_count != 1)
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_PARAM_INVALID));
+
+        ret = CFW_SetVideoSurveillance(nVidoSurveillance, nSim);
+        if (0 != ret)
+        {
+            OSI_LOGI(0, "AT+SETVOS:Set VidoSurveillance error %d\n\r", ret);
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
+        }
+        atCmdRespOK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_READ)
+    {
+        char rsp[40] = {0};
+        ret = CFW_GetVideoSurveillance(&nVidoSurveillance, nSim);
+        if (0 != ret)
+        {
+            OSI_LOGI(0, "AT+SETVOS:Get VidoSurveillance error %d\n\r", ret);
+            AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
+        }
+        sprintf(rsp, "+SETVOS: %d", nVidoSurveillance);
+        atCmdRespInfoText(cmd->engine, rsp);
+        atCmdRespOK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_TEST)
+    {
+        atCmdRespInfoText(cmd->engine, "+SETVOS:(0-1)");
+        atCmdRespOK(cmd->engine);
+    }
+    else
+    {
+        atCmdRespCmsError(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
+    }
+}
 
 void atCmdHandleMMICG(atCommand_t *cmd)
 {
@@ -1962,6 +2093,7 @@ void atCmdHandleMMICG(atCommand_t *cmd)
         }
         else if (gAtRecordCtx.recorder != NULL)
         {
+            path = 1;
             mode = 2;
             ctrl = 6;
         }
@@ -1986,6 +2118,8 @@ void atCmdHandleMMICG(atCommand_t *cmd)
 void atAudioInit(void)
 {
     gAtAudioCtx.player = NULL;
+    gAtRecordCtx.recorder = NULL;
+    prvAtRegisterCcCb(atCcEventCb);
 }
 
 #endif // CONFIG_AT_AUDIO_SUPPORT

@@ -30,15 +30,15 @@ void atCmdHandleNVPC(atCommand_t *cmd)
     if (cmd->type == AT_CMD_SET)
     {
         bool paramok = true;
-        uint8_t dataType = atParamUintInRange(cmd->params[0], 0, 7, &paramok);
-        uint16_t operType = atParamUintInRange(cmd->params[1], 0, 2, &paramok);
+        uint8_t dataType = atParamUint(cmd->params[0], &paramok);
+        uint16_t operType = atParamUint(cmd->params[1], &paramok);
         if (!paramok)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
         if (operType == 0)
         {
-            uint16_t offset = atParamUintInRange(cmd->params[2], 0, 65535, &paramok);
-            uint16_t dataLength = atParamUintInRange(cmd->params[3], 0, 65535, &paramok);
+            uint16_t offset = atParamUint(cmd->params[2], &paramok);
+            uint16_t dataLength = atParamUint(cmd->params[3], &paramok);
             const char *value = atParamDefStr(cmd->params[4], "", &paramok);
             (void)value; // not used
 
@@ -64,8 +64,8 @@ void atCmdHandleNVPC(atCommand_t *cmd)
         }
         else if (operType == 1)
         {
-            uint16_t offset = atParamUintInRange(cmd->params[2], 0, 65535, &paramok);
-            uint16_t dataLength = atParamUintInRange(cmd->params[3], 0, 65535, &paramok);
+            uint16_t offset = atParamUint(cmd->params[2], &paramok);
+            uint16_t dataLength = atParamUint(cmd->params[3], &paramok);
             const char *value = atParamStr(cmd->params[4], &paramok);
             if (!paramok || cmd->param_count != 5 || strlen(value) != dataLength * 2)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
@@ -97,8 +97,8 @@ void atCmdHandleNVPC(atCommand_t *cmd)
         }
         else
         {
-            uint16_t offset = atParamUintInRange(cmd->params[2], 0, 65535, &paramok);
-            uint16_t dataLength = atParamUintInRange(cmd->params[3], 0, 65535, &paramok);
+            uint16_t offset = atParamUint(cmd->params[2], &paramok);
+            uint16_t dataLength = atParamUint(cmd->params[3], &paramok);
             const char *value = atParamStr(cmd->params[4], &paramok);
             if (!paramok || cmd->param_count != 5 || strlen(value) != dataLength * 2)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
@@ -237,77 +237,19 @@ void atCmdHandleSSIT(atCommand_t *cmd)
 {
     if (cmd->type == AT_CMD_SET)
     {
-        // AT^SSIT=<siModule>[,<cmd>[,<v1>[,<v2>[,<v3>]]]
         bool paramok = true;
-        static const uint32_t module_list[5] = {0, 1, 3, 7, 9};
-        uint8_t module = atParamUintInList(cmd->params[0], module_list, sizeof(module_list) / sizeof(module_list[0]), &paramok);
-        if (!paramok)
-            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
+        uint32_t module = atParamUint(cmd->params[0], &paramok);
         uint32_t testcmd = atParamDefUint(cmd->params[1], 0, &paramok);
         uint32_t param1 = atParamDefUint(cmd->params[2], 0, &paramok);
         uint32_t param2 = atParamDefUint(cmd->params[3], 0, &paramok);
         uint32_t param3 = atParamDefUint(cmd->params[4], 0, &paramok);
-
-        if (module == 0)
-        {
-            static const uint32_t cmd_list[11] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-            testcmd = atParamUintInList(cmd->params[1], cmd_list, sizeof(cmd_list) / sizeof(cmd_list[0]), &paramok);
-            if (!paramok)
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-
-            if ((cmd->param_count == 2) && (_valueInRange(testcmd, 2, 6) || _valueInRange(testcmd, 9, 12)))
-            {
-                if (testcmd == 12)
-                    param1 = 1;
-            }
-            else if ((cmd->param_count == 3) && (testcmd == 7))
-                ;
-            else if ((cmd->param_count == 4) && (testcmd == 8))
-                ;
-            else
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-        }
-        else if ((module == 1) && (cmd->param_count == 2) && _valueInRange(testcmd, 0, 3))
-        {
-            ;
-        }
-        else if ((module == 3) && (cmd->param_count == 4) && _valueInRange(testcmd, 0, 1) && _valueInRange(param1, 0, 1))
-        {
-            param2 = atParamUint(cmd->params[3], &paramok);
-            if (!paramok)
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-        }
-        else if ((module == 7) && _valueInRange(testcmd, 0, 3))
-        {
-            if ((testcmd == 0) && (cmd->param_count == 4) && _valueInRange(param1, 0, 1) && _valueInRange(param2, 0, 1))
-                ;
-            else if ((testcmd == 1) && (cmd->param_count == 2))
-                ;
-            else if ((testcmd == 2) && (cmd->param_count == 3))
-            {
-                param1 = atParamUint(cmd->params[2], &paramok);
-                if (!paramok)
-                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-            }
-            else if ((testcmd == 3) && (cmd->param_count == 3) && _valueInRange(param1, 0, 1))
-            {
-                ;
-            }
-            else
-                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-        }
-        else if ((module == 9) && (cmd->param_count == 3) && _valueInRange(param1, 0, 1))
-        {
-            ;
-        }
-        else
+        if (!paramok || cmd->param_count > 5)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
         uint32_t result = CFW_EmodEngineerCmd(module, testcmd, param1, param2, param3);
 
         char rsp[32];
-        sprintf(rsp, "%s: %d", cmd->desc->name, (unsigned)result);
+        sprintf(rsp, "^SSIT: %d", (unsigned)result);
 
         atCmdRespInfoText(cmd->engine, rsp);
         atCmdRespOK(cmd->engine);

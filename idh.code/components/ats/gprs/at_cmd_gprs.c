@@ -993,8 +993,7 @@ static void _onEV_CFW_GPRS_STATUS_IND(const osiEvent_t *event)
     else
 #endif
     {
-        if ((gAtSetting.sim[nSim].cgreg != 0 && PsStatus != gAtCfwCtx.sim[nSim].cgreg_val) ||
-            cfw_event.nParam2 == 0xFFFFFFF2)
+        if (gAtSetting.sim[nSim].cgreg != 0)
         {
             char rsp[32];
             sprintf(rsp, "+CGREG: %d", PsStatus);
@@ -1094,7 +1093,14 @@ void atCfwGprsInit(void)
                 pdp_cont.nApnSize = g_staAtGprsCidInfo_nv[cid].nApnSize;
                 pdp_cont.nPdpAddrSize = g_staAtGprsCidInfo_nv[cid].nPdpAddrSize;
                 memcpy(pdp_cont.pApn, g_staAtGprsCidInfo_nv[cid].pApn, g_staAtGprsCidInfo_nv[cid].nApnSize);
-                memcpy(pdp_cont.pPdpAddr, g_staAtGprsCidInfo_nv[cid].pPdpAddr, g_staAtGprsCidInfo_nv[cid].nPdpAddrSize);
+                if (pdp_cont.nPdpType == CFW_GPRS_PDP_TYPE_IPV6 && pdp_cont.nPdpAddrSize == 16)
+                {
+                    memcpy(&pdp_cont.pPdpAddr[4], &g_staAtGprsCidInfo_nv[cid].pPdpAddr[4], g_staAtGprsCidInfo_nv[cid].nPdpAddrSize);
+                }
+                else
+                {
+                    memcpy(pdp_cont.pPdpAddr, g_staAtGprsCidInfo_nv[cid].pPdpAddr, g_staAtGprsCidInfo_nv[cid].nPdpAddrSize);
+                }
                 pdp_cont.nApnUserSize = g_staAtGprsCidInfo_nv[cid].nUsernameSize;
                 pdp_cont.nApnPwdSize = g_staAtGprsCidInfo_nv[cid].nPasswordSize;
                 memcpy(pdp_cont.pApnUser, g_staAtGprsCidInfo_nv[cid].uaUsername, g_staAtGprsCidInfo_nv[cid].nUsernameSize);
@@ -1387,6 +1393,18 @@ void atCmdHandleCGDCONT(atCommand_t *cmd)
         pdp_cont.nApnSize = strlen(apn);
         if (pdp_cont.nApnSize > THE_APN_MAX_LEN)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        uint8_t i = 0;
+        for (i = 0; i < strlen(apn); i++)
+        {
+            if ((*(apn + i) < 0x2D) ||
+                ((*(apn + i) > 0x2D && *(apn + i) < 0x30) && (*(apn + i) != 0x2E)) ||
+                (*(apn + i) > 0x39 && *(apn + i) < 0x41) ||
+                (*(apn + i) > 0x5A && *(apn + i) < 0x61) ||
+                (*(apn + i) > 0x7A)) //not "A-Z"(0X41-5A) "a-z"(0X61-7A) "0-9" "-"(0X2D)
+            {
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            }
+        }
         memcpy(pdp_cont.pApn, apn, pdp_cont.nApnSize);
         uint8_t pdp_addr_len = strlen(pdp_addr);
         OSI_LOGI(0, "cgdcont:pdp_addr_len==%d", pdp_addr_len);
@@ -1431,7 +1449,14 @@ void atCmdHandleCGDCONT(atCommand_t *cmd)
         g_staAtGprsCidInfo_nv[cid].nApnSize = pdp_cont.nApnSize;
         g_staAtGprsCidInfo_nv[cid].nPdpAddrSize = pdp_cont.nPdpAddrSize;
         memcpy(g_staAtGprsCidInfo_nv[cid].pApn, pdp_cont.pApn, pdp_cont.nApnSize);
-        memcpy(g_staAtGprsCidInfo_nv[cid].pPdpAddr, pdp_cont.pPdpAddr, pdp_cont.nPdpAddrSize);
+        if (pdp_cont.nPdpType == CFW_GPRS_PDP_TYPE_IPV6 && pdp_cont.nPdpAddrSize == 16)
+        {
+            memcpy(&g_staAtGprsCidInfo_nv[cid].pPdpAddr[4], &pdp_cont.pPdpAddr[4], pdp_cont.nPdpAddrSize);
+        }
+        else
+        {
+            memcpy(g_staAtGprsCidInfo_nv[cid].pPdpAddr, pdp_cont.pPdpAddr, pdp_cont.nPdpAddrSize);
+        }
         atCfgAutoSave();
         RETURN_OK(cmd->engine);
     }
@@ -1461,7 +1486,8 @@ void atCmdHandleCGDCONT(atCommand_t *cmd)
                     uint8_t i = 0;
                     for (i = 0; i < PdnInfo.APNLen; i++)
                     {
-                        if (PdnInfo.AccessPointName[i] == 0x2E) //find first "."
+                        if (((PdnInfo.AccessPointName[i] == 0x2E) && (PdnInfo.AccessPointName[i + 1] == 0x4D) && (PdnInfo.AccessPointName[i + 2] == 0x4E) && (PdnInfo.AccessPointName[i + 3] == 0x43)) ||
+                            ((PdnInfo.AccessPointName[i] == 0x2E) && (PdnInfo.AccessPointName[i + 1] == 0x6D) && (PdnInfo.AccessPointName[i + 2] == 0x6E) && (PdnInfo.AccessPointName[i + 3] == 0x63))) //find first ".mnc" or ".MNC"
                         {
                             PdnInfo.APNLen = i;
                             break;
@@ -1550,7 +1576,8 @@ void atCmdHandleCGDCONT(atCommand_t *cmd)
                     uint8_t i = 0;
                     for (i = 0; i < pdp_cont.nApnSize; i++)
                     {
-                        if (pdp_cont.pApn[i] == 0x2E) //find first "."
+                        if (((pdp_cont.pApn[i] == 0x2E) && (pdp_cont.pApn[i + 1] == 0x4D) && (pdp_cont.pApn[i + 2] == 0x4E) && (pdp_cont.pApn[i + 3] == 0x43)) ||
+                            ((pdp_cont.pApn[i] == 0x2E) && (pdp_cont.pApn[i + 1] == 0x6D) && (pdp_cont.pApn[i + 2] == 0x6E) && (pdp_cont.pApn[i + 3] == 0x63))) //find first ".mnc" or ".MNC"
                         {
                             pdp_cont.nApnSize = i;
                             break;
@@ -1595,9 +1622,10 @@ void atCmdHandleCFGIMSPDN(atCommand_t *cmd)
         bool paramok = true;
         if (1 <= cmd->param_count)
         {
-            cid = atParamDefUintInRange(
-                cmd->params[0], IMS_PDP_CID, IMS_PDP_CID, IMS_PDP_CID, &paramok);
+            cid = atParamUintInRange(cmd->params[0], IMS_PDP_CID, IMS_PDP_CID, &paramok);
             OSI_LOGI(0, "CFGIMSPDN set cid is: %d", cid);
+            if (!paramok)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             if (1 == cmd->param_count)
             {
                 if (CFW_GprsSetInternalPdpCtx(PDP_CTX_TYPE_IMS, &pdp_cont, nSim) != 0)
@@ -1626,6 +1654,18 @@ void atCmdHandleCFGIMSPDN(atCommand_t *cmd)
         pdp_cont.nApnSize = strlen(apn);
         if (pdp_cont.nApnSize > THE_APN_MAX_LEN)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+        uint8_t i = 0;
+        for (i = 0; i < strlen(apn); i++)
+        {
+            if ((*(apn + i) < 0x2D) ||
+                ((*(apn + i) > 0x2D && *(apn + i) < 0x30) && (*(apn + i) != 0x2E)) ||
+                (*(apn + i) > 0x39 && *(apn + i) < 0x41) ||
+                (*(apn + i) > 0x5A && *(apn + i) < 0x61) ||
+                (*(apn + i) > 0x7A)) //not "A-Z"(0X41-5A) "a-z"(0X61-7A) "0-9" "-"(0X2D)
+            {
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+            }
+        }
         if (pdp_cont.nApnSize > 0)
             memcpy(pdp_cont.pApn, apn, pdp_cont.nApnSize);
 
@@ -1633,10 +1673,28 @@ void atCmdHandleCFGIMSPDN(atCommand_t *cmd)
         if (pdp_cont.nPdpAddrSize > 0 && _pdpAddressFromStr(pdp_cont.nPdpType, pdp_addr) != 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         if (pdp_cont.nPdpAddrSize > 0)
-            memcpy(pdp_cont.pPdpAddr, pdp_addr, pdp_cont.nPdpAddrSize);
+        {
+#if LWIP_IPV6
+            if (pdp_cont.nPdpType == CFW_GPRS_PDP_TYPE_IPV6)
+            {
+                ip6_addr_t dns1_ip6;
+                ip6addr_aton(pdp_addr, &dns1_ip6);
+                memcpy(&pdp_cont.pPdpAddr[4], &dns1_ip6.addr[0], 16);
+                pdp_cont.nPdpAddrSize = 16;
+            }
+#endif
+            if (pdp_cont.nPdpType == CFW_GPRS_PDP_TYPE_IP)
+            {
+                uint32_t Pro_DnsIp1 = (uint32_t)inet_addr((const char *)pdp_addr);
+                pdp_cont.pPdpAddr[0] = Pro_DnsIp1;
+                pdp_cont.pPdpAddr[1] = Pro_DnsIp1 >> 8;
+                pdp_cont.pPdpAddr[2] = Pro_DnsIp1 >> 16;
+                pdp_cont.pPdpAddr[3] = Pro_DnsIp1 >> 24;
+                pdp_cont.nPdpAddrSize = 4;
+            }
+        }
         pdp_cont.nDComp = dcomp;
         pdp_cont.nHComp = hcomp;
-        //     pdp_cont.nNSLPI = nslpi;
         if (CFW_GprsSetInternalPdpCtx(PDP_CTX_TYPE_IMS, &pdp_cont, nSim) != 0)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
 
@@ -1656,7 +1714,9 @@ void atCmdHandleCFGIMSPDN(atCommand_t *cmd)
             pdpType = pPdpCont->nPdpType;
             const osiValueStrMap_t *pdp_type_vs = osiVsmapFindByVal(gPdpTypeVSMap, pdpType);
             if (pdp_type_vs == NULL)
-                pdp_type_vs = &gPdpTypeVSMap[0];
+            {
+                RETURN_OK(cmd->engine);
+            }
             char *prsp = &rsp[0];
             prsp += sprintf(prsp, "+CFGIMSPDN: 11,\"%s\"", pdp_type_vs->str);
             if (pPdpCont->nApnSize == 0)
@@ -2638,8 +2698,8 @@ void atCmdHandleCGTFT(atCommand_t *cmd)
 
         if (cmd->param_count > 7)
         {
-            const char *ipsec = atParamStr(cmd->params[7], &paramok);
-            if (!paramok || ipsec == NULL)
+            const char *ipsec = atParamRawText(cmd->params[7], &paramok);
+            if (!paramok)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             uint32_t ipsec_index = 0;
             uint8_t hex_len;
@@ -2662,7 +2722,7 @@ void atCmdHandleCGTFT(atCommand_t *cmd)
 
         if (cmd->param_count > 8)
         {
-            const char *type_of_service = atParamStr(cmd->params[8], &paramok);
+            const char *type_of_service = atParamOptStr(cmd->params[8], &paramok);
             if (!paramok)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             if ((NULL != type_of_service) && strcmp(type_of_service, ""))
@@ -2675,7 +2735,7 @@ void atCmdHandleCGTFT(atCommand_t *cmd)
 
         if (cmd->param_count > 9)
         {
-            const char *FlowLabel = atParamStr(cmd->params[9], &paramok);
+            const char *FlowLabel = atParamRawText(cmd->params[9], &paramok);
             if (!paramok)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             OSI_LOGXI(OSI_LOGPAR_S, 0x100052b5, "CGTFT: FlowLabel  = %s", FlowLabel);
@@ -2700,7 +2760,7 @@ void atCmdHandleCGTFT(atCommand_t *cmd)
 
         if (cmd->param_count > 10)
         {
-            unsigned direction = atParamDefUintInRange(cmd->params[10], 4, 0, 3, &paramok);
+            unsigned direction = atParamDefUintInRange(cmd->params[10], 3, 0, 3, &paramok);
             if (!paramok)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 
@@ -2711,7 +2771,7 @@ void atCmdHandleCGTFT(atCommand_t *cmd)
 
         if (cmd->param_count > 11)
         {
-            const char *SourceMask = atParamStr(cmd->params[11], &paramok);
+            const char *SourceMask = atParamOptStr(cmd->params[11], &paramok);
             if (!paramok)
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
             int count = 1;
@@ -3746,7 +3806,6 @@ static void _cgattGprsAttRsp(atCommand_t *cmd, const osiEvent_t *event)
 void atCmdHandleCGATT(atCommand_t *cmd)
 {
     uint32_t ret;
-    uint8_t uState = 0;
     uint8_t att_state = 0;
     uint8_t nSim = atCmdGetSim(cmd->engine);
     char rsp[32];
@@ -3827,11 +3886,19 @@ void atCmdHandleCGATT(atCommand_t *cmd)
     }
     else if (AT_CMD_READ == cmd->type)
     {
-        ret = CFW_GetGprsAttState(&uState, nSim);
+        CFW_NW_STATUS_INFO sStatus;
+        ret = CFW_GprsGetstatus(&sStatus, nSim);
         if (ret != 0)
             RETURN_CME_CFW_ERR(cmd->engine, ret);
-
-        sprintf(rsp, "+CGATT:%d", uState);
+        if (sStatus.nStatus == CFW_NW_STATUS_REGISTERED_HOME || sStatus.nStatus == CFW_NW_STATUS_REGISTERED_ROAMING)
+        {
+            sStatus.nStatus = 1;
+        }
+        else
+        {
+            sStatus.nStatus = 0;
+        }
+        sprintf(rsp, "+CGATT:%d", sStatus.nStatus);
         atCmdRespInfoText(cmd->engine, rsp);
         atCmdRespOK(cmd->engine);
     }
@@ -4277,7 +4344,7 @@ void atCmdHandlePDNACTINFO(atCommand_t *cmd)
             if (pdnmode) //active pdn
             {
                 if (nCurrentRat == 2) //T3380
-                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 30, 5, 30, &paramok);
+                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 10, 5, 30, &paramok);
                 else //T3482
                     pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 8, 5, 8, &paramok);
                 pdnTimerAndMaxCount.nMaxCount = atParamDefUintInRange(cmd->params[3], 4, 2, 4, &paramok);
@@ -4290,9 +4357,9 @@ void atCmdHandlePDNACTINFO(atCommand_t *cmd)
             else //deactive pdn
             {
                 if (nCurrentRat == 2) //T3390
-                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 8, 2, 8, &paramok);
+                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 5, 2, 8, &paramok);
                 else //T3492
-                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 8, 2, 6, &paramok);
+                    pdnTimerAndMaxCount.nTimeValue = atParamDefUintInRange(cmd->params[2], 6, 2, 6, &paramok);
                 pdnTimerAndMaxCount.nMaxCount = atParamDefUintInRange(cmd->params[3], 4, 2, 4, &paramok);
                 if (!paramok)
                     RETURN_CME_ERR(cmd->engine, ERR_INVALID_PARAMETER);
@@ -4633,6 +4700,8 @@ typedef struct
 static int _pppDataToAt(void *param, uint8_t *data, uint32_t size)
 {
     atDispatch_t *ch = (atDispatch_t *)param;
+    if (!atDispatchIsValid(ch))
+        return 0;
     atDataEngine_t *dengine = atDispatchGetDataEngine(ch);
     if (dengine != NULL)
         atDataWrite(dengine, (const void *)data, (size_t)size);
@@ -4660,6 +4729,18 @@ static int _pppDataToAt(void *param, uint8_t *data, uint32_t size)
 static int _pppAtFlowControl(void *param)
 {
     atDispatch_t *ch = (atDispatch_t *)param;
+    if (ch == NULL)
+    {
+        OSI_LOGE(0, "failed to get PPP dispatch");
+        return 2;
+    }
+
+    if (atDispatchIsValid(ch) == false)
+    {
+        OSI_LOGE(0, "failed to get PPP dispatch atDispatchIsValid");
+        return 2;
+    }
+
     atDevice_t *device = atDispatchGetDevice(ch);
     if (device == NULL)
     {
@@ -5168,7 +5249,7 @@ void atCmdHandleCGREG(atCommand_t *cmd)
     }
     else if (AT_CMD_TEST == cmd->type)
     {
-        atCmdRespInfoText(cmd->engine, "+CGREG: (0,1,2)");
+        atCmdRespInfoText(cmd->engine, "+CGREG: (0-2)");
         atCmdRespOK(cmd->engine);
     }
     else
@@ -5952,6 +6033,10 @@ void atCmdHandleCGEQOS(atCommand_t *cmd)
         unsigned ul_gbr = atParamDefUintInRange(cmd->params[3], 0, 0, 5000, &paramok);
         unsigned dl_mbr = atParamDefUintInRange(cmd->params[4], 0, 0, 10000, &paramok);
         unsigned ul_mbr = atParamDefUintInRange(cmd->params[5], 0, 0, 5000, &paramok);
+
+        AT_Gprs_CidInfo *pinfo = &gAtCfwCtx.sim[nSim].cid_info[cid];
+        if (0 == pinfo->uCid)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
 
         if (osiIsUintInList(qci, qci_unsupported, OSI_ARRAY_SIZE(qci_unsupported)))
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_GPRS_UNSUPPORTED_QCI_VALUE);
@@ -9689,6 +9774,19 @@ void atCmdHandleCFGDFTPDN(atCommand_t *cmd)
             {
                 errCode = ERR_INVALID_PARAMETER;
                 goto cfgdftpdn_fail;
+            }
+            uint8_t i = 0;
+            for (i = 0; i < strlen(apn); i++)
+            {
+                if ((*(apn + i) < 0x2D) ||
+                    ((*(apn + i) > 0x2D && *(apn + i) < 0x30) && (*(apn + i) != 0x2E)) ||
+                    (*(apn + i) > 0x39 && *(apn + i) < 0x41) ||
+                    (*(apn + i) > 0x5A && *(apn + i) < 0x61) ||
+                    (*(apn + i) > 0x7A)) //not "A-Z"(0X41-5A) "a-z"(0X61-7A) "0-9" "-"(0X2D)
+                {
+                    errCode = ERR_INVALID_PARAMETER;
+                    goto cfgdftpdn_fail;
+                }
             }
         }
 

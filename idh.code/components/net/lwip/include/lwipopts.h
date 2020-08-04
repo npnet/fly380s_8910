@@ -104,6 +104,7 @@
 #define DHCP_DEBUG 0
 #define AUTOIP_DEBUG 0
 #define IP6_DEBUG 0
+#define NAT_DEBUG 0
 
 #ifdef CONFIG_NET_LWIP_PPP_ON
 #define PPP_SUPPORT 1

@@ -52,8 +52,10 @@ void simlockDumpFile(void)
     }
     read_len = vfs_file_read(SIMLOCK_DATA_FILE, buf, file_size);
 
+    if (read_len != file_size)
+        OSI_LOGI(0, "SIMLOCK: read file fail read length=%d, read_len = %d", file_size, read_len);
+
     simlockDump((uint8_t *)buf, file_size);
-    OSI_LOGI(0, "SIMLOCK: read file fail read length=%d, read_len = %d", file_size, read_len);
 
     free(buf);
 }
@@ -64,7 +66,7 @@ bool simlockStorageRead(void *buffer,
 {
     bool ret = false;
     int fd;
-    uint32_t read_len;
+    int32_t read_len;
     if (stor_length != STOR_LEN_ANY)
     {
         if (!(offset + length <= stor_length))
@@ -104,7 +106,7 @@ bool simlockStorageWrite(void *buffer,
 {
     bool ret = false;
     int fd;
-    uint32_t write_len;
+    int32_t write_len;
 
     if (stor_length != STOR_LEN_ANY)
     {
@@ -138,13 +140,23 @@ bool simlockStorageWrite(void *buffer,
 
 bool simlockStorageInit(void)
 {
-    int fd;
-    uint32_t file_size = vfs_file_size(SIMLOCK_DATA_FILE);
+    int32_t fd;
+    int32_t file_size = vfs_file_size(SIMLOCK_DATA_FILE);
+    int32_t simlock_storage_size = sizeof(SIMLOCK_STORAGE_STR);
+    int32_t write_len;
+
     if (file_size < 0)
     {
         fd = vfs_open(SIMLOCK_DATA_FILE, O_CREAT | O_WRONLY);
         if (fd < 0)
+        {
+            OSI_LOGI(0, "SIMLOCK: simlock create file fail");
             return false;
+        }
+        char *buf = malloc(simlock_storage_size);
+        memset(buf, 0, simlock_storage_size);
+        if ((write_len = vfs_write(fd, buf, simlock_storage_size)) != simlock_storage_size)
+            OSI_LOGI(0, "SIMLOCK: simlock init file fail length=%d, write_len = %d", simlock_storage_size, write_len);
 
         vfs_close(fd);
     }

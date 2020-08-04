@@ -263,8 +263,11 @@ unsigned auReadBufFetch(auReadBuf_t *d, auReader_t *reader, unsigned size);
  * \param d         read buffer
  * \param reader    audio reader
  * \param size      requested byte count to be skipped
+ * \return
+ *      - true on success.
+ *      - false on error.
  */
-void auReadBufSkip(auReadBuf_t *d, auReader_t *reader, unsigned size);
+bool auReadBufSkip(auReadBuf_t *d, auReader_t *reader, unsigned size);
 
 /**
  * \brief valid data pointer

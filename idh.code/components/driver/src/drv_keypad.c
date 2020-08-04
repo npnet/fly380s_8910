@@ -22,7 +22,23 @@
 #define POWERKEY_PRESS_DEBOUNCE (50)
 #define POWERKEY_RELEASE_DEBOUBCE (10)
 
-static uint32_t g_previousKeys[2];
+#define SCAN_ROW_COL(row, col) ((row)*8 + (col) + 1)
+#define BBATKEYCODE_NUM 36
+
+typedef struct
+{
+    uint8_t scan;
+    uint8_t key_code;
+} drvKeypadScanMap_t;
+#include "drv_keypad_def.h"
+
+typedef struct
+{
+    uint8_t debunceTime;
+    uint8_t kpItvTime;
+    uint8_t kp_in_mask;
+    uint8_t kp_out_mask;
+} drvKeyPadCfg;
 
 typedef struct
 {
@@ -46,20 +62,26 @@ typedef struct keypad_context
     keyEventCb_t cb;
 } keypadCtx_t;
 
-static keypadCtx_t *_keypad = NULL;
+static keypadCtx_t *gDrvKeyPad = NULL;
+static uint32_t g_previousKeys[2];
 
-static keyMap_t _getKeyID(uint8_t row, uint8_t col)
+/**
+ * Get key code from scan (row, col), return -1 for invalid
+ */
+static int prvGetKeyCode(uint8_t row, uint8_t col)
 {
-    if (row == 0xff && col == 0xff)
-        return KEY_MAP_POWER;
-    if ((row >= 0 && row <= 8) && (col >= 0 && col <= 8))
-        return row * 8 + col + 1;
+    unsigned scan = SCAN_ROW_COL(row, col);
+    for (unsigned n = 0; n < OSI_ARRAY_SIZE(gKeyMatrix); n++)
+    {
+        if (gKeyMatrix[n].scan == scan)
+            return gKeyMatrix[n].key_code;
+    }
     return -1;
 }
 
 static void _keyCallback(keyMap_t id, uint32_t event, bool status)
 {
-    keypadCtx_t *key = _keypad;
+    keypadCtx_t *key = gDrvKeyPad;
     keyCond_t *cond = NULL;
     if (key != NULL)
     {
@@ -76,6 +98,54 @@ static void _keyCallback(keyMap_t id, uint32_t event, bool status)
     }
 }
 
+/**
+ * Get all press keys code from register,values can not more than 10 .
+ * bbat test use api
+ */
+
+int bbatGetAllScanKeyId(uint8_t *key, int *count)
+{
+    uint8_t i;
+    uint8_t mask = 0;
+    uint32_t kp_data[2];
+    int id = 0;
+    kp_data[0] = hwp_keypad->kp_data_l;
+    kp_data[1] = hwp_keypad->kp_data_h;
+    if (kp_data[0] == 0 && kp_data[1] == 0)
+    {
+        return -1;
+    }
+    for (i = 0; i < LOW_KEY_NB; i++)
+    {
+        if ((kp_data[0] & (1 << i)) != 0)
+        {
+            mask = i;
+            id = prvGetKeyCode(mask / 8, mask % 8);
+            if (id < 0)
+                continue;
+            key[*count] = id;
+            *count = *count + 1;
+            if (*count >= BBATKEYCODE_NUM)
+                return -1;
+        }
+    }
+    for (i = 0; i < HIGH_KEY_NB; i++)
+    {
+        if ((kp_data[1] & (1 << i)) != 0)
+        {
+            mask = i + LOW_KEY_NB;
+            id = prvGetKeyCode(mask / 8, mask % 8);
+            if (id < 0)
+                continue;
+            key[*count] = id;
+            *count = *count + 1;
+            if (*count >= BBATKEYCODE_NUM)
+                return -1;
+        }
+    }
+    return 1;
+}
+
 static void _keypadSearch(uint32_t *keys, uint32_t event, bool status)
 {
     uint8_t i;
@@ -87,7 +157,9 @@ static void _keypadSearch(uint32_t *keys, uint32_t event, bool status)
         if ((keys[0] & (1 << i)) != 0)
         {
             mask = i;
-            id = _getKeyID(mask / 8, mask % 8);
+            id = prvGetKeyCode(mask / 8, mask % 8);
+            if (id < 0)
+                continue;
             _keyCallback(id, event, status);
         }
     }
@@ -97,7 +169,9 @@ static void _keypadSearch(uint32_t *keys, uint32_t event, bool status)
         if ((keys[1] & (1 << i)) != 0)
         {
             mask = i + LOW_KEY_NB;
-            id = _getKeyID(mask / 8, mask % 8);
+            id = prvGetKeyCode(mask / 8, mask % 8);
+            if (id < 0)
+                continue;
             _keyCallback(id, event, status);
         }
     }
@@ -147,7 +221,7 @@ static void _KeypadIsrCB(void *p)
 static void _pwrKeyIsrCB(void *p)
 {
     keypadCtx_t *key = (keypadCtx_t *)p;
-    keyMap_t id = _getKeyID(0xff, 0xff);
+    keyMap_t id = KEY_MAP_POWER;
     keyCond_t *cond = &key->cond[id];
     uint32_t event;
 
@@ -172,9 +246,9 @@ static void _pwrKeyIsrCB(void *p)
 void drvKeypadSetCB(keyEventCb_t cb, uint32_t mask, void *ctx)
 {
     uint8_t i;
-    if (_keypad == NULL)
+    if (gDrvKeyPad == NULL)
         return;
-    keypadCtx_t *key = _keypad;
+    keypadCtx_t *key = gDrvKeyPad;
     key->cb = cb;
     for (i = 0; i < KEY_MAP_MAX_COUNT; i++)
     {
@@ -189,10 +263,10 @@ int drvKeypadState(keyMap_t id)
     if (id < 0 || id >= KEY_MAP_MAX_COUNT)
         return -1;
 
-    if (_keypad == NULL)
+    if (gDrvKeyPad == NULL)
         return -1;
 
-    keypadCtx_t *key = _keypad;
+    keypadCtx_t *key = gDrvKeyPad;
     return key->cond[id].pressed ? 1 : 0;
 }
 
@@ -223,18 +297,18 @@ void drvKeypadOpen(drvKeyPadCfg *cfg)
 
 void drvKeypadInit()
 {
-    if (_keypad != NULL)
+    if (gDrvKeyPad != NULL)
         return;
     keypadCtx_t *key = (keypadCtx_t *)calloc(1, sizeof(keypadCtx_t));
     if (key == NULL)
         return;
-    _keypad = key;
+    gDrvKeyPad = key;
 
     drvKeyPadCfg cfg;
     cfg.debunceTime = 8;
     cfg.kpItvTime = 16;
-    cfg.kp_in_mask = 0x1f;
-    cfg.kp_out_mask = 0x1f;
+    cfg.kp_in_mask = 0x3f;
+    cfg.kp_out_mask = 0x3f;
     drvKeypadOpen(&cfg);
 
     //config keypad interupt

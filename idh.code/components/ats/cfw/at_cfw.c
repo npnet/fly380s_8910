@@ -248,6 +248,8 @@ void atCfwInit(void)
 
     memset(p, 0, sizeof(*p));
 
+    Cfw_SetTimezone(gAtSetting.timezone);
+
     atCfwGcInit();
     atCfwNwInit();
     atCfwCcInit();

@@ -204,7 +204,6 @@ void atCmdHandleSimlockSPIDENTIFYEND(atCommand_t *cmd)
 /*****************************************************************************/
 void atCmdHandleSimlockSPDATAENCRYPT(atCommand_t *cmd)
 {
-
     ATC_STATUS status = S_ATC_SUCCESS;
     char *encrypt_key = NULL;
     bool paramok = true;
@@ -214,17 +213,24 @@ void atCmdHandleSimlockSPDATAENCRYPT(atCommand_t *cmd)
     {
     case AT_CMD_SET:
         encrypt_key = malloc(2 * sizeof(simlock_encrypt_keys_t) + 1);
+        if (encrypt_key == NULL)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
         memset(encrypt_key, 0, 2 * sizeof(simlock_encrypt_keys_t) + 1);
 
         char *rsp = malloc(2 * sizeof(simlock_encrypt_keys_t) + 1 + PAD_LEN);
+        if (rsp == NULL)
+        {
+            free(encrypt_key);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_NO_MEMORY);
+        }
         memset(rsp, 0, 2 * sizeof(simlock_encrypt_keys_t) + PAD_LEN);
 
         const char *data = atParamStr(cmd->params[0], &paramok);
-        if (NULL == encrypt_key && NULL == rsp)
+        if (!paramok)
         {
-            OSI_LOGI(0, "SIMLOCK: storage malloc fail");
-            atCmdRespCmeError(cmd->engine, ERR_AT_UNKNOWN);
-            return;
+            free(encrypt_key);
+            free(rsp);
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
         }
 
         status = srvSimlockEncryptKeys(data, strlen(data), (char *)encrypt_key, 2 * sizeof(simlock_encrypt_keys_t) + 1);
@@ -335,4 +341,39 @@ void atCmdHandleSimlockSimlockData(atCommand_t *cmd)
 void atCmdHandleSimlockSPSIMLOCKIMEI(atCommand_t *cmd)
 {
     atCmdRespOK(cmd->engine);
+}
+
+uint32_t CFW_GetSimLockStatusFromAP(CFW_SRV_SIMLOCKDATA_T *data)
+{
+    srvSimlockData_t *pSimLockData = (srvSimlockData_t *)malloc(sizeof(srvSimlockData_t));
+    if (pSimLockData == NULL)
+        return 1;
+
+    memset(pSimLockData, 0x00, sizeof(srvSimlockData_t));
+    srvSimlockGetLocksData(pSimLockData);
+
+    data->SIM_lock_status = pSimLockData->SIM_lock_status;
+    data->max_num_trials = pSimLockData->max_num_trials;
+
+    data->network_locks.numLocks = pSimLockData->network_locks.numLocks;
+    data->network_locks.reserved = pSimLockData->network_locks.reserved;
+    memcpy(data->network_locks.locks, pSimLockData->network_locks.locks, CFW_MAX_PERSONALISATIONS * sizeof(CFW_SIM_LOCK_PLMN_T));
+
+    data->network_subset_locks.numLocks = pSimLockData->network_subset_locks.numLocks;
+    data->network_subset_locks.reserved = pSimLockData->network_subset_locks.reserved;
+    memcpy(data->network_subset_locks.locks, pSimLockData->network_subset_locks.locks, CFW_MAX_PERSONALISATIONS * sizeof(CFW_NETWORK_SUBSET_LOCK_DATA_T));
+
+    data->SP_locks.numLocks = pSimLockData->SP_locks.numLocks;
+    data->SP_locks.reserved = pSimLockData->SP_locks.reserved;
+    memcpy(data->SP_locks.locks, pSimLockData->SP_locks.locks, CFW_MAX_PERSONALISATIONS * sizeof(CFW_SP_LOCK_DATA_T));
+
+    data->corporate_locks.numLocks = pSimLockData->corporate_locks.numLocks;
+    data->corporate_locks.reserved = pSimLockData->corporate_locks.reserved;
+    memcpy(data->corporate_locks.locks, pSimLockData->corporate_locks.locks, CFW_MAX_PERSONALISATIONS * sizeof(CORPORATE_LOCK_DATA_T));
+
+    data->user_locks.numLocks = pSimLockData->user_locks.numLocks;
+    memcpy(&data->user_locks.locks, &pSimLockData->user_locks.locks, sizeof(USER_LOCK_DATA_T) * 3);
+
+    free(pSimLockData);
+    return 0;
 }

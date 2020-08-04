@@ -300,6 +300,94 @@ bool audevSetRecordSampleInterval(uint8_t time_ms);
 uint8_t audevGetRecordSampleInterval(void);
 
 /**
+ * \brief set call mode mic gain
+ *
+ * \p mode should in 0,5. 0:VOICECALLNB,5:VOICECALLWB
+ * \p path should in [0, 5]. 0:Handset,1:Handfree,2:Handset4P,3:Handset3P,4:BTHS,5:BTHSNrec
+ * \p anaGain should in [0, 7].0:0dB,1:3dB,2:6dB,3:12dB,4:18dB,5:24dB,6:30dB,7:36dB
+ * \p adcGain should in [0,15].0:Mute,1:-12dB,2:-10dB,...,6:-2dB,7:0dB,...,15:16dB
+ *
+ * \param anaGain  Input analog gain
+ * \param adcGain  Input ADC gain.
+ * \return
+ *      - true set success
+ *      - false set invalid parameter, or failed
+ */
+bool audevSetMicGain(uint8_t mode, uint8_t path, uint16_t anaGain, uint16_t adcGain);
+
+/**
+ * \brief get call mode mic gain
+ *
+ * \p mode should in 0,5. 0:VOICECALLNB,5:VOICECALLWB
+ * \p path should in [0, 5]. 0:Handset,1:Handfree,2:Handset4P,3:Handset3P,4:BTHS,5:BTHSNrec
+ * \p anaGain should in [0, 7].0:0dB,1:3dB,2:6dB,3:12dB,4:18dB,5:24dB,6:30dB,7:36dB
+ * \p adcGain should in [0,15].0:Mute,1:-12dB,2:-10dB,...,6:-2dB,7:0dB,...,15:16dB
+ *
+ * \return
+ * 	 - anaGain ,adcGain
+ */
+bool audevGetMicGain(uint8_t mode, uint8_t path, uint16_t *anaGain, uint16_t *adcGain);
+
+/**
+ * \brief set record mode mic gain
+ *
+ * \p mode should in 2,4. 2:MUSICRECORD,4:FMRECORD
+ * \p path should in [1, 3]. 1:Handfree,2:Handset4P,3:Handset3P
+ * \p anaGain should in [0, 7].0:0dB,1:3dB,2:6dB,3:12dB,4:18dB,5:24dB,6:30dB,7:36dB
+ * \p adcGain should in [0,15].0:Mute,1:-12dB,2:-10dB,...,6:-2dB,7:0dB,...,15:16dB
+ *
+ * \param anaGain  Input analog gain
+ * \param adcGain  Input ADC gain.
+ * \return
+ *      - true set success
+ *      - false set invalid parameter, or failed
+ */
+bool audevSetRecordMicGain(uint8_t mode, uint8_t path, uint16_t anaGain, uint16_t adcGain);
+
+/**
+ * \brief get call mode mic gain
+ *
+ * \p mode should in 2,4. 2:MUSICRECORD,4:FMRECORD
+ * \p path should in [1, 3]. 1:Handfree,2:Handset4P,3:Handset3P
+ * \p anaGain should in [0, 7].0:0dB,1:3dB,2:6dB,3:12dB,4:18dB,5:24dB,6:30dB,7:36dB
+ * \p adcGain should in [0,15].0:Mute,1:-12dB,2:-10dB,...,6:-2dB,7:0dB,...,15:16dB
+ *
+ * \return
+ * 	 - anaGain ,adcGain
+ */
+bool audevGetRecordMicGain(uint8_t mode, uint8_t path, uint16_t *anaGain, uint16_t *adcGain);
+
+/**
+ * \brief set call mode sidetone gain
+ *
+ * \p mode should in 0,5. 0:VOICECALLNB,5:VOICECALLWB
+ * \p path should in [0, 5]. 0:Handset,1:Handfree,2:Handset4P,3:Handset3P,4:BTHS,5:BTHSNrec
+ * \p level should in [0, 15]. match with call vol0-vol15
+ * \p sideGain should in [-39, 6].-39:mute,-36:-36dB,-33:-33dB...,-3:-3dB,0:0dB,3:3dB,6:6dB
+ *
+ * \param sideGain  side tone gain
+ * \return
+ *      - true set success
+ *      - false set invalid parameter, or failed
+ */
+bool audevSetSideToneGain(uint8_t mode, uint8_t path, uint8_t level, int8_t sideGain);
+
+/**
+ * \brief get call mode sidetone gain
+ *
+ * \p mode should in 0,5. 0:VOICECALLNB,5:VOICECALLWB
+ * \p path should in [0, 5]. 0:Handset,1:Handfree,2:Handset4P,3:Handset3P,4:BTHS,5:BTHSNrec
+ * \p level should in [0, 15]. match with call vol0-vol15
+ * \p sideGain should in [-39, 6].-39:mute,-36:-36dB,-33:-33dB...,-3:-3dB,0:0dB,3:3dB,6:6dB
+ *
+ * \param sideGain  side tone gain
+
+ * \return
+ * 	 - sideGain -39:mute,-36:-36dB,-33:-33dB...,-3:-3dB,0:0dB,3:3dB,6:6dB
+ */
+bool audevGetSideToneGain(uint8_t mode, uint8_t path, uint8_t level, int8_t *sideGain);
+
+/**
  * \brief start voice for call
  *
  * \return
@@ -491,6 +579,16 @@ bool audevStopPlayTest(void);
  * Close mic and speaker
  */
 void audSetLdoVB(uint32_t en);
+
+/**
+ * Get audCodec Open status
+ */
+bool audIsCodecOpen(void);
+
+/**
+ * headset plug depop
+ */
+void audHeadsetdepop_en(bool en, uint8_t mictype);
 
 OSI_EXTERN_C_END
 #endif
