@@ -111,8 +111,10 @@ static void lv_poc_build_group_list_config(lv_obj_t * list, lv_area_t list_area)
 {
 }
 
-static void lv_poc_build_group_new_group_cb(int result_type)
+static void lv_poc_build_group_new_group_cb_refresh(lv_task_t *task)
 {
+	int result_type = (int)task->user_data;
+
 	if(result_type == 1)
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Build_Group, true);
@@ -124,6 +126,12 @@ static void lv_poc_build_group_new_group_cb(int result_type)
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_failed_text, NULL);
 	}
 	lv_poc_del_activity(poc_build_group_activity);
+}
+
+static void lv_poc_build_group_new_group_cb(int result_type)
+{
+	/*修改刷新机制*/
+	lv_poc_refr_func_ui(lv_poc_build_group_new_group_cb_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_LOW, (void *)result_type);
 }
 
 static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, int32_t info_num, int32_t selected_num)
@@ -464,6 +472,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 	p_info = lv_poc_build_group_info;
 
     p_cur = member_list_obj->online_list;
+
     while(p_cur)
     {
         btn = lv_list_add_btn(activity_list, &ic_member_online, p_cur->name);
@@ -474,25 +483,39 @@ void lv_poc_build_group_refresh(lv_task_t * task)
         lv_obj_set_height(btn, btn_height);
 
         btn_label = lv_list_get_btn_label(btn);
+
         lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
 
         btn_checkbox = lv_cb_create(btn, NULL);
 		lv_cb_set_text(btn_checkbox, "");
 		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_online.header.w - 5);
-		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
-        p_info->is_selected = false;
         p_info->item_information = p_cur->information;
         p_info->checkbox = btn_checkbox;
+		p_info->is_selected = false;
         btn->user_data = (void *)p_info;
         p_info++;
         p_cur = p_cur->next;
+
+		/*把自己选上*/
+		if(NULL != strstr(lv_list_get_btn_text(btn),"我"))//如果是自己
+		{
+			OSI_LOGI(0, "[song]build group is me");
+			lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_PR);
+			lv_poc_build_group_selected_num++;
+		}
+		else
+		{
+			lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
+		}
+
         if(member_list_is_first_item == 1)
         {
         	member_list_is_first_item = 0;
         	lv_list_set_btn_selected(activity_list, btn);
         }
+
     }
 
     p_cur = member_list_obj->offline_list;
