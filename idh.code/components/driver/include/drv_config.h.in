@@ -28,6 +28,11 @@
 #cmakedefine CONFIG_SUPPORT_BATTERY_CHARGER
 
 /**
+ * whether to support camera single buffer
+ */
+#cmakedefine CONFIG_CAMERA_SINGLE_BUFFER
+
+/**
  * host command engine packet size
  */
 #cmakedefine CONFIG_HOST_CMD_ENGINE_MAX_PACKET_SIZE @CONFIG_HOST_CMD_ENGINE_MAX_PACKET_SIZE@
@@ -74,4 +79,14 @@
  */
 #cmakedefine CONFIG_SUPPORT_LCD_ST7735S
 
+/**
+ * whether headset detect is supported
+ */
+#cmakedefine CONFIG_HEADSET_DETECT_SUPPORT
+#ifdef CONFIG_HEADSET_DETECT_SUPPORT
+/**
+ * headset thread stack size in bytes
+ */
+#cmakedefine CONFIG_HEADSET_STACK_SIZE @CONFIG_HEADSET_STACK_SIZE@
+#endif
 #endif

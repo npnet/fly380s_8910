@@ -11,6 +11,10 @@
  */
 
 #include "drv_debug_port.h"
+#include "drv_debug_port_imp.h"
+
+// Host packet for event 0x9db00000
+const uint8_t gBlueScreenEventData[GDB_EVENT_DATA_SIZE] = {0xAD, 0x00, 0x06, 0xFF, 0x00, 0x00, 0x00, 0xB0, 0x9D, 0xD2};
 
 static SLIST_HEAD(, drvDebugPort) gDebugPortList = SLIST_HEAD_INITIALIZER(&gDebugPortList);
 

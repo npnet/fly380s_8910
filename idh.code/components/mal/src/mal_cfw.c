@@ -211,6 +211,7 @@ int sim_channel_open(uint8_t *dfname, uint8_t *channel_id, uint16_t timeout, uin
     ctx.length = ascii2hex((const char *)dfname, strlen((const char *)dfname), ctx.df);
     if (ctx.length == 0)
     {
+        free(trans);
         OSI_LOGI(0, "dfname is illegal!");
         return -1;
     }

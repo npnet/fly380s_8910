@@ -18,7 +18,7 @@
 #include "drv_wcn.h"
 
 #define WIFI_SCAN_MIN_INTERVAL (120)
-#define WIFI_RSSI_CALIB_OFFSET (18)
+#define WIFI_RSSI_CALIB_OFFSET (28)
 
 typedef struct
 {

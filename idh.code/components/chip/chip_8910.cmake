@@ -109,6 +109,7 @@ function(pacvariant_gen)
                 --deltainc ${out_inc_dir}
                 --dep ${modemgen_dir}/modem.d
                 --deprel ${BINARY_TOP_DIR}
+                --prepackfile ${CONFIG_PACKAGE_FILE_JSON_PATH}
                 ${nvmvariant}
                 ${prepack_cpio} ${nvitem_bin} ${modem_img}
             DEPFILE ${modemgen_dir}/modem.d

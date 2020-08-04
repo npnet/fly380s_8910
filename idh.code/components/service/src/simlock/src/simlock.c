@@ -1129,18 +1129,14 @@ uint32_t simlockGetControlData(uint8_t *data, uint16_t size)
 bool prvEfuseGetUid(void *uid)
 {
     uint32_t id_low, id_high;
-    bool low = false;
-    bool high = false;
     uint8_t *id = (uint8_t *)uid;
 
-    drvEfuseOpen();
-#define RDA_EFUSE_UNIQUE_ID_LOW_INDEX (24)
-#define RDA_EFUSE_UNIQUE_ID_HIGH_INDEX (26)
-    low = drvEfuseRead(RDA_EFUSE_UNIQUE_ID_LOW_INDEX, &id_low);
-    high = drvEfuseRead(RDA_EFUSE_UNIQUE_ID_HIGH_INDEX, &id_high);
-    drvEfuseClose();
+    bool result = drvEfuseBatchRead(true,
+                                    RDA_EFUSE_DOUBLE_BLOCK_UNIQUE_ID_LOW_INDEX, &id_low,
+                                    RDA_EFUSE_DOUBLE_BLOCK_UNIQUE_ID_HIGH_INDEX, &id_high,
+                                    DRV_EFUSE_ACCESS_END);
 
-    if (low && high)
+    if (result)
     {
         *id++ = (id_low & 0xff000000) >> 24;
         *id++ = (id_low & 0x00ff0000) >> 16;

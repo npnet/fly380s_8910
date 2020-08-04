@@ -11,6 +11,7 @@
  */
 
 #include "drv_debug_port.h"
+#include "drv_debug_port_imp.h"
 #include "drv_axidma.h"
 #include "drv_names.h"
 #include "hwregs.h"
@@ -47,10 +48,15 @@
  * The timer to pill trace must be relaxed. Otherwise, it will seriously
  * impact power consumption.
  */
+#include "osi_log.h"
 
 #define UART_TXFIFO_SIZE (128)
 #define UART_RXFIFO_SIZE (128)
+#ifdef CONFIG_SOC_8910
+#define RXFIFO_BUF_SIZE (8 * 1024)
+#else
 #define RXFIFO_BUF_SIZE (256)
+#endif
 #define TRACE_TX_POLL_INTERVAL (20)
 #define TRACE_PACKET_TX_TIMEOUT (500)
 
@@ -92,6 +98,8 @@ static int prvUartFifoRead(HWP_ARM_UART_T *hwp, void *data, unsigned size)
 {
     REG_ARM_UART_UART_RXFIFO_STAT_T uart_rxfifo_stat = {hwp->uart_rxfifo_stat};
     int bytes = uart_rxfifo_stat.b.rx_fifo_cnt;
+    if (bytes == UART_RXFIFO_SIZE)
+        OSI_LOGI(0, "debug uart Rx overflow, size %d",bytes);
     if (bytes > size)
         bytes = size;
 
@@ -170,7 +178,7 @@ static void prvUartStartTxDma(drvDebugUartPort_t *d, const void *data, size_t si
  */
 static void prvUartTraceOutput(drvDebugUartPort_t *d, unsigned whence)
 {
-    if (!d->port.mode.trace_enable || !gTraceEnabled)
+    if (!d->port.mode.trace_enable)
         return;
 
     if (whence == OUTPUT_AT_TXDONE)
@@ -310,7 +318,7 @@ static void prvUartInit(drvDebugUartPort_t *d)
     };
     d->hwp->uart_delay = uart_delay.v;
 
-    REG_ARM_UART_UART_RXTRIG_T uart_rxtrig = {.b.rx_trig = 64};
+    REG_ARM_UART_UART_RXTRIG_T uart_rxtrig = {.b.rx_trig = 32};
     d->hwp->uart_rxtrig = uart_rxtrig.v;
 
     REG_ARM_UART_UART_TXTRIG_T uart_txtrig = {.b.tx_trig = 0};
@@ -406,11 +414,27 @@ static void prvUartBsEnter(void *param)
     d->blue_screen_mode = true;
     d->rx_cb = prvDummyRxCallback;
 
-    // TODO: this can be optimized to wait the specified request source finished
-    drvAxidmaStopAll();
+    // When TX DMA is enabled, wait TX DMA done
+    if (d->tx_dma_ch != NULL)
+        OSI_POLL_WAIT(!drvAxidmaChBusy(d->tx_dma_ch));
 
     if (d->port.mode.bs_only)
+    {
+        // HACK: For blue screen only, this uart may be used for other
+        // purpose in normal mode. It is possible that the DMA is
+        // running, and the DMA channel is unknown. So, wait a while
+        // and stop all.
+        osiDelayUS(200 * 1000);
+        drvAxidmaStopAll();
         prvUartInit(d);
+    }
+
+    if (d->port.mode.trace_enable)
+    {
+#ifdef CONFIG_KERNEL_HOST_TRACE
+        prvUartFifoWriteAll(d->hwp, gBlueScreenEventData, GDB_EVENT_DATA_SIZE);
+#endif
+    }
 }
 
 /**

@@ -20,6 +20,7 @@
 
 #include "tb.h"
 #include "tb_internal.h"
+#include "osi_api.h"
 #include "osi_log.h"
 #include "atr_config.h"
 #include "nvm.h"
@@ -29,6 +30,11 @@
 #include "at_cfw.h"
 #include "ml.h"
 #include "audio_device.h"
+#include "fupdate.h"
+#include "drv_rtc.h"
+#include "drv_gpio.h"
+#include "netmain.h"
+#include "ppp_interface.h"
 
 #ifdef CONFIG_ATR_TB_API_SUPPORT
 
@@ -65,14 +71,21 @@ tb_DataStatistics g_tb_DataStatistics[2] = {
 static uint8_t g_SMS_Unread_Msg = 0;
 static uint8_t gConnectingFlag = 0;
 
+OSI_WEAK const char *AT_GMI_ID = GMI_ID;
+OSI_WEAK const char *AT_GMM_ID = GMM_ID;
+OSI_WEAK const char *AT_GMR_ID = GMR_ID;
+
 #define URI_MAX_NUMBER 21
 #define SIP_STR "sip:"
+
+uint8_t g_cfw_exit_flag = 0xFF;
 
 //API
 
 //NW module
 int tb_wan_reg_callback(tb_wan_network_info_cb wan_network_info_func)
 {
+    OSI_LOGI(0, "tb_wan_reg_callback, wan_network_info_func is 0x%x", wan_network_info_func);
     g_tb_wan_network_info_cb = wan_network_info_func;
     return TB_SUCCESS;
 }
@@ -348,12 +361,12 @@ int tb_data_wan_disconnect(tb_data_profile_id cid)
         return TB_FAILURE;
     }
 
+    g_tb_data_dial_status[cid - 1] = TB_DIAL_STATUS_DISCONNECTING;
+
     if (g_tb_data_callback_fun != NULL)
     {
         g_tb_data_callback_fun(cid, TB_DIAL_STATUS_DISCONNECTING);
     }
-
-    g_tb_data_dial_status[cid - 1] = TB_DIAL_STATUS_DISCONNECTING;
 
     return TB_SUCCESS;
 }
@@ -437,7 +450,7 @@ int tb_data_set_connect_parameter(tb_data_profile_id cid, tb_data_connect_profil
     }
     else
     {
-        memcpy(&(g_tb_data_connect_profile[cid]), &para, sizeof(tb_data_connect_profile));
+        memcpy(&(g_tb_data_connect_profile[cid - 1]), &para, sizeof(tb_data_connect_profile));
         return TB_SUCCESS;
     }
 }
@@ -462,11 +475,13 @@ int tb_data_wan_connect(tb_data_profile_id cid)
         return TB_FAILURE;
     }
 
+    g_tb_data_dial_status[cid - 1] = TB_DIAL_STATUS_CONNECTING;
+
     if (g_tb_data_callback_fun != NULL)
     {
         g_tb_data_callback_fun(cid, TB_DIAL_STATUS_CONNECTING);
     }
-    g_tb_data_dial_status[cid - 1] = TB_DIAL_STATUS_CONNECTING;
+
     return TB_SUCCESS;
 }
 
@@ -484,7 +499,7 @@ int tb_data_get_connect_parameter(tb_data_profile_id cid, tb_data_connect_profil
         return TB_FAILURE;
     }
 
-    memcpy((void *)para, &(g_tb_data_connect_profile[cid]), sizeof(tb_data_connect_profile));
+    memcpy((void *)para, &(g_tb_data_connect_profile[cid - 1]), sizeof(tb_data_connect_profile));
     return TB_SUCCESS;
 }
 
@@ -601,21 +616,30 @@ int tb_data_get_ipv4_address(tb_data_profile_id cid, tb_data_ipv4_addr *address)
     }
 
     memset(address, 0, sizeof(tb_data_ipv4_addr));
+    OSI_LOGI(0, "sPdpCont.nIpType is :%d", sPdpCont.nIpType);
+    OSI_LOGI(0, "sPdpCont.nPdpAddrSize is :%d", sPdpCont.nPdpAddrSize);
     if (sPdpCont.nPdpAddrSize == 0)
     {
         OSI_LOGI(0, "nPdpAddrSize zero");
-        return TB_FAILURE;
+        sprintf(address->ip_addr, "0.0.0.0");
+        //return TB_FAILURE;
+    }
+    else
+    {
+        sprintf(address->ip_addr, "%d.%d.%d.%d", sPdpCont.pPdpAddr[0], sPdpCont.pPdpAddr[1], sPdpCont.pPdpAddr[2], sPdpCont.pPdpAddr[3]);
     }
     if (sPdpCont.nPdpDnsSize == 0)
     {
         OSI_LOGI(0, "nPdpDnsSize zero");
-        return TB_FAILURE;
+        sprintf(address->pref_dns_addr, "0.0.0.0");
+        sprintf(address->standy_dns_addr, "0.0.0.0");
+        //return TB_FAILURE;
     }
-    OSI_LOGI(0, "sPdpCont.nIpType is :%d", sPdpCont.nIpType);
-    OSI_LOGI(0, "sPdpCont.nPdpAddrSize is :%d", sPdpCont.nPdpAddrSize);
-    sprintf(address->ip_addr, "%d.%d.%d.%d", sPdpCont.pPdpAddr[0], sPdpCont.pPdpAddr[1], sPdpCont.pPdpAddr[2], sPdpCont.pPdpAddr[3]);
-    sprintf(address->pref_dns_addr, "%d.%d.%d.%d", sPdpCont.pPdpDns[0], sPdpCont.pPdpDns[1], sPdpCont.pPdpDns[2], sPdpCont.pPdpDns[3]);
-    sprintf(address->standy_dns_addr, "%d.%d.%d.%d", sPdpCont.pPdpDns[21], sPdpCont.pPdpDns[22], sPdpCont.pPdpDns[23], sPdpCont.pPdpDns[24]);
+    else
+    {
+        sprintf(address->pref_dns_addr, "%d.%d.%d.%d", sPdpCont.pPdpDns[0], sPdpCont.pPdpDns[1], sPdpCont.pPdpDns[2], sPdpCont.pPdpDns[3]);
+        sprintf(address->standy_dns_addr, "%d.%d.%d.%d", sPdpCont.pPdpDns[21], sPdpCont.pPdpDns[22], sPdpCont.pPdpDns[23], sPdpCont.pPdpDns[24]);
+    }
 
     return TB_SUCCESS;
 }
@@ -840,7 +864,6 @@ int tb_sms_send_sms(tb_sms_msg_type *msg)
     CFW_CfgSetDefaultSmsParam(&sInfo, nSim);
 
     OSI_LOGXI(OSI_LOGPAR_S, 0, "tb_sms_send_sms send %s", send_data);
-    OSI_LOGXI(OSI_LOGPAR_M, 0, "tb_sms_send_sms at send %*s", send_size, send_data);
     OSI_LOGI(0, "tb_sms_send_sms send_size = %d \n", send_size);
 
     if (send_size > 420)
@@ -1070,9 +1093,12 @@ int tb_voice_hungup_call()
 
     CFW_CC_CURRENT_CALL_INFO call_info[AT_CC_MAX_NUM];
 
-    CFW_CcGetCurrentCall(call_info, &cnt, nSim);
+    ret = CFW_CcGetCurrentCall(call_info, &cnt, nSim);
+    OSI_LOGI(0, "tb_voice_hungup_call cnt = %d, ret = 0x%x", cnt, ret);
     for (i = 0; i < cnt; i++)
     {
+        OSI_LOGI(0, "tb_voice_hungup_call status = %d", call_info[i].status);
+
         if (CFW_CM_STATUS_WAITING != call_info[i].status)
         {
             ret = CFW_CcReleaseCallX(call_info[i].idx, nSim);
@@ -1105,6 +1131,268 @@ int tb_voice_switch_audio_channel(int audio_channel)
     return TB_SUCCESS;
 }
 
+int tb_device_get_modemserialnumber(char *msn, int size)
+{
+    uint8_t nSim = 0;
+    uint8_t sn[25] = {
+        0,
+    };
+
+    int len = nvmReadSN(nSim, &sn, 24);
+    if (len == -1)
+    {
+        return TB_FAILURE;
+    }
+
+    strncpy(msn, (const char *)sn, size);
+
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "tb_device_get_modemserialnumber msn %s", msn);
+
+    return TB_SUCCESS;
+}
+
+int tb_device_get_hwversion(char *hdver, int size)
+{
+    uint8_t *basebandVersion = CFW_EmodGetBaseBandVersionV1();
+
+    if (basebandVersion == NULL)
+    {
+        return TB_FAILURE;
+    }
+
+    strncpy(hdver, (const char *)basebandVersion, size);
+
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "tb_device_get_hwversion basebandVersion %s", basebandVersion);
+
+    return TB_SUCCESS;
+}
+
+int tb_device_getversion(char *ver, int size)
+{
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "tb_device_getversion GMI %s", AT_GMI_ID);
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "tb_device_getversion GMM %s", AT_GMM_ID);
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "tb_device_getversion GMR %s", AT_GMR_ID);
+    strncpy(ver, (const char *)AT_GMI_ID, size - 1);
+    if (size - strlen(AT_GMI_ID) > 2)
+    {
+        strcat(ver, " ");
+    }
+
+    if (size - strlen(ver) > strlen(AT_GMM_ID) + 1)
+    {
+        strcat(ver, (const char *)AT_GMM_ID);
+    }
+
+    if (size - strlen(ver) > 2)
+    {
+        strcat(ver, " ");
+    }
+
+    if (size - strlen(ver) > strlen(AT_GMR_ID) + 1)
+    {
+        strcat(ver, (const char *)AT_GMR_ID);
+    }
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "tb_device_getversion ver %s", ver);
+    return TB_SUCCESS;
+}
+
+static uint16_t tb_ConvertICCID(uint8_t *pInput, uint16_t nInputLen, uint8_t *pOutput)
+{
+    uint16_t i;
+    uint8_t *pBuffer = pOutput;
+    for (i = 0; i < nInputLen; i++)
+    {
+        uint8_t high4bits = pInput[i] >> 4;
+        uint8_t low4bits = pInput[i] & 0x0F;
+
+        if (low4bits < 0x0A)
+            *pOutput++ = low4bits + '0'; // 0 - 0x09
+        else                             // 0x0A - 0x0F
+            *pOutput++ = low4bits - 0x0A + 'A';
+
+        if (high4bits < 0x0A)
+            *pOutput++ = high4bits + '0'; // 0 - 9
+        else                              // 0x0A - 0x0F
+            *pOutput++ = high4bits - 0x0A + 'A';
+    }
+    OSI_LOGI(0, "shane: return size = %d", pOutput - pBuffer);
+    return pOutput - pBuffer;
+}
+
+int tb_device_get_iccid(char *iccid, int size)
+{
+    uint8_t nSim = 0;
+    uint8_t *pICCID = CFW_GetICCID(nSim);
+
+    if (pICCID != NULL)
+    {
+        uint8_t ICCID[21] = {0};
+        OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", 10, pICCID);
+        OSI_LOGI(0, "shane: at_hex2ascii");
+        tb_ConvertICCID(pICCID, 10, ICCID);
+        OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", 20, ICCID);
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "pICCID1 =%s\n", ICCID);
+        strncpy(iccid, (const char *)ICCID, size);
+    }
+    else
+    {
+        return TB_FAILURE;
+    }
+
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "tb_device_get_iccid iccid %s", iccid);
+
+    return TB_SUCCESS;
+}
+int tb_device_set_rtc_timer(unsigned long seconds, tb_timer_callbck pCallback, tb_timer_p *pTimer)
+{
+    tb_timer_p timer;
+    if (pTimer == NULL || pCallback == NULL)
+    {
+        OSI_LOGI(0, "tb_device_set_rtc_timer NULL parameter");
+        return TB_FAILURE;
+    }
+    timer = osiTimerCreate(NULL, pCallback, NULL);
+    osiTimerSetCallback(timer, OSI_TIMER_IN_ISR, pCallback, timer);
+    osiTimerStart(timer, seconds * 1000);
+    *pTimer = timer;
+    OSI_LOGI(0, "tb_device_set_rtc_timer, pTimer: 0x%x", pTimer);
+    return TB_SUCCESS;
+}
+
+int tb_device_cancel_timer(tb_timer_p pTimer)
+{
+    if (pTimer == NULL)
+    {
+        OSI_LOGI(0, "tb_device_cancel_timer NULL parameter");
+        return TB_FAILURE;
+    }
+    OSI_LOGI(0, "tb_device_cancel_timer, pTimer: 0x%x", pTimer);
+    osiTimerStop(pTimer);
+    osiTimerDelete(pTimer);
+    return TB_SUCCESS;
+}
+
+int tb_device_shutdown_system(void)
+{
+    OSI_LOGI(0, "tb_device_shutdown_system");
+    g_cfw_exit_flag = 0;
+    CFW_ShellControl(CFW_CONTROL_CMD_POWER_OFF);
+    return TB_SUCCESS;
+}
+
+int tb_device_reboot_system(void)
+{
+    OSI_LOGI(0, "tb_device_reboot_system");
+    //osiShutdown(OSI_SHUTDOWN_RESET);
+    g_cfw_exit_flag = 1;
+    CFW_ShellControl(CFW_CONTROL_CMD_POWER_OFF);
+    return TB_SUCCESS;
+}
+
+int tb_device_modem_wakeup_mcu(uint32_t gpio_num)
+{
+    drvGpioConfig_t cfg = {
+        .mode = DRV_GPIO_OUTPUT,
+        .out_level = false,
+    };
+    drvGpio_t *d = drvGpioOpen(gpio_num, &cfg, NULL, NULL);
+    if (d == NULL)
+        return TB_FAILURE;
+
+    for (uint8_t i = 1; i <= 6; ++i)
+    {
+        drvGpioWrite(d, (i % 2));
+        osiThreadSleep(50);
+    }
+
+    drvGpioClose(d);
+    return TB_SUCCESS;
+}
+
+int tb_device_enable_sleep(bool enable)
+{
+    static osiPmSource_t *gTbPmLock = NULL;
+    if (gTbPmLock == NULL)
+    {
+        const uint32_t name = OSI_MAKE_TAG('T', 'B', 'D', 'V');
+        gTbPmLock = osiPmSourceCreate(name, NULL, NULL);
+        if (gTbPmLock == NULL)
+            return TB_FAILURE;
+    }
+    if (enable)
+        osiPmWakeUnlock(gTbPmLock);
+    else
+        osiPmWakeLock(gTbPmLock);
+    return TB_SUCCESS;
+}
+
+int tb_device_get_update_result(void)
+{
+    fupdateStatus_t status = fupdateGetStatus();
+    if (status == FUPDATE_STATUS_FINISHED)
+    {
+        char *old_version = NULL;
+        char *new_version = NULL;
+        if (fupdateGetVersion(&old_version, &new_version))
+        {
+            OSI_LOGXI(OSI_LOGPAR_SS, 0, "FUPDATE: %s -> %s",
+                      old_version, new_version);
+            free(old_version);
+            free(new_version);
+        }
+        fupdateInvalidate(true);
+        return TB_SUCCESS;
+    }
+    return TB_FAILURE;
+}
+
+int tb_device_start_update_firmware(void)
+{
+    if (!fupdateSetReady(NULL))
+    {
+        OSI_LOGE(0, "Fota Error: not ready");
+        return TB_FAILURE;
+    }
+    osiShutdown(OSI_SHUTDOWN_RESET);
+    return TB_SUCCESS;
+}
+
+int tb_device_query_hu_ipaddr(char *hu_ipaddr, int ipaddr_buf_len)
+{
+    char temp[20] = {
+        0,
+    };
+    struct netif *netinfo = NULL;
+
+    OSI_LOGE(0, "tb_device_query_hu_ipaddr");
+    if (hu_ipaddr == NULL)
+    {
+        OSI_LOGE(0, "NULL hu_ipaddr");
+        return TB_FAILURE;
+    }
+    NETIF_FOREACH(netinfo)
+    {
+        OSI_LOGE(0, "netinfo->link_mode:%d", netinfo->link_mode);
+        if (netinfo->link_mode == NETIF_LINK_MODE_NETCARD)
+        {
+            sprintf(temp, "%s", ipaddr_ntoa(&(netinfo->ip_addr)));
+            break;
+        }
+    }
+
+    if (strlen(temp))
+    {
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "hu_ipaddr:%s", (const char *)temp);
+        strncpy(hu_ipaddr, temp, ipaddr_buf_len);
+    }
+    else
+    {
+        strncpy(hu_ipaddr, "0.0.0.0", ipaddr_buf_len);
+        return TB_FAILURE;
+    }
+
+    return TB_SUCCESS;
+}
 //CFW Eveent handle
 
 int tb_get_signal_bar_gsm(uint8_t nCsq)
@@ -1565,23 +1853,44 @@ int tb_handle_Gprs_Act_Rsp(const CFW_EVENT *cfw_event)
 
     if (cfw_event->nType == CFW_GPRS_ACTIVED)
     {
+
+        osiEvent_t tcpip_event = *(osiEvent_t *)cfw_event;
+        tcpip_event.id = EV_TCPIP_CFW_GPRS_ACT;
+        CFW_EVENT *tcpip_cfw_event = (CFW_EVENT *)&tcpip_event;
+        tcpip_cfw_event->nUTI = 0;
+        osiEventSend(netGetTaskID(), (const osiEvent_t *)&tcpip_event);
+
         tb_start_data_statistics_timer(cfw_event->nParam1);
+
+        g_tb_data_dial_status[cfw_event->nParam1 - 1] = TB_DIAL_STATUS_CONNECTED;
+
         if (g_tb_data_callback_fun != NULL)
         {
             g_tb_data_callback_fun(cfw_event->nParam1, TB_DIAL_STATUS_CONNECTED);
         }
-        g_tb_data_dial_status[cfw_event->nParam1 - 1] = TB_DIAL_STATUS_CONNECTED;
     }
     else if (cfw_event->nType == CFW_GPRS_DEACTIVED)
     {
+        uint8_t nCid, nSimId;
+        //Delete ppp Session first
+        OSI_LOGI(0, "ppp session will be deleted!!! GprsActRsp");
+        nCid = cfw_event->nParam1;
+        nSimId = cfw_event->nFlag;
+        pppSessionDeleteByNetifDestoryed(nSimId, nCid);
+
+        osiEvent_t tcpip_event = *(osiEvent_t *)cfw_event;
+        tcpip_event.id = EV_TCPIP_CFW_GPRS_DEACT;
+        CFW_EVENT *tcpip_cfw_event = (CFW_EVENT *)&tcpip_event;
+        tcpip_cfw_event->nUTI = 0;
+        osiEventSend(netGetTaskID(), (const osiEvent_t *)&tcpip_event);
+        tb_stop_data_statistics_timer(cfw_event->nParam1);
+
+        g_tb_data_dial_status[cfw_event->nParam1 - 1] = TB_DIAL_STATUS_DISCONNECTED;
+
         if (g_tb_data_callback_fun != NULL)
         {
             g_tb_data_callback_fun(cfw_event->nParam1, TB_DIAL_STATUS_DISCONNECTED);
         }
-
-        tb_stop_data_statistics_timer(cfw_event->nParam1);
-
-        g_tb_data_dial_status[cfw_event->nParam1 - 1] = TB_DIAL_STATUS_DISCONNECTED;
     }
 
     return TB_SUCCESS;
@@ -1615,14 +1924,14 @@ int tb_handle_Gprs_DeActive_Ind(const CFW_EVENT *cfw_event)
         return TB_SUCCESS;
     }
 
+    tb_stop_data_statistics_timer(cfw_event->nParam1);
+
+    g_tb_data_dial_status[cfw_event->nParam1 - 1] = TB_DIAL_STATUS_DISCONNECTED;
+
     if (g_tb_data_callback_fun != NULL)
     {
         g_tb_data_callback_fun(cfw_event->nParam1, TB_DIAL_STATUS_DISCONNECTED);
     }
-
-    tb_stop_data_statistics_timer(cfw_event->nParam1);
-
-    g_tb_data_dial_status[cfw_event->nParam1 - 1] = TB_DIAL_STATUS_DISCONNECTED;
 
     return TB_SUCCESS;
 }
@@ -1854,12 +2163,12 @@ int tb_handle_Sms_Send_Rsp(const CFW_EVENT *cfw_event)
 
     OSI_LOGI(0, "tb_handle_Sms_Send_Rsp,  nType is 0x%x", cfw_event->nType);
 
-    if (0 == nType)
+    if ((NULL != g_tb_sms_callback_fun) && (0 == nType))
     {
         OSI_LOGI(0, "tb_handle_Sms_Send_Rsp send sms sucess!\n");
         g_tb_sms_callback_fun(TB_SMS_SEND_RESULT, 1);
     }
-    else if (0xf0 == nType)
+    else if ((NULL != g_tb_sms_callback_fun) && (0xf0 == nType))
     {
         OSI_LOGI(0, "tb_handle_Sms_Send_Rsp send sms failed!");
         g_tb_sms_callback_fun(TB_SMS_SEND_RESULT, 0);
@@ -1873,13 +2182,13 @@ int tb_handle_Sms_Delete_Rsp(const CFW_EVENT *cfw_event)
 
     OSI_LOGI(0, "tb_handle_Sms_Delete_Rsp,  nType is 0x%x", cfw_event->nType);
 
-    if (0 == nType)
+    if ((NULL != g_tb_sms_callback_fun) && (0 == nType))
 
     {
         OSI_LOGI(0, "tb_handle_Sms_Delete_Rsp delete sms sucess!\n");
         g_tb_sms_callback_fun(TB_SMS_DELETE_RESULT, 3);
     }
-    else if (0xf0 == nType)
+    else if ((NULL != g_tb_sms_callback_fun) && (0xf0 == nType))
     {
         OSI_LOGI(0, "tb_handle_Sms_Delete_Rsp delete sms failed!");
         g_tb_sms_callback_fun(TB_SMS_DELETE_RESULT, 2);
@@ -1907,7 +2216,7 @@ int tb_handle_Sms_Read_Rsp(const CFW_EVENT *cfw_event)
     CFW_SMS_NODE_EX *pNode = (CFW_SMS_NODE_EX *)cfw_event->nParam1;
 
     OSI_LOGI(0, "tb_handle_Sms_Read_Rsp pNode->node.nStatus = %d", pNode->node.nStatus);
-    if (CFW_SMS_STORED_STATUS_UNREAD == pNode->node.nStatus)
+    if ((NULL != g_tb_sms_callback_fun) && (CFW_SMS_STORED_STATUS_UNREAD == pNode->node.nStatus))
     {
         if (g_SMS_Unread_Msg > 0)
         {
@@ -1961,7 +2270,10 @@ int tb_handle_Sms_Read_Rsp(const CFW_EVENT *cfw_event)
             OSI_LOGI(0, "tb_handle_Sms_Read_Rsp dcs2 ctx->toal = %d", ctx->total);
             OSI_LOGI(0, "tb_handle_Sms_Read_Rsp dcs2 ctx->current_index= %d", ctx->current_index);
             OSI_LOGI(0, "tb_handle_Sms_Read_Rsp dcs2 ctx->index = %d", ctx->index);
-            g_tb_sms_received_contents_cb(ctx);
+            if (NULL != g_tb_sms_received_contents_cb)
+            {
+                g_tb_sms_received_contents_cb(ctx);
+            }
         }
         else if (pType1Data->dcs == 0)
         {
@@ -2000,7 +2312,10 @@ int tb_handle_Sms_Read_Rsp(const CFW_EVENT *cfw_event)
             OSI_LOGI(0, "tb_handle_Sms_Read_Rsp ctx->toal = %d", ctx->total);
             OSI_LOGI(0, "tb_handle_Sms_Read_Rsp ctx->current_Index= %d", ctx->current_index);
             OSI_LOGI(0, "tb_handle_Sms_Read_Rsp ctx->index = %d", ctx->index);
-            g_tb_sms_received_contents_cb(ctx);
+            if (NULL != g_tb_sms_received_contents_cb)
+            {
+                g_tb_sms_received_contents_cb(ctx);
+            }
         }
     }
     else
@@ -2018,7 +2333,11 @@ int tb_handle_New_Sms_Ind(const CFW_EVENT *pCfwEvent)
     CFW_NEW_SMS_NODE_EX *pNewMsgNode = (CFW_NEW_SMS_NODE_EX *)pCfwEvent->nParam1;
 
     OSI_LOGI(0, "tb_handle_New_Sms_Ind received new sms\n");
-    g_tb_sms_callback_fun(TB_SMS_RECEIVED, 1);
+
+    if (NULL != g_tb_sms_callback_fun)
+    {
+        g_tb_sms_callback_fun(TB_SMS_RECEIVED, 1);
+    }
 
     /* get new message node and check it */
     if (NULL == pNewMsgNode || pCfwEvent->nType != 0)
@@ -2048,7 +2367,7 @@ int tb_handle_New_Sms_Ind(const CFW_EVENT *pCfwEvent)
         }
         OSI_LOGI(0, "tb_handle_New_Sms_Ind: dcs = %d, messageClass = %d\n", dcs, messageClass);
 
-        if (1 == messageClass || 4 == messageClass)
+        if ((NULL != g_tb_sms_callback_fun) && (1 == messageClass || 4 == messageClass))
         {
             g_SMS_Unread_Msg++;
             g_tb_sms_callback_fun(TB_SIM_NV_UNREAD_SMS, g_SMS_Unread_Msg);
@@ -2069,7 +2388,7 @@ int tb_handle_New_Sms_Ind(const CFW_EVENT *pCfwEvent)
         }
         OSI_LOGI(0, "tb_handle_New_Sms_Ind: dcs = %d, messageClass = %d\n", dcs, messageClass);
 
-        if (1 == messageClass || 4 == messageClass)
+        if ((NULL != g_tb_sms_callback_fun) && (1 == messageClass || 4 == messageClass))
         {
             g_SMS_Unread_Msg++;
             g_tb_sms_callback_fun(TB_SIM_NV_UNREAD_SMS, g_SMS_Unread_Msg);
@@ -2105,7 +2424,10 @@ int tb_handle_CC_Initiate_Speech_Call_Rsp(const CFW_EVENT *cfw_event)
     }
     notify_call_info.call_type = TB_VOICE_CALL_TYPE_VOICE;
 
-    g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    if (NULL != g_tb_voice_callback_fun)
+    {
+        g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    }
 
     return TB_SUCCESS;
 }
@@ -2130,7 +2452,10 @@ int tb_handle_CC_Accept_Call_Rsp(const CFW_EVENT *cfw_event)
     }
     notify_call_info.call_type = TB_VOICE_CALL_TYPE_VOICE;
 
-    g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    if (NULL != g_tb_voice_callback_fun)
+    {
+        g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    }
 
     return TB_SUCCESS;
 }
@@ -2145,7 +2470,10 @@ int tb_handle_CC_HungUp_Call_Rsp(const CFW_EVENT *cfw_event)
     notify_call_info.call_state = TB_VOICE_NOTIFY_CALL_ENDED;
     notify_call_info.hungup_result = 1;
 
-    g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    if (NULL != g_tb_voice_callback_fun)
+    {
+        g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    }
 
     return TB_SUCCESS;
 }
@@ -2160,7 +2488,10 @@ int tb_handle_CC_Alerting_Call_Ind(const CFW_EVENT *cfw_event)
 
     notify_call_info.call_state = TB_VOICE_NOTIFY_CALL_CONNECTING;
 
-    g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    if (NULL != g_tb_voice_callback_fun)
+    {
+        g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    }
 
     return TB_SUCCESS;
 }
@@ -2190,34 +2521,27 @@ int tb_handle_CC_Speech_Call_Ind(const CFW_EVENT *pCfwEvent)
         strncpy(notify_call_info.number, num_str, strlen(num_str));
     }
 
-    g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    if (NULL != g_tb_voice_callback_fun)
+    {
+        g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    }
     return TB_SUCCESS;
 }
 
 int tb_handle_CC_Release_Call_Ind(const CFW_EVENT *pCfwEvent)
 {
-    int num_len = 0;
-    char num_str[TEL_NUMBER_MAX_LEN + 2];
-    CFW_SPEECH_CALL_IND *call_info = (CFW_SPEECH_CALL_IND *)pCfwEvent->nParam1;
     tb_voice_notify_call_state_number_info notify_call_info = {
         0,
     };
 
     notify_call_info.call_state = TB_VOICE_NOTIFY_CALL_ENDED;
     notify_call_info.call_type = TB_VOICE_CALL_TYPE_VOICE;
-    notify_call_info.remote_party_name_valid = 0;
+    notify_call_info.hungup_result = 1;
 
-    if (call_info->TelNumber.nSize)
+    if (NULL != g_tb_voice_callback_fun)
     {
-        num_len = cfwBcdToDialString(call_info->TelNumber.nTelNumber, call_info->TelNumber.nSize, (char *)num_str);
-        strncpy(notify_call_info.number, num_str, num_len);
+        g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
     }
-    else
-    {
-        tb_voice_GetUriCallNumber((const char *)call_info->calling_uri, num_str);
-        strncpy(notify_call_info.number, num_str, strlen(num_str));
-    }
-    g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
     return TB_SUCCESS;
 }
 
@@ -2245,7 +2569,36 @@ int tb_handle_CC_Error_Call_Ind(const CFW_EVENT *pCfwEvent)
         tb_voice_GetUriCallNumber((const char *)call_info->calling_uri, num_str);
         strncpy(notify_call_info.number, num_str, strlen(num_str));
     }
-    g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    if (NULL != g_tb_voice_callback_fun)
+    {
+        g_tb_voice_callback_fun(TB_VOICE_REPORT_CALL_INFO, &notify_call_info);
+    }
+    return TB_SUCCESS;
+}
+
+int tb_handle_Cfw_Exit_Ind(const CFW_EVENT *cfw_event)
+{
+    OSI_LOGI(0, "tb_handle_Cfw_Exit_Ind: nType: %d,g_cfw_exit_flag:%d", cfw_event->nType, g_cfw_exit_flag);
+
+    if (g_cfw_exit_flag == 0)
+    {
+        OSI_LOGI(0, "Shut Down");
+        g_cfw_exit_flag = 0xFF;
+        drvRtcUpdateTime();
+        atCfgAutoSave();
+        osiThreadSleep(100);
+        osiShutdown(OSI_SHUTDOWN_POWER_OFF);
+    }
+    else if (g_cfw_exit_flag == 1)
+    {
+        OSI_LOGI(0, "Reboot");
+        g_cfw_exit_flag = 0xFF;
+        drvRtcUpdateTime();
+        atCfgAutoSave();
+        osiThreadSleep(100);
+        osiShutdown(OSI_SHUTDOWN_RESET);
+    }
+
     return TB_SUCCESS;
 }
 
@@ -2366,9 +2719,14 @@ int tb_handle_cfw_event(const osiEvent_t *event)
         OSI_LOGI(0, "tb_handle_cfw_event: EV_CFW_CC_RELEASE_CALL_RSP");
         tb_handle_CC_HungUp_Call_Rsp(cfw_event);
         break;
+    case EV_CFW_EXIT_IND:
+        OSI_LOGI(0, "tb_handle_cfw_event: EV_CFW_EXIT_IND");
+        tb_handle_Cfw_Exit_Ind(cfw_event);
+        break;
     default:
         break;
     }
     return TB_SUCCESS;
 }
+
 #endif

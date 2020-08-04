@@ -34,7 +34,7 @@ typedef struct
 } camExample_t;
 
 static bool prvCamInit(camExample_t *cam);
-
+#ifndef CONFIG_CAMERA_SINGLE_BUFFER
 static void prvCamContinuousFrameModeTest(camExample_t *cam)
 {
     uint8_t *pCamPreviewDataBuffer = NULL;
@@ -61,7 +61,7 @@ static void prvCamContinuousFrameModeTest(camExample_t *cam)
 
     drvCamClose();
 }
-
+#endif
 static void prvCamOneShotFrameModeTest(camExample_t *cam)
 {
     uint16_t *pCamPreviewDataBuffer = NULL;
@@ -116,7 +116,9 @@ static void prvCamThread(void *param)
     camExample_t cam;
     using testcase_t = void (*)(camExample_t *);
     testcase_t testlist[] = {
+#ifndef CONFIG_CAMERA_SINGLE_BUFFER
         prvCamContinuousFrameModeTest,
+#endif
         prvCamOneShotFrameModeTest,
     };
 

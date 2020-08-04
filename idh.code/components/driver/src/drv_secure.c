@@ -41,14 +41,14 @@
 #define RDA_SE_CFG_SECURITY_ENABLE_BIT2 (1 << 25)
 
 static uint8_t pubkey_addr[] = {
-    RDA_PUBKEY0_EFUSE_BLOCK_INDEX,
-    RDA_PUBKEY1_EFUSE_BLOCK_INDEX,
-    RDA_PUBKEY2_EFUSE_BLOCK_INDEX,
-    RDA_PUBKEY3_EFUSE_BLOCK_INDEX,
-    RDA_PUBKEY4_EFUSE_BLOCK_INDEX,
-    RDA_PUBKEY5_EFUSE_BLOCK_INDEX,
-    RDA_PUBKEY6_EFUSE_BLOCK_INDEX,
-    RDA_PUBKEY7_EFUSE_BLOCK_INDEX,
+    RDA_PUBKEY0_EFUSE_DOUBLE_BLOCK_INDEX,
+    RDA_PUBKEY1_EFUSE_DOUBLE_BLOCK_INDEX,
+    RDA_PUBKEY2_EFUSE_DOUBLE_BLOCK_INDEX,
+    RDA_PUBKEY3_EFUSE_DOUBLE_BLOCK_INDEX,
+    RDA_PUBKEY4_EFUSE_DOUBLE_BLOCK_INDEX,
+    RDA_PUBKEY5_EFUSE_DOUBLE_BLOCK_INDEX,
+    RDA_PUBKEY6_EFUSE_DOUBLE_BLOCK_INDEX,
+    RDA_PUBKEY7_EFUSE_DOUBLE_BLOCK_INDEX,
 };
 
 struct chip_id
@@ -258,10 +258,8 @@ static void prvAntiClone(void)
 bool prvReadSecurityFlag(void)
 {
     struct spl_security_info info;
-    drvEfuseOpen();
     prvRomapiSetBase();
     prvGetDdeviceSecurityContext(&info);
-    drvEfuseClose();
     OSI_LOGD(0, "secure: readSecurityFlag secure_mode = %x", info.secure_mode);
     if (!info.secure_mode ||
         info.chip_security_context.flags & RDA_SE_CFG_RDCERT_DISABLE_BIT)
@@ -279,7 +277,7 @@ static void prvWritePublicKey(void)
     for (i = 0; i < PUBLICKEYWORDS; i++)
     {
         pubkey[i] = __ntohl(*(uint32_t *)&pubkey_ptr->pubkey[i * 4]);
-        drvEfuseWrite(pubkey_addr[i], pubkey[i]);
+        drvEfuseWrite(true, pubkey_addr[i], pubkey[i]);
         OSI_LOGD(0, "pubkey_addr = %08x pubkey[%d] = %08x", pubkey_addr[i], i, pubkey[i]);
     }
 }
@@ -292,10 +290,8 @@ bool ReadSecurityFlag(void)
     MMU_Disable();
 
     struct spl_security_info info;
-    drvEfuseOpen();
     prvRomapiSetBase();
     prvGetDdeviceSecurityContext(&info);
-    drvEfuseClose();
     OSI_LOGD(0, "secure: readSecurityFlag secure_mode = %x", info.secure_mode);
     if (!info.secure_mode ||
         info.chip_security_context.flags & RDA_SE_CFG_RDCERT_DISABLE_BIT)
@@ -324,14 +320,11 @@ bool writeSecuriyFlag(void)
     uint32_t val;
     if (!prvReadSecurityFlag())
     {
-        drvEfuseOpen();
         prvAntiClone();
         prvWritePublicKey();
         val = RDA_SE_CFG_SECURITY_ENABLE_BIT0 | RDA_SE_CFG_SECURITY_ENABLE_BIT1 | RDA_SE_CFG_SECURITY_ENABLE_BIT2;
-        drvEfuseWrite(RDA_EFUSE_SECURITY_CFG_INDEX, val);
+        drvEfuseWrite(true, RDA_EFUSE_DOUBLE_BLOCK_SECURITY_CFG_INDEX, val);
         OSI_LOGD(0, "secure: RDA_EFUSE_SECURITY_CFG =  %08x", val);
-
-        drvEfuseClose();
     }
 
     MMU_Enable();

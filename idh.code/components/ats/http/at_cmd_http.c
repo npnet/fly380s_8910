@@ -1440,7 +1440,7 @@ static void _httpSetcrtPromptCB(void *param, atCmdPromptEndMode_t end_mode, size
     OSI_LOGI(0x0, "AT HTTPSSETCRT send size/%d", size);
     if (end_mode == AT_PROMPT_END_OVERFLOW)
     {
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
     }
 #if defined(MUPNP_USE_OPENSSL)
     paramRet = Https_saveCrttoFile((char *)async->data, size - 1, crtFlag);
@@ -1544,7 +1544,7 @@ static void _httpDataPromptCB(void *param, atCmdPromptEndMode_t end_mode, size_t
     OSI_LOGI(0x0, "AT HTTPDATA send size/%d", size);
     if (end_mode == AT_PROMPT_END_OVERFLOW)
     {
-        RETURN_CMS_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CMS_INVALID_PARA);
     }
     areq = at_httpx_create_async_req(AT_HTTPX_EV_DATA, NULL, 0);
     if (areq == NULL)

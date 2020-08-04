@@ -196,7 +196,7 @@ bool isDhcpPackage(drvEthPacket_t *pkt, uint32_t size)
     if (__ntohs(pkt->ethhd.h_proto) == ETH_P_IP)
     {
         isIPpackage = true;
-        OSI_LOGI(0, "isDhcpPackage isIPpackage");
+        //OSI_LOGI(0, "isDhcpPackage isIPpackage");
     }
     if (!isIPpackage)
         return false;

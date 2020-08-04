@@ -14,6 +14,7 @@
 // #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
 #include "drv_debug_port.h"
+#include "drv_debug_port_imp.h"
 #include "drv_config.h"
 #include "drv_usb.h"
 #include "drv_names.h"
@@ -200,7 +201,7 @@ static bool prvUserialStartTxLocked(drvDebugUserialPort_t *d, const void *data, 
  */
 static void prvUserialTraceOutputLocked(drvDebugUserialPort_t *d, unsigned whence)
 {
-    if (!d->port.mode.trace_enable || !gTraceEnabled || !d->port.status.usb_host_opened)
+    if (!d->port.mode.trace_enable || !d->port.status.usb_host_opened)
         return;
 
     if (whence == OUTPUT_AT_TXDONE)
@@ -654,6 +655,17 @@ static void prvUserialBsEnter(void *param)
     drvDebugUserialPort_t *d = (drvDebugUserialPort_t *)param;
     d->blue_screen_mode = true;
     d->rx_cb = prvDummyRxCallback;
+
+    if (d->port.mode.trace_enable)
+    {
+#ifdef CONFIG_KERNEL_HOST_TRACE
+        // It will make USB easier to copy the data to RAM (stack).
+        uint8_t event_data[GDB_EVENT_DATA_SIZE];
+        memcpy(event_data, gBlueScreenEventData, GDB_EVENT_DATA_SIZE);
+
+        prvUserialSendPacket(&d->port, event_data, GDB_EVENT_DATA_SIZE);
+#endif
+    }
 }
 
 /**

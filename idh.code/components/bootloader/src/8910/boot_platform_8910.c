@@ -269,7 +269,7 @@ void bootResetPinEnable(void)
     swrst_ctrl0.b.ext_rstn_pd_en = 1;
     swrst_ctrl0.b.pb_7s_rst_pd_en = 1;
     swrst_ctrl0.b.reg_rst_pd_en = 1;
-    swrst_ctrl0.b.wdg_rst_pd_en = 1;
+    swrst_ctrl0.b.wdg_rst_pd_en = 0;
     halAdiBusWrite(&hwp_rda2720mGlobal->swrst_ctrl0, swrst_ctrl0.v);
 
     REG_RDA2720M_GLOBAL_SWRST_CTRL1_T swrst_ctrl1 = {};

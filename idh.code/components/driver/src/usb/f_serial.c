@@ -32,7 +32,6 @@ typedef struct
     copsFunc_t func;
     usbSerial_t serial;
     uint32_t serial_name;
-    cops_t *cdev;
     struct
     {
         usb_interface_descriptor_t intf;
@@ -142,8 +141,6 @@ static int _serialSetup(copsFunc_t *f, const usb_device_request_t *ctrl)
 static int _serialBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
 {
     fSerial_t *s = _f2s(f);
-    f->controller = udc;
-    s->cdev = cops;
     s->serial.func = f;
     s->serial.epin_desc = &s->desc.in_ep;
     s->serial.epout_desc = &s->desc.out_ep;
@@ -171,9 +168,9 @@ static void _serialUnbind(copsFunc_t *f)
     s->serial.ops->unbind(&s->serial);
 
     if (s->intf_num != -1)
-        copsRemoveInterface(s->cdev, s->intf_num);
+        copsRemoveInterface(f->cops, s->intf_num);
     s->intf_num = -1;
-    copsRemoveString(s->cdev, &generic_serial_str);
+    copsRemoveString(f->cops, &generic_serial_str);
 }
 
 static void _serialDisable(copsFunc_t *f)

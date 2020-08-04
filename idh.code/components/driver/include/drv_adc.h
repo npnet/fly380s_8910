@@ -91,5 +91,16 @@ int32_t drvAdcGetChannelVolt(uint32_t channel, int32_t scale);
  */
 
 int32_t drvAdcGetRawValue(uint32_t channel, int32_t scale);
+/**
+ * @brief return the volt for the hmic channel in mV.
+ *
+ * @param scale  	set the scale of the hmic channel,default use ADC_SCALE_1V250
+ * @param con_mode  set the scale ratio of the channel,match with rg_aud_hedet_v2ad_scale
+ * @return
+ *      -1 failure
+ *      the volt vlaue.
+ */
+
+int32_t drvAdcGetHMicChannelVolt(int32_t scale, int32_t con_mode);
 
 #endif /*__RDA_ADC_H__*/

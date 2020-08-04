@@ -66,9 +66,14 @@ static void prvEthLanUploadDataCB(drvEthPacket_t *pkt, uint32_t size, void *ctx)
 
     if (size > ETH_HLEN)
     {
-        OSI_LOGE(0x1000756d, "prvEthUploadDataCB data size: %d", size - ETH_HLEN);
+        //OSI_LOGE(0x1000756d, "prvEthUploadDataCB data size: %d", size - ETH_HLEN);
         uint8_t *ipData = pkt->data;
         sys_arch_dump(ipData, size - ETH_HLEN);
+#ifdef CONFIG_NET_TRACE_IP_PACKET
+        uint8_t *ipdata = ipData;
+        uint16_t identify = (ipdata[4] << 8) + ipdata[5];
+        OSI_LOGI(0x0, "prvEthUploadDataCB data size: %d identify %04x", size - ETH_HLEN, identify);
+#endif
     }
 
     if (session->dev_netif != NULL && isARPPackage(pkt, size)) //drop ARP package
@@ -101,6 +106,7 @@ wan_to_netdev_lan_datainput(struct pbuf *p, struct netif *nif)
     struct pbuf *q = NULL;
     netdevIntf_t *nc = &gNetIntf;
     drvEthReq_t *tx_req;
+    uint32_t size = 0;
     while ((tx_req = drvEtherTxReqAlloc(nc->ether)) == NULL)
     {
         osiThreadSleep(1);
@@ -108,6 +114,7 @@ wan_to_netdev_lan_datainput(struct pbuf *p, struct netif *nif)
             return -1;
     }
     uint8_t *pData = tx_req->payload->data;
+    size = p->tot_len;
 
     for (q = p; q != NULL; q = q->next)
     {
@@ -118,12 +125,17 @@ wan_to_netdev_lan_datainput(struct pbuf *p, struct netif *nif)
     sys_arch_dump(pData, p->tot_len);
 
     nif->u32RndisDLSize += p->tot_len;
+#ifdef CONFIG_NET_TRACE_IP_PACKET
+    uint8_t *ipdata = pData;
+    uint16_t identify = (ipdata[4] << 8) + ipdata[5];
+    OSI_LOGI(0x0, "Wan to NC identify %04x", identify);
+#endif
     OSI_LOGE(0x0, "Wan to NC %d", p->tot_len);
     pbuf_free(p);
-    if (!drvEtherTxReqSubmit(nc->ether, tx_req, p->tot_len))
+    if (!drvEtherTxReqSubmit(nc->ether, tx_req, size))
     {
         drvEtherTxReqFree(nc->ether, tx_req);
-        OSI_LOGW(0x0, "Wan to NC error %d", p->tot_len);
+        OSI_LOGW(0x0, "Wan to NC error %d", size);
         return -1;
     }
     return 0;
@@ -220,7 +232,7 @@ static bool prvNdevLanDataToPs(netSession_t *session, const void *data, size_t s
 static void prvProcessNdevLanConnect(void *par)
 {
     netdevIntf_t *nc = (netdevIntf_t *)par;
-    OSI_LOGI(0x10007574, "netdevConnect (ether %p, session %p)", nc->ether, nc->session);
+    OSI_LOGI(0x0, "prvProcessNdevLanConnect (ether %p, session %p)", nc->ether, nc->session);
     if (nc->ether == NULL)
         return;
 
@@ -245,10 +257,11 @@ static void prvProcessNdevLanConnect(void *par)
 
 void netdevLanConnect()
 {
-    OSI_LOGI(0x10007576, "netdevConnect timer start.");
+    OSI_LOGI(0x0, "netdevLanConnect timer start.");
     netdevIntf_t *nc = &gNetIntf;
-    if (nc->connect_timer == NULL)
-        nc->connect_timer = osiTimerCreate(netGetTaskID(), prvProcessNdevLanConnect, nc);
+    if (nc->connect_timer != NULL)
+        osiTimerDelete(nc->connect_timer);
+    nc->connect_timer = osiTimerCreate(netGetTaskID(), prvProcessNdevLanConnect, nc);
     osiTimerStart(nc->connect_timer, 500);
 }
 

@@ -254,7 +254,7 @@ FLASHRAM_CODE static void prvPageProgram(
             return;
         }
 
-        if (d->flash.suspend_en && osiIrqPending())
+        if (d->flash.suspend_en && osiIrqPending() && !osiIsPanic())
         {
             halSpiFlashProgramSuspend(&d->flash);
 
@@ -300,7 +300,7 @@ FLASHRAM_CODE static void prvErase(drvSpiFlash_t *d, uint32_t offset, size_t siz
             return;
         }
 
-        if (d->flash.suspend_en && osiIrqPending())
+        if (d->flash.suspend_en && osiIrqPending() && !osiIsPanic())
         {
             halSpiFlashEraseSuspend(&d->flash);
 

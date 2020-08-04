@@ -40,21 +40,23 @@ static camprevExample_t camPrev;
 static void prvBlackPrint(void)
 {
     OSI_LOGI(0, "cam LCD display black");
+
     lcdFrameBuffer_t dataBufferWin;
     lcdDisplay_t lcdRec;
     uint16_t *lcdblack = (uint16_t *)malloc(240 * 320 * 2);
     camd_assert(lcdblack);
     memset(lcdblack, 0, 240 * 320 * 2);
+
     dataBufferWin.buffer = lcdblack;
     dataBufferWin.colorFormat = LCD_RESOLUTION_RGB565;
     dataBufferWin.keyMaskEnable = false;
-
     dataBufferWin.region_x = 0;
     dataBufferWin.region_y = 0;
     dataBufferWin.height = camPrev.lcddev.height;
     dataBufferWin.width = camPrev.lcddev.width;
     dataBufferWin.rotation = 0;
     dataBufferWin.widthOriginal = camPrev.lcddev.width;
+    dataBufferWin.maskColor = 0;
 
     lcdRec.x = 0;
     lcdRec.y = 0;
@@ -81,6 +83,8 @@ static void prvCameraPrint(void *buff)
     dataBufferWin.width = camPrev.lcddev.width;
     dataBufferWin.widthOriginal = camPrev.camdev.img_width;
     dataBufferWin.rotation = 1;
+    dataBufferWin.maskColor = 0;
+
     lcdRec.x = 0;
     lcdRec.y = 0;
     lcdRec.width = camPrev.lcddev.width;
@@ -106,15 +110,26 @@ static void prvLcdInit(void)
 static void prvCamExampleThread(void *param)
 {
     uint16_t *pCamPreviewDataBuffer = NULL;
+#ifndef CONFIG_CAMERA_SINGLE_BUFFER
     drvCamStartPreview();
-    while (1)
+    for (;;)
     {
         pCamPreviewDataBuffer = drvCamPreviewDQBUF();
         //deal data
-        OSI_LOGD(0, "cam deal data");
+        OSI_LOGI(0, "cam deal data");
         prvCameraPrint(pCamPreviewDataBuffer);
         drvCamPreviewQBUF((uint16_t *)pCamPreviewDataBuffer);
     }
+#else
+    for (;;)
+    {
+        if (drvCamCaptureImage(&pCamPreviewDataBuffer))
+        {
+            OSI_LOGI(0, "cam deal data");
+            prvCameraPrint(pCamPreviewDataBuffer);
+        }
+    }
+#endif
     OSI_LOGD(0, "_camPrevTask osiThreadExit");
     osiThreadExit();
 }

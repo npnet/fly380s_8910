@@ -29,8 +29,8 @@
 #include <sys/queue.h>
 
 #define DEBUG_SUSPEND_MODE OSI_SUSPEND_PM1
-#define SUSPEND_MIN_TIME (5)             // ms
-#define SUSPEND_WDT_MARGIN_TIME (200000) // 20s
+#define SUSPEND_MIN_TIME (5)            // ms
+#define SUSPEND_WDT_MARGIN_TIME (20000) // 20s
 #define PSM_MIN_TIME (150)
 
 #ifdef CONFIG_WDT_ENABLE
@@ -66,6 +66,7 @@ typedef struct osiShutdownReg
 typedef struct
 {
     bool started;
+    osiBootMode_t boot_mode;
     osiPmSourceHead_t resume_list;
     osiPmSourceHead_t active_list;
     osiPmSourceHead_t inactive_list;
@@ -73,7 +74,6 @@ typedef struct
     osiShutdownRegHead_t shutdown_reg_list;
 
     uint32_t boot_causes;
-    osiBootMode_t boot_mode;
     uint32_t sleep32k_flags;
 } osiPmContext_t;
 
@@ -447,12 +447,12 @@ static void prvSuspend(osiPmContext_t *d, osiSuspendMode_t mode, int64_t sleep_m
     osiChipSuspend(mode);
 
     osiProfileExit(PROFCODE_DEEP_SLEEP);
-    WDT_EXIT_DEEPSLEEP();
 
     uint32_t source = osiPmCpuSuspend(mode, sleep_ms);
     OSI_LOGI(0, "suspend resume source 0x%08x", source);
 
     osiChipResume(mode, source);
+    WDT_EXIT_DEEPSLEEP();
 
     TAILQ_FOREACH(p, &d->resume_list, resume_iter)
     {
@@ -473,9 +473,11 @@ static void prv32KSleep(osiPmContext_t *d, int64_t sleep_ms)
 
     osiProfileEnter(PROFCODE_DEEP_SLEEP);
 
+    WDT_ENTER_DEEPSLEEP(OSI_MIN(int64_t, osiCpDeepSleepTime(), sleep_ms) + SUSPEND_WDT_MARGIN_TIME);
     uint32_t source = osiChip32KSleep(sleep_ms);
     OSI_LOGI(0, "suspend resume source 0x%08x", source);
 
+    WDT_EXIT_DEEPSLEEP();
     osiProfileExit(PROFCODE_DEEP_SLEEP);
 }
 
@@ -491,17 +493,13 @@ static void prvLightSleep(osiPmContext_t *d, uint32_t idle_tick)
         osiTimerWakeupProcess();
 }
 
-void osiPmSleep(uint32_t idle_tick)
+static void prvSleepLocked(uint32_t idle_tick)
 {
-    uint32_t critical = osiEnterCritical();
     osiPmContext_t *d = &gOsiPmCtx;
     osiSuspendMode_t mode = DEBUG_SUSPEND_MODE;
 
     if (osiIsSleepAbort())
-    {
-        osiExitCritical(critical);
         return;
-    }
 
     if (gOsiPmCtx.sleep32k_flags != 0)
     {
@@ -511,7 +509,6 @@ void osiPmSleep(uint32_t idle_tick)
             if (deep_sleep_ms > SUSPEND_MIN_TIME)
             {
                 prv32KSleep(d, deep_sleep_ms);
-                osiExitCritical(critical);
                 return;
             }
         }
@@ -524,13 +521,18 @@ void osiPmSleep(uint32_t idle_tick)
             if (deep_sleep_ms > SUSPEND_MIN_TIME)
             {
                 prvSuspend(d, mode, deep_sleep_ms);
-                osiExitCritical(critical);
                 return;
             }
         }
     }
 
     prvLightSleep(d, idle_tick);
+}
+
+void osiPmSleep(uint32_t idle_tick)
+{
+    uint32_t critical = osiEnterCritical();
+    prvSleepLocked(idle_tick);
     osiExitCritical(critical);
 }
 

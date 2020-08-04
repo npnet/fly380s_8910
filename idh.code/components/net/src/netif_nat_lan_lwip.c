@@ -36,7 +36,6 @@ extern u8_t netif_num;
 
 #define MAX_SIM_ID 2
 #define MAX_CID 7
-static ip4_nat_entry_t *lwip_nat_entry[MAX_SIM_ID][MAX_CID] = {0};
 static struct netif gprs_netif[MAX_SIM_ID][MAX_CID] = {0};
 
 static err_t nat_lan_lwip_tcpip_input(struct pbuf *p, struct netif *inp)
@@ -290,7 +289,7 @@ struct netif *TCPIP_nat_lan_lwip_netif_create(uint8_t nCid, uint8_t nSimId)
     ip4_addr_copy(new_nat_entry->source_net, ip4);
     IP4_ADDR(&(new_nat_entry->source_netmask), 255, 255, 255, 255);
     ip4_nat_add(new_nat_entry);
-    lwip_nat_entry[nSimId][nCid] = new_nat_entry;
+    netif->nat_entry = new_nat_entry;
 #if LWIP_TCPIP_CORE_LOCKING
     UNLOCK_TCPIP_CORE();
 #endif
@@ -308,11 +307,11 @@ void TCPIP_nat_lan_lwip_netif_destory(uint8_t nCid, uint8_t nSimId)
 #if LWIP_TCPIP_CORE_LOCKING
         LOCK_TCPIP_CORE();
 #endif
-        ip4_nat_entry_t *new_nat_entry = lwip_nat_entry[nSimId][nCid];
+        ip4_nat_entry_t *new_nat_entry = netif->nat_entry;
         if (new_nat_entry != NULL)
         {
+            netif->nat_entry = NULL;
             ip4_nat_remove(new_nat_entry);
-            lwip_nat_entry[nSimId][nCid] = NULL;
             free(new_nat_entry);
         }
         netif_set_link_down(netif);

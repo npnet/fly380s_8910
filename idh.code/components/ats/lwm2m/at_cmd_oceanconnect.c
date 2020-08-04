@@ -311,9 +311,14 @@ void AT_CmdFunc_NCDPOPEN(atCommand_t *pParam)
             AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_NO_NET_SERVICE));
         }
 
-        if (!paramok || pParam->param_count > 3 || gOceanConnectRef != -1)
+        if (gOceanConnectRef != -1)
         {
             OSI_LOGI(0x1000448e, "AT+NCDPOPEN gOceanConnectRef=%d", gOceanConnectRef);
+            AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_EXE_FAIL));
+        }
+        if (!paramok || pParam->param_count > 3)
+        {
+            OSI_LOGI(0, "AT+NCDPOPEN param error");
             AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_PARAM_INVALID));
         }
         if (uPort == 0)

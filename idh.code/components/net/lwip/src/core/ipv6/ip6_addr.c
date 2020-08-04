@@ -82,7 +82,8 @@ ip6addr_aton(const char *cp, ip6_addr_t *addr)
     if (*s == ':') {
       zero_blocks--;
     } else if (!isxdigit(*s)) {
-      break;
+      //break;
+       return 0;
     }
   }
 

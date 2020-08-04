@@ -352,7 +352,7 @@ static void  chap_handle_response(ppp_pcb *pcb, int id,
 #if PPP_AUTHGPRS_SUPPORT
 	if ((pcb->chap_server.flags & AUTH_DONE) == 0)
 	{
-		if(pcb->acted == 0)
+		if(pcb->acted == 0 && ((pppSession_t *)pcb->ppp_session->uti_attact != 0xff))
 		{
 			/* Do gprs Activate with user and SHA value */
 

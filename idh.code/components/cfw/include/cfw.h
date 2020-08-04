@@ -1785,6 +1785,19 @@ uint32_t CFW_GetT3302();
 uint32_t CFW_SetT3302(
     uint32_t value);
 
+/*! \brief function retrieves the RRC release value.
+
+\return \a RRC release value
+*/
+uint32_t CFW_GetRRCRel();
+
+/*! \brief function set the RRC release value.
+
+\param [in]  value RRC release value.
+\return \a ERR_SUCCESS on success
+*/
+uint32_t CFW_SetRRCRel(
+    uint32_t value);
 /*! \brief function retrieves the operator ID by operator name.
 
 \param [out] pOperatorId    Specify the operator identifier in digital format,if the ID length is 5,the array should terminated with 0x0F. For example,the id is 0X04,0X06,0X00,0X00,0X00,0X0F,and its corresponding full name is "China Mobile"
@@ -2175,6 +2188,14 @@ typedef struct _CFW_NW_NETWORK_INFO
     uint8_t nNwkShortNameLen;
     uint8_t nNwkNames[247];
 } CFW_NW_NETWORK_INFO;
+
+typedef struct _CFW_NW_MBS_CELL_INFO
+{
+    uint16_t nArfcn; // Abs Freq Number
+    uint8_t nBsic;   // Base Station Code
+    uint8_t nCellId[2];
+    uint8_t nLai[5];
+} CFW_NW_MBS_CELL_INFO;
 
 typedef struct _CFW_NW_JAMMING_DETECT_GET_IND
 {
@@ -9022,8 +9043,14 @@ uint8_t CFW_SmsGetSmsType(CFW_SIM_ID nSimID);
 uint32_t CFW_SwitchPort(uint8_t nFlag);
 
 uint32_t CFW_GetRFTemperature(uint32_t *temp);
+
 uint32_t CFW_SetLTEFreqPwrRange(uint16_t freqlow, uint16_t freqhigh, uint16_t power);
 uint32_t CFW_SetRFFreqPwrRange(uint16_t mode, uint16_t band, uint16_t powerlow, uint16_t powerhigh);
+
+uint32_t CFW_SetVideoSurveillance(uint8_t iEnable, CFW_SIM_ID nSimID);
+
+uint32_t CFW_GetVideoSurveillance(uint8_t *iEnable, CFW_SIM_ID nSimID);
+
 typedef struct _CFW_APNS_UNAME_UPWD
 {
     char apn[50];
@@ -9090,6 +9117,7 @@ bool CFW_SatGetOpenChannelUserInfo(uint8_t *pUser, uint8_t *pUserLen, uint8_t *p
 bool CFW_SatGetOpenChannelAPN(uint8_t *pAPN, uint8_t *pApnLen, CFW_SIM_ID nSimID);
 bool CFW_SatGetOpenChannelDestAddress(uint8_t *pAddress, uint8_t *pAddressLen, uint8_t *pAddressType, CFW_SIM_ID nSimID);
 bool CFW_SatGetOpenChannelNetInfo(uint8_t *pBuffer, uint8_t *pBearerType, uint8_t *pTranType, uint16_t *pTranPort, CFW_SIM_ID nSimID);
+bool CFW_SatGetDisplayText(uint8_t *pText, uint8_t *pTextLength, uint8_t *nScheme, CFW_SIM_ID nSimID);
 
 uint32_t CFW_SimGetEID(uint16_t nUTI, CFW_SIM_ID nSimID);
 uint32_t CFW_GprsHostAddress(uint8_t *pIPAddress, uint8_t *nLength, uint8_t *nIPType, uint8_t nCid, CFW_SIM_ID nSimID);
@@ -9133,5 +9161,101 @@ uint32_t CFW_SetPdnDeactTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO pdnTimerAnd
 uint32_t CFW_GetPdnDeactTimerAndMaxCount(CFW_PDN_TIMER_MAXCOUNT_INFO *pdnTimerAndMaxCount, uint8_t nRat, CFW_SIM_ID nSimID);
 
 extern uint32_t CSW_SetAndGetMicGain(uint8_t *resultcode, uint8_t *hasMsg, uint8_t *resultMsg, uint8_t mode, uint8_t nPath, uint8_t nCtrl, uint8_t *nParam, uint16_t nParamLength);
+uint32_t SimSendStatusReq(uint8_t nMode, CFW_SIM_ID nSimID);
+
+#define CFW_MAX_IMSI_ARR_LEN 8
+#define CFW_MAX_PERSONALISATIONS 10
+
+typedef struct _CFW_SIM_LOCK_PLMN_T
+{
+    uint16_t mcc;
+    uint16_t mnc;
+    uint16_t mnc_digit_num;
+    uint16_t pending;
+} CFW_SIM_LOCK_PLMN_T;
+
+typedef struct _CFW_NETWORK_LOCKS_T
+{
+    uint8_t numLocks;
+    uint8_t reserved; // Byte alignment
+    uint8_t pending[2];
+    CFW_SIM_LOCK_PLMN_T locks[CFW_MAX_PERSONALISATIONS];
+} CFW_NETWORK_LOCKS_T;
+
+typedef struct _CFW_NETWORK_SUBSET_LOCK_DATA_T
+{
+    CFW_SIM_LOCK_PLMN_T plmn;
+    uint8_t network_subset[2]; // IMSI digits 6 and 7
+    uint8_t pending[2];
+} CFW_NETWORK_SUBSET_LOCK_DATA_T;
+
+typedef struct _CFW_NETWORK_SUBSET_LOCKS_T
+{
+    uint8_t numLocks;
+    uint8_t reserved; // Byte alignment
+    uint8_t pending[2];
+    CFW_NETWORK_SUBSET_LOCK_DATA_T locks[CFW_MAX_PERSONALISATIONS];
+} CFW_NETWORK_SUBSET_LOCKS_T;
+
+typedef struct _CFW_SP_LOCK_DATA_T
+{
+    CFW_SIM_LOCK_PLMN_T plmn;
+    uint8_t sp;       // GID1 1 byte
+    uint8_t reserved; // Byte alignment
+    uint8_t pending[2];
+} CFW_SP_LOCK_DATA_T;
+
+typedef struct _CFW_SP_LOCKS_T
+{
+    uint8_t numLocks;
+    uint8_t reserved; // Byte alignment
+    uint8_t pending[2];
+    CFW_SP_LOCK_DATA_T locks[CFW_MAX_PERSONALISATIONS];
+} CFW_SP_LOCKS_T;
+
+typedef struct _CFW_CORPORATE_LOCK_DATA_T
+{
+    CFW_SIM_LOCK_PLMN_T plmn;
+    uint8_t sp;        // GID1 1 byte
+    uint8_t corporate; // GID2 1 byte
+    uint8_t pending[2];
+} CFW_CORPORATE_LOCK_DATA_T;
+
+typedef struct _CFW_CORPORATE_LOCKS_T
+{
+    uint8_t numLocks;
+    uint8_t reserved; // Byte alignment
+    uint8_t pending[2];
+    CFW_CORPORATE_LOCK_DATA_T locks[CFW_MAX_PERSONALISATIONS];
+} CFW_CORPORATE_LOCKS_T;
+
+typedef struct _CFW_IMSI_T
+{
+    uint8_t imsi_len;
+    uint8_t pending[3];
+    uint8_t imsi_val[CFW_MAX_IMSI_ARR_LEN];
+} CFW_IMSI_T;
+
+typedef CFW_IMSI_T CFW_USER_LOCK_DATA_T;
+
+typedef struct _CFW_USER_LOCKS2_T
+{
+    uint8_t numLocks;
+    uint8_t pending[3];
+    CFW_USER_LOCK_DATA_T locks[3];
+} CFW_USER_LOCKS2_T;
+
+typedef struct
+{
+    uint32_t SIM_lock_status;
+    uint32_t max_num_trials;
+    CFW_NETWORK_LOCKS_T network_locks;
+    CFW_NETWORK_SUBSET_LOCKS_T network_subset_locks;
+    CFW_SP_LOCKS_T SP_locks;
+    CFW_CORPORATE_LOCKS_T corporate_locks;
+    CFW_USER_LOCKS2_T user_locks;
+} CFW_SRV_SIMLOCKDATA_T;
+
+bool Cfw_SetTimezone(int8_t timezone);
 
 #endif

@@ -516,7 +516,7 @@ uint32_t srvSimlockDataProcess(const char *data, const uint32_t len)
 
     if (len != (sizeof(simlock_data_t) << 1) || !data)
     {
-        OSI_LOGI(0, "SIMLOCK: para err,len:%d !\n", len);
+        OSI_LOGI(0, "SIMLOCK: para err,len:%d (sizeof(simlock_data_t) << 1) = %d\n", len, (sizeof(simlock_data_t) << 1));
         return 0;
     }
 
@@ -823,17 +823,23 @@ bool srvSimlockGetLocksStatus(srvSimlockType_t lock_type)
 
 void srvSimlockGetLocksData(srvSimlockData_t *simlock_data)
 {
-    uint32_t data_length;
+    uint32_t data_length = 0x00;
     simlock_data_t *data_buf = NULL;
+
+    if (simlock_data == NULL)
+    {
+        OSI_LOGI(0, "SIMLOCK: srvSimlockGetLocksData check data buf error");
+        return;
+    }
 
     if (!simlockDataVerify())
         return;
 
     simlockReadDataSize(&data_length);
-    data_buf = (simlock_data_t *)malloc(data_length);
-    if (!data_buf || !simlock_data)
+    data_buf = (simlock_data_t *)malloc(sizeof(simlock_data_t));
+    if (!data_buf)
     {
-        OSI_LOGI(0, "SIMLOCK: srvSimlockGetLocksData check data buf error");
+        OSI_LOGE(0, "SIMLOCK: allocate data_buf fail");
         return;
     }
 
@@ -858,7 +864,7 @@ void srvSimlockGetLocksData(srvSimlockData_t *simlock_data)
 bool srvSimlockUnLocks(srvSimlockType_t lock_type, srvSimlockKey_t *input_key)
 {
     uint32_t max_num_trials;
-    bool ret;
+    bool ret = false;
 
     MN_SIM_LOCK_USER_DATA_T nv_user_data = {};
     srvSimlockData_t *simlock_data = (srvSimlockData_t *)malloc(sizeof(*simlock_data));
@@ -960,11 +966,9 @@ bool srvSimlockUnLocks(srvSimlockType_t lock_type, srvSimlockKey_t *input_key)
         ret = false;
     }
 
-    return ret;
-
 failed_handle:
     free(simlock_data);
-    return false;
+    return ret;
 }
 
 void srvSimlockInit()

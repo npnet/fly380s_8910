@@ -819,7 +819,7 @@ static void _cnumRspCB(atCommand_t *cmd, const osiEvent_t *event)
         async->g_nMaxTextSize = pStorageInfo->txtLen;
 
         cmd->uti = cfwRequestUTI((osiEventCallback_t)_cnumRspCB, cmd);
-        if (async->g_nListEntryMaxIndex <= AT_PBK_LIST_ENTRY_STEP * async->g_nListEntryStepCounter++)
+        if ((async->g_nListEntryMaxIndex - async->g_nListEntryMinIndex + 1) <= (AT_PBK_LIST_ENTRY_STEP * async->g_nListEntryStepCounter))
         {
             async->g_nListEntryLastStep = 1;
             nErrorCode = CFW_SimListPbkEntries(CFW_PBK_ON, async->g_nListEntryMinIndex, async->g_nListEntryMaxIndex, cmd->uti, nSim);

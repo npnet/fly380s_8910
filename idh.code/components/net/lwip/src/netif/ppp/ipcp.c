@@ -1078,7 +1078,7 @@ OSI_LOGI(0x1000762c, "ipcp_ackci");
     return (1);
 
 bad:
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c5, "ipcp_ackci: received bad Ack!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077c5, "ipcp_ackci: received bad Ack!"));
     return (0);
 }
 
@@ -1349,7 +1349,7 @@ OSI_LOGI(0x1000762d, "ipcp_nakci");
     return 1;
 
 bad:
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c6, "ipcp_nakci: received bad Nak!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077c6, "ipcp_nakci: received bad Nak!"));
     return 0;
 }
 
@@ -1508,7 +1508,7 @@ OSI_LOGI(0x1000762e, "ipcp_rejci");
     return 1;
 
 bad:
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c7, "ipcp_rejci: received bad Reject!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077c7, "ipcp_rejci: received bad Reject!"));
     return 0;
 }
 
@@ -1563,7 +1563,7 @@ OSI_LOGI(0x1000762f, "ipcp_reqci");
 	if (l < 2 ||			/* Not enough data for CI header or */
 	    p[1] < 2 ||			/*  CI length too small or */
 	    p[1] > l) {			/*  CI length too big? */
-	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c8, "ipcp_reqci: bad CI length!"));
+	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077c8, "ipcp_reqci: bad CI length!"));
 	    orc = CONFREJ;		/* Reject bad CI */
 	    cilen = l;			/* Reject till end of packet */
 	    l = 0;			/* Don't loop again */
@@ -1812,7 +1812,7 @@ endswitch:
     }
 
     *len = ucp - inp;			/* Compute output length */
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077c9, "ipcp: returning Configure-%d", rc));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077c9, "ipcp: returning Configure-%d", rc));
     return (rc);			/* Return final code */
 }
 
@@ -1913,7 +1913,7 @@ OSI_LOGI(0x10007631, "ipcp_up");
     ipcp_options *go = &pcb->ipcp_gotoptions;
     ipcp_options *wo = &pcb->ipcp_wantoptions;
 
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077ca, "ipcp: up"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077ca, "ipcp: up"));
 
     /*
      * We must have a non-zero IP address for both ends of the link.
@@ -2145,7 +2145,7 @@ OSI_LOGI(0x10007632, "ipcp_down");
     ipcp_options *ho = &pcb->ipcp_hisoptions;
     ipcp_options *go = &pcb->ipcp_gotoptions;
 
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077cb, "ipcp: down"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077cb, "ipcp: down"));
 #if PPP_STATS_SUPPORT
     /* XXX a bit IPv4-centric here, we only need to get the stats
      * before the interface is marked down. */

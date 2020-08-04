@@ -148,6 +148,10 @@ void osiChipResume(osiSuspendMode_t mode, uint32_t source)
         REG_FIELD_WRITE1(hwp_timer4->timer_irq_mask_set, timer_irq_mask_set, ostimer_mask, 1);
 
         prvRestoreTickRef32K();
+
+        for (uintptr_t address = (uintptr_t)&hwp_mailbox->sysmail0;
+             address <= (uintptr_t)&hwp_mailbox->sysmail191; address += 4)
+            *(volatile unsigned *)address = 0;
     }
 }
 

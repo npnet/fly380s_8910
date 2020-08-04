@@ -580,7 +580,7 @@ static void lcp_rprotrej(fsm *f, u_char *inp, int len) {
 #endif /* PPP_PROTOCOLNAME */
 
     if (len < 2) {
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077cc, "lcp_rprotrej: Rcvd short Protocol-Reject packet!"));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077cc, "lcp_rprotrej: Rcvd short Protocol-Reject packet!"));
 	return;
     }
 
@@ -591,7 +591,7 @@ static void lcp_rprotrej(fsm *f, u_char *inp, int len) {
      * OPENED state SHOULD be silently discarded.
      */
     if( f->state != PPP_FSM_OPENED ){
-	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077cd, "Protocol-Reject discarded: LCP in state %d", f->state));
+	LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077cd, "Protocol-Reject discarded: LCP in state %d", f->state));
 	return;
     }
 
@@ -1128,7 +1128,7 @@ static int lcp_ackci(fsm *f, u_char *p, int len) {
 	goto bad;
     return (1);
 bad:
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077d3, "lcp_acki: received bad Ack!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077d3, "lcp_acki: received bad Ack!"));
     return (0);
 }
 
@@ -1591,7 +1591,7 @@ static int lcp_nakci(fsm *f, u_char *p, int len, int treat_as_reject) {
     return 1;
 
 bad:
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077d4, "lcp_nakci: received bad Nak!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077d4, "lcp_nakci: received bad Nak!"));
     return 0;
 }
 
@@ -1822,7 +1822,7 @@ static int lcp_rejci(fsm *f, u_char *p, int len) {
     return 1;
 
 bad:
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077d5, "lcp_rejci: received bad Reject!"));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077d5, "lcp_rejci: received bad Reject!"));
     return 0;
 }
 
@@ -1880,7 +1880,7 @@ static int lcp_reqci(fsm *f, u_char *inp, int *lenp, int reject_if_disagree) {
 	if (l < 2 ||			/* Not enough data for CI header or */
 	    p[1] < 2 ||			/*  CI length too small or */
 	    p[1] > l) {			/*  CI length too big? */
-	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077d6, "lcp_reqci: bad CI length!"));
+	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077d6, "lcp_reqci: bad CI length!"));
 	    orc = CONFREJ;		/* Reject bad CI */
 	    cilen = l;			/* Reject till end of packet */
 	    l = 0;			/* Don't loop again */
@@ -1984,7 +1984,7 @@ static int lcp_reqci(fsm *f, u_char *inp, int *lenp, int reject_if_disagree) {
 		    || ho->neg_eap
 #endif /* EAP_SUPPORT */
 		    || cilen != CILEN_SHORT) {
-		    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077d7, "lcp_reqci: rcvd AUTHTYPE PAP, rejecting..."));
+		    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077d7, "lcp_reqci: rcvd AUTHTYPE PAP, rejecting..."));
 		    orc = CONFREJ;
 		    break;
 		}
@@ -2022,7 +2022,7 @@ static int lcp_reqci(fsm *f, u_char *inp, int *lenp, int reject_if_disagree) {
 		    ho->neg_eap ||
 #endif /* EAP_SUPPORT */
 		    cilen != CILEN_CHAP) {
-		    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077d8, "lcp_reqci: rcvd AUTHTYPE CHAP, rejecting..."));
+		    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077d8, "lcp_reqci: rcvd AUTHTYPE CHAP, rejecting..."));
 		    orc = CONFREJ;
 		    break;
 		}
@@ -2073,7 +2073,7 @@ static int lcp_reqci(fsm *f, u_char *inp, int *lenp, int reject_if_disagree) {
 		    ho->neg_upap ||
 #endif /* PAP_SUPPORT */
 		    cilen != CILEN_SHORT) {
-		    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077d9, "lcp_reqci: rcvd AUTHTYPE EAP, rejecting..."));
+		    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077d9, "lcp_reqci: rcvd AUTHTYPE EAP, rejecting..."));
 		    orc = CONFREJ;
 		    break;
 		}
@@ -2246,7 +2246,7 @@ static int lcp_reqci(fsm *f, u_char *inp, int *lenp, int reject_if_disagree) {
 	    break;
 
 	default:
-	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077da, "lcp_reqci: rcvd unknown option %d", citype));
+	    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077da, "lcp_reqci: rcvd unknown option %d", citype));
 	    orc = CONFREJ;
 	    break;
 	}
@@ -2300,7 +2300,7 @@ endswitch:
     }
 
     pbuf_free(nakp);
-    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNIN, (0x100077db, "lcp_reqci: returning CONF%d.", rc));
+    LWIP_DEBUGF(LWIP_DBG_LEVEL_WARNING, (0x100077db, "lcp_reqci: returning CONF%d.", rc));
     return (rc);			/* Return final code */
 }
 

@@ -436,7 +436,11 @@ sensorInfo_t gc0310Info =
         1,                //		uint16_t spi_ctrl_clk_div;
         DRV_NAME_I2C1,    //		uint32_t i2c_name;
         0,                //		uint32_t nPixcels;
-        2,                //		uint8_t captureDrops;
+#ifdef CONFIG_CAMERA_SINGLE_BUFFER
+        0, //		uint8_t captureDrops;
+#else
+        2,
+#endif
         0,
         0,
         NULL, //		uint8_t *buffer;
@@ -763,6 +767,7 @@ static void prvCsiCamIsrCB(void *ctx)
             }
         }
         break;
+
     case campPreviewState1:
         if (cause.b.vsync_f)
         {

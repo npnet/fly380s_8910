@@ -785,6 +785,7 @@ dns_skip_name(struct pbuf* p, u16_t query_idx)
  * @param idx the DNS table entry index for which to send a request
  * @return ERR_OK if packet is sent; an err_t indicating the problem otherwise
  */
+ extern struct netif *getGprsNetIf(uint8_t nSim, uint8_t nCid);
 static err_t
 dns_send(u8_t idx)
 {
@@ -889,6 +890,8 @@ dns_send(u8_t idx)
       dst = &dns_servers[entry->server_idx];
       int requsest_id =0;
       int found = 0;
+      dns_pcbs[pcb_idx]->netif_idx = 0;
+      LWIP_DEBUGF(DNS_DEBUG,(0,"dns_send:begin dns_pcbs[%d]->netif_idx=%d",pcb_idx,dns_pcbs[pcb_idx]->netif_idx));
 #if ((LWIP_DNS_SECURE & LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING) != 0)
       for (requsest_id = 0; requsest_id < DNS_MAX_REQUESTS; requsest_id++) {
         if (dns_requests[requsest_id].found && (dns_requests[requsest_id].dns_table_idx == idx)) {
@@ -912,6 +915,19 @@ dns_send(u8_t idx)
                   //dst = &dns_server;
                   ip_addr_debug_print(DNS_DEBUG,dst);
               }
+             LWIP_DEBUGF(DNS_DEBUG,(0,"dns_send: using sim and cid,found the netif_idx for dns_pcbs"));
+             uint8_t nSimId = (simcid & 0xff00) >> 8;
+             uint8_t nCid = simcid & 0x00ff;
+             struct netif *netif = getGprsNetIf(nSimId, nCid);
+             if (netif == NULL)
+             {
+                 netif = netif_default;
+             }
+             if(netif != NULL)
+             {
+               dns_pcbs[pcb_idx]->netif_idx = netif_get_index(netif);
+             }
+            LWIP_DEBUGF(DNS_DEBUG,(0,"dns_send: found dns_pcbs[%d]->netif_idx=%d",pcb_idx, dns_pcbs[pcb_idx]->netif_idx));
          }
       }
     }

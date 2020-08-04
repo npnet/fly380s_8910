@@ -40,7 +40,6 @@ struct f_ecm
 {
     copsFunc_t func; // keep first member
     ecmData_t data_channel;
-    cops_t *cops;
     usbEp_t *notify_ep;
     usbXfer_t *notify_xfer;
     int ctrl_id;
@@ -273,9 +272,6 @@ static void prvEcmClose(copsFunc_t *f)
 static int prvEcmFuncBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
 {
     struct f_ecm *ecm = prvF2ECM(f);
-    f->controller = udc;
-    ecm->cops = cops;
-
     int ctrl_id = copsAssignInterface(cops, f);
     if (ctrl_id < 0)
         return -1;
@@ -362,20 +358,20 @@ static void prvEcmFuncUnbind(copsFunc_t *f)
     ecm_data_intf_desc.iInterface = 0;
     ecm_control_intf_desc.iInterface = 0;
     ecm_desc.iMacAddress = 0;
-    copsRemoveString(ecm->cops, &ecm_string[0]);
-    copsRemoveString(ecm->cops, &ecm_string[1]);
-    copsRemoveString(ecm->cops, &ecm_string[2]);
-    copsRemoveString(ecm->cops, &ecm_string[3]);
+    copsRemoveString(f->cops, &ecm_string[0]);
+    copsRemoveString(f->cops, &ecm_string[1]);
+    copsRemoveString(f->cops, &ecm_string[2]);
+    copsRemoveString(f->cops, &ecm_string[3]);
 
     if (ecm->ctrl_id != -1)
     {
-        copsRemoveInterface(ecm->cops, ecm->ctrl_id);
+        copsRemoveInterface(f->cops, ecm->ctrl_id);
         ecm->ctrl_id = -1;
     }
 
     if (ecm->data_id != -1)
     {
-        copsRemoveInterface(ecm->cops, ecm->data_id);
+        copsRemoveInterface(f->cops, ecm->data_id);
         ecm->data_id = -1;
     }
 }

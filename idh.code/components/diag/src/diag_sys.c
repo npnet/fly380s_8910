@@ -46,15 +46,13 @@ static void _handleReadUIDReq(const diagMsgHead_t *cmd)
     uint32_t id_low, id_high, length;
     uint8_t uData[8] = {0};
     uint8_t uDataAscii[32] = {0};
-    bool low = false;
-    bool high = false;
 
-    drvEfuseOpen();
-    low = drvEfuseRead(RDA_EFUSE_UNIQUE_ID_LOW_INDEX, &id_low);
-    high = drvEfuseRead(RDA_EFUSE_UNIQUE_ID_HIGH_INDEX, &id_high);
-    drvEfuseClose();
+    bool result = drvEfuseBatchRead(true,
+                                    RDA_EFUSE_DOUBLE_BLOCK_UNIQUE_ID_LOW_INDEX, &id_low,
+                                    RDA_EFUSE_DOUBLE_BLOCK_UNIQUE_ID_HIGH_INDEX, &id_high,
+                                    DRV_EFUSE_ACCESS_END);
 
-    if (low && high)
+    if (result)
     {
         length = 8;
         uint8_t *uid = uData;
@@ -83,9 +81,10 @@ static void _handleReadUIDReq(const diagMsgHead_t *cmd)
     }
     else
     {
+        uint8_t data = 0;
         length = 1;
         head.len = length + sizeof(diagMsgHead_t);
-        diagOutputPacket2(&head, 0x00, length);
+        diagOutputPacket2(&head, &data, length);
         OSI_LOGD(0, "EFUSE Read UID fail...");
     }
 }

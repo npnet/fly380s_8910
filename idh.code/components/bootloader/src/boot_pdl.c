@@ -145,5 +145,6 @@ bool pdlEngineLoop(pdlEngine_t *d, pdlCmdProcess_t proc, pdlPolling_t polling, v
         }
     }
 
+    free(pkt);
     return true;
 }

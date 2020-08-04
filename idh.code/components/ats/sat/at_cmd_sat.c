@@ -1678,11 +1678,11 @@ void callback_gprs_active(atCommand_t *cmd, const osiEvent_t *event)
             OSI_LOGI(0, "default ip = %X", (netif_default->ip_addr));
             //CFW_GprsHostAddress
             uint8_t IPAddress[21] = {0};
-            uint8_t nLength = 0;
+            uint8_t nLength = 21;
             uint8_t nIPType = 0;
 
             uint32_t retval = CFW_GprsHostAddress(IPAddress, &nLength, &nIPType, bip_cid, nSim);
-            if ((retval != ERR_SUCCESS) && (nLength != 0))
+            if ((retval != ERR_SUCCESS) || (nLength == 0))
             {
                 OSI_LOGI(0, "BIP netif ERROR!");
                 goto BIP_SOCKET_ERROR;
@@ -1834,6 +1834,8 @@ void callback_gprs_active(atCommand_t *cmd, const osiEvent_t *event)
 void at_bipSetDefaultQos(CFW_SIM_ID nSimID)
 {
     CFW_GPRS_QOS Qos;
+    memset(&Qos, 0x00, sizeof(CFW_GPRS_QOS));
+
     Qos.nPrecedence = 0x03;
     Qos.nDelay = 0x04;
     Qos.nReliability = 0x02;
@@ -2066,7 +2068,7 @@ uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
                 else
                 {
                     bip_status = BIP_IDLE;
-                    if (bip_retry_num < BIP_RETRY_NUM)
+                    if (bip_retry_num++ < BIP_RETRY_NUM)
                         goto BIP_SOCKET_RETRY;
                     else
                     {
@@ -2099,12 +2101,17 @@ uint8_t at_bip_process(uint8_t nCmdID, CFW_SIM_ID nSimID)
             }
             else if (bip_addrtype == BIP_IPv6)
             {
+#if LWIP_IPV6
                 CFW_TCPIP_SOCKET_ADDR6 local_addr = {0};
                 local_addr.sin6_family = AF_INET6;
-                memcpy(local_addr.sin6_addr.un.u32_addr, &bit_netif->ip_addr.u_addr.ip6.addr, 4);
+                memcpy(local_addr.sin6_addr.un.u32_addr, &bit_netif->ip_addr.u_addr.ip6.addr, 16);
                 local_addr.sin6_len = sizeof(CFW_TCPIP_SOCKET_ADDR6);
                 OSI_LOGXI(OSI_LOGPAR_M, 0, "%X", sizeof(CFW_TCPIP_SOCKET_ADDR), (uint8_t *)&local_addr);
                 retval = CFW_TcpipSocketBind(bip_socket, (CFW_TCPIP_SOCKET_ADDR *)&local_addr, sizeof(CFW_TCPIP_SOCKET_ADDR6));
+#else
+                at_bip_response(0x30, nSim);
+                return -1;
+#endif
             }
 
             if (SOCKET_ERROR == retval)
@@ -2203,7 +2210,7 @@ uint8_t auto_process = 0xFF;
 struct stk_tms_info
 {
     osiTimer_t *tms_timer;
-    uint64_t tms_value;
+    int64_t tms_value;
     uint8_t sim_id;
     uint8_t timer_id;
 } stk_tms_info[NUMBER_OF_SIM][8];
@@ -2245,36 +2252,51 @@ static void callback_sim_close(atCommand_t *cmd, const osiEvent_t *event)
     OSI_LOGI(0, "receive EV_CFW_SIM_CLOSE_RSP...");
     uint8_t nCmd = 0;
     uint8_t nQualifier = 0;
+
+    uint16_t uti = cfwRequestNoWaitUTI();
     if (CFW_SatGetCurCMD(nSim) == SIM_SAT_REFRESH_COM)
     {
         if (false == CFW_SatGetCurrentCmd(&nCmd, &nQualifier, nSim))
         {
-            uint16_t uti = cfwRequestNoWaitUTI(); // cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
             CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x32, 0, 0, 0, uti, nSim);
             return;
         }
         OSI_LOGI(0, "Current proactive command = %d, qualifier = %d", nCmd, nQualifier);
-        if (nQualifier == 0x04)
+        SimSendStatusReq(0x02, nSim);
+        switch (nQualifier)
+        {
+        case 0x04:
         {
             OSI_LOGI(0, "CFW_ResetDevice ...");
-
-            //extern UINT8 nICCID[CFW_SIM_COUNT][ICCID_LENGTH];
-            //nICCID[nSim][0] = 0;
-            //SIM_SAT_PARAM *pSatGetInfo;
-            //CFW_CfgSimGetSatParam(&pSatGetInfo, nSim);
             CFW_SimInit(1, nSim);
-            //pSatGetInfo->nCurCmd = 0;
+            break;
         }
-        else
+        case 0x05:
         {
+            uint8_t aid[18];
+            uint8_t length = 0;
+            OSI_LOGI(0, "Reselect Application ...");
+            CFW_GetUsimAID(aid, &length, nSim);
+            uint32_t retval = SimSelectApplicationReq(aid, length, 0, nSim);
+            if (ERR_SUCCESS != retval)
+            {
+                OSI_LOGI(0, "ReselectApplicationReq return 0x%x \n", retval);
+                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
+                break;
+            }
+            //break;  DO NOT BREAK
+        }
+        case 0x06:
+        {
+            OSI_LOGI(0, "USIM Initiation ...");
             if (ERR_SUCCESS != CFW_SimInitStage1(nSim))
             {
-                OSI_LOGI(0, "REFRESH: CFW_SimInitStage1 ERROR");
-                if (ERR_SUCCESS != CFW_SimInitStage3(nSim))
-                {
-                    OSI_LOGI(0, "REFRESH: CFW_SimInitStage3 failed");
-                }
+                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
             }
+            break;
+        }
+        default:
+            OSI_LOGI(0, "Noting to DO!");
         }
     }
 }
@@ -2509,6 +2531,15 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
     case SIM_SAT_REFRESH_COM:
     {
         OSI_LOGI(0x10004f4e, "SIM_SAT_REFRESH_COM");
+        CFW_NW_STATUS_INFO status;
+        uint32_t retval = CFW_NwGetStatus(&status, nSim);
+        if ((retval != ERR_SUCCESS) || ((status.nStatus != CFW_NW_STATUS_REGISTERED_HOME) &&
+                                        (status.nStatus != CFW_NW_STATUS_REGISTERED_ROAMING)))
+        {
+            OSI_LOGI(0, "The SIM card have not regitstered!");
+            CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x8, 0, 0, 0, uti, nSim);
+            return;
+        }
         uint8_t nFilesList[32] = {0};
         uint8_t nFileNum = 32;
         if (CFW_SatGetRefreshFilesList(nFilesList, &nFileNum, nSim) == false)
@@ -2519,23 +2550,34 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
         }
         switch (nQualifier)
         {
-        case 0x00:
         case 0x01:
-        case 0x02:
         {
+            OSI_LOGI(0, "nFileNum = %d", nFileNum);
+            for (uint8_t i = 0; i < nFileNum; i++)
+                OSI_LOGI(0, "nFilesList[%d] = %d", i, nFilesList[i]);
+
             uint16_t uti = cfwRequestNoWaitUTI();
             if (nFileNum != 0)
                 CFW_SimRefreshFiles(nFilesList, nFileNum, uti, nSim);
-            if (nQualifier == 0x01)
-                break;
+            OSI_LOGI(0, "REFRESH files, responed to UICC with 0x03");
+            CFW_SatResponse(0x01, 0x03, 0, 0, 0, 0, nSim);
+            break;
         }
+        case 0x00:
+        case 0x02:
         case 0x03:
         {
+#if 0
             uti = cfwRequestUTI((osiEventCallback_t)callback_nw_deregister, cmd);
             if (ERR_SUCCESS != CFW_NwDeRegister(uti, nSim))
             {
                 //uti = cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
                 uint16_t uti = cfwRequestNoWaitUTI();
+                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
+            }
+#endif
+            if (CFW_SimInitStage1(nSim) != ERR_SUCCESS)
+            {
                 CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
             }
         }
@@ -2560,59 +2602,11 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                     osiTimerDelete(tms->tms_timer);
                 }
             }
-            //SimSendStatusReq(2, nSim);
-            uint8_t cid = 1;
-            uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_active, cmd);
-            for (; cid < 8; cid++)
-            {
-                OSI_LOGI(0, "get status of cid = %d!", cid);
-                uint8_t status = 0;
-                if (ERR_SUCCESS == CFW_GetGprsActState(cid, &status, nSim))
-                {
-                    OSI_LOGI(0, "cid %d status = %d", cid, status);
-                    if (status == CFW_GPRS_ACTIVED)
-                    {
-                        OSI_LOGI(0, "Deactivate cid %d", cid);
-                        if (ERR_SUCCESS != CFW_GprsAct(CFW_GPRS_DEACTIVED, bip_cid, uti, nSim))
-                        {
-                            //uti = cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
-                            uint16_t uti = cfwRequestNoWaitUTI();
-                            CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
-                            OSI_LOGI(0, "refresh: Deactivate cid %d failed", cid);
-                            return;
-                        }
-                        CFW_ReleaseCID(cid, nSim);
-                    }
-                }
-            }
-            uti = cfwRequestUTI((osiEventCallback_t)callback_nw_deregister, cmd);
-            if (ERR_SUCCESS != CFW_NwDeRegister(uti, nSim))
-            {
-                //uti = cfwRequestUTI((osiEventCallback_t)callback_stk_response, cmd);
-                uint16_t uti = cfwRequestNoWaitUTI();
-                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
-            }
         }
-        break;
+        //break;
         case 0x05:
-        {
-            uint8_t aid[18];
-            uint8_t length = 18;
-            CFW_GetUsimAID(aid, &length, nSim);
-            uint32_t retval = SimSelectApplicationReq(aid, length, 0, nSim);
-            if (ERR_SUCCESS != retval)
-            {
-                OSI_LOGI(0, "ReselectApplicationReq return 0x%x \n", retval);
-                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x21, 0, 0, 0, uti, nSim);
-            }
-            else
-                CFW_SatResponse(SIM_SAT_REFRESH_COM, 0, 0, 0, 0, uti, nSim);
-        }
-        break;
         case 0x06:
         {
-            OSI_LOGI(0, "Process Refresh command qualifier 0x6");
-            //SimSendStatusReq(2, nSim);
             uint8_t cid = 1;
             uti = cfwRequestUTI((osiEventCallback_t)callback_gprs_active, cmd);
             for (; cid < 8; cid++)
@@ -2644,17 +2638,12 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                 uint16_t uti = cfwRequestNoWaitUTI();
                 CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x20, 0, 0, 0, uti, nSim);
             }
-            OSI_LOGI(0, "nFileNum = %d", nFileNum);
-            for (uint8_t i = 0; i < nFileNum; i++)
-                OSI_LOGI(0, "nFilesList[%d] = %d", i, nFilesList[i]);
-            uti = cfwRequestUTI((osiEventCallback_t)NULL, cmd);
-            CFW_SimRefreshFiles(nFilesList, nFileNum, uti, nSim);
         }
         break;
         default:
         {
             OSI_LOGI(0, "The parameter(%u) of REFRESH command is not supported!", nQualifier);
-            CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x32, 0, 0, 0, uti, nSim);
+            CFW_SatResponse(SIM_SAT_REFRESH_COM, 0x30, 0, 0, 0, uti, nSim);
         }
         break;
         }
@@ -2949,6 +2938,16 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                 at_bip_response(0x21, nSim);
                 return;
             }
+            else if (retval != bip_sdata.nLength)
+            {
+                memcpy(bip_sdata.pData, bip_sdata.pData + retval, bip_sdata.nLength - retval);
+                bip_sdata.nLength -= retval;
+                OSI_LOGI(0, "------ SEND Data immediately ------");
+            }
+            else
+            {
+                bip_sdata.nLength = 0;
+            }
         }
         OSI_LOGI(0, "Response to SEND DATA, bip_socket = %d!", bip_socket);
     }
@@ -3044,16 +3043,17 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
     case SIM_SAT_GET_CHANNEL_STATUS_COM:
     {
         bip_command = SIM_SAT_GET_CHANNEL_STATUS_COM;
-        OSI_LOGI(0, "Get GET CHANNEL STATUS!, bip_command = %d", bip_command);
+        OSI_LOGI(0, "Get GET CHANNEL STATUS!, bip_status = %d, bip_type = %d", bip_status, bip_type);
 
-        uint8_t nStatus = 0;
+        uint16_t nStatus = 0;
         if ((bip_status >= BIP_SOCKET) && (bip_type == CFW_TCPIP_SOCK_STREAM))
             nStatus = (0x80 + bip_cid) << 0x08;
         else if ((bip_status >= BIP_ACTIVED) && (bip_type == CFW_TCPIP_SOCK_DGRAM))
             nStatus = (0x80 + bip_cid) << 0x08;
         else
             nStatus = 0x0005;
-        CFW_SatResponse(SIM_SAT_GET_CHANNEL_STATUS_COM, 0, 0, &nStatus, 1, uti, nSim);
+        OSI_LOGI(0, "Get GET CHANNEL STATUS!, bip_cid = %d, nStatus = %d", bip_cid, nStatus);
+        CFW_SatResponse(SIM_SAT_GET_CHANNEL_STATUS_COM, 0, 0, &nStatus, 2, uti, nSim);
     }
     break;
     case SIM_SAT_SETUP_EVENT_LIST_COM:
@@ -3097,6 +3097,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
         if ((timer == 0) || (timer > 8))
             goto TIMER_ERROR;
         struct stk_tms_info *tms = &stk_tms_info[nSim][timer - 1];
+        OSI_LOGXI(OSI_LOGPAR_D, 0, "Timer management: orignal time value = %lld", tms->tms_value);
 
         OSI_LOGI(0, "TIMER MANAGEMENT: Qualifier = %d!", nQualifier);
         if (nQualifier == 0)
@@ -3111,12 +3112,12 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                 OSI_LOGI(0, "reStart Timer, SAT timer id = %d!", timer);
                 osiTimerDelete(tms->tms_timer);
             }
-            tms->tms_value = (uint64_t)osiUpTime();
-            OSI_LOGI(0, "Timer management: orignal time value = %d", tms->tms_value);
-            tms->tms_timer = osiTimerCreate(NULL, stk_tms_timeout, (void *)&timer);
+            tms->tms_value = osiUpTime();
+            OSI_LOGXI(OSI_LOGPAR_D, 0, "Timer management: orignal time value = %lld", tms->tms_value);
 
+            tms->tms_timer = osiTimerCreate(NULL, stk_tms_timeout, (void *)&timer);
             bool ret = osiTimerStart(tms->tms_timer, timerout * 1000);
-            OSI_LOGI(0, "Timerout interval = 0x%X ms", timerout * 1000);
+            OSI_LOGI(0, "Timerout interval = %d ms", timerout * 1000);
             if (ret == true)
             {
                 CFW_SatResponse(SIM_SAT_TIMER_MANAGEMENT_COM, 0, 0, &timer, 1, uti, nSim);
@@ -3127,7 +3128,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
         else if ((nQualifier == 0x01) || (nQualifier == 0x02))
         {
             uint64_t time_value = tms->tms_value;
-            OSI_LOGI(0, "Timer management: orignal time value = %d", time_value);
+            OSI_LOGXI(OSI_LOGPAR_D, 0, "Timer management: orignal time value = %lld", time_value);
 
             if ((time_value == 0) || (time_value == -1)) //timer isn't starting
                 CFW_SatResponse(SIM_SAT_TIMER_MANAGEMENT_COM, 0x24, 0, &timer, 1, uti, nSim);
@@ -3143,7 +3144,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
                     }
                 }
 
-                time_value = (uint64_t)osiUpTime();
+                time_value = (uint64_t)osiUpTime() - time_value;
                 OSI_LOGI(0, "Timer management: time elapsed = %d ms", time_value);
                 time_value = time_value / 1000; //convert from ms to s
 
@@ -3166,8 +3167,24 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
     break;
     case SIM_SAT_DISPLAY_TEXT_COM:
     {
-        //CFW_SAT_DTEXT_RSP *pDisplayText = (CFW_SAT_DTEXT_RSP *)data;
-        CFW_SatResponse(SIM_SAT_DISPLAY_TEXT_COM, 0, 0, 0, 0, uti, nSim);
+        uint8_t text[255] = {0};
+        uint8_t length = 0;
+        uint8_t scheme = 0;
+        uint8_t status = 0;
+        if (CFW_SatGetDisplayText(text, &length, &scheme, nSim) == false)
+        {
+            status = 0x30;
+            OSI_LOGI(0, "call CFW_SatGetDisplayText error, status = %d", status);
+        }
+        else
+        {
+            if (length == 0)
+                status = 0x32;
+            else if ((scheme != 0) && (scheme != 4) && (scheme != 8))
+                status = 0x32;
+            OSI_LOGI(0, "length = %d, scheme = %d, status = %d", length, scheme, status);
+        }
+        CFW_SatResponse(SIM_SAT_DISPLAY_TEXT_COM, status, 0, 0, 0, uti, nSim);
     }
     break;
     case SIM_SAT_POLLING_OFF_COM:
@@ -3402,7 +3419,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
         else if (nQualifier == 0x04)
         {
             uint8_t elp[4] = {0};
-            uint8_t length = 4;
+            uint8_t length = 0;
             CFW_SimGetLanguage(elp, &length, nSim);
             OSI_LOGI(0, "AT: elp = 0x%X,%X, length = %d", elp[0], elp[1], length);
             if (((elp[0] != 0xFF) && (elp[1] != 0xFF)) && (length != 0))
@@ -3503,6 +3520,7 @@ void _onEV_CFW_SAT_CMDTYPE_IND(const osiEvent_t *event)
         CFW_CfgGetSmsFormat(&nFormat, nSim);
         CFW_CfgSetSmsFormat(0, nSim);
         CFW_DIALNUMBER_V2 dummy;
+        memset(&dummy, 0x00, sizeof(CFW_DIALNUMBER_V2));
         uint32_t ret = CFW_SmsSendMessage_V2(&dummy, pPDUPacket, nLengthPDU, uti, nSim);
         CFW_CfgSetSmsFormat(nFormat, nSim);
         if (ret == ERR_SUCCESS)
@@ -3865,10 +3883,20 @@ void atCmdHandleSTR(atCommand_t *cmd)
             {
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
             }
+            memset(inkey, 0x00, length + 1);
+
             inkey[0] = scheme;
             memcpy(inkey + 1, data, length);
             length++;
-            retval = CFW_SatResponse(cmd_type, status, item, (void *)data, length, cmd->uti, nSim);
+            retval = CFW_SatResponse(cmd_type, status, item, (void *)inkey, length, cmd->uti, nSim);
+
+            if (inkey != NULL)
+            {
+                memset(inkey, 0x00, length + 1);
+                free(inkey);
+                inkey = NULL;
+            }
+
             OSI_LOGI(0, "AT response SIM_SAT_GET_INKEY_COM");
         }
         else if (cmd_type == SIM_SAT_GET_INPUT_COM)
@@ -3887,10 +3915,19 @@ void atCmdHandleSTR(atCommand_t *cmd)
             {
                 RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
             }
+            memset(input, 0x00, length + 1);
+
             input[0] = scheme;
             memcpy(input + 1, data, length);
             length++; //Plus one byte of sch
-            retval = CFW_SatResponse(cmd_type, status, item, (void *)data, length, cmd->uti, nSim);
+            retval = CFW_SatResponse(cmd_type, status, item, (void *)input, length, cmd->uti, nSim);
+            if (input != NULL)
+            {
+                memset(input, 0x00, length + 1);
+                free(input);
+                input = NULL;
+            }
+
             OSI_LOGI(0, "AT response SIM_SAT_GET_INKEY_COM");
         }
         OSI_LOGI(0, "CFW_SatResponse: retval = %d", retval);

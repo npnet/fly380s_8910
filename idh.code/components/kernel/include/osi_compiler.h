@@ -323,9 +323,13 @@ typedef struct
 #define OSI_FROM_BE16(v) __builtin_bswap16(v)
 #define OSI_FROM_BE32(v) __builtin_bswap32(v)
 
-// macro for 32bits register read and write
+// macro for 32bits/16bits/8bits register read and write
 #define OSI_REG32_WRITE(address, value) *(volatile uint32_t *)(address) = (value)
 #define OSI_REG32_READ(address) (*(volatile uint32_t *)(address))
+#define OSI_REG16_WRITE(address, value) *(volatile uint16_t *)(address) = (value)
+#define OSI_REG16_READ(address) (*(volatile uint16_t *)(address))
+#define OSI_REG8_WRITE(address, value) *(volatile uint8_t *)(address) = (value)
+#define OSI_REG8_READ(address) (*(volatile uint8_t *)(address))
 
 // macros for easier writing
 #define OSI_KB(n) ((unsigned)(n) * (unsigned)(1024))

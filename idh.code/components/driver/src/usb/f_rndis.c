@@ -38,7 +38,6 @@ typedef struct f_rndis
     uint8_t data_id;
     uint8_t host_addr[ETH_ALEN];
     uint32_t vendorID;
-    cops_t *cdev;
     rndisParams_t *params;
     char manufacturer[16];
     usbEp_t *notify_ep;
@@ -60,7 +59,7 @@ static unsigned int bitrate(udc_t *udc)
         return 19 * 64 * 1 * 1000 * 8;
 }
 
-#define RNDIS_STATUS_INTERVAL_MS 9
+#define RNDIS_STATUS_INTERVAL_MS 16
 #define STATUS_BYTECOUNT 8 /* 8 bytes data */
 
 /* string descriptors: */
@@ -295,17 +294,14 @@ static void _rndisCommandComplete(usbEp_t *ep, usbXfer_t *xfer)
 static int _rndisBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
 {
     rndis_t *rndis = _f2rndis(f);
-    int retval;
 
-    f->controller = udc;
-    rndis->cdev = cops;
     rndis->data_channel.func = f;
     rndis->data_channel.epin_desc = &rndis_ep_in_desc;
     rndis->data_channel.epout_desc = &rndis_ep_out_desc;
     rndis->data_channel.rndis_open = prvRndisOpenCB;
     rndis->data_channel.rndis_close = prvRndisCloseCB;
 
-    retval = rndisEtherBind(&rndis->data_channel);
+    int retval = rndisEtherBind(&rndis->data_channel);
     if (retval < 0)
     {
         OSI_LOGE(0, "rndisEtherBind failed\n");
@@ -407,12 +403,12 @@ static void _rndisUnbind(copsFunc_t *f)
         udcEpFree(f->controller, rndis->notify_ep);
 
     if (rndis->ctrl_id != -1)
-        copsRemoveInterface(rndis->cdev, rndis->ctrl_id);
+        copsRemoveInterface(f->cops, rndis->ctrl_id);
     if (rndis->data_id != -1)
-        copsRemoveInterface(rndis->cdev, rndis->data_id);
+        copsRemoveInterface(f->cops, rndis->data_id);
 
     for (uint8_t i = 0; rndis_string_defs[i].s != NULL; ++i)
-        copsRemoveString(rndis->cdev, &rndis_string_defs[i]);
+        copsRemoveString(f->cops, &rndis_string_defs[i]);
 }
 
 static int _rndisSetup(copsFunc_t *f, const usb_device_request_t *ctrl)
@@ -422,7 +418,7 @@ static int _rndisSetup(copsFunc_t *f, const usb_device_request_t *ctrl)
     uint16_t w_value = ctrl->wValue;
     uint16_t w_length = ctrl->wLength;
     int32_t value = -EOPNOTSUPP;
-    copsCtrl_t *cc = copsGetCtrl(rndis->cdev);
+    copsCtrl_t *cc = copsGetCtrl(f->cops);
     usbXfer_t *xfer = cc->xfer;
 
     xfer->zlp = 0;
@@ -461,7 +457,7 @@ static int _rndisSetup(copsFunc_t *f, const usb_device_request_t *ctrl)
 
     default:
     invalid:
-        OSI_LOGE(0, "invalid control req%02x.%02x v%04x i%04x l%d\n",
+        OSI_LOGE(0, "invalid control %02x/%02x value/%04x index/%04x length/%u\n",
                  ctrl->bmRequestType, ctrl->bRequest,
                  w_value, w_index, w_length);
         return -1;

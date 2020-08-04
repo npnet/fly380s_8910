@@ -11,7 +11,6 @@
  */
 
 //#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
-
 #include "osi_log.h"
 #include "osi_api.h"
 #include "hwregs.h"
@@ -69,17 +68,19 @@ static SensorOps_t *prvCamLoad(void)
 
 static bool prvCamSetFrameBuffer(uint16_t *FrameBuf[], uint8_t nBufcounts)
 {
+#ifdef CONFIG_CAMERA_SINGLE_BUFFER
+    ImageSensor.pSensorInfo->capturedata = NULL;
+#else
     ImageSensor.pSensorInfo->previewdata[0] = NULL;
     ImageSensor.pSensorInfo->previewdata[1] = NULL;
     ImageSensor.pSensorInfo->capturedata = NULL;
-
-    if (nBufcounts > 2)
+#endif
+    if (nBufcounts > SENSOR_FRAMEBUFFER_NUM)
         return false;
     if (FrameBuf[0] == NULL)
         return false;
 
     ImageSensor.framebuffer_count = nBufcounts;
-
     for (uint8_t i = 0; i < nBufcounts; i++)
     {
         ImageSensor.pSensorInfo->previewdata[i] = (uint8_t *)(OSI_ALIGN_UP(FrameBuf[i], CONFIG_CACHE_LINE_SIZE));
@@ -89,8 +90,9 @@ static bool prvCamSetFrameBuffer(uint16_t *FrameBuf[], uint8_t nBufcounts)
 
     //create semphore for task sync
     ImageSensor.pSensorInfo->cam_sem_capture = osiSemaphoreCreate(1, 0);
+#ifndef CONFIG_CAMERA_SINGLE_BUFFER
     ImageSensor.pSensorInfo->cam_sem_preview = osiSemaphoreCreate(2, 0);
-
+#endif
     return true;
 }
 
@@ -113,13 +115,16 @@ void drvCamClose(void)
 
             OSI_LOGI(0, "cam:drvCamClose,osiSemaphoreDelete");
             osiSemaphoreDelete(ImageSensor.pSensorInfo->cam_sem_capture);
+#ifndef CONFIG_CAMERA_SINGLE_BUFFER
             osiSemaphoreDelete(ImageSensor.pSensorInfo->cam_sem_preview);
+#endif
         }
     }
 }
 
 bool drvCamCaptureImage(uint16_t **pFrameBuf)
 {
+    OSI_LOGI(0, "cam: drvCamCaptureImage");
     if (ImageSensor.poweron_flag)
     {
         ImageSensor.pSensorOpsApi->cameraCaptureImage(ImageSensor.nPixcels);
@@ -145,6 +150,10 @@ bool drvCamCaptureImage(uint16_t **pFrameBuf)
 bool drvCamStopPreview(void)
 {
     OSI_LOGI(0, "cam: drvCamStopPreview");
+#ifdef CONFIG_CAMERA_SINGLE_BUFFER
+    return false;
+#endif
+
     if (ImageSensor.poweron_flag)
     {
         ImageSensor.pSensorOpsApi->cameraStopPrev();
@@ -157,6 +166,10 @@ bool drvCamStopPreview(void)
 void drvCamPreviewQBUF(uint16_t *pFrameBuf)
 {
     OSI_LOGD(0, "cam: drvCamPreviewQBUF");
+#ifdef CONFIG_CAMERA_SINGLE_BUFFER
+    return;
+#endif
+
     uint32_t critical = osiEnterCritical();
     ImageSensor.pSensorOpsApi->cameraPrevNotify();
     osiExitCritical(critical);
@@ -164,8 +177,11 @@ void drvCamPreviewQBUF(uint16_t *pFrameBuf)
 
 uint16_t *drvCamPreviewDQBUF(void)
 {
-    uint8_t turn = 0;
     OSI_LOGD(0, "cam: drvCamPreviewDQBUF");
+#ifdef CONFIG_CAMERA_SINGLE_BUFFER
+    return NULL;
+#endif
+    uint8_t turn = 0;
     osiSemaphoreAcquire(ImageSensor.pSensorInfo->cam_sem_preview);
     //get valid bufnumber
     turn = 1 - ImageSensor.pSensorInfo->page_turn;
@@ -175,6 +191,9 @@ uint16_t *drvCamPreviewDQBUF(void)
 
 bool drvCamStartPreview(void)
 {
+#ifdef CONFIG_CAMERA_SINGLE_BUFFER
+    return false;
+#endif
     OSI_LOGI(0, "cam: drvCamStartPreview");
     if (ImageSensor.poweron_flag)
     {
@@ -184,7 +203,6 @@ bool drvCamStartPreview(void)
     else
         return false;
 }
-
 bool drvCamPowerOn(void)
 {
     OSI_LOGI(0, "cam: drvCamPowerOn");
@@ -248,7 +266,9 @@ bool drvCamInit(void)
 
         //malloc sensor framedata buffer
         ImageSensor.pFramebuffer[0] = NULL;
+#ifndef CONFIG_CAMERA_SINGLE_BUFFER
         ImageSensor.pFramebuffer[1] = NULL;
+#endif
         //malloc more data size for dma cache line
         uint32_t alloc_size = ImageSensor.nPixcels + CONFIG_CACHE_LINE_SIZE;
         ImageSensor.pFramebuffer[0] = (uint16_t *)calloc(alloc_size, sizeof(uint8_t));
@@ -256,6 +276,7 @@ bool drvCamInit(void)
         {
             return false;
         }
+#ifndef CONFIG_CAMERA_SINGLE_BUFFER
         ImageSensor.pFramebuffer[1] = (uint16_t *)calloc(alloc_size, sizeof(uint8_t));
         if (ImageSensor.pFramebuffer[1] == NULL)
         {
@@ -263,6 +284,7 @@ bool drvCamInit(void)
             ImageSensor.pFramebuffer[0] = NULL;
             return false;
         }
+#endif
         //set sensor framebuffer
         prvCamSetFrameBuffer(&(ImageSensor.pFramebuffer[0]), SENSOR_FRAMEBUFFER_NUM);
 

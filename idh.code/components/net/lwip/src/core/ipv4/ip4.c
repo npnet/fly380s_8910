@@ -110,6 +110,17 @@ static u16_t ip_id;
 /** The default netif used for multicast */
 static struct netif* ip4_default_multicast_netif;
 
+void ip_init(void)
+{
+#ifdef LWIP_RAND
+  uint32_t srand_ = sys_get_srand();
+  LWIP_DEBUGF(TCP_DEBUG, (0x0, "ip_init: srand :%ld ", srand_));
+  srand(srand_);
+  ip_id = LWIP_RAND();
+  LWIP_DEBUGF(TCP_DEBUG, (0x0, "ip_init: ip_id :%d ", ip_id));
+#endif /* LWIP_RAND */
+}
+
 /**
  * @ingroup ip4
  * Set a default netif for IPv4 multicast. */
@@ -164,7 +175,12 @@ ip4_route(const ip4_addr_t *dest)
   /* iterate through netifs */
   for (netif = netif_list; netif != NULL; netif = netif->next) {
     /* is the netif up, does it have a link and a valid address? */
-    if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
+#if IP_NAT
+    if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif)) && (netif->link_mode == NETIF_LINK_MODE_LWIP || netif->link_mode == NETIF_LINK_MODE_NAT_LWIP_LAN))
+#else
+    if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif)) && netif->link_mode == NETIF_LINK_MODE_LWIP)
+#endif
+    {
       /* network mask matches? */
       if (ip4_addr_netcmp(dest, netif_ip4_addr(netif), netif_ip4_netmask(netif))) {
         /* return netif on which to forward IP packet */

@@ -41,6 +41,12 @@ config SUPPORT_BATTERY_CHARGER
     help
         enable charger.
 
+config CAMERA_SINGLE_BUFFER
+    bool "camera single buffer"
+    default n
+    help
+        enable sinable buffer.
+
 config USB_SUPPORT
     bool "support usb"
     default y if SOC_8910
@@ -92,4 +98,18 @@ config SUPPORT_LCD_ST7735S
         Support ST7735S LCD panel
 
 endif
+config HEADSET_DETECT_SUPPORT
+    bool "support headset detect"
+    default y
+    help
+        enable headset detect.
+if HEADSET_DETECT_SUPPORT
+config HEADSET_STACK_SIZE
+    int "headset thread stack size"
+    default 16384
+    help
+        headset detect will run in separated thread. The stack size in bytes
+        shall be determined by the used status.
+endif
+
 endmenu

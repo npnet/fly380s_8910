@@ -18,6 +18,9 @@
 #include "hal_adi_bus.h"
 #include "hal_chip.h"
 #include "hal_config.h"
+#include "drv_config.h"
+#include "hal_iomux.h"
+#include "drv_gpio.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -93,6 +96,18 @@ static int32_t prvVoltageSettingValue(uint32_t power_id, uint32_t mv)
     return value;
 }
 
+static void prvPowerOnVbatRf(bool enable)
+{
+    drvGpio_t *gpio_ptr;
+    drvGpioConfig_t cfg_output = {0};
+    cfg_output.mode = DRV_GPIO_OUTPUT;
+
+    gpio_ptr = drvGpioOpen(CONFIG_GPIO_X_USED_FOR_VBAT_RF, &cfg_output, NULL, NULL);
+
+    drvGpioWrite(gpio_ptr, enable);
+    return;
+}
+
 uint32_t halPmuReadPsmInitCnt(void)
 {
     uint32_t cnt_init = halAdiBusRead(&hwp_rda2720mPsm->psm_cnt_update_l_value);
@@ -143,11 +158,14 @@ void halBootCauseMode(void)
     REG_RDA2720M_GLOBAL_MODULE_EN0_T module_en0;
     REG_RDA2720M_GLOBAL_RTC_CLK_EN0_T rtc_clk_en0;
     REG_RDA2720M_GLOBAL_SWRST_CTRL0_T swrst_ctrl0;
+    REG_RDA2720M_GLOBAL_CHGR_STATUS_T chgr_status;
 
+    chgr_status.v = halAdiBusRead(&hwp_rda2720mGlobal->chgr_status);
     swrst_ctrl0.v = halAdiBusRead(&hwp_rda2720mGlobal->swrst_ctrl0);
     por_src_flag.v = halAdiBusRead(&hwp_rda2720mGlobal->por_src_flag);
     OSI_LOGI(0, "pmu: boot por_src_flag 0x%08x, swrst_ctrl0 0x%x",
              por_src_flag.v, swrst_ctrl0.b.reg_rst_en);
+
     if (swrst_ctrl0.b.reg_rst_en == 0)
     {
         if (por_src_flag.v & (1 << 11))
@@ -161,13 +179,18 @@ void halBootCauseMode(void)
         if (por_src_flag.v & (1 << 6))
             osiSetBootCause(OSI_BOOTCAUSE_ALARM);
 
-        if (por_src_flag.v & ((1 << 4) | (1 << 5) | (1 << 10)))
-            osiSetBootCause(OSI_BOOTCAUSE_CHARGE);
     }
+
+    if (chgr_status.b.chgr_int && chgr_status.b.chgr_on)
+            osiSetBootCause(OSI_BOOTCAUSE_CHARGE);
+
+
     REG_ADI_CHANGE1(hwp_rda2720mGlobal->por_src_flag, por_src_flag,
                     reg_soft_rst_flg_clr, 1); // clear bit14
-    REG_ADI_CHANGE4(hwp_rda2720mGlobal->por_7s_ctrl, por_7s_ctrl,
+
+    REG_ADI_CHANGE5(hwp_rda2720mGlobal->por_7s_ctrl, por_7s_ctrl,
                     pbint_7s_flag_clr, 1, // clear bit12
+                    ext_rstn_flag_clr, 1, // clear bit11
                     chgr_int_flag_clr, 1, // clear bit10
                     pbint2_flag_clr, 1,   // clear bit9
                     pbint_flag_clr, 1     // clear bit8
@@ -196,8 +219,9 @@ void halBootCauseMode(void)
     uint32_t boot_mode_val = halAdiBusRead(&PMU_BOOT_MODE_REG);
 
     REG_SYS_CTRL_RESET_CAUSE_T reset_cause = {hwp_sysCtrl->reset_cause};
-    OSI_LOGD(0, "pmu: boot mode magic 0x%x, por_src_flag 0x%x, wdg_int_raw 0x%x reset_cause 0x%x",
-             boot_mode_val, por_src_flag.v, wdg_int_raw.v, reset_cause.v);
+    por_src_flag.v = halAdiBusRead(&hwp_rda2720mGlobal->por_src_flag);
+    OSI_LOGD(0, "pmu: boot mode magic 0x%x, por_src_flag 0x%x, wdg_int_raw 0x%x reset_cause 0x%x, boot_cause 0x%x",
+             boot_mode_val, por_src_flag.v, wdg_int_raw.v, reset_cause.v, osiGetBootCauses());
 
     if (boot_mode == OSI_BOOTMODE_NORMAL)
         osiSetBootMode(boot_mode_val);
@@ -208,10 +232,18 @@ void halPmuInit(void)
 {
     halPmuUnlockPowerReg();
 
+#ifdef CONFIG_FLASH_LP_POWER_DOWN
+    halPmuSwitchPower(HAL_POWER_SPIMEM, true, false);
+#else
     halPmuSwitchPower(HAL_POWER_SPIMEM, true, true);
+#endif
     halPmuSwitchPower(HAL_POWER_MEM, true, true);
     halPmuSwitchPower(HAL_POWER_VIO18, true, true);
+#ifdef CONFIG_HEADSET_DETECT_SUPPORT
+    halPmuSwitchPower(HAL_POWER_VDD28, true, true);
+#else
     halPmuSwitchPower(HAL_POWER_VDD28, true, false);
+#endif
     halPmuSwitchPower(HAL_POWER_DCXO, true, true);
 
 #ifdef CONFIG_CAMA_POWER_ON_INIT
@@ -289,17 +321,18 @@ void halPmuExtFlashPowerOn(void)
 {
 #ifdef CONFIG_BOARD_WITH_EXT_FLASH
     // Usually, iomux, power with correct voltage, clock should be
-    // configured here. There are 2 examples below.
+    // configured here. There are examples below, and the default is
+    // external flash on vio, 83MHz.
 
-#define EXT_FLASH_EXAMPLE_W25Q64JV_ON_LCDIO
+#define EXT_FLASH_EXAMPLE_ON_VIO_83M
 
-#ifdef EXT_FLASH_EXAMPLE_W25Q64JV_ON_LCDIO
-    hwp_iomux->pad_spi_lcd_sio_cfg_reg = IOMUX_PAD_SPI_LCD_SIO_SEL_FUN_SPI_FLASH1_CLK_SEL;
-    hwp_iomux->pad_spi_lcd_sdc_cfg_reg = IOMUX_PAD_SPI_LCD_SDC_SEL_FUN_SPI_FLASH1_CS_SEL;
-    hwp_iomux->pad_spi_lcd_clk_cfg_reg = IOMUX_PAD_SPI_LCD_CLK_SEL_FUN_SPI_FLASH1_SIO_0_SEL;
-    hwp_iomux->pad_spi_lcd_cs_cfg_reg = IOMUX_PAD_SPI_LCD_CS_SEL_FUN_SPI_FLASH1_SIO_1_SEL;
-    hwp_iomux->pad_spi_lcd_select_cfg_reg = IOMUX_PAD_SPI_LCD_SELECT_SEL_FUN_SPI_FLASH1_SIO_2_SEL;
-    hwp_iomux->pad_lcd_fmark_cfg_reg = IOMUX_PAD_LCD_FMARK_SEL_FUN_SPI_FLASH1_SIO_3_SEL;
+#ifdef EXT_FLASH_EXAMPLE_ON_LCDIO_3V3_83M
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_CLK_PAD_SPI_LCD_SIO);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_CS_PAD_SPI_LCD_SDC);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_0_PAD_SPI_LCD_CLK);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_1_PAD_SPI_LCD_CS);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_2_PAD_SPI_LCD_SELECT);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_3_PAD_LCD_FMARK);
 
     // config power
     REG_RDA2720M_GLOBAL_LDO_LCD_REG0_T lcd_reg0 = {};
@@ -338,15 +371,15 @@ void halPmuExtFlashPowerOn(void)
         .b.clk_divider = 2,
     };
     hwp_spiFlash1->spi_config = spi_config.v;
-#endif // EXT_FLASH_EXAMPLE_W25Q64JV_ON_LCDIO
+#endif // EXT_FLASH_EXAMPLE_ON_LCDIO_3V3_83M
 
-#ifdef EXT_FLASH_EXAMPLE_GD25LQ128C_ON_LCDIO
-    hwp_iomux->pad_spi_lcd_sio_cfg_reg = IOMUX_PAD_SPI_LCD_SIO_SEL_FUN_SPI_FLASH1_CLK_SEL;
-    hwp_iomux->pad_spi_lcd_sdc_cfg_reg = IOMUX_PAD_SPI_LCD_SDC_SEL_FUN_SPI_FLASH1_CS_SEL;
-    hwp_iomux->pad_spi_lcd_clk_cfg_reg = IOMUX_PAD_SPI_LCD_CLK_SEL_FUN_SPI_FLASH1_SIO_0_SEL;
-    hwp_iomux->pad_spi_lcd_cs_cfg_reg = IOMUX_PAD_SPI_LCD_CS_SEL_FUN_SPI_FLASH1_SIO_1_SEL;
-    hwp_iomux->pad_spi_lcd_select_cfg_reg = IOMUX_PAD_SPI_LCD_SELECT_SEL_FUN_SPI_FLASH1_SIO_2_SEL;
-    hwp_iomux->pad_lcd_fmark_cfg_reg = IOMUX_PAD_LCD_FMARK_SEL_FUN_SPI_FLASH1_SIO_3_SEL;
+#ifdef EXT_FLASH_EXAMPLE_ON_LCDIO_1V8_83M
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_CLK_PAD_SPI_LCD_SIO);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_CS_PAD_SPI_LCD_SDC);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_0_PAD_SPI_LCD_CLK);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_1_PAD_SPI_LCD_CS);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_2_PAD_SPI_LCD_SELECT);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_3_PAD_LCD_FMARK);
 
     // config power
     REG_RDA2720M_GLOBAL_LDO_LCD_REG0_T lcd_reg0 = {};
@@ -385,7 +418,33 @@ void halPmuExtFlashPowerOn(void)
         .b.clk_divider = 2,
     };
     hwp_spiFlash1->spi_config = spi_config.v;
-#endif // EXT_FLASH_EXAMPLE_GD25LQ128C_ON_LCDIO
+#endif // EXT_FLASH_EXAMPLE_ON_LCDIO_1V8_83M
+
+#ifdef EXT_FLASH_EXAMPLE_ON_VIO_83M
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_CLK_PAD_GPIO_0);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_CS_PAD_GPIO_1);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_0_PAD_GPIO_2);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_1_PAD_GPIO_3);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_2_PAD_GPIO_4);
+    halIomuxSetFunction(HAL_IOMUX_FUN_SPI_FLASH1_SIO_3_PAD_GPIO_5);
+
+    REG_SYS_CTRL_CFG_PLL_SPIFLASH1_DIV_T spiflash1_div = {
+        .b.cfg_pll_spiflash1_div = 5,
+        .b.cfg_pll_spiflash1_div_update = 1,
+    };
+    hwp_sysCtrl->cfg_pll_spiflash1_div = spiflash1_div.v; // 166M
+
+    REG_SYS_CTRL_SEL_CLOCK_T sel_clock = {hwp_sysCtrl->sel_clock};
+    sel_clock.b.soft_sel_spiflash1 = 0; // fast
+    hwp_sysCtrl->sel_clock = sel_clock.v;
+
+    REG_SPI_FLASH_SPI_CONFIG_T spi_config = {
+        .b.quad_mode = 1,
+        .b.sample_delay = 2,
+        .b.clk_divider = 2,
+    };
+    hwp_spiFlash1->spi_config = spi_config.v;
+#endif // EXT_FLASH_EXAMPLE_ON_VIO_83M
 
 #endif
 }
@@ -446,6 +505,8 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
     REG_RDA2720M_GLOBAL_MODULE_EN0_T module_en0;
     REG_RDA2720M_BLTC_RG_RGB_V0_T rg_rgb_v0;
     REG_RDA2720M_BLTC_RG_RGB_V1_T rg_rgb_v1;
+    REG_RDA2720M_BLTC_RG_RGB_V2_T rg_rgb_v2;
+    REG_RDA2720M_BLTC_RG_RGB_V3_T rg_rgb_v3;
     REG_RDA2720M_GLOBAL_FLASH_CTRL_T flash_ctrl;
 
     switch (id)
@@ -525,7 +586,7 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
 
     case HAL_POWER_CAMFLASH:
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, flash_ctrl,
-                flash_pon, enabled ? 1 : 0);
+                        flash_pon, enabled ? 1 : 0);
         break;
     case HAL_POWER_KEYLED:
         REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
@@ -548,11 +609,22 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
 
     case HAL_POWER_BACK_LIGHT:
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, 1);
+
+        REG_ADI_CHANGE4(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                        g_sel, enabled ? 1 : 0, g_sw, enabled ? 1 : 0,
+                        r_sel, enabled ? 1 : 0, r_sw, enabled ? 1 : 0);
+
+        REG_ADI_CHANGE4(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                        wled_sel, enabled ? 1 : 0, wled_sw, enabled ? 1 : 0,
+                        b_sel, enabled ? 1 : 0, b_sw, enabled ? 1 : 0);
+
         REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_pd_ctrl, bltc_pd_ctrl,
                         hw_pd, 0,
                         sw_pd, enabled ? 0 : 1);
         REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
         REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x20);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v3, rg_rgb_v3, rg_rgb_v3, 0x20);
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, enabled ? 1 : 0);
         break;
 
@@ -575,6 +647,10 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
                         slp_ldoana_pd_en, lp_enabled ? 0 : 1);
         break;
 
+    case HAL_POWER_VBAT_RF:
+        prvPowerOnVbatRf(enabled);
+        break;
+
     default:
         // ignore silently
         break;
@@ -595,15 +671,14 @@ void halPmuSet7sReset(bool enable)
                         pbint_7s_rst_disable, 1);
 }
 
-
 bool halPmuSetCamFlashLevel(uint8_t level)
 {
     REG_RDA2720M_GLOBAL_FLASH_CTRL_T flash_ctrl;
 
-    if(level >= 0 && level < 16)
+    if (level >= 0 && level < 16)
     {
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, flash_ctrl, flash_v_sw, level);
-	return true;
+        return true;
     }
     return false;
 }
@@ -810,7 +885,6 @@ OSI_NO_RETURN void halShutdown(int mode, int64_t wake_uptime)
 
     if (mode == OSI_SHUTDOWN_PSM_SLEEP || mode == OSI_SHUTDOWN_POWER_OFF)
     {
-        halAdiBusWrite(&PSM_MODE_REG, mode);
         bool pwrkey_en = false;
         bool wakeup_en = false;
 
@@ -828,6 +902,7 @@ OSI_NO_RETURN void halShutdown(int mode, int64_t wake_uptime)
         }
         else if (mode == OSI_SHUTDOWN_PSM_SLEEP)
         {
+            halAdiBusWrite(&PSM_MODE_REG, mode);
             wakeup_en = true;
 #ifdef CONFIG_PWRKEY_WAKEUP_PSM
             pwrkey_en = true;

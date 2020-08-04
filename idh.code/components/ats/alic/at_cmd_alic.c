@@ -53,6 +53,7 @@ osiThread_t *alicThread = NULL;
 
 static bool alic_shutdown = false;
 static char curTopicBuf[AT_ALIC_TOPIC_LEN];
+static char CurBroadcastTopic[AT_ALIC_TOPIC_LEN]; //broadcast topic format /broadcast/device name/{anything}
 
 const char *iotx_alic_ca_crt =
     {
@@ -106,7 +107,9 @@ static int at_alic_auth(char *pkey, char *dname, char *dsecret)
 #endif
     memset(curTopicBuf, 0, AT_ALIC_TOPIC_LEN);
     sprintf(curTopicBuf, "/%s/%s", meta.product_key, meta.device_name);
-    OSI_LOGXI(OSI_LOGPAR_S, 0, "at_alic_auth curTopicBuf:%s", curTopicBuf);
+    memset(CurBroadcastTopic, 0, AT_ALIC_TOPIC_LEN);
+    sprintf(CurBroadcastTopic, "/broadcast/%s/", meta.product_key);
+    OSI_LOGXI(OSI_LOGPAR_SS, 0, "at_alic_auth curTopicBuf:%s CurBroadcastTopic:%s", curTopicBuf, CurBroadcastTopic);
     s_status = AT_ALIC_AUTH;
     return 0;
 }
@@ -367,7 +370,6 @@ static int at_alic_connect_server(uint16_t keepalive, uint8_t cleanversion)
         OSI_LOGI(0, "at_alic_connect_server IOT_MQTT_Construct() fail");
         return -1;
     }
-    memset(&s_default_sign, 0, sizeof(iotx_sign_mqtt_t));
     s_status = AT_ALIC_CONNECTED;
     return 0;
 }
@@ -631,9 +633,13 @@ void AT_ALIC_CmdFunc_AUTH(atCommand_t *pParam)
         if (at_alic_auth(pkey, dname, dsecret) != 0)
         {
             OSI_LOGI(0, "AT+ALICAUTH at_alic_auth fail ");
+            if (authmode)
+                free(dsecret);
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
         }
         OSI_LOGI(0, "AT+ALICAUTH at_alic_auth succuss");
+        if (authmode)
+            free(dsecret);
         RETURN_OK(pParam->engine);
     }
     else if (AT_CMD_TEST == pParam->type)
@@ -654,7 +660,7 @@ void AT_ALIC_CmdFunc_AUTH(atCommand_t *pParam)
     else
     {
         OSI_LOGI(0, "AT_ALIC_CmdFunc_AUTH ERROR");
-        RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
+        RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_NOT_SURPORT);
     }
 }
 
@@ -778,7 +784,7 @@ void AT_ALIC_CmdFunc_SUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_SUB Wrong topic LENGTH");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
-        if (strstr(topic, curTopicBuf) == NULL)
+        if (strstr(topic, curTopicBuf) == NULL && strncmp(topic, CurBroadcastTopic, AT_StrLen(CurBroadcastTopic)) != 0)
         {
             OSI_LOGI(0, "AT_ALIC_CmdFunc_SUB Wrong topic format");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
@@ -851,7 +857,7 @@ void AT_ALIC_CmdFunc_UNSUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_UNSUBWrong topic LENGTH");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
-        if (strstr(topic, curTopicBuf) == NULL)
+        if (strstr(topic, curTopicBuf) == NULL && strncmp(topic, CurBroadcastTopic, AT_StrLen(CurBroadcastTopic)) != 0)
         {
             OSI_LOGI(0, "AT_ALIC_CmdFunc_UNSUB Wrong topic format");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
@@ -907,7 +913,7 @@ void AT_ALIC_CmdFunc_PUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB before connect, authenticate must be done");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
         }
-        if ((pParam->param_count < 2) && (pParam->param_count > 5))
+        if ((pParam->param_count < 3) || (pParam->param_count > 5))
         {
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB param  count ERROR");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
@@ -924,7 +930,7 @@ void AT_ALIC_CmdFunc_PUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB Wrong topic LENGTH");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
-        if (strstr(topic, curTopicBuf) == NULL)
+        if (strstr(topic, curTopicBuf) == NULL || strstr(topic, "#") != NULL || strstr(topic, "+") != NULL)
         {
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB Wrong topic format");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
@@ -941,15 +947,20 @@ void AT_ALIC_CmdFunc_PUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB: cleanssion pParam error");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
+        if (AT_StrLen(msg) > AT_ALIC_OUT_MSG_LEN)
+        {
+            OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB Wrong MESSAGE LENGTH");
+            RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
+        }
         if (pParam->param_count >= 4)
         {
-            duplicate = atParamUintInRange(pParam->params[index++], 0, 1, &iResult);
+            duplicate = atParamDefUintInRange(pParam->params[index++], 0, 0, 1, &iResult);
             if (!iResult)
             {
                 OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB: duplicate pParam error");
                 RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
             }
-            retain = atParamUintInRange(pParam->params[index++], 0, 1, &iResult);
+            retain = atParamDefUintInRange(pParam->params[index++], 0, 0, 1, &iResult);
             if (!iResult)
             {
                 OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB: retain pParam error");

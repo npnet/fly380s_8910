@@ -27,7 +27,7 @@ typedef enum
     DRV_CHARGER_TYPE_SDP,
     DRV_CHARGER_TYPE_DCP,
     DRV_CHARGER_TYPE_CDP,
-    DRV_CHARGER_TYPE_UNKOWN
+    DRV_CHARGER_TYPE_UNKOWN //no use adapter
 } drvChargerType_t;
 
 typedef void (*drvChargerPlugCB_t)(void *ctx, bool plugged);
@@ -56,6 +56,12 @@ drvChargerType_t drvChargerGetType(void);
  */
 
 void drvChargerGetInfo(uint8_t *nBcs, uint8_t *nBcl);
+
+void drvChargeEnable(void);
+
+void drvChargeDisable(void);
+
+uint16_t drvChargerGetBatteryVoltage();
 
 #ifdef __cplusplus
 }

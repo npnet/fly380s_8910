@@ -18,10 +18,18 @@
 #include "at_response.h"
 #include "at_engine.h"
 #include "drv_rtc.h"
+#include "drv_rng.h"
 
 #define NET_ENGINE_EVENT_QUEUE_SIZE 32
 
 extern osiThread_t *netThreadID;
+
+uint32_t sys_get_srand()
+{
+    uint32_t srand;
+    drvRngGenerate((void *)&srand, 4);
+    return srand;
+}
 
 err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 {

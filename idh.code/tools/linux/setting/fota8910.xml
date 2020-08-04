@@ -12,14 +12,24 @@ without further testing or modification.
 -->
 
 <!--
-Most likely the configuration cis suitable. And it can be changed if needed.
+Most likely the configuration is suitable. And it can be changed if needed.
+
+Method is patch method fine tune. The default method is "diff":
+* diff: (default option) create differential patch
+* ignore: not touch the file
+* remove: remove the file forcedly
+* replace: remove the file if exists, and insert with new content
 -->
 
 <pacdiff>
     <!-- The default AP application ID is "AP", and it runs on FLASH. -->
-    <pacflash id="AP" flash="SFL1" blocksize="0x10000" bundleblock="0"/>
+    <pacflash id="AP" flash="SFL1" blocksize="0x10000" bundleblock="0" method="diff"/>
     <!-- The default modem image ID is "PS". It is a SFFS image. -->
-    <pacsffs id="PS" ebsize="0x10000" pbsize="0x200" mount="/modem"/>
+    <pacsffs id="PS" ebsize="0x10000" pbsize="0x200" mount="/modem" method="diff">
+        <!--
+            <file name="nvm/audio_calib.bin" method="ignore"/>
+        -->
+    </pacsffs>
     <!--
         NV will be updated inside modem image. The following are only
         describing clear running NV rules.
@@ -63,7 +73,7 @@ Most likely the configuration cis suitable. And it can be changed if needed.
             <cleanrunning onchange="always"/>
         </nvitem>
         <nvitem id="0x277" runningnv="/modemnvm/cfw_nv.bin">
-            <cleanrunning onchange="never"/>
+            <cleanrunning onchange="0x277"/>
         </nvitem>
         <nvitem id="0x278" runningnv="/modemnvm/audio_calib.bin">
             <cleanrunning onchange="0x278"/>
@@ -75,11 +85,9 @@ Most likely the configuration cis suitable. And it can be changed if needed.
             <cleanrunning onchange="0x27a"/>
         </nvitem>
     </pacnv>
-    <!--
-        Create patch for pre-set files. Method can be ignore/diff/replace.
-        Inside, individual files can be configured. Such as:
+    <paccpio id="PREPACK" method="diff">
+        <!--
             <file name="some_file_name" method="ignore"/>
-     -->
-    <paccpio id="PACKAGE_FILE" method="diff">
+        -->
     </paccpio>
 </pacdiff>

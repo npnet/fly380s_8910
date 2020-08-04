@@ -15,6 +15,7 @@
 
 #include "srv_sim_detect.h"
 #include "hal_config.h"
+#include "hal_iomux.h"
 #include "drv_gpio.h"
 #include "osi_api.h"
 #include "osi_log.h"
@@ -22,7 +23,7 @@
 #include <stdio.h>
 
 #define CONFIG_SIM_DETECT_DEBOUNCE_TIMEOUT (400) // ms
-
+#define CONFIG_SIM_DETECT_DROPOUT_TIMEOUT (2000) // ms
 typedef struct
 {
     int sim_id;
@@ -36,7 +37,15 @@ typedef struct
 static void _debounceCB(void *sd_)
 {
     simDetect_t *sd = (simDetect_t *)sd_;
-    sd->connect_debounce = false;
+
+    if (sd->connect_debounce == false)
+    {
+        srvSimDetectSwitch(sd->sim_id, true); //switch on interrupt
+    }
+    else
+    {
+        sd->connect_debounce = false;
+    }
     if (!((drvGpioRead(sd->gpio) ^ gSysnvSimVoltTrigMode)))
     {
         OSI_LOGI(0, "SIM %d Plug In", sd->sim_id);
@@ -72,6 +81,8 @@ static void _simDetectCB(void *sd_)
         else
         {
             OSI_LOGI(0, "SIM %d Plug Out", sd->sim_id);
+            srvSimDetectSwitch(sd->sim_id, false); //switch off interrupt
+            osiTimerStart(sd->debounce_timer, CONFIG_SIM_DETECT_DROPOUT_TIMEOUT);
             if (sd->cb)
                 sd->cb(sd->sim_id, false);
         }
@@ -96,6 +107,11 @@ static bool _simDetectInit(simDetect_t *sd, int gpio_id)
     sd->gpio = drvGpioOpen(gpio_id, &cfg, _simDetectCB, sd);
     if (sd->gpio == NULL)
         goto gpio_open_fail;
+
+    // Force pull none is needed for sim detect. Though it should be
+    // configured by iomux function properties, call it again here.
+    halIomuxSetPadPull(HAL_IOMUX_FUN_GPIO(gpio_id), HAL_IOMUX_FORCE_PULL_NONE);
+
     sd->connected = drvGpioRead(sd->gpio);
     (gSysnvSimHotPlug == true) ? (cfg.intr_enabled = true) : (cfg.intr_enabled = false);
     if (drvGpioReconfig(sd->gpio, &cfg))

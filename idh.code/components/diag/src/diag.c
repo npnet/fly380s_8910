@@ -88,6 +88,8 @@ static bool prvDiagSendMulti(const osiBuffer_t *bufs, unsigned count, unsigned s
 {
     diagContext_t *d = gDiagCtx;
     int enc_size = osiHdlcEncodeMultiLen(bufs, count);
+    if (enc_size < 0)
+        return false;
 
     void *enc_buf = malloc(enc_size);
     if (enc_buf != NULL)
@@ -184,10 +186,12 @@ static void prvDiagRxProcess(void *param)
         if (size <= 0)
             break;
 
+        char *pbuf = &buf[0];
         while (size > 0)
         {
-            int pbytes = osiHdlcDecodePush(&d->hdlc, buf, size);
+            int pbytes = osiHdlcDecodePush(&d->hdlc, pbuf, size);
             size -= pbytes;
+            pbuf += pbytes;
 
             osiHdlcDecodeState_t state = osiHdlcDecodeGetState(&d->hdlc);
             if (state == OSI_HDLC_DEC_ST_PACKET)
@@ -252,6 +256,7 @@ void diagInit(drvDebugPort_t *port)
     drvDebugPortSetRxCallback(d->port, _diagDataCB, d);
     osiHdlcDecodeInit(&d->hdlc, d->prebuf, d->prebuf_size,
                       OSI_HDLC_DEC_CHECK_OVERFLOW | OSI_HDLC_DEC_CHECK_DIAG_TOO_LARGE);
+    _diagDataCB(d);
 }
 
 unsigned diagDeviceName(void)

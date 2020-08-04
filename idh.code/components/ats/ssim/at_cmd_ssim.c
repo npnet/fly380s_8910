@@ -400,13 +400,8 @@ uint32_t CFW_SetSoftSimDefaultInfo(uint8_t *nImsi, uint8_t *nKey, uint8_t *nPlmn
 
 int _generateSha256AuthCode(unsigned char *password, unsigned char *outputAuthcode)
 {
-    bool low = false;
     uint32_t id_low;
-
-    drvEfuseOpen();
-    low = drvEfuseRead(EFUSE_UNIQUE_ID_LOW_INDEX, &id_low);
-    drvEfuseClose();
-
+    bool low = drvEfuseRead(true, RDA_EFUSE_DOUBLE_BLOCK_UNIQUE_ID_LOW_INDEX, &id_low);
     if (!low)
     {
         OSI_LOGE(0, "_generateSha256AuthCode get efuse chip id error");

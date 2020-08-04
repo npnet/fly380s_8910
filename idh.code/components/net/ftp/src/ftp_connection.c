@@ -823,31 +823,31 @@ bool ftp_conn_create()
     }
 
 FAILED:
-    if (connP->sem)
-    {
-        osiSemaphoreDelete(connP->sem);
-        connP->sem = NULL;
-    }
-
-    if (connP->lock)
-    {
-        osiMutexDelete(connP->lock);
-        connP->lock = NULL;
-    }
-
-    if (ipc_socket > 0)
-    {
-        close(ipc_socket);
-        ipc_socket = -1;
-    }
-
     if (connP != NULL)
     {
+        if (connP->sem)
+        {
+            osiSemaphoreDelete(connP->sem);
+            connP->sem = NULL;
+        }
+
+        if (connP->lock)
+        {
+            osiMutexDelete(connP->lock);
+            connP->lock = NULL;
+        }
+
+        if (ipc_socket > 0)
+        {
+            close(ipc_socket);
+            ipc_socket = -1;
+        }
+
         free(connP);
         connP = NULL;
     }
 
-    gFtpCon = connP;
+    gFtpCon = NULL;
     return false;
 }
 
@@ -885,17 +885,11 @@ void ftp_conn_destroy()
             conP->sockset[FTP_IPC_SOCK].sock = -1;
         }
 
-        if (conP->sem)
-        {
-            osiSemaphoreDelete(conP->sem);
-            conP->sem = NULL;
-        }
+        osiSemaphoreDelete(conP->sem);
+        conP->sem = NULL;
 
-        if (conP->lock)
-        {
-            osiMutexDelete(conP->lock);
-            conP->lock = NULL;
-        }
+        osiMutexDelete(conP->lock);
+        conP->lock = NULL;
 
         free(conP);
         conP = NULL;
@@ -978,7 +972,6 @@ bool ftp_conn_disconnect(ftp_sock_e flag)
 bool ftp_conn_send(uint8_t *buf, uint32_t buflen, ftp_sock_e flag)
 {
     int nbSent = 0;
-    uint32_t offset = 0;
 
 #if TRANS_DEBUG
 #ifdef LWIP_IPV6_ON
@@ -1026,16 +1019,19 @@ bool ftp_conn_send(uint8_t *buf, uint32_t buflen, ftp_sock_e flag)
         FTPLOGI(FTPLOG_CON, "sending %d bytes to %s:%d", buflen, s, ntohs(port));
 #endif
 
-    while (offset != buflen)
+    int size = CFW_TcpipAvailableBuffer(sockset->sock);
+    if (size < buflen)
     {
-        nbSent = send(sockset->sock, buf + offset, buflen - offset, 0);
-        if (nbSent == -1)
-        {
-            FTPLOGI(FTPLOG_CON, "send() failed, error: %d(%s)", errno, strerror(errno));
-            sockset->errcode = errno;
-            return false;
-        }
-        offset += nbSent;
+        FTPLOGI(FTPLOG_CON, "send() failed, available %d size isn't enough", size);
+        return false;
+    }
+
+    nbSent = send(sockset->sock, buf, buflen, 0);
+    if (nbSent == -1)
+    {
+        FTPLOGI(FTPLOG_CON, "send() failed, error: %d(%s)", errno, strerror(errno));
+        sockset->errcode = errno;
+        return false;
     }
 
     return true;

@@ -47,6 +47,9 @@ void AT_NET_CmdFunc_NetInfo(atCommand_t *pParam)
             sprintf(outString, "default netif notset\r\n");
             atCmdRespInfoText(pParam->engine, outString);
         }
+#if LWIP_TCPIP_CORE_LOCKING
+        LOCK_TCPIP_CORE();
+#endif
         NETIF_FOREACH(netinfo)
         {
             int cid = netinfo->sim_cid & 0x0f;
@@ -123,6 +126,9 @@ void AT_NET_CmdFunc_NetInfo(atCommand_t *pParam)
                 atCmdRespInfoText(pParam->engine, outString);
             }
         }
+#if LWIP_TCPIP_CORE_LOCKING
+        UNLOCK_TCPIP_CORE();
+#endif
         atCmdRespOK(pParam->engine);
         break;
     }

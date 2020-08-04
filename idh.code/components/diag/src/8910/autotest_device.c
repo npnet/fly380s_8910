@@ -38,7 +38,16 @@
 #include "audio_recorder.h"
 #include "audio_writer.h"
 #include "drv_rtc.h"
+#include "drv_pmic_intr.h"
+#include "drv_keypad.h"
 #include <osi_log.h>
+#include "drv_sdmmc.h"
+#include "drv_charger.h"
+#include "drv_lcd.h"
+
+#ifdef CONFIG_DIAG_BT_AUTOTEST_SUPPORT
+#include "bt_abs.h"
+#endif
 
 #define BBAT_FAILURE 0x01
 #define BBAT_SUCCESS 0x00
@@ -54,16 +63,19 @@ typedef uint32_t (*DIAG_AUTOTEST_CALLBACK)(
 typedef enum _DEVICE_AUTOTEST_ID_E
 {
     DEVICE_AUTOTEST_KEYPAD = 1,
-    DEVICE_AUTOTEST_LCD_SPI = 3,
+    DEVICE_AUTOTEST_LCD_SPI = 2,
     DEVICE_AUTOTEST_CAMERA_IIC = 4,
     DEVICE_AUTOTEST_CAMERA_OPENCLOSE = 5,
     DEVICE_AUTOTEST_CAMERA_MIPI = 6,
     DEVICE_AUTOTEST_GPIO = 7, //and TP test
+    DEVICE_AUTOTEST_TCARD = 8,
     DEVICE_AUTOTEST_SIM = 9,
     DEVICE_AUTOTEST_MIC = 10,
-    DEVICE_AUTOTEST_SPEAK = 11,    //speak&&receiver&&earphone
-    DEVICE_AUTOTEST_CAMFLASH = 12, //DEVICE_AUTOTEST_MISC = 12,  //lcd backlight,vibrator,keypadbacklight
+    DEVICE_AUTOTEST_SPEAK = 11, //speak&&receiver&&earphone
+                                // DEVICE_AUTOTEST_CAMFLASH = 12, //DEVICE_AUTOTEST_MISC = 12,  //lcd backlight,vibrator,keypadbacklight
+    DEVICE_AUTOTEST_MISC = 12,
     DEVICE_AUTOTEST_FM = 13,
+    DEVICE_AUTOTEST_BT = 15,
     DEVICE_AUTOTEST_IIC_DEV = 17, //speak&&receiver&&earphone
     DEVICE_AUTOTEST_CHARGE = 18,
     DEVICE_AUTOTEST_NVRAM_R = 19,
@@ -86,12 +98,30 @@ typedef enum
 
 typedef enum
 {
-    KEYPAD_REST_N = 0x01,
-    KEYPAD_KEYIN0,
-    KEYPAD_EXT_RSTN_IN,
-    KEYPAD_PWR
-
+    KEYPAD_OPEN = 0x01,
+    KEYPAD_READ,
+    KEYPAD_CLOSE,
+    KEYPAD_IDLE,
+    KEYPAD_KEYREPORT,
+    KEYPAD_MAX
 } AUTOTEST_KEYPAD_E;
+
+typedef enum
+{
+    KEYPAD_CODE_KEYIN0 = 0x72,
+    KEYPAD_CODE_EXTREST = 0x73,
+    KEYPAD_CODE_PBINT = 0x74,
+    KEYPAD_CODE_MAX
+
+} AUTOTEST_KEYPAD_CODE_E;
+
+typedef enum
+{
+    CHARGE_OPEN = 1,
+    CHARGE_END = 2,
+    CHARGE_CLOSE = 3,
+    CHARGE_AUX
+} CHARGE_CMD_E;
 
 typedef enum
 {
@@ -147,6 +177,25 @@ typedef enum
     RTC_CLOSE
 } AUTOTEST_RTC_E;
 
+typedef enum
+{
+    BT_OPEN = 0x01,
+    BT_SEARCH,
+    BT_READ,
+    BT_CLOSE,
+    BT_RSSI
+} AUTOTEST_BT_E;
+
+typedef enum
+{
+    MISC_VIBRATOR = 0x03,
+    MISC_CAM_FLASH = 0x04,
+    MISC_RGB_LIGHT = 0x09,
+    MISC_BAT_TEMPERATURE = 0x0a,
+    MISC_MAX
+
+} AUTOTEST_MISC_E;
+
 /**---------------------------------------------------------------------------*
  **                         Data Structures                                   *
  **---------------------------------------------------------------------------*/
@@ -155,6 +204,55 @@ typedef struct
     diagMsgHead_t msg_head;
     uint8_t sim_select;
 } diagMsgSim_t;
+
+typedef struct
+{
+    diagMsgHead_t msg_head;
+    uint8_t charge_cmd;
+} diagMsgCharge_t;
+
+typedef struct
+{
+    diagMsgHead_t msg_head;
+    uint8_t batt_cmd;
+    uint8_t rgb_cmd;
+    uint8_t light_cmd;
+} diagMsgBattTempera_t;
+
+typedef struct
+{
+    uint8_t voltage;
+} diagVibrate_t;
+
+typedef struct
+{
+    uint8_t color;
+    uint8_t light_switch;
+} diagRGBLight_t;
+
+typedef struct
+{
+    diagMsgHead_t msg_head;
+    uint8_t sub_cmd;
+    union {
+        diagVibrate_t vibrate;
+        diagRGBLight_t rgb_light;
+    } sub_cmd_info;
+} diagMsgMisc_t;
+
+typedef struct
+{
+    diagMsgHead_t msg_head;
+    uint8_t lcd_cmd;
+    uint8_t rgb_cmd;
+    uint8_t light_cmd;
+} diagMsgLcdt;
+
+typedef struct
+{
+    diagMsgHead_t msg_head;
+    uint8_t card_select;
+} diagMsgCard_t;
 
 typedef struct
 {
@@ -214,6 +312,30 @@ typedef struct
     diagMsgRTC_t rtc_msg;
     bool opened;
 } diagRtcContext_t;
+
+#ifdef CONFIG_DIAG_BT_AUTOTEST_SUPPORT
+#define DIAG_BT_INQURY_MAX_SIZE 16
+typedef struct
+{
+    diagMsgHead_t msg_head;
+    uint8_t command;
+} diagMsgBT_t;
+
+typedef struct
+{
+    BT_ADDRESS addr;
+    uint32 rssi;
+} diagBTDevInfo_t;
+
+typedef struct
+{
+    BT_STATUS ret;
+    diagMsgBT_t bt_msg;
+    osiSemaphore_t *sem;
+    diagBTDevInfo_t inqury[DIAG_BT_INQURY_MAX_SIZE];
+    uint32_t inquryNum;
+} diagBTContext_t;
+#endif
 
 #define PIN_NUM_MAX 67
 const autoTestPmPinFunc_t autodev_pm_func[] = {
@@ -281,7 +403,12 @@ const autoTestPmPinFunc_t autodev_pm_func[] = {
 
 autoTestPmPinFunc_t autodev_restore[PIN_NUM_MAX];
 
-static uint16_t keypadcode = 0;
+typedef struct auto_test_contest
+{
+    uint8_t keypad_code;
+} autoTestCtx_t;
+
+static autoTestCtx_t gAutoTextCtx = {};
 
 static DIAG_AUTOTEST_CALLBACK diagAutotestCallback[DEVICE_AUTOTEST_MAX_F] = {NULL};
 
@@ -300,6 +427,10 @@ static const unsigned char sin1k_44k_88bytes[] = {
 };
 
 static diagRtcContext_t diagRtc_ctx = {.opened = false};
+
+#ifdef CONFIG_DIAG_BT_AUTOTEST_SUPPORT
+static diagBTContext_t diagBT_ctx = {.sem = NULL};
+#endif
 
 static void _restoreIomuxValue(void)
 {
@@ -485,7 +616,79 @@ static uint32_t _handleAdcAutotest(
     return 1;
 }
 bool gBBATMode = false;
-uint8_t gPBkeyStatus = 1;
+
+static bool prvGetKeypadCode(uint8_t *keypad_code)
+{
+    autoTestCtx_t *ctx = &gAutoTextCtx;
+
+    if (ctx->keypad_code < KEYPAD_CODE_KEYIN0 || ctx->keypad_code >= KEYPAD_CODE_MAX)
+        return false;
+
+    *keypad_code = ctx->keypad_code;
+
+    return true;
+}
+
+static void prvExtRestnCB(void *ctx)
+{
+    autoTestCtx_t *auto_ctx = (autoTestCtx_t *)ctx;
+    auto_ctx->keypad_code = KEYPAD_CODE_EXTREST;
+
+    bool level = drvPmicEicGetLevel(DRV_PMIC_EIC_EXT_RSTN);
+    drvPmicEicTrigger(DRV_PMIC_EIC_EXT_RSTN, 10, !level);
+
+    OSI_LOGI(0, "bbat reset key call back");
+}
+
+static void prvAutoTestKeyPadCB(keyMap_t id, keyState_t evt, void *ctx)
+{
+    autoTestCtx_t *auto_ctx = (autoTestCtx_t *)&gAutoTextCtx;
+
+    if (id > 0)
+        auto_ctx->keypad_code = KEYPAD_CODE_KEYIN0;
+    else if (id == 0)
+        auto_ctx->keypad_code = KEYPAD_CODE_PBINT;
+
+    OSI_LOGI(0, "bbat:  keypad open callback id = %d", id);
+}
+
+static void prvKeypadAutotestOpen()
+{
+    REG_RDA2720M_GLOBAL_POR_7S_CTRL_T por_7s_ctrl;
+    REG_ADI_CHANGE1(hwp_rda2720mGlobal->por_7s_ctrl, por_7s_ctrl,
+                    ext_rstn_mode, 0);
+    drvKeypadInit();
+
+    uint32_t mask = KEY_STATE_PRESS | KEY_STATE_RELEASE;
+    drvKeypadSetCB(prvAutoTestKeyPadCB, mask, (void *)&gAutoTextCtx);
+
+    drvPmicEicSetCB(DRV_PMIC_EIC_EXT_RSTN, prvExtRestnCB, (void *)&gAutoTextCtx);
+    drvPmicEicTrigger(DRV_PMIC_EIC_EXT_RSTN, 10, true);
+}
+
+static void prvKeypadAutotestClose()
+{
+    REG_RDA2720M_GLOBAL_POR_7S_CTRL_T por_7s_ctrl;
+    REG_ADI_CHANGE1(hwp_rda2720mGlobal->por_7s_ctrl, por_7s_ctrl,
+                    ext_rstn_mode, 1);
+}
+
+static bool prvViberateOpen()
+{
+    return halPmuSwitchPower(HAL_POWER_VIBR, true, true);
+}
+
+static bool prvRGBlightOpen()
+{
+    OSI_LOGI(0, "bbat:  misc rgb light open");
+    return halPmuSwitchPower(HAL_POWER_BACK_LIGHT, true, true);
+}
+
+static bool prvRGBlightClose()
+{
+    OSI_LOGI(0, "bbat:  misc rgb light close");
+    return halPmuSwitchPower(HAL_POWER_BACK_LIGHT, false, false);
+}
 
 static uint32_t _handleKeypadAutotest(
     const uint8_t *src_ptr, // Pointer of the input message.
@@ -494,75 +697,70 @@ static uint32_t _handleKeypadAutotest(
 
 {
     uint8_t command = 0;
+    int count = 0;
     diagMsgHead_t *msg_head = (diagMsgHead_t *)src_ptr;
-
     diagMsgHead_t respMsg;
-    uint8_t keyvalue[6] = {0xff, 0xff, 00, 0xff, 0, 0};
-    REG_KEYPAD_KP_CTRL_T keypad0;
-    REG_KEYPAD_KP_CTRL_T keypad0_temp;
+    uint8_t keyvalue[6] = {0x00, 0x01, 00, 0x73, 0x00, 0x00};
+    uint8_t keycode[36] = {0x00};
     command = *(uint8_t *)(msg_head + 1);
     memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
     OSI_LOGI(0, "bbat: _handleKeypadAutotest");
 
     switch (command)
     {
-    case KEYPAD_KEYIN0:
+    case KEYPAD_OPEN:
     {
-        OSI_LOGI(0, "bbat:  Keyin0 test");
-
-        keypad0.v = hwp_keypad->kp_ctrl;
-        keypad0_temp.v = keypad0.v;
-        keypad0.b.kp_en = 1;
-        keypad0.b.kp_dbn_time = 0;
-        hwp_keypad->kp_ctrl = keypad0.v;
-        osiDelayUS(200000);
-        respMsg.subtype = 0;
-        if ((hwp_keypad->kp_data_l & 0x1) == 1)
-        {
-            keyvalue[3] = 1; //pass
-        }
-        else
-        {
-            keyvalue[3] = 0; //pass
-        }
-        keypad0.b.kp_en = 0;
-        hwp_keypad->kp_ctrl = keypad0_temp.v;
-        diagOutputPacket2(&respMsg, keyvalue, 6);
-    }
-    break;
-
-    case KEYPAD_REST_N:
-    {
-        if (keypadcode)
-        {
-            respMsg.subtype = BBAT_SUCCESS;
-            _autotestGenerateRspMsg(&respMsg);
-
-            keypadcode = 0;
-        }
-        else
-        {
-            respMsg.subtype = BBAT_SUCCESS;
-            _autotestGenerateRspMsg(&respMsg);
-        }
-    }
-    break;
-
-    case KEYPAD_EXT_RSTN_IN:
-    {
+        OSI_LOGI(0, "bbat:  keypad open");
+        prvKeypadAutotestOpen();
         respMsg.subtype = BBAT_SUCCESS;
         _autotestGenerateRspMsg(&respMsg);
     }
     break;
-    case KEYPAD_PWR:
+
+    case KEYPAD_READ:
     {
-        respMsg.subtype = gPBkeyStatus;
+        OSI_LOGI(0, "bbat:  keypad read");
+        osiDelayUS(200000);
+        uint8_t keypad_code;
+        if (prvGetKeypadCode(&keypad_code))
+        {
+            keyvalue[3] = keypad_code;
+            respMsg.subtype = BBAT_SUCCESS;
+        }
+
+        diagOutputPacket2(&respMsg, keyvalue, 6);
+    }
+    break;
+
+    case KEYPAD_CLOSE:
+    {
+        OSI_LOGI(0, "bbat:  keypad close");
+        prvKeypadAutotestClose();
+        respMsg.subtype = BBAT_SUCCESS;
         _autotestGenerateRspMsg(&respMsg);
     }
     break;
+
+    case KEYPAD_KEYREPORT:
+    {
+        OSI_LOGI(0, "bbat:  keypad key code report");
+        osiDelayUS(200000);
+
+        if (bbatGetAllScanKeyId(keycode, &count) > 0)
+        {
+            respMsg.subtype = BBAT_SUCCESS;
+            OSI_LOGI(0, "count=%d", count);
+            diagOutputPacket2(&respMsg, keycode, count);
+        }
+        else
+        {
+            count = 0;
+            respMsg.subtype = BBAT_FAILURE;
+            diagOutputPacket2(&respMsg, keycode, count);
+        }
+    }
+    break;
     default:
-        respMsg.subtype = 1; //ATCMD_BADCOMMAND;
-        //_autotestGenerateRspMsg(  msg_head);
         respMsg.subtype = 0x5A;
         _autotestGenerateRspMsg(&respMsg);
         break;
@@ -625,6 +823,71 @@ static uint32_t _handleSIMAutotest(
     respMsg.len = sizeof(diagMsgHead_t) + 1;
     respMsg.subtype = ret;
     //res = (uint8_t)ret;
+    diagOutputPacket2(&respMsg, NULL, 0);
+
+    return 1;
+}
+
+static uint32_t _handleTCARDAutotest(
+    const uint8_t *src_ptr, // Pointer of the input message.
+    uint16_t src_len        // Size of the source buffer in uint8_t.
+)
+{
+    bool ret = 0, sd_ret;
+    diagMsgHead_t respMsg;
+    static drvSdmmc_t *d;
+    static bool sdmmc;
+    uint8_t SdmmcTestBuf[512];
+
+    diagMsgCard_t *msg_head = (diagMsgCard_t *)src_ptr;
+
+    memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
+
+    OSI_LOGI(0, "bbat: _handleSdCardAutotest");
+    if (d == NULL)
+    {
+        d = drvSdmmcCreate(DRV_NAME_SDMMC1);
+    }
+    if (d == NULL)
+    {
+        OSI_LOGI(0, "bbat: sdmmc: test: Open SD card FAILED");
+        ret = 1;
+    }
+    else
+    {
+        if (sdmmc == true)
+        {
+
+            if (true == drvSdmmcRead(d, 1024, SdmmcTestBuf, 512))
+            {
+                ret = 0;
+            }
+            else
+            {
+                ret = 1;
+            }
+        }
+        else
+        {
+            sd_ret = drvSdmmcOpen(d);
+            if (sd_ret == false)
+            {
+                OSI_LOGI(0, "bbat: sdmmc: test: Open SD card Failed\n");
+                drvSdmmcDestroy(d);
+                d = NULL;
+                ret = 1;
+            }
+            else
+            {
+                sdmmc = true;
+            }
+        }
+    }
+    OSI_LOGI(0, "bbat: sdmmc: test ret =%d\n", ret);
+
+    respMsg.len = sizeof(diagMsgHead_t) + 1;
+
+    respMsg.subtype = ret;
     diagOutputPacket2(&respMsg, NULL, 0);
 
     return 1;
@@ -816,6 +1079,244 @@ static void _diagInitAutotestCallback(void)
     }
 }
 
+static uint32_t _handleChargeTest(
+    const uint8_t *src_ptr, // Pointer of the input message.
+    uint16_t src_len        // Size of the source buffer in uint8_t.
+)
+{
+    uint8_t ret = 0;
+    diagMsgHead_t respMsg;
+    uint8_t nBcs = 0;
+    uint8_t nBcl = 0;
+
+    diagMsgCharge_t *msg_head = (diagMsgCharge_t *)src_ptr;
+
+    memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
+
+    OSI_LOGI(0, "bbat: _handleChargeTest");
+    switch ((CHARGE_CMD_E)(msg_head->charge_cmd))
+    {
+    case CHARGE_OPEN:
+        drvChargeEnable();
+        ret = 0;
+        OSI_LOGI(0, "bbat: enable charge");
+        break;
+
+    case CHARGE_END:
+
+        drvChargerGetInfo(&nBcs, &nBcl);
+        if (nBcl == 100)
+            ret = 0;
+        else
+            ret = 1;
+        OSI_LOGI(0, "bbat: batter is %d", nBcl);
+        break;
+    case CHARGE_CLOSE:
+        drvChargeDisable();
+        ret = 0;
+        OSI_LOGI(0, "bbat: disable charge");
+        break;
+    case CHARGE_AUX:
+
+        drvAdcInit();
+        uint32_t value = (uint32_t)drvAdcGetChannelVolt(ADC_CHANNEL_VBATSENSE, ADC_SCALE_5V000);
+        OSI_LOGI(0, "bbat: _handleBattTemperatureTest,volt 0x%x", value);
+        respMsg.len = sizeof(diagMsgHead_t) + 4;
+        //respMsg.type = msg_head->msg_head.type;
+        respMsg.subtype = 0;
+
+        diagOutputPacket2(&respMsg, &value, 4);
+        return 1;
+
+        break;
+
+    default:
+        ret = SIM_FAIL;
+        break;
+    }
+
+    respMsg.len = sizeof(diagMsgHead_t) + 1;
+    respMsg.subtype = ret;
+    //res = (uint8_t)ret;
+    diagOutputPacket2(&respMsg, NULL, 0);
+
+    return 1;
+}
+
+uint16_t *gLcdTestBuff = NULL;
+static uint32_t _handleSPILcdTest(
+    const uint8_t *src_ptr, // Pointer of the input message.
+    uint16_t src_len        // Size of the source buffer in uint8_t.
+)
+{
+    uint32_t i;
+    diagMsgHead_t respMsg;
+
+    lcdFrameBuffer_t dataBufferWin;
+    lcdDisplay_t lcdRec;
+
+    diagMsgLcdt *msg_head = (diagMsgLcdt *)src_ptr;
+
+    memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
+
+    OSI_LOGI(0, "bbat: _handleSPILcdTest");
+    switch (msg_head->lcd_cmd)
+    {
+    case 0x21:
+        OSI_LOGI(0, "bbat: test lcd");
+        drvLcdInit();
+
+        halPmuSwitchPower(HAL_POWER_CAMA, true, true);
+        halPmuSwitchPower(HAL_POWER_CAMD, true, true);
+
+        halPmuSwitchPower(HAL_POWER_VDD28, true, true);
+        osiDelayUS(1000);
+        if (gLcdTestBuff == NULL)
+        {
+            gLcdTestBuff = osiMalloc(240 * 320 * 2);
+        }
+        if (msg_head->rgb_cmd == 1) //red
+        {
+            OSI_LOGI(0, "bbat: test lcd red");
+            for (i = 0; i < 240 * 320; i++)
+            {
+                gLcdTestBuff[i] = 0xf800;
+            }
+        }
+        else if (msg_head->rgb_cmd == 2) //green
+        {
+            for (i = 0; i < 240 * 320; i++)
+            {
+                gLcdTestBuff[i] = 0x07e0;
+            }
+        }
+        else if (msg_head->rgb_cmd == 3) //blue
+        {
+            for (i = 0; i < 240 * 320; i++)
+            {
+                gLcdTestBuff[i] = 0x01f;
+            }
+        }
+        if (msg_head->light_cmd == 0)
+        {
+            halPmuSwitchPower(HAL_POWER_BACK_LIGHT, true, true);
+        }
+
+        if (msg_head->light_cmd == 1)
+        {
+            halPmuSwitchPower(HAL_POWER_BACK_LIGHT, false, false);
+        }
+        dataBufferWin.buffer = gLcdTestBuff;
+        dataBufferWin.colorFormat = LCD_RESOLUTION_RGB565;
+        dataBufferWin.keyMaskEnable = false;
+
+        dataBufferWin.region_x = 0;
+        dataBufferWin.region_y = 0;
+        dataBufferWin.height = 320;
+        dataBufferWin.width = 240;
+        dataBufferWin.rotation = 0;
+        dataBufferWin.widthOriginal = 240;
+
+        lcdRec.x = 0;
+        lcdRec.y = 0;
+        lcdRec.width = 240;  //240;
+        lcdRec.height = 320; //;
+
+        drvLcdBlockTransfer(&dataBufferWin, &lcdRec);
+        respMsg.len = sizeof(diagMsgHead_t) + 4;
+        //respMsg.type = msg_head->msg_head.type;
+        //respMsg.subtype = 0;
+
+        diagOutputPacket2(&respMsg, NULL, 0);
+
+        return 1;
+
+        break;
+    default:
+        break;
+    }
+
+    respMsg.len = sizeof(diagMsgHead_t) + 4;
+    //respMsg.type = msg_head->msg_head.type;
+    respMsg.subtype = 0;
+
+    diagOutputPacket2(&respMsg, NULL, 0);
+
+    return 1;
+}
+
+static uint32_t _handleMiscTest(
+    const uint8_t *src_ptr, // Pointer of the input message.
+    uint16_t src_len        // Size of the source buffer in uint8_t.
+)
+{
+    uint32_t value;
+    diagMsgHead_t respMsg;
+
+    diagMsgMisc_t *msg_head = (diagMsgMisc_t *)src_ptr;
+
+    memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
+
+    OSI_LOGI(0, "bbat: _handleMiscTest sub_cmd = %x", msg_head->sub_cmd);
+    switch (msg_head->sub_cmd)
+    {
+    case MISC_VIBRATOR:
+        OSI_LOGI(0, "bbat:  misc vibrator test");
+        respMsg.subtype = prvViberateOpen() ? BBAT_SUCCESS : BBAT_FAILURE;
+        _autotestGenerateRspMsg(&respMsg);
+        break;
+    case MISC_CAM_FLASH:
+        OSI_LOGI(0, "bbat:  misc cam's flash test");
+        diagMsgCAMFLASH_t *msg_falsh = (diagMsgCAMFLASH_t *)src_ptr;
+        if (msg_falsh->level >= 0 && msg_falsh->level < 16)
+        {
+            if (msg_falsh->level == 0)
+            {
+                halPmuSwitchPower(HAL_POWER_CAMFLASH, false, false);
+            }
+            else
+            {
+                halPmuSetCamFlashLevel(msg_falsh->level);
+                halPmuSwitchPower(HAL_POWER_CAMFLASH, true, false);
+            }
+            respMsg.subtype = BBAT_SUCCESS;
+        }
+        else
+        {
+            respMsg.subtype = BBAT_FAILURE;
+        }
+        _autotestGenerateRspMsg(&respMsg);
+        break;
+
+    case MISC_RGB_LIGHT:
+        OSI_LOGI(0, "bbat:  misc rgb light test");
+        if (msg_head->sub_cmd_info.rgb_light.light_switch)
+            respMsg.subtype = prvRGBlightOpen() ? BBAT_SUCCESS : BBAT_FAILURE;
+        else
+            respMsg.subtype = prvRGBlightClose() ? BBAT_SUCCESS : BBAT_FAILURE;
+
+        _autotestGenerateRspMsg(&respMsg);
+        break;
+
+    case MISC_BAT_TEMPERATURE:
+        OSI_LOGI(0, "bbat:  misc bat temperature test");
+        drvAdcInit();
+        value = (uint32_t)drvAdcGetChannelVolt(ADC_CHANNEL_BAT_DET, ADC_SCALE_5V000);
+        OSI_LOGI(0, "bbat: _handleMiscTest,volt 0x%x", value);
+        respMsg.len = sizeof(diagMsgHead_t) + 4;
+        //respMsg.type = msg_head->msg_head.type;
+        respMsg.subtype = 0;
+
+        diagOutputPacket2(&respMsg, &value, 4);
+        break;
+
+    default:
+        break;
+    }
+
+    return 1;
+}
+
 static uint32_t _handleCamOpenCloseAutotest(
     const uint8_t *src_ptr, // Pointer of the input message.
     uint16_t src_len        // Size of the source buffer in uint8_t.
@@ -925,6 +1426,7 @@ static void _diagRegisterAutotestCallback(uint32_t type, DIAG_AUTOTEST_CALLBACK 
 static bool _handleDeviceAutotest(const diagMsgHead_t *cmd, void *ctx)
 {
     uint8_t cmd_subtype;
+    OSI_LOGE(0, "bbat: _handleDeviceAutotest !");
     cmd_subtype = cmd->subtype;
 
     if (cmd_subtype < DEVICE_AUTOTEST_MAX_F)
@@ -1030,41 +1532,218 @@ static uint32_t _handleVibAutotest(
     return 1;
 }
 
-static uint32_t _handleCamFlashAutotest(
+#ifdef CONFIG_DIAG_BT_AUTOTEST_SUPPORT
+static void _diagBtMsgCallback(unsigned int msg_id, char status, void *data_ptr)
+{
+    diagBTContext_t *ctx = &diagBT_ctx;
+
+    OSI_LOGI(0, "bbat: bt callback id=0x%x, param1=0x%x, param2=0x%x", msg_id, status, data_ptr);
+
+    switch (msg_id)
+    {
+    case ID_STATUS_BT_ON_RES:
+    case ID_STATUS_BT_OFF_RES:
+    {
+        ctx->ret = status;
+        osiSemaphoreRelease(ctx->sem);
+    }
+    break;
+    case ID_STATUS_CM_INQUIRY_RES:
+    {
+        if (data_ptr == NULL)
+            break;
+
+        if (ctx->inquryNum < DIAG_BT_INQURY_MAX_SIZE)
+        {
+
+            uint8 addr_string[64] = {0};
+            sprintf((char *)addr_string, "rssi:0x%lx, addr:%02x%s%02x%s%02x%s%02x%s%02x%s%02x",
+                    ((BT_DEVICE_INFO *)data_ptr)->rssi,
+                    ((BT_DEVICE_INFO *)data_ptr)->addr.addr[0], ":",
+                    ((BT_DEVICE_INFO *)data_ptr)->addr.addr[1], ":",
+                    ((BT_DEVICE_INFO *)data_ptr)->addr.addr[2], ":",
+                    ((BT_DEVICE_INFO *)data_ptr)->addr.addr[3], ":",
+                    ((BT_DEVICE_INFO *)data_ptr)->addr.addr[4], ":",
+                    ((BT_DEVICE_INFO *)data_ptr)->addr.addr[5]);
+            OSI_LOGXI(OSI_LOGPAR_S, 0, "bbat: %s", addr_string);
+
+            ctx->inqury[ctx->inquryNum].addr = ((BT_DEVICE_INFO *)data_ptr)->addr;
+            ctx->inqury[ctx->inquryNum].rssi = ((BT_DEVICE_INFO *)data_ptr)->rssi;
+            ctx->inquryNum++;
+
+            if (ctx->inquryNum == DIAG_BT_INQURY_MAX_SIZE)
+            {
+                ctx->ret = status;
+                osiSemaphoreRelease(ctx->sem);
+            }
+        }
+    }
+    break;
+    case ID_STATUS_CM_INQUIRY_FINISH_RES:
+    {
+        if (ctx->inquryNum < DIAG_BT_INQURY_MAX_SIZE)
+        {
+            ctx->ret = status;
+            osiSemaphoreRelease(ctx->sem);
+        }
+    }
+    break;
+    case ID_STATUS_SPP_DATA_RECIEVE_IND:
+    {
+        BT_FreeMenSppData((BT_AT_SPP_DATA *)data_ptr);
+        data_ptr = NULL;
+    }
+    break;
+
+    default:
+        break;
+    }
+
+    if (data_ptr != NULL)
+        free(data_ptr);
+
+    return;
+}
+
+static uint32_t _handleBTAutotest(
     const uint8_t *src_ptr, // Pointer of the input message.
     uint16_t src_len        // Size of the source buffer in uint8_t.
 )
 {
-    diagMsgHead_t *msg_head = (diagMsgHead_t *)src_ptr;
-    diagMsgCAMFLASH_t *msg_falsh = (diagMsgCAMFLASH_t *)src_ptr;
-    diagMsgHead_t respMsg;
-    osiPanic();
-    OSI_LOGE(0, "bbat: _handleCamFlashAutotest !");
-    memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
-    if (msg_falsh->command == 0x04)
+    uint32_t i = 0;
+    BT_ADDRESS BtRead[DIAG_BT_INQURY_MAX_SIZE] = {0};
+    uint8_t BtRssi[DIAG_BT_INQURY_MAX_SIZE][10] = {0};
+    diagBTContext_t *ctx = &diagBT_ctx;
+    ctx->ret = BT_PENDING;
+    diagMsgBT_t *reqMsg = (diagMsgBT_t *)src_ptr;
+    diagMsgBT_t *respMsg = &ctx->bt_msg;
+    memcpy(&respMsg->msg_head, reqMsg, sizeof(diagMsgHead_t));
+    respMsg->msg_head.subtype = BBAT_FAILURE;
+
+    OSI_LOGXI(OSI_LOGPAR_M, 0, "bbat: diag bt : %*s", src_len, (void *)src_ptr);
+
+    switch (reqMsg->command)
     {
-        if (msg_falsh->level >= 0 && msg_falsh->level < 16)
+    case BT_OPEN:
+    {
+        if (!BT_GetState())
         {
-            if (msg_falsh->level == 0)
+            ctx->sem = osiSemaphoreCreate(1, 0);
+            if (ctx->sem == NULL)
             {
-                halPmuSwitchPower(HAL_POWER_CAMFLASH, false, false);
+                OSI_LOGE(0, "bbat: bt create sem failed");
+                respMsg->msg_head.subtype = BBAT_FAILURE;
             }
             else
             {
-                halPmuSetCamFlashLevel(msg_falsh->level);
-                halPmuSwitchPower(HAL_POWER_CAMFLASH, true, false);
+                bt_register_at_callback_func(_diagBtMsgCallback);
+
+                ctx->ret = BT_Start();
+                if (ctx->ret == BT_PENDING)
+                    osiSemaphoreAcquire(ctx->sem);
+
+                respMsg->msg_head.subtype = (ctx->ret == BT_SUCCESS ? BBAT_SUCCESS : BBAT_FAILURE);
+
+                if (ctx->ret != BT_SUCCESS)
+                {
+                    bt_register_at_callback_func(NULL);
+                    osiSemaphoreDelete(ctx->sem);
+                    ctx->sem = NULL;
+                }
             }
-            respMsg.subtype = BBAT_SUCCESS;
-            _autotestGenerateRspMsg(&respMsg);
+        }
+
+        respMsg->msg_head.len = sizeof(diagMsgHead_t);
+        _autotestGenerateRspMsg(&respMsg->msg_head);
+    }
+    break;
+    case BT_SEARCH:
+    {
+        if (BT_GetState() && ctx->sem != NULL)
+        {
+            ctx->inquryNum = 0;
+            ctx->ret = BT_SearchDevice(BT_SERVICE_ALL);
+            if (ctx->ret == BT_PENDING)
+                osiSemaphoreAcquire(ctx->sem);
+
+            respMsg->msg_head.subtype = (ctx->ret == BT_SUCCESS ? BBAT_SUCCESS : BBAT_FAILURE);
+        }
+
+        respMsg->msg_head.len = sizeof(diagMsgHead_t);
+        _autotestGenerateRspMsg(&respMsg->msg_head);
+    }
+    break;
+    case BT_READ:
+    {
+        if (BT_GetState() && ctx->inquryNum > 0)
+        {
+            for (i = 0; i < ctx->inquryNum; i++)
+                BtRead[i] = ctx->inqury[i].addr;
+
+            respMsg->msg_head.subtype = BT_SUCCESS;
+            OSI_LOGXI(OSI_LOGPAR_M, 0, "bbat: diag bt read: %*s", (ctx->inquryNum * sizeof(BT_ADDRESS)), (void *)BtRead);
+            diagOutputPacket2(&respMsg->msg_head, (void *)BtRead, (ctx->inquryNum * sizeof(BT_ADDRESS)));
         }
         else
         {
-            respMsg.subtype = BBAT_FAILURE;
-            _autotestGenerateRspMsg(&respMsg);
+            respMsg->msg_head.len = sizeof(diagMsgHead_t);
+            _autotestGenerateRspMsg(&respMsg->msg_head);
         }
+    }
+    break;
+    case BT_CLOSE:
+    {
+        if (BT_GetState() && ctx->sem != NULL)
+        {
+            ctx->ret = BT_Stop();
+            if (ctx->ret == BT_PENDING)
+                osiSemaphoreAcquire(ctx->sem);
+
+            respMsg->msg_head.subtype = (ctx->ret == BT_SUCCESS ? BBAT_SUCCESS : BBAT_FAILURE);
+
+            if (ctx->ret == BT_SUCCESS)
+            {
+                bt_register_at_callback_func(NULL);
+                osiSemaphoreDelete(ctx->sem);
+                ctx->inquryNum = 0;
+                ctx->sem = NULL;
+            }
+        }
+
+        respMsg->msg_head.len = sizeof(diagMsgHead_t);
+        _autotestGenerateRspMsg(&respMsg->msg_head);
+    }
+    break;
+    case BT_RSSI:
+    {
+        if (BT_GetState() && ctx->inquryNum > 0)
+        {
+            for (i = 0; i < ctx->inquryNum; i++)
+            {
+                *((BT_ADDRESS *)(BtRssi[i])) = ctx->inqury[i].addr;
+                *((uint32_t *)(BtRssi[i] + sizeof(BT_ADDRESS))) = ctx->inqury[i].rssi;
+            }
+            respMsg->msg_head.subtype = BT_SUCCESS;
+            OSI_LOGXI(OSI_LOGPAR_M, 0, "bbat: diag bt rssi: %*s", (ctx->inquryNum * sizeof(BtRssi[0])), (void *)BtRssi);
+            diagOutputPacket2(&respMsg->msg_head, (void *)BtRssi, (ctx->inquryNum * sizeof(BtRssi[0])));
+        }
+        else
+        {
+            respMsg->msg_head.len = sizeof(diagMsgHead_t);
+            _autotestGenerateRspMsg(&respMsg->msg_head);
+        }
+    }
+    break;
+    default:
+    {
+        respMsg->msg_head.subtype = BBAT_FAILURE;
+        _autotestGenerateRspMsg(&respMsg->msg_head);
+    }
+    break;
     }
     return 1;
 }
+#endif
 
 #define UART_TXFIFO_SIZE (128)
 #define UART_RXFIFO_SIZE (128)
@@ -1376,24 +2055,31 @@ void _drvRegisterDeviceAutoTestCmdRoutine(void)
 
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_KEYPAD, _handleKeypadAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_GPIO, _handleGpioAutotest);
+    _diagRegisterAutotestCallback(DEVICE_AUTOTEST_TCARD, _handleTCARDAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_SIM, _handleSIMAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_VIB, _handleVibAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_USB, _handleUSBAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_ADC, _handleAdcAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_UART, _handleUartAutotest);
-    _diagRegisterAutotestCallback(DEVICE_AUTOTEST_CAMFLASH, _handleCamFlashAutotest);
+    _diagRegisterAutotestCallback(DEVICE_AUTOTEST_MISC, _handleMiscTest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_CAMERA_OPENCLOSE, _handleCamOpenCloseAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_CAMERA_MIPI, _handleMipiCamAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_NVRAM_R, _autotestResultRead);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_NVRAM_W, _autotestResultWrite);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_RTC, _handleRtcAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_CHECK, _handleAutotestCheck);
+    _diagRegisterAutotestCallback(DEVICE_AUTOTEST_CHARGE, _handleChargeTest);
+    _diagRegisterAutotestCallback(DEVICE_AUTOTEST_LCD_SPI, _handleSPILcdTest);
 
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_MIC, _handleMicAutotest);
     _diagRegisterAutotestCallback(DEVICE_AUTOTEST_SPEAK, _handleSpeakerAutotest);
+
+#ifdef CONFIG_DIAG_BT_AUTOTEST_SUPPORT
+    _diagRegisterAutotestCallback(DEVICE_AUTOTEST_BT, _handleBTAutotest);
+#endif
 }
 
-void diagAutoTestInit(void)
+void diagAutoTestInit(void) //use uart baud 961200
 {
     OSI_LOGI(0, "bbat: diagAutoTestInit ");
 
@@ -1404,16 +2090,8 @@ void diagAutoTestInit(void)
     diagRegisterCmdHandle(DIAG_DEVICE_AUTOTEST_F, _handleDeviceAutotest, NULL);
 
     // io select UART3 rx/tx, for uart{1,3} loopback test
-    hwp_iomux->pad_keyout_4_cfg_reg = 4;
-    hwp_iomux->pad_keyout_5_cfg_reg = 4;
+    // hwp_iomux->pad_keyout_4_cfg_reg = 4;
+    // hwp_iomux->pad_keyout_5_cfg_reg = 4;
 
     halPmuSwitchPower(HAL_POWER_SD, true, true);
-}
-
-void drvSetPBkeyStatus(uint32_t key_status)
-{
-    if (key_status == 1)
-        gPBkeyStatus = 0;
-    else
-        gPBkeyStatus = 1;
 }

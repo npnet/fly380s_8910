@@ -558,9 +558,13 @@ bool copsAddFunction(cops_t *c, copsFunc_t *f)
         return false;
     }
 
+    f->cops = c;
+    f->controller = c->driver.udc;
     int r = cfBind(f, c, c->driver.udc);
     if (r < 0)
     {
+        f->cops = NULL;
+        f->controller = NULL;
         OSI_LOGE(0, "bind function %4c fail", f->name);
         return false;
     }
@@ -587,6 +591,8 @@ bool copsAddFunctions(cops_t *c, copsFunc_t **funcs, unsigned count)
     for (unsigned i = 0; i < count; ++i)
     {
         copsFunc_t *f = funcs[i];
+        f->cops = c;
+        f->controller = c->driver.udc;
         int r = cfBind(f, c, c->driver.udc);
         if (r < 0)
         {
@@ -612,6 +618,8 @@ bool copsAddFunctions(cops_t *c, copsFunc_t **funcs, unsigned count)
         else
         {
             cfUnbind(f);
+            f->cops = NULL;
+            f->controller = NULL;
         }
     }
 

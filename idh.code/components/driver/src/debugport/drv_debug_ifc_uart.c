@@ -11,6 +11,7 @@
  */
 
 #include "drv_debug_port.h"
+#include "drv_debug_port_imp.h"
 #include "drv_names.h"
 #include "drv_ifc.h"
 #include "hwregs.h"
@@ -113,7 +114,7 @@ static void prvUartStartRxDma(drvDebugUartPort_t *d)
  */
 static void prvUartTraceOutput(drvDebugUartPort_t *d, unsigned whence)
 {
-    if (!d->port.mode.trace_enable || !gTraceEnabled)
+    if (!d->port.mode.trace_enable)
         return;
 
     if (whence == OUTPUT_AT_TXDONE)
@@ -177,7 +178,7 @@ static void prvUartISR(void *param)
         int bytes = RX_DMA_SIZE - drvIfcGetTC(&d->rx_ifc);
         if (bytes > 0)
         {
-            osiDCacheCleanInvalidate(d->rx_dma_buf, bytes);
+            osiDCacheInvalidate(d->rx_dma_buf, bytes);
             osiFifoPut(&d->rx_fifo, d->rx_dma_buf, bytes);
             prvUartStartRxDma(d);
             d->rx_cb(d->rx_cb_ctx);
@@ -226,7 +227,7 @@ static bool prvUartSendPacketLocked(drvDebugUartPort_t *d, const void *data, uns
  */
 static bool prvUartSendPacket(drvDebugPort_t *p, const void *data, unsigned size)
 {
-    drvDebugUartPort_t *d = (drvDebugUartPort_t *)p;
+    drvDebugUartPort_t *d = OSI_CONTAINER_OF(p, drvDebugUartPort_t, port);
 
     if (d->blue_screen_mode)
         return prvUartFifoWriteAll(d->hwp, data, size);
@@ -247,7 +248,7 @@ static void prvDummyRxCallback(void *param) {}
  */
 static void prvDuartSetRxCallback(drvDebugPort_t *p, osiCallback_t cb, void *param)
 {
-    drvDebugUartPort_t *d = (drvDebugUartPort_t *)p;
+    drvDebugUartPort_t *d = OSI_CONTAINER_OF(p, drvDebugUartPort_t, port);
     d->rx_cb = (cb == NULL) ? prvDummyRxCallback : cb;
     d->rx_cb_ctx = param;
 }
@@ -257,7 +258,7 @@ static void prvDuartSetRxCallback(drvDebugPort_t *p, osiCallback_t cb, void *par
  */
 static void prvDuartSetTraceEnable(drvDebugPort_t *p, bool enable)
 {
-    drvDebugUartPort_t *d = (drvDebugUartPort_t *)p;
+    drvDebugUartPort_t *d = OSI_CONTAINER_OF(p, drvDebugUartPort_t, port);
     if (enable)
     {
         uint32_t critical = osiEnterCritical();
@@ -271,7 +272,7 @@ static void prvDuartSetTraceEnable(drvDebugPort_t *p, bool enable)
  */
 static int prvDuartRead(drvDebugPort_t *p, void *data, unsigned size)
 {
-    drvDebugUartPort_t *d = (drvDebugUartPort_t *)p;
+    drvDebugUartPort_t *d = OSI_CONTAINER_OF(p, drvDebugUartPort_t, port);
     return osiFifoGet(&d->rx_fifo, data, size);
 }
 
@@ -298,6 +299,13 @@ static void prvUartBsEnter(void *param)
     if (d->trace_buf.size != 0)
         osiTraceBufHandled();
     d->trace_buf.size = 0;
+
+    if (d->port.mode.trace_enable)
+    {
+#ifdef CONFIG_KERNEL_HOST_TRACE
+        prvUartSendPacket(&d->port, gBlueScreenEventData, GDB_EVENT_DATA_SIZE);
+#endif
+    }
 }
 
 /**

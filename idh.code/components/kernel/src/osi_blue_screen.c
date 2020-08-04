@@ -24,8 +24,6 @@
 #endif
 #include <assert.h>
 
-#define GDB_EVENT 0x9db00000
-
 #ifdef CONFIG_CPU_MIPS
 #define GDB_CMD_BREAKPOINT 0x10
 
@@ -148,7 +146,7 @@ OSI_NO_RETURN OSI_SECTION_SRAM_TEXT void osiPanicAt(void *address)
     __builtin_trap();
 }
 
-bool osiIsPanic(void)
+bool OSI_SECTION_SRAM_TEXT osiIsPanic(void)
 {
     return gIsPanic;
 }
@@ -162,7 +160,6 @@ OSI_NO_RETURN void osiBlueScreen(uint32_t type, void *regs)
         prvSaveContext(regs);
 
         osiDCacheCleanInvalidateAll();
-        osiDebugEvent(GDB_EVENT);
         osiProfileCode(PROFCODE_BLUE_SCREEN);
         osiDCacheCleanInvalidateAll();
 

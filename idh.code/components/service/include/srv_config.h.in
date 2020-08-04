@@ -65,4 +65,19 @@
  */
 #cmakedefine CONFIG_SRV_SIMLOCK_ENABLE
 
+/**
+ * minimal power on voltage
+ */
+#cmakedefine CONFIG_SRV_POWER_ON_VOLTAGE @CONFIG_SRV_POWER_ON_VOLTAGE@
+
+/**
+ * power off voltage threshold
+ */
+#cmakedefine CONFIG_SRV_POWER_OFF_VOLTAGE @CONFIG_SRV_POWER_OFF_VOLTAGE@
+
+/**
+ * support power off charge mode or not
+ */
+#cmakedefine CONFIG_SRV_POWER_OFF_CHARGE_SUPPORT
+
 #endif

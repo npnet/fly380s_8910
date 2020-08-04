@@ -152,6 +152,20 @@ config 8909_DUALMODE
     default n
 endif
 
+if SOC_8910
+config FLASH_LP_POWER_DOWN
+    bool "Power down flash in low power mode"
+    default n
+    help
+        EXPERIMENTAL!! Power down flash in low power mode.
+
+config PSRAM_LP_HALF_SLEEP
+    bool "PSRAM enter half sleep in low power mode"
+    default n
+    help
+        EXPERIMENTAL!! PSRAM enter half sleep in low power mode.
+endif
+
 menu "Frequency"
 
 if SOC_8910

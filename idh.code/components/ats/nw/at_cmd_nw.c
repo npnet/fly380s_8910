@@ -59,7 +59,6 @@ extern uint32_t CFW_NW_SendPLMNList(CFW_StoredPlmnList *plmnlist, uint8_t nSimID
 extern uint32_t CFW_SimWritePreferPLMN(uint8_t index, uint8_t *operator, uint8_t nSize, uint16_t nUTI, CFW_SIM_ID nSimID);
 extern uint32_t CFW_SimReadPreferPLMN(uint16_t nUTI, CFW_SIM_ID nSimID);
 extern uint32_t CFW_NwGetLteSignalQuality(uint8_t *pSignalLevel, uint8_t *pBitError, CFW_SIM_ID nSimID);
-extern uint32_t CFW_CfgNwSetDetectMBS(uint8_t nMode);
 bool AT_EMOD_CCED_ProcessData(uint8_t nSim, CFW_TSM_CURR_CELL_INFO *pCurrCellInfo,
                               CFW_TSM_ALL_NEBCELL_INFO *pNeighborCellInfo, char *nStrPosiList);
 uint8_t Mapping_Creg_From_PsType(uint8_t pstype);
@@ -462,6 +461,7 @@ static void _onEV_CFW_NW_NETWORKINFO_IND(const osiEvent_t *event)
             {
                 gAtSetting.timezone = timezone;
                 gAtSetting.timezone_dst = timezone_dst;
+                Cfw_SetTimezone(gAtSetting.timezone);
                 atCfgAutoSave();
             }
         }
@@ -563,6 +563,20 @@ static void _onEV_CFW_NW_JAMMING_DETECT_IND(const osiEvent_t *event)
     {
         OSI_LOGI(0, "_onEV_CFW_NW_JAMMING_DETECT_IND ERROR:nMode: %d", p->nMode);
     }
+}
+static void _onEV_CFW_MBS_CALL_INFO_IND(const osiEvent_t *event)
+{
+    char rsp[100] = {
+        0,
+    };
+    const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
+    CFW_NW_MBS_CELL_INFO *p = (CFW_NW_MBS_CELL_INFO *)cfw_event->nParam1;
+
+    atMemFreeLater(p);
+    sprintf(rsp, "+MBS_INFO:%d,%d,\"%X%X\",\"%X%X%X%X%X\"",
+            p->nArfcn, p->nBsic, p->nCellId[0], p->nCellId[1],
+            p->nLai[0], p->nLai[1], p->nLai[2], p->nLai[3], p->nLai[4]);
+    atCmdRespDefUrcText(rsp);
 }
 
 static void _onEV_CFW_ERRC_CONNSTATUS_IND(const osiEvent_t *event)
@@ -833,13 +847,43 @@ static void _copsDeregRsp(atCommand_t *cmd, const osiEvent_t *event)
 {
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     uint8_t nSim = atCmdGetSim(cmd->engine);
-
+    char rsp[40] = {
+        0,
+    };
+    char *prsp = rsp;
     if (0 == cfw_event->nParam1)
     {
-        if ((CFW_NWGetStackRat(nSim) == 4 /*API_RAT_LTE*/)) /*4 is NBIOT or LTE*/
-            atCmdRespInfoText(cmd->engine, "+CEREG: 0");
+        if (gAtSetting.sim[nSim].creg == 2)
+        {
+            sprintf(prsp, "+CREG: 2,0,\"0000\",\"0000\",0");
+        }
         else
-            atCmdRespInfoText(cmd->engine, "+CREG: 0");
+        {
+            sprintf(prsp, "+CREG: %d,0", gAtSetting.sim[nSim].creg);
+        }
+        atCmdRespInfoText(cmd->engine, rsp);
+
+        memset(rsp, 0, sizeof(rsp));
+        if (gAtSetting.sim[nSim].cgreg == 2)
+        {
+            sprintf(prsp, "+CGREG: 2,0,\"0000\",\"0000\",0\n\r");
+        }
+        else
+        {
+            sprintf(prsp, "+CGREG: %d,0", gAtSetting.sim[nSim].creg);
+        }
+        atCmdRespInfoText(cmd->engine, rsp);
+
+        memset(rsp, 0, sizeof(rsp));
+        if (gAtSetting.sim[nSim].cereg == 2)
+        {
+            sprintf(prsp, "+CEREG: 2,0,\"0000\",\"0000\",0\n\r");
+        }
+        else
+        {
+            sprintf(prsp, "+CEREG: %d,0", gAtSetting.sim[nSim].cereg);
+        }
+        atCmdRespInfoText(cmd->engine, rsp);
         atCmdRespOK(cmd->engine);
     }
     else
@@ -931,6 +975,18 @@ static void _copsGetAvailRsp(atCommand_t *cmd, const osiEvent_t *event)
 }
 
 // 7.3 PLMN selection +COPS
+#define AT_NW_CHECK_SIM_STATUS(nSim) \
+    ({uint8_t nSimStatus = CFW_GetSimStatus(nSim);                \
+    if (CFW_SIM_ABSENT == nSimStatus)                             \
+    {                                                             \
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_SIM_NOT_INSERTED); \
+    }                                                             \
+    else if (CFW_SIM_ABNORMAL == nSimStatus)                      \
+    {                                                             \
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_SIM_WRONG);        \
+    }                                                             \
+    OSI_LOGI(0, "atCmdHandleCOPS sim check:%d", nSimStatus); })
+
 void atCmdHandleCOPS(atCommand_t *cmd)
 {
     uint8_t nSim = atCmdGetSim(cmd->engine);
@@ -952,6 +1008,7 @@ void atCmdHandleCOPS(atCommand_t *cmd)
         if (AcT == 9)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 #endif
+        AT_NW_CHECK_SIM_STATUS(nSim);
         gAtSetting.sim[nSim].cops_act = AcT;
         if ((mode == COPS_MODE_AUTOMATIC && cmd->param_count > 2) ||
             (mode == COPS_MODE_DEREGISTER && cmd->param_count > 1) ||
@@ -1058,7 +1115,7 @@ void atCmdHandleCOPS(atCommand_t *cmd)
         }
         if (CFW_DISABLE_COMM == nFM)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_ALLOWED);
-
+        AT_NW_CHECK_SIM_STATUS(nSim);
         cmd->uti = cfwRequestUTI((osiEventCallback_t)_copsGetAvailRsp, cmd);
         atCmdSetTimeoutHandler(cmd->engine, 1000 * 60 * 3, _copsGetAvailRspTimeOutCB);
         if ((res = CFW_NwGetAvailableOperators(cmd->uti, nSim)) != 0)
@@ -1804,10 +1861,11 @@ void atCmdHandleCSQ(atCommand_t *cmd)
 #ifndef CONFIG_SOC_6760
         uint32_t ret = 0;
         uint8_t rat = 0;
-
+        CFW_NW_STATUS_INFO nStatusInfo;
         CFW_COMM_MODE nFM = CFW_DISABLE_COMM;
         ret = CFW_GetComm(&nFM, nSim);
-        if (nFM != CFW_DISABLE_COMM)
+        CFW_NwGetStatus(&nStatusInfo, nSim);
+        if ((nFM != CFW_DISABLE_COMM) || (CFW_NW_STATUS_NOTREGISTERED_NOTSEARCHING == nStatusInfo.nStatus))
         {
             CFW_NW_STATUS_INFO sStatus;
             rat = CFW_NWGetStackRat(nSim);
@@ -1933,6 +1991,7 @@ void atCmdHandleCESQ(atCommand_t *cmd)
         uint8_t rsrp = 255;
         uint32_t ret = 0;
         uint8_t rat = 0;
+        CFW_NW_STATUS_INFO sStatus;
 
         rat = CFW_NWGetStackRat(nSim);
         OSI_LOGXI(OSI_LOGPAR_I, 0, "CESQ:rat: %d", rat);
@@ -1943,47 +2002,63 @@ void atCmdHandleCESQ(atCommand_t *cmd)
         OSI_LOGXI(OSI_LOGPAR_I, 0, "CESQ:nRssi: %d,nRxQual: %d,iRsrq: %d,iRsrp: %d", sQualReport.nRssi, sQualReport.nRxQual, sQualReport.iRsrq, sQualReport.iRsrp);
         if (rat == 4)
         {
-            //_rsrqFromNrsrq(&rsrq, sQualReport.iRsrq);
-            _rsrpFromNrsrp(&rsrp, sQualReport.iRsrp + 17);
-            if (rsrp < 17)
+            ret = CFW_GprsGetstatus(&sStatus, nSim);
+            if (ret != 0)
             {
-                rsrp = 0;
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
             }
-            else if ((17 < rsrp) && (rsrp < 114))
+            if (sStatus.nStatus != CFW_NW_STATUS_NOTREGISTERED_NOTSEARCHING)
             {
-                rsrp -= 17;
-            }
-            else
-            {
-                rsrp = 97;
-            }
-            if (sQualReport.iRsrq < 0)
-            {
-                rsrq = 0;
-            }
-            else if (sQualReport.iRsrq > 34)
-            {
-                rsrq = 34;
-            }
-            else
-            {
-                _rsrqFromNrsrq(&rsrq, sQualReport.iRsrq);
+                //_rsrqFromNrsrq(&rsrq, sQualReport.iRsrq);
+                _rsrpFromNrsrp(&rsrp, sQualReport.iRsrp + 17);
+                if (rsrp < 17)
+                {
+                    rsrp = 0;
+                }
+                else if ((17 < rsrp) && (rsrp < 114))
+                {
+                    rsrp -= 17;
+                }
+                else
+                {
+                    rsrp = 97;
+                }
+                if (sQualReport.iRsrq < 0)
+                {
+                    rsrq = 0;
+                }
+                else if (sQualReport.iRsrq > 34)
+                {
+                    rsrq = 34;
+                }
+                else
+                {
+                    _rsrqFromNrsrq(&rsrq, sQualReport.iRsrq);
+                }
             }
         }
         else
         {
-            CFW_NwGetSignalQuality(&rxlev, &ber, nSim);
-            if (rxlev > 110)
+            ret = CFW_NwGetStatus(&sStatus, nSim);
+            if (ret != 0)
             {
-                rxlev = 0;
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
             }
-            else if ((rxlev <= 110) && (rxlev >= 48))
+            if (sStatus.nStatus != CFW_NW_STATUS_NOTREGISTERED_NOTSEARCHING)
             {
-                rxlev = (uint8_t)(63 - (rxlev - 48));
-            }
-            else
-            {
-                rxlev = 63;
+                CFW_NwGetSignalQuality(&rxlev, &ber, nSim);
+                if (rxlev > 110)
+                {
+                    rxlev = 0;
+                }
+                else if ((rxlev <= 110) && (rxlev >= 48))
+                {
+                    rxlev = (uint8_t)(63 - (rxlev - 48));
+                }
+                else
+                {
+                    rxlev = 63;
+                }
             }
         }
 
@@ -2612,51 +2687,88 @@ static void CCED_TimerV1CB(void *ctx)
     OSI_LOGI(0, "Come In CCED_TimerCB nSim ==%d", pCtx->nSim);
     pCtx->nCurNetMode = CFW_NWGetStackRat(pCtx->nSim);
     OSI_LOGXI(OSI_LOGPAR_I, 0, "rat: %d", pCtx->nCurNetMode);
+
+    CFW_NW_STATUS_INFO sStatus;
     if (pCtx->nCurNetMode == CFW_RAT_LTE)
     {
-        iRet = CFW_NwGetLteSignalQuality(&nSignalLevel, &nBitError, pCtx->nSim);
-        if (nSignalLevel < 17)
+        CFW_NW_QUAL_INFO iQualReport;
+        iRet = CFW_GprsGetstatus(&sStatus, pCtx->nSim);
+        if (iRet != 0)
         {
-            nSignalLevel = 0;
+            goto Loop;
         }
-        else if ((17 <= nSignalLevel) && (nSignalLevel < 113))
+        if (sStatus.nStatus != CFW_NW_STATUS_NOTREGISTERED_NOTSEARCHING)
         {
-            nSignalLevel = (uint8_t)((nSignalLevel - 17) / 3);
-        }
-        else
-        {
-            nSignalLevel = 31;
+            iRet = CFW_NwGetLteSignalQuality(&nSignalLevel, &nBitError, pCtx->nSim);
+            if (iRet != ERR_SUCCESS)
+            {
+                goto Loop;
+            }
+            iRet = CFW_NwGetQualReport(&iQualReport, pCtx->nSim);
+            if (iRet != ERR_SUCCESS)
+            {
+                goto Loop;
+            }
+            OSI_LOGXI(OSI_LOGPAR_I, 0, "rat: %d", iQualReport.nRssidBm);
+            if (iQualReport.nRssidBm < -113)
+            {
+                nSignalLevel = 0;
+            }
+            else if ((iQualReport.nRssidBm >= -113) && (iQualReport.nRssidBm <= -51))
+            {
+                nSignalLevel = (uint8_t)((iQualReport.nRssidBm + 113) / 2);
+            }
+            else
+            {
+                nSignalLevel = 31;
+            }
         }
     }
     else
     {
-        iRet = CFW_NwGetSignalQuality(&nSignalLevel, &nBitError, pCtx->nSim);
-        if (nSignalLevel > 113)
+        iRet = CFW_NwGetStatus(&sStatus, pCtx->nSim);
+        if (iRet != ERR_SUCCESS)
         {
-            nSignalLevel = 0;
+            goto Loop;
         }
-        else if ((nSignalLevel <= 113) && (nSignalLevel >= 51))
+        if (sStatus.nStatus != CFW_NW_STATUS_NOTREGISTERED_NOTSEARCHING)
         {
-            nSignalLevel = (uint8_t)(31 - (nSignalLevel - 51) / 2);
-        }
-        else
-        {
-            nSignalLevel = 31;
+            iRet = CFW_NwGetSignalQuality(&nSignalLevel, &nBitError, pCtx->nSim);
+            if (iRet != ERR_SUCCESS)
+            {
+                goto Loop;
+            }
+            if (nSignalLevel > 113)
+            {
+                nSignalLevel = 0;
+            }
+            else if ((nSignalLevel <= 113) && (nSignalLevel >= 51))
+            {
+                nSignalLevel = (uint8_t)(31 - (nSignalLevel - 51) / 2);
+            }
+            else
+            {
+                nSignalLevel = 31;
+            }
         }
     }
-    OSI_LOGI(0, "CCED_TimerCB: Finish CFW_NwGetSignalQuality,iRet=%d  iRet==%x", iRet, iRet);
+Loop:
+    OSI_LOGI(0, "CCED_TimerCB: Finish CFW_NwGetSignalQuality,iRet=%x", iRet);
     osiTimerStart(ccedtimer, 10000);
-    if (ERR_SUCCESS == iRet)
+    if (ERR_SUCCESS != iRet)
     {
-        memset(nBuf, 0, 20);
-        char *pBuf = &nBuf[0];
-        pBuf += sprintf(pBuf, "+CCED: %d,%d", nSignalLevel, nBitError);
-        atCmdRespDefUrcText(nBuf);
+        nSignalLevel = 99;
+        nBitError = 99;
     }
+    memset(nBuf, 0, 20);
+    char *pBuf = &nBuf[0];
+    pBuf += sprintf(pBuf, "+CCED: %d,%d", nSignalLevel, nBitError);
+    atCmdRespDefUrcText(nBuf);
 }
 static void CCED_TimerRspCB(void *ctx, const osiEvent_t *event)
 {
-    OSI_LOGI(0, "CCED_TimerRspCB------");
+    OSI_LOGI(0, "CCED_TimerRspCB()");
+
     const CFW_EVENT *cfw_event = (const CFW_EVENT *)event;
     CFW_SIM_ID nSim = (CFW_SIM_ID)cfw_event->nFlag;
     atCcedTimerContext_t *pCtx = (atCcedTimerContext_t *)ctx;
@@ -2668,11 +2780,16 @@ static void CCED_TimerRspCB(void *ctx, const osiEvent_t *event)
     CFW_NET_INFO_T tNetLTEinfo;
 
     char *pTxtBuf = malloc(1024);
+    if (pTxtBuf == NULL)
+        return;
+
     memset(&tCurrCellInf, 0, sizeof(CFW_TSM_CURR_CELL_INFO));
     memset(&tNeighborCellInfo, 0, sizeof(CFW_TSM_ALL_NEBCELL_INFO));
     memset(&tNetLTEinfo, 0, sizeof(CFW_NET_INFO_T));
     memset(pTxtBuf, 0, 1024);
+    atMemFreeLater(pTxtBuf);
 
+    OSI_LOGI(0, "CCED_TimerRspCB() nEventId: %d, nType: %d", cfw_event->nEventId, cfw_event->nType);
     if (cfw_event->nEventId == EV_CFW_TSM_INFO_IND)
     {
         if (cfw_event->nType != 0)
@@ -2680,7 +2797,6 @@ static void CCED_TimerRspCB(void *ctx, const osiEvent_t *event)
             OSI_LOGI(0, "CCED_TimerRspCB:   ERROR!!!---CfwEvent.nType --0x%x\n\r", cfw_event->nType);
             sprintf(pTxtBuf, "+CCED: %d", ERR_AT_CME_EXE_FAIL);
             atCmdRespDefUrcText(pTxtBuf);
-            free(pTxtBuf);
             osiTimerDelete(ccedtimerV2);
             ccedtimerV2 = NULL;
             return;
@@ -2782,11 +2898,9 @@ static void CCED_TimerRspCB(void *ctx, const osiEvent_t *event)
     }
     else if (cfw_event->nEventId == EV_CFW_TSM_INFO_END_RSP)
     {
-        free(pTxtBuf);
         osiTimerStart(ccedtimerV2, 5000);
         return;
     }
-    free(pTxtBuf);
 }
 static void _ccedTimerV2CB(void *ctx)
 {
@@ -2890,10 +3004,14 @@ static void CCED_RspCB(atCommand_t *cmd, const osiEvent_t *event)
     CFW_NET_INFO_T tNetLTEinfo;
 
     char *pTxtBuf = malloc(1024);
+    if (pTxtBuf == NULL)
+        return;
+
     memset(&tCurrCellInf, 0, sizeof(CFW_TSM_CURR_CELL_INFO));
     memset(&tNeighborCellInfo, 0, sizeof(CFW_TSM_ALL_NEBCELL_INFO));
     memset(&tNetLTEinfo, 0, sizeof(CFW_NET_INFO_T));
     memset(pTxtBuf, 0, 1024);
+    atMemFreeLater(pTxtBuf);
 
     if (cfw_event->nEventId == EV_CFW_TSM_INFO_IND)
     {
@@ -2904,7 +3022,6 @@ static void CCED_RspCB(atCommand_t *cmd, const osiEvent_t *event)
             {
                 _ccedDeleteTimer(pCtx->lteReqType);
             }
-            free(pTxtBuf);
             AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
         }
         if (cfw_event->nParam2 == CFW_TSM_CURRENT_CELL)
@@ -3004,7 +3121,6 @@ static void CCED_RspCB(atCommand_t *cmd, const osiEvent_t *event)
             }
         }
     }
-    free(pTxtBuf);
 }
 /*
  *******************************************************************************
@@ -3079,50 +3195,80 @@ void atCmdHandleCCED(atCommand_t *cmd)
         }
 
         uint8_t rat = CFW_NWGetStackRat(nSim);
-
         if (8 == nRequestedDump)
         {
             //Get RSSI LTE&GSM
-            uint8_t nSignalLevel = 0;
-            uint8_t nBitError = 0;
+            uint8_t nSignalLevel = 99;
+            uint8_t nBitError = 99;
+            uint32_t iRet = 0;
+            CFW_NW_STATUS_INFO sStatus;
             if (nMode == 1)
             {
                 _ccedCreatTimer(nRequestedDump, rat, nSim);
             }
             if (rat == CFW_RAT_LTE)
             {
-                iRet = CFW_NwGetLteSignalQuality(&nSignalLevel, &nBitError, nSim);
-                if (nSignalLevel < 17)
+                CFW_NW_QUAL_INFO iQualReport;
+                iRet = CFW_GprsGetstatus(&sStatus, nSim);
+                if (iRet != ERR_SUCCESS)
                 {
-                    nSignalLevel = 0;
+                    AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
                 }
-                else if ((17 <= nSignalLevel) && (nSignalLevel < 113))
+                if (sStatus.nStatus != CFW_NW_STATUS_NOTREGISTERED_NOTSEARCHING)
                 {
-                    nSignalLevel = (uint8_t)((nSignalLevel - 17) / 3);
-                }
-                else
-                {
-                    nSignalLevel = 31;
+                    iRet = CFW_NwGetLteSignalQuality(&nSignalLevel, &nBitError, nSim);
+                    if (iRet != ERR_SUCCESS)
+                    {
+                        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                    }
+                    iRet = CFW_NwGetQualReport(&iQualReport, nSim);
+                    if (iRet != ERR_SUCCESS)
+                    {
+                        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                    }
+                    OSI_LOGXI(OSI_LOGPAR_I, 0, "rat: %d", iQualReport.nRssidBm);
+                    if (iQualReport.nRssidBm < -113)
+                    {
+                        nSignalLevel = 0;
+                    }
+                    else if ((iQualReport.nRssidBm >= -113) && (iQualReport.nRssidBm <= -51))
+                    {
+                        nSignalLevel = (uint8_t)((iQualReport.nRssidBm + 113) / 2);
+                    }
+                    else
+                    {
+                        nSignalLevel = 31;
+                    }
                 }
             }
             else
             {
-                iRet = CFW_NwGetSignalQuality(&nSignalLevel, &nBitError, nSim);
-                if (nSignalLevel > 113)
+                iRet = CFW_NwGetStatus(&sStatus, nSim);
+                if (iRet != ERR_SUCCESS)
                 {
-                    nSignalLevel = 0;
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
                 }
-                else if ((nSignalLevel <= 113) && (nSignalLevel >= 51))
+                if (sStatus.nStatus != CFW_NW_STATUS_NOTREGISTERED_NOTSEARCHING)
                 {
-                    nSignalLevel = (uint8_t)(31 - (nSignalLevel - 51) / 2);
-                }
-                else
-                {
-                    nSignalLevel = 31;
+                    iRet = CFW_NwGetSignalQuality(&nSignalLevel, &nBitError, nSim);
+                    if (iRet != ERR_SUCCESS)
+                    {
+                        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                    }
+                    if (nSignalLevel > 113)
+                    {
+                        nSignalLevel = 0;
+                    }
+                    else if ((nSignalLevel <= 113) && (nSignalLevel >= 51))
+                    {
+                        nSignalLevel = (uint8_t)(31 - (nSignalLevel - 51) / 2);
+                    }
+                    else
+                    {
+                        nSignalLevel = 31;
+                    }
                 }
             }
-            if (iRet != ERR_SUCCESS)
-                AT_CMD_RETURN(atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_FAIL));
 
             prsp += sprintf(prsp, "+CCED: %d,%d", nSignalLevel, nBitError);
             atCmdRespInfoText(cmd->engine, rsp);
@@ -5161,6 +5307,7 @@ void atCfwNwInit(void)
 #endif
         EV_CFW_NW_JAMMING_DETECT_IND, _onEV_CFW_NW_JAMMING_DETECT_IND,
         EV_CFW_EMC_NUM_LIST_IND, _onEV_CFW_EMC_NUM_LIST_IND,
+        EV_CFW_MBS_CALL_INFO_IND, _onEV_CFW_MBS_CALL_INFO_IND,
 
         0);
 }
@@ -5334,4 +5481,85 @@ void atCmdHandleT3302(atCommand_t *cmd)
     {
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
     }
+}
+//Set Pseudo base station identification
+void atCmdHandleSDMBS(atCommand_t *cmd)
+{
+    char rsp[20] = {
+        0x00,
+    };
+
+    switch (cmd->type)
+    {
+    case AT_CMD_SET:
+        if (cmd->param_count > 1)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        bool paramok = true;
+        uint8_t uDMBS = atParamUintInRange(cmd->params[0], 0, 1, &paramok);
+        if (!paramok)
+            atCmdRespCmeError(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
+        else
+        {
+            gAtSetting.detectMBS = uDMBS;
+            atCmdRespOK(cmd->engine);
+        }
+        break;
+    case AT_CMD_READ:
+        sprintf(rsp, "%s: %d", cmd->desc->name, gAtSetting.detectMBS);
+        atCmdRespInfoText(cmd->engine, rsp);
+        atCmdRespOK(cmd->engine);
+        break;
+    case AT_CMD_TEST:
+        sprintf(rsp, "%s: (0,1)", cmd->desc->name);
+        atCmdRespInfoText(cmd->engine, rsp);
+        atCmdRespOK(cmd->engine);
+        break;
+    default:
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
+        break;
+    }
+}
+
+void atCmdHandleLOCREL(atCommand_t *cmd)
+{
+    if (cmd->type == AT_CMD_SET)
+    {
+        bool paramok = true;
+        if (cmd->param_count != 1)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        uint32_t v = atParamUintInRange(cmd->params[0], 0, 20, &paramok);
+        OSI_LOGI(0, "LOCREL set value: %u", v);
+
+        if (!paramok)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        if (CFW_SetRRCRel(v) != ERR_SUCCESS)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+        RETURN_OK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_READ)
+    {
+        char rsp[20];
+        sprintf(rsp, "+LOCREL: %lu", CFW_GetRRCRel());
+        atCmdRespInfoText(cmd->engine, rsp);
+        atCmdRespOK(cmd->engine);
+    }
+    else if (AT_CMD_TEST == cmd->type)
+    {
+        atCmdRespInfoText(cmd->engine, "+LOCREL=<value>");
+        RETURN_OK(cmd->engine);
+    }
+    else
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPTION_NOT_SURPORT);
+    }
+}
+
+uint32_t CFW_GetDetectMBS(uint8_t *pMode)
+{
+    *pMode = gAtSetting.detectMBS;
+    return 0;
 }

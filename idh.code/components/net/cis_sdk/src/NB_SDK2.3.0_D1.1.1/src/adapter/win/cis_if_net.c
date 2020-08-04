@@ -47,7 +47,7 @@ cis_ret_t cisnet_create(cisnet_t* netctx,const char* host,void* context)
     (*netctx)->sock = 0;
 	(*netctx)->port = atoi((const char *)(ctx->serverPort));
     (*netctx)->state = 0;
-    (*netctx)->quit = 0;
+    (*netctx)->quit = 1;
 	(*netctx)->g_packetlist=NULL;
     (*netctx)->context = context;
     cissys_lockcreate(&((*netctx)->lockpacket));
@@ -72,8 +72,11 @@ cis_ret_t cisnet_create(cisnet_t* netctx,const char* host,void* context)
 
 void     cisnet_destroy(cisnet_t netctx)
 {
-    OSI_LOGI(0x10007693, "cisnet_destroy");
+    OSI_LOGI(0, "cisnet_destroy wait thread exit...");
     closesocket(netctx->sock);
+    while (netctx->quit == 0)
+        osiThreadSleep(5);
+    OSI_LOGI(0, "cisnet_destroy will to free");
     cissys_lockdestory(netctx->lockpacket);
     cis_free(netctx);
 }
@@ -196,7 +199,8 @@ static void callbackRecvThread(void* lpParam)
     uint32_t packetid = 0;
     cisnet_t netctx = (cisnet_t)lpParam;
 	int sock = netctx->sock;
-	while(0 == netctx->quit && netctx->state == 1)
+	netctx->quit = 0;
+	while(netctx->state == 1)
 	{
 		struct timeval tv = {5,0};
 		fd_set readfds;
@@ -270,6 +274,7 @@ static void callbackRecvThread(void* lpParam)
 		}
 	}
 TAG_END:
+	netctx->quit = 1;
 	OSI_LOGI(0x1000769b, "Error in socket recv thread exit..\n");
     osiThreadExit();
 }

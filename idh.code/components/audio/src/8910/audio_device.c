@@ -24,6 +24,10 @@
 #include "vfs.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+#include "drv_names.h"
+#include "drv_i2c.h"
+#endif
 
 #define INT8 int8_t
 #define UINT8 uint8_t
@@ -54,6 +58,7 @@ typedef uint32_t CALIB_AUD_MODE_T;   // not care
 #include "cpheaders/vois_m.h"
 #include "cpheaders/dm_audio.h"
 #include "cpheaders/hal_aud_zsp.h"
+#include "cfw.h"
 
 // CP APIs
 INT32 DM_VoisSetCfg(AUD_ITF_T itf, VOIS_AUDIO_CFG_T *cfg, AUD_DEVICE_CFG_EXT_T devicecfg, SND_BT_WORK_MODE_T btworkmode);
@@ -79,6 +84,18 @@ AUD_ERR_T aud_bbatPcmBufferPlayStart(SND_ITF_T itf, BBAT_PCM_STREAM_T *playbuffe
 #define AUDEV_PLAY_OUT_BUF_SIZE (1152 * 2)
 #define AUDEV_VOICE_DUMP_CHANNELS (6)
 #define AUDEV_AUDIO_PA_TYPE (AUD_INPUT_TYPE_CLASSD)
+
+typedef enum
+{
+    AUDEV_CALIB_AUD_CODEC_SET_INGAIN = 0x00000000,
+    AUDEV_CALIB_AUD_CODEC_GET_INGAIN = 0x00000001,
+    AUDEV_CALIB_AUD_CODEC_SET_OUTGAIN = 0x00000002,
+    AUDEV_CALIB_AUD_CODEC_GET_OUTGAIN = 0x00000003,
+    AUDEV_CALIB_AUD_CODEC_SET_SIDETONEGAIN = 0x00000004,
+    AUDEV_CALIB_AUD_CODEC_GET_SIDETONEGAIN = 0x00000005,
+    AUDEV_CALIB_AUD_CODEC_SET_RECORDERGAIN = 0x00000006,
+    AUDEV_CALIB_AUD_CODEC_GET_RECORDERGAIN = 0x00000007,
+} audevCalibAudCodecCtrl_t;
 
 enum
 {
@@ -124,6 +141,7 @@ typedef struct
     bool out_mute;           // output mute for voice call, play, tone
     uint32_t sample_rate;    // sample freq for mic record and voice call record
     uint8_t sample_interval; // sample time interval for mic record
+    uint8_t ext_i2s_en;      // sample time interval for mic record
 } audevSetting_t;
 
 typedef struct
@@ -135,12 +153,16 @@ typedef struct
     osiTimer_t *finish_timer;
     osiWork_t *finish_work;
     osiWork_t *tone_end_work;
+    osiTimer_t *simu_toneend_timer;
     osiSemaphore_t *cpstatus_sema;
     AUD_ZSP_SHAREMEM_T *shmem;
     uint32_t clk_users;
     audevSetting_t cfg;
     bool voice_uplink_mute;
-
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+    osiWork_t *i2s_play_work;
+    osiWork_t *i2s_record_work;
+#endif
     struct
     {
         audevPlayType_t type;
@@ -152,6 +174,7 @@ typedef struct
         void *ops_ctx;
         HAL_AIF_STREAM_T stream;
         AUD_LEVEL_T level;
+        osiElapsedTimer_t time;
     } play;
 
     struct
@@ -178,6 +201,26 @@ typedef struct
 } audevContext_t;
 
 static audevContext_t gAudevCtx;
+
+static inline int prvHex2Num(char c)
+{
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'A' && c <= 'F')
+        return 0xa + (c - 'A');
+    if (c >= 'a' && c <= 'f')
+        return 0xa + (c - 'a');
+    return -1;
+}
+
+static inline char prvNum2Hex(uint8_t c)
+{
+    if (c < 0xA)
+        return c + '0';
+    if (c >= 0xA && c <= 0xF)
+        return (c - 0xA) + 'A';
+    return -1;
+}
 
 /**
  * Convert volume [0,100] to AUD_SPK_LEVEL_T
@@ -386,24 +429,74 @@ static bool prvSetVoiceConfig(void)
  */
 static bool prvSetPlayConfig(void)
 {
+    SND_SPK_LEVEL_T FadeStartLevel, FadeEndLevel;
     audevContext_t *d = &gAudevCtx;
+    uint32_t time_ms = osiElapsedTime(&d->play.time);
+
+    if (time_ms < 100)
+        return true;
+    osiElapsedTimerStart(&d->play.time);
+
+    FadeStartLevel = (d->play.level.spkLevel);
+    FadeEndLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute);
+    OSI_LOGI(0, "audio device prvSetPlayConfig , old Level/%d new Level/%d",
+             FadeStartLevel, FadeEndLevel);
+
+    if (FadeStartLevel == FadeEndLevel)
+        return true;
 
     AUD_LEVEL_T level = {
-        .spkLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute),
+        .spkLevel = FadeEndLevel,
         .micLevel = SND_MIC_ENABLE,
         .sideLevel = SND_SIDE_VOL_15,
         .toneLevel = SND_TONE_0DB,
         .appMode = SND_APP_MODE_MUSIC,
     };
 
-    if (!DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level))
-        return false;
+    bool isIncrease = (FadeEndLevel > FadeStartLevel) ? true : false;
 
-    if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
-        return false;
+#define STEPLEVEL (1)
+    {
+        if (isIncrease)
+        {
+            FadeStartLevel = FadeStartLevel + STEPLEVEL;
+            level.spkLevel = OSI_MIN(unsigned, FadeStartLevel, FadeEndLevel);
+            level.spkLevel = OSI_MIN(unsigned, AUDIO_LEVEL_MAX, level.spkLevel);
+            OSI_LOGI(0, "audio device prvSetPlayConfig , level.spkLevel/%d ", level.spkLevel);
+            if (DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level) != 0)
+                return false;
 
-    //update para in play
-    d->play.level.spkLevel = level.spkLevel;
+            if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
+                return false;
+
+            //update para in play
+            d->play.level.spkLevel = level.spkLevel;
+
+            if ((level.spkLevel == AUDIO_LEVEL_MAX) || (level.spkLevel == FadeEndLevel))
+                return true;
+        }
+        else
+        {
+            FadeStartLevel = (FadeStartLevel < STEPLEVEL) ? 0 : (FadeStartLevel - STEPLEVEL);
+            level.spkLevel = OSI_MAX(unsigned, FadeStartLevel, FadeEndLevel);
+            OSI_LOGI(0, "audio device prvSetPlayConfig , level.spkLevel/%d ", level.spkLevel);
+
+            if (DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level) != 0)
+                return false;
+
+            if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
+                return false;
+
+            //update para in play
+            d->play.level.spkLevel = level.spkLevel;
+
+            if ((level.spkLevel == 0) || (level.spkLevel == FadeEndLevel))
+                return true;
+        }
+    }
+
+    OSI_LOGI(0, "audio device prvSetPlayConfig , d->play.level.spkLevel/%d",
+             d->play.level.spkLevel);
 
     return true;
 }
@@ -581,6 +674,9 @@ static bool prvPlayGetFramesLocked(void)
         }
         else
         {
+            if ((frame.bytes == 0) && ((frame.flags & AUFRAME_FLAG_END) == 0))
+                return true;
+
             unsigned bytes = prvAudioInPut(d->shmem, (void *)frame.data, frame.bytes);
             d->play.ops.data_consumed(d->play.ops_ctx, bytes);
 
@@ -646,8 +742,10 @@ static void prvIpcWork(void *param)
     osiMutexLock(d->lock);
 
     if (d->clk_users & AUDEV_CLK_USER_PLAY)
+    {
         prvPlayGetFramesLocked();
-
+        prvSetPlayConfig();
+    }
     if (d->clk_users & AUDEV_CLK_USER_RECORD)
         prvRecPutFramesLocked();
 
@@ -688,6 +786,14 @@ static void prvFinishTimeout(void *param)
 }
 
 /**
+ * simu tone play end timer timeout
+ */
+static void prvToneStopEndTimeout(void *param)
+{
+    AUD_ToneStopEnd();
+}
+
+/**
  * Decode nv into context
  */
 static bool prvNvDecode(audevSetting_t *p, uint8_t *buffer, unsigned length)
@@ -707,6 +813,7 @@ static bool prvNvDecode(audevSetting_t *p, uint8_t *buffer, unsigned length)
     PB_OPT_DEC_ASSIGN(p->out_mute, out_mute);
     PB_OPT_DEC_ASSIGN(p->sample_rate, sample_rate);
     PB_OPT_DEC_ASSIGN(p->sample_interval, sample_interval);
+    PB_OPT_DEC_ASSIGN(p->ext_i2s_en, ext_i2s_en);
     return true;
 }
 
@@ -726,6 +833,7 @@ static int prvNvEncode(const audevSetting_t *p, void *buffer, unsigned length)
     PB_OPT_ENC_ASSIGN(p->out_mute, out_mute);
     PB_OPT_ENC_ASSIGN(p->sample_rate, sample_rate);
     PB_OPT_ENC_ASSIGN(p->sample_interval, sample_interval);
+    PB_OPT_ENC_ASSIGN(p->ext_i2s_en, ext_i2s_en);
     return pbEncodeToMem(fields, pbs, buffer, length);
 }
 
@@ -802,7 +910,694 @@ static void prvSetDefaultSetting(audevSetting_t *p)
     p->out_mute = false;
     p->sample_rate = 8000;
     p->sample_interval = 20;
+    p->ext_i2s_en = 0;
 }
+
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+
+//When use external device,you should set audio device ext i2s mode:1.(audevSetExtI2sMode)
+//You should open the macros : CONFIG_AUDIO_EXT_I2S_ENABLE,(audio)
+//                                            CONFIG_CAMA_POWER_ON_INIT, (HAL  configurations:)
+//                                            CONFIG_CAMA_CLK_FOR_AUDIO.(HAL  configurations:)
+// ext i2s only support in local audioplay and local soundrecorder
+
+extern uint32_t g_halPingPangFlag;
+unsigned g_pingpanghalfbytes = 0;
+HAL_AIF_CONFIG_T g_audCodecAifCfg;
+drvI2cMaster_t *g_audExtDevI2c = NULL;
+
+//External device address,you can modify this address according to the actual situation.
+#define EXT_DEV_I2C_ADDR (0x10)
+
+typedef struct
+{
+    uint8_t addr;
+    uint8_t data;
+} extDevReg_t;
+
+//This is an example for ES8374.You can modify them.
+//g_audPlayRegList: Initilize register list when playing music.(8k)
+static const extDevReg_t g_audPlayRegList[] =
+    {
+        {0x00, 0x3f},
+        {0x00, 0x03},
+        {0x01, 0xff},
+        {0x05, 0x33},
+        {0x06, 0x03},
+        {0x6f, 0xa0},
+        {0x72, 0x41},
+        {0x09, 0x01},
+        {0x0c, 0x17},
+        {0x0d, 0xa3},
+        {0x0e, 0x30},
+        {0x0f, 0x81},
+        {0x0a, 0x8a},
+        {0x0b, 0x07},
+        {0x09, 0x41},
+        {0x10, 0x0c},
+        {0x11, 0x0c},
+        {0x24, 0x28},
+        {0x36, 0x00},
+        {0x12, 0x30},
+        {0x13, 0x20},
+        {0x2c, 0x05},
+        {0x2d, 0x05},
+        {0x00, 0x80},
+        {0x02, 0x08},
+        {0x14, 0x0a},
+        {0x15, 0x40},
+        {0x16, 0x00},
+        {0x17, 0xa0},
+        {0x1b, 0x10},
+        {0x28, 0x00},
+        {0x25, 0xc0},
+        {0x38, 0xc0},
+        {0x6d, 0x15},
+
+        {0x0b, 0x07},
+        {0x0c, 0x17},
+        {0x0d, 0xa3},
+        {0x0e, 0x30},
+        {0x0f, 0x9d},
+        {0x05, 0x66},
+        {0x06, 0x06},
+        {0x07, 0x00},
+        {0x03, 0x20}, //8k
+
+        {0x1c, 0x90},
+        {0x1d, 0x00},
+        {0x1e, 0xa0},
+        {0x1f, 0x0c},
+        {0x36, 0x00},
+        {0x37, 0x00},
+        {0x38, 0x00},
+
+};
+
+//This is an example for ES8374.You can modify them.
+//g_audRecRegList: Initilize register list when recording.(8k)
+static const extDevReg_t g_audRecRegList[] =
+    {
+        {0x00, 0x3f},
+        {0x00, 0x03},
+        {0x01, 0xff},
+        {0x05, 0x33},
+        {0x06, 0x03},
+        {0x6f, 0xa0},
+        {0x72, 0x41},
+        {0x09, 0x01},
+        {0x0c, 0x17},
+        {0x0d, 0xa3},
+        {0x0e, 0x30},
+        {0x0f, 0x81},
+        {0x0a, 0x8a},
+        {0x0b, 0x07},
+        {0x09, 0x41},
+        {0x10, 0x0c},
+        {0x11, 0x0c},
+        {0x24, 0x28},
+        {0x36, 0x00},
+        {0x12, 0x30},
+        {0x13, 0x20},
+        {0x2c, 0x05},
+        {0x2d, 0x05},
+        {0x00, 0x80},
+        {0x02, 0x08},
+        {0x14, 0x0a},
+        {0x15, 0x40},
+        {0x16, 0x00},
+        {0x17, 0xa0},
+        {0x1b, 0x10},
+        {0x28, 0x00},
+        {0x25, 0xc0},
+        {0x38, 0xc0},
+        {0x6d, 0x15},
+
+        {0x0b, 0x07},
+        {0x0c, 0x17},
+        {0x0d, 0xa3},
+        {0x0e, 0x30},
+        {0x0f, 0x9d},
+        {0x05, 0x66},
+        {0x06, 0x06},
+        {0x07, 0x00},
+        {0x03, 0x20},
+
+        {0x21, 0x24},
+        {0x22, 0x00},
+        {0x24, 0x08},
+        {0x25, 0x00},
+        {0x28, 0x00},
+
+};
+
+//This is an example for ES8374.You can modify them.
+//g_audCloseRegList:  register list when closing.
+static const extDevReg_t g_audCloseRegList[] =
+    {
+        {0x38, 0xc0},
+        {0x25, 0xc0},
+        {0x24, 0x28},
+        {0x36, 0x20},
+        {0x37, 0x21},
+        {0x1a, 0x08},
+        {0x1c, 0x10},
+        {0x1d, 0x10},
+        {0x1e, 0x40},
+        {0x21, 0xd4},
+        {0x15, 0xbf},
+        {0x14, 0x14},
+        {0x09, 0x80},
+        {0x01, 0x03},
+
+};
+
+//This is an example for ES8374.You can modify them and add lists,such as
+//8k,11.025k,12k,16k,22.05k,24k,32k,44.1k,48k,96k.
+
+/*static const extDevReg_t g_aud8kRegList[] =
+{
+    {0x0b, 0x07},
+    {0x0c, 0x17},
+    {0x0d, 0xa3},
+    {0x0e, 0x30},
+    {0x0f, 0x9d},
+    {0x05, 0x66},
+    {0x06, 0x06},
+    {0x07, 0x00},
+    {0x03, 0x20},
+};*/
+
+static const extDevReg_t g_aud16kRegList[] =
+    {
+        {0x0b, 0x07},
+        {0x0c, 0x17},
+        {0x0d, 0xa3},
+        {0x0e, 0x30},
+        {0x0f, 0x95},
+        {0x05, 0x33},
+        {0x06, 0x03},
+        {0x07, 0x00},
+        {0x03, 0x20},
+};
+
+static const extDevReg_t g_aud44kRegList[] =
+    {
+        {0x0b, 0x06},
+        {0x0c, 0x27},
+        {0x0d, 0xdc},
+        {0x0e, 0x2b},
+        {0x0f, 0x88},
+        {0x05, 0x11},
+        {0x06, 0x01},
+        {0x07, 0x00},
+        {0x03, 0x20},
+};
+
+//This is an example for ES8374.(You can modify when recording.)
+static const extDevReg_t g_audinpathRegList[] =
+    {
+        {0x21, 0x24},
+        {0x22, 0x00},
+        {0x24, 0x08},
+        {0x25, 0x00},
+        {0x28, 0x00},
+};
+
+//This is an example for ES8374.(You can modify when playing.)
+static const extDevReg_t g_audoutpathRegList[] =
+    {
+        {0x1c, 0x90},
+        {0x1d, 0x00},
+        {0x1e, 0xa0},
+        {0x1f, 0x0c},
+        {0x36, 0x00},
+        {0x37, 0x00},
+        {0x38, 0x00},
+
+};
+
+/*
+//keep for debug
+static void prvAudWriteOneReg(uint8_t addr, uint8_t data)
+{
+    drvI2cSlave_t idAddress = {EXT_DEV_I2C_ADDR, addr, 0, false};
+    if (g_audExtDevI2c != NULL)
+    {
+        drvI2cWrite(g_audExtDevI2c, &idAddress, &data, 1);
+    }
+    else
+    {
+        OSI_LOGE(0, "i2c is not open");
+    }
+}
+static void prvAudReadReg(uint8_t addr, uint8_t *data, uint32_t len)
+{
+    drvI2cSlave_t idAddress = {EXT_DEV_I2C_ADDR, addr, 0, false};
+    if (g_audExtDevI2c != NULL)
+    {
+        drvI2cRead(g_audExtDevI2c, &idAddress, data, len);
+    }
+    else
+    {
+        OSI_LOGE(0, "i2c is not open");
+    }
+}
+*/
+static bool prvAudWriteRegList(const extDevReg_t *regList, uint16_t len)
+{
+    uint16_t regCount;
+    drvI2cSlave_t wirte_data = {EXT_DEV_I2C_ADDR, 0, 0, false};
+    for (regCount = 0; regCount < len; regCount++)
+    {
+        OSI_LOGI(0, "aud write reg %x,%x", regList[regCount].addr, regList[regCount].data);
+        wirte_data.addr_data = regList[regCount].addr;
+        if (drvI2cWrite(g_audExtDevI2c, &wirte_data, &regList[regCount].data, 1))
+            osiDelayUS(5);
+        else
+            return false;
+    }
+
+    return true;
+}
+
+/**
+ * Set configuration for play
+ */
+static bool prvExtI2sSetPlayConfig(void)
+{
+    audevContext_t *d = &gAudevCtx;
+
+    AUD_LEVEL_T level = {
+        .spkLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute),
+        .micLevel = SND_MIC_ENABLE,
+        .sideLevel = SND_SIDE_VOL_15,
+        .toneLevel = SND_TONE_0DB,
+        .appMode = SND_APP_MODE_MUSIC,
+    };
+
+    //SND_ITF_T itf = prvOutputToSndItf(d->cfg.outdev);
+
+    //set outpath reg,you can modify.
+    prvAudWriteRegList(g_audoutpathRegList, sizeof(g_audoutpathRegList) / sizeof(extDevReg_t));
+
+    //update para in play
+    d->play.level.spkLevel = level.spkLevel;
+
+    return true;
+}
+
+/**
+ * Set input device configuration
+ */
+static bool prvExtI2sSetDeviceExt(void)
+{
+    /*
+    audevContext_t *d = &gAudevCtx;
+    AUD_DEVICE_CFG_EXT_T device_ext = {
+        .inputType = prvInputToType(d->cfg.indev),
+        .inputCircuityType = AUD_INPUT_MIC_CIRCUITY_TYPE_DIFFERENTIAL,
+        .inputPath = AUD_INPUT_PATH1,
+        .linePath = AUD_LINE_PATH2,
+        .spkpaType = AUDEV_AUDIO_PA_TYPE,
+    };
+	*/
+
+    //set inputpath reg,you can modify.
+    prvAudWriteRegList(g_audinpathRegList, sizeof(g_audinpathRegList) / sizeof(extDevReg_t));
+
+    return true;
+}
+
+static void prvAudI2sAifCfg(CONST HAL_AIF_STREAM_T *stream, HAL_AIF_SERIAL_CFG_T *serialCfg)
+{
+    switch (stream->sampleRate)
+    {
+    case HAL_AIF_FREQ_8000HZ:
+        serialCfg->bckLrckRatio = 32; //32 AIF_BCK_LRCK_BCK_LRCK_32
+        break;
+
+    case HAL_AIF_FREQ_11025HZ:
+        serialCfg->bckLrckRatio = 36;
+        break;
+
+    case HAL_AIF_FREQ_12000HZ:
+        serialCfg->bckLrckRatio = 38;
+        break;
+
+    case HAL_AIF_FREQ_16000HZ:
+        serialCfg->bckLrckRatio = 50;
+        break;
+
+    case HAL_AIF_FREQ_22050HZ:
+        serialCfg->bckLrckRatio = 40;
+        break;
+
+    case HAL_AIF_FREQ_24000HZ:
+        serialCfg->bckLrckRatio = 38;
+        break;
+
+    case HAL_AIF_FREQ_32000HZ:
+        serialCfg->bckLrckRatio = 56;
+        break;
+
+    case HAL_AIF_FREQ_44100HZ:
+        serialCfg->bckLrckRatio = 62;
+        break;
+
+    case HAL_AIF_FREQ_48000HZ:
+        serialCfg->bckLrckRatio = 36;
+        break;
+
+    case HAL_AIF_FREQ_96000HZ:
+        serialCfg->bckLrckRatio = 36;
+        break;
+
+    default:
+        OSI_ASSERT(false, "Improper stream frequency.");
+        // Die
+        break;
+    }
+
+    if (stream->channelNb == HAL_AIF_MONO)
+    {
+        serialCfg->rxMode = HAL_AIF_RX_MODE_STEREO_MONO_FROM_L;
+        serialCfg->txMode = HAL_AIF_TX_MODE_MONO_STEREO_DUPLI; //HAL_AIF_TX_MODE_MONO_STEREO_DUPLI,HAL_AIF_TX_MODE_MONO_STEREO_CHAN_L
+    }
+    else
+    {
+        serialCfg->rxMode = HAL_AIF_RX_MODE_STEREO_STEREO;
+        serialCfg->txMode = HAL_AIF_TX_MODE_STEREO_STEREO;
+    }
+
+    g_audCodecAifCfg.interface = HAL_AIF_IF_SERIAL_1; //I2S2:HAL_AIF_IF_SERIAL_1,I2S1:HAL_AIF_IF_SERIAL
+    g_audCodecAifCfg.sampleRate = stream->sampleRate;
+    g_audCodecAifCfg.channelNb = stream->channelNb;
+    g_audCodecAifCfg.PARALLEL_FOR_FM = false;
+    g_audCodecAifCfg.serialCfg = serialCfg;
+
+    hal_AifSetI2sGpio();
+}
+
+static bool prvAudExtCodecI2cOpen(uint32_t name, drvI2cBps_t bps)
+{
+    if (name == 0 || g_audExtDevI2c != NULL)
+    {
+        return false;
+    }
+    g_audExtDevI2c = drvI2cMasterAcquire(name, bps);
+    if (g_audExtDevI2c == NULL)
+    {
+        OSI_LOGE(0, "audio i2c open fail");
+        return false;
+    }
+
+    hwp_iomux->pad_gpio_14_cfg_reg |= IOMUX_PAD_GPIO_14_SEL_V_FUN_I2C_M2_SCL_SEL;
+    hwp_iomux->pad_gpio_15_cfg_reg |= IOMUX_PAD_GPIO_15_SEL_V_FUN_I2C_M2_SDA_SEL;
+
+    return true;
+}
+
+static void prvAudExtCodecI2cClose()
+{
+    if (g_audExtDevI2c != NULL)
+        drvI2cMasterRelease(g_audExtDevI2c);
+    g_audExtDevI2c = NULL;
+}
+
+OSI_UNUSED static unsigned prvAudInUpdate(AUD_ZSP_SHAREMEM_T *p, void *buf, unsigned size)
+{
+    uint16_t readOffset = *(volatile uint16_t *)&p->audInPara.readOffset;
+    uint16_t writeOffset = *(volatile uint16_t *)&p->audInPara.writeOffset;
+    uint16_t inLenth = *(volatile uint16_t *)&p->audInPara.inLenth;
+    OSI_BARRIER();
+
+    char *bytePtr = (char *)&p->audInput[0];
+    unsigned bytes = AUDIOIN_BYTES;
+
+    unsigned tail = inLenth - readOffset;
+    if (tail >= size)
+    {
+        memcpy(buf, bytePtr + readOffset, size);
+    }
+    else //tail<size
+    {
+        if (bytes >= size)
+        {
+            memcpy(buf, bytePtr + readOffset, tail);
+            memcpy((char *)buf + tail, bytePtr, size - tail);
+        }
+        else
+        {
+            memcpy(buf, bytePtr + readOffset, tail);
+            memset((char *)buf + tail, 0, size - tail);
+
+            if (p->audInPara.fileEndFlag == 0)
+            {
+                prvIpcNotify(); //update data
+                OSI_LOGI(0, "prvIpcNotify-1");
+                return -1;
+            }
+        }
+    }
+
+    OSI_BARRIER();
+    *(volatile uint16_t *)&p->audInPara.readOffset = (readOffset + size) % inLenth;
+
+    if ((bytes - size) < (size * 4)) //advance 4 frame
+    {
+        if (p->audInPara.fileEndFlag == 0) //notify
+        {
+            prvIpcNotify(); //update data
+            OSI_LOGI(0, "prvIpcNotify0");
+        }
+    }
+
+    /*OSI_LOGI(0, "1read_availBytes = %d,need_bytes = %d,readoffset:%d, writeoffset:%d \n", 
+	bytes-size,size,p->audInPara.readOffset,p->audInPara.writeOffset);*/
+
+    return size;
+}
+
+int16_t prvExtI2sOutLevel2Val(SND_SPK_LEVEL_T spkLevel)
+{
+    int16_t level2Val = 16384;
+
+    switch (spkLevel)
+    {
+    case SND_SPK_MUTE: //mute
+        level2Val = 0;
+        break;
+    case SND_SPK_VOL_1:
+        level2Val = 130;
+        break;
+    case SND_SPK_VOL_2:
+        level2Val = 184;
+        break;
+    case SND_SPK_VOL_3:
+        level2Val = 260;
+        break;
+    case SND_SPK_VOL_4:
+        level2Val = 367;
+        break;
+    case SND_SPK_VOL_5:
+        level2Val = 518;
+        break;
+    case SND_SPK_VOL_6:
+        level2Val = 732;
+        break;
+    case SND_SPK_VOL_7:
+        level2Val = 1034;
+        break;
+    case SND_SPK_VOL_8:
+        level2Val = 1460;
+        break;
+    case SND_SPK_VOL_9:
+        level2Val = 2063;
+        break;
+    case SND_SPK_VOL_10:
+        level2Val = 2914;
+        break;
+    case SND_SPK_VOL_11:
+        level2Val = 4115;
+        break;
+    case SND_SPK_VOL_12:
+        level2Val = 5813;
+        break;
+    case SND_SPK_VOL_13:
+        level2Val = 8211;
+        break;
+    case SND_SPK_VOL_14:
+        level2Val = 11599;
+        break;
+    case SND_SPK_VOL_15:
+        level2Val = 16384;
+        break;
+    default:
+        level2Val = 16384;
+        break;
+    }
+
+    return level2Val;
+}
+
+#define SHR(a, shift) ((a) >> (shift))
+#define ADD32(a, b) ((INT32)(a) + (INT32)(b))
+#define MULT16_16(a, b) (((INT32)(INT16)(a)) * ((INT32)(INT16)(b)))
+#define MULT16_16_P14(a, b) (SHR(ADD32(8192, MULT16_16((a), (b))), 14))
+
+static bool prvExtI2sOutputDataLocked(void)
+{
+    audevContext_t *d = &gAudevCtx;
+
+    unsigned space = g_pingpanghalfbytes;
+    unsigned offset = 0;
+
+    if (g_halPingPangFlag == 1)
+    {
+        offset = space;
+    }
+
+    unsigned bytes = prvAudInUpdate(d->shmem, (char *)d->shmem->audOutput + offset, space); //importtant
+    if (bytes == -1)
+    {
+        OSI_LOGI(0, "prvAudInUpdate err\n");
+    }
+
+    //music level
+    SND_SPK_LEVEL_T spkLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute);
+    int16_t val = prvExtI2sOutLevel2Val(spkLevel);
+
+    for (int16_t i = 0; i < (space / 2); i++)
+    {
+        d->shmem->audOutput[offset / 2 + i] = MULT16_16_P14(d->shmem->audOutput[offset / 2 + i], val);
+    }
+
+    OSI_LOGI(0, "audio spkLevel/%d, val/%d,offset/%d", spkLevel, val, offset);
+
+    return true;
+}
+
+static void prvExtI2sInPutDataLocked(void)
+{
+    audevContext_t *d = &gAudevCtx;
+
+    unsigned space = g_pingpanghalfbytes;
+    unsigned offset = 0;
+    uintptr_t srcdata;
+
+    if (g_halPingPangFlag == 1)
+    {
+        offset = space;
+    }
+
+    srcdata = ((d->cfg.sample_rate == 8000) ? (uintptr_t)d->shmem->txPcmBuffer.pcmBuf : (uintptr_t)d->shmem->txPcmVolte.pcmBuf);
+
+    for (;;)
+    {
+        d->record.frame.bytes = OSI_MIN(unsigned, AUDEV_RECORD_BUF_SIZE, space);
+        if (d->record.frame.bytes == 0)
+            break;
+
+        memcpy((void *)d->record.frame.data, (void *)srcdata + offset, d->record.frame.bytes);
+        offset += d->record.frame.bytes;
+        space -= d->record.frame.bytes;
+
+        // We shouldn't break even put_frame failed, to avoid overflow
+        d->record.ops.put_frame(d->record.ops_ctx, &d->record.frame);
+    }
+}
+
+static void prvExtI2sOutputWork(void *param)
+{
+    audevContext_t *d = &gAudevCtx;
+    osiMutexLock(d->lock);
+    prvExtI2sOutputDataLocked();
+    osiMutexUnlock(d->lock);
+}
+
+static void prvExtI2sInputWork(void *param)
+{
+    audevContext_t *d = &gAudevCtx;
+    osiMutexLock(d->lock);
+    prvExtI2sInPutDataLocked();
+    osiMutexUnlock(d->lock);
+}
+
+static void audevExtI2sOutputISR(void *ctx)
+{
+    audevContext_t *d = &gAudevCtx;
+    hal_AifIrqHandler(1);
+    osiWorkEnqueue(d->i2s_play_work, d->wq);
+    hal_AifIrqClrStatus(1);
+}
+static void audevExtI2sInputISR(void *ctx)
+{
+    audevContext_t *d = &gAudevCtx;
+    hal_AifIrqHandler(0);
+    osiWorkEnqueue(d->i2s_record_work, d->wq);
+    hal_AifIrqClrStatus(0);
+}
+
+static void prvExtI2sOutputSetIrqHandler(void)
+{
+    uint32_t irqn = HAL_SYSIRQ_NUM(SYS_IRQ_ID_AIF_APB_1); //AIF_PLAY_INTERUPT_ID
+
+    osiIrqDisable(irqn);
+    osiIrqSetHandler(irqn, audevExtI2sOutputISR, NULL);
+    osiIrqSetPriority(irqn, SYS_IRQ_PRIO_AIF_APB_1);
+    osiIrqEnable(irqn);
+}
+
+static void prvExtI2sOutputDisableIrq(void)
+{
+    uint32_t irqn = HAL_SYSIRQ_NUM(SYS_IRQ_ID_AIF_APB_1);
+    osiIrqDisable(irqn);
+}
+
+static void prvExtI2sInputSetIrqHandler(void)
+{
+    uint32_t irqn = HAL_SYSIRQ_NUM(SYS_IRQ_ID_AIF_APB_0); //AIF_RECORD_INTERUPT_ID
+
+    osiIrqDisable(irqn);
+    osiIrqSetHandler(irqn, audevExtI2sInputISR, NULL);
+    osiIrqSetPriority(irqn, SYS_IRQ_PRIO_AIF_APB_0);
+    osiIrqEnable(irqn);
+}
+
+static void prvExtI2sInputDisableIrq(void)
+{
+    uint32_t irqn = HAL_SYSIRQ_NUM(SYS_IRQ_ID_AIF_APB_0);
+    osiIrqDisable(irqn);
+}
+
+/**
+ * Get audio device ext i2s mode status
+ */
+uint32_t audevIsExtI2sMode(void)
+{
+    audevContext_t *d = &gAudevCtx;
+    return d->cfg.ext_i2s_en;
+}
+
+/**
+ * Set audio device ext i2s mode
+ */
+bool audevSetExtI2sMode(uint8_t I2sMode)
+{
+    audevContext_t *d = &gAudevCtx;
+    if ((I2sMode != 0) && (I2sMode != 1))
+        return false;
+
+    osiMutexLock(d->lock);
+    d->cfg.ext_i2s_en = I2sMode;
+    audevSetting_t cfg = d->cfg;
+    osiMutexUnlock(d->lock);
+
+    prvStoreNv(&cfg);
+    return true;
+}
+#endif
 
 /**
  * Initialize audio device
@@ -825,16 +1620,21 @@ void audevInit(void)
     d->finish_work = osiWorkCreate(prvFinishWork, NULL, NULL);
     d->finish_timer = osiTimerCreate(NULL, prvFinishTimeout, NULL);
     d->tone_end_work = osiWorkCreate(prvToneEndWork, NULL, NULL);
+    d->simu_toneend_timer = osiTimerCreate(NULL, prvToneStopEndTimeout, NULL);
     d->cpstatus_sema = osiSemaphoreCreate(1, 0);
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+    d->i2s_play_work = osiWorkCreate(prvExtI2sOutputWork, NULL, NULL);
+    d->i2s_record_work = osiWorkCreate(prvExtI2sInputWork, NULL, NULL);
+#endif
 
     prvSetDefaultSetting(&d->cfg);
     prvLoadNv(&d->cfg);
     d->voice_uplink_mute = false;
     d->clk_users = 0;
     d->record.frame.data = (uintptr_t)d->record.buf;
-
     ipc_register_audio_notify(prvIpcNotify);
     prvSetDeviceExt();
+    osiElapsedTimerStart(&d->play.time);
 }
 
 /**
@@ -972,6 +1772,9 @@ bool audevSetInput(audevInput_t dev)
 
     d->cfg.indev = dev;
     prvSetDeviceExt();
+
+    if (d->clk_users & AUDEV_CLK_USER_VOICE)
+        prvSetVoiceConfig();
 
     audevSetting_t cfg = d->cfg;
     osiMutexUnlock(d->lock);
@@ -1137,6 +1940,247 @@ bool audevSetRecordSampleInterval(uint8_t time_ms)
 }
 
 /**
+ * Get Call mode Mic Gain
+ */
+bool audevGetMicGain(uint8_t mode, uint8_t path, uint16_t *anaGain, uint16_t *adcGain)
+{
+    uint8_t resultCode = 0;
+    uint8_t hasMsg = 0;
+    uint8_t strParam[4] = {0};
+    uint8_t resultMsg[900] = {0};
+    //only support in mode:VOICECALLNB,mode VOICECALLWB
+    if ((mode != 0) && (mode != 5))
+        return false;
+    if (path > 5)
+        return false;
+    strParam[0] = 0;
+    CSW_SetAudioCodecCalibParam(&resultCode, &hasMsg, resultMsg, mode, path,
+                                AUDEV_CALIB_AUD_CODEC_GET_INGAIN, strParam, strlen((const char *)strParam));
+
+    if (resultCode)
+    {
+        OSI_LOGXD(OSI_LOGPAR_SII, 0, "[%s][%d] resultCode:%d\n", __FUNCTION__, __LINE__, resultCode);
+        return false;
+    }
+    else
+    {
+        if (hasMsg)
+        {
+            OSI_LOGXD(OSI_LOGPAR_SIS, 0, "[%s][%d] resultMsg:%s\n", __FUNCTION__, __LINE__, resultMsg);
+            *anaGain = (prvHex2Num(resultMsg[9]) << 4 | prvHex2Num(resultMsg[10])) | ((prvHex2Num(resultMsg[11]) << 4 | prvHex2Num(resultMsg[12])) << 8);
+            *adcGain = (prvHex2Num(resultMsg[13]) << 4 | prvHex2Num(resultMsg[14])) | ((prvHex2Num(resultMsg[15]) << 4 | prvHex2Num(resultMsg[16])) << 8);
+            OSI_LOGXD(OSI_LOGPAR_SIII, 0, "[%s][%d] anaGain:%d adcGain:%d\n", __FUNCTION__, __LINE__, *anaGain, *adcGain);
+        }
+        return true;
+    }
+}
+
+/**
+ * Set Call mode Mic Gain
+ */
+bool audevSetMicGain(uint8_t mode, uint8_t path, uint16_t anaGain, uint16_t adcGain)
+{
+    uint8_t resultCode = 0;
+    uint8_t hasMsg = 0;
+    uint8_t strParam[12];
+    uint8_t resultMsg[900];
+    //only support in mode:VOICECALLNB,mode VOICECALLWB
+    if ((mode != 0) && (mode != 5))
+        return false;
+    if (path > 5)
+        return false;
+    if (anaGain > 7)
+        return false;
+    if (adcGain > 15)
+        return false;
+
+    strParam[0] = prvNum2Hex((anaGain >> 4) & 0xF);
+    strParam[1] = prvNum2Hex(anaGain & 0xF);
+    strParam[2] = prvNum2Hex((anaGain >> 12) & 0xF);
+    strParam[3] = prvNum2Hex((anaGain >> 8) & 0xF);
+    strParam[4] = prvNum2Hex((adcGain >> 4) & 0xF);
+    strParam[5] = prvNum2Hex(adcGain & 0xF);
+    strParam[6] = prvNum2Hex((adcGain >> 12) & 0xF);
+    strParam[7] = prvNum2Hex((adcGain >> 8) & 0xF);
+    strParam[8] = 0x0;
+    OSI_LOGXD(OSI_LOGPAR_SIS, 0, "[%s][%d] strParam:%s \n", __FUNCTION__, __LINE__, strParam);
+    memset(resultMsg, 0, sizeof(resultMsg));
+    CSW_SetAudioCodecCalibParam(&resultCode, &hasMsg, resultMsg, mode, path,
+                                AUDEV_CALIB_AUD_CODEC_SET_INGAIN, strParam, strlen((const char *)strParam));
+    OSI_LOGXD(OSI_LOGPAR_SII, 0, "[%s][%d] resultCode:%d\n", __FUNCTION__, __LINE__, resultCode);
+    if (resultCode)
+        return false;
+    else
+        return true;
+}
+
+/**
+ * Get record mode Mic Gain
+ */
+bool audevGetRecordMicGain(uint8_t mode, uint8_t path, uint16_t *anaGain, uint16_t *adcGain)
+{
+    uint8_t resultCode = 0;
+    uint8_t hasMsg = 0;
+    uint8_t strParam[4] = {0};
+    uint8_t resultMsg[900] = {0};
+    //only support mode in 2:MUSICRECORD,4:FMRECORD
+    if ((mode != 2) && (mode != 4))
+        return false;
+    //only support path in 1:Handfree,2:Handset4P,3:Handset3P
+    if ((path != 1) && (mode != 2) && (mode != 3))
+        return false;
+    strParam[0] = 0;
+    CSW_SetAudioCodecCalibParam(&resultCode, &hasMsg, resultMsg, mode, path,
+                                AUDEV_CALIB_AUD_CODEC_GET_RECORDERGAIN, strParam, strlen((char *)strParam));
+
+    if (resultCode)
+    {
+        OSI_LOGXD(OSI_LOGPAR_SII, 0, "[%s][%d] resultCode:%d\n", __FUNCTION__, __LINE__, resultCode);
+        return false;
+    }
+    else
+    {
+        if (hasMsg)
+        {
+            OSI_LOGXD(OSI_LOGPAR_SIS, 0, "[%s][%d] resultMsg:%s\n", __FUNCTION__, __LINE__, resultMsg);
+            *anaGain = (prvHex2Num(resultMsg[9]) << 4 | prvHex2Num(resultMsg[10])) | ((prvHex2Num(resultMsg[11]) << 4 | prvHex2Num(resultMsg[12])) << 8);
+            *adcGain = (prvHex2Num(resultMsg[13]) << 4 | prvHex2Num(resultMsg[14])) | ((prvHex2Num(resultMsg[15]) << 4 | prvHex2Num(resultMsg[16])) << 8);
+            OSI_LOGXD(OSI_LOGPAR_SIII, 0, "[%s][%d] anaGain:%d adcGain:%d\n", __FUNCTION__, __LINE__, *anaGain, *adcGain);
+        }
+        return true;
+    }
+}
+
+/**
+ * Set record mode Mic Gain
+ */
+bool audevSetRecordMicGain(uint8_t mode, uint8_t path, uint16_t anaGain, uint16_t adcGain)
+{
+    uint8_t resultCode = 0;
+    uint8_t hasMsg = 0;
+    uint8_t strParam[12] = {0};
+    uint8_t resultMsg[900] = {0};
+    //only support mode in 2:MUSICRECORD,4:FMRECORD
+    if ((mode != 2) && (mode != 4))
+        return false;
+    //only support path in 1:Handfree,2:Handset4P,3:Handset3P
+    if ((path != 1) && (mode != 2) && (mode != 3))
+        return false;
+    if (anaGain > 7)
+        return false;
+    if (adcGain > 15)
+        return false;
+
+    strParam[0] = prvNum2Hex((anaGain >> 4) & 0xF);
+    strParam[1] = prvNum2Hex(anaGain & 0xF);
+    strParam[2] = prvNum2Hex((anaGain >> 12) & 0xF);
+    strParam[3] = prvNum2Hex((anaGain >> 8) & 0xF);
+    strParam[4] = prvNum2Hex((adcGain >> 4) & 0xF);
+    strParam[5] = prvNum2Hex(adcGain & 0xF);
+    strParam[6] = prvNum2Hex((adcGain >> 12) & 0xF);
+    strParam[7] = prvNum2Hex((adcGain >> 8) & 0xF);
+    strParam[8] = 0x0;
+    OSI_LOGXD(OSI_LOGPAR_SIS, 0, "[%s][%d] strParam:%s \n", __FUNCTION__, __LINE__, strParam);
+    memset(resultMsg, 0, sizeof(resultMsg));
+    CSW_SetAudioCodecCalibParam(&resultCode, &hasMsg, resultMsg, mode, path,
+                                AUDEV_CALIB_AUD_CODEC_SET_RECORDERGAIN, strParam, strlen((const char *)strParam));
+
+    OSI_LOGXD(OSI_LOGPAR_SII, 0, "[%s][%d] resultCode:%d\n", __FUNCTION__, __LINE__, resultCode);
+    if (resultCode)
+        return false;
+    else
+        return true;
+}
+
+/**
+ * Get Call mode sidetone Gain
+ */
+bool audevGetSideToneGain(uint8_t mode, uint8_t path, uint8_t level, int8_t *sideGain)
+{
+    uint8_t resultCode = 0;
+    uint8_t hasMsg = 0;
+    uint8_t strParam[4] = {0};
+    uint8_t resultMsg[900] = {0};
+    //only support in mode:VOICECALLNB,mode VOICECALLWB
+    if ((mode != 0) && (mode != 5))
+        return false;
+    if (path > 5)
+        return false;
+    if (level > 15)
+        return false;
+
+    strParam[0] = 0;
+    CSW_SetAudioCodecCalibParam(&resultCode, &hasMsg, resultMsg, mode, path,
+                                AUDEV_CALIB_AUD_CODEC_GET_SIDETONEGAIN, strParam, strlen((const char *)strParam));
+
+    if (resultCode)
+    {
+        OSI_LOGXD(OSI_LOGPAR_SII, 0, "[%s][%d] resultCode:%d\n", __FUNCTION__, __LINE__, resultCode);
+        return false;
+    }
+    else
+    {
+        if (hasMsg)
+        {
+            OSI_LOGXD(OSI_LOGPAR_SIS, 0, "[%s][%d] resultMsg:%s \n", __FUNCTION__, __LINE__, resultMsg);
+            *sideGain = (int8_t)(prvHex2Num(resultMsg[9 + level * 2]) << 4 | prvHex2Num(resultMsg[10 + level * 2]));
+            OSI_LOGXD(OSI_LOGPAR_SIII, 0, "[%s][%d] level:%d sideGain:%d \n", __FUNCTION__, __LINE__, level, *sideGain);
+        }
+        return true;
+    }
+}
+
+/**
+ * Set Call mode sidetone Gain
+ */
+bool audevSetSideToneGain(uint8_t mode, uint8_t path, uint8_t level, int8_t sideGain)
+{
+    uint8_t resultCode = 0;
+    uint8_t hasMsg = 0;
+    uint8_t strParam[64] = {0};
+    uint8_t resultMsg[900] = {0};
+    //only support in mode:AUDEV_CALIB_AUD_MODE_VOICECALLNB,mode AUDEV_CALIB_AUD_MODE_VOICECALLWB
+    if ((mode != 0) && (mode != 5))
+        return false;
+    if (path > 5)
+        return false;
+    if (level > 15)
+        return false;
+
+    if ((sideGain < -39) || (sideGain > 6))
+        return false;
+    if (((sideGain + 39) % 3) != 0)
+        return false;
+
+    strParam[0] = 0;
+    CSW_SetAudioCodecCalibParam(&resultCode, &hasMsg, resultMsg, mode, path,
+                                AUDEV_CALIB_AUD_CODEC_GET_SIDETONEGAIN, strParam, strlen((const char *)strParam));
+    if (resultCode)
+    {
+        OSI_LOGXD(OSI_LOGPAR_SII, 0, "[%s][%d] resultCode:%d\n", __FUNCTION__, __LINE__, resultCode);
+        return false;
+    }
+
+    OSI_LOGXD(OSI_LOGPAR_SIS, 0, "[%s][%d] resultMsg:%s \n", __FUNCTION__, __LINE__, resultMsg);
+
+    memcpy(strParam, &resultMsg[9], 32);
+
+    strParam[0 + level * 2] = prvNum2Hex((sideGain >> 4) & 0xF);
+    strParam[1 + level * 2] = prvNum2Hex(sideGain & 0xF);
+    strParam[32] = 0x0;
+    OSI_LOGXD(OSI_LOGPAR_SIS, 0, "[%s][%d] strParam:%s \n", __FUNCTION__, __LINE__, strParam);
+
+    CSW_SetAudioCodecCalibParam(&resultCode, &hasMsg, resultMsg, mode, path,
+                                AUDEV_CALIB_AUD_CODEC_SET_SIDETONEGAIN, strParam, strlen((const char *)strParam));
+
+    OSI_LOGXD(OSI_LOGPAR_SII, 0, "[%s][%d] resultCode:%d\n", __FUNCTION__, __LINE__, resultCode);
+    if (resultCode)
+        return false;
+    else
+        return true;
+}
+
+/**
  * Start voice call
  */
 bool audevStartVoice(void)
@@ -1146,8 +2190,11 @@ bool audevStartVoice(void)
 
     osiMutexLock(d->lock);
 
-    if (d->clk_users != 0) // disable when any user is working
+    if ((d->clk_users & ~AUDEV_CLK_USER_VOICE) != 0) // disable when any other users is working
         goto failed;
+
+    if (d->clk_users & AUDEV_CLK_USER_VOICE)
+        goto success;
 
     prvEnableAudioClk(AUDEV_CLK_USER_VOICE);
     if (!prvSetVoiceConfig())
@@ -1159,6 +2206,7 @@ bool audevStartVoice(void)
     if (!prvWaitStatus(CODEC_VOIS_START_DONE))
         goto failed_disable_clk;
 
+success:
     osiMutexUnlock(d->lock);
     return true;
 
@@ -1224,6 +2272,8 @@ bool audevPlayTone(audevTone_t tone, unsigned duration)
 {
     audevContext_t *d = &gAudevCtx;
     OSI_LOGI(0, "audio play tone %d duration/%d user/0x%x", tone, duration, d->clk_users);
+    if (duration == 0)
+        return true;
 
     osiMutexLock(d->lock);
 
@@ -1233,6 +2283,9 @@ bool audevPlayTone(audevTone_t tone, unsigned duration)
     prvEnableAudioClk(AUDEV_CLK_USER_TONE);
     if (!prvSetVoiceConfig())
         goto failed_disable_clk;
+
+    if (prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute) == AUD_SPK_MUTE)
+        osiTimerStart(d->simu_toneend_timer, (duration + 200));
 
     if (DM_PlayToneEx(prvToneToDmTone(tone), prvVolumeToToneAttenuatio(d->cfg.play_vol),
                       duration, prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute)) != 0)
@@ -1258,6 +2311,7 @@ bool audevStopTone(void)
     OSI_LOGI(0, "audio stop tone, user/0x%x", d->clk_users);
 
     osiMutexLock(d->lock);
+    osiTimerStop(d->simu_toneend_timer);
 
     if ((d->clk_users & AUDEV_CLK_USER_TONE) == 0)
         goto success;
@@ -1298,7 +2352,7 @@ static void prvLoopbackCfg(VOIS_AUDIO_CFG_T *vois, AUD_DEVICE_CFG_EXT_T *device_
     device_ext->linePath = AUD_LINE_PATH2;
     device_ext->spkpaType = AUDEV_AUDIO_PA_TYPE;
 
-    level->spkLevel = prvVolumeToLevel(d->loopback.volume, false),
+    level->spkLevel = prvVolumeToLevel(d->loopback.volume, false);
     level->micLevel = SND_MIC_ENABLE;
     level->sideLevel = SND_SIDE_MUTE;
     level->toneLevel = SND_TONE_0DB;
@@ -1428,6 +2482,11 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
              frame->sample_format, frame->channel_count,
              frame->sample_rate, d->clk_users);
 
+    const uint32_t valid_samplerate[] = {
+        8000, 9600, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 96000};
+
+    if (!osiIsUintInList(frame->sample_rate, valid_samplerate, OSI_ARRAY_SIZE(valid_samplerate)))
+        return false;
     if (frame->sample_format != AUSAMPLE_FORMAT_S16)
         return false;
     if (frame->channel_count != 1 && frame->channel_count != 2)
@@ -1494,18 +2553,80 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
 
         prvEnableAudioClk(AUDEV_CLK_USER_PLAY);
 
-        if (DM_ZspMusicPlayStart() != 0)
-            goto failed_disable_clk;
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+        if (d->cfg.ext_i2s_en)
+        {
 
-        if (!prvWaitStatus(ZSP_START_DONE))
-            goto failed_disable_clk;
+            g_pingpanghalfbytes = half_buffer_bytes;
+            HAL_AIF_SERIAL_CFG_T serialCfg = {
+                .mode = 0,
+                .aifIsMaster = false,
+                .lsbFirst = false,
+                .polarity = false,
+                .rxDelay = 0,
+                .txDelay = 1,
+                .rxMode = 1,
+                .txMode = 2,
+                .fs = frame->sample_rate,
+                .bckLrckRatio = 32,
+                .invertBck = false,
+                .outputHalfCycleDelay = true,
+                .inputHalfCycleDelay = false,
+                .enableBckOutGating = false,
+            };
 
-        aud_SetSharkingMode(0);
-        if (DM_AudStreamStart(prvOutputToSndItf(d->cfg.outdev), &stream, &level) != 0)
-            goto failed_disable_clk;
+            prvExtI2sOutputSetIrqHandler();
+            prvAudExtCodecI2cOpen(DRV_NAME_I2C2, DRV_I2C_BPS_100K);
 
-        if (!prvWaitStatus(CODEC_STREAM_START_DONE))
-            goto failed_disable_clk;
+            SND_ITF_T itf = prvOutputToSndItf(d->cfg.outdev);
+
+            if ((itf != SND_ITF_BLUETOOTH) && (level.appMode != SND_APP_MODE_FMPLAY))
+                prvAudI2sAifCfg(&stream, &serialCfg);
+
+            if (hal_AifOpen(&g_audCodecAifCfg) != HAL_ERR_NO) //BCLK LRCK
+            {
+                OSI_LOGE(0, "hal_AifOpen fail\n");
+                goto failed_disable_clk;
+            }
+
+            //set external device reg
+            prvAudWriteRegList(g_audPlayRegList, sizeof(g_audPlayRegList) / sizeof(extDevReg_t));
+
+            //You can add other samplerates,such as 32k,48k.
+            if (frame->sample_rate == 44100)
+            {
+                prvAudWriteRegList(g_aud44kRegList, sizeof(g_aud44kRegList) / sizeof(extDevReg_t));
+            }
+            else if (frame->sample_rate == 16000)
+            {
+                prvAudWriteRegList(g_aud16kRegList, sizeof(g_aud16kRegList) / sizeof(extDevReg_t));
+            }
+
+            //set outpath Reg
+            prvExtI2sSetPlayConfig();
+            // Send the stream through the IFC
+            if (hal_AifPlayStream(&stream) != HAL_ERR_NO)
+            {
+                OSI_LOGE(0, "hal_AifPlayStream Resource Busy");
+                goto failed_disable_clk;
+            }
+        }
+        else
+#endif
+        {
+            if (DM_ZspMusicPlayStart() != 0)
+                goto failed_disable_clk;
+
+            if (!prvWaitStatus(ZSP_START_DONE))
+                goto failed_disable_clk;
+
+            aud_SetSharkingMode(0);
+            if (DM_AudStreamStart(prvOutputToSndItf(d->cfg.outdev), &stream, &level) != 0)
+                goto failed_disable_clk;
+
+            if (!prvWaitStatus(CODEC_STREAM_START_DONE))
+                goto failed_disable_clk;
+        }
 
         //for reopen aif when audio output path change
         memcpy(&(d->play.stream), &stream, sizeof(HAL_AIF_STREAM_T));
@@ -1518,6 +2639,8 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     else if (type == AUDEV_PLAY_TYPE_VOICE)
     {
         if ((d->clk_users & AUDEV_CLK_USER_VOICE) == 0) // only available in voice call
+            goto failed;
+        if ((d->clk_users & ~AUDEV_CLK_USER_VOICE) != 0) // disable when any other users is working
             goto failed;
 
         d->play.channel_count = frame->channel_count;
@@ -1569,6 +2692,10 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     }
 
 failed_disable_clk:
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+    if (d->cfg.ext_i2s_en)
+        prvExtI2sOutputDisableIrq();
+#endif
     prvDisableAudioClk(AUDEV_CLK_USER_PLAY);
 failed:
     osiMutexUnlock(d->lock);
@@ -1599,19 +2726,42 @@ bool audevStopPlayV2(void)
         if ((d->clk_users & AUDEV_CLK_USER_PLAY) == 0)
             goto success;
 
-        osiTimerStop(d->finish_timer);
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+        if (d->cfg.ext_i2s_en)
+        {
 
-        if (DM_AudStreamStop(prvOutputToSndItf(d->cfg.outdev)) != 0)
-            goto failed;
+            //I2C set external codec
+            prvAudWriteRegList(g_audCloseRegList, sizeof(g_audCloseRegList) / sizeof(extDevReg_t));
 
-        if (!prvWaitStatus(CODEC_STREAM_STOP_DONE))
-            goto failed;
+            if (hal_AifStopPlay() != HAL_ERR_NO)
+            {
+                OSI_LOGE(0, "hal_AifStopPlay Resource Busy");
+                goto failed;
+            }
 
-        if (DM_ZspMusicPlayStop() != 0)
-            goto failed;
+            hal_AifClose();
 
-        if (!prvWaitStatus(ZSP_STOP_DONE))
-            goto failed;
+            prvExtI2sOutputDisableIrq();
+
+            prvAudExtCodecI2cClose();
+        }
+        else
+#endif
+        {
+            osiTimerStop(d->finish_timer);
+
+            if (DM_AudStreamStop(prvOutputToSndItf(d->cfg.outdev)) != 0)
+                goto failed;
+
+            if (!prvWaitStatus(CODEC_STREAM_STOP_DONE))
+                goto failed;
+
+            if (DM_ZspMusicPlayStop() != 0)
+                goto failed;
+
+            if (!prvWaitStatus(ZSP_STOP_DONE))
+                goto failed;
+        }
 
         prvDisableAudioClk(AUDEV_CLK_USER_PLAY);
     }
@@ -1697,46 +2847,117 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
         d->record.frame.channel_count = 1;
         d->record.frame.sample_rate = d->cfg.sample_rate;
 
-        d->shmem->updateParaInd = 0;
-        d->shmem->audInPara.sampleRate = d->cfg.sample_rate;
-        d->shmem->audInPara.channelNb = HAL_AIF_MONO;
-        d->shmem->audOutPara.channelNb = HAL_AIF_MONO;
-        d->shmem->audInPara.bitsPerSample = sizeof(int16_t) * 8; // S16, in bits
-        d->shmem->musicMode = ZSP_MUSIC_MODE_RECORD_WAV;
-        d->shmem->audInPara.readOffset = 0;
-        d->shmem->audInPara.writeOffset = 0;
-        d->shmem->audInPara.sbcOutFlag = 0;
-        d->shmem->audInPara.fileEndFlag = 0;
-        d->shmem->audInPara.inLenth = AUDIO_INPUT_BUF_SIZE;
-        d->shmem->audInPara.outLength = pcm_buffer_bytes / 2; //ping/pang length
-        d->shmem->audOutPara.samplerate = HAL_AIF_FREQ_8000HZ;
-        d->shmem->audOutPara.length = AUDEV_PLAY_OUT_BUF_SIZE;
-        memset(d->shmem->audOutput, 0, AUDIO_OUTPUT_BUF_SIZE);
-
-        prvEnableAudioClk(AUDEV_CLK_USER_RECORD);
-        prvSetDeviceExt();
-
-        if (DM_ZspMusicPlayStart() != 0)
-            goto failed_disable_clk;
-
-        if (!prvWaitStatus(ZSP_START_DONE))
-            goto failed_disable_clk;
-
-        OSI_LOGE(0, "audio start record itf = %d", prvOutputToSndItf(d->cfg.outdev));
-        if ((d->clk_users & AUDEV_CLK_USER_PLAYTEST) != 0)
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+        if (d->cfg.ext_i2s_en)
         {
-            itf = prvOutputToSndItf(d->bbat.outdev);
+            g_pingpanghalfbytes = stream.length / 2;
+            //osiIrqSetHandler	//register irq
+            prvExtI2sInputSetIrqHandler();
         }
         else
+#endif
         {
-            itf = prvOutputToSndItf(d->cfg.outdev);
+            d->shmem->updateParaInd = 0;
+            d->shmem->audInPara.sampleRate = d->cfg.sample_rate;
+            d->shmem->audInPara.channelNb = HAL_AIF_MONO;
+            d->shmem->audOutPara.channelNb = HAL_AIF_MONO;
+            d->shmem->audInPara.bitsPerSample = sizeof(int16_t) * 8; // S16, in bits
+            d->shmem->musicMode = ZSP_MUSIC_MODE_RECORD_WAV;
+            d->shmem->audInPara.readOffset = 0;
+            d->shmem->audInPara.writeOffset = 0;
+            d->shmem->audInPara.sbcOutFlag = 0;
+            d->shmem->audInPara.fileEndFlag = 0;
+            d->shmem->audInPara.inLenth = AUDIO_INPUT_BUF_SIZE;
+            d->shmem->audInPara.outLength = pcm_buffer_bytes / 2; //ping/pang length
+            d->shmem->audOutPara.samplerate = HAL_AIF_FREQ_8000HZ;
+            d->shmem->audOutPara.length = AUDEV_PLAY_OUT_BUF_SIZE;
+            memset(d->shmem->audOutput, 0, AUDIO_OUTPUT_BUF_SIZE);
         }
+        prvEnableAudioClk(AUDEV_CLK_USER_RECORD);
 
-        if (DM_AudStreamRecord(itf, &stream, &level) != 0)
-            goto failed_disable_clk;
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+        if (d->cfg.ext_i2s_en)
+        {
+            HAL_AIF_SERIAL_CFG_T serialCfg = {
+                .mode = 0,
+                .aifIsMaster = false,
+                .lsbFirst = false,
+                .polarity = false,
+                .rxDelay = 0,
+                .txDelay = 1,
+                .rxMode = 1,
+                .txMode = 2,
+                .fs = d->cfg.sample_rate,
+                .bckLrckRatio = 32,
+                .invertBck = false,
+                .outputHalfCycleDelay = true,
+                .inputHalfCycleDelay = false,
+                .enableBckOutGating = false,
+            };
 
-        if (!prvWaitStatus(CODEC_RECORD_START_DONE))
-            goto failed_disable_clk;
+            prvAudExtCodecI2cOpen(DRV_NAME_I2C2, DRV_I2C_BPS_100K);
+            OSI_LOGE(0, "audio start record itf = %d", prvOutputToSndItf(d->cfg.outdev));
+            if ((d->clk_users & AUDEV_CLK_USER_PLAYTEST) != 0)
+            {
+                itf = prvOutputToSndItf(d->bbat.outdev);
+            }
+            else
+            {
+                itf = prvOutputToSndItf(d->cfg.outdev);
+            }
+
+            if ((itf != SND_ITF_BLUETOOTH) && (level.appMode != SND_APP_MODE_FMPLAY))
+                prvAudI2sAifCfg(&stream, &serialCfg);
+
+            if (hal_AifOpen(&g_audCodecAifCfg) != HAL_ERR_NO) //BCLK LRCK
+            {
+                OSI_LOGE(0, "hal_AifOpen fail\n");
+                goto failed_disable_clk;
+            }
+
+            //I2C set external codec
+            prvAudWriteRegList(g_audRecRegList, sizeof(g_audRecRegList) / sizeof(extDevReg_t));
+
+            if (d->cfg.sample_rate == 16000)
+            {
+                prvAudWriteRegList(g_aud16kRegList, sizeof(g_aud16kRegList) / sizeof(extDevReg_t));
+            }
+
+            prvExtI2sSetDeviceExt();
+
+            // Send the stream through the IFC
+            if (hal_AifRecordStream(&stream) != HAL_ERR_NO)
+            {
+                OSI_LOGE(0, "hal_AiRecordStream Resource Busy");
+                goto failed_disable_clk;
+            }
+        }
+        else
+#endif
+        {
+            prvSetDeviceExt();
+            if (DM_ZspMusicPlayStart() != 0)
+                goto failed_disable_clk;
+
+            if (!prvWaitStatus(ZSP_START_DONE))
+                goto failed_disable_clk;
+
+            OSI_LOGE(0, "audio start record itf = %d", prvOutputToSndItf(d->cfg.outdev));
+            if ((d->clk_users & AUDEV_CLK_USER_PLAYTEST) != 0)
+            {
+                itf = prvOutputToSndItf(d->bbat.outdev);
+            }
+            else
+            {
+                itf = prvOutputToSndItf(d->cfg.outdev);
+            }
+
+            if (DM_AudStreamRecord(itf, &stream, &level) != 0)
+                goto failed_disable_clk;
+
+            if (!prvWaitStatus(CODEC_RECORD_START_DONE))
+                goto failed_disable_clk;
+        }
     }
     else if (type == AUDEV_RECORD_TYPE_VOICE ||
              type == AUDEV_RECORD_TYPE_VOICE_DUAL ||
@@ -1787,6 +3008,10 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
     return true;
 
 failed_disable_clk:
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+    if (d->cfg.ext_i2s_en)
+        prvExtI2sInputDisableIrq();
+#endif
     prvDisableAudioClk(AUDEV_CLK_USER_RECORD);
 failed:
     osiMutexUnlock(d->lock);
@@ -1809,17 +3034,40 @@ bool audevStopRecord(void)
 
     if (d->record.type == AUDEV_RECORD_TYPE_MIC)
     {
-        if (DM_AudStreamStop(prvOutputToSndItf(d->cfg.outdev)) != 0)
-            goto failed;
+#ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
+        if (d->cfg.ext_i2s_en)
+        {
 
-        if (!prvWaitStatus(CODEC_STREAM_STOP_DONE))
-            goto failed;
+            //I2C set external codec
+            prvAudWriteRegList(g_audCloseRegList, sizeof(g_audCloseRegList) / sizeof(extDevReg_t));
 
-        if (DM_ZspMusicPlayStop() != 0)
-            goto failed;
+            if (hal_AifStopRecord() != HAL_ERR_NO)
+            {
+                OSI_LOGE(0, "hal_AifStopRecord Resource Busy");
+                goto failed;
+            }
 
-        if (!prvWaitStatus(ZSP_STOP_DONE))
-            goto failed;
+            hal_AifClose();
+
+            prvExtI2sInputDisableIrq();
+
+            prvAudExtCodecI2cClose();
+        }
+        else
+#endif
+        {
+            if (DM_AudStreamStop(prvOutputToSndItf(d->cfg.outdev)) != 0)
+                goto failed;
+
+            if (!prvWaitStatus(CODEC_STREAM_STOP_DONE))
+                goto failed;
+
+            if (DM_ZspMusicPlayStop() != 0)
+                goto failed;
+
+            if (!prvWaitStatus(ZSP_STOP_DONE))
+                goto failed;
+        }
 
         prvDisableAudioClk(AUDEV_CLK_USER_RECORD);
     }
@@ -1946,5 +3194,28 @@ void audSetLdoVB(uint32_t en)
     audevContext_t *d = &gAudevCtx;
     osiMutexLock(d->lock);
     aud_SetLdoVB(en);
+    osiMutexUnlock(d->lock);
+}
+
+bool audIsCodecOpen(void)
+{
+    audevContext_t *d = &gAudevCtx;
+    return (d->clk_users != 0);
+}
+
+void audHeadsetdepop_en(bool en, uint8_t mictype)
+{
+    audevContext_t *d = &gAudevCtx;
+    osiMutexLock(d->lock);
+    if (en)
+    {
+        //four seg heaset set 1,three seg headset set 2
+        if (mictype == 2)
+            aud_HeadsetConfig(1, 0);
+        else
+            aud_HeadsetConfig(2, 0);
+    }
+    else
+        aud_HeadsetConfig(0, 0);
     osiMutexUnlock(d->lock);
 }

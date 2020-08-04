@@ -163,13 +163,16 @@ static void ssl_rsp(void *param)
         }
         else if (errorCode < -1)
         {
-            sprintf(uaRspStr, "SSL HANDSHAKE ERROR :-%lx", -errorCode);
+            OSI_LOGI(0, "SSL HANDSHAKE ERROR :-%lx", -errorCode);
+            sprintf(uaRspStr, "SSL CONNECT FAIL");
             atCmdRespErrorText(engine, uaRspStr);
+            mbedtlsSocket_Free(sslSocket);
         }
         else
         {
-            strcpy(uaRspStr, "SSL CONNECT ERROR");
+            strcpy(uaRspStr, "SSL CONNECT FAIL");
             atCmdRespErrorText(engine, uaRspStr);
+            mbedtlsSocket_Free(sslSocket);
         }
     }
     break;
@@ -184,15 +187,32 @@ static void ssl_rsp(void *param)
     break;
     case EV_CFW_TLSSOCK_READ_EVENT_IND:
     {
-        char data[DATA_OUTPUT_RINGBUF_SIZE];
-        memset(data, 0, DATA_OUTPUT_RINGBUF_SIZE);
+        char *data = NULL;
+        data = malloc(DATA_OUTPUT_RINGBUF_SIZE + 1);
+        if (data == NULL)
+            break;
+        memset(data, 0, DATA_OUTPUT_RINGBUF_SIZE + 1);
+
         uint32_t readlen = 0;
         readlen = MbedtlsSocket_Recv(sslSocket, (uint8_t *)data, DATA_OUTPUT_RINGBUF_SIZE);
+        if (readlen <= 0)
+        {
+            memset(data, 0, DATA_OUTPUT_RINGBUF_SIZE + 1);
+            free(data);
+            data = NULL;
+            break;
+        }
+
         do
         {
             atCmdRespUrcNText(engine, data, readlen);
+            memset(data, 0, DATA_OUTPUT_RINGBUF_SIZE + 1);
             readlen = MbedtlsSocket_Recv(sslSocket, (uint8_t *)data, DATA_OUTPUT_RINGBUF_SIZE);
         } while (readlen != 0);
+
+        memset(data, 0, DATA_OUTPUT_RINGBUF_SIZE + 1);
+        free(data);
+        data = NULL;
     }
     break;
     case EV_CFW_TLSSOCK_DATA_SENT_EVENT_IND:
@@ -267,8 +287,8 @@ void AT_TCPIP_CmdFunc_SSLSTART(atCommand_t *pParam)
         uint8_t nCid = getActivedPdp(pParam->engine);
         if (nCid == TLSSOCK_INVALID_CID)
         {
-            sprintf(aucBuffer, "CONNECT FAIL PDP error");
-            AT_CMD_RETURN(atCmdRespErrorText(pParam->engine, aucBuffer));
+            OSI_LOGI(0, "CONNECT FAIL PDP error");
+            AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_EXE_FAIL));
         }
         if (g_sslstate == 1)
         {
@@ -333,7 +353,7 @@ void AT_TCPIP_CmdFunc_SSLSTART(atCommand_t *pParam)
         iResult = mbedtlsSocket_Cfg(s_sslSocket, TLSSOCK_CFG_TYPE_CLI_CERT, (uint32_t)&cli_cert);
         if (iResult != 0)
         {
-            sprintf(aucBuffer, "CONNECT FAIL");
+            sprintf(aucBuffer, "SSL CONNECT FAIL");
             AT_CMD_RETURN(atCmdRespErrorText(pParam->engine, aucBuffer));
         }
         TLSSOCK_CRT_T cli_key;
@@ -343,14 +363,14 @@ void AT_TCPIP_CmdFunc_SSLSTART(atCommand_t *pParam)
         iResult = mbedtlsSocket_Cfg(s_sslSocket, TLSSOCK_CFG_TYPE_CLI_KEY, (uint32_t)&cli_key);
         if (iResult != 0)
         {
-            sprintf(aucBuffer, "CONNECT FAIL");
+            sprintf(aucBuffer, "SSL CONNECT FAIL");
             AT_CMD_RETURN(atCmdRespErrorText(pParam->engine, aucBuffer));
         }
 
         iResult = mbedtlsSocket_Cfg(s_sslSocket, TLSSOCK_CFG_TYPE_CIPHER_SUITE, (uint32_t)ciphersuite_preference);
         if (iResult != 0)
         {
-            sprintf(aucBuffer, "CONNECT FAIL");
+            sprintf(aucBuffer, "SSL CONNECT FAIL");
             AT_CMD_RETURN(atCmdRespErrorText(pParam->engine, aucBuffer));
         }
 
@@ -358,7 +378,7 @@ void AT_TCPIP_CmdFunc_SSLSTART(atCommand_t *pParam)
         iResult = mbedtlsSocket_Connect(s_sslSocket, nAddr, uPort);
         if (iResult != 0)
         {
-            sprintf(aucBuffer, "CONNECT FAIL");
+            sprintf(aucBuffer, "SSL CONNECT FAIL");
             AT_CMD_RETURN(atCmdRespErrorText(pParam->engine, aucBuffer));
         }
         AT_SetAsyncTimerMux(pParam->engine, 120);
@@ -370,7 +390,7 @@ void AT_TCPIP_CmdFunc_SSLSTART(atCommand_t *pParam)
             AT_CMD_RETURN(atCmdRespCmeError(pParam->engine, ERR_AT_CME_NO_MEMORY));
 
         memset(pRstStr, 0, 85);
-        strcpy(pRstStr, "+SSLSTART: (\"SSL\"), (\"(0-255).(0-255).(0-255).(0-255)\"), (0-65535)");
+        strcpy(pRstStr, "+SSLSTART:(\"(0-255).(0-255).(0-255).(0-255)\"), (0-65535)");
 
         atCmdRespInfoText(pParam->engine, pRstStr);
         atCmdRespOK(pParam->engine);
@@ -413,7 +433,7 @@ static void _timeoutabortTimeout(atCommand_t *cmd)
 static void _tcpipSend(atCommand_t *cmd, uint8_t *send_data, uint32_t uLength)
 {
     //stAT_Tcpip_Paras *tcpipParas = &(g_uCipContexts.nTcpipParas[uMuxIndex]);
-    int32_t iResult;
+    int32_t iResult = 0;
 
     if (ssl_socketconn != CFW_TCPIP_IPPROTO_UDP)
     {
@@ -510,20 +530,6 @@ void AT_TCPIP_CmdFunc_SSLSEND(atCommand_t *pParam) //atCommand_t *cmd
         async->uMuxIndex = 0;
         atCmdRespOutputPrompt(pParam->engine);
         atCmdSetPromptMode(pParam->engine, _tcpipDataPromptCB, pParam, async->data, TCPIP_DATA_MAX_SIZE);
-    }
-    else if (AT_CMD_TEST == pParam->type)
-    {
-        char aucBuffer[40] = {0};
-        sprintf(aucBuffer, "+SSLSEND:<length>");
-        atCmdRespInfoText(pParam->engine, aucBuffer);
-        atCmdRespOK(pParam->engine);
-    }
-    else if (AT_CMD_READ == pParam->type)
-    {
-        char aucBuffer[40] = {0};
-        sprintf(aucBuffer, "+SSLSEND:<size>");
-        atCmdRespInfoText(pParam->engine, aucBuffer);
-        atCmdRespOK(pParam->engine);
     }
     else
     {

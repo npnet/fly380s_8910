@@ -134,6 +134,7 @@ static const osiValueStrMap_t gAtCmeText[] = {
     {ERR_AT_CME_HTTP_INIT_NEED, "HTTPINIT is needed first"},
     {ERR_AT_CME_HTTP_PARA_CID_INVALID, "HTTPPARA CID invalid"},
     {ERR_AT_CME_SNTP_SYNCING, "SNTP is syncing time, wait it done and try it later"},
+    {ERR_AT_CMS_INVALID_TXT_CHAR, "Text is not string type"},
     {ERR_AT_CME_NETWORK_REFUSED, "username or password is invalid"},
     {ERR_AT_CME_PDP_DEACTIVED, "pdp have not actived"},
     {ERR_AT_CME_PDP_ACTIVED, "pdp is actived"},

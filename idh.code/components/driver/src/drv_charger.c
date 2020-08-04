@@ -75,6 +75,7 @@ static uint32_t _drvChargerVoltagePercentum(uint32_t voltage, chgState_e is_char
 
 #define CHGMNG_CALI_MODE_END_VOLT 4500
 #define CHGMNG_CALI_MODE_BAT_OVP_VOLT 4500
+#define CHG_NV_TEMP_OFFSET 1000 //NV value must be positive,e.g. nv = -5C + CHG_NV_TEMP_OFFSET
 
 #define OVP_DETECT_VALID_TIMES (3)
 
@@ -92,16 +93,6 @@ static uint32_t _drvChargerVoltagePercentum(uint32_t voltage, chgState_e is_char
     }
 
 #define _CHG_COUNTER_DEC(c) (c--)
-#define _CHG_COUNTER_RELOAD(c, reload) \
-    {                                  \
-        if (c == 0)                    \
-            c = reload;                \
-    }
-#define _CHG_COUNTER_DEC_AND_AUTO_RELOAD(c, round) \
-    {                                              \
-        _CHG_COUNTER_DEC(c);                       \
-        _CHG_COUNTER_RELOAD(c, round);             \
-    }
 
 /**---------------------------------------------------------------------------*
  **                         Global Variables                                  *
@@ -113,6 +104,7 @@ static chgSwitPoiint_e hw_switch_point = CHG_SWITPOINT_15; //The lowest switchov
 static uint16_t cv_status_counter = 0;
 static uint16_t charge_endtime_counter = 0;
 static uint16_t warning_counter = 0;
+static bool charge_stop = false;
 //static uint16_t pulse_counter = 0;
 static uint16_t ovp_detect_counter = 0;
 static uint16_t ovp_detect_bat_cnt = 0;
@@ -159,6 +151,148 @@ static chgDischarge_t dischg_param =
         3000, //deadline_vol
         24,   //warning_count,warning interval
 };
+
+const static int16_t vbat_temp_table[][2] =
+    {
+        {1451, -40},
+        {1435, -39},
+        {1419, -38},
+        {1402, -37},
+        {1384, -36},
+        {1367, -35},
+        {1348, -34},
+        {1330, -33},
+        {1311, -32},
+        {1292, -31},
+        {1272, -30},
+        {1253, -29},
+        {1233, -28},
+        {1212, -27},
+        {1192, -26},
+        {1171, -25},
+        {1150, -24},
+        {1129, -23},
+        {1108, -22},
+        {1087, -21},
+        {1066, -20},
+        {1045, -19},
+        {1023, -18},
+        {1002, -17},
+        {981, -16},
+        {960, -15},
+        {938, -14},
+        {917, -13},
+        {896, -12},
+        {875, -11},
+        {854, -10},
+        {834, -9},
+        {814, -8},
+        {794, -7},
+        {773, -6},
+        {754, -5},
+        {735, -4},
+        {716, -3},
+        {697, -2},
+        {678, -1},
+        {660, 0},
+        {642, 1},
+        {625, 2},
+        {608, 3},
+        {591, 4},
+        {574, 5},
+        {558, 6},
+        {542, 7},
+        {527, 8},
+        {512, 9},
+        {497, 10},
+        {483, 11},
+        {468, 12},
+        {456, 13},
+        {441, 14},
+        {428, 15},
+        {416, 16},
+        {403, 17},
+        {391, 18},
+        {379, 19},
+        {368, 20},
+        {357, 21},
+        {346, 22},
+        {335, 23},
+        {326, 24},
+        {316, 25},
+        {306, 26},
+        {297, 27},
+        {288, 28},
+        {279, 29},
+        {271, 30},
+        {262, 31},
+        {254, 32},
+        {247, 33},
+        {239, 34},
+        {231, 35},
+        {225, 36},
+        {218, 37},
+        {211, 38},
+        {205, 39},
+        {199, 40},
+        {193, 41},
+        {187, 42},
+        {181, 43},
+        {176, 44},
+        {170, 45},
+        {165, 46},
+        {160, 47},
+        {156, 48},
+        {151, 49},
+        {146, 50},
+        {142, 51},
+        {138, 52},
+        {134, 53},
+        {130, 54},
+        {126, 55},
+        {122, 56},
+        {118, 57},
+        {115, 58},
+        {112, 59},
+        {108, 60},
+        {105, 61},
+        {102, 62},
+        {99, 63},
+        {97, 64},
+        {94, 65},
+        {91, 66},
+        {89, 67},
+        {86, 68},
+        {84, 69},
+        {81, 70},
+        {79, 71},
+        {77, 72},
+        {75, 73},
+        {73, 74},
+        {71, 75},
+        {69, 76},
+        {67, 77},
+        {65, 78},
+        {63, 79},
+        {62, 80},
+        {60, 81},
+        {58, 82},
+        {57, 83},
+        {55, 84},
+        {54, 85},
+        {52, 86},
+        {51, 87},
+        {50, 88},
+        {49, 89},
+        {47, 90},
+        {46, 91},
+        {45, 92},
+        {44, 93},
+        {43, 94},
+        {42, 95},
+};
+
+#define HOT_TEMP 1042
 
 typedef struct
 {
@@ -275,7 +409,7 @@ static void _updateChargerStatus(drvChargerContext_t *p)
             p->type = DRV_CHARGER_TYPE_UNKOWN;
     }
 
-    OSI_LOGI(0, "chg: level/%d status/%x type/%d", level, status.v, p->type);
+    OSI_LOGD(0, "chg: level/%d status/%x type/%d", level, status.v, p->type);
 
     drvPmicEicTrigger(DRV_PMIC_EIC_CHGR_INT, CHARGER_DEBOUNCE, !level);
 }
@@ -315,6 +449,8 @@ static void _drvChargetPhyInit(void)
 static void _drvChargerTurnOn(void)
 {
     REG_RDA2720M_GLOBAL_CHGR_CTRL0_T chargCtrol0;
+    if (charge_stop == true)
+        return;
     halAdiBusBatchChange(
         &hwp_rda2720mGlobal->chgr_ctrl0, REG_FIELD_MASKVAL1(chargCtrol0, chgr_pd, 0),
         HAL_ADI_BUS_CHANGE_END);
@@ -605,6 +741,11 @@ static void _drvChargerVbatQueueInit(uint32_t vbat_vol, uint32_t queue_len)
     module_state.bat_statistic_vol = vbat_vol;
 }
 
+uint16_t drvChargerGetBatteryVoltage()
+{
+    return module_state.bat_statistic_vol & 0xffff;
+}
+
 static void _drvChargerSetChargerCurrentAccordMode(chgAdapterType_e mode)
 {
     switch (mode)
@@ -717,8 +858,88 @@ static uint32_t _drvChargerGetChgCurrent(void)
     uint32_t chgCurrent = 0;
     progAdcResult = _drvChargerGetVprogAdcResult();
     chgCurrent = _drvChargerAdcValueToCurrent(progAdcResult);
-    OSI_LOGD(0, "_drvChargerGetChgCurrent:progAdcResult:%d,chgCurrent:%d\n", progAdcResult, chgCurrent);
+    OSI_LOGD(0, "chg: _drvChargerGetChgCurrent:progAdcResult:%d,chgCurrent:%d\n", progAdcResult, chgCurrent);
     return chgCurrent;
+}
+
+static uint32_t _drvChargerGetADCResultByChannel(uint32_t adc_channel, int32_t scale)
+{
+    int32_t i, j, temp;
+    int32_t vbat_result[VBAT_RESULT_NUM];
+
+    for (i = 0; i < VBAT_RESULT_NUM; i++)
+    {
+        vbat_result[i] = drvAdcGetChannelVolt(adc_channel, scale);
+        OSI_LOGD(0, "chg: _GetADCResult i:%d adc:%d", i, vbat_result[i]);
+    }
+
+    for (j = 1; j <= VBAT_RESULT_NUM - 1; j++)
+    {
+        for (i = 0; i < VBAT_RESULT_NUM - j; i++)
+        {
+            if (vbat_result[i] > vbat_result[i + 1])
+            {
+                temp = vbat_result[i];
+                vbat_result[i] = vbat_result[i + 1];
+                vbat_result[i + 1] = temp;
+            }
+        }
+    }
+
+    return vbat_result[VBAT_RESULT_NUM / 2];
+}
+
+static uint32_t _drvChargerGetChannelVol(uint32_t adc_channel, int32_t scale)
+{
+
+    uint32_t vol = 0;
+
+    vol = _drvChargerGetADCResultByChannel(adc_channel, scale);
+
+    OSI_LOGD(0, "chg: etChannelVol adc_channel:%d vol=%d", adc_channel, vol);
+
+    return vol;
+}
+
+static int32_t _drvChargerGetVbatTempVolValue(void)
+{
+    uint32_t vol = 0;
+    uint32_t i = 0;
+    int32_t temp = 0;
+    uint32_t table_size = sizeof(vbat_temp_table) / sizeof(vbat_temp_table[0]);
+
+    vol = _drvChargerGetChannelVol(ADC_CHANNEL_BAT_DET, ADC_SCALE_1V250);
+
+    for (i = 0; i < table_size; i++)
+    {
+        if (vol >= vbat_temp_table[i][0])
+        {
+            break;
+        }
+    }
+
+    if (i < table_size)
+    {
+        temp = vbat_temp_table[i][1];
+    }
+    else
+    {
+        temp = vbat_temp_table[table_size - 1][1];
+    }
+
+    OSI_LOGD(0, "chg: VbatTempVolValue temp=%d, vol=%d", temp, vol);
+
+    return temp;
+}
+
+OSI_UNUSED static uint32_t _drvChargerGetCurrentTemp(void)
+{
+    int32_t result = 0;
+
+    result = CHG_NV_TEMP_OFFSET + _drvChargerGetVbatTempVolValue();
+    OSI_LOGD(0, "chg: GetCurrentTemp = %d", result);
+    module_state.charging_temperature = result;
+    return (uint32_t)result;
 }
 
 static void _drvChargerSendMsgToClient(CHR_SVR_MSG_SERVICE_E msg, uint32_t param)
@@ -1064,6 +1285,7 @@ static uint32_t _drvChargerVoltagePercentum(uint32_t voltage, chgState_e is_char
 /*****************************************************************************/
 //  Description:    The function calculates the vbat every 2 seconds.
 /*****************************************************************************/
+
 static void _drvChargerVbatMonitorRoutine()
 {
     /*If we had inform the upper layer to shutdown, we will not send any other messages
@@ -1078,6 +1300,30 @@ static void _drvChargerVbatMonitorRoutine()
         OSI_LOGI(0, "chg: _drvChargerVbatMonitorRoutine NO BAT");
         return;
     }
+
+#ifdef _DETEDCT_BATTERY_TEMP_
+    _drvChargerGetCurrentTemp();
+    OSI_LOGI(0, "chg: charging_temperature = %d", module_state.charging_temperature);
+    if (module_state.charging_temperature >= HOT_TEMP) //
+    {
+        _drvChargerSendMsgToClient(CHR_WARNING_IND, 0);
+        if (module_state.chgmng_state == CHG_CHARGING)
+        {
+            _drvChargerFSMProcess(CHG_FSM_EVENT_STOP_CHG, CHG_OVERTEMP);
+            module_state.charging_stop_reason = CHG_OVERTEMP;
+            OSI_LOGI(0, "chg: stop charging for over temperaure");
+        }
+    }
+    else
+    {
+        OSI_LOGI(0, "chg: low temperaure %d", module_state.chgmng_state);
+        if (module_state.chgmng_state == CHG_IDLE)
+        {
+            OSI_LOGI(0, "chg: start charging for over temperaure");
+            _drvChargerFSMProcess(CHG_FSM_EVENT_START_CHG, 0);
+        }
+    }
+#endif
 
     if (module_state.chgmng_state == CHG_IDLE)
     {
@@ -1207,6 +1453,10 @@ static void _drvChargerMonitorChargerRoutine(void)
 
     if (module_state.chgmng_state == CHG_IDLE)
     {
+        if (module_state.charging_stop_reason == CHG_OVERTEMP)
+        {
+            return;
+        }
 
         // check if need to recharge
         if (module_state.bat_statistic_vol <= chg_param.rechg_vol)
@@ -1625,4 +1875,15 @@ void drvChargerInit(void)
     _updateChargerStatus(p);
 
     OSI_LOGI(0, "chg: drvChargerInit end");
+}
+
+void drvChargeEnable(void)
+{
+    charge_stop = false;
+    _drvChargerTurnOn();
+}
+void drvChargeDisable(void)
+{
+    charge_stop = true;
+    _drvChargerTurnOff();
 }

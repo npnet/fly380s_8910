@@ -201,7 +201,7 @@ static void _AtMqttPostEventCb(void *param)
     case MQTT_CONN_RSP_LOST:
     {
         cOutstr[0] = '\0';
-        sprintf(cOutstr, "%s", "+MQTTDISCONNECTED:256");
+        sprintf(cOutstr, "%s", "+MQTTDISCONNECTED:256,connection lost.");
         cOutstr[strlen(cOutstr)] = '\0';
         atCmdRespInfoText(g_atCmdEngine, cOutstr);
         MQTTAsync_destroy(&g_stMqttClient);
@@ -211,13 +211,16 @@ static void _AtMqttPostEventCb(void *param)
     case MQTT_DISCONN_RSP_SUCC:
     {
         MQTTAsync_destroy(&g_stMqttClient);
-        atCmdRespOK(g_atCmdEngine);
+        //atCmdRespOK(g_atCmdEngine);
         MqttOptsUninit();
         break;
     }
     case MQTT_DISCONN_RSP_FAIL:
     {
-        atCmdRespCmeError(g_atCmdEngine, ERR_AT_CME_EXE_FAIL);
+        cOutstr[0] = '\0';
+        sprintf(cOutstr, "%s", "+MQTTDISCONNECTED:disconnect fail.");
+        cOutstr[strlen(cOutstr)] = '\0';
+        atCmdRespInfoText(g_atCmdEngine, cOutstr);
         break;
     }
     default:
@@ -440,7 +443,7 @@ void AT_GPRS_CmdFunc_MQTTCONN(atCommand_t *pParam)
         if (7 == pParam->param_count)
         {
             pcUserName = (char *)atParamStr(pParam->params[5], &bParamRet);
-            if ((false == bParamRet) || (strlen(pcHost) > MQTT_HOSTNAME_LEN_MAX - 1))
+            if ((false == bParamRet) || (strlen(pcUserName) > MQTT_HOSTNAME_LEN_MAX - 1))
             {
                 cDebugBuf[0] = '\0';
                 sprintf(cDebugBuf, "%s%s(%d):Param[5] error.", MQTT_DEBUG_HEAD, __func__, __LINE__);
@@ -449,7 +452,7 @@ void AT_GPRS_CmdFunc_MQTTCONN(atCommand_t *pParam)
             }
 
             pcPassword = (char *)atParamStr(pParam->params[6], &bParamRet);
-            if ((false == bParamRet) || (strlen(pcHost) > MQTT_PASSWORD_LEN_MAX - 1))
+            if ((false == bParamRet) || (strlen(pcPassword) > MQTT_PASSWORD_LEN_MAX - 1))
             {
                 cDebugBuf[0] = '\0';
                 sprintf(cDebugBuf, "%s%s(%d):Param[6] error.", MQTT_DEBUG_HEAD, __func__, __LINE__);
@@ -942,7 +945,7 @@ void AT_GPRS_CmdFunc_MQTTDISCONN(atCommand_t *pParam)
     }
 
 Success:
-    return;
+    RETURN_OK(pParam->engine);
 Fail:
     RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
 NotSurropt:

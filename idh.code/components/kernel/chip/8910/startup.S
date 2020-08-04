@@ -69,10 +69,10 @@ Reset_Handler:
     BLX     osiBootStart
     .endfunc
 
-    .global WakeupPm1_Handler
-    .type   WakeupPm1_Handler, %function
+    .global osiWakePm1Entry
+    .type   osiWakePm1Entry, %function
     .func
-WakeupPm1_Handler:
+osiWakePm1Entry:
     MRC     p15, 0, R0, c1, c0, 0   // Read CP15 System Control register
     ORR     R0, R0, #(0x1 << 12)    // Set I bit 12 to enable I Cache
     MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register
@@ -99,10 +99,10 @@ WakeupPm1_Handler:
     BLX     osiWakePm1
     .endfunc
 
-    .global WakeupPm2_Handler
-    .type   WakeupPm2_Handler, %function
+    .global osiWakePm2Entry
+    .type   osiWakePm2Entry, %function
     .func
-WakeupPm2_Handler:
+osiWakePm2Entry:
     MRC     p15, 0, R0, c1, c0, 0   // Read CP15 System Control register
     ORR     R0, R0, #(0x1 << 12)    // Set I bit 12 to enable I Cache
     MCR     p15, 0, R0, c1, c0, 0   // Write value back to CP15 System Control register
@@ -127,28 +127,4 @@ WakeupPm2_Handler:
     LDR     SP, =__sys_stack_top
 
     BLX     osiWakePm2
-    .endfunc
-
-    .global SaveContext
-    .type   SaveContext, %function
-    .func
-SaveContext:
-    STMIA   R0, {R4-R14}
-    MOV     R2, SP
-    LDR     SP, =__svc_stack_top
-    PUSH    {R2, LR}
-    BLX     R1
-    POP     {R2, LR}
-    MOV     SP, R2
-    MOV     R0, #1
-    BX      LR
-    .endfunc
-
-    .global RestoreContext
-    .type   RestoreContext, %function
-    .func
-RestoreContext:
-    LDMIA   R0, {R4-R14}
-    MOV     R0, #0
-    BX      LR
     .endfunc

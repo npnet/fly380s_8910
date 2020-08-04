@@ -14,44 +14,61 @@
 #include "osi_profile.h"
 #include "osi_chip.h"
 #include "hwregs.h"
+#include <assert.h>
 
-#define PROFILE_BUF_SIZE (48 * 1024)
-#define PROFILE_STOP_ON_FULL (0)
+static_assert(OSI_IS_ALIGNED(CONFIG_KERNEL_PROFILE_BUF_SIZE, 4),
+              "CONFIG_KERNEL_PROFILE_BUF_SIZE should be 4 aligned");
 
 typedef struct
 {
-    uint32_t config;
-    uint32_t *start_address;
-    uint16_t pos;
-    uint16_t size;
-    uint32_t freq;
+    uint32_t mode;           // profile mode
+    uint32_t *start_address; // profile buffer start address
+    uint16_t pos;            // profile next write position, in word
+    uint16_t size;           // profile buffer size, in word
+    uint32_t freq;           // profile tick frequency
 } osiProfileContext_t;
 
-static uint32_t gProfileBuf[PROFILE_BUF_SIZE / 4];
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
+static uint32_t gProfileBuf[CONFIG_KERNEL_PROFILE_BUF_SIZE / 4];
 static osiProfileContext_t gProfileCtx;
+#endif
 
 void osiProfileInit(void)
 {
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
     osiProfileContext_t *p = &gProfileCtx;
-    p->config = 0;
+    p->mode = OSI_PROFILE_MODE_NORMAL;
     p->start_address = gProfileBuf;
     p->pos = 0;
-    p->size = PROFILE_BUF_SIZE / 4;
+    p->size = CONFIG_KERNEL_PROFILE_BUF_SIZE / 4;
     p->freq = osiChipProfileTickFreq();
+#endif
+}
+
+void osiProfileSetMode(osiProfileMode_t mode)
+{
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
+    unsigned critical = osiEnterCritical();
+    osiProfileContext_t *p = &gProfileCtx;
+    if (p->mode != mode)
+    {
+        p->mode = mode;
+        p->pos = 0;
+    }
+    osiExitCritical(critical);
+#endif
 }
 
 void osiProfileCode(unsigned code)
 {
-    // config: 0/running 1/pause
-    // remainingSize: total size
-
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
     osiProfileContext_t *p = &gProfileCtx;
     if (p->start_address == 0)
         return;
 
     unsigned critical = osiEnterCritical();
 
-    if (PROFILE_STOP_ON_FULL && p->pos + 1 >= p->size)
+    if (p->mode == OSI_PROFILE_MODE_STOP_ON_FULL && p->pos + 1 >= p->size)
     {
         osiExitCritical(critical);
         return;
@@ -75,46 +92,59 @@ void osiProfileCode(unsigned code)
         p->pos = 0;
 
     osiExitCritical(critical);
+#endif
 }
 
 void osiProfileEnter(unsigned code)
 {
-    osiProfileCode(code);
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
+    osiProfileCode(code & ~PROFCODE_EXIT_FLAG);
+#endif
 }
 
 void osiProfileExit(unsigned code)
 {
-    osiProfileCode(code | CPEXITFLAG);
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
+    osiProfileCode(code | PROFCODE_EXIT_FLAG);
+#endif
 }
 
 void osiProfileThreadEnter(unsigned id)
 {
-    unsigned code = id + CPTHREAD_START;
-    if (code > CPTHREAD_END)
-        code = CPTHREAD_END;
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
+    unsigned code = id + PROFCODE_THREAD_START;
+    if (code > PROFCODE_THREAD_END)
+        code = PROFCODE_THREAD_END;
     osiProfileCode(code);
+#endif
 }
 
 void osiProfileThreadExit(unsigned id)
 {
-    unsigned code = id + CPTHREAD_START;
-    if (code > CPTHREAD_END)
-        code = CPTHREAD_END;
-    osiProfileCode(code | CPEXITFLAG);
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
+    unsigned code = id + PROFCODE_THREAD_START;
+    if (code > PROFCODE_THREAD_END)
+        code = PROFCODE_THREAD_END;
+    osiProfileCode(code | PROFCODE_EXIT_FLAG);
+#endif
 }
 
 void osiProfileIrqEnter(unsigned id)
 {
-    unsigned code = id + CPIRQ_START;
-    if (code > CPIRQ_END)
-        code = CPIRQ_END;
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
+    unsigned code = id + PROFCODE_IRQ_START;
+    if (code > PROFCODE_IRQ_END)
+        code = PROFCODE_IRQ_END;
     osiProfileCode(code);
+#endif
 }
 
 void osiProfileIrqExit(unsigned id)
 {
-    unsigned code = id + CPIRQ_START;
-    if (code > CPIRQ_END)
-        code = CPIRQ_END;
-    osiProfileCode(code | CPEXITFLAG);
+#if (CONFIG_KERNEL_PROFILE_BUF_SIZE > 0)
+    unsigned code = id + PROFCODE_IRQ_START;
+    if (code > PROFCODE_IRQ_END)
+        code = PROFCODE_IRQ_END;
+    osiProfileCode(code | PROFCODE_EXIT_FLAG);
+#endif
 }
