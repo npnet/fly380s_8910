@@ -37,7 +37,8 @@ static void activity_destory(lv_obj_t *obj)
 static void * about_list_create(lv_obj_t * parent, lv_area_t display_area)
 {
     activity_list = lv_poc_list_create(parent, NULL, display_area, about_list_config);
-    return (void *)activity_list;
+	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
+	return (void *)activity_list;
 }
 
 typedef struct

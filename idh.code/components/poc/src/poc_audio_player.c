@@ -13,6 +13,9 @@
 // #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
 #include "poc_audio_player.h"
+#include "lv_include/lv_poc_type.h"
+#include "lv_include/lv_poc.h"
+
 #ifdef CONFIG_POC_AUDIO_PLAYER_SUPPORT
 
 static void prvPocAudioPlayerMemWriterDelete(auWriter_t *d)
@@ -324,7 +327,10 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 	{
 		return false;
 	}
-
+	#if 0
+	/*对讲前还原音量*/
+	lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
+	#endif
 #if 1
 	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
@@ -386,6 +392,7 @@ bool pocAudioPlayerStop(POCAUDIOPLAYER_HANDLE player_id)
 	{
 		return false;
 	}
+
 	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
 	if(auPlayerStop((auPlayer_t *)player->player))
 	{
@@ -394,6 +401,7 @@ bool pocAudioPlayerStop(POCAUDIOPLAYER_HANDLE player_id)
 		return true;
 	}
 	pocAudioPlayerReset(player_id);
+
 	return false;
 }
 

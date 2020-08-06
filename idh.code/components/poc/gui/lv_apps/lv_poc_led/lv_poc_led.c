@@ -37,7 +37,8 @@ typedef struct _PocLedIdtComAttr_t
 	uint16_t    jumpperiod;
 	uint16_t	jumpcount;
 	bool        ledstatus;
-	uint8_t 	charge_status;
+	uint8_t 	before_status;/*记录上次运行状态*/
+	uint16_t    before_jumpperiod;/*记录上次的运行周期*/
 } PocLedIdtComAttr_t;
 
 static PocLedIdtComAttr_t pocLedIdtAttr = {0};
@@ -124,14 +125,27 @@ static void poc_Led_Entry(void *param)
 				break;
 
 		    case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
-
-				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
-
+		    {
+				switch(pocLedIdtAttr.before_status)
+				{
+					case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
+					{
+						pocLedIdtAttr.jumpperiod = pocLedIdtAttr.before_jumpperiod;
+						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
+						break;
+					}
+					default:
+					{
+						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
+						break;
+					}
+				}
 				break;
+		    }
 
 			case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
-
-				switch(pocLedIdtAttr.charge_status)
+			{
+				switch(pocLedIdtAttr.before_status)
 				{
 					case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
 					{
@@ -150,39 +164,42 @@ static void poc_Led_Entry(void *param)
 					}
 					case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
 					{
+						pocLedIdtAttr.jumpperiod = pocLedIdtAttr.before_jumpperiod;
 						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
 						break;
 					}
 				}
 
 				break;
+			}
 
 			case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
 
-				pocLedIdtAttr.charge_status = LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS;
+				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS;
+				pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
 
 				break;
 
 			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
 
-				pocLedIdtAttr.charge_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS;
+				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS;
 				lv_poc_red_open_green_close();
 
 				break;
 			case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
 
-				pocLedIdtAttr.charge_status = LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS;
+				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS;
 				lv_poc_led_status_all_close();
 
 				break;
 
 			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
 
-				pocLedIdtAttr.charge_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS;
+				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS;
 				lv_poc_red_close_green_open();
 
 				break;

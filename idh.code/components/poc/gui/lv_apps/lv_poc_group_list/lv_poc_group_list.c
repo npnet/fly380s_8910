@@ -89,7 +89,8 @@ static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
     display_area.y1 = 0;
     display_area.y2 = lv_poc_get_display_height(display);
     activity_list = lv_poc_list_create(display, NULL, display_area, lv_poc_group_list_list_config);
-    return (lv_obj_t *)activity_list;
+	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
+	return (lv_obj_t *)activity_list;
 }
 
 static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
@@ -169,7 +170,7 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     }
     else
     {
-	    poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
+	    poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
     }
 }
@@ -336,7 +337,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 		case LV_SIGNAL_FOCUS:
 		{
-			/*可以解决白屏问题，但是锁组死机*/
+			/*解决白屏问题*/
 			#if 1
 			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
 				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
@@ -410,7 +411,7 @@ static void lv_poc_get_group_list_cb(int result_type)
 	}
 	else
 	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, true);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 }
@@ -548,7 +549,7 @@ static void lv_poc_group_delete_oprator_cb(int result_type)
 
 			if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
 			{
-				poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, true);
+				poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 			}
 		}
@@ -689,7 +690,7 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     {
 		if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
 		{
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, true);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 		}
     }
@@ -1304,7 +1305,7 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 
 	if(result_type == 1)
 	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Join_Group, false);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Join_Group, 50, false);
 		if(lv_poc_group_current_info != NULL && activity_list != NULL)
 		{
 			lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);

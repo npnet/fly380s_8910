@@ -297,7 +297,7 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 
 /*电池图标*/
 const lv_img_dsc_t *battery_img_dispaly[9] = { &stat_sys_battery_charge_anim0
-												,&stat_sys_battery_charge_anim15
+												//,&stat_sys_battery_charge_anim15
 												,&stat_sys_battery_charge_anim28
 												,&stat_sys_battery_charge_anim43
 												,&stat_sys_battery_charge_anim57
@@ -553,10 +553,12 @@ bool lv_poc_setting_init(void)
 {
     lv_poc_setting_conf_init();
     poc_setting_conf = lv_poc_setting_conf_read();
+	poc_setting_conf->voicevolume = 3;
 	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
 	lv_poc_set_volum(POC_MMI_VOICE_MSG, 3, false, false);
+	lv_poc_set_volum(POC_MMI_VOICE_VOICE, poc_setting_conf->voicevolume, false, false);
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_keypad_led_init();
 #endif
@@ -2323,7 +2325,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
             if(low_battery_check_count < 1)
             {
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
-	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, false);
+	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, 50, false);
             }
             low_battery_check_count = (low_battery_check_count + 1) % (60*5);/*5min提示一次*/
             return (lv_img_dsc_t *)battery_img;
@@ -2342,14 +2344,14 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         if(battery_t.battery_value >= 100)
         {
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-			battery_img_cur = 7;
+			battery_img_cur = 6;
             battery_img = battery_img_dispaly[battery_img_cur];
         }
         else if(battery_t.battery_value >= 85)
         {
 			battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
-			if(battery_img_cur>7)
+			if(battery_img_cur>6)
 			battery_img_cur=6;
         }
         else if(battery_t.battery_value >= 71)
@@ -2357,42 +2359,42 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			battery_img = battery_img_dispaly[battery_img_cur];
 
 			battery_img_cur++;
-			if(battery_img_cur>7)
+			if(battery_img_cur>6)
 			battery_img_cur=5;
         }
         else if(battery_t.battery_value >= 57)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
-			if(battery_img_cur>7)
+			if(battery_img_cur>6)
 			battery_img_cur=4;
         }
         else if(battery_t.battery_value >= 43)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
-			if(battery_img_cur>7)
+			if(battery_img_cur>6)
 			battery_img_cur=3;
         }
         else if(battery_t.battery_value >= 28)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
-			if(battery_img_cur>7)
+			if(battery_img_cur>6)
 			battery_img_cur=2;
         }
-        else if(battery_t.battery_value >= 15)
-        {
-            battery_img = battery_img_dispaly[battery_img_cur];
-			battery_img_cur++;
-			if(battery_img_cur>7)
-			battery_img_cur=1;
-        }
+//        else if(battery_t.battery_value >= 15)
+//        {
+//            battery_img = battery_img_dispaly[battery_img_cur];
+//			battery_img_cur++;
+//			if(battery_img_cur>7)
+//			battery_img_cur=1;
+//        }
         else if(battery_t.battery_value >= 0)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
-			if(battery_img_cur>7)
+			if(battery_img_cur>6)
 			battery_img_cur=0;
         }
 

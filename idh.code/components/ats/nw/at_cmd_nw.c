@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -450,13 +450,6 @@ static void _onEV_CFW_NW_NETWORKINFO_IND(const osiEvent_t *event)
 #if defined(AT_CUCC_DATAREG) || defined(AT_CTCC_DATAREG)
     //startIotSelfRegOnce(gAtCurrentSetting.self_register);
 #endif
-	/*！----------自定义加入这层*/
-	/*判断是否有网络下发校时功能*/
-	if(p->nUniversalTimeZoneLen == 0)
-		Net_Time_flag = false;
-	else
- 		Net_Time_flag = true;
-	/*----------------------！*/
 
     if (p->nUniversalTimeZoneLen > 0)
     {
@@ -516,6 +509,19 @@ static void _onEV_CFW_NW_NETWORKINFO_IND(const osiEvent_t *event)
             atCmdRespDefUrcText(rsp);
         }
     }
+	/*！----------自定义加入这层*/
+	/*判断是否有网络下发校时功能*/
+	if(p->nUniversalTimeZoneLen == 0)
+	{
+		OSI_LOGI(0, "[song]nas network haven't update time\n");
+		Net_Time_flag = false;
+	}
+	else
+	{
+		OSI_LOGI(0, "[song]nas network have update time\n");
+ 		Net_Time_flag = true;
+	}
+	/*----------------------！*/
 }
 #ifdef CFW_VOLTE_SUPPORT
 extern CFW_NW_EMC_NUM_LIST_INFO gAtNwEmcNumList;

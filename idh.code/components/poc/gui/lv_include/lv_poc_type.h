@@ -132,6 +132,7 @@ typedef struct
 #endif
 	uint8_t volume;                   //[0-10]    [default 5]
 	uint8_t tonevolume;               //[0-10]    [default 3]
+	uint8_t voicevolume;              //[0-10]    [default 4]
 	uint8_t language;                 //[0]简体中文       [default 0]
 	nv_poc_font_size_msg_t font;
 	nv_poc_theme_msg_t theme;
@@ -192,6 +193,7 @@ typedef enum
 	POC_MMI_VOICE_KEY,
 	POC_MMI_VOICE_PLAY,
 	POC_MMI_VOICE_CALL,
+	POC_MMI_VOICE_VOICE,
 } POC_MMI_VOICE_TYPE_E;
 
 typedef enum

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -38,10 +38,14 @@ void sntpSyncDoneCB(void *param)
     if (result->iRspCode == 0)
     {
         sprintf(cString, "+SNTP: FAILED\r\n");
+		/*校时失败*/
+		OSI_LOGI(0, "[song]sntp network update time failed");
     }
     else
     {
         sprintf(cString, "+SNTP: OK\r\n");
+		/*校时成功*/
+		OSI_LOGI(0, "[song]sntp network update time success");
     }
     atCmdRespDefUrcText(cString);
 

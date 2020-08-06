@@ -166,6 +166,10 @@ lv_poc_setting_get_current_volume(IN POC_MMI_VOICE_TYPE_E type)
 	{
 		return config->volume;
 	}
+	else if(type == POC_MMI_VOICE_VOICE)
+	{
+		return config->voicevolume;
+	}
 	return 0xff;
 }
 
@@ -200,12 +204,18 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
 		config->volume = poc_volum / 10;
 		audevSetPlayVolume(poc_volum);
 	}
+	else if(type == POC_MMI_VOICE_VOICE)
+	{
+		if(config->voicevolume == poc_volum / 10)return;
+		config->voicevolume = poc_volum / 10;
+		audevSetPlayVolume(poc_volum);
+	}
 	lv_poc_setting_conf_write();
 
-	if(play && !ttsIsPlaying())
-	{
-		poc_play_btn_voice_one_time(config->volume, play);
-	}
+//	if(play && !ttsIsPlaying())
+//	{
+//		poc_play_btn_voice_one_time(config->volume, play);
+//	}
 }
 
 /*
@@ -577,7 +587,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
-				PlayVoiceType = true;
+				PlayVoiceType = false;
 				break;
 
 			default:
@@ -630,7 +640,7 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
       date : 2020-06-11
 */
 void
-poc_play_voice_one_time(IN       LVPOCAUDIO_Type_e voice_type, IN bool isBreak)
+poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN bool isBreak)
 {
 	if(NULL != prv_play_btn_voice_one_time_player)
 	{
@@ -654,6 +664,8 @@ poc_play_voice_one_time(IN       LVPOCAUDIO_Type_e voice_type, IN bool isBreak)
 			return;
 		}
 	}
+//	/*设置音量*/
+//	audevSetPlayVolume(volume);
 
 	osiEvent_t event = {0};
 	event.id = 101;
@@ -979,7 +991,7 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	if(!poc_check_sim_prsent(POC_SIM_1))
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, false);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, 50, false);
 		return false;
 	}
 
@@ -987,14 +999,14 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		CFW_NwGetStatus(&nStatusInfo, nSim) != 0)
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
-		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, false);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
 		return false;
 	}
 
 	if(nStatusInfo.nStatus == 0 || nStatusInfo.nStatus == 2 || nStatusInfo.nStatus == 4)
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
-		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, false);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
 		return false;
 	}
 	return true;

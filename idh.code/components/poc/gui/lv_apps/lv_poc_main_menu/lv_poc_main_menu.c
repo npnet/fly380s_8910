@@ -100,7 +100,8 @@ static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
 static void * lv_poc_main_menu_list_create(lv_obj_t * parent, lv_area_t display_area)
 {
     main_menu_list = lv_poc_list_create(parent, NULL, display_area, lv_poc_list_config);
-    return (void *)main_menu_list;
+	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
+	return (void *)main_menu_list;
 }
 
 static void  lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)

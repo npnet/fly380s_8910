@@ -55,10 +55,11 @@ void lv_poc_sntp_Update_Time(void)
 
 	if (result == CFW_SNTP_READY)
 	{
-
+		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP: CFW_SNTP_READY\n");
 	}
 	else if (result == CFW_SNTP_PARAM_INVALID)
 	{
+		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP: CFW_SNTP_PARAM_INVALID\n");
 		free(sntpClient);//ERR_AT_CME_PARAM_INVALID
 		sntpClient = NULL;
 	}
@@ -66,9 +67,6 @@ void lv_poc_sntp_Update_Time(void)
 	{
 		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP:  sync time is processing,ERR_AT_CME_SNTP_SYNCING\n");
 	}
-
-	/*校时成功*/
-	OSI_LOGI(0, "[song]network update time success");
 
 }
 

@@ -54,7 +54,8 @@ static int lv_poc_member_list_get_member_type = -1;
 static lv_obj_t * lv_poc_member_list_activity_create(lv_poc_display_t *display)
 {
     activity_win = lv_poc_win_create(display, (const char *)lv_poc_member_list_title, lv_poc_member_list_list_create);
-    return (lv_obj_t *)activity_win;
+	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
+	return (lv_obj_t *)activity_win;
 }
 
 static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
@@ -164,7 +165,7 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 		}
 		else
 		{
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, true);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, 50, true);
 			lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, false);
 			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_offline, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
 			lv_task_once(once_task);
@@ -191,7 +192,7 @@ static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 		sigal_member_list = lv_list_get_btn_selected(activity_list);
 		if(NULL != strstr(lv_list_get_btn_text(sigal_member_list),"我"))//如果是自己
 		{
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Unable_To_Call_Yourself, true);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Unable_To_Call_Yourself, 50, true);
 			lv_poc_member_call_obj_information = NULL;
 			return;
 		}
@@ -312,7 +313,7 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	}
 	else
 	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 
@@ -370,7 +371,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     {
 		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
 		{
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 		}
     }
