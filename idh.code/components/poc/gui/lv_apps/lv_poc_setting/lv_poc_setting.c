@@ -247,6 +247,7 @@ static lv_obj_t * poc_setting_create(lv_poc_display_t *display)
 #if 1
     poc_setting_win = lv_poc_win_create(display, lv_poc_setting_title_text, poc_setting_list_create);
 #endif
+	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
     return (lv_obj_t  *)poc_setting_win;
 }
 

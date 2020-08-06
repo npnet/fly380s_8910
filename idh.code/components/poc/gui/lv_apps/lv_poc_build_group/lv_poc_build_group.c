@@ -52,6 +52,7 @@ static lv_obj_t * lv_poc_build_group_activity_create(lv_poc_display_t *display)
 #if 1
     activity_win = lv_poc_win_create(display, "成员列表", lv_poc_build_group_list_create);
 #endif
+	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
     return (lv_obj_t *)activity_win;
 }
 
@@ -117,12 +118,12 @@ static void lv_poc_build_group_new_group_cb_refresh(lv_task_t *task)
 
 	if(result_type == 1)
 	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Build_Group, true);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Build_Group, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_success_text, NULL);
 	}
 	else
 	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_To_Build_Group, true);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_To_Build_Group, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_failed_text, NULL);
 	}
 	lv_poc_del_activity(poc_build_group_activity);
@@ -152,7 +153,7 @@ static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, i
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,
 				(const uint8_t *)lv_poc_build_group_few_member_text1,
 				(const uint8_t *)lv_poc_build_group_few_member_text2);
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_To_Build_Group_Due_To_Less_Than_Two_People, true);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_To_Build_Group_Due_To_Less_Than_Two_People, 50, true);
 		}
 		lv_poc_del_activity(poc_build_group_activity);
 		return false;
@@ -313,7 +314,7 @@ static void lv_poc_build_group_get_list_cb(int msg_type)
 	}
 	else
 	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 }
@@ -350,7 +351,7 @@ void lv_poc_build_group_open(void)
 
 	if(!lv_poc_get_member_list(NULL, lv_poc_build_group_member_list, 1, lv_poc_build_group_get_list_cb))
 	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, true);
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 
@@ -483,7 +484,6 @@ void lv_poc_build_group_refresh(lv_task_t * task)
         lv_obj_set_height(btn, btn_height);
 
         btn_label = lv_list_get_btn_label(btn);
-
         lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
 
         btn_checkbox = lv_cb_create(btn, NULL);
@@ -491,24 +491,25 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_online.header.w - 5);
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
-        p_info->item_information = p_cur->information;
-        p_info->checkbox = btn_checkbox;
-		p_info->is_selected = false;
-        btn->user_data = (void *)p_info;
-        p_info++;
-        p_cur = p_cur->next;
-
 		/*把自己选上*/
 		if(NULL != strstr(lv_list_get_btn_text(btn),"我"))//如果是自己
 		{
 			OSI_LOGI(0, "[song]build group is me");
+			p_info->is_selected = true;
 			lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_PR);
 			lv_poc_build_group_selected_num++;
 		}
 		else
 		{
+			p_info->is_selected = false;
 			lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
 		}
+
+        p_info->item_information = p_cur->information;
+        p_info->checkbox = btn_checkbox;
+        btn->user_data = (void *)p_info;
+        p_info++;
+        p_cur = p_cur->next;
 
         if(member_list_is_first_item == 1)
         {
