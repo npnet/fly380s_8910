@@ -30,6 +30,7 @@
 #include "audio_device.h"
 #include <sys/time.h>
 #include "lv_include/lv_poc_lib.h"
+
 #include "cJSON.h"
 
 extern "C" lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
@@ -71,6 +72,7 @@ static bool LvGuiIdtCom_self_is_member_call(char * info);
 static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx);
 static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx);
 static void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_str);
+static void lv_poc_GuiIdtTask_Tread_delay(lv_task_t *task);
 
 char *LvPocGetCauseStr(USHORT usCause)
 {
@@ -1303,6 +1305,7 @@ static void LvGuiIdtCom_auto_login_timer_cb(void *ctx)
 	{
 		if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
 		{
+			OSI_LOGI(0, "[song]autologin ing...[3]\n");
 			pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING;
 		}
 	}
@@ -1586,6 +1589,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "尝试登陆中...");
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"发出申请", (const uint8_t *)"");
 				osiTimerStart(pocIdtAttr.try_login_timer, 2000);/*为了播放语音加的延时登陆功能*/
+				OSI_LOGI(0, "[song]relogin start[3]\n");
 				break;
 			}/*尝试登陆中*/
 			if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING)
@@ -1983,7 +1987,7 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 			Msg_GROUP_MEMBER_s * member = NULL;
 			GROUP_MEMBER_s * gmember = NULL;
 
-			int gNameLen = 0;
+			//int gNameLen = 0;
 			memset(&g_data, 0, sizeof(GData_s));
 			g_data.dwNum = new_group->num;
 			g_data.ucPriority = m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucPriority;
@@ -2002,6 +2006,7 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 				gmember->ucChanNum = member->ucChanNum;
 				gmember->ucStatus = member->ucStatus;
 				gmember->ucFGCount = member->ucFGCount;
+				#if 0
 				gNameLen = strlen((const char *)g_data.ucName);
 				if(gNameLen + strlen((const char *)member->ucName) < 64)
 				{
@@ -2011,6 +2016,10 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 					}
 					strcat((char *)g_data.ucName, (const char *)member->ucName);
 				}
+				#endif
+				/*群组名字*/
+				strcpy((char *)g_data.ucName, (const char *)lv_poc_get_self_name_count());
+				//strcat((char *)g_data.ucName, (const char *)"(自建)");
 			}
 
 			//IDT_GAdd(m_IdtUser.m_Group.m_Group_Num, &g_data);
@@ -2725,7 +2734,7 @@ static void prvPocGuiIdtTaskHandleGuStatus(uint32_t id, uint32_t ctx)
 {
 	switch(id)
 	{
-		case LVPOCGUIIDTCOM_SIGNAL_GU_STATUS_REP:
+		case LVPOCGUIIDTCOM_SIGNAL_GU_STATUS_REP:/*组或者用户状态发生变化*/
 		{
 			if(ctx == 0)
 			{
@@ -2991,7 +3000,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 					osiTimerStart(pocIdtAttr.get_member_list_timer, 1000);
 				}
 			}
-			else if (OPT_G_DEL == grop->dwOptCode)
+			else if (OPT_G_DEL == grop->dwOptCode)/*删除组*/
 			{
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP, grop);
 			}
@@ -3195,7 +3204,7 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 			{
 				del_group->cb(3);
 				break;
-			}
+			}/*不能删除自己当前组*/
 
 			for(i = 0; i < m_IdtUser.m_Group.m_Group_Num; i++)
 			{
@@ -3205,19 +3214,23 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 				}
 			}
 
-			if(i >= m_IdtUser.m_Group.m_Group_Num)
+			if(i >= m_IdtUser.m_Group.m_Group_Num)/*未找到该组*/
 			{
 				del_group->cb(4);
 				break;
 			}
 
 			pocIdtAttr.pocDeleteGroupcb = del_group->cb;
-
-			if(IDT_GDel(i, group_info->m_ucGNum) == -1)
+			lv_task_t *Thead_task = NULL;
+			Thead_task = lv_task_create(lv_poc_GuiIdtTask_Tread_delay, 50, LV_TASK_PRIO_HIGH, (void *)group_info->m_ucGNum);
+			lv_task_once(Thead_task);
+			#if 0
+			if(IDT_GDel(0, group_info->m_ucGNum) == -1)
 			{
 				pocIdtAttr.pocDeleteGroupcb(5);
 				pocIdtAttr.pocDeleteGroupcb = NULL;
 			}
+			#endif
 			break;
 		}
 
@@ -3737,6 +3750,25 @@ void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_
 			break;
 		}
 	}
+}
+
+/*
+	  name : lv_poc_GuiIdtTask_Tread_delay
+	 param :
+	author : wangls
+  describe : 处理需要部分延时处理的消息
+	  date : 2020-08-06
+*/
+static
+void lv_poc_GuiIdtTask_Tread_delay(lv_task_t *task)
+{
+
+	if(IDT_GDel(0, (UCHAR *)task->user_data) == -1)
+	{
+		pocIdtAttr.pocDeleteGroupcb(5);
+		pocIdtAttr.pocDeleteGroupcb = NULL;
+	}
+
 }
 
 #if 0
