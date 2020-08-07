@@ -36,7 +36,7 @@ target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_targets(${target} PRIVATE
     kernel driver ml hal calclib atr cfw fs fsmount
     aworker net lwip mbedtls mal diag
-    nvm fupdate audio service tts poc
+    nvm fupdate audio service tts poc lvgl
 )
 
 target_sources(${target} PRIVATE

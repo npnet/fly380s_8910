@@ -15,7 +15,6 @@
 
 #include "osi_compiler.h"
 #include "poc_config.h"
-#include "hal_keypad_def.h"
 #include "drv_keypad.h"
 #include "lvgl.h"
 

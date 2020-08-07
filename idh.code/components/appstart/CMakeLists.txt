@@ -21,7 +21,7 @@ if(CONFIG_SOC_8910)
     target_include_targets(${target} PRIVATE
         atr ats diag nvm kernel driver ml bdev fs fsmount
         net hal mal cfw http fupdate service apploader
-        audio tts poc
+        audio tts poc lvgl
     )
     target_include_targets_if(CONFIG_SPRD_BT_ENABLE THEN ${target} PRIVATE sprd_bt)
     target_include_targets_if(CONFIG_BLUEU_BT_ENABLE THEN ${target} PRIVATE blueu)

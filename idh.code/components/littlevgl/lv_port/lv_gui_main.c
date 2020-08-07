@@ -93,7 +93,7 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {
     {KEY_MAP_8,      LV_GROUP_KEY_ENTER},
     {KEY_MAP_9,      LV_GROUP_KEY_GP},
     {KEY_MAP_STAR,   LV_GROUP_KEY_END},
-    {KEY_MAP_WELL,   LV_GROUP_KEY_END},
+    {KEY_MAP_SHARP,  LV_GROUP_KEY_END},
     {KEY_MAP_OK,     LV_GROUP_KEY_END},
     {KEY_MAP_LEFT,   LV_GROUP_KEY_END},
     {KEY_MAP_RIGHT,  LV_GROUP_KEY_END},
