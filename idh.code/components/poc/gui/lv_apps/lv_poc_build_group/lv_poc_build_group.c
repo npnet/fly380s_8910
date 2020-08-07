@@ -46,6 +46,8 @@ static char * lv_poc_build_group_few_member_text2 = "能少于两人";
 
 static char * lv_poc_build_group_error_text = "错误";
 
+static char lv_poc_member_myself_name[32] = {0};
+
 
 static lv_obj_t * lv_poc_build_group_activity_create(lv_poc_display_t *display)
 {
@@ -497,6 +499,11 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 			OSI_LOGI(0, "[song]build group is me");
 			p_info->is_selected = true;
 			lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_PR);
+			/*获取自己的号码*/
+			char myself_name[32] = {0};
+			strcpy((char *)myself_name, (const char *)lv_list_get_btn_text(btn));
+			strncpy((char *)lv_poc_member_myself_name, (const char *)myself_name, 5);
+
 			lv_poc_build_group_selected_num++;
 		}
 		else
@@ -759,6 +766,18 @@ void lv_poc_build_group_success_refresh(lv_task_t *tsak)
 	lv_poc_build_group_operator(lv_poc_build_group_info,
 							lv_poc_build_group_member_list->offline_number + lv_poc_build_group_member_list->online_number,
 							lv_poc_build_group_selected_num);
+}
+
+/*
+	  name : lv_poc_get_self_name_count
+	 param : none
+	author : wangls
+  describe : 获取自己的号码
+	  date : 2020-07-22
+*/
+char *lv_poc_get_self_name_count(void)
+{
+	return lv_poc_member_myself_name;
 }
 
 #ifdef __cplusplus

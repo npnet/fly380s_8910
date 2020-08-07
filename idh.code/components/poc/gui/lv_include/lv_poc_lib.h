@@ -713,6 +713,15 @@ void lv_poc_ear_ppt_key_init(void);
 */
 bool lv_poc_get_earppt_state(void);
 
+/*
+	  name : lv_poc_get_self_name_count
+	 param : none
+	author : wangls
+  describe : 获取自己的号码
+	  date : 2020-07-22
+*/
+char *lv_poc_get_self_name_count(void);
+
 #ifdef __cplusplus
 }
 #endif
