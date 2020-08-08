@@ -208,7 +208,6 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
 		if(config->voicevolume == poc_volum / 10)return;
 		config->voicevolume = poc_volum / 10;
 		audevSetPlayVolume(poc_volum);
-	}
  	}
 	lv_poc_setting_conf_write();
 
