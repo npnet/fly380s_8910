@@ -908,8 +908,6 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_init_stabar_signal_img();
 	lv_poc_init_stabar_gps_img();/*GPS图标*/
 
-	lv_poc_init_stabar_gps_img();/*GPS图标*/
-
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
     lv_task_create(lv_poc_stabar_task,1000,LV_TASK_PRIO_LOWEST,NULL);
