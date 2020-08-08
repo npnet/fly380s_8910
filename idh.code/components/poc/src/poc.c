@@ -33,20 +33,29 @@
 
 static void lv_poc_network_config_task(lv_task_t * task);
 static void lv_poc_power_on_picture(lv_task_t * task);
+bool lv_poc_watchdog_power_on_mode = false;
 
 static void pocIdtStartHandleTask(void * ctx)
 {
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-	poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, 50, true);
-	osiThreadSleep(5000);
+
+	if(lv_poc_watchdog_power_on_mode == false)
+	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, 50, true);
+		osiThreadSleep(5000);
+	}
+
 	while(!poc_get_network_register_status(POC_SIM_1))
 	{
 		OSI_LOGI(0, "[poc][idt] checking network\n");
 		osiThreadSleep(5000*6);/*30s*/
 	}
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
-	//登录任务
-	poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, 50, true);
+
+	if(lv_poc_watchdog_power_on_mode == false)
+	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, 50, true);
+	}
 	#if 0
 	pocAudioPlayerSound();/*new player test*/
 	#endif
@@ -64,35 +73,48 @@ static void pocStartAnimation(void *ctx)
 		50, LV_TASK_PRIO_HIGH, NULL);
 	lv_task_once(task);
 
-	//魔方图片
-	lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
-	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
-	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
-	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
-	osiThreadSleep(2000);
+	if(lv_poc_watchdog_power_on_mode == false)
+	{
+		//魔方图片
+		lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
+		lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
+		lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
+		lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+		osiThreadSleep(2000);
 
-	/*打开屏幕，除去花屏问题*/
-	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
-	drvLcdSetBackLightEnable(lcd, true);
+		/*打开屏幕，除去花屏问题*/
+		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+		drvLcdSetBackLightEnable(lcd, true);
 
-	poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
-	osiThreadSleep(3000);
-	lv_obj_del(poc_power_on_backgroup_sprd_image);
-	//开机图片
-	lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
-	lv_img_set_auto_size(poc_power_on_backgroup_image, false);
-	lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
-	extern lv_img_dsc_t img_poweron_poc_logo_unicom;
-	lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
-
-	lv_poc_setting_init();/*开机配置*/
-	osiThreadSleep(4000);
-	osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
-	osiThreadSleep(2800);
-	lv_poc_refr_task_once(lv_poc_power_on_picture,
-		LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
-	osiThreadSleep(200);
-	lv_obj_del(poc_power_on_backgroup_image);
+		poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
+		osiThreadSleep(3000);
+		lv_obj_del(poc_power_on_backgroup_sprd_image);
+		//开机图片
+		lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
+		lv_img_set_auto_size(poc_power_on_backgroup_image, false);
+		lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
+		extern lv_img_dsc_t img_poweron_poc_logo_unicom;
+		lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
+		lv_poc_setting_init();/*开机配置*/
+		osiThreadSleep(4000);
+		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+		osiThreadSleep(2800);
+		lv_poc_refr_task_once(lv_poc_power_on_picture,
+			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+		osiThreadSleep(200);
+		lv_obj_del(poc_power_on_backgroup_image);
+	}
+	else/*watchdog*/
+	{
+		lv_poc_setting_init();/*开机配置*/
+		osiThreadSleep(3000);
+		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+		osiThreadSleep(2000);
+		lv_poc_refr_task_once(lv_poc_power_on_picture,
+			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+		drvLcdSetBackLightEnable(lcd, true);
+	}
 	lvGuiUpdateLastActivityTime();
 	/*网络校时*/
 	lv_poc_sntp_Update_Time();
@@ -145,8 +167,17 @@ void pocStart(void *ctx)
 	{
 		OSI_LOGI(0, "[song]poc boot mode is charge power on");
 		lvGuiInit(pocLvgl_ShutdownCharge_Start);
-	}else//设备重启或正常开机
+	}//看门狗重启
+	else if(boot_causes == OSI_BOOTCAUSE_WDG
+		||  boot_causes == (OSI_BOOTCAUSE_CHARGE|OSI_BOOTCAUSE_WDG))
 	{
+		lv_poc_watchdog_power_on_mode = true;
+		OSI_LOGI(0, "[song]poc boot mode is wdg power on");
+		lvGuiInit(pocLvglStart);
+	}
+	else//设备重启或正常开机
+	{
+		lv_poc_watchdog_power_on_mode = false;
 		lvGuiInit(pocLvglStart);
 	}
 

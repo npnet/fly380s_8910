@@ -233,8 +233,13 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 	}
 	else if(LV_EVENT_LONG_PRESSED == event)
 	{
+		/*禁止刷新*/
+		extern uint16_t CUR_UNOPT;
+
 		if(prv_group_list_cur_opt == 1)
 		{
+			CUR_UNOPT = LVPOCUNREFOPTIDTCOM_SIGNAL_LOCKORUNLOCK_GROUP_STATUS;
+
 			if(lv_poc_group_list_info == NULL)
 			{
 				return;
@@ -265,6 +270,8 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 		}
 		else if(prv_group_list_cur_opt == 2)
 		{
+			CUR_UNOPT = LVPOCUNREFOPTIDTCOM_SIGNAL_DELETE_GROUP_STATUS;
+
 			lv_poc_group_delete_info = p_info;
 			lv_poc_warnning_open(lv_poc_lockgroupwindow_label_delete_group_text,
 				lv_poc_lockgroupwindow_label_delete_group_question_text,
@@ -338,7 +345,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 		case LV_SIGNAL_FOCUS:
 		{
 			/*解决白屏问题*/
-			#if 1
+			#if 0
 			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
 				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
 			#endif
@@ -570,6 +577,7 @@ static void lv_poc_lock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
 		{
 			return;
 		}
+
 		list_element_t * item_info = (list_element_t *)lv_poc_group_lock_info->item_information;
 		lv_poc_group_info_t * group_info = (lv_poc_group_info_t)item_info->information;
 		lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_LOCK, (lv_poc_group_info_t)group_info, lv_poc_group_lock_oprator_cb);
@@ -608,10 +616,14 @@ static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
 {
 	if(event == LV_EVENT_APPLY)
 	{
+		extern uint16_t CUR_UNOPT;
+		CUR_UNOPT = LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS;
+
 		if(lv_poc_group_delete_info == NULL)
 		{
 			return;
 		}
+
 		list_element_t * item_info = (list_element_t *)lv_poc_group_delete_info->item_information;
 		lv_poc_group_info_t * group_info = (lv_poc_group_info_t)item_info->information;
 		lv_poc_delete_group((lv_poc_group_info_t)group_info, lv_poc_group_delete_oprator_cb);
@@ -622,6 +634,8 @@ static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t ev
 {
 	if(event == LV_EVENT_CANCEL)
 	{
+		extern uint16_t CUR_UNOPT;
+		CUR_UNOPT = LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS;
 	}
 }
 
@@ -997,6 +1011,15 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
 void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
 {
+	extern uint16_t CUR_UNOPT;
+
+	if(CUR_UNOPT != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)/*防止一些界面刷新数据混乱导致死机问题*/
+	{
+		return;
+	}
+
+	OSI_LOGI(0, "[song]grouplist refreshing");
+
 	if(group_list_obj == NULL)
 	{
 		group_list_obj = group_list;

@@ -563,6 +563,8 @@ bool lv_poc_setting_init(void)
 	poc_keypad_led_init();
 #endif
 	poc_ext_pa_init();
+	extern uint16_t CUR_UNOPT;
+	CUR_UNOPT = LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS;
     return true;
 }
 
@@ -904,6 +906,8 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_init_stabar_sim2_img();
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
+	lv_poc_init_stabar_gps_img();/*GPS图标*/
+
 	lv_poc_init_stabar_gps_img();/*GPS图标*/
 
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);

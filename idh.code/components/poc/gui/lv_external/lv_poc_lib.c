@@ -44,8 +44,7 @@ drvGpioConfig_t* configport = NULL;
 static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
 
-
-
+uint16_t CUR_UNOPT;/*记录在一些不能刷新的状态*/
 
 /*
       name : lv_poc_get_keypad_dev
@@ -210,6 +209,7 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
 		config->voicevolume = poc_volum / 10;
 		audevSetPlayVolume(poc_volum);
 	}
+ 	}
 	lv_poc_setting_conf_write();
 
 //	if(play && !ttsIsPlaying())
