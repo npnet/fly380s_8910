@@ -233,6 +233,7 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
     keyMap_t last_key = d->last_key;
     keyState_t last_key_state = d->last_key_state;
     bool keypad_pending = d->keypad_pending;
+
     d->keypad_pending = false;
     osiExitCritical(critical);
     if (keypad_pending)
@@ -255,7 +256,14 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 
 	    if((!pocKeypadHandle(data->key, data->state, NULL))&&(!lv_poc_charge_poweron_status()))
 	    {
-		    lvGuiScreenOn();
+			extern bool lv_poc_watchdog_power_on_mode;
+			if(lv_poc_watchdog_power_on_mode == true)
+			{
+				lv_poc_watchdog_power_on_mode = false;
+				poc_setting_conf = lv_poc_setting_conf_read();
+				poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
+			}
+			lvGuiScreenOn();
 	    }
     }
 

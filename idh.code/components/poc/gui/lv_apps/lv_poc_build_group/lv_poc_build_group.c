@@ -499,6 +499,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 			OSI_LOGI(0, "[song]build group is me");
 			p_info->is_selected = true;
 			lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_PR);
+
 			/*获取自己的号码*/
 			char myself_name[32] = {0};
 			strcpy((char *)myself_name, (const char *)lv_list_get_btn_text(btn));
@@ -561,6 +562,13 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 
 void lv_poc_build_group_refresh_with_data(lv_poc_member_list_t *member_list_obj)
 {
+	extern uint16_t CUR_UNOPT;
+
+	if(CUR_UNOPT != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)/*防止一些界面刷新数据混乱导致死机问题*/
+	{
+		return;
+	}
+
 	if(member_list_obj == NULL)
 	{
 		member_list_obj = lv_poc_build_group_member_list;
