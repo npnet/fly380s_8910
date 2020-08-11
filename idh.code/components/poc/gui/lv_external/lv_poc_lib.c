@@ -1560,6 +1560,38 @@ poc_set_green_status(bool ledstatus)
 }
 
 /*
+	  name : Lv_ear_ppt_timer_cb
+	 param : none
+	author : wangls
+  describe : ear ppt cb回调
+	  date : 2020-08-10
+*/
+typedef struct _PocEarKeyComAttr_t
+{
+	osiTimer_t *ear_press_timer;/*误触碰定时器*/
+	osiThread_t *ear_ppt_thread;
+	bool ear_key_press;
+}PocEarKeyComAttr_t;
+
+static PocEarKeyComAttr_t ear_key_attr = {0};
+
+static void Lv_ear_ppt_timer_cb(void *ctx)
+{
+	OSI_LOGI(0, "[song]ear time cb\n");
+	if(drvGpioRead(poc_ear_ppt_gpio) == false)/*press*/
+	{
+		ear_key_attr.ear_key_press = true;
+		poc_earkey_state = true;
+		OSI_LOGI(0, "[song]key is press,start speak\n");
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+	}
+	else
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机未插好", (const uint8_t *)"请重新插入");
+	}
+}
+
+/*
 	  name : lv_poc_ear_ppt_key_init
 	 param : none
 	author : wangls
@@ -1588,6 +1620,10 @@ void lv_poc_ear_ppt_key_init(void)
 	{
 		OSI_LOGI(0, "[song]ear gpio open success\n");
 	}
+
+	/*ear time*/
+	memset(&ear_key_attr, 0, sizeof(PocEarKeyComAttr_t));
+	ear_key_attr.ear_press_timer = osiTimerCreate(ear_key_attr.ear_ppt_thread, Lv_ear_ppt_timer_cb, NULL);/*误触碰定时器*/
 }
 
 /*
@@ -1600,17 +1636,26 @@ void lv_poc_ear_ppt_key_init(void)
 static
 void poc_ear_ppt_irq(void *ctx)
 {
+
 	if(drvGpioRead(poc_ear_ppt_gpio))/*release*/
 	{
-		poc_earkey_state = false;
-		OSI_LOGI(0, "[song]key is release,stop speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		if(ear_key_attr.ear_key_press == true)
+		{
+			ear_key_attr.ear_key_press = false;
+			poc_earkey_state = false;
+			OSI_LOGI(0, "[song]key is release,stop speak\n");
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		}
+		else
+		{
+			OSI_LOGI(0, "[song]ear time stop\n");
+			osiTimerStop(ear_key_attr.ear_press_timer);
+		}
 	}
 	else/*press*/
 	{
-		poc_earkey_state = true;
-		OSI_LOGI(0, "[song]key is press,start speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+		osiTimerStart(ear_key_attr.ear_press_timer, 200);
+		OSI_LOGI(0, "[song]ear time start\n");
 	}
 }
 
@@ -1778,6 +1823,7 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 	lv_poc_member_info_t self_info = lv_poc_get_self_info();
 	char *self_name = lv_poc_get_member_name(self_info);
 
+	OSI_LOGI(0, "[song]prv_lv_poc_get_member_list_cb is enter\n");
 	if(prv_member_list == NULL
 		|| prv_member_list_cb == NULL
 		|| (prv_member_list_type < 1 || prv_member_list_type > 3))
@@ -1801,8 +1847,10 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 		return;
 	}
 
+	/*构建链表*/
 	list_element_t * p_element = NULL;
-	list_element_t * p_cur = NULL;
+	list_element_t * p_online_cur = NULL;
+	list_element_t * p_offline_cur = NULL;
 
 	for(int i = 0; i < num; i++)
 	{
@@ -1810,20 +1858,21 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 
 		if(p_element == NULL)
 		{
+			OSI_LOGI(0, "[song]element null");
 			p_element = prv_member_list->online_list;
 			while(p_element)
 			{
-				p_cur = p_element;
+				p_online_cur = p_element;
 				p_element = p_element->next;
-				lv_mem_free(p_cur);
+				lv_mem_free(p_online_cur);
 			}
 
 			p_element = prv_member_list->offline_list;
 			while(p_element)
 			{
-				p_cur = p_element;
+				p_offline_cur = p_element;
 				p_element = p_element->next;
-				lv_mem_free(p_cur);
+				lv_mem_free(p_offline_cur);
 			}
 			prv_member_list_cb(0);
 			prv_member_list_cb = NULL;
@@ -1848,20 +1897,18 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 			prv_member_list->online_number++;//计算在线人数
 			if(prv_member_list->online_list != NULL)
 			{
-				if(p_element != NULL)/*NULL point*/
-				{
-					p_cur->next = p_element;
-					p_cur = p_cur->next;
-				}
+				OSI_LOGI(0, "[song]online nonull");
+				p_online_cur->next = p_element;
+				p_online_cur = p_online_cur->next;
 			}
 			else
 			{
-				if(p_element != NULL)/*NULL point*/
-				{
-					prv_member_list->online_list = p_element;
-					p_cur = p_element;
-				}
+				OSI_LOGI(0, "[song]online null");
+				prv_member_list->online_list = p_element;
+				p_online_cur = p_element;
 			}
+			OSI_LOGI(0, "[song]online status is = %d",pGroup->member[i].ucStatus);
+		    OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]online member ucNum %s",prv_member_list->online_list->name);
 		}
 
 		if(pGroup->member[i].ucStatus == 0
@@ -1871,22 +1918,24 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 			prv_member_list->offline_number++;//计算离线人数
 			if(prv_member_list->offline_list != NULL)
 			{
-				if(p_element != NULL)/*NULL point*/
-				{
-					p_cur->next = p_element;
-					p_cur = p_cur->next;
-				}
+				OSI_LOGI(0, "[song]offline nonull");
+				p_offline_cur->next = p_element;
+				p_offline_cur = p_offline_cur->next;
 			}
 			else
 			{
-				if(p_element != NULL)/*NULL point*/
-				{
-					prv_member_list->offline_list = p_element;
-					p_cur = p_element;
-				}
+				OSI_LOGI(0, "[song]offline null");
+				prv_member_list->offline_list = p_element;
+				p_offline_cur = p_element;
 			}
+			OSI_LOGI(0, "[song]offline status is = %d",pGroup->member[i].ucStatus);
+		    OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]offline member ucNum %s",prv_member_list->offline_list->name);
 		}
 		p_element = NULL;
+		#if 0
+		OSI_LOGI(0, "[song]ucnum status is = %d",pGroup->member[i].ucStatus);
+		OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]member ok ucNum %s",pGroup->member[i].ucNum);
+		#endif
 	}
 	prv_member_list_cb(1);
 	prv_member_list_cb = NULL;
@@ -1922,9 +1971,10 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 
 		return false;
 	}
-
+	OSI_LOGE(0, "[song][1]LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND is ok\n");
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND, group_info))
 	{
+		OSI_LOGI(0, "[song]re register callback");
 		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_MEMBER_LIST_CB_IND, NULL))
 		{
 			OSI_LOGE(0, "cancel register callback[get member list cb] failed!");
@@ -1934,7 +1984,7 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 		prv_member_list_cb = NULL;
 		return false;
 	}
-
+	OSI_LOGE(0, "[song][2]LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND is ok\n");
 	return true;
 }
 

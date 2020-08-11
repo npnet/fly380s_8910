@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -1829,7 +1829,8 @@ void drvChargerInit(void)
 
     _drvChargerSetSwitchOverPoint(cv_v & 0x3f); //Set hardware cc-cv switch point hw_switch_point
     _drvChargerSetEndVolt(chg_param.chg_end_vol);
-    _drvChargerSetChangerCurrent(CHARGER_CURRENT_700MA); // Set default current
+	/*set 1a*/
+    _drvChargerSetChangerCurrent(CHARGER_CURRENT_1000MA); // Set default current
     _drvChargerSetBatOvpVolt(chg_param.bat_safety_vol);
     _drvSetChargerBoardParam();
 

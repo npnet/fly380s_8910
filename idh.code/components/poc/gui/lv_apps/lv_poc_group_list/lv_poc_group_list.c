@@ -209,9 +209,6 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 	{
 		lv_poc_group_lock_info = p_info;
 		lv_poc_set_current_group((lv_poc_group_info_t)p_element->information, lv_poc_group_list_set_current_group_cb);
-		#if 0/*test*/
-		lv_poc_member_list_open(NULL,NULL,false);
-		#endif
 		#if 1
 		if(member_list == NULL)
 		{

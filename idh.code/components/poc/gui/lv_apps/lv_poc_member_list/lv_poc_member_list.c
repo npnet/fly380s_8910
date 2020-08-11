@@ -91,6 +91,8 @@ static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
 		}
 
 		lv_mem_free(lv_poc_member_list_obj);
+		lv_poc_member_list_need_free_member_list = false;
+		OSI_LOGI(0, "[song]free memberlist");
 	}
 	lv_poc_member_list_obj = NULL;
 	poc_member_list_activity = NULL;
@@ -369,6 +371,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
 
     if(members == NULL)
     {
+		OSI_LOGI(0, "[song]member null to get\n");
 		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
 		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
@@ -377,6 +380,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     }
     else
     {
+		OSI_LOGI(0, "[song]have member to refr\n");
 		lv_poc_refr_func_ui(lv_poc_member_list_refresh,
 			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH,NULL);
 	}
@@ -1092,6 +1096,8 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
 	}
 
     list_element_t * p_cur = NULL;
+	list_element_t * p_temp = NULL;
+
     lv_poc_status_t status = lv_poc_member_list_is_exists(member_list_obj, name, information);
     if(status == POC_OPERATE_FAILD || status == POC_MEMBER_NONENTITY)
     {
@@ -1100,28 +1106,28 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
 
     if(true == is_online)
     {
-        p_cur = member_list_obj->offline_list;/*p_cur != NULL 解决进入群组后单呼死机问题*/
+        p_cur = member_list_obj->offline_list;
         if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
         {
         	member_list_obj->offline_list = p_cur->next;
             p_cur->next = member_list_obj->online_list;
             member_list_obj->online_list = p_cur;
+
             return POC_OPERATE_SECCESS;
         }
-		if(p_cur != NULL)
-		{
-        	p_cur = p_cur->next;
-		}
-        while(p_cur)
+        while(p_cur->next)
         {
-            if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+            if(MEMBER_EQUATION((void *)p_cur->next->name, (void *)name, (void *)p_cur->next->information, (void *)information, NULL))
             {
-            	member_list_obj->offline_list = p_cur->next;
-                p_cur->next = member_list_obj->online_list;
-                member_list_obj->online_list = p_cur;
+				p_temp = p_cur->next;
+            	p_cur->next = p_temp->next;
+                p_temp->next = member_list_obj->online_list;
+                member_list_obj->online_list = p_temp;
+
                 return POC_OPERATE_SECCESS;
             }
             p_cur = p_cur->next;
+			//OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]p_cur ucnum = %s",p_cur->name);
         }
     }
     else
@@ -1132,20 +1138,18 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
         	member_list_obj->online_list = p_cur->next;
             p_cur->next = member_list_obj->offline_list;
             member_list_obj->offline_list = p_cur;
+
             return POC_OPERATE_SECCESS;
         }
-
-		if(p_cur != NULL)
-		{
-        	p_cur = p_cur->next;
-		}
-        while(p_cur)
+        while(p_cur->next)
         {
-            if(MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
+            if(MEMBER_EQUATION((void *)p_cur->next->name, (void *)name, (void *)p_cur->next->information, (void *)information, NULL))
             {
-            	member_list_obj->online_list = p_cur->next;
-                p_cur->next = member_list_obj->offline_list;
-                member_list_obj->offline_list = p_cur;
+            	p_temp = p_cur->next;
+            	p_cur->next = p_temp->next;
+                p_temp->next = member_list_obj->offline_list;
+                member_list_obj->offline_list = p_temp;
+
                 return POC_OPERATE_SECCESS;
             }
             p_cur = p_cur->next;
@@ -1153,25 +1157,6 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
     }
 
     return POC_UNKNOWN_FAULT;
-
-    //LV_POC_MEMBER_LIST_SET_STATE_SUCCESS:
-    #if 0
-	if(p_cur != NULL && p_cur->list_item != NULL)
-	{
-		lv_obj_t *btn_item = (lv_obj_t *)p_cur->list_item;
-		lv_obj_t *btn_img = lv_list_get_btn_img(btn_item);
-
-		if(is_online)
-		{
-			lv_img_set_src(btn_img, &ic_member_online);
-		}
-		else
-		{
-			lv_img_set_src(btn_img, &ic_member_offline);
-		}
-	}
-	return POC_OPERATE_SECCESS;
-	#endif
 }
 
 lv_poc_status_t lv_poc_member_list_is_exists(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
