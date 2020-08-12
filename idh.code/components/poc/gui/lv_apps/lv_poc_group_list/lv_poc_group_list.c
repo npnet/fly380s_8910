@@ -1012,6 +1012,7 @@ void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
 
 	if(CUR_UNOPT != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)/*防止一些界面刷新数据混乱导致死机问题*/
 	{
+		OSI_LOGI(0, "[song]grouplist can't refresh\n");
 		return;
 	}
 
