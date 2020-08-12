@@ -1860,7 +1860,7 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 
 		if(p_element == NULL)
 		{
-			OSI_LOGI(0, "[song]element null");
+			//OSI_LOGI(0, "[song]element null");
 			p_element = prv_member_list->online_list;
 			while(p_element)
 			{
@@ -1899,18 +1899,18 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 			prv_member_list->online_number++;//计算在线人数
 			if(prv_member_list->online_list != NULL)
 			{
-				OSI_LOGI(0, "[song]online nonull");
+				//OSI_LOGI(0, "[song]online nonull");
 				p_online_cur->next = p_element;
 				p_online_cur = p_online_cur->next;
 			}
 			else
 			{
-				OSI_LOGI(0, "[song]online null");
+				//OSI_LOGI(0, "[song]online null");
 				prv_member_list->online_list = p_element;
 				p_online_cur = p_element;
 			}
-			OSI_LOGI(0, "[song]online status is = %d",pGroup->member[i].ucStatus);
-		    OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]online member ucNum %s",prv_member_list->online_list->name);
+			//OSI_LOGI(0, "[song]online status is = %d",pGroup->member[i].ucStatus);
+		    //OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]online member ucNum %s",prv_member_list->online_list->name);
 		}
 
 		if(pGroup->member[i].ucStatus == 0
@@ -1930,8 +1930,8 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 				prv_member_list->offline_list = p_element;
 				p_offline_cur = p_element;
 			}
-			OSI_LOGI(0, "[song]offline status is = %d",pGroup->member[i].ucStatus);
-		    OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]offline member ucNum %s",prv_member_list->offline_list->name);
+			//OSI_LOGI(0, "[song]offline status is = %d",pGroup->member[i].ucStatus);
+		    //OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]offline member ucNum %s",prv_member_list->offline_list->name);
 		}
 		p_element = NULL;
 		#if 0

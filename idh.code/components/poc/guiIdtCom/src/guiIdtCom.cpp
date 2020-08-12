@@ -426,6 +426,8 @@ public:
 	osiTimer_t * try_login_timer;/*尝试登录定时器*/
 	osiTimer_t * auto_login_timer;/*自动登录定时器*/
 	bool onepoweron;/*记录第一次开机状态*/
+	char build_self_name[16];/*存储自建群组尾序号*/
+	int buildgroupnumber;/*自编组号码*/
 } PocGuiIIdtComAttr_t;
 
 typedef struct
@@ -1544,6 +1546,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 
 			LvGuiIdtCom_self_info_json_parse_status();
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
+			/*上电获取群组列表*/
 			osiTimerStart(pocIdtAttr.get_group_list_timer, 500);
 			break;
 		}
@@ -1985,6 +1988,7 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 			lv_poc_build_new_group_t * new_group = (lv_poc_build_new_group_t *)ctx;
 			Msg_GROUP_MEMBER_s * member = NULL;
 			GROUP_MEMBER_s * gmember = NULL;
+			char groupselfname[32] = {0};
 
 			//int gNameLen = 0;
 			memset(&g_data, 0, sizeof(GData_s));
@@ -2016,11 +2020,33 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 					strcat((char *)g_data.ucName, (const char *)member->ucName);
 				}
 				#endif
-				/*群组名字*/
-				strcpy((char *)g_data.ucName, (const char *)lv_poc_get_self_name_count());
-				strcat((char *)g_data.ucName, (const char *)"(自建)");
 			}
 
+			/*群组名字*/
+			strcpy((char *)g_data.ucName, (const char *)lv_poc_get_self_name_count());
+			strcat((char *)g_data.ucName, (const char *)"(自建1)");
+			pocIdtAttr.buildgroupnumber = 1;
+
+			/*检查创建的群名是否重复*/
+			for (unsigned long i = 0; i < m_IdtUser.m_Group.m_Group_Num; i++)
+			{
+				if(0 == strcmp((char *)g_data.ucName, (char *)m_IdtUser.m_Group.m_Group[i].m_ucGName))
+				{
+					memset(&g_data.ucName, 0, sizeof(g_data.ucName));
+					memset(&groupselfname, 0, sizeof(groupselfname));
+					/*名字相同重新分配*/
+					strcpy((char *)g_data.ucName, (const char *)lv_poc_get_self_name_count());
+					strcat((char *)g_data.ucName, (const char *)"(自建");
+					pocIdtAttr.buildgroupnumber++;
+					__itoa(pocIdtAttr.buildgroupnumber, (char *)&groupselfname , 10);/*10 --- 十进制*/
+					strcat((char *)g_data.ucName, (char *)&groupselfname);
+					strcat((char *)g_data.ucName, (const char *)")");
+				}
+				#if 0
+				OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]g_data.ucName %s", g_data.ucName);
+				OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]m_ucGName %s", m_IdtUser.m_Group.m_Group[i].m_ucGName);
+				#endif
+			}
 			IDT_GAdd(0, &g_data);
 			break;
 		}
@@ -2948,7 +2974,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
 				OSI_LOGI(0, "[song]OPT_G_MODIFY\n");
 			}
-			else if (OPT_U_QUERYGROUP == grop->dwOptCode)
+			else if (OPT_U_QUERYGROUP == grop->dwOptCode)/*上电获取自己的群组*/
 			{
 			    m_IdtUser.m_Group.Reset();
 			    m_IdtUser.m_Group.m_Group_Num = grop->pGroup.dwNum;/*有几个组*/
@@ -2981,6 +3007,18 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 					        checked_current = true;
 				        }
 			        }
+					#if 0
+					/*搜索(自建1)的名称，以便后续叠加*/
+					char *p_selfgroup = NULL;
+					memset(&pocIdtAttr.build_self_name, 0, sizeof(pocIdtAttr.build_self_name));
+					if(NULL != strstr((char *)&m_IdtUser.m_Group.m_Group[i].m_ucGName, "自建"))
+					{
+						p_selfgroup = strstr((char *)&m_IdtUser.m_Group.m_Group[i].m_ucGName, "自建");
+						strncpy((char *)&pocIdtAttr.build_self_name, (const char *)p_selfgroup, 4);
+						OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]p_selfgroup is %s", p_selfgroup);
+						OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]buildself is %s", pocIdtAttr.build_self_name);
+					}
+					#endif
 			    }
 
 			    if(!checked_current)
