@@ -187,14 +187,16 @@ static void _AtMqttPostEventCb(void *param)
     {
     case MQTT_CONN_RSP_SUCC:
     {
-        atCmdRespOK(g_atCmdEngine);
+        if (g_atCmdEngine != NULL)
+            atCmdRespOK(g_atCmdEngine);
         g_stMqttOpts.m_eState = CONNECTED;
         break;
     }
     case MQTT_CONN_RSP_FAIL:
     {
         MQTTAsync_destroy(&g_stMqttClient);
-        atCmdRespCmeError(g_atCmdEngine, ERR_AT_CME_EXE_FAIL);
+        if (g_atCmdEngine != NULL)
+            atCmdRespCmeError(g_atCmdEngine, ERR_AT_CME_EXE_FAIL);
         MqttOptsUninit();
         break;
     }
@@ -203,7 +205,8 @@ static void _AtMqttPostEventCb(void *param)
         cOutstr[0] = '\0';
         sprintf(cOutstr, "%s", "+MQTTDISCONNECTED:256,connection lost.");
         cOutstr[strlen(cOutstr)] = '\0';
-        atCmdRespInfoText(g_atCmdEngine, cOutstr);
+        if (g_atCmdEngine != NULL)
+            atCmdRespInfoText(g_atCmdEngine, cOutstr);
         MQTTAsync_destroy(&g_stMqttClient);
         MqttOptsUninit();
         break;
@@ -220,7 +223,8 @@ static void _AtMqttPostEventCb(void *param)
         cOutstr[0] = '\0';
         sprintf(cOutstr, "%s", "+MQTTDISCONNECTED:disconnect fail.");
         cOutstr[strlen(cOutstr)] = '\0';
-        atCmdRespInfoText(g_atCmdEngine, cOutstr);
+        if (g_atCmdEngine != NULL)
+            atCmdRespInfoText(g_atCmdEngine, cOutstr);
         break;
     }
     default:

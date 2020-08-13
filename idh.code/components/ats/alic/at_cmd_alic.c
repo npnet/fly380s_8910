@@ -54,6 +54,15 @@ osiThread_t *alicThread = NULL;
 static bool alic_shutdown = false;
 static char curTopicBuf[AT_ALIC_TOPIC_LEN];
 static char CurBroadcastTopic[AT_ALIC_TOPIC_LEN]; //broadcast topic format /broadcast/device name/{anything}
+enum ALIC_STATE
+{
+    ALIC_SUB = 1,
+    ALIC_PUB,
+    ALIC_UNSUB,
+    ALIC_NULL,
+};
+
+enum ALIC_STATE alic_state = ALIC_NULL;
 
 const char *iotx_alic_ca_crt =
     {
@@ -123,6 +132,7 @@ static void at_alic_urc_at_cb(void *param)
 static void at_alic_ok_cb(void *param)
 {
     OSI_LOGI(0, "at_alic_ok_cb response operation succuss");
+    alic_state = ALIC_NULL;
     if (is_alic_timeout)
     {
         OSI_LOGI(0, "at_alic_ok_cb alic timeout had response");
@@ -135,6 +145,7 @@ static void at_alic_error_cb(void *param)
 {
 
     OSI_LOGI(0, " at_alic_error_cb response operation error");
+    alic_state = ALIC_NULL;
     if (is_alic_timeout)
     {
         OSI_LOGI(0, "at_alic_ok_cb alic timeout had response");
@@ -259,43 +270,88 @@ static void at_alic_event_handle(void *pcontext, void *pclient, iotx_mqtt_event_
 
     case IOTX_MQTT_EVENT_SUBCRIBE_SUCCESS:
         OSI_LOGI(0, "subscribe success, packet-id=%u", (unsigned int)packet_id);
+        if (alic_state != ALIC_SUB)
+        {
+            OSI_LOGI(0, "MQTT subscribe ack duplicate.");
+            resp = false;
+        }
         break;
 
     case IOTX_MQTT_EVENT_SUBCRIBE_TIMEOUT:
         OSI_LOGI(0, "subscribe wait ack timeout, packet-id=%u", (unsigned int)packet_id);
+        if (alic_state != ALIC_SUB)
+        {
+            OSI_LOGI(0, "MQTT subscribe wait ack timeout duplicate.");
+            resp = false;
+        }
         rc = -1;
         break;
 
     case IOTX_MQTT_EVENT_SUBCRIBE_NACK:
         OSI_LOGI(0, "subscribe nack, packet-id=%u", (unsigned int)packet_id);
+        if (alic_state != ALIC_SUB)
+        {
+            OSI_LOGI(0, "MQTT subscribe nack duplicate.");
+            resp = false;
+        }
         rc = -1;
         break;
 
     case IOTX_MQTT_EVENT_UNSUBCRIBE_SUCCESS:
         OSI_LOGI(0, "unsubscribe success, packet-id=%u", (unsigned int)packet_id);
+        if (alic_state != ALIC_UNSUB)
+        {
+            OSI_LOGI(0, "MQTT unsubscribe  ack duplicate.");
+            resp = false;
+        }
         break;
 
     case IOTX_MQTT_EVENT_UNSUBCRIBE_TIMEOUT:
         OSI_LOGI(0, "unsubscribe timeout, packet-id=%u", (unsigned int)packet_id);
+        if (alic_state != ALIC_UNSUB)
+        {
+            OSI_LOGI(0, "MQTT unsubscribe  ack duplicate.");
+            resp = false;
+        }
         rc = -1;
         break;
 
     case IOTX_MQTT_EVENT_UNSUBCRIBE_NACK:
         OSI_LOGI(0, "unsubscribe nack, packet-id=%u", (unsigned int)packet_id);
+        if (alic_state != ALIC_UNSUB)
+        {
+            OSI_LOGI(0, "MQTT unsubscribe  Nack duplicate.");
+            resp = false;
+        }
         rc = -1;
         break;
 
     case IOTX_MQTT_EVENT_PUBLISH_SUCCESS:
         OSI_LOGI(0, "publish success, packet-id=%u", (unsigned int)packet_id);
+        if (alic_state != ALIC_PUB)
+        {
+            OSI_LOGI(0, "MQTT publish  ack duplicate.");
+            resp = false;
+        }
         break;
 
     case IOTX_MQTT_EVENT_PUBLISH_TIMEOUT:
         OSI_LOGI(0, "publish timeout, packet-id=%u", (unsigned int)packet_id);
+        if (alic_state != ALIC_PUB)
+        {
+            OSI_LOGI(0, "MQTT publish timeout duplicate.");
+            resp = false;
+        }
         rc = -1;
         break;
 
     case IOTX_MQTT_EVENT_PUBLISH_NACK:
         OSI_LOGI(0, "publish nack, packet-id=%u", (unsigned int)packet_id);
+        if (alic_state != ALIC_PUB)
+        {
+            OSI_LOGI(0, "MQTT publish nack duplicate.");
+            resp = false;
+        }
         rc = -1;
         break;
 
@@ -801,6 +857,7 @@ void AT_ALIC_CmdFunc_SUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_SUB at_alic_subscribe fail ");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
         }
+        alic_state = ALIC_SUB;
         atCmdSetTimeoutHandler(pParam->engine, 60000, _timeoutalicTimeout);
     }
     else if (AT_CMD_TEST == pParam->type)
@@ -868,6 +925,7 @@ void AT_ALIC_CmdFunc_UNSUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_UNSUB IOT_MQTT_Unsubscribe fail");
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_EXE_FAIL);
         }
+        alic_state = ALIC_UNSUB;
         atCmdSetTimeoutHandler(pParam->engine, 60000, _timeoutalicTimeout);
     }
     else if (AT_CMD_TEST == pParam->type)
@@ -978,6 +1036,7 @@ void AT_ALIC_CmdFunc_PUB(atCommand_t *pParam)
             OSI_LOGI(0, "AT_ALIC_CmdFunc_PUB at_alic_publish no ack");
             RETURN_OK(pParam->engine);
         }
+        alic_state = ALIC_PUB;
         atCmdSetTimeoutHandler(pParam->engine, 60000, _timeoutalicTimeout);
     }
     else if (AT_CMD_TEST == pParam->type)
