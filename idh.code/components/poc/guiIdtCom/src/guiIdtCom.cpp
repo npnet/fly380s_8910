@@ -1053,7 +1053,7 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
     grop.dwSn = dwSn;
     grop.wRes = wRes;
     memcpy(&grop.pGroup, (const void *)pGroup, sizeof(GData_s));
-
+	/*删组操作*/
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GROUP_OPERATOR_REP, (void *)&grop);
 }
 

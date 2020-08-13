@@ -181,7 +181,6 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 	author : wangls
   describe : lv任务刷新
 	  date : 2020-07-28
-	 result: 解决新建群组里刷新白屏-黑屏-无法唤醒/问题
 */
 static void lv_poc_group_list_set_current_group_cb(int result_type)
 {
@@ -988,7 +987,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	        && GROUP_EQUATION((void *)p_cur->name, (void *)lock_group_name, (void *)p_cur->information, (void *)lock_group, NULL))
         {
 	        is_set_lock_group = 0;
-			lv_img_set_src(img, &locked);//unlock
+			lv_img_set_src(img, &locked);//lock
 			p_group_info->is_lock = true;
 			lv_poc_group_current_lock_info = p_group_info;
 		}
@@ -1340,17 +1339,17 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 			lv_obj_t *btn_label = lv_list_get_btn_label(group_item->list_item);
 			lv_label_set_text(btn_label, " ");
 			lv_label_set_text(btn_label, lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-			lv_img_set_src(group_info->lock_img, &unlock);
+			lv_img_set_src(group_info->lock_img, &unlock);/*未锁组*/
 			group_info->is_lock = false;
-
+			/*当前选的group list*/
 			group_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
 			group_item = (list_element_t *)group_info->item_information;
 			btn_label = lv_list_get_btn_label(group_item->list_item);
-	    	strcpy(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-	    	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+	    	strcpy(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+	    	strcat(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
 			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
-			lv_img_set_src(group_info->lock_img, &unlock);
-			group_info->is_lock = false;
+			lv_img_set_src(group_info->lock_img, &locked);
+			group_info->is_lock = true;/*锁组*/
 
 			if(group_info == NULL) return;
 			lv_poc_group_current_info = group_info;

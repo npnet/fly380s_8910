@@ -176,12 +176,17 @@ static void poc_Led_Entry(void *param)
 			case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
 
 				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS;
 				pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
 
+				break;
+
+			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
+
+				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS;
+				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
 				break;
 
 			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
