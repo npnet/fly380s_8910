@@ -1217,6 +1217,7 @@ uint32_t __sprd_codec_headset_type_detect(void)
 
 void __sprd_codec_headset_related_oper(uint32_t heaset_type)
 {
+    g_HeadPhoneStatus.MicType = heaset_type;
     __sprd_codec_ap_hp_depop_en(true);
     __sprd_codec_headset_type_related_oper(heaset_type);
     return;

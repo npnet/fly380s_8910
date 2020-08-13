@@ -166,7 +166,7 @@ diagRunMode_t diagRunModeCheck(drvDebugPort_t *port)
         if (rc.mode != DIAG_RM_NORMAL)
         {
             drvUsbDisable();
-            osiThreadSleepUS(500 * 1000);
+            osiThreadSleepUS(1000 * 1000);
             drvUsbEnable(0);
         }
         else

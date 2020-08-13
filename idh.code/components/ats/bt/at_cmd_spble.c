@@ -512,6 +512,11 @@ void _AppBleMsgHandler(void *param)
         break;
     }
 
+    if (NULL != (void *)pEvent->param2)
+    {
+        free((void *)pEvent->param2);
+    }
+
     if (NULL != pEvent)
     {
         free(pEvent);
@@ -1067,8 +1072,14 @@ void AT_SPBLE_CmdFunc_COMM(atCommand_t *pParam)
             // set bt callback for response.
             AppRegisterBtMsgCB(APP_BLE_MSG, _AppBleMsgHandler);
             // call bt api connect
-            BLE_Connect(Type, (unsigned char *)Addr);
-            atCmdSetTimeoutHandler(pParam->engine, TIMEOUT_NOT_RESPONSE, _AppBleNotResponseHandler);
+            if (BT_IN_PROGRESS != BLE_Connect(Type, (unsigned char *)Addr))
+            {
+                atCmdSetTimeoutHandler(pParam->engine, TIMEOUT_NOT_RESPONSE, _AppBleNotResponseHandler);
+            }
+            else
+            {
+                atCmdRespErrorText(pParam->engine, "+BLECOMM:ERR=error, exist one connection");
+            }
 
             return;
             break;

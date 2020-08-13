@@ -1876,7 +1876,7 @@ ftp_ret_t FTPLib_getStop()
     if (gFTPLibCtx->ftpc.apiType == FTP_API_SYNC)
     {
         while (gFTPLibCtx->dataCmd != FTP_DATA_NULL)
-            osiThreadSleep(200);
+            osiThreadSleep(100);
     }
 
     return FTP_RET_SUCCESS;
@@ -1988,6 +1988,8 @@ ftp_ret_t FTPLib_putStop()
         return FTP_RET_INTERNAL_ERR;
     }
 
+    setError(FTP_RET_SUCCESS);
+
     gFTPLibCtx->ftpCon.op->killTimeout(FTP_DATA_SOCK);
     if (gFTPLibCtx->ftpCon.op->disconnect(FTP_DATA_SOCK) != true)
         return FTP_RET_API_ERR;
@@ -1995,7 +1997,7 @@ ftp_ret_t FTPLib_putStop()
     if (gFTPLibCtx->ftpc.apiType == FTP_API_SYNC)
     {
         while (gFTPLibCtx->dataCmd != FTP_DATA_NULL)
-            osiThreadSleep(200);
+            osiThreadSleep(100);
     }
 
     return FTP_RET_SUCCESS;
