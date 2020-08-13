@@ -215,7 +215,8 @@ typedef enum
 	LV_GROUP_KEY_VOL_DOWN       = 45,
 	LV_GROUP_KEY_VOL_UP         = 46,
 	LV_GROUP_KEY_POC            = 47,
-	LV_GROUP_KEY_SET            = 48
+	LV_GROUP_KEY_SET            = 48,
+	LV_GROUP_KEY_LOCK_SCREEN    = 49
 } LV_GROUP_KEY_E;
 
 typedef enum {

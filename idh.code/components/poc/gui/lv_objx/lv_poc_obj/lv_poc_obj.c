@@ -937,7 +937,7 @@ static bool lv_poc_init_stabar_time_label(void)
     //memset(time_label,0,sizeof(lv_label_ext_t));
     //lv_obj_set_size(time_label, LV_POC_STABAR_TIME_HOR_RES, LV_POC_STABAR_TIME_VER_RES);
     //lv_obj_set_pos(time_label, LV_POC_STABAR_TIME_POSITION_X, LV_POC_STABAR_TIME_POSITION_Y);
-    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 0, 0);
+    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 2, 0);
 
     lv_poc_get_time(&time);
 
@@ -1198,7 +1198,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
 //	lv_obj_set_pos(control->left_button, LV_POC_CONTROL_LBTN_POSITION_X, LV_POC_CONTROL_LBTN_POSITION_Y);
     lv_label_set_text(control->left_button,left_text);
     lv_label_set_align(control->left_button, LV_LABEL_ALIGN_CENTER);
-    lv_obj_align(control->left_button, lv_obj_get_parent(control->left_button), LV_ALIGN_IN_LEFT_MID, 0, 0);
+    lv_obj_align(control->left_button, lv_obj_get_parent(control->left_button), LV_ALIGN_IN_LEFT_MID, 2, -1);
 
     control->middle_button = lv_label_create(control->background,NULL);
 //	lv_mem_assert(control->middle_button);
@@ -1207,7 +1207,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
 //	lv_obj_set_pos(control->middle_button, LV_POC_CONTROL_MBTN_POSITION_X, LV_POC_CONTROL_MBTN_POSITION_Y);
     lv_label_set_text(control->middle_button, middle_text);
     lv_label_set_align(control->middle_button, LV_LABEL_ALIGN_CENTER);
-    lv_obj_align(control->middle_button, lv_obj_get_parent(control->middle_button), LV_ALIGN_CENTER, 0, 0);
+    lv_obj_align(control->middle_button, lv_obj_get_parent(control->middle_button), LV_ALIGN_CENTER, 0, -1);
 
     control->right_button = lv_label_create(control->background,NULL);
 //	lv_mem_assert(control->right_button);
@@ -1216,7 +1216,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
 //	lv_obj_set_pos(control->right_button, LV_POC_CONTROL_RBTN_POSITION_X, LV_POC_CONTROL_RBTN_POSITION_Y);
     lv_label_set_text(control->right_button, right_text);
     lv_label_set_align(control->right_button, LV_LABEL_ALIGN_CENTER);
-    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, 0, 0);
+    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, 0, -1);
 
     //lv_refr_now(NULL);
 

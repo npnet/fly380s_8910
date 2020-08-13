@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -234,12 +234,12 @@ bool drvLcdOpenV2(drvLcd_t *d)
 
     osiMutexLock(gGoudaCtx.lock);
 
-    if (d->state == LCD_STATE_OPENED)
+    if (d->state == LCD_STATE_OPENED)/*针对重启模式，上次已经配置过*/
         goto pass_unlock;
 
     if (d->state == LCD_STATE_PROBE_FAILD)
         goto fail_unlock;
-
+	/*首次配置LCD*/
     prvGoudaInit();
     prvSetPowerEnable(true);
 
@@ -247,7 +247,7 @@ bool drvLcdOpenV2(drvLcd_t *d)
     for (unsigned n = 0; n < OSI_ARRAY_SIZE(gLcdDescs); n++)
     {
         drvLcdSetDesc(d, gLcdDescs[n]);
-        if (d->desc->ops.probe(d))
+        if (d->desc->ops.probe(d))//如果id正确
         {
             d->desc->ops.init(d);
             d->state = LCD_STATE_OPENED;
@@ -593,10 +593,10 @@ bool drvLcdFill(drvLcd_t *d, uint16_t color, const drvLcdArea_t *screen_roi, boo
     }
     else
     {
-        roi.x = 0;
+        roi.x = 0;/*加2偏移，解决边花屏问题*/
         roi.y = 0;
-        roi.w = d->desc->width;
-        roi.h = d->desc->height;
+        roi.w = d->desc->width;// + 2;
+        roi.h = d->desc->height;// + 2;
         if (drvLcdDirSwapped(drvLcdDirCombine(d->app_dir, d->desc->dir)))
             OSI_SWAP(uint16_t, roi.w, roi.h);
     }

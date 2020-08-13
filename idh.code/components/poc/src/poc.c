@@ -60,6 +60,7 @@ static void pocIdtStartHandleTask(void * ctx)
 	pocAudioPlayerSound();/*new player test*/
 	#endif
 	osiThreadSleep(2000);
+	/*login task*/
 	lvPocGuiIdtCom_log();
 	osiThreadExit();
 }

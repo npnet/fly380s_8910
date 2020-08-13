@@ -78,20 +78,20 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {
     {KEY_MAP_SOFT_R, LV_KEY_NEXT},
 };
 #else
-static const lvGuiKeypadMap_t gLvKeyMap[] = {
+static const lvGuiKeypadMap_t gLvKeyMap[] = {/*song is here*/
     {KEY_MAP_POWER,  0xf0},
     {KEY_MAP_SIM1,   0xf1},
     {KEY_MAP_SIM2,   0xf2},
     {KEY_MAP_0,      LV_GROUP_KEY_END},
-    {KEY_MAP_1,      LV_GROUP_KEY_VOL_DOWN},
-    {KEY_MAP_2,      LV_GROUP_KEY_ESC},
-    {KEY_MAP_3,      LV_GROUP_KEY_MB},
-    {KEY_MAP_4,      LV_GROUP_KEY_POC},
-    {KEY_MAP_5,      LV_GROUP_KEY_UP},
-    {KEY_MAP_6,      LV_GROUP_KEY_DOWN},
-    {KEY_MAP_7,      LV_GROUP_KEY_VOL_UP},
-    {KEY_MAP_8,      LV_GROUP_KEY_ENTER},
-    {KEY_MAP_9,      LV_GROUP_KEY_GP},
+    {KEY_MAP_1,      LV_GROUP_KEY_ENTER},/*确定*/
+    {KEY_MAP_2,      LV_GROUP_KEY_END},/*短按系统设置(广播无),长按对讲设置(广播com.corget.show.setting)*/
+    {KEY_MAP_3,      LV_GROUP_KEY_MB},/*成员列表-广播android.ptt.curr.info.play*/
+    {KEY_MAP_4,      LV_GROUP_KEY_UP},/*上*/
+    {KEY_MAP_5,      LV_GROUP_KEY_DOWN},/*下*/
+    {KEY_MAP_6,      LV_GROUP_KEY_GP},/*群组列表-广播android.ptt.curr.group*/
+    {KEY_MAP_7,      LV_GROUP_KEY_ESC},/*返回*/
+    {KEY_MAP_8,      LV_GROUP_KEY_END},/*(13)无定义*/
+    {KEY_MAP_9,      LV_GROUP_KEY_LOCK_SCREEN},/*长按锁屏/解屏,广播android.intent.action.elink.lockscreen,android.intent.action.elink.unlockscreen*/
     {KEY_MAP_STAR,   LV_GROUP_KEY_END},
     {KEY_MAP_WELL,   LV_GROUP_KEY_END},
     {KEY_MAP_OK,     LV_GROUP_KEY_END},
@@ -249,7 +249,8 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 		            gLvScreenStatusFirstKey = true;
 	            }
                 data->key = gLvKeyMap[n].lv_key;
-
+				/*song get key*/
+				OSI_LOGI(0, "[song]keyvalue is %d", data->key);
                 break;
             }
         }

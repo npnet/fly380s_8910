@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -37,95 +37,113 @@ static void prvSt7735sSetDir(drvLcd_t *d, drvLcdDirection_t dir)
 static void prvSt7735sInit(drvLcd_t *d)
 {
     const drvLcdPanelDesc_t *desc = drvLcdGetDesc(d);
-    drvLcdWriteCmd(d, 0x11); //Sleep out
-    osiThreadSleep(100); //Delay 120ms
+
+	drvLcdWriteCmd(d, 0x11); //Sleep out
+    osiThreadSleep(120); //Delay 120ms
+
     //------------------------------------ST7735S Frame Rate-----------------------------------------//
     drvLcdWriteCmd(d, 0xB1);
     drvLcdWriteData(d, 0x05);
-    drvLcdWriteData(d, 0x3C);
-    drvLcdWriteData(d, 0x3C);
+    drvLcdWriteData(d, 0x3c);
+    drvLcdWriteData(d, 0x3c);
+
     drvLcdWriteCmd(d, 0xB2);
     drvLcdWriteData(d, 0x05);
-    drvLcdWriteData(d, 0x3C);
-    drvLcdWriteData(d, 0x3C);
+    drvLcdWriteData(d, 0x3c);
+    drvLcdWriteData(d, 0x3c);
+
     drvLcdWriteCmd(d, 0xB3);
     drvLcdWriteData(d, 0x05);
-    drvLcdWriteData(d, 0x3C);
-    drvLcdWriteData(d, 0x3C);
+    drvLcdWriteData(d, 0x3c);
+    drvLcdWriteData(d, 0x3c);
     drvLcdWriteData(d, 0x05);
-    drvLcdWriteData(d, 0x3C);
-    drvLcdWriteData(d, 0x3C);
+    drvLcdWriteData(d, 0x3c);
+    drvLcdWriteData(d, 0x3c);
     //------------------------------------End ST7735S Frame Rate-----------------------------------------//
     drvLcdWriteCmd(d, 0xB4); //Dot inversion
     drvLcdWriteData(d, 0x03);
+
     drvLcdWriteCmd(d, 0xC0);
     drvLcdWriteData(d, 0x28);
     drvLcdWriteData(d, 0x08);
     drvLcdWriteData(d, 0x04);
+
     drvLcdWriteCmd(d, 0xC1);
     drvLcdWriteData(d, 0XC0);
+
     drvLcdWriteCmd(d, 0xC2);
     drvLcdWriteData(d, 0x0D);
     drvLcdWriteData(d, 0x00);
+
     drvLcdWriteCmd(d, 0xC3);
     drvLcdWriteData(d, 0x8D);
     drvLcdWriteData(d, 0x2A);
+
     drvLcdWriteCmd(d, 0xC4);
     drvLcdWriteData(d, 0x8D);
     drvLcdWriteData(d, 0xEE);
     //---------------------------------End ST7735S Power Sequence-------------------------------------//
     drvLcdWriteCmd(d, 0xC5); //VCOM
-    drvLcdWriteData(d, 0x1A);
-    //drvLcdWriteCmd(d, 0x36); //MX, MY, RGB mode
-    //drvLcdWriteData(d, 0xC0);
+    drvLcdWriteData(d, 0x1a);
     prvSt7735sSetDir(d, desc->dir);
     //------------------------------------ST7735S Gamma Sequence-----------------------------------------//
     drvLcdWriteCmd(d, 0xE0);
-    drvLcdWriteData(d, 0x04);
-    drvLcdWriteData(d, 0x22);
-    drvLcdWriteData(d, 0x07);
-    drvLcdWriteData(d, 0x0A);
-    drvLcdWriteData(d, 0x2E);
-    drvLcdWriteData(d, 0x30);
-    drvLcdWriteData(d, 0x25);
-    drvLcdWriteData(d, 0x2A);
-    drvLcdWriteData(d, 0x28);
-    drvLcdWriteData(d, 0x26);
-    drvLcdWriteData(d, 0x2E);
-    drvLcdWriteData(d, 0x3A);
+    drvLcdWriteData(d, 0x05);
+    drvLcdWriteData(d, 0x1a);
+    drvLcdWriteData(d, 0x0c);
+    drvLcdWriteData(d, 0x0e);
+    drvLcdWriteData(d, 0x3a);
+    drvLcdWriteData(d, 0x34);
+    drvLcdWriteData(d, 0x2d);
+    drvLcdWriteData(d, 0x2f);
+    drvLcdWriteData(d, 0x2d);
+    drvLcdWriteData(d, 0x2a);
+    drvLcdWriteData(d, 0x2F);
+    drvLcdWriteData(d, 0x3C);
     drvLcdWriteData(d, 0x00);
     drvLcdWriteData(d, 0x01);
-    drvLcdWriteData(d, 0x03);
-    drvLcdWriteData(d, 0x13);
+    drvLcdWriteData(d, 0x02);
+    drvLcdWriteData(d, 0x10);
+
     drvLcdWriteCmd(d, 0xE1);
     drvLcdWriteData(d, 0x04);
-    drvLcdWriteData(d, 0x16);
-    drvLcdWriteData(d, 0x06);
-    drvLcdWriteData(d, 0x0D);
+    drvLcdWriteData(d, 0x1b);
+    drvLcdWriteData(d, 0x0d);
+    drvLcdWriteData(d, 0x0e);
     drvLcdWriteData(d, 0x2D);
+    drvLcdWriteData(d, 0x29);
+    drvLcdWriteData(d, 0x24);
+    drvLcdWriteData(d, 0x29);
+    drvLcdWriteData(d, 0x28);
     drvLcdWriteData(d, 0x26);
-    drvLcdWriteData(d, 0x23);
-    drvLcdWriteData(d, 0x27);
-    drvLcdWriteData(d, 0x27);
-    drvLcdWriteData(d, 0x25);
-    drvLcdWriteData(d, 0x2D);
+
+    drvLcdWriteData(d, 0x31);
     drvLcdWriteData(d, 0x3B);
     drvLcdWriteData(d, 0x00);
-    drvLcdWriteData(d, 0x01);
-    drvLcdWriteData(d, 0x04);
-    drvLcdWriteData(d, 0x13);
+    drvLcdWriteData(d, 0x00);
+    drvLcdWriteData(d, 0x03);
+    drvLcdWriteData(d, 0x12);
+
+	drvLcdWriteCmd(d, 0xfc);
+    drvLcdWriteData(d, 0x8c);
     //------------------------------------End ST7735S Gamma Sequence-----------------------------------------//
     drvLcdWriteCmd(d, 0x3A); //65k mode
     drvLcdWriteData(d, 0x05);
+
+	drvLcdWriteCmd(d, 0x35);
+	drvLcdWriteData(d, 0x00);
+
     drvLcdWriteCmd(d, 0x29); //Display on
 
-    osiThreadSleep(20);
-    drvLcdWriteCmd(d, 0x2c);
+	osiThreadSleep(20); //Delay 20ms
+	drvLcdWriteCmd(d, 0x2c);
+
+	OSI_LOGI(0, "[song]ST7735S init");
 }
 
 static void prvSt7735sBlitPrepare(drvLcd_t *d, drvLcdDirection_t dir, const drvLcdArea_t *roi)
 {
-    OSI_LOGD(0, "ST7735S dir/%d roi/%d/%d/%d/%d", dir, roi->x, roi->y, roi->w, roi->h);
+    OSI_LOGD(0, "[song]ST7735S dir/%d roi/%d/%d/%d/%d", dir, roi->x, roi->y, roi->w, roi->h);
 
     prvSt7735sSetDir(d, dir);
 
@@ -155,7 +173,7 @@ static uint32_t prvSt7735sReadId(drvLcd_t *d)
     drvLcdReadData(d, LCD_CMD_READ_ID, id, 4);
 
     uint32_t dev_id = (id[3] << 16) | (id[2] << 8) | id[1];
-    OSI_LOGI(0, "ST7735S read id: 0x%08x", dev_id);
+    OSI_LOGI(0, "[song]ST7735S read id: 0x%08x", dev_id);
     return dev_id;
 }
 
@@ -163,7 +181,7 @@ static bool prvSt7735sProbe(drvLcd_t *d)
 {
     const drvLcdPanelDesc_t *desc = drvLcdGetDesc(d);
 
-    OSI_LOGI(0, "ST7735S probe");
+    OSI_LOGI(0, "[song]ST7735S probe");
     return prvSt7735sReadId(d) == desc->dev_id;
 }
 
@@ -177,10 +195,10 @@ const drvLcdPanelDesc_t gLcdSt7735sDesc = {
     .dev_id = 0x7c89f0,
     .reset_us = 20 * 1000,
     .init_delay_us = 100 * 1000,
-    .width = 160,
-    .height = 128,
+    .width = 132,
+    .height = 132,
     .out_fmt = DRV_LCD_OUT_FMT_16BIT_RGB565,
-    .dir = DRV_LCD_DIR_EXCHG_XINV,
+    .dir = DRV_LCD_DIR_ROTATE_270,
     .line_mode = DRV_LCD_SPI_4WIRE,
     .fmark_enabled = false,
     .fmark_delay = 0x2a000,
