@@ -1472,6 +1472,8 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_LOGIN_REP:
 		{
+			static int play_voice_delay = 0;
+
 			if(pocIdtAttr.player == 0)
 			{
 				pocIdtAttr.player = pocAudioPlayerCreate(81920);
@@ -1506,7 +1508,12 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 				{//当前未登录
 					if(pocIdtAttr.onepoweron == false)/*开机后登陆成功之前只播一次*/
 					{
-						poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, 50, true);
+						play_voice_delay++;
+						if(play_voice_delay >= 30 || play_voice_delay == 1)//2min
+						{
+							play_voice_delay = 1;
+							poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, 50, true);
+						}
 					}
 					pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED;
 
@@ -1783,7 +1790,7 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				break;
 			}
 			unsigned int mic_ctl = (unsigned int)ctx;
-			bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
+			bool pttStatus = lv_poc_get_earppt_state()|lv_poc_get_ppt_state();//pocGetPttKeyState()|
 
 			if(mic_ctl > 1 && pocIdtAttr.mic_ctl <= 1 && m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)  //获得话权
 			{

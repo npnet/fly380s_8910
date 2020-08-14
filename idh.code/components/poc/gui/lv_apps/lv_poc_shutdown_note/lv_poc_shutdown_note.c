@@ -58,17 +58,17 @@ typedef enum{
 static
 void lv_poc_shutdown_note_activity_area(void)
 {
-	//根据160*128（屏幕宽度）和弹窗130*98（弹窗宽度）
+	//根据132*132（屏幕宽度）和弹窗102*102（弹窗宽度）
 
 	//屏幕弹跳消息框
 	msg_display_area.x1 = 15;
-	msg_display_area.x2 = 145;
+	msg_display_area.x2 = 117;
 	msg_display_area.y1 = 24;
 	msg_display_area.y2 = 122;
 
 	//消息框内容框大小
 	shutdown_display_area.x1 = 15;
-	shutdown_display_area.x2 = 145;
+	shutdown_display_area.x2 = 117;
 	shutdown_display_area.y1 = 24;
 	shutdown_display_area.y2 = 122;
 }
@@ -356,11 +356,11 @@ void lv_poc_shutdown_animation(lv_task_t * task)
 
 	lv_obj_t * shutdown_animation;
 	shutdown_animation = lv_obj_create(lv_scr_act(), NULL);
-    lv_obj_set_size(shutdown_animation, 160, 128);
+    lv_obj_set_size(shutdown_animation, 132, 132);
     lv_obj_set_pos(shutdown_animation,  0, 0);
 	lv_obj_t * poc_shut_down_backgroup_image = lv_img_create(shutdown_animation, NULL);
 	lv_img_set_auto_size(poc_shut_down_backgroup_image, false);
-	lv_obj_set_size(poc_shut_down_backgroup_image, 160, 128);
+	lv_obj_set_size(poc_shut_down_backgroup_image, 132, 132);
 	lv_img_set_src(poc_shut_down_backgroup_image, &img_poweroff_poc_logo_unicom);
 	lv_obj_align( poc_shut_down_backgroup_image, shutdown_animation, LV_ALIGN_CENTER,  0,  0);
 
@@ -413,7 +413,7 @@ void lv_poc_shutdown_note_power_off_warning_create(lv_task_t * task)
 	char *title = "关机";
 	char *context = "您的对讲机将会\n关机。";
 	char *opt_left_str = "            确定            ";//28格才能填满
-	lv_area_t warnningarea = {15, 24, 145, 122};//提示框大小
+	lv_area_t warnningarea = {15, 24, 117, 122};//提示框大小
 
 	//新建提示框
 	lv_poc_warnning_open(title, context, opt_left_str,lv_poc_power_off_warning_apply_event_handler,
@@ -472,7 +472,7 @@ void lv_poc_shutdown_note_reboot_warning_create(lv_task_t * task)
 	char *title = "重新启动";
 	char *context = "您确定需要重新\n启动对讲机吗？";
 	char *opt_left_str = "            确定            ";//28格才能填满
-	lv_area_t warnningarea = {15, 24, 145, 122};//提示框大小
+	lv_area_t warnningarea = {15, 24, 117, 122};//提示框大小
 
 	//新建提示框
 	lv_poc_warnning_open(title, context, opt_left_str,lv_poc_reboot_warning_apply_event_handler,

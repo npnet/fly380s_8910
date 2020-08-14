@@ -74,7 +74,7 @@ static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display)
 	lv_obj_set_size(warnning->prv_title_obj, lv_obj_get_width(warnning->prv_base_obj) - 4, lv_obj_get_height(warnning->prv_base_obj) / 3);
 	lv_label_set_text(warnning->prv_title_obj,warnning->title);
 	lv_obj_set_style(warnning->prv_title_obj,&lv_poc_lockgroup_style);
-	lv_obj_align(warnning->prv_title_obj,warnning->prv_base_obj,LV_ALIGN_IN_TOP_LEFT,10,5);
+	lv_obj_align(warnning->prv_title_obj,warnning->prv_base_obj,LV_ALIGN_IN_TOP_LEFT,2,5);
 
 	//创建线条
 	lv_style_copy(&style_line, &lv_style_plain);
@@ -97,7 +97,7 @@ static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display)
 	lv_obj_set_size(warnning->prv_context_obj, lv_obj_get_width(warnning->prv_base_obj) - 4, lv_obj_get_height(warnning->prv_base_obj) / 3);
 	lv_label_set_text(warnning->prv_context_obj, warnning->context);
 	lv_obj_set_style(warnning->prv_context_obj, &lv_poc_lockgroup_style);
-	lv_obj_align(warnning->prv_context_obj,warnning->prv_base_obj,LV_ALIGN_IN_LEFT_MID, 10, -2);
+	lv_obj_align(warnning->prv_context_obj,warnning->prv_base_obj,LV_ALIGN_IN_LEFT_MID, 2, -2);
 
 	//第三行字体
 	memset(&lv_poc_lockgroupbutton_style, 0, sizeof(lv_style_t));

@@ -57,7 +57,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 	bool ret = false;
 	if(id == LV_GROUP_KEY_POC) //poc
 	{
-		if(prvPttKeyState != state)// && !lvPocGuiIdtCom_listen_status())/*当正在接听是ppt键无效*/
+		if(prvPttKeyState != state)
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{
@@ -73,7 +73,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		prvPttKeyState = state;
 		ret = false;
 	}
-	else if(id == 0xf0)
+	else if(id == LV_GROUP_KEY_LOCK_SCREEN)
 	{
 		if(prvPowerTimer == NULL)
 		{

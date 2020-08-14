@@ -19,6 +19,8 @@ enum {
 	poc_green_led   = 13,//IO greenled
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set  = 8,//IO headset
+	poc_volum_up  = 20,//IO volum
+	poc_ppt       = 21,//IO ppt
 };
 
 //字符串长度:
@@ -721,6 +723,34 @@ bool lv_poc_get_earppt_state(void);
 	  date : 2020-07-22
 */
 char *lv_poc_get_self_name_count(void);
+
+/*
+	  name : lv_poc_ppt_key_init
+	 param : none
+	author : wangls
+  describe : ppt配置
+	  date : 2020-08-14
+*/
+void lv_poc_ppt_key_init(void);
+
+/*
+	  name : lv_poc_volum_up_key_init
+	 param : none
+	author : wangls
+  describe : volum up配置
+	  date : 2020-08-14
+*/
+void lv_poc_volum_up_key_init(void);
+
+/*
+	  name : lv_poc_get_ppt_state
+	 param : none
+	author : wangls
+  describe : 获取对讲ppt
+	  date : 2020-08-14
+*/
+bool lv_poc_get_ppt_state(void);
+
 
 #ifdef __cplusplus
 }

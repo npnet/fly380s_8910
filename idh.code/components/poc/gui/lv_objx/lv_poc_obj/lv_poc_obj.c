@@ -2322,7 +2322,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         else if(battery_t.battery_value >= 0)
         {
             battery_img = &stat_sys_battery_0;
-            if(low_battery_check_count < 1)
+            if(low_battery_check_count < 1 && battery_t.battery_value <= 5)
             {
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, 50, false);

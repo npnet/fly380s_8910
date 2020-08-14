@@ -38,6 +38,8 @@ static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_green_gpio = NULL;
+static drvGpio_t * poc_volum_up_gpio = NULL;
+static drvGpio_t * poc_ppt_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 
@@ -1574,22 +1576,7 @@ typedef struct _PocEarKeyComAttr_t
 }PocEarKeyComAttr_t;
 
 static PocEarKeyComAttr_t ear_key_attr = {0};
-
-static void Lv_ear_ppt_timer_cb(void *ctx)
-{
-	OSI_LOGI(0, "[song]ear time cb\n");
-	if(drvGpioRead(poc_ear_ppt_gpio) == false)/*press*/
-	{
-		ear_key_attr.ear_key_press = true;
-		poc_earkey_state = true;
-		OSI_LOGI(0, "[song]key is press,start speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
-	}
-	else
-	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机未插好", (const uint8_t *)"请重新插入");
-	}
-}
+static void Lv_ear_ppt_timer_cb(void *ctx);
 
 /*
 	  name : lv_poc_ear_ppt_key_init
@@ -1619,11 +1606,10 @@ void lv_poc_ear_ppt_key_init(void)
 	else
 	{
 		OSI_LOGI(0, "[song]ear gpio open success\n");
+		/*ear time*/
+		memset(&ear_key_attr, 0, sizeof(PocEarKeyComAttr_t));
+		ear_key_attr.ear_press_timer = osiTimerCreate(ear_key_attr.ear_ppt_thread, Lv_ear_ppt_timer_cb, NULL);/*误触碰定时器*/
 	}
-
-	/*ear time*/
-	memset(&ear_key_attr, 0, sizeof(PocEarKeyComAttr_t));
-	ear_key_attr.ear_press_timer = osiTimerCreate(ear_key_attr.ear_ppt_thread, Lv_ear_ppt_timer_cb, NULL);/*误触碰定时器*/
 }
 
 /*
@@ -1660,6 +1646,29 @@ void poc_ear_ppt_irq(void *ctx)
 }
 
 /*
+	  name : Lv_ear_ppt_timer_cb
+	 param : none
+	author : wangls
+  describe : ear ppt cb
+	  date : 2020-08-14
+*/
+static void Lv_ear_ppt_timer_cb(void *ctx)
+{
+	OSI_LOGI(0, "[song]ear time cb\n");
+	if(drvGpioRead(poc_ear_ppt_gpio) == false)/*press*/
+	{
+		ear_key_attr.ear_key_press = true;
+		poc_earkey_state = true;
+		OSI_LOGI(0, "[song]key is press,start speak\n");
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+	}
+	else
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机未插好", (const uint8_t *)"请重新插入");
+	}
+}
+
+/*
 	  name : lv_poc_get_earppt_state
 	 param : none
 	author : wangls
@@ -1672,20 +1681,164 @@ bool lv_poc_get_earppt_state(void)
 }
 
 /*
-	  name : lv_poc_read_headset_ppt_key
+	  name : lv_poc_ppt_key_init
 	 param : none
 	author : wangls
-  describe : 耳机ppt读取
-	  date : 2020-07-30
+  describe : ppt配置
+	  date : 2020-08-14
 */
-bool
-lv_poc_read_ear_ppt_key(void)
+typedef struct _PocPptKeyComAttr_t
 {
-	lv_poc_ear_ppt_key_init();
-	if(poc_ear_ppt_gpio == NULL) return false;
-	return drvGpioRead(poc_ear_ppt_gpio);
+	osiTimer_t *ppt_press_timer;/*误触碰定时器*/
+	osiThread_t *poc_ppt_thread;
+	bool poc_key_press;
+}PocPptKeyComAttr_t;
+
+static PocPptKeyComAttr_t poc_ppt_key_attr = {0};
+static uint8_t poc_pptkey_state = false;
+static void Lv_poc_ppt_timer_cb(void *ctx);
+static void poc_ppt_irq(void *ctx);
+
+void lv_poc_ppt_key_init(void)
+{
+	/*配置ppt IO*/
+    drvGpioConfig_t cfg = {
+        .mode = DRV_GPIO_INPUT,
+        .intr_enabled = true,
+        .intr_level = false,
+        .rising = true,
+        .falling = true,
+        .debounce = true,
+    };
+
+	poc_ppt_gpio = drvGpioOpen(poc_ppt, &cfg, poc_ppt_irq, NULL);
+
+	if(poc_ppt_gpio == NULL)
+	{
+		return;
+	}
+	else
+	{
+		OSI_LOGI(0, "[song]ppt gpio open success\n");
+		/*ppt time*/
+		memset(&poc_ppt_key_attr, 0, sizeof(PocPptKeyComAttr_t));
+		poc_ppt_key_attr.ppt_press_timer = osiTimerCreate(poc_ppt_key_attr.poc_ppt_thread, Lv_poc_ppt_timer_cb, NULL);/*误触碰定时器*/
+	}
 }
 
+/*
+	  name : poc_ppt_irq
+	 param : none
+	author : wangls
+  describe : ppt中断
+	  date : 2020-08-14
+*/
+static
+void poc_ppt_irq(void *ctx)
+{
+
+	if(drvGpioRead(poc_ppt_gpio))/*release*/
+	{
+		if(poc_ppt_key_attr.poc_key_press == true)
+		{
+			poc_ppt_key_attr.poc_key_press = false;
+			poc_pptkey_state = false;
+			OSI_LOGI(0, "[song]key is release,stop speak\n");
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		}
+		else
+		{
+			OSI_LOGI(0, "[song]ppt time stop\n");
+			osiTimerStop(poc_ppt_key_attr.ppt_press_timer);
+		}
+	}
+	else/*press*/
+	{
+		osiTimerStart(poc_ppt_key_attr.ppt_press_timer, 200);
+		OSI_LOGI(0, "[song]ppt key is press\n");
+	}
+}
+
+/*
+	  name : Lv_poc_ppt_timer_cb
+	 param : none
+	author : wangls
+  describe : ppt cb
+	  date : 2020-08-14
+*/
+static void Lv_poc_ppt_timer_cb(void *ctx)
+{
+	if(drvGpioRead(poc_ppt_gpio) == false)/*press*/
+	{
+		poc_ppt_key_attr.poc_key_press = true;
+		poc_pptkey_state = true;
+		OSI_LOGI(0, "[song]key is press,start speak\n");
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+	}
+	else
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"ppt未按下", (const uint8_t *)"");
+	}
+}
+
+/*
+	  name : lv_poc_get_ppt_state
+	 param : none
+	author : wangls
+  describe : 获取对讲ppt
+	  date : 2020-08-14
+*/
+bool lv_poc_get_ppt_state(void)
+{
+	return poc_pptkey_state == 1 ? true : false;
+}
+
+/*
+	  name : poc_volum_up_key_irq
+	 param : none
+	author : wangls
+  describe : volum up 中断
+	  date : 2020-08-14
+*/
+static
+void poc_volum_up_key_irq(void *ctx)
+{
+	if(drvGpioRead(poc_volum_up_gpio))/*release*/
+	{
+		OSI_LOGI(0, "[song]volum up key is release\n");
+	}
+	else/*press*/
+	{
+		OSI_LOGI(0, "[song]volum up key is press\n");
+	}
+}
+
+/*
+	  name : lv_poc_volum_up_key_init
+	 param : none
+	author : wangls
+  describe : volum up 配置
+	  date : 2020-08-14
+*/
+void lv_poc_volum_up_key_init(void)
+{
+	/*配置ppt IO*/
+    drvGpioConfig_t cfg = {
+        .mode = DRV_GPIO_INPUT,
+        .intr_enabled = true,
+        .intr_level = false,
+        .rising = true,
+        .falling = true,
+        .debounce = true,
+    };
+
+	poc_volum_up_gpio = drvGpioOpen(poc_volum_up, &cfg, poc_volum_up_key_irq, NULL);
+
+	if(poc_volum_up_gpio == NULL)
+	{
+		return;
+	}
+}
 
 
 static lv_poc_group_list_t * prv_group_list = NULL;

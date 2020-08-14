@@ -79,7 +79,7 @@ static void pocStartAnimation(void *ctx)
 		//魔方图片
 		lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
 		lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
-		lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
+		lv_obj_set_size(poc_power_on_backgroup_sprd_image, 132, 132);
 		lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
 		osiThreadSleep(2000);
 
@@ -93,7 +93,7 @@ static void pocStartAnimation(void *ctx)
 		//开机图片
 		lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
 		lv_img_set_auto_size(poc_power_on_backgroup_image, false);
-		lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
+		lv_obj_set_size(poc_power_on_backgroup_image, 132, 132);
 		extern lv_img_dsc_t img_poweron_poc_logo_unicom;
 		lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
 		lv_poc_setting_init();/*开机配置*/
@@ -139,7 +139,7 @@ static void pocLvglStart(void)
 static void pocLvglStart(void)
 {
 	lv_obj_t * bg = lv_obj_create(lv_scr_act(), NULL);
-	lv_obj_set_size(bg, 160, 128);
+	lv_obj_set_size(bg, 132, 132);
 	lv_obj_t * label = lv_label_create(bg, NULL);
 	lv_label_set_text(label, "Flyscale");
 	lv_obj_align(label, bg, LV_ALIGN_CENTER, 0, 0);
