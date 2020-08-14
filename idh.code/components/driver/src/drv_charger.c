@@ -147,8 +147,8 @@ static uint16_t chg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
 
 static chgDischarge_t dischg_param =
     {
-        3440, //warning_vol
-        3380, //shutdown_vol
+        3400, //warning_vol
+        3300, //shutdown_vol
         3000, //deadline_vol
         24,   //warning_count,warning interval
 };
@@ -317,7 +317,7 @@ typedef enum
 static chgCharge_t chg_param =
     {
         4150, //rechg_vol
-        4210, //chg_end_vol
+        4280, //chg_end_vol
         4330,
         CHARGER_CURRENT_700MA, //standard_chg_current
         CHARGER_CURRENT_500MA, //usb_chg_current
