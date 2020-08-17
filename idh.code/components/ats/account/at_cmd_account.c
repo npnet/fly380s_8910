@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2016 RDA Technologies Limited and/or its affiliates("RDA").
 * All rights reserved.
 *
 * This software is supplied "AS IS" without any warranties.
@@ -149,6 +149,8 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 			            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 			            break;
 		            }
+					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]userName is %s", userName);
+					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]userPasswd is %s", userPasswd);
 			    }while(0);
 		    }
 
@@ -160,17 +162,18 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 		            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 		            break;
 	            }
-
+				OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]ip_address is %s", ip_address);
 		    }
 
 		    if(cmd->param_count >= 4)
 		    {
-			    ip_port = atParamInt(cmd->params[0], &paramok);
+			    ip_port = atParamInt(cmd->params[3], &paramok);
 				if (!paramok)
 				{
 					RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 					break;
 				}
+				OSI_LOGI(0, "[song]ip_port is %d", ip_port);
 		    }
 
 		    if(userName != NULL)
