@@ -436,10 +436,10 @@ void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t even
 
 		if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
 		{
-			lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
-				LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
-			lv_task_once(task);
 		}
+		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
+			LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
+		lv_task_once(task);
 	}
 }
 
