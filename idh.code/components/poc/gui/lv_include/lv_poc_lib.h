@@ -19,8 +19,10 @@ enum {
 	poc_green_led   = 13,//IO greenled
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set  = 8,//IO headset
-	poc_volum_up  = 20,//IO volum
+	poc_volum_up  = 20,//IO volum up
 	poc_ppt       = 21,//IO ppt
+	poc_volum_down  = 18,//IO volum down
+	poc_sos  = 19,//IO sos
 };
 
 //字符串长度:
@@ -734,13 +736,13 @@ char *lv_poc_get_self_name_count(void);
 void lv_poc_ppt_key_init(void);
 
 /*
-	  name : lv_poc_volum_up_key_init
+	  name : lv_poc_key_init
 	 param : none
 	author : wangls
-  describe : volum up配置
-	  date : 2020-08-14
+  describe : key配置
+	  date : 2020-08-16
 */
-void lv_poc_volum_up_key_init(void);
+void lv_poc_key_init(void);
 
 /*
 	  name : lv_poc_get_ppt_state
@@ -751,6 +753,24 @@ void lv_poc_volum_up_key_init(void);
 */
 bool lv_poc_get_ppt_state(void);
 
+/*
+	  name : lv_poc_set_adc_current_sense
+	 param : none
+	author : wangls
+  describe : 设置adc电流源
+	  date : 2020-08-18
+	return : true-打开/false-关闭
+*/
+bool lv_poc_set_adc_current_sense(bool status);
+
+/*
+	  name : lv_poc_get_adc_to_volum
+	 param : none
+	author : wangls
+  describe : 获取滑动阻值adc
+	  date : 2020-08-18
+*/
+uint8_t lv_poc_get_adc_to_volum(void);
 
 #ifdef __cplusplus
 }

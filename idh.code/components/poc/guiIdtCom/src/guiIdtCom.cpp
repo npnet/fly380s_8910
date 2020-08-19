@@ -1509,17 +1509,10 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 					if(pocIdtAttr.onepoweron == false)/*开机后登陆成功之前只播一次*/
 					{
 						play_voice_delay++;
-						play_voice_delay++;
 						if(play_voice_delay >= 30 || play_voice_delay == 1)//2min
-
-						{
-						if(play_voice_delay >= 30 || play_voice_delay == 1)
-							play_voice_delay = 1;
 						{
 							poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, 50, true);
 							play_voice_delay = 1;
-						}
-							poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, 50, true);
 						}
 					}
 					pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED;

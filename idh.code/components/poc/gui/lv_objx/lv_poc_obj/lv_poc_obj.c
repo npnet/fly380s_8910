@@ -558,11 +558,17 @@ bool lv_poc_setting_init(void)
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
 	lv_poc_set_volum(POC_MMI_VOICE_MSG, 3, false, false);
-	lv_poc_set_volum(POC_MMI_VOICE_VOICE, poc_setting_conf->voicevolume, false, false);
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_keypad_led_init();
 #endif
 	poc_ext_pa_init();
+	extern uint16_t CUR_UNOPT;
+	CUR_UNOPT = LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS;
+	lv_poc_ear_ppt_key_init();
+	lv_poc_ppt_key_init();
+	lv_poc_key_init();
+	lv_poc_set_adc_current_sense(true);
+
     return true;
 }
 
@@ -576,13 +582,14 @@ static bool lv_poc_theme_init(void)
 {
 	#define LV_POC_SWITCH_ON_OFF_INDIC_COLOR LV_COLOR_MAKE(0x77, 0x77, 0x77);
 // 初始化白色主题
-    lv_style_copy(&theme_white_style_base,&lv_style_transp);
+    lv_style_copy(&theme_white_style_base,&lv_style_scr);
     theme_white_style_base.body.main_color = LV_COLOR_MAKE(0x00,0x00,0x00);
     theme_white_style_base.body.grad_color = LV_COLOR_MAKE(0x00,0x00,0x00);
     theme_white_style_base.body.radius = 0;
     theme_white_style_base.body.opa = 255;
-    theme_white_style_base.image.color = LV_COLOR_BLUE;
-    theme_white_style_base.image.intense = 0x33;
+    theme_white_style_base.image.color = LV_COLOR_MAKE(0xFF, 0xF5, 0x98);//天蓝色
+    theme_white_style_base.image.intense = 60;
+	theme_white_style_base.image.opa = 240;
 
     lv_style_copy(&theme_white_style_list_scroll, &lv_style_scr);
     lv_style_copy(&theme_white_style_list_page, &theme_white_style_list_scroll);
@@ -3483,6 +3490,42 @@ void lv_poc_anim_note(lv_obj_t *obj)
 	lv_anim_set_exec_cb(&lv_anim_obj, obj, (lv_anim_exec_xcb_t)lv_obj_set_opa_scale);
 
 	lv_anim_create(&lv_anim_obj);
+}
+
+/*
+	  name : lv_poc_set_volum_opt
+	 param : none
+	author : wangls
+  describe : adc to 设置音量
+	  date : 2020-08-18
+*/
+void lv_poc_set_volum_opt(lv_task_t *task)
+{
+	static uint8_t vol_cur = 0;
+	static uint8_t vol_last = 0;
+
+	vol_cur = lv_poc_get_adc_to_volum();
+
+	if(vol_cur == vol_last || (vol_cur == 0 && vol_last == 0))
+	{
+		return;
+	}
+
+	vol_last = vol_cur;
+
+	lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+}
+
+/*
+	  name : lv_poc_check_volum_task
+	 param : none
+	author : wangls
+  describe : 创建检索音量旋钮任务
+	  date : 2020-08-18
+*/
+void lv_poc_check_volum_task(LVPOCIDTCOM_Led_Period_t period)
+{
+	lv_task_create(lv_poc_set_volum_opt, period, LV_TASK_PRIO_LOW, NULL);
 }
 
 #ifdef __cplusplus

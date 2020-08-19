@@ -20,6 +20,14 @@ extern "C" {
 */
 void lv_poc_shutdown_note_activity_open(lv_task_t * task);
 
+/*
+	  name : lv_poc_shutdown_animation
+	 param : none
+	author : wangls
+  describe : 关机动画
+	  date : 2020-06-23
+*/
+void lv_poc_shutdown_animation(lv_task_t * task);
 
 
 #ifdef __cplusplus

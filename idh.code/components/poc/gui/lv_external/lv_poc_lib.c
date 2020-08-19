@@ -21,6 +21,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+/*add adc*/
+#include "drv_adc.h"
+#include "hwregs/8910/rda2720m_adc.h"
+#include "hal_adi_bus.h"
 
 static nv_poc_setting_msg_t poc_setting_conf_local = {0};
 static nv_poc_theme_msg_node_t theme_white = {0};
@@ -39,10 +43,37 @@ static drvGpio_t * poc_port_Gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_green_gpio = NULL;
 static drvGpio_t * poc_volum_up_gpio = NULL;
+static drvGpio_t * poc_volum_down_gpio = NULL;
+static drvGpio_t * poc_sos_gpio = NULL;
 static drvGpio_t * poc_ppt_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 
+/*********************volum***********************/
+
+typedef struct PocVolumAttribute_t{
+	uint32_t adc_level;
+	uint8_t volum_level;
+}PocVolumAttribute_t;
+
+static PocVolumAttribute_t lv_poc_volum_set[]= {
+	{150, 0},
+	{380, 1},
+	{760, 2},
+	{1100, 3},
+	{1440, 4},
+	{1780, 5},
+	{2120, 6},
+	{2460, 7},
+	{2800, 8},
+	{3140, 9},
+	{3820, 10},
+	{4096, 11}
+};
+
+#define POC_VOLUM_LEVEL_SIZE (sizeof(lv_poc_volum_set)/sizeof(lv_poc_volum_set[0]))
+
+/*************************************************/
 static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
 
@@ -1797,7 +1828,7 @@ bool lv_poc_get_ppt_state(void)
 	  name : poc_volum_up_key_irq
 	 param : none
 	author : wangls
-  describe : volum up 中断
+  describe : volum 中断
 	  date : 2020-08-14
 */
 static
@@ -1814,13 +1845,53 @@ void poc_volum_up_key_irq(void *ctx)
 }
 
 /*
-	  name : lv_poc_volum_up_key_init
+	  name : poc_volum_down_key_irq
 	 param : none
 	author : wangls
-  describe : volum up 配置
+  describe : volum 中断
 	  date : 2020-08-14
 */
-void lv_poc_volum_up_key_init(void)
+static
+void poc_volum_down_key_irq(void *ctx)
+{
+	if(drvGpioRead(poc_volum_down_gpio))/*release*/
+	{
+		OSI_LOGI(0, "[song]volum down key is release\n");
+	}
+	else/*press*/
+	{
+		OSI_LOGI(0, "[song]volum down key is press\n");
+	}
+}
+
+/*
+	  name : poc_sos_key_irq
+	 param : none
+	author : wangls
+  describe : sos 中断
+	  date : 2020-08-14
+*/
+static
+void poc_sos_key_irq(void *ctx)
+{
+	if(drvGpioRead(poc_sos_gpio))/*release*/
+	{
+		OSI_LOGI(0, "[song]sos key is release\n");
+	}
+	else/*press*/
+	{
+		OSI_LOGI(0, "[song]sos key is press\n");
+	}
+}
+
+/*
+	  name : lv_poc_key_init
+	 param : none
+	author : wangls
+  describe : volum key 配置
+	  date : 2020-08-14
+*/
+void lv_poc_key_init(void)
 {
 	/*配置ppt IO*/
     drvGpioConfig_t cfg = {
@@ -1833,8 +1904,12 @@ void lv_poc_volum_up_key_init(void)
     };
 
 	poc_volum_up_gpio = drvGpioOpen(poc_volum_up, &cfg, poc_volum_up_key_irq, NULL);
+	poc_volum_down_gpio = drvGpioOpen(poc_volum_down, &cfg, poc_volum_down_key_irq, NULL);
+	poc_sos_gpio = drvGpioOpen(poc_sos, &cfg, poc_sos_key_irq, NULL);
 
-	if(poc_volum_up_gpio == NULL)
+	if(poc_volum_up_gpio == NULL
+	   || poc_volum_down_gpio == NULL
+	   || poc_sos_gpio == NULL)
 	{
 		return;
 	}
@@ -2402,6 +2477,64 @@ lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
 		return false;
 	}
 	return true;
+}
+
+/*
+	  name : lv_poc_set_adc_current_sense
+	 param : none
+	author : wangls
+  describe : 设置adc电流源
+	  date : 2020-08-18
+	return : true-打开/false-关闭
+*/
+bool lv_poc_set_adc_current_sense(bool status)
+{
+#if 0
+	REG_RDA2720M_ADC_AUXAD_CTL0_T adc_auxad_ctl0_t;
+
+	adc_auxad_ctl0_t.b.rg_auxad_currentsen_en = 1;
+	halAdiBusWrite(&hwp_rda2720mAdc->auxad_ctl0, adc_auxad_ctl0_t.v);
+
+//	if(true == status){
+//		REG_ADI_CHANGE1(hwp_rda2720mAdc->auxad_ctl0, adc_auxad_ctl0_t, rg_auxad_currentsen_en, 1);
+//	}else{
+//		REG_ADI_CHANGE1(hwp_rda2720mAdc->auxad_ctl0, adc_auxad_ctl0_t, rg_auxad_currentsen_en, 0);
+//	}
+#endif
+	return ((halAdiBusRead(&adc_auxad_ctl0_t.v) & 0x1) == 1 ? true : false);
+}
+
+/*
+	  name : lv_poc_get_adc_to_volum
+	 param : none
+	author : wangls
+  describe : 获取滑动阻值adc
+	  date : 2020-08-18
+*/
+uint8_t lv_poc_get_adc_to_volum(void)
+{
+	int32_t adc_cur_value = 0;
+	int i;
+
+	adc_cur_value = drvAdcGetRawValue(ADC_CHANNEL_1, ADC_SCALE_1V250);
+
+	for(i = 0; i < POC_VOLUM_LEVEL_SIZE; i++)
+	{
+		if(adc_cur_value <= lv_poc_volum_set[i].adc_level)
+		{
+			break;
+		}
+	}
+
+	if(i == POC_VOLUM_LEVEL_SIZE)
+	{
+		return false;
+	}
+#if 0
+	OSI_LOGI(0, "[song]adc vlaue is =%d", *adcvlaue);
+#endif
+
+	return lv_poc_volum_set[i].volum_level;
 }
 
 

@@ -11,7 +11,6 @@ extern "C" {
 static void lv_poc_shutdown_note_event_handler(lv_obj_t *obj, lv_event_t event);
 static lv_res_t lv_poc_shutdown_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param);
 static void lv_poc_shutdown_note_activity_destory(lv_obj_t *obj);
-static void lv_poc_shutdown_animation(lv_task_t * task);
 static void lv_poc_shutdown_task(lv_task_t * task);
 static void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t event);
 static void lv_poc_power_off_warning_cancel_event_handler(lv_obj_t *obj, lv_event_t event);
@@ -348,7 +347,6 @@ lv_res_t lv_poc_shutdown_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, v
   describe : 关机动画
 	  date : 2020-06-23
 */
-static
 void lv_poc_shutdown_animation(lv_task_t * task)
 {
 	poc_shutdown_type user_data_type;
@@ -436,10 +434,11 @@ void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t even
 
 		if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
 		{
-			lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
-				LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
-			lv_task_once(task);
+
 		}
+		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
+			LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
+		lv_task_once(task);
 	}
 }
 

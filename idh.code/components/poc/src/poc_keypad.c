@@ -117,6 +117,24 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		prvPowerKeyState = state;
 		ret = true;
 	}
+	else if(id == 0xf0)/*电源按键*/
+	{
+		if(prvPttKeyState != state)
+		{
+			if(state == LV_INDEV_STATE_PR)
+			{
+				OSI_LOGI(0, "[song]power key press");
+			}
+			else
+			{
+				OSI_LOGI(0, "[song]power key release");
+				lv_poc_refr_func_ui(lv_poc_shutdown_animation, LVPOCLISTIDTCOM_LIST_PERIOD_10,
+					LV_TASK_PRIO_HIGH, (void *)2);
+			}
+		}
+		prvPttKeyState = state;
+		ret = false;
+	}
 	preKey = id;
 	preKeyState = state;
 	return ret;

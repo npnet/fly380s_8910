@@ -209,6 +209,7 @@ static
 void lv_poc_power_on_picture(lv_task_t * task)
 {
 	lv_poc_create_idle();
+	lv_poc_check_volum_task(LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500);
 }
 
 #endif
