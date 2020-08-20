@@ -427,10 +427,10 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 	{
 		if(lv_poc_group_current_info != NULL)
 		{
-			#if 0/*以下代码死机*/
+			#if 1/*以下代码死机*/
 			if(lv_poc_group_lock_info == NULL)
 			{
-				if(activity_list == NULL)
+				if(activity_list == NULL)//ok
 				{
 					return;
 				}

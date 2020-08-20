@@ -1115,6 +1115,10 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
 
             return POC_OPERATE_SECCESS;
         }
+		if(p_cur == NULL)/*solve haven't offline on group*/
+		{
+			return POC_UNKNOWN_FAULT;
+		}
         while(p_cur->next)
         {
             if(MEMBER_EQUATION((void *)p_cur->next->name, (void *)name, (void *)p_cur->next->information, (void *)information, NULL))
@@ -1141,6 +1145,11 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
 
             return POC_OPERATE_SECCESS;
         }
+		if(p_cur == NULL)
+		{
+			return POC_UNKNOWN_FAULT;
+		}
+
         while(p_cur->next)
         {
             if(MEMBER_EQUATION((void *)p_cur->next->name, (void *)name, (void *)p_cur->next->information, (void *)information, NULL))
