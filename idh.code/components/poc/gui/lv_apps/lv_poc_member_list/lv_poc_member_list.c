@@ -734,6 +734,8 @@ void lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj)
 		lv_poc_member_list_clear(member_list_obj);
 		lv_poc_get_member_list(lv_poc_group_list_get_member_list_info, member_list_obj, 1,lv_poc_member_list_get_list_cb);
 	}
+	/*one*/
+   	lv_poc_member_list_get_member_type = -1;
 }
 
 lv_poc_status_t lv_poc_member_list_move_top(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
