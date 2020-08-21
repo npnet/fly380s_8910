@@ -503,7 +503,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 			/*获取自己的号码*/
 			char myself_name[32] = {0};
 			strcpy((char *)myself_name, (const char *)lv_list_get_btn_text(btn));
-			strncpy((char *)lv_poc_member_myself_name, (const char *)myself_name, 5);
+			strncpy((char *)lv_poc_member_myself_name, (const char *)myself_name, 4);/*改此处是改账号的长度*/
 
 			lv_poc_build_group_selected_num++;
 		}

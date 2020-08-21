@@ -181,7 +181,6 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 	author : wangls
   describe : lv任务刷新
 	  date : 2020-07-28
-	 result: 解决新建群组里刷新白屏-黑屏-无法唤醒/问题
 */
 static void lv_poc_group_list_set_current_group_cb(int result_type)
 {
@@ -217,6 +216,7 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 
 		if(member_list != NULL)
 		{
+			OSI_LOGI(0, "[song]lv_poc_group_list_press_btn_cb is run");
 			memset((void *)member_list, 0, sizeof(lv_poc_member_list_t));
 			strcpy(lv_poc_group_member_list_title, (const char *)p_element->name);
 			member_list->hide_offline = false;
@@ -428,16 +428,12 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 	{
 		if(lv_poc_group_current_info != NULL)
 		{
-			#if 0/*以下代码死机*/
+			OSI_LOGI(0, "[song]group_lock_oprator_refresh\n");
+
 			if(lv_poc_group_lock_info == NULL)
 			{
-				if(activity_list == NULL)
-				{
-					return;
-				}
 				lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
 				lv_poc_group_current_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
-				if(lv_poc_group_current_info == NULL) return;
 				lv_poc_group_lock_info = lv_poc_group_current_info;
 			}
 
@@ -454,12 +450,12 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 			lv_poc_group_lock_info = NULL;
 			group_item = (list_element_t *)group_info->item_information;
 			btn_label = lv_list_get_btn_label(group_item->list_item);
-	    	strcpy(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-	    	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+	    	strcpy(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+	    	strcat(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
 			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
 			lv_img_set_src(group_info->lock_img, &locked);
 			group_info->is_lock = true;
-			#else/*解决锁组死机*/
+			#if 0
 			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
 				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_LOWEST, NULL);
 			#endif
@@ -475,11 +471,6 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 		lv_poc_group_current_lock_info = NULL;
 		lv_img_set_src(group_info->lock_img, &unlock);
 		group_info->is_lock = false;
-
-		#if 1/*解决刷新缺口*/
-		lv_poc_refr_func_ui(lv_poc_group_list_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_LOWEST, NULL);
-		#endif
 	}
 }
 
@@ -1346,8 +1337,8 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 			group_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
 			group_item = (list_element_t *)group_info->item_information;
 			btn_label = lv_list_get_btn_label(group_item->list_item);
-	    	strcpy(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-	    	strcat(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+	    	strcpy(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+          	strcat(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
 			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
 			lv_img_set_src(group_info->lock_img, &unlock);
 			group_info->is_lock = false;

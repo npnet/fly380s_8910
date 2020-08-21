@@ -557,7 +557,6 @@ bool lv_poc_setting_init(void)
 	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
-	lv_poc_set_volum(POC_MMI_VOICE_MSG, 3, false, false);
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_keypad_led_init();
 #endif
@@ -2329,7 +2328,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         else if(battery_t.battery_value >= 0)
         {
             battery_img = &stat_sys_battery_0;
-            if(low_battery_check_count < 1 && battery_t.battery_value <= 5)
+            if(low_battery_check_count < 1 && battery_t.battery_value <= 10)
             {
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, 50, false);

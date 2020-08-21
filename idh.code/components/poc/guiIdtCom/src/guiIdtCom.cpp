@@ -1251,6 +1251,7 @@ static void LvGuiIdtCom_get_lock_group_status_timer_cb(void *ctx)
 {
 	if(pocIdtAttr.lockGroupOpt > LV_POC_GROUP_OPRATOR_TYPE_NONE)
 	{
+		OSI_LOGI(0, "[song]LvGuiIdtCom_get_lock_group_status_timer_cb is running");
 		osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 1000);
 		return;
 	}
@@ -1996,8 +1997,6 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 			Msg_GROUP_MEMBER_s * member = NULL;
 			GROUP_MEMBER_s * gmember = NULL;
 			char groupselfname[32] = {0};
-
-			//int gNameLen = 0;
 			memset(&g_data, 0, sizeof(GData_s));
 			g_data.dwNum = new_group->num;
 			g_data.ucPriority = m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucPriority;
@@ -2016,17 +2015,6 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 				gmember->ucChanNum = member->ucChanNum;
 				gmember->ucStatus = member->ucStatus;
 				gmember->ucFGCount = member->ucFGCount;
-				#if 0
-				gNameLen = strlen((const char *)g_data.ucName);
-				if(gNameLen + strlen((const char *)member->ucName) < 64)
-				{
-					if(gNameLen > 0)
-					{
-						strcat((char *)g_data.ucName, (const char *)"、");
-					}
-					strcat((char *)g_data.ucName, (const char *)member->ucName);
-				}
-				#endif
 			}
 
 			/*群组名字*/
@@ -2081,7 +2069,8 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 
 			for(unsigned long i = 0; i < g_data.dwNum; i++)
 			{
-				IDT_GAddU(i, grop->pGroup.ucNum, &g_data.member[i]);
+				/*包含一次群组回调callback_IDT_GOptRsp,导致进入新建群组后自动刷新进入死循环*/
+				IDT_GAddU(LV_POC_IDT_DWSN_QUERY_GROUPADDUSER, grop->pGroup.ucNum, &g_data.member[i]);
 			}
 
 			if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL))
@@ -2092,6 +2081,11 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 
 			pocIdtAttr.pocBuildGroupCb(1);
 			pocIdtAttr.pocBuildGroupCb = NULL;
+<<<<<<< .mine
+
+=======
+
+>>>>>>> .theirs
 			break;
 		}
 
@@ -2171,7 +2165,7 @@ static void prvPocGuiIdtTaskHandleMemberList(uint32_t id, uint32_t ctx)
 	        // 查询组成员
 	        pocIdtAttr.isPocMemberListBuf = true;
 	        Func_GQueryU(pocIdtAttr.query_group, m_IdtUser.m_Group.m_Group[pocIdtAttr.query_group].m_ucGNum);
-
+			OSI_LOGI(0, "[song]LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND Func_GQueryU");
 			break;
 		}
 
@@ -2901,6 +2895,11 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 			{
 				if (CAUSE_ZERO != grop->wRes)
 					return;
+				if(LV_POC_IDT_DWSN_QUERY_GROUPADDUSER == grop->wRes)
+				{
+					OSI_LOGI(0,"[song]group add user opt!");
+					return;
+				}
 
 				if(pocIdtAttr.pPocMemberList != NULL
 					&& pocIdtAttr.pPocMemberListBuf != NULL)
@@ -2939,7 +2938,6 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 					}
 
 					OSI_LOGI(0,"[song]group---member have updated!");
-					/*上电先填充组数据*/
 					lv_poc_activity_func_cb_set.member_list.refresh_with_data(NULL);
 				}
 			}
@@ -3046,7 +3044,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 				    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP, NULL);
 					OSI_LOGI(0, "[song]isRefreshGroupList false\n");
 			    }
-
+				OSI_LOGI(0, "[song]isRefreshGroupList is\n");
 				if(isRefreshGroupList)
 				{
 					OSI_LOGI(0, "[song]isRefreshGroupList true\n");
@@ -3341,6 +3339,7 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_CUR_GROUP:
 		{
+			OSI_LOGI(0, "[song]LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_CUR_GROUP Func_GQueryU is running");
 			pocIdtAttr.query_group = pocIdtAttr.current_group;
 			Func_GQueryU(pocIdtAttr.query_group, NULL);
 			break;
@@ -3348,6 +3347,7 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF:
 		{
+			OSI_LOGI(0, "[song]LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF IDT_UQueryG is running");
 			pocIdtAttr.isPocGroupListAll = false;
 			IDT_UQueryG(0, pocIdtAttr.self_info.ucNum);
 			break;

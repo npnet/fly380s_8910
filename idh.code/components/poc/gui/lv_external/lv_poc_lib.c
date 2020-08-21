@@ -513,7 +513,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
    	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
 	bool isPlayVoice = false;
-	bool PlayVoiceType = false;//语音还是嘟声音
 	osiEvent_t event = {0};
 	LVPOCAUDIO_Type_e voice_queue[10] = {0};
 	int voice_queue_reader = 0;
@@ -609,7 +608,8 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
 			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 				voice_formate = AUSTREAM_FORMAT_MP3;
-				PlayVoiceType = false;
+				/*audio volum*/
+            	audevSetPlayVolume(60);
 				break;
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
 			case LVPOCAUDIO_Type_Tone_Lost_Mic:
@@ -619,21 +619,13 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
-				PlayVoiceType = false;
+				/*tone volum*/
+            	audevSetPlayVolume(40);
 				break;
 
 			default:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
 				break;
-		}
-
-		if(PlayVoiceType == false)/* 语音音量 */
-		{/*0 - 110*/
-			audevSetPlayVolume(50);//修改语音声音大小
-		}
-		else/* 嘟音量 */
-		{
-			audevSetPlayVolume(20);//修改tone声音大小
 		}
 
 		if(prv_lv_poc_audio_array[voice_type] != NULL)
@@ -2190,7 +2182,7 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 	prv_member_list = member_list;
 	prv_member_list_type = type;
 	prv_member_list_cb = func;
-
+	OSI_LOGI(0, "[song]lv_poc_get_member_list LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND");
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND, prv_lv_poc_get_member_list_cb))
 	{
 		prv_member_list = NULL;
