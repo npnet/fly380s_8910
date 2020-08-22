@@ -84,7 +84,7 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {/*song is here*/
     {KEY_MAP_SIM2,   0xf2},
     {KEY_MAP_0,      LV_GROUP_KEY_END},
     {KEY_MAP_1,      LV_GROUP_KEY_ENTER},/*确定*/
-    {KEY_MAP_2,      LV_GROUP_KEY_END},/*短按系统设置(广播无),长按对讲设置(广播com.corget.show.setting)*/
+    {KEY_MAP_2,      LV_GROUP_KEY_SET},/*短按系统设置(广播无),长按对讲设置(广播com.corget.show.setting)*/
     {KEY_MAP_3,      LV_GROUP_KEY_MB},/*成员列表-广播android.ptt.curr.info.play*/
     {KEY_MAP_4,      LV_GROUP_KEY_UP},/*上*/
     {KEY_MAP_5,      LV_GROUP_KEY_DOWN},/*下*/

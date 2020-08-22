@@ -2081,11 +2081,6 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 
 			pocIdtAttr.pocBuildGroupCb(1);
 			pocIdtAttr.pocBuildGroupCb = NULL;
-<<<<<<< .mine
-
-=======
-
->>>>>>> .theirs
 			break;
 		}
 

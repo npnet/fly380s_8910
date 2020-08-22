@@ -19,9 +19,9 @@ enum {
 	poc_green_led   = 13,//IO greenled
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set  = 8,//IO headset
-	poc_volum_up  = 20,//IO volum up
+	poc_group_page_up  = 20,//IO volum up
 	poc_ppt       = 21,//IO ppt
-	poc_volum_down  = 18,//IO volum down
+	poc_group_page_down  = 18,//IO volum down
 	poc_sos  = 19,//IO sos
 };
 

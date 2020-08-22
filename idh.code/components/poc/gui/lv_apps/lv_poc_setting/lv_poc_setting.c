@@ -24,12 +24,16 @@ static const char * lv_poc_setting_btn_text_btn_voice = "按键音";
 #ifdef CONFIG_POC_TTS_SUPPORT
 static const char * lv_poc_setting_btn_text_broadcast = "语音播报";
 #endif
+#ifdef CONFIG_POC_BIGFONT_SUPPORT
 static const char * lv_poc_setting_btn_text_big_font = "大号字体";
+#endif
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 static const char * lv_poc_setting_btn_text_key_light = "按键灯";
 #endif
 static const char * lv_poc_setting_btn_text_GPS = "GPS";
+#ifdef CONFIG_POC_TOUCH_SUPPORT
 static const char * lv_poc_setting_btn_text_tourch = "手电筒";
+#endif
 static const char * lv_poc_setting_btn_text_brightness = "亮度";
 static const char * lv_poc_setting_btn_text_brightness_time = "亮屏时间";
 #ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
@@ -116,6 +120,7 @@ static void lv_poc_setting_broadcast_btn_cb(lv_obj_t * obj)
 }
 #endif
 
+#ifdef CONFIG_POC_BIGFONT_SUPPORT
 static void lv_poc_setting_big_font_btn_cb(lv_obj_t * obj)
 {
     lv_obj_t * ext_obj = NULL;
@@ -142,6 +147,7 @@ static void lv_poc_setting_big_font_btn_cb(lv_obj_t * obj)
 	lv_task_t * task = lv_task_create(poc_setting_update_UI_task, 10, LV_TASK_PRIO_LOWEST, NULL);
 	lv_task_once(task);
 }
+#endif
 
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 static void lv_poc_setting_key_light_btn_cb(lv_obj_t * obj)
@@ -183,12 +189,11 @@ static void lv_poc_setting_GPS_btn_cb(lv_obj_t * obj)
 	//lv_sw_toggle(ext_obj);
 }
 
+#ifdef CONFIG_POC_TOUCH_SUPPORT
 static void lv_poc_setting_torch_btn_cb(lv_obj_t * obj)
 {
     lv_obj_t * ext_obj = NULL;
 	ext_obj = (lv_obj_t *)obj->user_data;
-	//poc_setting_conf->electric_torch_switch = poc_setting_conf->electric_torch_switch? 0:1;
-	//poc_set_torch_status(poc_setting_conf->electric_torch_switch);
 	if(poc_get_torch_status())
     {
 		poc_set_torch_status(false);
@@ -199,8 +204,8 @@ static void lv_poc_setting_torch_btn_cb(lv_obj_t * obj)
 		poc_set_torch_status(true);
     	lv_sw_on(ext_obj, LV_ANIM_OFF);
     }
-	//lv_poc_setting_conf_write();
 }
+#endif
 
 static void lv_poc_setting_brightness_btn_cb(lv_obj_t * obj)
 {
@@ -212,7 +217,6 @@ static void lv_poc_setting_brightness_btn_cb(lv_obj_t * obj)
 	poc_setting_conf->screen_brightness = cur_bright;
 	lv_poc_setting_conf_write();
 	lv_label_set_text(ext_obj, bright_str[cur_bright]);
-	//lcd_backlight(cur_bright);
 	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 }
 
@@ -344,6 +348,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     }
 #endif
 
+#ifdef CONFIG_POC_BIGFONT_SUPPORT/*big font*/
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_big_font);
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
@@ -370,6 +375,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     {
     	lv_sw_off(sw, LV_ANIM_OFF);
     }
+#endif
 
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_key_light);
@@ -427,6 +433,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     	lv_sw_off(sw, LV_ANIM_OFF);
     }
 
+#ifdef CONFIG_POC_TOUCH_SUPPORT/*touch function*/
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_tourch);
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
@@ -453,6 +460,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     {
     	lv_sw_off(sw, LV_ANIM_OFF);
     }
+#endif
 
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_brightness);
     lv_obj_set_click(btn, true);

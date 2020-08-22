@@ -42,8 +42,8 @@ static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_green_gpio = NULL;
-static drvGpio_t * poc_volum_up_gpio = NULL;
-static drvGpio_t * poc_volum_down_gpio = NULL;
+static drvGpio_t * poc_group_page_up_gpio = NULL;
+static drvGpio_t * poc_group_page_down_gpio = NULL;
 static drvGpio_t * poc_sos_gpio = NULL;
 static drvGpio_t * poc_ppt_gpio = NULL;
 
@@ -1058,18 +1058,18 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.list_btn_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.about_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
 	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
-	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
+	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
-	//poc_setting->font.status_bar_signal_type_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 45);//主界面时间time
 	poc_setting->font.idle_date_label_font = (uint32_t)LV_POC_FONT_MSYH(2500, 18);//主界面日期label
 	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.idle_popwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
-	poc_setting->font.idle_lockgroupwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
-	poc_setting->font.idle_shutdownwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 16);
+	poc_setting->font.idle_lockgroupwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
+	poc_setting->font.idle_shutdownwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 16);
 
 	poc_setting->theme.white = &theme_white;
+	poc_setting->theme.white->style_base = (uint32_t)&theme_white_style_base;
 	poc_setting->theme.white->style_list_scroll = (uint32_t)&theme_white_style_list_scroll;
 	poc_setting->theme.white->style_list_page = (uint32_t)&theme_white_style_list_page;
 	poc_setting->theme.white->style_list_btn_rel = (uint32_t)&theme_white_style_list_btn_rel;
@@ -1093,6 +1093,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 
 #ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 	poc_setting->theme.black = &theme_black;
+	poc_setting->theme.black->style_base = (uint32_t)&theme_black_style_base;
 	poc_setting->theme.black->style_list_scroll = (uint32_t)&theme_black_style_list_scroll;
 	poc_setting->theme.black->style_list_page = (uint32_t)&theme_black_style_list_page;
 	poc_setting->theme.black->style_list_btn_rel = (uint32_t)&theme_black_style_list_btn_rel;
@@ -1145,7 +1146,7 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 #endif
 	poc_setting->font.big_font_switch = 1;
 	poc_setting->font.list_page_colum_count = 3;
-	poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
+	poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 	poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
 	poc_setting->volume = 5;
 	poc_setting->language = 0;
@@ -1193,7 +1194,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 	else if(poc_setting->font.big_font_switch == 1)
 	{
 		poc_setting->font.list_page_colum_count = 3;
-		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
+		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;/*close font*/
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
 	}
 #endif
@@ -1817,42 +1818,44 @@ bool lv_poc_get_ppt_state(void)
 }
 
 /*
-	  name : poc_volum_up_key_irq
+	  name : poc_group_page_up_key_irq
 	 param : none
 	author : wangls
-  describe : volum 中断
+  describe : group page up
 	  date : 2020-08-14
 */
 static
-void poc_volum_up_key_irq(void *ctx)
+void poc_group_page_up_key_irq(void *ctx)
 {
-	if(drvGpioRead(poc_volum_up_gpio))/*release*/
+	if(drvGpioRead(poc_group_page_up_gpio))/*release*/
 	{
-		OSI_LOGI(0, "[song]volum up key is release\n");
+		OSI_LOGI(0, "[song]group page up key is release\n");
 	}
 	else/*press*/
 	{
-		OSI_LOGI(0, "[song]volum up key is press\n");
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"群组向上翻页", (const uint8_t *)"未设置");
+		OSI_LOGI(0, "[song]group page up key is press\n");
 	}
 }
 
 /*
-	  name : poc_volum_down_key_irq
+	  name : poc_group_page_down_key_irq
 	 param : none
 	author : wangls
-  describe : volum 中断
+  describe : group page down
 	  date : 2020-08-14
 */
 static
-void poc_volum_down_key_irq(void *ctx)
+void poc_group_page_down_key_irq(void *ctx)
 {
-	if(drvGpioRead(poc_volum_down_gpio))/*release*/
+	if(drvGpioRead(poc_group_page_down_gpio))/*release*/
 	{
-		OSI_LOGI(0, "[song]volum down key is release\n");
+		OSI_LOGI(0, "[song]group page down key is release\n");
 	}
 	else/*press*/
 	{
-		OSI_LOGI(0, "[song]volum down key is press\n");
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"群组向下翻页", (const uint8_t *)"未设置");
+		OSI_LOGI(0, "[song]group page down key is press\n");
 	}
 }
 
@@ -1872,6 +1875,7 @@ void poc_sos_key_irq(void *ctx)
 	}
 	else/*press*/
 	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"SOS功能", (const uint8_t *)"未设置");
 		OSI_LOGI(0, "[song]sos key is press\n");
 	}
 }
@@ -1895,12 +1899,12 @@ void lv_poc_key_init(void)
         .debounce = true,
     };
 
-	poc_volum_up_gpio = drvGpioOpen(poc_volum_up, &cfg, poc_volum_up_key_irq, NULL);
-	poc_volum_down_gpio = drvGpioOpen(poc_volum_down, &cfg, poc_volum_down_key_irq, NULL);
+	poc_group_page_up_gpio = drvGpioOpen(poc_group_page_up, &cfg, poc_group_page_up_key_irq, NULL);
+	poc_group_page_down_gpio = drvGpioOpen(poc_group_page_down, &cfg, poc_group_page_down_key_irq, NULL);
 	poc_sos_gpio = drvGpioOpen(poc_sos, &cfg, poc_sos_key_irq, NULL);
 
-	if(poc_volum_up_gpio == NULL
-	   || poc_volum_down_gpio == NULL
+	if(poc_group_page_up_gpio == NULL
+	   || poc_group_page_down_gpio == NULL
 	   || poc_sos_gpio == NULL)
 	{
 		return;
@@ -2481,17 +2485,11 @@ lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
 */
 bool lv_poc_set_adc_current_sense(bool status)
 {
-#if 0
+#if 1
 	REG_RDA2720M_ADC_AUXAD_CTL0_T adc_auxad_ctl0_t;
 
 	adc_auxad_ctl0_t.b.rg_auxad_currentsen_en = 1;
 	halAdiBusWrite(&hwp_rda2720mAdc->auxad_ctl0, adc_auxad_ctl0_t.v);
-
-//	if(true == status){
-//		REG_ADI_CHANGE1(hwp_rda2720mAdc->auxad_ctl0, adc_auxad_ctl0_t, rg_auxad_currentsen_en, 1);
-//	}else{
-//		REG_ADI_CHANGE1(hwp_rda2720mAdc->auxad_ctl0, adc_auxad_ctl0_t, rg_auxad_currentsen_en, 0);
-//	}
 #endif
 	return ((halAdiBusRead(&adc_auxad_ctl0_t.v) & 0x1) == 1 ? true : false);
 }

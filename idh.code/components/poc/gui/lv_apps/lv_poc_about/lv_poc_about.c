@@ -132,7 +132,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_style_t * style_label;
     poc_setting_conf = lv_poc_setting_conf_read();
     style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_about_label;
-    style_label->text.font = (lv_font_t *)poc_setting_conf->font.about_label_current_font;
+    style_label->text.font = (lv_font_t *)poc_setting_conf->font.list_btn_small_font;
 
 	int label_array_size = sizeof(lv_poc_about_label_array)/sizeof(lv_poc_about_label_struct_t);
 	lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
@@ -176,9 +176,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 
 		lv_label_set_text(label, lv_poc_about_label_content[i]);
 
-		lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
+		lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
 		lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-		lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
+		lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL);
 		lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
 
 		lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);

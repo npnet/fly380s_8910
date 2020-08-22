@@ -38,6 +38,7 @@ static const char * lv_poc_shutdown_note_label_2_text = "重新启动";
 
 static lv_area_t msg_display_area;//屏幕消息框大小
 static lv_area_t shutdown_display_area;//关机消息框大小
+static bool lv_poc_power_off_status = false;
 
 //关机类型
 typedef enum{
@@ -57,17 +58,17 @@ typedef enum{
 static
 void lv_poc_shutdown_note_activity_area(void)
 {
-	//根据132*132（屏幕宽度）和弹窗102*102（弹窗宽度）
+	//根据132*132（屏幕宽度）和弹窗112*112（弹窗宽度）
 
 	//屏幕弹跳消息框
-	msg_display_area.x1 = 15;
-	msg_display_area.x2 = 117;
+	msg_display_area.x1 = 10;
+	msg_display_area.x2 = 124;
 	msg_display_area.y1 = 24;
 	msg_display_area.y2 = 122;
 
 	//消息框内容框大小
-	shutdown_display_area.x1 = 15;
-	shutdown_display_area.x2 = 117;
+	shutdown_display_area.x1 = 10;
+	shutdown_display_area.x2 = 124;
 	shutdown_display_area.y1 = 24;
 	shutdown_display_area.y2 = 122;
 }
@@ -411,7 +412,7 @@ void lv_poc_shutdown_note_power_off_warning_create(lv_task_t * task)
 	char *title = "关机";
 	char *context = "您的对讲机将会\n关机。";
 	char *opt_left_str = "            确定            ";//28格才能填满
-	lv_area_t warnningarea = {15, 24, 117, 122};//提示框大小
+	lv_area_t warnningarea = {10, 24, 124, 122};//提示框大小
 
 	//新建提示框
 	lv_poc_warnning_open(title, context, opt_left_str,lv_poc_power_off_warning_apply_event_handler,
@@ -439,6 +440,8 @@ void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t even
 		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
 			LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
 		lv_task_once(task);
+
+		lv_poc_power_off_status = true;
 	}
 }
 
@@ -471,7 +474,7 @@ void lv_poc_shutdown_note_reboot_warning_create(lv_task_t * task)
 	char *title = "重新启动";
 	char *context = "您确定需要重新\n启动对讲机吗？";
 	char *opt_left_str = "            确定            ";//28格才能填满
-	lv_area_t warnningarea = {15, 24, 117, 122};//提示框大小
+	lv_area_t warnningarea = {10, 24, 124, 122};//提示框大小
 
 	//新建提示框
 	lv_poc_warnning_open(title, context, opt_left_str,lv_poc_reboot_warning_apply_event_handler,
@@ -494,6 +497,8 @@ void lv_poc_reboot_warning_apply_event_handler(lv_obj_t *obj, lv_event_t event)
 		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
 			LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_REBOOT);
 		lv_task_once(task);
+
+		lv_poc_power_off_status = true;
 	}
 }
 
@@ -511,6 +516,18 @@ void lv_poc_reboot_warning_cancel_event_handler(lv_obj_t *obj, lv_event_t event)
 	if(event == LV_EVENT_CANCEL){//取消重新启动
 
 	}
+}
+
+/*
+	  name : lv_poc_get_power_off_status
+	 param : none
+	author : wangls
+  describe : get power off status
+	  date : 2020-08-22
+*/
+bool lv_poc_get_power_off_status(void)
+{
+	return lv_poc_power_off_status;
 }
 
 #ifdef __cplusplus

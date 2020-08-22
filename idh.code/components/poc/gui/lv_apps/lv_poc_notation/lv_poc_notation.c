@@ -11,6 +11,8 @@
 
 #define LV_POC_NOTATION_TASK_QUEUE_SIZE (15)
 
+#define LV_POC_NOTATIONWINDOW_X (2)
+
 typedef struct
 {
 	lv_poc_notation_msg_type_t msg_type;
@@ -62,14 +64,14 @@ lv_obj_t * lv_poc_notation_create(void)
     lv_poc_notation_style.text.opa = 255;
     lv_poc_notation_style.body.main_color = LV_COLOR_SILVER;
     lv_poc_notation_style.body.grad_color = LV_COLOR_SILVER;
-    lv_poc_notation_style.body.opa = 220;/*更改背景透明度*/
+    lv_poc_notation_style.body.opa = 240;/*更改背景透明度*/
 	lv_poc_notation_style.text.letter_space = 1;//字间隔
 	//lv_poc_notation_style.text.line_space = 2;//行间隔
 
 	lv_poc_notationwindow_obj = lv_obj_create(lv_scr_act(), NULL);
     lv_obj_set_style(lv_poc_notationwindow_obj,&lv_poc_notation_style);
     lv_obj_set_size(lv_poc_notationwindow_obj, LV_HOR_RES * 27/ 40, LV_VER_RES / 2);
-    lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80, LV_VER_RES / 4);
+    lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80 + LV_POC_NOTATIONWINDOW_X, LV_VER_RES / 4);
 	lv_poc_notationwindow_label_1 = lv_label_create(lv_poc_notationwindow_obj, NULL);
 	lv_obj_set_size(lv_poc_notationwindow_label_1, lv_obj_get_width(lv_poc_notationwindow_obj) - 4, lv_obj_get_height(lv_poc_notationwindow_obj) / 3);
     lv_label_set_style(lv_poc_notationwindow_label_1, 1,&lv_poc_notation_style);
@@ -190,7 +192,7 @@ void lv_poc_notation_refresh(void)
 	    						lv_obj_get_height(lv_poc_notationwindow_obj) / 2 + 4);
 
 			}
-			else
+			else/*普通两行提示框*/
 			{
 	    		lv_label_set_text(lv_poc_notationwindow_label_2, (char *)lv_poc_notationwindow_label_2_text);
 				//宽度
@@ -215,7 +217,7 @@ void lv_poc_notation_refresh(void)
 	if(label_1_length > 4 || label_2_length > 4)//文本长度 大于4个汉字
 	{
 		//重新设置消息框原点                                                 13/80
-		lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 3/ 80, LV_VER_RES / 3);
+		lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 3/ 80 + LV_POC_NOTATIONWINDOW_X, LV_VER_RES / 3);
 		//重新设置消息框宽度
 		lv_obj_set_width(lv_poc_notationwindow_obj,LV_HOR_RES * 37/ 40);//1行消息
                                                                    //27/ 40
@@ -230,7 +232,7 @@ void lv_poc_notation_refresh(void)
 	else//还原消息框
 	{
 		//重新设置消息框原点
-		lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80, LV_VER_RES / 3);
+		lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80 + LV_POC_NOTATIONWINDOW_X, LV_VER_RES / 3);
 		//重新设置消息框宽度
 		lv_obj_set_width(lv_poc_notationwindow_obj,LV_HOR_RES * 27/ 40);
 
@@ -251,14 +253,14 @@ void lv_poc_notation_refresh(void)
 		if(label_1_length == 4 && label_2_length == 2)
 		{//切换群主选项
 			//重新设置消息框原点
-			lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80, LV_VER_RES / 3);
+			lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80 + LV_POC_NOTATIONWINDOW_X, LV_VER_RES / 3);
 			//重新设置消息框宽度
 			lv_obj_set_width(lv_poc_notationwindow_obj,LV_HOR_RES * 27/ 40);
 		}
 		else
 		{
 			//重新设置消息框原点															//消息框拉高		LV_VER_RES / 3(中间)
-			lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 3/ 80, LV_VER_RES / 4);//（空白的中间）
+			lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 3/ 80 + LV_POC_NOTATIONWINDOW_X, LV_VER_RES / 4);//（空白的中间）
 			//重新设置消息框高度
 			lv_obj_set_height(lv_poc_notationwindow_obj,LV_VER_RES / 2);
 
@@ -269,7 +271,8 @@ void lv_poc_notation_refresh(void)
 		if(lv_poc_notation_listen_speak_status == true)/*设置群组框*/
 		{
 			lv_obj_align(lv_poc_notationwindow_label_3, lv_poc_notationwindow_obj, LV_ALIGN_IN_BOTTOM_LEFT, 10, -10);
-			lv_obj_align(label_2, lv_poc_notationwindow_obj, LV_ALIGN_IN_BOTTOM_RIGHT, -8, -10);
+			lv_obj_set_width(label_2, lv_obj_get_width(lv_poc_notationwindow_obj) / 2);/*设置群组框大小*/
+			lv_obj_align(label_2, lv_poc_notationwindow_obj, LV_ALIGN_IN_BOTTOM_RIGHT, -10, -10);/*调节群组名称坐标*/
 		}
 		else
 		{
@@ -300,7 +303,6 @@ lv_obj_t * lv_poc_notation_listenning(const int8_t * text_1, const int8_t * text
 		/*添加 (群组:) 固定框*/
 		lv_poc_notationwindow_label_3 = lv_label_create(lv_poc_notationwindow_obj, NULL);
 		lv_label_set_style(lv_poc_notationwindow_label_3,1,&lv_poc_notation_style);
-		lv_label_set_long_mode(lv_poc_notationwindow_label_3, LV_LABEL_LONG_SROLL_CIRC);
 		lv_label_set_text(lv_poc_notationwindow_label_3, "                    ");
 		lv_label_set_align(lv_poc_notationwindow_label_3, LV_LABEL_ALIGN_CENTER);
 	}
@@ -308,7 +310,6 @@ lv_obj_t * lv_poc_notation_listenning(const int8_t * text_1, const int8_t * text
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_1, false);
 		memset(lv_poc_notationwindow_label_1_text, 0, LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE * sizeof(int8_t));
-		//strcpy((char *)lv_poc_notationwindow_label_1_text,(char *)"用户：");
 		strcpy((char *)lv_poc_notationwindow_label_1_text, (char *)text_1);
 	}
 	else
@@ -348,7 +349,6 @@ lv_obj_t * lv_poc_notation_speaking(const int8_t * text_1, const int8_t * text_2
 		/*添加 (群组:) 固定框*/
 		lv_poc_notationwindow_label_3 = lv_label_create(lv_poc_notationwindow_obj, NULL);
 		lv_label_set_style(lv_poc_notationwindow_label_3,1,&lv_poc_notation_style);
-		lv_label_set_long_mode(lv_poc_notationwindow_label_3, LV_LABEL_LONG_SROLL_CIRC);
 		lv_label_set_text(lv_poc_notationwindow_label_3, "                    ");
 		lv_label_set_align(lv_poc_notationwindow_label_3, LV_LABEL_ALIGN_CENTER);
 	}

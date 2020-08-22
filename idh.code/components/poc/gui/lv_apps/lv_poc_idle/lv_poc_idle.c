@@ -177,13 +177,17 @@ static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 
 				case LV_GROUP_KEY_GP:
 				{
+					#if 0
 					lv_poc_group_list_open(NULL);
+					#endif
 					break;
 				}
 
 				case LV_GROUP_KEY_MB:
 				{
+					#if 0
 					lv_poc_member_list_open(NULL, NULL, false);
+					#endif
 					break;
 				}
 
@@ -248,7 +252,7 @@ static char * lv_poc_idle_get_date(lv_poc_time_t * time)
 {
 	static char data_str[IDLE_DATE_LABEL_STR_LEN];
 	memset(data_str, 0, sizeof(data_str)/sizeof(data_str[0]));
-	sprintf(data_str,"%d月%d日 星期%s",time->tm_mon, time->tm_mday, lv_poc_idle_week_map(time->tm_wday));
+	sprintf(data_str,"%d月%d日星期%s",time->tm_mon, time->tm_mday, lv_poc_idle_week_map(time->tm_wday));
 	return data_str;
 }
 
@@ -292,7 +296,6 @@ static void lv_poc_idle_time_task(void)
 	static bool isInit = false;
     static lv_style_t * idle_clock_style;
 	static lv_style_t * style;
-	//static lv_coord_t screen_w = 0;
 	static lv_coord_t screen_h = 0;
 	static bool isCreatedPocTask = false;
 	POC_MMI_MODEM_PLMN_RAT network_type = MMI_MODEM_PLMN_RAT_UNKNOW;
@@ -301,7 +304,6 @@ static void lv_poc_idle_time_task(void)
 	if(isInit == false)
 	{
         isInit = true;
-	    //screen_w = lv_poc_get_display_width(activity_idle->display);
 	    screen_h = lv_poc_get_display_height(activity_idle->display);
 	    idle_clock_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_idle_big_clock);
         idle_big_clock = lv_label_create(activity_idle->display, NULL);
@@ -332,16 +334,9 @@ static void lv_poc_idle_time_task(void)
 
     if( current_activity != activity_idle)
     {
-        //lv_obj_set_hidden(idle_big_clock, true);
-        //lv_obj_set_hidden(idle_date_label, true);
         is_running = false;
         return;
     }
-    //else if(current_activity->)
-    //{
-        //lv_obj_set_hidden(idle_big_clock, false);
-        //lv_obj_set_hidden(idle_date_label, false);
-    //}
 	lv_poc_get_time(&time);
 	sprintf(big_clock_str,"%02d:%02d",time.tm_hour,time.tm_min);
 	str = lv_poc_idle_get_date(&time);
@@ -371,7 +366,7 @@ static void lv_poc_idle_time_task(void)
     {
         lv_obj_align(idle_big_clock, activity_idle->display, LV_ALIGN_CENTER, 0, -screen_h/12);
     }
-    lv_obj_align(idle_date_label, idle_big_clock, LV_ALIGN_OUT_BOTTOM_MID, 0, -7);
+    lv_obj_align(idle_date_label, idle_big_clock, LV_ALIGN_OUT_BOTTOM_MID, 0, -8);
     strcpy(old_big_clock_str, big_clock_str);
     strcpy(old_str,str);
 	is_running = false;

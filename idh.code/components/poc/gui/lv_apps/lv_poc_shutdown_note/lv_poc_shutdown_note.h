@@ -29,6 +29,14 @@ void lv_poc_shutdown_note_activity_open(lv_task_t * task);
 */
 void lv_poc_shutdown_animation(lv_task_t * task);
 
+/*
+	  name : lv_poc_get_power_off_status
+	 param : none
+	author : wangls
+  describe : get power off status
+	  date : 2020-08-22
+*/
+bool lv_poc_get_power_off_status(void);
 
 #ifdef __cplusplus
 }

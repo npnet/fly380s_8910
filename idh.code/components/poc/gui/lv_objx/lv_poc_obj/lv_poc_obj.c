@@ -1,4 +1,4 @@
-#ifdef __cplusplus
+﻿#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -297,8 +297,8 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 
 /*电池图标*/
 const lv_img_dsc_t *battery_img_dispaly[9] = { &stat_sys_battery_charge_anim0
-												//,&stat_sys_battery_charge_anim15
-												,&stat_sys_battery_charge_anim28
+												,&stat_sys_battery_charge_anim15
+												//,&stat_sys_battery_charge_anim28
 												,&stat_sys_battery_charge_anim43
 												,&stat_sys_battery_charge_anim57
 												,&stat_sys_battery_charge_anim71
@@ -938,61 +938,56 @@ static bool lv_poc_init_stabar_time_label(void)
     lv_poc_status_bar_fptr->time_formate = LV_POC_STABAR_TIME_FORMATE_DEFAULT;
     lv_poc_status_bar_fptr->time_label  = lv_label_create(lv_poc_status_bar, NULL);
     time_label = lv_poc_status_bar_fptr->time_label;
-    //lv_mem_assert(time_label);
     lv_label_set_style(time_label, LV_LABEL_STYLE_MAIN,label_style);
-    //memset(time_label,0,sizeof(lv_label_ext_t));
-    //lv_obj_set_size(time_label, LV_POC_STABAR_TIME_HOR_RES, LV_POC_STABAR_TIME_VER_RES);
-    //lv_obj_set_pos(time_label, LV_POC_STABAR_TIME_POSITION_X, LV_POC_STABAR_TIME_POSITION_Y);
-    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 2, 0);
+    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 4, 1);
 
     lv_poc_get_time(&time);
 
     switch(lv_poc_status_bar_fptr->time_formate)
     {
-    case lv_poc_time_format_hhmm:
-    {
-        sprintf(lv_poc_time,"%02d:%02d",time.tm_hour,time.tm_min);
-        break;
-    }
+	    case lv_poc_time_format_hhmm:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d",time.tm_hour,time.tm_min);
+	        break;
+	    }
 
-    case lv_poc_time_format_mmhh:
-    {
-        sprintf(lv_poc_time,"%02d:%02d",time.tm_min,time.tm_hour);
-        break;
-    }
+	    case lv_poc_time_format_mmhh:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d",time.tm_min,time.tm_hour);
+	        break;
+	    }
 
-    case lv_poc_time_format_hhmmss:
-    {
-        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_hour,time.tm_min,time.tm_sec);
-        break;
-    }
+	    case lv_poc_time_format_hhmmss:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_hour,time.tm_min,time.tm_sec);
+	        break;
+	    }
 
-    case lv_poc_time_format_sshhmm:
-    {
-        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_sec,time.tm_hour,time.tm_min);
-        break;
-    }
+	    case lv_poc_time_format_sshhmm:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_sec,time.tm_hour,time.tm_min);
+	        break;
+	    }
 
-    case lv_poc_time_format_ssmmhh:
-    {
-        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_sec,time.tm_min,time.tm_hour);
-        break;
-    }
+	    case lv_poc_time_format_ssmmhh:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_sec,time.tm_min,time.tm_hour);
+	        break;
+	    }
 
-    case lv_poc_time_format_mmhhss:
-    {
-        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_min,time.tm_hour,time.tm_sec);
-        break;
-    }
+	    case lv_poc_time_format_mmhhss:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_min,time.tm_hour,time.tm_sec);
+	        break;
+	    }
 
-    default:
-    {
-        sprintf(lv_poc_time,"%02d:%02d",time.tm_hour,time.tm_min);
-    }
+	    default:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d",time.tm_hour,time.tm_min);
+	    }
     }
 
     lv_label_set_text(time_label, lv_poc_time);
-    //lv_refr_now(NULL);
     return ret_val;
 }
 
@@ -1174,12 +1169,9 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
     ctrl_background_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_control);
     ctrl_background_style->text.font = (lv_font_t *)poc_setting_conf->font.activity_control_font;
 
-    //lv_mem_assert(activity);
     control = (lv_poc_control_t *)lv_mem_alloc(sizeof(lv_poc_control_t));
-    //lv_mem_assert(control);
 
     control->background = lv_obj_create(activity->display, NULL);
-    //lv_mem_assert(control->background);
 
     if(activity->has_stabar)
     {
@@ -1198,33 +1190,19 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
     activity->control = control;
 
     control->left_button = lv_label_create(control->background,NULL);
-//	lv_mem_assert(control->left_button);
-//	lv_label_set_style(control->left_button,&ctl_label_style);
-//	lv_obj_set_size(control->left_button, LV_POC_CONTROL_LBTN_HOR_RES, LV_POC_CONTROL_LBTN_VER_RES);
-//	lv_obj_set_pos(control->left_button, LV_POC_CONTROL_LBTN_POSITION_X, LV_POC_CONTROL_LBTN_POSITION_Y);
     lv_label_set_text(control->left_button,left_text);
     lv_label_set_align(control->left_button, LV_LABEL_ALIGN_CENTER);
-    lv_obj_align(control->left_button, lv_obj_get_parent(control->left_button), LV_ALIGN_IN_LEFT_MID, 2, -1);
+    lv_obj_align(control->left_button, lv_obj_get_parent(control->left_button), LV_ALIGN_IN_LEFT_MID, 4, -1);
 
     control->middle_button = lv_label_create(control->background,NULL);
-//	lv_mem_assert(control->middle_button);
-//	lv_label_set_style(control->middle_button,&ctl_label_style);
-//	lv_obj_set_size(control->middle_button, LV_POC_CONTROL_MBTN_HOR_RES, LV_POC_CONTROL_MBTN_VER_RES);
-//	lv_obj_set_pos(control->middle_button, LV_POC_CONTROL_MBTN_POSITION_X, LV_POC_CONTROL_MBTN_POSITION_Y);
     lv_label_set_text(control->middle_button, middle_text);
     lv_label_set_align(control->middle_button, LV_LABEL_ALIGN_CENTER);
     lv_obj_align(control->middle_button, lv_obj_get_parent(control->middle_button), LV_ALIGN_CENTER, 0, -1);
 
     control->right_button = lv_label_create(control->background,NULL);
-//	lv_mem_assert(control->right_button);
-//	lv_label_set_style(control->right_button,&ctl_label_style);
-//	lv_obj_set_size(control->right_button, LV_POC_CONTROL_RBTN_HOR_RES, LV_POC_CONTROL_RBTN_VER_RES);
-//	lv_obj_set_pos(control->right_button, LV_POC_CONTROL_RBTN_POSITION_X, LV_POC_CONTROL_RBTN_POSITION_Y);
     lv_label_set_text(control->right_button, right_text);
     lv_label_set_align(control->right_button, LV_LABEL_ALIGN_CENTER);
-    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, 0, -1);
-
-    //lv_refr_now(NULL);
+    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, -2, -1);
 
 }
 
@@ -2317,18 +2295,14 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         {
             battery_img = &stat_sys_battery_43;
         }
-        else if(battery_t.battery_value >= 28)
+        else if(battery_t.battery_value >= 10)
         {
-            battery_img = &stat_sys_battery_28;
+            battery_img = &stat_sys_battery_15;
         }
-//        else if(battery_t.battery_value >= 15)
-//        {
-//            battery_img = &stat_sys_battery_15;
-//        }
         else if(battery_t.battery_value >= 0)
         {
             battery_img = &stat_sys_battery_0;
-            if(low_battery_check_count < 1 && battery_t.battery_value <= 10)
+            if(low_battery_check_count < 1)
             {
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, 50, false);
@@ -2340,7 +2314,6 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
     }
     else
     {
-#if 1
 		if(charge_status == false)
 		{
 			charge_status = true;
@@ -2358,7 +2331,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=6;
+			battery_img_cur=5;
         }
         else if(battery_t.battery_value >= 71)
         {
@@ -2366,36 +2339,29 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=5;
+			battery_img_cur=4;
         }
         else if(battery_t.battery_value >= 57)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=4;
+			battery_img_cur=3;
         }
         else if(battery_t.battery_value >= 43)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=3;
+			battery_img_cur=2;
         }
-        else if(battery_t.battery_value >= 28)
+        else if(battery_t.battery_value >= 10)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=2;
+			battery_img_cur=1;
         }
-//        else if(battery_t.battery_value >= 15)
-//        {
-//            battery_img = battery_img_dispaly[battery_img_cur];
-//			battery_img_cur++;
-//			if(battery_img_cur>7)
-//			battery_img_cur=1;
-//        }
         else if(battery_t.battery_value >= 0)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
@@ -2403,41 +2369,6 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			if(battery_img_cur>6)
 			battery_img_cur=0;
         }
-
-#else
-        if(battery_t.battery_value >= 100)
-        {
-            battery_img = &stat_sys_battery_charge_anim100;
-        }
-        else if(battery_t.battery_value >= 85)
-        {
-            battery_img = &stat_sys_battery_charge_anim85;
-        }
-        else if(battery_t.battery_value >= 71)
-        {
-            battery_img = &stat_sys_battery_charge_anim71;
-        }
-        else if(battery_t.battery_value >= 57)
-        {
-            battery_img = &stat_sys_battery_charge_anim57;
-        }
-        else if(battery_t.battery_value >= 43)
-        {
-            battery_img = &stat_sys_battery_charge_anim43;
-        }
-        else if(battery_t.battery_value >= 28)
-        {
-            battery_img = &stat_sys_battery_charge_anim28;
-        }
-        else if(battery_t.battery_value >= 15)
-        {
-            battery_img = &stat_sys_battery_charge_anim15;
-        }
-        else if(battery_t.battery_value >= 0)
-        {
-            battery_img = &stat_sys_battery_charge_anim0;
-        }
-#endif
 
     }
     return (lv_img_dsc_t *)battery_img;
@@ -2701,7 +2632,6 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     if(!is_lv_poc_atctivity_init)
     {
         is_lv_poc_atctivity_init = true;
-        //lv_poc_setting_init();
         lv_poc_theme_init();
         lv_poc_status_bar_init();
         lv_poc_activity_list_init();
@@ -2711,7 +2641,6 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     poc_setting_conf = lv_poc_setting_conf_read();
     poc_display_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_base);
     lv_poc_activity_t *activity = (lv_poc_activity_t *)lv_mem_alloc(sizeof(lv_poc_activity_t));
-    //lv_mem_assert(activity);
     memset(activity,0,sizeof(lv_poc_activity_t));
     if(_idle_activity == NULL)
     {
@@ -2730,7 +2659,6 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     activity->activity_ext.prepare_destory = activity_ext->prepare_destory;
 
     activity->base = lv_obj_create(lv_scr_act(), NULL);
-    //activity->base->ext_attr = activity;
     lv_obj_set_size(activity->base,LV_POC_SCREEN_SCALE_HOR_RES,LV_POC_SCREEN_SCALE_VER_RES);
     lv_obj_set_pos(activity->base,LV_POC_SCREEN_X,LV_POC_SCREEN_Y);
 
@@ -2755,9 +2683,7 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
         {
             lv_img_set_src(activity->display,&ic_launcher_bg);
         }
-        //lv_obj_set_parent(lv_poc_status_bar, _idle_activity);
     }
-    //lv_refr_now();    //会导致刷屏中途显示背景图
     if(has_control)
     {
         if(control_text != NULL)

@@ -21,8 +21,8 @@
 
 static void prvSt7735sSetDir(drvLcd_t *d, drvLcdDirection_t dir)
 {
-    // MY MX MV ML BGR MH x x
-    uint8_t ctrl = 0x8; // default value except MY/MX/MV
+    // MY MX MV ML BGR MH x x default value except MY/MX/MV
+    uint8_t ctrl = 0x0; //改此处修改RGB(0x8)或BGR(0x0)模式
     if (dir & 1)
         ctrl |= 0x80;
     if (dir & 2)

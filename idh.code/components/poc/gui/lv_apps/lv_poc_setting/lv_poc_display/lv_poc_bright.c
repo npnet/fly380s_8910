@@ -78,14 +78,12 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     btn_label = lv_list_get_btn_label(btn);
     cb = lv_cb_create(btn, NULL);
     lv_cb_set_text(cb, "");
-    //lv_obj_set_size(cb, lv_obj_get_width(cb)*9/17, btn_height*9/17);
     btn->user_data = (void *)cb;
     lv_obj_set_height(cb, btn_cb_height);
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb));
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb) - 3);/*图标偏移大小*/
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(bright_time_rb, cb);
-    //lv_cb_set_action(btn, press_btn_action);
     btn_array[0] = btn;
 
     btn = lv_list_add_btn(list, NULL, "15秒");
@@ -96,14 +94,12 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     btn_label = lv_list_get_btn_label(btn);
     cb = lv_cb_create(btn, NULL);
     lv_cb_set_text(cb, "");
-    //lv_obj_set_size(cb, lv_obj_get_width(cb)*9/17, btn_height*9/17);
     btn->user_data = (void *)cb;
     lv_obj_set_height(cb, btn_cb_height);
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb));
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb) - 3);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(bright_time_rb, cb);
-    //lv_cb_set_action(btn, press_btn_action);
     btn_array[1] = btn;
 
     btn = lv_list_add_btn(list, NULL, "30秒");
@@ -116,7 +112,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_cb_set_text(cb, "");
     //lv_obj_set_size(cb, lv_obj_get_width(cb)*9/17, btn_height*9/17);
     btn->user_data = (void *)cb;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb));
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb) - 3);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(bright_time_rb, cb);
@@ -133,7 +129,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_cb_set_text(cb, "");
     //lv_obj_set_size(cb, lv_obj_get_width(cb)*9/17, btn_height*9/17);
     btn->user_data = (void *)cb;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb));
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb) - 3);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(bright_time_rb, cb);
@@ -150,7 +146,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_cb_set_text(cb, "");
     //lv_obj_set_size(cb, lv_obj_get_width(cb)*9/17, btn_height*9/17);
     btn->user_data = (void *)cb;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb));
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb) - 3);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(bright_time_rb, cb);
@@ -167,7 +163,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_cb_set_text(cb, "");
     //lv_obj_set_size(cb, lv_obj_get_width(cb)*9/17, btn_height*9/17);
     btn->user_data = (void *)cb;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb));
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb) - 3);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(bright_time_rb, cb);
@@ -184,7 +180,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_cb_set_text(cb, "");
     //lv_obj_set_size(cb, lv_obj_get_width(cb)*9/17, btn_height*9/17);
     btn->user_data = (void *)cb;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb));
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb) - 3);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(bright_time_rb, cb);
@@ -201,7 +197,7 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
     lv_cb_set_text(cb, "");
     //lv_obj_set_size(cb, lv_obj_get_width(cb)*9/17, btn_height*9/17);
     btn->user_data = (void *)cb;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb));
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(cb) - 3);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(cb, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
     lv_poc_rb_add(bright_time_rb, cb);
