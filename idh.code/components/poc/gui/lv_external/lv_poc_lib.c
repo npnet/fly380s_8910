@@ -1827,6 +1827,13 @@ bool lv_poc_get_ppt_state(void)
 static
 void poc_group_page_up_key_irq(void *ctx)
 {
+	/*group page opt*/
+	extern lv_poc_activity_t * poc_group_list_activity;
+	if(current_activity != poc_group_list_activity)
+	{
+		return;
+	}
+
 	if(drvGpioRead(poc_group_page_up_gpio))/*release*/
 	{
 		OSI_LOGI(0, "[song]group page up key is release\n");
@@ -1848,6 +1855,13 @@ void poc_group_page_up_key_irq(void *ctx)
 static
 void poc_group_page_down_key_irq(void *ctx)
 {
+	/*group page opt*/
+	extern lv_poc_activity_t * poc_group_list_activity;
+	if(current_activity != poc_group_list_activity)
+	{
+		return;
+	}
+
 	if(drvGpioRead(poc_group_page_down_gpio))/*release*/
 	{
 		OSI_LOGI(0, "[song]group page down key is release\n");
@@ -1907,6 +1921,7 @@ void lv_poc_key_init(void)
 	   || poc_group_page_down_gpio == NULL
 	   || poc_sos_gpio == NULL)
 	{
+		Ap_OSI_ASSERT((poc_group_page_up_gpio != NULL), "[song]group io NULL"); /*assert verified*/
 		return;
 	}
 }

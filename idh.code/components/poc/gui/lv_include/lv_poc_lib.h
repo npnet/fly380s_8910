@@ -13,6 +13,12 @@
 
 #define LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE (10)
 
+#define AP_ASSERT_ENABLE/*enable assert*/
+
+#ifdef AP_ASSERT_ENABLE
+#define Ap_OSI_ASSERT(expect_true, info) OSI_ASSERT(expect_true, info)
+#endif
+
 enum {
 	poc_torch_led   = 2,//IO touch
 	poc_red_led     = 10,//IO redled
