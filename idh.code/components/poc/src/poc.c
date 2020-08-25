@@ -29,6 +29,7 @@
 #include "lv_include/lv_poc.h"
 #include "app_test.h"
 #include "guiIdtCom_api.h"
+#include "guiZzdCom_api.h"
 #include "hal_chip.h"
 
 static void lv_poc_network_config_task(lv_task_t * task);
@@ -60,7 +61,10 @@ static void pocIdtStartHandleTask(void * ctx)
 	pocAudioPlayerSound();/*new player test*/
 	#endif
 	osiThreadSleep(2000);
-	lvPocGuiIdtCom_log();
+	//lvPocGuiIdtCom_log();
+	/*zzd platform*/
+	guiZzdComInit();
+
 	osiThreadExit();
 }
 

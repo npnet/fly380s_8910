@@ -1625,7 +1625,7 @@
     ITEM_NAME    = u16_hst_pow_data_sel
     ITEM_ID      = 602
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x2
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 161
     ITEM_PARENT  = 104
     ITEM_DESC    =  
@@ -3078,7 +3078,7 @@
     ITEM_NAME    = u16_rf_afc_limit
     ITEM_ID      = 602
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x64
+    ITEM_CONTENT = 0xFFFF
     ITEM_INDEX   = 306
     ITEM_PARENT  = 272
     ITEM_DESC    =  
@@ -3088,7 +3088,7 @@
     ITEM_NAME    = u16_soft_afc_limit
     ITEM_ID      = 602
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x258
+    ITEM_CONTENT = 0xFFFF
     ITEM_INDEX   = 307
     ITEM_PARENT  = 272
     ITEM_DESC    =  
@@ -3098,7 +3098,7 @@
     ITEM_NAME    = u16_hst_dch_en
     ITEM_ID      = 602
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFF
     ITEM_INDEX   = 308
     ITEM_PARENT  = 272
     ITEM_DESC    = HST DCH EN

@@ -285,6 +285,11 @@ void lv_poc_member_call_open(void * information)
     	return;
     }
 
+	if(lvPocGuiIdtCom_get_listen_status())/*listen status cannot member call*/
+	{
+		return;
+	}
+
 	if(information == NULL)
 	{
 		OSI_LOGI(0, "[member_call] infomation of call obj is empty\n");
@@ -307,6 +312,7 @@ void lv_poc_member_call_open(void * information)
     {
 	    lv_mem_free(lv_poc_member_call_member_list_obj);
 	    lv_poc_member_call_member_list_obj = NULL;
+		return ;/*failed open, return*/
     }
     lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_CALL, true);
 	lv_poc_activity_set_signal_cb(poc_member_call_activity, lv_poc_member_call_signal_func);

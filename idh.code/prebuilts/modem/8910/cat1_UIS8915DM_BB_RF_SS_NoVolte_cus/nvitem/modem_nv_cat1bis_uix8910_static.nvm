@@ -42,7 +42,7 @@
     ITEM_NAME    = nvmVersion
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x89330423
+    ITEM_CONTENT = 0x89130422
     ITEM_INDEX   = 3
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -62,7 +62,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x200800
+    ITEM_CONTENT = 0x8200800
     ITEM_INDEX   = 5
     ITEM_PARENT  = 4
     ITEM_DESC    =  
@@ -4608,7 +4608,7 @@
     ITEM_NAME    = pdn_act_t3482_Len
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x8
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 459
     ITEM_PARENT  = 458
     ITEM_DESC    =  
@@ -4618,7 +4618,7 @@
     ITEM_NAME    = pdn_act_retry_cnt
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 460
     ITEM_PARENT  = 458
     ITEM_DESC    =  
@@ -4628,7 +4628,7 @@
     ITEM_NAME    = pdn_deact_t3492_Len
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x6
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 461
     ITEM_PARENT  = 458
     ITEM_DESC    =  
@@ -4638,7 +4638,7 @@
     ITEM_NAME    = pdn_deact_retry_cnt
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 462
     ITEM_PARENT  = 458
     ITEM_DESC    =  
@@ -4648,7 +4648,7 @@
     ITEM_NAME    = pdp_Act_t3380_Len
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xA
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 463
     ITEM_PARENT  = 458
     ITEM_DESC    =  
@@ -4658,7 +4658,7 @@
     ITEM_NAME    = pdp_Act_retry_cnt
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 464
     ITEM_PARENT  = 458
     ITEM_DESC    =  
@@ -4668,7 +4668,7 @@
     ITEM_NAME    = pdp_deact_t3390_Len
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x5
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 465
     ITEM_PARENT  = 458
     ITEM_DESC    =  
@@ -4678,7 +4678,7 @@
     ITEM_NAME    = pdp_deact_retry_cnt
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 466
     ITEM_PARENT  = 458
     ITEM_DESC    =  
@@ -5061,7 +5061,7 @@
     ITEM_NAME    = deltaNvImsiMcc
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 504
     ITEM_PARENT  = 493
     ITEM_DESC    =  
@@ -5071,7 +5071,7 @@
     ITEM_NAME    = deltaNvImsiMnc
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 505
     ITEM_PARENT  = 493
     ITEM_DESC    =  
@@ -5383,7 +5383,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x80B
+    ITEM_CONTENT = 0x803
     ITEM_INDEX   = 536
     ITEM_PARENT  = 535
     ITEM_DESC    =  
@@ -5443,7 +5443,7 @@
     ITEM_NAME    = bit_field_2
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x60
+    ITEM_CONTENT = 0x20
     ITEM_INDEX   = 542
     ITEM_PARENT  = 539
     ITEM_DESC    =  
@@ -5473,7 +5473,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9
+    ITEM_CONTENT = 0xB
     ITEM_INDEX   = 545
     ITEM_PARENT  = 544
     ITEM_DESC    =  
@@ -5673,7 +5673,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C22
     ITEM_INDEX   = 565
     ITEM_PARENT  = 564
     ITEM_DESC    =  
@@ -5693,7 +5693,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C14
     ITEM_INDEX   = 567
     ITEM_PARENT  = 566
     ITEM_DESC    =  
@@ -6003,7 +6003,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x795BF27F
+    ITEM_CONTENT = 0x795FF27F
     ITEM_INDEX   = 598
     ITEM_PARENT  = 597
     ITEM_DESC    =  
@@ -6023,7 +6023,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x795BF27F
+    ITEM_CONTENT = 0x795FF27F
     ITEM_INDEX   = 600
     ITEM_PARENT  = 599
     ITEM_DESC    =  
@@ -6043,7 +6043,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 602
     ITEM_PARENT  = 601
     ITEM_DESC    =  
@@ -6063,7 +6063,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 604
     ITEM_PARENT  = 603
     ITEM_DESC    =  
@@ -7958,7 +7958,7 @@
     ITEM_NAME    = ratePriorRelativePwrTh
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xA
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 792
     ITEM_PARENT  = 775
     ITEM_DESC    =  
@@ -7968,7 +7968,7 @@
     ITEM_NAME    = ratePriorPssPeakAveTh
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xC
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 793
     ITEM_PARENT  = 775
     ITEM_DESC    =  
@@ -7978,7 +7978,7 @@
     ITEM_NAME    = ratePriorM0M1PeakAveTh
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x14
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 794
     ITEM_PARENT  = 775
     ITEM_DESC    =  
@@ -7988,7 +7988,7 @@
     ITEM_NAME    = ratePriorFddSinrTh
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x2F
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 795
     ITEM_PARENT  = 775
     ITEM_DESC    =  
@@ -7998,7 +7998,7 @@
     ITEM_NAME    = ratePriorFddRsrpTh
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x29
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 796
     ITEM_PARENT  = 775
     ITEM_DESC    =  
@@ -8008,7 +8008,7 @@
     ITEM_NAME    = ratePriorFddPeakFactor
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xA
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 797
     ITEM_PARENT  = 775
     ITEM_DESC    =  
@@ -9113,7 +9113,7 @@
     ITEM_NAME    = threshold0
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x57
+    ITEM_CONTENT = 0x1E
     ITEM_INDEX   = 907
     ITEM_PARENT  = 905
     ITEM_DESC    =  
@@ -9123,7 +9123,7 @@
     ITEM_NAME    = threshold1
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xA
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 908
     ITEM_PARENT  = 905
     ITEM_DESC    =  
@@ -9213,7 +9213,7 @@
     ITEM_NAME    = dtPort
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x5
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 917
     ITEM_PARENT  = 614
     ITEM_DESC    = 0-UART port;2-close port;5-usb port
@@ -9274,7 +9274,7 @@
     ITEM_NAME    = slideWinMobDetectEnable
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x1
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 923
     ITEM_PARENT  = 922
     ITEM_DESC    =  
@@ -9284,7 +9284,7 @@
     ITEM_NAME    = analyTimeLenOfConn
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x8
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 924
     ITEM_PARENT  = 922
     ITEM_DESC    =  
@@ -9294,7 +9294,7 @@
     ITEM_NAME    = analyTimeLenOfIdl
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 925
     ITEM_PARENT  = 922
     ITEM_DESC    =  
@@ -9304,7 +9304,7 @@
     ITEM_NAME    = rsrpGapThreshold
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x3
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 926
     ITEM_PARENT  = 922
     ITEM_DESC    =  

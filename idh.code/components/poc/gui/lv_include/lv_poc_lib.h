@@ -13,6 +13,12 @@
 
 #define LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE (10)
 
+#define AP_ASSERT_ENABLE/*enable assert*/
+
+#ifdef AP_ASSERT_ENABLE
+#define Ap_OSI_ASSERT(expect_true, info) OSI_ASSERT(expect_true, info)
+#endif
+
 enum {
 	poc_torch_led   = 2,//IO touch
 	poc_red_led     = 10,//IO redled
@@ -721,6 +727,14 @@ bool lv_poc_get_earppt_state(void);
 	  date : 2020-07-22
 */
 char *lv_poc_get_self_name_count(void);
+
+/*
+	  name : lv_poc_opt_refr_status
+	  param :
+	  date : 2020-08-24
+*/
+LVPOCIDTCOM_UNREFOPT_SignalType_t
+lv_poc_opt_refr_status(LVPOCIDTCOM_UNREFOPT_SignalType_t status);
 
 #ifdef __cplusplus
 }

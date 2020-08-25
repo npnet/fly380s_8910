@@ -365,6 +365,17 @@ typedef enum{
 	LVPOCUPDATE_TYPE_END ,
 }poc_update_type;
 
+typedef enum
+{
+	LV_POC_IDT_DWSN_QUERY_START  = 0,
+
+	LV_POC_IDT_DWSN_QUERY_USERGROUP_INFO = 1,
+	LV_POC_IDT_DWSN_QUERY_GROUPADDUSER = 2,
+	LV_POC_IDT_DWSN_QUERY_DELETEGROUP = 3,
+
+	LV_POC_IDT_DWSN_QUERY_END,
+} lv_poc_idt_dwsn_query_type_t;
+
 typedef enum{
 	LVPOCAUDIO_Type_Start_Index,
 	LVPOCAUDIO_Type_Start_Machine,      // 欢迎使用数字公网对讲机

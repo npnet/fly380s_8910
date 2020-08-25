@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -35,6 +35,9 @@
 #include <malloc.h>
 
 // #define DEBUG_NOT_START_CP
+
+/*使能GPIO8的VBAT*/
+#define EN_POWER_VBAT_RF 0
 
 #define SUPPORT_SOFTLZMA
 #undef SUPPORT_HARDLZMA2
@@ -284,7 +287,9 @@ bool halCpLoad(void)
 #endif
 
 #ifdef CONFIG_GPIO_USED_FOR_VBAT_RF_SWITCH
+	#if EN_POWER_VBAT_RF
     halPmuSwitchPower(HAL_POWER_VBAT_RF, true, false);
+	#endif
 #endif
 
     halShmemUpdateRamAccess();

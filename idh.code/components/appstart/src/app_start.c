@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -70,6 +70,7 @@
 extern void bt_porting_interface_test(void);
 #endif
 
+#define CalibMode false/*打开或关闭校准模式*/
 static const char gBuildRevision[] OSI_SECTION_RW_KEEP = BUILD_IDENTIFY;
 
 // TODO:
@@ -78,6 +79,7 @@ extern int32_t ipc_at_init(void);
 extern void CFW_RpcInit(void);
 extern bool aworker_start();
 
+#if CalibMode
 static void _checkGpioCalibMode(void)
 {
 #ifdef CONFIG_BOARD_ENTER_CALIB_BY_GPIO
@@ -95,6 +97,7 @@ static void _checkGpioCalibMode(void)
         osiSetBootMode(OSI_BOOTMODE_CALIB);
 #endif
 }
+#endif
 
 static void prvSetFlashWriteProhibitByAddress(unsigned address, unsigned size)
 {
@@ -234,7 +237,9 @@ static void prvPowerOn(void *arg)
     srvSimlockInit();
 #endif
 
+#if CalibMode/*校准模式---使用GPIO13---阻碍设备green灯*/
     _checkGpioCalibMode();
+#endif
 
     unsigned diag_device = diagDeviceName();
     drvDebugPort_t *diag_port = drvDebugPortFindByName(diag_device);
@@ -310,7 +315,7 @@ static void prvPowerOn(void *arg)
     // zsp_uart & uart_3 are both for cp
     halIomuxSetFunction(HAL_IOMUX_FUN_ZSP_UART_TXD);
     halIomuxSetFunction(HAL_IOMUX_FUN_UART_3_TXD);
-    if (!halCpLoad())
+    if (!halCpLoad())/*里面有配置GPIO8*/
         osiPanic();
 
     audevInit();
@@ -416,7 +421,7 @@ void osiAppStart(void)
     // wait a while for PM source created
     osiThreadSleep(10);
     osiPmStart();
-	
+
 #ifdef CONFIG_POC_SUPPORT
 	if (osiGetBootMode() != OSI_BOOTMODE_CALIB)
 	{

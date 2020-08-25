@@ -33,7 +33,7 @@ if(CONFIG_SOC_8910)
 
     set_if(flash2_opt CONFIG_APP_FLASH2_ENABLED THEN WITH_FLASH2)
     add_uimage(${BUILD_TARGET} ${ldscript} ${dummy_cxx_file} ${flash2_opt})
-    target_link_libraries(${BUILD_TARGET} PRIVATE all_libs ${target} all_libs)
+	target_link_libraries(${BUILD_TARGET} PRIVATE all_libs ${target} all_libs  ${CMAKE_CURRENT_SOURCE_DIR}/lib/zzd/libpoc.a ${CMAKE_CURRENT_SOURCE_DIR}/lib/zzd/zzd_poc.a)
 endif()
 
 relative_glob(srcs include/*.h src/*.c src/*.h)
