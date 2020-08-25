@@ -561,12 +561,11 @@ bool lv_poc_setting_init(void)
 	poc_keypad_led_init();
 #endif
 	poc_ext_pa_init();
-	extern uint16_t CUR_UNOPT;
-	CUR_UNOPT = LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS;
 	lv_poc_ear_ppt_key_init();
 	lv_poc_ppt_key_init();
 	lv_poc_key_init();
 	lv_poc_set_adc_current_sense(true);
+	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 
     return true;
 }

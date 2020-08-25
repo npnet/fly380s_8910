@@ -25,10 +25,20 @@ enum {
 	poc_green_led   = 13,//IO greenled
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set  = 8,//IO headset
-	poc_group_page_up  = 20,//IO volum up
-	poc_ppt       = 21,//IO ppt
-	poc_group_page_down  = 18,//IO volum down
-	poc_sos  = 19,//IO sos
+    poc_group_page_up  = 20,//IO volum up
+    poc_ppt       = 21,//IO ppt
+    poc_group_page_down  = 18,//IO volum down
+    poc_sos  = 19,//IO sos
+};
+
+enum {
+	LV_POC_LED_START = 0,
+
+	LV_POC_LED_RED = 1,
+	LV_POC_LED_GREEN = 2,
+	LV_POC_LED_TOUCH = 3,
+
+	LV_POC_LED_END,
 };
 
 //字符串长度:
@@ -733,22 +743,34 @@ bool lv_poc_get_earppt_state(void);
 char *lv_poc_get_self_name_count(void);
 
 /*
-	  name : lv_poc_ppt_key_init
+	  name : poc_set_touch_blacklight
 	 param : none
 	author : wangls
-  describe : ppt配置
-	  date : 2020-08-14
+  describe : 配置手电筒
+	  date : 2020-08-08
 */
-void lv_poc_ppt_key_init(void);
+void
+poc_set_touch_blacklight(bool status);
 
 /*
-	  name : lv_poc_key_init
+	  name : poc_set_red_blacklight
 	 param : none
 	author : wangls
-  describe : key配置
-	  date : 2020-08-16
+  describe : 配置RED
+	  date : 2020-08-08
 */
-void lv_poc_key_init(void);
+void
+poc_set_red_blacklight(bool status);
+
+/*
+	  name : poc_set_green_blacklight
+	 param : none
+	author : wangls
+  describe : 配置GREEN
+	  date : 2020-08-08
+*/
+void
+poc_set_green_blacklight(bool status);
 
 /*
 	  name : lv_poc_get_ppt_state
@@ -758,6 +780,24 @@ void lv_poc_key_init(void);
 	  date : 2020-08-14
 */
 bool lv_poc_get_ppt_state(void);
+
+/*
+	  name : lv_poc_key_init
+	 param : none
+	author : wangls
+  describe : volum key 配置
+	  date : 2020-08-14
+*/
+void lv_poc_key_init(void);
+
+/*
+	  name : lv_poc_ppt_key_init
+	 param : none
+	author : wangls
+  describe : ppt配置
+	  date : 2020-08-14
+*/
+void lv_poc_ppt_key_init(void);
 
 /*
 	  name : lv_poc_set_adc_current_sense
@@ -778,9 +818,18 @@ bool lv_poc_set_adc_current_sense(bool status);
 */
 uint8_t lv_poc_get_adc_to_volum(void);
 
+/*
+	  name : lv_poc_opt_refr_status
+	  param :
+	  date : 2020-08-24
+*/
+LVPOCIDTCOM_UNREFOPT_SignalType_t
+lv_poc_opt_refr_status(LVPOCIDTCOM_UNREFOPT_SignalType_t status);
+
 #ifdef __cplusplus
 }
 #endif
 
 
 #endif //__LV_POC_LIB_H_
+

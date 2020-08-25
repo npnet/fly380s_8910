@@ -77,7 +77,7 @@ static PocVolumAttribute_t lv_poc_volum_set[]= {
 static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
 
-uint16_t CUR_UNOPT;/*记录在一些不能刷新的状态*/
+static uint16_t poc_cur_unopt_status;
 
 /*
       name : lv_poc_get_keypad_dev
@@ -1625,6 +1625,7 @@ void lv_poc_ear_ppt_key_init(void)
 
 	if(poc_ear_ppt_gpio == NULL)
 	{
+		Ap_OSI_ASSERT((poc_ear_ppt_gpio != NULL), "[song]ear config io NULL"); /*assert verified*/
 		OSI_LOGI(0, "[song]ear gpio open failed\n");
 	}
 	else
@@ -1998,10 +1999,16 @@ prv_lv_poc_get_group_list_cb(int msg_type, uint32_t num, CGroup *group)
 bool
 lv_poc_get_group_list(lv_poc_group_list_t * group_list, get_group_list_cb func)
 {
+	#ifndef AP_ASSERT_ENABLE
 	if(group_list == NULL || func == NULL)
 	{
 		return false;
 	}
+	#else
+	Ap_OSI_ASSERT((group_list != NULL), "[song]delete prv_group_list NULL");
+	Ap_OSI_ASSERT((func != NULL), "[song]delete prv_group_list_cb NULL");
+	#endif
+
 	prv_group_list = group_list;
 	prv_group_list_cb = func;
 
@@ -2201,7 +2208,6 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 	prv_member_list = member_list;
 	prv_member_list_type = type;
 	prv_member_list_cb = func;
-	OSI_LOGI(0, "[song]lv_poc_get_member_list LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND");
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND, prv_lv_poc_get_member_list_cb))
 	{
 		prv_member_list = NULL;
@@ -2542,4 +2548,21 @@ uint8_t lv_poc_get_adc_to_volum(void)
 	return lv_poc_volum_set[i].volum_level;
 }
 
+/*
+	  name : lv_poc_opt_refr_status
+	  param :
+	  date : 2020-08-24
+*/
+LVPOCIDTCOM_UNREFOPT_SignalType_t
+lv_poc_opt_refr_status(LVPOCIDTCOM_UNREFOPT_SignalType_t status)
+{
+	if(status <= LVPOCUNREFOPTIDTCOM_SIGNAL_STATUS_START)
+	{
+		return poc_cur_unopt_status;/*as return value*/
+	}
+
+	poc_cur_unopt_status = status;
+
+	return poc_cur_unopt_status;
+}
 

@@ -369,8 +369,12 @@ typedef enum{
 typedef enum
 {
 	LV_POC_IDT_DWSN_QUERY_START  = 0,
+
 	LV_POC_IDT_DWSN_QUERY_USERGROUP_INFO = 1,
 	LV_POC_IDT_DWSN_QUERY_GROUPADDUSER = 2,
+	LV_POC_IDT_DWSN_QUERY_DELETEGROUP = 3,
+
+	LV_POC_IDT_DWSN_QUERY_END,
 } lv_poc_idt_dwsn_query_type_t;
 
 typedef enum{
