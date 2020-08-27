@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -361,16 +361,7 @@ void drvLcdSetBackLightEnable(drvLcd_t *d, bool enabled)
  */
 void drvLcdSetBackLightNess(drvLcd_t *d, uint32_t level)
 {
-	uint32_t backlightness = level;
-	if(backlightness >= RG_RGB_BACKLIGHT_LEVEL_END)
-	{
-		backlightness = RG_RGB_BACKLIGHT_LEVEL_8;
-	}
-	else if(backlightness < RG_RGB_BACKLIGHT_LEVEL_0)
-	{
-		backlightness = RG_RGB_BACKLIGHT_LEVEL_0;
-	}
-	halPmuSetPowerLevel(LCD_BACK_LIGHT_POWER, backlightness);
+	//halPmuSetPowerLevel(LCD_BACK_LIGHT_POWER, backlightness);
 }
 
 void drvLcdWaitTransferDone(void)

@@ -61,9 +61,9 @@ static void pocIdtStartHandleTask(void * ctx)
 	pocAudioPlayerSound();/*new player test*/
 	#endif
 	osiThreadSleep(2000);
-	//lvPocGuiIdtCom_log();
+	lvPocGuiIdtCom_log();
 	/*zzd platform*/
-	guiZzdComInit();
+	//guiZzdComInit();
 
 	osiThreadExit();
 }

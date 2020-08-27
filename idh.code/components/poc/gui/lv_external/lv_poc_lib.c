@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "hal_adi_bus.h"/*register include*/
+#include "hwreg_access.h"
 
 static nv_poc_setting_msg_t poc_setting_conf_local = {0};
 static nv_poc_theme_msg_node_t theme_white = {0};
@@ -45,6 +47,8 @@ static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
 
 static uint16_t poc_cur_unopt_status;
+static void poc_Lcd_Set_BackLightNess(uint32_t level);
+static void poc_SetPowerLevel(uint32_t mv);
 
 /*
       name : lv_poc_get_keypad_dev
@@ -363,13 +367,101 @@ poc_get_lcd_status(void)
 /*
       name : poc_set_lcd_blacklight
     return : set lcd blacklight
-      date : 2020-03-30
+      date : 2020-08-27
 */
 void
 poc_set_lcd_blacklight(IN int8_t blacklight)
 {
-	drvLcdSetBackLightNess(NULL, blacklight);
+	poc_Lcd_Set_BackLightNess(blacklight);
 }
+
+/*
+      name : poc_Lcd_Set_BackLightNess
+    return : set lcd backlight level
+      date : 2020-08-27
+*/
+static
+void poc_Lcd_Set_BackLightNess(uint32_t level)
+{
+	uint32_t backlightness = level;
+
+	if(backlightness >= POC_LCD_BACKLIGHT_LEVEL_END)
+	{
+		backlightness = POC_LCD_BACKLIGHT_LEVEL_8;
+	}
+	else if(backlightness < POC_LCD_BACKLIGHT_LEVEL_0)
+	{
+		backlightness = POC_LCD_BACKLIGHT_LEVEL_0;
+	}
+
+	poc_SetPowerLevel(backlightness);
+}
+
+/*
+      name : poc_SetPowerLevel
+    return : set lcd power register
+      date : 2020-08-27
+*/
+static
+void poc_SetPowerLevel(uint32_t mv)
+{
+	REG_RDA2720M_BLTC_RG_RGB_V0_T rg_rgb_v0;
+    REG_RDA2720M_BLTC_RG_RGB_V1_T rg_rgb_v1;
+
+    switch (mv)
+    {
+    case POC_LCD_BACKLIGHT_LEVEL_0:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x00);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x00);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_1:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x04);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x04);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_2:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x08);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x08);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_3:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x0c);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x0c);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_4:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x10);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x10);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_5:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x14);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x14);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_6:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x18);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x18);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_7:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x1c);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x1c);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_8:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
+        break;
+
+    default:
+        // ignore silently
+        break;
+    }
+}
+
+
 
 static osiThread_t * prv_play_btn_voice_one_time_thread = NULL;
 static auPlayer_t * prv_play_btn_voice_one_time_player = NULL;

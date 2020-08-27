@@ -48,6 +48,7 @@ static void prvPowerKeyCb(void *ctx)
 	}
 	else//充电开机
 	{
+		osiSetBootCause(OSI_BOOTCAUSE_PWRKEY);/*as reboot*/
 		osiShutdown(OSI_SHUTDOWN_RESET);//重启设备
 	}
 }

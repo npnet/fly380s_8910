@@ -9185,7 +9185,7 @@
     ITEM_NAME    = imsi[9]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 914
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9790,7 +9790,7 @@
     ITEM_NAME    = nw_sim_ba_count[0]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x1A
+    ITEM_CONTENT = 0x17
     ITEM_INDEX   = 973
     ITEM_PARENT  = 972
     ITEM_DESC    =  
@@ -10342,7 +10342,7 @@
     ITEM_NAME    = arfcn[46]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x6D
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1028
     ITEM_PARENT  = 981
     ITEM_DESC    =  
@@ -10352,7 +10352,7 @@
     ITEM_NAME    = arfcn[47]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x2
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1029
     ITEM_PARENT  = 981
     ITEM_DESC    =  
@@ -10362,7 +10362,7 @@
     ITEM_NAME    = arfcn[48]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x68
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1030
     ITEM_PARENT  = 981
     ITEM_DESC    =  
@@ -10372,7 +10372,7 @@
     ITEM_NAME    = arfcn[49]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x2
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1031
     ITEM_PARENT  = 981
     ITEM_DESC    =  
@@ -10382,7 +10382,7 @@
     ITEM_NAME    = arfcn[50]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x66
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1032
     ITEM_PARENT  = 981
     ITEM_DESC    =  
@@ -10392,7 +10392,7 @@
     ITEM_NAME    = arfcn[51]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x2
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1033
     ITEM_PARENT  = 981
     ITEM_DESC    =  
@@ -21258,7 +21258,7 @@
     ITEM_NAME    = sequence
     ITEM_ID      = 631
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x168
+    ITEM_CONTENT = 0x5C
     ITEM_INDEX   = 2115
     ITEM_PARENT  = 0
     ITEM_DESC    =  

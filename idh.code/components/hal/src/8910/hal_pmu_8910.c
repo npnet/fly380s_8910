@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -179,11 +179,13 @@ void halBootCauseMode(void)
         if (por_src_flag.v & (1 << 6))
             osiSetBootCause(OSI_BOOTCAUSE_ALARM);
 
+		if (chgr_status.b.chgr_int && chgr_status.b.chgr_on)
+            osiSetBootCause(OSI_BOOTCAUSE_CHARGE);
     }
-
+	#if 0
     if (chgr_status.b.chgr_int && chgr_status.b.chgr_on)
             osiSetBootCause(OSI_BOOTCAUSE_CHARGE);
-
+	#endif
 
     REG_ADI_CHANGE1(hwp_rda2720mGlobal->por_src_flag, por_src_flag,
                     reg_soft_rst_flg_clr, 1); // clear bit14
@@ -621,8 +623,8 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
         REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_pd_ctrl, bltc_pd_ctrl,
                         hw_pd, 0,
                         sw_pd, enabled ? 0 : 1);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x0);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x0);
         REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x20);
         REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v3, rg_rgb_v3, rg_rgb_v3, 0x20);
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, enabled ? 1 : 0);
@@ -695,8 +697,6 @@ bool halPmuSetPowerLevel(uint32_t id, uint32_t mv)
     REG_RDA2720M_GLOBAL_LDO_SPIMEM_REG1_T ldo_spimem_reg1;
     REG_RDA2720M_GLOBAL_VIBR_CTRL1_T vibr_ctrl1;
     REG_RDA2720M_GLOBAL_KPLED_CTRL1_T kpled_ctrl1;
-    REG_RDA2720M_BLTC_RG_RGB_V0_T rg_rgb_v0;
-    REG_RDA2720M_BLTC_RG_RGB_V1_T rg_rgb_v1;	
 
     int32_t level = prvVoltageSettingValue(id, mv);
 
@@ -749,61 +749,6 @@ bool halPmuSetPowerLevel(uint32_t id, uint32_t mv)
         break;
     }
 
-    if (id == HAL_POWER_BACK_LIGHT)
-    {
-	    switch (mv)
-        {
-        case RG_RGB_BACKLIGHT_LEVEL_0:
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x00);
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x00);
-            break;
-
-        case RG_RGB_BACKLIGHT_LEVEL_1:
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x04);
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x04);
-            break;
-
-        case RG_RGB_BACKLIGHT_LEVEL_2:
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x08);
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x08);
-            break;
-
-        case RG_RGB_BACKLIGHT_LEVEL_3:
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x0c);
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x0c);
-            break;
-
-        case RG_RGB_BACKLIGHT_LEVEL_4:
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x10);
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x10);
-            break;
-
-        case RG_RGB_BACKLIGHT_LEVEL_5:
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x17);
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x17);
-            break;
-
-        case RG_RGB_BACKLIGHT_LEVEL_6:
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x1e);
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x1e);
-            break;
-
-        case RG_RGB_BACKLIGHT_LEVEL_7:
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x23);
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x23);
-            break;
-
-        case RG_RGB_BACKLIGHT_LEVEL_8:
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x28);
-	        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x28);
-            break;
-
-        default:
-            // ignore silently
-            break;
-        }
-    }
-	
     return true;
 }
 
