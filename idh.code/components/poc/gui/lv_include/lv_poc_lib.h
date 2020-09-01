@@ -736,6 +736,26 @@ char *lv_poc_get_self_name_count(void);
 LVPOCIDTCOM_UNREFOPT_SignalType_t
 lv_poc_opt_refr_status(LVPOCIDTCOM_UNREFOPT_SignalType_t status);
 
+/*
+	name : lv_poc_get_record_mic_gain
+   param : none
+  author : wangls
+describe : 获取record mic增益
+	date : 2020-09-01
+
+*/
+bool lv_poc_get_record_mic_gain(void);
+
+/*
+	name : lv_poc_set_record_mic_gain
+   param : none
+  author : wangls
+describe : 设置record mic增益
+	date : 2020-09-01
+
+*/
+bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_path path, lv_poc_record_mic_anaGain anaGain, lv_poc_record_mic_adcGain adcGain);
+
 #ifdef __cplusplus
 }
 #endif

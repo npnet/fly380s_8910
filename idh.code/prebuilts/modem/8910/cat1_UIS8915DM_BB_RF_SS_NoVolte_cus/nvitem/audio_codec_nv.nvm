@@ -363,7 +363,7 @@
     ITEM_NAME    = freq
     ITEM_ID      = 634
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x2625A00
+    ITEM_CONTENT = 0xBEBC200
     ITEM_INDEX   = 35
     ITEM_PARENT  = 33
     ITEM_DESC    = system clock(Hz) 

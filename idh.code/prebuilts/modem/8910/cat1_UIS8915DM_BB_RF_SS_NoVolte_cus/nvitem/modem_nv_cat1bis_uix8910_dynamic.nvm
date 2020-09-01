@@ -62,7 +62,7 @@
     ITEM_NAME    = length
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x8
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5
     ITEM_PARENT  = 4
     ITEM_DESC    =  
@@ -83,7 +83,7 @@
     ITEM_NAME    = imsiCon[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x49
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 7
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -93,7 +93,7 @@
     ITEM_NAME    = imsiCon[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x6
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 8
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -103,7 +103,7 @@
     ITEM_NAME    = imsiCon[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x40
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 9
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -113,7 +113,7 @@
     ITEM_NAME    = imsiCon[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x31
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 10
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -123,7 +123,7 @@
     ITEM_NAME    = imsiCon[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x8
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 11
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -133,7 +133,7 @@
     ITEM_NAME    = imsiCon[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x3
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 12
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -143,7 +143,7 @@
     ITEM_NAME    = imsiCon[6]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x27
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 13
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -153,7 +153,7 @@
     ITEM_NAME    = imsiCon[7]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x6
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 14
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -163,7 +163,7 @@
     ITEM_NAME    = fillByte
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 15
     ITEM_PARENT  = 4
     ITEM_DESC    =  
@@ -214,7 +214,7 @@
     ITEM_NAME    = rplmn[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 20
     ITEM_PARENT  = 19
     ITEM_DESC    =  
@@ -224,7 +224,7 @@
     ITEM_NAME    = rplmn[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 21
     ITEM_PARENT  = 19
     ITEM_DESC    =  
@@ -234,7 +234,7 @@
     ITEM_NAME    = rplmn[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 22
     ITEM_PARENT  = 19
     ITEM_DESC    =  
@@ -876,7 +876,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x8
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 86
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -886,7 +886,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9600
+    ITEM_CONTENT = 0xE74
     ITEM_INDEX   = 87
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -896,7 +896,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9826
+    ITEM_CONTENT = 0xDDE
     ITEM_INDEX   = 88
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -906,7 +906,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x514
+    ITEM_CONTENT = 0xE42
     ITEM_INDEX   = 89
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -916,7 +916,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x94D2
+    ITEM_CONTENT = 0xDEE
     ITEM_INDEX   = 90
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -926,7 +926,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9FE8
+    ITEM_CONTENT = 0x5DC
     ITEM_INDEX   = 91
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -936,7 +936,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[6]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xA0AE
+    ITEM_CONTENT = 0x12C
     ITEM_INDEX   = 92
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -946,7 +946,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[7]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9690
+    ITEM_CONTENT = 0xFFFFFFFF
     ITEM_INDEX   = 93
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -956,7 +956,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[8]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xE06
+    ITEM_CONTENT = 0xFFFFFFFF
     ITEM_INDEX   = 94
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -966,7 +966,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[9]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFFFFFF
     ITEM_INDEX   = 95
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -987,7 +987,7 @@
     ITEM_NAME    = ltePrevUsedBand[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x5
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 97
     ITEM_PARENT  = 96
     ITEM_DESC    =  
@@ -997,7 +997,7 @@
     ITEM_NAME    = ltePrevUsedBand[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x27
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 98
     ITEM_PARENT  = 96
     ITEM_DESC    =  
@@ -1007,7 +1007,7 @@
     ITEM_NAME    = ltePrevUsedBand[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x28
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 99
     ITEM_PARENT  = 96
     ITEM_DESC    =  
@@ -1017,7 +1017,7 @@
     ITEM_NAME    = ltePrevUsedBand[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x3
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 100
     ITEM_PARENT  = 96
     ITEM_DESC    =  
@@ -1027,7 +1027,7 @@
     ITEM_NAME    = ltePrevUsedBand[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x26
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 101
     ITEM_PARENT  = 96
     ITEM_DESC    =  
@@ -1037,7 +1037,7 @@
     ITEM_NAME    = ltePrevUsedBand[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x29
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 102
     ITEM_PARENT  = 96
     ITEM_DESC    =  
@@ -1088,7 +1088,7 @@
     ITEM_NAME    = guti[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xB
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 107
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1098,7 +1098,7 @@
     ITEM_NAME    = guti[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xF6
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 108
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1108,7 +1108,7 @@
     ITEM_NAME    = guti[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x64
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 109
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1118,7 +1118,7 @@
     ITEM_NAME    = guti[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xF0
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 110
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1138,7 +1138,7 @@
     ITEM_NAME    = guti[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x1
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 112
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1148,7 +1148,7 @@
     ITEM_NAME    = guti[6]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x82
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 113
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1158,7 +1158,7 @@
     ITEM_NAME    = guti[7]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 114
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1168,7 +1168,7 @@
     ITEM_NAME    = guti[8]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFC
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 115
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1178,7 +1178,7 @@
     ITEM_NAME    = guti[9]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x7
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 116
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1188,7 +1188,7 @@
     ITEM_NAME    = guti[10]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x73
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 117
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1198,7 +1198,7 @@
     ITEM_NAME    = guti[11]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x58
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 118
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1219,7 +1219,7 @@
     ITEM_NAME    = regTai[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x64
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 120
     ITEM_PARENT  = 119
     ITEM_DESC    =  
@@ -1229,7 +1229,7 @@
     ITEM_NAME    = regTai[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xF0
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 121
     ITEM_PARENT  = 119
     ITEM_DESC    =  
@@ -1249,7 +1249,7 @@
     ITEM_NAME    = regTai[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x21
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 123
     ITEM_PARENT  = 119
     ITEM_DESC    =  
@@ -1259,7 +1259,7 @@
     ITEM_NAME    = regTai[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 124
     ITEM_PARENT  = 119
     ITEM_DESC    =  
@@ -1640,7 +1640,7 @@
     ITEM_NAME    = length
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x36
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 162
     ITEM_PARENT  = 161
     ITEM_DESC    =  
@@ -1661,7 +1661,7 @@
     ITEM_NAME    = epsNsc[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 164
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1671,7 +1671,7 @@
     ITEM_NAME    = epsNsc[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 165
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1681,7 +1681,7 @@
     ITEM_NAME    = epsNsc[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 166
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1691,7 +1691,7 @@
     ITEM_NAME    = epsNsc[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 167
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1701,7 +1701,7 @@
     ITEM_NAME    = epsNsc[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 168
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1711,7 +1711,7 @@
     ITEM_NAME    = epsNsc[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 169
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1721,7 +1721,7 @@
     ITEM_NAME    = epsNsc[6]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 170
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1731,7 +1731,7 @@
     ITEM_NAME    = epsNsc[7]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 171
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1741,7 +1741,7 @@
     ITEM_NAME    = epsNsc[8]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 172
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1751,7 +1751,7 @@
     ITEM_NAME    = epsNsc[9]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 173
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1761,7 +1761,7 @@
     ITEM_NAME    = epsNsc[10]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 174
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1771,7 +1771,7 @@
     ITEM_NAME    = epsNsc[11]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 175
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1781,7 +1781,7 @@
     ITEM_NAME    = epsNsc[12]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 176
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1791,7 +1791,7 @@
     ITEM_NAME    = epsNsc[13]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 177
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1801,7 +1801,7 @@
     ITEM_NAME    = epsNsc[14]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 178
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1811,7 +1811,7 @@
     ITEM_NAME    = epsNsc[15]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 179
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1821,7 +1821,7 @@
     ITEM_NAME    = epsNsc[16]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 180
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1831,7 +1831,7 @@
     ITEM_NAME    = epsNsc[17]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 181
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1841,7 +1841,7 @@
     ITEM_NAME    = epsNsc[18]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 182
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1851,7 +1851,7 @@
     ITEM_NAME    = epsNsc[19]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 183
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1861,7 +1861,7 @@
     ITEM_NAME    = epsNsc[20]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 184
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1871,7 +1871,7 @@
     ITEM_NAME    = epsNsc[21]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 185
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1881,7 +1881,7 @@
     ITEM_NAME    = epsNsc[22]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 186
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1891,7 +1891,7 @@
     ITEM_NAME    = epsNsc[23]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 187
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1901,7 +1901,7 @@
     ITEM_NAME    = epsNsc[24]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 188
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1911,7 +1911,7 @@
     ITEM_NAME    = epsNsc[25]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 189
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1921,7 +1921,7 @@
     ITEM_NAME    = epsNsc[26]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 190
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1931,7 +1931,7 @@
     ITEM_NAME    = epsNsc[27]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 191
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1941,7 +1941,7 @@
     ITEM_NAME    = epsNsc[28]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 192
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1951,7 +1951,7 @@
     ITEM_NAME    = epsNsc[29]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 193
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1961,7 +1961,7 @@
     ITEM_NAME    = epsNsc[30]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 194
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1971,7 +1971,7 @@
     ITEM_NAME    = epsNsc[31]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 195
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1981,7 +1981,7 @@
     ITEM_NAME    = epsNsc[32]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 196
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -1991,7 +1991,7 @@
     ITEM_NAME    = epsNsc[33]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 197
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2001,7 +2001,7 @@
     ITEM_NAME    = epsNsc[34]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 198
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2011,7 +2011,7 @@
     ITEM_NAME    = epsNsc[35]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 199
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2021,7 +2021,7 @@
     ITEM_NAME    = epsNsc[36]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 200
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2031,7 +2031,7 @@
     ITEM_NAME    = epsNsc[37]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 201
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2041,7 +2041,7 @@
     ITEM_NAME    = epsNsc[38]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 202
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2051,7 +2051,7 @@
     ITEM_NAME    = epsNsc[39]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 203
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2061,7 +2061,7 @@
     ITEM_NAME    = epsNsc[40]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 204
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2071,7 +2071,7 @@
     ITEM_NAME    = epsNsc[41]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 205
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2081,7 +2081,7 @@
     ITEM_NAME    = epsNsc[42]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 206
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2091,7 +2091,7 @@
     ITEM_NAME    = epsNsc[43]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 207
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2101,7 +2101,7 @@
     ITEM_NAME    = epsNsc[44]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 208
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2111,7 +2111,7 @@
     ITEM_NAME    = epsNsc[45]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 209
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2121,7 +2121,7 @@
     ITEM_NAME    = epsNsc[46]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 210
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2131,7 +2131,7 @@
     ITEM_NAME    = epsNsc[47]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 211
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2141,7 +2141,7 @@
     ITEM_NAME    = epsNsc[48]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 212
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2151,7 +2151,7 @@
     ITEM_NAME    = epsNsc[49]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 213
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2161,7 +2161,7 @@
     ITEM_NAME    = epsNsc[50]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 214
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2171,7 +2171,7 @@
     ITEM_NAME    = epsNsc[51]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 215
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2181,7 +2181,7 @@
     ITEM_NAME    = epsNsc[52]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 216
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -2191,7 +2191,7 @@
     ITEM_NAME    = epsNsc[53]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 217
     ITEM_PARENT  = 163
     ITEM_DESC    =  
@@ -4957,7 +4957,7 @@
     ITEM_NAME    = rejPlmn[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 492
     ITEM_PARENT  = 491
     ITEM_DESC    =  
@@ -4967,7 +4967,7 @@
     ITEM_NAME    = rejPlmn[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 493
     ITEM_PARENT  = 491
     ITEM_DESC    =  
@@ -4977,7 +4977,7 @@
     ITEM_NAME    = rejPlmn[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 494
     ITEM_PARENT  = 491
     ITEM_DESC    =  
@@ -6288,7 +6288,7 @@
     ITEM_NAME    = GsmBaNb
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x17
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 625
     ITEM_PARENT  = 17
     ITEM_DESC    =  
@@ -6329,7 +6329,7 @@
     ITEM_NAME    = GsmBa[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x273
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 629
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6339,7 +6339,7 @@
     ITEM_NAME    = GsmBa[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x270
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 630
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6349,7 +6349,7 @@
     ITEM_NAME    = GsmBa[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x26F
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 631
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6359,7 +6359,7 @@
     ITEM_NAME    = GsmBa[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x26B
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 632
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6369,7 +6369,7 @@
     ITEM_NAME    = GsmBa[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x26A
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 633
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6379,7 +6379,7 @@
     ITEM_NAME    = GsmBa[6]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x269
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 634
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6389,7 +6389,7 @@
     ITEM_NAME    = GsmBa[7]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x267
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 635
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6399,7 +6399,7 @@
     ITEM_NAME    = GsmBa[8]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x265
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 636
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6409,7 +6409,7 @@
     ITEM_NAME    = GsmBa[9]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x264
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 637
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6419,7 +6419,7 @@
     ITEM_NAME    = GsmBa[10]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x39
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 638
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6429,7 +6429,7 @@
     ITEM_NAME    = GsmBa[11]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x38
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 639
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6439,7 +6439,7 @@
     ITEM_NAME    = GsmBa[12]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x37
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 640
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6449,7 +6449,7 @@
     ITEM_NAME    = GsmBa[13]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x36
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 641
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6459,7 +6459,7 @@
     ITEM_NAME    = GsmBa[14]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x35
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 642
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6469,7 +6469,7 @@
     ITEM_NAME    = GsmBa[15]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x34
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 643
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6479,7 +6479,7 @@
     ITEM_NAME    = GsmBa[16]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x33
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 644
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6489,7 +6489,7 @@
     ITEM_NAME    = GsmBa[17]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x32
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 645
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6499,7 +6499,7 @@
     ITEM_NAME    = GsmBa[18]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x31
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 646
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6509,7 +6509,7 @@
     ITEM_NAME    = GsmBa[19]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x30
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 647
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6519,7 +6519,7 @@
     ITEM_NAME    = GsmBa[20]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x2F
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 648
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6529,7 +6529,7 @@
     ITEM_NAME    = GsmBa[21]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x2E
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 649
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6539,7 +6539,7 @@
     ITEM_NAME    = GsmBa[22]
     ITEM_ID      = 603
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x20
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 650
     ITEM_PARENT  = 627
     ITEM_DESC    =  
@@ -6680,7 +6680,7 @@
     ITEM_NAME    = rplmn[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 664
     ITEM_PARENT  = 663
     ITEM_DESC    =  
@@ -6690,7 +6690,7 @@
     ITEM_NAME    = rplmn[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 665
     ITEM_PARENT  = 663
     ITEM_DESC    =  
@@ -6700,7 +6700,7 @@
     ITEM_NAME    = rplmn[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 666
     ITEM_PARENT  = 663
     ITEM_DESC    =  
@@ -6731,7 +6731,7 @@
     ITEM_NAME    = equvPlmnList[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 669
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6741,7 +6741,7 @@
     ITEM_NAME    = equvPlmnList[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 670
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6751,7 +6751,7 @@
     ITEM_NAME    = equvPlmnList[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 671
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6761,7 +6761,7 @@
     ITEM_NAME    = equvPlmnList[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 672
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6771,7 +6771,7 @@
     ITEM_NAME    = equvPlmnList[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 673
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6781,7 +6781,7 @@
     ITEM_NAME    = equvPlmnList[6]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 674
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6791,7 +6791,7 @@
     ITEM_NAME    = equvPlmnList[7]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 675
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6801,7 +6801,7 @@
     ITEM_NAME    = equvPlmnList[8]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 676
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6811,7 +6811,7 @@
     ITEM_NAME    = equvPlmnList[9]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 677
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6821,7 +6821,7 @@
     ITEM_NAME    = equvPlmnList[10]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 678
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6831,7 +6831,7 @@
     ITEM_NAME    = equvPlmnList[11]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 679
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6841,7 +6841,7 @@
     ITEM_NAME    = equvPlmnList[12]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 680
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6851,7 +6851,7 @@
     ITEM_NAME    = equvPlmnList[13]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 681
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6861,7 +6861,7 @@
     ITEM_NAME    = equvPlmnList[14]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 682
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6871,7 +6871,7 @@
     ITEM_NAME    = equvPlmnList[15]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 683
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6881,7 +6881,7 @@
     ITEM_NAME    = equvPlmnList[16]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 684
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6891,7 +6891,7 @@
     ITEM_NAME    = equvPlmnList[17]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 685
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6901,7 +6901,7 @@
     ITEM_NAME    = equvPlmnList[18]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 686
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6911,7 +6911,7 @@
     ITEM_NAME    = equvPlmnList[19]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 687
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6921,7 +6921,7 @@
     ITEM_NAME    = equvPlmnList[20]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 688
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6931,7 +6931,7 @@
     ITEM_NAME    = equvPlmnList[21]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 689
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6941,7 +6941,7 @@
     ITEM_NAME    = equvPlmnList[22]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 690
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6951,7 +6951,7 @@
     ITEM_NAME    = equvPlmnList[23]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 691
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6961,7 +6961,7 @@
     ITEM_NAME    = equvPlmnList[24]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 692
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6971,7 +6971,7 @@
     ITEM_NAME    = equvPlmnList[25]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 693
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6981,7 +6981,7 @@
     ITEM_NAME    = equvPlmnList[26]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 694
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -6991,7 +6991,7 @@
     ITEM_NAME    = equvPlmnList[27]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 695
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7001,7 +7001,7 @@
     ITEM_NAME    = equvPlmnList[28]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 696
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7011,7 +7011,7 @@
     ITEM_NAME    = equvPlmnList[29]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 697
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7021,7 +7021,7 @@
     ITEM_NAME    = equvPlmnList[30]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 698
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7031,7 +7031,7 @@
     ITEM_NAME    = equvPlmnList[31]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 699
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7041,7 +7041,7 @@
     ITEM_NAME    = equvPlmnList[32]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 700
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7051,7 +7051,7 @@
     ITEM_NAME    = equvPlmnList[33]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 701
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7061,7 +7061,7 @@
     ITEM_NAME    = equvPlmnList[34]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 702
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7071,7 +7071,7 @@
     ITEM_NAME    = equvPlmnList[35]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 703
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7081,7 +7081,7 @@
     ITEM_NAME    = equvPlmnList[36]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 704
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7091,7 +7091,7 @@
     ITEM_NAME    = equvPlmnList[37]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 705
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7101,7 +7101,7 @@
     ITEM_NAME    = equvPlmnList[38]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 706
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7111,7 +7111,7 @@
     ITEM_NAME    = equvPlmnList[39]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 707
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7121,7 +7121,7 @@
     ITEM_NAME    = equvPlmnList[40]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 708
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7131,7 +7131,7 @@
     ITEM_NAME    = equvPlmnList[41]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 709
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7141,7 +7141,7 @@
     ITEM_NAME    = equvPlmnList[42]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 710
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7151,7 +7151,7 @@
     ITEM_NAME    = equvPlmnList[43]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 711
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7161,7 +7161,7 @@
     ITEM_NAME    = equvPlmnList[44]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 712
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7171,7 +7171,7 @@
     ITEM_NAME    = equvPlmnList[45]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 713
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7181,7 +7181,7 @@
     ITEM_NAME    = equvPlmnList[46]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 714
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7191,7 +7191,7 @@
     ITEM_NAME    = equvPlmnList[47]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 715
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7201,7 +7201,7 @@
     ITEM_NAME    = equvPlmnList[48]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 716
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7211,7 +7211,7 @@
     ITEM_NAME    = equvPlmnList[49]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 717
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7221,7 +7221,7 @@
     ITEM_NAME    = equvPlmnList[50]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 718
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7231,7 +7231,7 @@
     ITEM_NAME    = equvPlmnList[51]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 719
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7241,7 +7241,7 @@
     ITEM_NAME    = equvPlmnList[52]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 720
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7251,7 +7251,7 @@
     ITEM_NAME    = equvPlmnList[53]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 721
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7261,7 +7261,7 @@
     ITEM_NAME    = equvPlmnList[54]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 722
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7271,7 +7271,7 @@
     ITEM_NAME    = equvPlmnList[55]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 723
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7281,7 +7281,7 @@
     ITEM_NAME    = equvPlmnList[56]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 724
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7291,7 +7291,7 @@
     ITEM_NAME    = equvPlmnList[57]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 725
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7301,7 +7301,7 @@
     ITEM_NAME    = equvPlmnList[58]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 726
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7311,7 +7311,7 @@
     ITEM_NAME    = equvPlmnList[59]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 727
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7321,7 +7321,7 @@
     ITEM_NAME    = equvPlmnList[60]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 728
     ITEM_PARENT  = 667
     ITEM_DESC    =  
@@ -7342,7 +7342,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 730
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -7352,7 +7352,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xE74
     ITEM_INDEX   = 731
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -7362,7 +7362,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xDDE
     ITEM_INDEX   = 732
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -7372,7 +7372,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xE42
     ITEM_INDEX   = 733
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -7382,7 +7382,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xDEE
     ITEM_INDEX   = 734
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -7392,7 +7392,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5DC
     ITEM_INDEX   = 735
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -7402,7 +7402,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[6]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x12C
     ITEM_INDEX   = 736
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -7412,7 +7412,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[7]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFFFFFF
     ITEM_INDEX   = 737
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -7422,7 +7422,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[8]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFFFFFF
     ITEM_INDEX   = 738
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -7432,7 +7432,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[9]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFFFFFF
     ITEM_INDEX   = 739
     ITEM_PARENT  = 729
     ITEM_DESC    =  
@@ -11402,7 +11402,7 @@
     ITEM_NAME    = t3402Value
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xAFC80
     ITEM_INDEX   = 1134
     ITEM_PARENT  = 1133
     ITEM_DESC    =  
@@ -13115,7 +13115,7 @@
     ITEM_NAME    = randSand
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x1E17D7E5
+    ITEM_CONTENT = 0x72616E64
     ITEM_INDEX   = 1305
     ITEM_PARENT  = 3
     ITEM_DESC    =  
@@ -13135,7 +13135,7 @@
     ITEM_NAME    = arfcnNum
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xC
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1307
     ITEM_PARENT  = 1306
     ITEM_DESC    =  
@@ -13196,7 +13196,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x672
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1313
     ITEM_PARENT  = 1312
     ITEM_DESC    =  
@@ -13206,7 +13206,7 @@
     ITEM_NAME    = plmnNum
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x1
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1314
     ITEM_PARENT  = 1312
     ITEM_DESC    =  
@@ -13237,7 +13237,7 @@
     ITEM_NAME    = plmn[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x64
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1317
     ITEM_PARENT  = 1315
     ITEM_DESC    =  
@@ -13247,7 +13247,7 @@
     ITEM_NAME    = plmn[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xF0
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1318
     ITEM_PARENT  = 1315
     ITEM_DESC    =  
@@ -13257,7 +13257,7 @@
     ITEM_NAME    = plmn[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x10
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1319
     ITEM_PARENT  = 1315
     ITEM_DESC    =  
@@ -13427,7 +13427,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x23F
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1336
     ITEM_PARENT  = 1335
     ITEM_DESC    =  
@@ -13658,7 +13658,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x1C2
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1359
     ITEM_PARENT  = 1358
     ITEM_DESC    =  
@@ -13889,7 +13889,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x5DC
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1382
     ITEM_PARENT  = 1381
     ITEM_DESC    =  
@@ -14120,7 +14120,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9600
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1405
     ITEM_PARENT  = 1404
     ITEM_DESC    =  
@@ -14130,7 +14130,7 @@
     ITEM_NAME    = plmnNum
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x1
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1406
     ITEM_PARENT  = 1404
     ITEM_DESC    =  
@@ -14161,7 +14161,7 @@
     ITEM_NAME    = plmn[1]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x64
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1409
     ITEM_PARENT  = 1407
     ITEM_DESC    =  
@@ -14171,7 +14171,7 @@
     ITEM_NAME    = plmn[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xF0
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1410
     ITEM_PARENT  = 1407
     ITEM_DESC    =  
@@ -14351,7 +14351,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9826
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1428
     ITEM_PARENT  = 1427
     ITEM_DESC    =  
@@ -14582,7 +14582,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x514
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1451
     ITEM_PARENT  = 1450
     ITEM_DESC    =  
@@ -14813,7 +14813,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x94D2
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1474
     ITEM_PARENT  = 1473
     ITEM_DESC    =  
@@ -15044,7 +15044,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9FE8
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1497
     ITEM_PARENT  = 1496
     ITEM_DESC    =  
@@ -15275,7 +15275,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xA0AE
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1520
     ITEM_PARENT  = 1519
     ITEM_DESC    =  
@@ -15506,7 +15506,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x9690
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1543
     ITEM_PARENT  = 1542
     ITEM_DESC    =  
@@ -15737,7 +15737,7 @@
     ITEM_NAME    = arfcn
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xE06
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 1566
     ITEM_PARENT  = 1565
     ITEM_DESC    =  

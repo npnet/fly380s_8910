@@ -856,9 +856,11 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 		if(m_IdtUser.m_iRxCount == 1)
 		{
 			audevSetPlayVolume(0);/*关闭音量*/
-			#if 0
-			pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)audio_voice_buff, 44);
-			#endif
+		}
+		/*临时方案*/
+		if(m_IdtUser.m_iRxCount == 5)/*音量设置需要时间 --- 需调节*/
+		{/*还原音量---去掉啪音*/
+			lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 		}
 		#endif
 
@@ -871,14 +873,6 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND, NULL);
 		}
-
-		#if 1
-		/*临时方案*/
-		if(m_IdtUser.m_iRxCount == 20)
-		{/*还原音量---去掉啪音*/
-			lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
-		}
-		#endif
 	}
     return 0;
 }

@@ -440,6 +440,49 @@ typedef enum _lv_poc_group_oprator_type
 	LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_OK,
 } lv_poc_group_oprator_type;
 
+typedef enum _lv_poc_record_mic_mode/*mic gain mode*/
+{
+	MUSICRECORD = 2,
+	FMRECORD = 4,
+} lv_poc_record_mic_mode;
+
+typedef enum _lv_poc_record_mic_path
+{
+	Handfree = 1,
+	Handset4P = 2,
+	Handset3P = 3,
+} lv_poc_record_mic_path;
+
+typedef enum _lv_poc_record_mic_anaGain
+{
+	POC_MIC_ANA_GAIN_LEVEL_1 = 1,
+	POC_MIC_ANA_GAIN_LEVEL_2 = 2,
+	POC_MIC_ANA_GAIN_LEVEL_3 = 3,
+	POC_MIC_ANA_GAIN_LEVEL_4 = 4,
+	POC_MIC_ANA_GAIN_LEVEL_5 = 5,
+	POC_MIC_ANA_GAIN_LEVEL_6 = 6,
+	POC_MIC_ANA_GAIN_LEVEL_7 = 7,
+} lv_poc_record_mic_anaGain;
+
+typedef enum _lv_poc_record_mic_adcGain
+{
+	POC_MIC_ADC_GAIN_LEVEL_1 = 1,
+	POC_MIC_ADC_GAIN_LEVEL_2 = 2,
+	POC_MIC_ADC_GAIN_LEVEL_3 = 3,
+	POC_MIC_ADC_GAIN_LEVEL_4 = 4,
+	POC_MIC_ADC_GAIN_LEVEL_5 = 5,
+	POC_MIC_ADC_GAIN_LEVEL_6 = 6,
+	POC_MIC_ADC_GAIN_LEVEL_7 = 7,
+	POC_MIC_ADC_GAIN_LEVEL_8 = 8,
+	POC_MIC_ADC_GAIN_LEVEL_9 = 9,
+	POC_MIC_ADC_GAIN_LEVEL_10 = 10,
+	POC_MIC_ADC_GAIN_LEVEL_11 = 11,
+	POC_MIC_ADC_GAIN_LEVEL_12 = 12,
+	POC_MIC_ADC_GAIN_LEVEL_13 = 13,
+	POC_MIC_ADC_GAIN_LEVEL_14 = 14,
+	POC_MIC_ADC_GAIN_LEVEL_15 = 15,
+} lv_poc_record_mic_adcGain;
+
 typedef struct _list_element_t{
     char name[LIST_ELEMENT_NAME_MAX_LENGTH];
     lv_obj_t * list_item;

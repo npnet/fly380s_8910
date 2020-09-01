@@ -27,7 +27,9 @@
 #include "guiIdtCom_api.h"
 #include "lv_include/lv_poc.h"
 #include "lv_gui_main.h"
+#include "poc_audio_recorder.h"
 
+#define POC_RECORD_OR_SPEAK_CALL 1/*1-正常对讲，0-自录自播*/
 
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
@@ -62,13 +64,21 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{
+				#if POC_RECORD_OR_SPEAK_CALL
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+				#else
+				lv_poc_start_recordwriter();/*自录*/
+				#endif
 			}
 			else
 			{
+				#if POC_RECORD_OR_SPEAK_CALL
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+				#else
+				lv_poc_start_playfile();/*自播*/
+				#endif
 			}
 		}
 		prvPttKeyState = state;

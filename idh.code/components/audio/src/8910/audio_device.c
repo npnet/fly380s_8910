@@ -502,6 +502,32 @@ static bool prvSetPlayConfig(void)
 }
 
 /**
+ * set play
+ */
+#if 0
+static bool pocsetplayconfig(void)
+{
+	audevContext_t *d = &gAudevCtx;
+
+    AUD_LEVEL_T level = {
+        .spkLevel = prvVolumeToLevel(d->cfg.play_vol, d->cfg.out_mute),
+        .micLevel = SND_MIC_ENABLE,
+        .sideLevel = SND_SIDE_VOL_15,
+        .toneLevel = SND_TONE_0DB,
+        .appMode = SND_APP_MODE_MUSIC,
+    };
+
+    if (!DM_AudSetup(prvOutputToSndItf(d->cfg.outdev), &level))
+        return false;
+
+    if (!prvWaitStatus(AUD_CODEC_SETUP_DONE))
+        return false;
+
+    return true;
+}
+#endif
+
+/**
  * Set input device configuration
  */
 static bool prvSetDeviceExt(void)
@@ -1827,8 +1853,13 @@ bool audevSetPlayVolume(unsigned vol)
 
     d->cfg.play_vol = vol;
     if (d->clk_users & AUDEV_CLK_USER_PLAY)
-        prvSetPlayConfig();
-
+    {
+		#if 1
+        prvSetPlayConfig();/*官方*/
+		#else
+		pocsetplayconfig();/*old*/
+		#endif
+    }
     audevSetting_t cfg = d->cfg;
     osiMutexUnlock(d->lock);
 
@@ -2476,7 +2507,17 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     if (play_ops == NULL || play_ops->get_frame == NULL || play_ops->data_consumed == NULL)
         return false;
     if (frame == NULL)
+    {
         return false;
+    }
+	/*open pa*/
+	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+	{
+		extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(true);
+
+		OSI_LOGI(0, "[songpa] open");
+	}
 
     OSI_LOGI(0, "[song]audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
              frame->sample_format, frame->channel_count,
@@ -2633,15 +2674,6 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         //for reopen aif when audio output path change
         memcpy(&(d->play.stream), &stream, sizeof(HAL_AIF_STREAM_T));
         memcpy(&(d->play.level), &level, sizeof(AUD_LEVEL_T));
-
-		/*open pa*/
-		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
-		{
-			extern bool poc_set_ext_pa_status(bool open);
-			poc_set_ext_pa_status(true);
-
-			OSI_LOGI(0, "[songpa] open");
-		}
 
         osiWorkEnqueue(d->ipc_work, d->wq);
         osiMutexUnlock(d->lock);
