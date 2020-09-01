@@ -192,7 +192,6 @@ drvLcdSetImageLayerSize
 // wifi scan
 drvWifiOpen
 drvWifiClose
-drvWifiScanAllChannel
 drvWifiScanChannel
 
 // cam

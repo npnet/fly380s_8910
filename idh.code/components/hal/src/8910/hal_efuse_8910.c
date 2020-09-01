@@ -28,25 +28,6 @@
 #define EFUSE_AP_USE_BIT (1 << 1)
 #define EFUSE_USE_MAP hwp_mailbox->sysmail100
 
-typedef SLIST_ENTRY(efuseBlock) efuseCacheIter_t;
-typedef SLIST_HEAD(efuseCacheHead, efuseBlock) efuseCacheHead_t;
-typedef struct efuseBlock
-{
-    efuseCacheIter_t iter;
-    uint32_t index;
-    uint32_t data;
-} efuseBlock_t;
-
-typedef struct
-{
-    efuseCacheHead_t single_bit_list;
-    efuseCacheHead_t double_bit_list;
-    bool sw_cache_enable;
-    bool init;
-} halEfuseContext_t;
-
-static halEfuseContext_t gHalEfuseCtx;
-
 static inline bool prvBlockIsValid(int32_t block_index)
 {
     return (block_index > RDA_EFUSE_BLOCK_LOCK_7_INDEX && block_index <= RDA_EFUSE_BLOCK_MAX_INDEX);
@@ -72,7 +53,6 @@ static bool prvEfuseWrite(uint32_t block_index, uint32_t val)
     REG_EFUSE_CTRL_EFUSE_PW_SWT_T pw_swt = {};
     pw_swt.b.ns_s_pg_en = 1;
     hwp_efuseCtrl->efuse_pw_swt = pw_swt.v;
-    osiDelayUS(1000);
 
     pw_swt.b.efs_enk2_on = 0;
     hwp_efuseCtrl->efuse_pw_swt = pw_swt.v;
@@ -94,27 +74,12 @@ static bool prvEfuseWrite(uint32_t block_index, uint32_t val)
 
     pw_swt.b.ns_s_pg_en = 0;
     hwp_efuseCtrl->efuse_pw_swt = pw_swt.v;
-    osiDelayUS(1000);
 
     return (hwp_efuseCtrl->efuse_sec_err_flag == 0);
 }
 
-static void prvEfuseInit(bool sw_cache_enable)
-{
-    halEfuseContext_t *d = &gHalEfuseCtx;
-
-    if (d->init)
-        return;
-
-    SLIST_INIT(&d->single_bit_list);
-    SLIST_INIT(&d->double_bit_list);
-    d->sw_cache_enable = sw_cache_enable;
-    d->init = true;
-}
-
 void halEfuseOpen(void)
 {
-    prvEfuseInit(true);
     uint32_t lock = halHwspinlockAcquire(HAL_HWSPINLOCK_ID_EFUSE);
     if (EFUSE_USE_MAP == 0)
     {
@@ -147,143 +112,42 @@ void halEfuseClose(void)
 
 bool halEfuseWrite(uint32_t block_index, uint32_t val)
 {
-    bool ret;
-
-    halEfuseContext_t *d = &gHalEfuseCtx;
-
     if (!prvBlockIsValid(block_index))
         return false;
 
     prvEfuseSetDouble(false);
-    ret = prvEfuseWrite(block_index, val);
-
-    if (ret && d->sw_cache_enable)
-    {
-        efuseBlock_t *block = (efuseBlock_t *)malloc(sizeof(efuseBlock_t));
-        if (block == NULL)
-            return false;
-
-        block->index = block_index;
-        block->data = val;
-
-        SLIST_INSERT_HEAD(&d->single_bit_list, block, iter);
-    }
-
-    return ret;
+    return prvEfuseWrite(block_index, val);
 }
 
 bool halEfuseDoubleWrite(uint32_t block_index, uint32_t val)
 {
-    bool ret;
-    halEfuseContext_t *d = &gHalEfuseCtx;
-
     if (!prvBlockIsValid(block_index * 2))
         return false;
 
     prvEfuseSetDouble(true);
-    ret = prvEfuseWrite(block_index, val);
-
-    if (ret && d->sw_cache_enable)
-    {
-        efuseBlock_t *block = (efuseBlock_t *)malloc(sizeof(efuseBlock_t));
-        if (block == NULL)
-            return false;
-
-        block->index = block_index;
-        block->data = val;
-
-        SLIST_INSERT_HEAD(&d->double_bit_list, block, iter);
-    }
-
-    return ret;
+    return prvEfuseWrite(block_index, val);
 }
 
 bool halEfuseRead(uint32_t block_index, uint32_t *val)
 {
-    bool ret;
-    halEfuseContext_t *d = &gHalEfuseCtx;
-
     if (!prvBlockIsValid(block_index))
         return false;
 
     if (val == NULL)
         return false;
 
-    efuseBlock_t *block;
-    if (d->sw_cache_enable)
-    {
-        SLIST_FOREACH(block, &d->single_bit_list, iter)
-        {
-            if (block->index == block_index)
-            {
-                *val = block->data;
-                OSI_LOGD(0, "cache block %d = 0x%08x", block->index, block->data);
-                return true;
-            }
-        }
-    }
-
     prvEfuseSetDouble(false);
-    ret = prvEfuseRead(block_index, val);
-
-    if (ret && d->sw_cache_enable)
-    {
-        block = (efuseBlock_t *)malloc(sizeof(efuseBlock_t));
-        if (block == NULL)
-            return false;
-
-        block->index = block_index;
-        block->data = *val;
-
-        OSI_LOGD(0, "uncache block %d = 0x%08x", block->index, block->data);
-
-        SLIST_INSERT_HEAD(&d->single_bit_list, block, iter);
-    }
-
-    return true;
+    return prvEfuseRead(block_index, val);
 }
 
 bool halEfuseDoubleRead(uint32_t block_index, uint32_t *val)
 {
-    bool ret;
-    halEfuseContext_t *d = &gHalEfuseCtx;
-
     if (!prvBlockIsValid(block_index * 2))
         return false;
 
     if (val == NULL)
         return false;
 
-    efuseBlock_t *block;
-    if (d->sw_cache_enable)
-    {
-        SLIST_FOREACH(block, &d->double_bit_list, iter)
-        {
-            if (block->index == block_index)
-            {
-                *val = block->data;
-                OSI_LOGD(0, "cache block %d = 0x%08x", block->index, block->data);
-                return true;
-            }
-        }
-    }
-
     prvEfuseSetDouble(true);
-    ret = prvEfuseRead(block_index, val);
-
-    if (ret && d->sw_cache_enable)
-    {
-        block = (efuseBlock_t *)malloc(sizeof(efuseBlock_t));
-        if (block == NULL)
-            return false;
-
-        block->index = block_index;
-        block->data = *val;
-
-        OSI_LOGD(0, "uncache block %d = 0x%08x", block->index, block->data);
-    }
-
-    SLIST_INSERT_HEAD(&d->double_bit_list, block, iter);
-
-    return true;
+    return prvEfuseRead(block_index, val);
 }

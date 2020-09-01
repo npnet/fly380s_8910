@@ -4506,6 +4506,14 @@ typedef enum
 
 typedef enum
 {
+    BT_NONE_STATE = 0x00,
+    BT_ADV_STATE,
+    BT_SCAN_STATE,
+    BT_CONN_STATE
+} bt_at_state_t;
+
+typedef enum
+{
     BT_INQ_DISABLE = 0x00,
     BT_INQ_IDLE,
     BT_INQ_PENDING
@@ -4652,6 +4660,9 @@ uint8 BLE_SetAdvPara(uint16 advMin, uint16 advMax, uint8 advType, uint8 ownAddrT
 //设置广播数据
 uint8 BLE_SetAdvData(uint8 len, char *data);
 
+//set iBeacon data
+uint8 BLE_SetBeaconData(char *uuid, char *major, char *minor);
+
 //设置激活广播
 uint8 BLE_SetAdvEnable(uint8 enable);
 
@@ -4668,7 +4679,7 @@ void BT_BLE_HandleEvent(uint8 *pdu);
 extern UINT8 app_le_scan_enable(void);
 extern int mgr_le_scan_stop(void);
 //extern int mgr_le_create_acl(bdaddr_t bdaddr, void *tid, UINT8 addrType);
-extern void att_client_connect(bdaddr_t address, UINT8 module, UINT8 addr_type);
+extern void att_client_connect(bdaddr_t *address, UINT8 module, UINT8 addr_type);
 extern int mgr_le_release_acl_fromaddr(bdaddr_t address);
 int GATT_Tester_Connect(bdaddr_t address, UINT8 addr_type);
 int gatt_tester_disconnect(bdaddr_t address);

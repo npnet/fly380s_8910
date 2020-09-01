@@ -31,7 +31,10 @@ typedef struct
 typedef struct
 {
     drvEthPacket_t *payload;
-    uint32_t payload_size;
+    union {
+        uint32_t actual_size;
+        uint32_t buffer_size;
+    };
 } drvEthReq_t;
 
 typedef enum
@@ -39,15 +42,6 @@ typedef enum
     DRV_ETHER_EVENT_CONNECT = (1 << 0),    ///< ethernet connected
     DRV_ETHER_EVENT_DISCONNECT = (1 << 1), ///< ethernet disconnected
 } drvEthEvent_t;
-
-typedef struct
-{
-    int (*on_open)(drvEther_t *ether);
-    void (*on_close)(drvEther_t *ether);
-    void (*wrap)(drvEther_t *ether, uint8_t *buf, uint32_t len);
-    int (*unwrap)(drvEther_t *ether, drvEthReq_t *req, uint8_t *buf, uint32_t size);
-    bool (*ready)(drvEther_t *ether);
-} drvEthOps_t;
 
 typedef void (*drvEthEventCB_t)(uint32_t evt, void *priv);
 typedef void (*drvEthULDataCB_t)(drvEthPacket_t *pkt, uint32_t len, void *priv);
@@ -81,52 +75,50 @@ typedef struct
 
 typedef struct
 {
-    bool (*open)(drvEther_t *ether);
-    void (*close)(drvEther_t *ether);
+    bool (*netup)(drvEther_t *ether);
+    void (*netdown)(drvEther_t *ether);
     drvEthReq_t *(*tx_req_alloc)(drvEther_t *ether);
     void (*tx_req_free)(drvEther_t *ether, drvEthReq_t *req);
     bool (*tx_req_submit)(drvEther_t *ether, drvEthReq_t *req, size_t size);
     void (*set_event_cb)(drvEther_t *ether, drvEthEventCB_t cb, void *priv);
     void (*set_uldata_cb)(drvEther_t *ether, drvEthULDataCB_t cb, void *priv);
-    bool (*enable)(drvEther_t *ether);
-    void (*disable)(drvEther_t *ether);
-    void (*destroy)(drvEther_t *ether);
 } drvEthImpl_t;
 
 struct drv_ether
 {
     drvEthImpl_t impl;
+    drvEthStats_t stats;
     void *impl_ctx;
     const uint8_t *host_mac;
     const uint8_t *dev_mac;
 };
 
 /**
- * \brief open the ether net device, called by netlink
+ * \brief netlink notfy the actual device net up
  *
  * \param eth   the net device
  * \return
  *      - true on succeed else fail
  */
-static inline bool drvEtherOpen(drvEther_t *eth)
+static inline bool drvEtherNetUp(drvEther_t *eth)
 {
-    return (eth ? eth->impl.open(eth) : false);
+    return (eth ? eth->impl.netup(eth) : false);
 }
 
 /**
- * \brief close the net device, called by netlink
+ * \brief netlink notify the actual device net down
  *
  * \param eth   the net device
  */
-static inline void drvEtherClose(drvEther_t *eth)
+static inline void drvEtherNetDown(drvEther_t *eth)
 {
     if (eth)
-        eth->impl.close(eth);
+        eth->impl.netdown(eth);
 }
 
 /**
- * \brief allocate a tx request from net device, called by netlink
- * \note besure call `drvEtherTxReqFree` if the request not use or submit fail
+ * \brief allocate a tx request from net device
+ * \note besure call `drvEtherTxReqFree` if the request not use
  *
  * \param eth   the net device
  * \return
@@ -138,8 +130,8 @@ static inline drvEthReq_t *drvEtherTxReqAlloc(drvEther_t *eth)
 }
 
 /**
- * \brief release a tx transfer request, called by netlink
- * \note do not call me if a request had been submitted
+ * \brief release a tx transfer request
+ * \note do not call me if a request had been submitted (even submit fail)
  *
  * \param eth   the net device
  * \param req   the transfer request
@@ -151,7 +143,7 @@ static inline void drvEtherTxReqFree(drvEther_t *eth, drvEthReq_t *req)
 }
 
 /**
- * \brief submit a tx transfer request, called by netlink
+ * \brief submit a tx transfer request (and recall the request)
  *
  * \param eth   the net device
  * \param req   the request
@@ -166,7 +158,7 @@ static inline bool drvEtherTxReqSubmit(drvEther_t *eth, drvEthReq_t *req, size_t
 
 /**
  * \brief register event callback to be notified net device state change
- *        like connect/disconnected, called by netlink
+ *        like connect/disconnected
  *
  * \param eth   the net device
  * \param cb    the callback
@@ -180,7 +172,7 @@ static inline void drvEtherSetEventCB(drvEther_t *eth, drvEthEventCB_t cb, void 
 
 /**
  * \brief register data upload callback, the callbcak will be call every time
- *        data coming from net device, called by netlink
+ *        data coming from net device
  *
  * \param eth   the net device
  * \param cb    the callback
@@ -191,49 +183,6 @@ static inline void drvEtherSetULDataCB(drvEther_t *eth, drvEthULDataCB_t cb, voi
     if (eth)
         eth->impl.set_uldata_cb(eth, cb, priv);
 }
-
-/**
- * \brief set net device enable(ready to work), called by net device implementation
- *
- * \param eth   the net device
- * \return
- *      - true on succeed else fail
- */
-static inline bool drvEtherEnable(drvEther_t *eth)
-{
-    return (eth ? eth->impl.enable(eth) : false);
-}
-
-/**
- * \brief set net device disabled, called by net device implementation
- *
- * \param eth   the net device
- */
-static inline void drvEtherDisable(drvEther_t *eth)
-{
-    if (eth)
-        eth->impl.disable(eth);
-}
-
-/**
- * \brief destroy the net device, better called bt net devuce implementation
- *
- * \param eth   the net device
- */
-static inline void drvEtherDestroy(drvEther_t *eth)
-{
-    if (eth)
-        eth->impl.destroy(eth);
-}
-
-/**
- * \brief get net device status
- *
- * \param eth   the net device
- * \return
- *      - (non-null) the status pointer else fail
- */
-const drvEthStats_t *drvEtherStatus(drvEther_t *eth);
 
 OSI_EXTERN_C_END
 

@@ -25,6 +25,8 @@ typedef struct
 {
     usb_endpoint_descriptor_t *epin_desc;
     usb_endpoint_descriptor_t *epout_desc;
+    const uint8_t *host_mac;
+    const uint8_t *dev_mac;
     copsFunc_t *func;
     void (*ecm_open)(copsFunc_t *func);
     void (*ecm_close)(copsFunc_t *func);

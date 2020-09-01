@@ -48,6 +48,7 @@
 #cmakedefine CONFIG_USB_SUPPORT
 
 #ifdef CONFIG_USB_SUPPORT
+
 /**
  * usb connect timeout
  */
@@ -62,6 +63,17 @@
  * udc features, lower 8 bits for config->bmAttributes, higher are software defined
  */
 #cmakedefine CONFIG_USB_DEVICE_CONTROLLER_FEATURE @CONFIG_USB_DEVICE_CONTROLLER_FEATURE@
+
+/**
+ * usb ether host mac address
+ */
+#cmakedefine CONFIG_USB_ETHER_HOST_MAC "@CONFIG_USB_ETHER_HOST_MAC@"
+
+/**
+ * usb ether dev mac address
+ */
+#cmakedefine CONFIG_USB_ETHER_DEV_MAC "@CONFIG_USB_ETHER_DEV_MAC@"
+
 #endif
 
 /**

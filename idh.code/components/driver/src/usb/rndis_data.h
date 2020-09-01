@@ -20,9 +20,8 @@
 #include "osi_api.h"
 #include "osi_compiler.h"
 
-#include "drv_if_ether.h"
-#include "usb_ether.h"
 #include "usb_utils.h"
+#include "usb_ether.h"
 
 OSI_EXTERN_C_BEGIN
 
@@ -33,12 +32,14 @@ typedef struct
 {
     void (*rndis_open)(copsFunc_t *func);
     void (*rndis_close)(copsFunc_t *func);
-    drvEther_t *eth;                       ///< ether instance
+    usbEther_t *usbe;                      ///< usb ether instance
     usb_endpoint_descriptor_t *epin_desc;  ///< usb in endpoint descriptor
     usb_endpoint_descriptor_t *epout_desc; ///< usb out endpoint descriptor
     copsFunc_t *func;                      ///< the composite function
     uint16_t cdc_filter;                   ///< cdc filter
     unsigned long priv;                    ///< private data for cdc ether
+    const uint8_t *host_mac;
+    const uint8_t *dev_mac;
 } rndisData_t;
 
 int rndisEtherBind(rndisData_t *ether);

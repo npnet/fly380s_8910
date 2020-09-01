@@ -45,8 +45,20 @@ typedef enum
     MSG_HEADSET_BTN_UP = 4,
 } drvHeadsetNotifyMsg_t;
 
+typedef struct
+{
+    drvHeadsetStus_t isplugin;
+    drvHeadsetType_t mictype;
+} drvHeadSetStatus_t;
+
 typedef struct drvHeadsetState HEADSET_T;
 typedef struct drvHeadsetContext drvHeadsetContext_t;
+
+/**
+ * get the status of headset and mic
+ * this function can be called after Handset Init
+*/
+void drvGetHeadsetStatus(drvHeadSetStatus_t *status);
 
 /**
  * callback function for HeadsetPlug detect work result notify
@@ -58,8 +70,9 @@ typedef void (*drvHeadsetNotifyCB_t)(void *ctx, drvHeadsetNotifyMsg_t id, uint32
 /**
  * customer can set callback function for HeadsetPlugin out event
  *
- * 
+ *
  */
+
 void drvHandsetSetNotifyCustCB(drvHeadsetNotifyCB_t cb, void *ctx);
 
 /**

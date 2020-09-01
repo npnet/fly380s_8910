@@ -10,9 +10,9 @@ extern "C" {
 
 /*授时中心IP地址 美国时间*/
 static char *serverip = "40.81.188.85";//40.81.188.85 //210.72.145.44
+static CFW_SNTP_CONFIG *sntpClientOpt = NULL;
 
 /*sntp 外部定义函数*/
-extern CFW_SNTP_CONFIG *sntpClient;
 extern void sntpConfigInit();
 extern sntp_status_t sntpUpdateStart();
 
@@ -27,16 +27,16 @@ extern bool Net_Time_flag;
   describe : 网络更新时间
 	  date : 2020-06-09
 */
-void lv_poc_sntp_Update_Time(void)
+void lv_poc_sntp_Update_Time(void *sntpopt)
 {
 	sntp_status_t result;//同步更新时间结果
-
+	sntpClientOpt =(CFW_SNTP_CONFIG *)sntpopt;
 	if(Net_Time_flag == true) return;//外部已通过nas信令完成校时 判断为移动或电信卡
 
-	if (sntpClient == NULL)
+	if (sntpClientOpt == NULL)
 	{
 		sntpConfigInit();
-		if (sntpClient == NULL)
+		if (sntpClientOpt == NULL)
 		{
 			OSI_LOGI(0, "[song]AT_CmdFunc_SNTP:  malloc failed,ERR_AT_CME_NO_MEMORY\n");
 		}
@@ -46,12 +46,12 @@ void lv_poc_sntp_Update_Time(void)
 		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP:  sync time processing,ERR_AT_CME_SNTP_SYNCING\n");
 	}
 
-	strncpy(sntpClient->cServer, serverip, AT_SNTP_SERVER_MAX_LENTH);
-	sntpClient->cServer[AT_SNTP_SERVER_MAX_LENTH] = '\0';
+	strncpy(sntpClientOpt->cServer, serverip, AT_SNTP_SERVER_MAX_LENTH);
+	sntpClientOpt->cServer[AT_SNTP_SERVER_MAX_LENTH] = '\0';
 
-	OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]AT_CmdFunc_SNTP: ntpServer = %s", sntpClient->cServer);
+	OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]AT_CmdFunc_SNTP: ntpServer = %s", sntpClientOpt->cServer);
 
-	result = sntpUpdateStart(sntpClient);
+	result = sntpUpdateStart(sntpClientOpt);
 
 	if (result == CFW_SNTP_READY)
 	{
@@ -60,8 +60,8 @@ void lv_poc_sntp_Update_Time(void)
 	else if (result == CFW_SNTP_PARAM_INVALID)
 	{
 		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP: CFW_SNTP_PARAM_INVALID\n");
-		free(sntpClient);//ERR_AT_CME_PARAM_INVALID
-		sntpClient = NULL;
+		free(sntpClientOpt);//ERR_AT_CME_PARAM_INVALID
+		sntpClientOpt = NULL;
 	}
 	else
 	{

@@ -653,6 +653,9 @@ $MYSYSMODE,     atCmdHandleMYSYSMODE, 0
 +WIFION,      atCmdHandleWifiOpen,   0
 +WIFIOFF,     atCmdHandleWifiClose,  0
 +WIFISCAN,      atCmdHandleWifiScan,   0
+#ifdef CONFIG_AT_WIFI_SENSITIVITY_TEST_SUPPORT
++WIFISENTEST,   atCmdHandleWifiSensitivityTest, 0
+#endif
 #endif
 
 +SIMHOTSWAP,    atCmdHandleSIMHOTSWAP, 0      //set sim hot-plug function

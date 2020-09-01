@@ -26,7 +26,6 @@ struct rndis_params
     uint32_t medium;
     uint32_t speed;
     uint32_t media_state;
-    const uint8_t *host_mac;
     uint16_t *filter;
     rndisData_t *ether;
 
@@ -160,11 +159,11 @@ static int gen_ndis_query_resp(struct rndis_params *params, uint32_t OID, uint8_
 #endif
 
     /* response goes here, right after the header */
-    drvEther_t *ether = params->ether->eth;
+    drvEther_t *ether = usbEtherGetEther(params->ether->usbe);
     rndis_query_cmplt_type *resp = (rndis_query_cmplt_type *)r->buf;
     outbuf = (uint32_t *)&resp[1];
     resp->InformationBufferOffset = cpu_to_le32(16);
-    const drvEthStats_t *status = drvEtherStatus(ether);
+    const drvEthStats_t *status = &ether->stats;
 
     switch (OID)
     {
@@ -373,7 +372,7 @@ static int gen_ndis_query_resp(struct rndis_params *params, uint32_t OID, uint8_
         if (params)
         {
             length = ETH_ALEN;
-            memcpy(outbuf, params->host_mac, length);
+            memcpy(outbuf, params->ether->host_mac, length);
             retval = 0;
         }
         break;
@@ -384,7 +383,7 @@ static int gen_ndis_query_resp(struct rndis_params *params, uint32_t OID, uint8_
         if (params)
         {
             length = ETH_ALEN;
-            memcpy(outbuf, params->host_mac, length);
+            memcpy(outbuf, params->ether->host_mac, length);
             retval = 0;
         }
         break;
@@ -491,7 +490,7 @@ static int gen_ndis_set_resp(struct rndis_params *params, uint32_t OID,
         {
             params->state = RNDIS_DATA_INITIALIZED;
             if (params->ether)
-                drvEtherEnable(params->ether->eth);
+                usbEtherStart(params->ether->usbe);
             //netif_carrier_on(params->dev);
             //if (netif_running(params->dev))
             //	netif_wake_queue(params->dev);
@@ -722,11 +721,6 @@ void rndis_uninit(struct rndis_params *params)
         rndis_free_response(params, resp);
 }
 
-void rndis_set_host_mac(struct rndis_params *params, const uint8_t *addr)
-{
-    params->host_mac = addr;
-}
-
 /*
  * Message Parser
  */
@@ -758,7 +752,7 @@ int rndis_msg_parser(struct rndis_params *params, uint8_t *buf)
         OSI_LOGI(0, "RNDIS_MSG_HALT\n");
         params->state = RNDIS_UNINITIALIZED;
         if (params->ether)
-            drvEtherDisable(params->ether->eth);
+            usbEtherStop(params->ether->usbe);
         return 0;
 
     case RNDIS_MSG_QUERY:
@@ -901,7 +895,7 @@ static inline rndisResp_t *rndis_alloc_response(rndisParams_t *params, size_t le
     {
         r->length = length;
         TAILQ_REMOVE(&params->reserved_list, r, anchor);
-        OSI_LOGV(0, "add req 0x%x, buf 0x%x\n", r, r->buf);
+        OSI_LOGV(0, "add req 0x%x, buf 0x%x", r, r->buf);
     }
     osiExitCritical(sc);
     return r;

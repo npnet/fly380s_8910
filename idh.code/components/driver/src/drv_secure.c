@@ -198,7 +198,13 @@ static void prvGetChipUnique(struct chip_unique_id *id, int kind)
 
 static int prvGetChipSecurityContext(struct chip_security_context *context, struct pubkey *pubkey)
 {
-    return romapi->prvGetChipSecurityContext(context, pubkey);
+    int ret;
+
+    halEfuseOpen();
+    ret = romapi->prvGetChipSecurityContext(context, pubkey);
+    halEfuseClose();
+
+    return ret;
 }
 
 static void prvGetDdeviceSecurityContext(struct spl_security_info *info)
@@ -247,10 +253,10 @@ static void prvAntiClone(void)
     drvSpiFlashClearRangeWriteProhibit(flash, HAL_FLASH_OFFSET(CONFIG_BOOT_FLASH_ADDRESS),
                                        HAL_FLASH_OFFSET(CONFIG_BOOT_FLASH_ADDRESS) + CONFIG_BOOT_FLASH_SIZE);
 
-    //uint32_t critical = osiEnterCritical();
+    uint32_t critical = osiEnterCritical();
     drvSpiFlashErase(flash, ENCRYPT_OFF, SECTOR_SIZE_4K);
     drvSpiFlashWrite(flash, ENCRYPT_OFF, pbuf, SECTOR_SIZE_4K);
-    //osiExitCritical(critical);
+    osiExitCritical(critical);
 
     free(pbuf);
 }
@@ -314,8 +320,10 @@ bool writeSecuriyFlag(void)
 {
     uint32_t critical = osiEnterCritical();
     osiDCacheCleanAll();
+    osiICacheInvalidateAll();
     L1C_DisableBTAC();
     MMU_Disable();
+    osiExitCritical(critical);
 
     uint32_t val;
     if (!prvReadSecurityFlag())
@@ -327,9 +335,6 @@ bool writeSecuriyFlag(void)
         OSI_LOGD(0, "secure: RDA_EFUSE_SECURITY_CFG =  %08x", val);
     }
 
-    MMU_Enable();
-    L1C_EnableBTAC();
-    osiExitCritical(critical);
     return true;
 }
 

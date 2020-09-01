@@ -92,20 +92,36 @@ typedef struct dwc_xfer
     uint8_t occupied : 1;
 } dwcXfer_t;
 
-typedef struct dwc_ep
+typedef struct dwc_tx_fifo dwcTxFifo_t;
+typedef TAILQ_ENTRY(dwc_tx_fifo) dwcTxFifoIter_t;
+typedef TAILQ_HEAD(dwc_tx_fifo_head, dwc_tx_fifo) dwcTxFifoHead_t;
+struct dwc_tx_fifo
+{
+    dwcTxFifoIter_t iter;
+    uint16_t bytes;
+    uint8_t index : 4;
+    uint8_t using_ep : 4;
+};
+
+typedef struct dwc_ep dwcEp_t;
+typedef STAILQ_ENTRY(dwc_ep) dwcEpIter_t;
+typedef STAILQ_HEAD(, dwc_ep) dwcEpHead_t;
+struct dwc_ep
 {
     usbEp_t ep;
     dwcEpReg_t *hep;
-    uint8_t fifo_index : 4;
     uint8_t type : 2;
     uint8_t periodic : 1;
     uint8_t used : 1;
     uint8_t halted : 1;
     uint8_t dynamic_fifo : 1;
+    uint8_t pending : 1;
     uint32_t dma_max;
+    dwcTxFifo_t *fifo;
     dwcXfer_t *xfer_schedule;
     dwc_xfer_head_t xfer_q;
-} dwcEp_t;
+    dwcEpIter_t iter;
+};
 
 typedef struct
 {
@@ -118,17 +134,23 @@ typedef struct
     uint8_t test_mode;
     uint8_t dedicated_fifo : 1; ///< reserved fifo for each enabled in endpoint
     uint8_t connected : 1;
+    uint8_t disable_schedule : 1;
 #define DWC_TXFIFO_COUNT (8)
     uint16_t tx_fifo_map;
     ep0State_t ep0_state;
     enum dwc_state pm_level;
     dwcXfer_t ep0_xfer;
     dwcXfer_t setup_xfer;
+    dwcEpHead_t pending_eps;
+    dwcTxFifoHead_t avail_txfifo;
+    dwcTxFifo_t txfifo_room[DWC_TXFIFO_COUNT];
     uint8_t *ep0_buf;   ///< make sure 8 bytes is enough
     uint8_t *setup_buf; ///< make sure 8 bytes is enough
 } dwcUdc_t;
 
 static dwcUdc_t _the_controller = {};
+
+#define EP2DWCEP(ep) (dwcEp_t *)(ep)
 
 static inline dwcUdc_t *prvGadgetGetDwc(udc_t *udc)
 {
@@ -157,6 +179,14 @@ static inline dwcEp_t *prvAddressGetEndpoint(dwcUdc_t *dwc, uint8_t address)
     }
 }
 
+static inline dwcEp_t *prvGetDwcEp0(dwcUdc_t *dwc)
+{
+    if (dwc->ep0_state & EP0_STATE_DIRIN_MASK)
+        return &dwc->iep[0];
+    else
+        return &dwc->oep[0];
+}
+
 static inline void prvChangeEp0State(dwcUdc_t *dwc, ep0State_t st)
 {
     dwc->ep0_state = st;
@@ -176,13 +206,12 @@ static void prvEpStopLocked(dwcUdc_t *dwc, dwcEp_t *ep);
 static void prvStallEp0(dwcUdc_t *dwc, dwcEp_t *ep);
 static int prvStallEpLocked(dwcUdc_t *dwc, dwcEp_t *ep_, bool halt);
 static void prvEpDisableLocked(dwcUdc_t *dwc, dwcEp_t *ep);
-static int8_t prvAllocateTxFifo(dwcUdc_t *dwc, dwcEp_t *ep);
-static void prvFreeTxFifo(dwcUdc_t *dwc, dwcEp_t *ep);
 static void prvEpCancelXferInQueue(dwcEp_t *ep);
 static inline void prvRxFifoFlush(dwcUdc_t *dwc);
 static inline void prvTxFifoFlushAll(dwcUdc_t *dwc);
 static void prvHwInit(dwcUdc_t *dwc, bool reset_int);
 static void prvExitHibernation(dwcUdc_t *dwc);
+static inline void prvTxFifoFreeLocked(dwcUdc_t *dwc, dwcEp_t *ep);
 
 static void prvDisconnectISR(dwcUdc_t *dwc)
 {
@@ -250,9 +279,6 @@ static void prvEpXferStopLocked(dwcUdc_t *dwc, dwcEp_t *ep)
             dctl.b.sgnpinnak = 1;
             dwc->hw->dctl |= dctl.v;
         }
-
-        if (ep->dynamic_fifo)
-            prvFreeTxFifo(dwc, ep);
     }
     else
     {
@@ -276,9 +302,12 @@ static void prvEpXferStopLocked(dwcUdc_t *dwc, dwcEp_t *ep)
     dctl.v = 0;
     if (ep->ep.dirin)
     {
-        prvTxFifoFlush(dwc, ep->fifo_index);
+        prvTxFifoFlush(dwc, ep->fifo->index);
         if (!ep->periodic)
             dctl.b.cgnpinnak = 1;
+
+        if (ep->dynamic_fifo)
+            prvTxFifoFreeLocked(dwc, ep);
     }
     else
         dctl.b.cgoutnak = 1;
@@ -330,12 +359,15 @@ static uint32_t prvEpXferStartLocked(dwcUdc_t *dwc, dwcEp_t *ep, void *buf, uint
 
     if (ep->ep.dirin)
     {
+        usbcDiepctl_t diepctl = {hep->epctl};
         if (ep->ep.num == 0)
         {
             REG_USBC_DIEPTSIZ0_T dieptsiz0 = {};
             dieptsiz0.b.xfersize = length;
             dieptsiz0.b.pktcnt = npkt;
             eptsiz = dieptsiz0.v;
+
+            diepctl.b.txfnum = 0;
         }
         else
         {
@@ -347,22 +379,12 @@ static uint32_t prvEpXferStartLocked(dwcUdc_t *dwc, dwcEp_t *ep, void *buf, uint
             else
                 dieptsiz.b.mc = 1;
             eptsiz = dieptsiz.v;
-            if (ep->dynamic_fifo)
-            {
-                int8_t index = prvAllocateTxFifo(dwc, ep);
-                if (index < 0)
-                {
-                    OSI_LOGW(0, "EP %x/%u xfer fail allocate fifo, use 0", ep->ep.address, ep->type);
-                    index = 0;
-                }
-                ep->fifo_index = index;
-            }
+
+            diepctl.b.txfnum = ep->fifo->index;
         }
 
-        usbcDiepctl_t diepctl = {hep->epctl};
         diepctl.b.cnak = 1;
         diepctl.b.epena = 1;
-        diepctl.b.txfnum = ep->fifo_index;
         epctl = diepctl.v;
     }
     else
@@ -607,7 +629,7 @@ stall:
 static void prvEp0CompleteCB(usbEp_t *ep_, usbXfer_t *xfer)
 {
     dwcUdc_t *dwc = (dwcUdc_t *)xfer->param;
-    dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
+    dwcEp_t *ep = EP2DWCEP(ep_);
 
     xfer->complete = NULL; // ep0 xfer is shared
     if (dwc->ep0_state != EP0_SETUP || ep != &dwc->oep[0])
@@ -654,15 +676,77 @@ static void prvDwcRmtWakeup_(dwcUdc_t *dwc)
     osiExitCritical(critical);
 }
 
+static void prvPendingEpLocked(dwcUdc_t *dwc, dwcEp_t *ep)
+{
+    if (ep->pending == 0)
+    {
+        ep->pending = 1;
+        STAILQ_INSERT_TAIL(&dwc->pending_eps, ep, iter);
+    }
+}
+
+// allocate tx fifo use LRU strategy
+static bool prvTxFifoAllocateLocked(dwcUdc_t *dwc, dwcEp_t *ep)
+{
+    if (ep->fifo && ep->fifo->using_ep == 0)
+    {
+        ep->fifo->using_ep = ep->ep.num;
+        TAILQ_REMOVE(&dwc->avail_txfifo, ep->fifo, iter);
+        return true;
+    }
+    else
+    {
+        dwcTxFifo_t *f, *tmp;
+        TAILQ_FOREACH_REVERSE_SAFE(f, &dwc->avail_txfifo, dwc_tx_fifo_head, iter, tmp)
+        {
+            if (f->bytes >= ep->ep.mps)
+            {
+                f->using_ep = ep->ep.num;
+                TAILQ_REMOVE(&dwc->avail_txfifo, f, iter);
+                ep->fifo = f;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static inline void prvTxFifoFreeLocked(dwcUdc_t *dwc, dwcEp_t *ep)
+{
+    // give back fifo to the queue head (LRU), but do not set
+    // ep->fifo to NULL for quick allocate
+    if (ep->fifo)
+    {
+        ep->fifo->using_ep = 0;
+        TAILQ_INSERT_HEAD(&dwc->avail_txfifo, ep->fifo, iter);
+    }
+}
+
 static void prvScheduleEpLocked(dwcUdc_t *dwc, dwcEp_t *ep)
 {
-    uint32_t sc = osiEnterCritical();
     if (ep->xfer_schedule)
-        goto end;
+        return;
 
     dwcXfer_t *dx = TAILQ_FIRST(&ep->xfer_q);
     if (dx == NULL)
-        goto end;
+        return;
+
+    if (dwc->disable_schedule && ep->ep.num != 0)
+    {
+        prvPendingEpLocked(dwc, ep);
+        return;
+    }
+
+    if (ep->dynamic_fifo)
+    {
+        if (!prvTxFifoAllocateLocked(dwc, ep))
+        {
+            OSI_LOGW(0, "EP %x/%u fail to allocate fifo, pending", ep->ep.address, ep->type);
+            prvPendingEpLocked(dwc, ep);
+            return;
+        }
+        OSI_LOGD(0, "EP %x/%u use fifo %u", ep->ep.address, ep->type, ep->fifo->index);
+    }
 
     if (dwc->pm_level == DWC_SUSPEND && ep->ep.dirin && (dwc->gadget->feature & UDC_FEATURE_WAKEUP_ON_WRITE))
         prvDwcRmtWakeup_(dwc);
@@ -675,9 +759,6 @@ static void prvScheduleEpLocked(dwcUdc_t *dwc, dwcEp_t *ep)
         size = ep->dma_max;
 
     dx->xfer_size = prvEpXferStartLocked(dwc, ep, dx->xfer.buf, size, !dx->xfer.uncached);
-
-end:
-    osiExitCritical(sc);
 }
 
 static int prvEpQueueLocked(dwcUdc_t *dwc, dwcEp_t *ep, dwcXfer_t *dx)
@@ -693,8 +774,8 @@ static int prvEpQueueLocked(dwcUdc_t *dwc, dwcEp_t *ep, dwcXfer_t *dx)
 
     dx->xfer.status = -EINPROGRESS;
     dx->xfer.actual = 0;
-
     dx->occupied = 1;
+
     TAILQ_INSERT_TAIL(&ep->xfer_q, dx, anchor);
     prvScheduleEpLocked(dwc, ep);
 
@@ -783,7 +864,7 @@ static void prvDwcEpHalt(udc_t *udc, usbEp_t *ep_, bool halt)
 {
     uint32_t critical = osiEnterCritical();
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
+    dwcEp_t *ep = EP2DWCEP(ep_);
     prvStallEpLocked(dwc, ep, halt);
     osiExitCritical(critical);
 }
@@ -862,58 +943,6 @@ static void prvEpStopLocked(dwcUdc_t *dwc, dwcEp_t *ep)
     }
 }
 
-static int8_t prvAllocateTxFifo(dwcUdc_t *dwc, dwcEp_t *ep)
-{
-    uint32_t critical = osiEnterCritical();
-    REG_USBC_DIEPTXF1_T txf_1_2;
-    REG_USBC_DIEPTXF2_T txf;
-    int8_t best = -1;
-    REG32 *dieptxf = (REG32 *)&dwc->hw->dieptxf1;
-    uint32_t best_fifo_size = 0xffffffff;
-    for (uint16_t i = DWC_TXFIFO_COUNT; i > 0; --i)
-    {
-        if ((dwc->tx_fifo_map & (1 << i)) == 0)
-        {
-            uint32_t fifo_size;
-            if (i <= 2)
-            {
-                txf_1_2.v = dieptxf[i - 1];
-                fifo_size = txf_1_2.b.inepntxfdep * 4;
-            }
-            else
-            {
-                txf.v = dieptxf[i - 1];
-                fifo_size = txf.b.inepntxfdep * 4;
-            }
-
-            if (fifo_size >= ep->ep.mps && fifo_size < best_fifo_size)
-            {
-                best_fifo_size = fifo_size;
-                best = i;
-            }
-        }
-    }
-
-    if (best != -1)
-        dwc->tx_fifo_map |= (1 << best);
-
-    osiExitCritical(critical);
-    OSI_LOGD(0, "EP %x/%u allocate txfifo %d", ep->ep.address, ep->type, best);
-    return best;
-}
-
-static inline void prvFreeTxFifo(dwcUdc_t *dwc, dwcEp_t *ep)
-{
-    uint32_t critical = osiEnterCritical();
-    if (ep->fifo_index != 0)
-    {
-        OSI_LOGD(0, "EP %x/%u free txfifo %u", ep->ep.address, ep->type, ep->fifo_index);
-        dwc->tx_fifo_map &= ~(1 << ep->fifo_index);
-        ep->fifo_index = 0;
-    }
-    osiExitCritical(critical);
-}
-
 static void prvEpDisableLocked(dwcUdc_t *dwc, dwcEp_t *ep)
 {
     if (ep->ep.dirin)
@@ -923,7 +952,7 @@ static void prvEpDisableLocked(dwcUdc_t *dwc, dwcEp_t *ep)
     prvEpStopLocked(dwc, ep);
     // always free in ep tx fifo
     if (ep->ep.dirin)
-        prvFreeTxFifo(dwc, ep);
+        prvTxFifoFreeLocked(dwc, ep);
 
     if (ep->ep.num != 0)
     {
@@ -941,22 +970,18 @@ static int prvEpEnableLocked(dwcUdc_t *dwc, dwcEp_t *ep)
     usbcDiepctl_t epctl = {hep->epctl};
     if (!epctl.b.usbactep)
     {
-        int8_t index = 0;
         if (ep->dynamic_fifo == 0 && ep->ep.dirin)
         {
-            index = prvAllocateTxFifo(dwc, ep);
-            if (index < 0)
+            uint32_t critical = osiEnterCritical();
+            if (!prvTxFifoAllocateLocked(dwc, ep))
             {
-                OSI_LOGW(0, "EP %x/%u enable fail allocate txfifo", ep->ep.address, ep->type);
-                // periodic transfer must use dedicated fifo
-                if (ep->periodic)
-                    osiPanic();
-                // use shared fifo
-                index = 0;
+                OSI_LOGE(0, "EP %x/%u fail allocate txfifo", ep->ep.address, ep->type);
+                osiPanic();
+                return -1;
             }
-            OSI_LOGI(0, "ep %x/%u allocate fifo %d", ep->ep.address, ep->type, index);
+            osiExitCritical(critical);
+            OSI_LOGI(0, "EP %x/%u allocate fifo %d", ep->ep.address, ep->type, ep->fifo->index);
         }
-        ep->fifo_index = index;
         epctl.b.usbactep = 1;
         epctl.b.eptype = ep->type;
         epctl.b.epdis = 0;
@@ -1120,8 +1145,6 @@ static void prvEpInDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
     else
     {
         size_left = REGTYPE_FIELD_GET(usbcDieptsiz_t, ep->hep->eptsiz, xfersize);
-        if (ep->dynamic_fifo)
-            prvFreeTxFifo(dwc, ep);
     }
 
     dwcXfer_t *dx = ep->xfer_schedule;
@@ -1129,7 +1152,7 @@ static void prvEpInDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
     {
         osiExitCritical(critical);
         OSI_LOGE(0, "ep %x done no transfer. (ctrl stage %d)", ep->ep.address, dwc->ep0_state);
-        return;
+        osiPanic();
     }
 
     if (size_left > dx->xfer_size)
@@ -1149,34 +1172,34 @@ static void prvEpInDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
         if (size > ep->dma_max)
             size = ep->dma_max;
         dx->xfer_size = prvEpXferStartLocked(dwc, ep, dx->xfer.buf + dx->xfer.actual, size, !dx->xfer.uncached);
-        osiExitCritical(critical);
-        return;
     }
-    else if (dx->zero)
+    else
     {
-        dx->zero = 0;
-        dx->xfer_size = 0;
-        prvEpProgramZlpLocked(dwc, ep);
-        osiExitCritical(critical);
-        return;
-    }
+        if (ep->dynamic_fifo)
+            prvTxFifoFreeLocked(dwc, ep);
 
-    if (transfer_done)
-    {
-        dx->xfer.status = 0;
-        dx->xfer_size = 0;
-        if (ep->ep.num == 0 && dwc->ep0_state == EP0_DATA_IN)
+        if (dx->zero)
         {
-            prvChangeEp0State(dwc, EP0_STATUS_OUT);
-            prvEp0Zlp(dwc);
-            osiExitCritical(critical);
+            dx->zero = 0;
+            dx->xfer_size = 0;
+            prvEpProgramZlpLocked(dwc, ep);
         }
         else
         {
-            osiExitCritical(critical);
-            prvGiveBackEpCurrent(dwc, ep);
+            dx->xfer.status = 0;
+            dx->xfer_size = 0;
+            if (ep->ep.num == 0 && dwc->ep0_state == EP0_DATA_IN)
+            {
+                prvChangeEp0State(dwc, EP0_STATUS_OUT);
+                prvEp0Zlp(dwc);
+            }
+            else
+            {
+                osiExitCritical(critical);
+                prvGiveBackEpCurrent(dwc, ep);
+                return;
+            }
         }
-        return;
     }
     osiExitCritical(critical);
 }
@@ -1238,11 +1261,8 @@ static void prvEpOutDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
         if (size > ep->dma_max)
             size = ep->dma_max;
         dx->xfer_size = prvEpXferStartLocked(dwc, ep, dx->xfer.buf + dx->xfer.actual, size, !dx->xfer.uncached);
-        osiExitCritical(critical);
-        return;
     }
-
-    if (transfer_done)
+    else
     {
         dx->xfer.status = 0;
         dx->xfer_size = 0;
@@ -1250,14 +1270,13 @@ static void prvEpOutDoneISR(dwcUdc_t *dwc, dwcEp_t *ep)
         {
             prvChangeEp0State(dwc, EP0_STATUS_IN);
             prvEp0Zlp(dwc);
-            osiExitCritical(critical);
         }
         else
         {
             osiExitCritical(critical);
             prvGiveBackEpCurrent(dwc, ep);
+            return;
         }
-        return;
     }
     osiExitCritical(critical);
 }
@@ -1316,7 +1335,7 @@ static void prvEpISR(dwcUdc_t *dwc, dwcEp_t *ep)
 
         if (doepint.b.stsphsercvd)
         {
-            OSI_LOGW(0, "ep %x stsphsercvd", ep->ep.address);
+            OSI_LOGD(0, "ep %x stsphsercvd", ep->ep.address);
         }
     }
 
@@ -1372,6 +1391,8 @@ static inline void prvResumeISR(dwcUdc_t *dwc)
 static void prvDwcISR(void *p)
 {
     dwcUdc_t *dwc = (dwcUdc_t *)p;
+    dwcEp_t *ep;
+    uint32_t critical;
     bool transfer_ready = true;
     unsigned retry_cnt = 3;
     REG_USBC_GINTSTS_T gintsts = {dwc->hw->gintsts};
@@ -1440,6 +1461,7 @@ isr_retry:
         transfer_ready = true;
     }
 
+    dwc->disable_schedule = 1;
     // do not process endpoints if udc may be disconnected
     if (OSI_LIKELY(transfer_ready))
     {
@@ -1469,6 +1491,19 @@ isr_retry:
             }
         }
     }
+
+    critical = osiEnterCritical();
+    dwc->disable_schedule = 0;
+    while ((ep = STAILQ_FIRST(&dwc->pending_eps)) != NULL)
+    {
+        ep->pending = 0;
+        STAILQ_REMOVE_HEAD(&dwc->pending_eps, iter);
+        prvScheduleEpLocked(dwc, ep);
+        osiExitCritical(critical);
+        OSI_NOP; // a while
+        critical = osiEnterCritical();
+    }
+    osiExitCritical(critical);
 
     if (gintsts.b.sessreqint)
     {
@@ -1512,6 +1547,8 @@ static void prvHwFifoInit(dwcUdc_t *dwc)
     gnptxfsiz.b.nptxfdep = np_tx_fifo_sz;
     dwc->hw->gnptxfsiz = gnptxfsiz.v;
 
+    TAILQ_INIT(&dwc->avail_txfifo);
+    dwcTxFifo_t *txfifo = &dwc->txfifo_room[0];
     const uint16_t ptx_fifo_1_2_sz = 512;
     const uint16_t ptx_fifo_sz = 128;
     REG32 *dieptxf = (REG32 *)&dwc->hw->dieptxf1;
@@ -1522,6 +1559,12 @@ static void prvHwFifoInit(dwcUdc_t *dwc)
         txf_1_2.b.inepntxfstaddr = start_addr;
         dieptxf[i] = txf_1_2.v;
         start_addr += ptx_fifo_1_2_sz;
+
+        txfifo->index = i + 1;
+        txfifo->bytes = ptx_fifo_1_2_sz * 4;
+        txfifo->using_ep = 0;
+        TAILQ_INSERT_TAIL(&dwc->avail_txfifo, txfifo, iter);
+        txfifo++;
     }
 
     dieptxf = (REG32 *)&dwc->hw->dieptxf3;
@@ -1532,6 +1575,12 @@ static void prvHwFifoInit(dwcUdc_t *dwc)
         txf.b.inepntxfstaddr = start_addr;
         dieptxf[i] = txf.v;
         start_addr += ptx_fifo_sz;
+
+        txfifo->index = i + 3;
+        txfifo->bytes = ptx_fifo_sz * 4;
+        txfifo->using_ep = 0;
+        TAILQ_INSERT_TAIL(&dwc->avail_txfifo, txfifo, iter);
+        txfifo++;
     }
 
     REG_USBC_GDFIFOCFG_T OSI_UNUSED gdfifocfg = {dwc->hw->gdfifocfg};
@@ -1721,18 +1770,9 @@ static int prvDwcEpQueue(udc_t *udc, usbEp_t *ep_, usbXfer_t *xfer)
     uint32_t critical = osiEnterCritical();
     dwcXfer_t *dx = prvXferGetDwcXfer(xfer);
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    dwcEp_t *ep;
+    dwcEp_t *ep = EP2DWCEP(ep_);
     if (ep_->num == 0)
-    {
-        if (dwc->ep0_state & EP0_STATE_DIRIN_MASK)
-            ep = &dwc->iep[0];
-        else
-            ep = &dwc->oep[0];
-    }
-    else
-    {
-        ep = prvAddressGetEndpoint(dwc, ep_->address);
-    }
+        ep = prvGetDwcEp0(dwc);
 
     if (!(ep->hep->epctl & REGTYPE_FIELD_MASK(usbcDiepctl_t, usbactep)))
     {
@@ -1757,18 +1797,9 @@ static void prvDwcEpDequeue(udc_t *udc, usbEp_t *ep_, usbXfer_t *xfer)
     }
 
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    dwcEp_t *ep;
+    dwcEp_t *ep = EP2DWCEP(ep_);
     if (ep_->num == 0)
-    {
-        if (dwc->ep0_state & EP0_STATE_DIRIN_MASK)
-            ep = &dwc->iep[0];
-        else
-            ep = &dwc->oep[0];
-    }
-    else
-    {
-        ep = prvAddressGetEndpoint(dwc, ep_->address);
-    }
+        ep = prvGetDwcEp0(dwc);
 
     if (dx == ep->xfer_schedule)
         prvEpStopLocked(dwc, ep);
@@ -1785,14 +1816,9 @@ static void prvDwcEpDequeueAll(udc_t *udc, usbEp_t *ep_)
 {
     uint32_t critical = osiEnterCritical();
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
+    dwcEp_t *ep = EP2DWCEP(ep_);
     if (ep_->num == 0)
-    {
-        if (dwc->ep0_state & EP0_STATE_DIRIN_MASK)
-            ep = &dwc->iep[0];
-        else
-            ep = &dwc->oep[0];
-    }
+        ep = prvGetDwcEp0(dwc);
 
     if (ep->xfer_schedule != NULL)
         prvEpStopLocked(dwc, ep);
@@ -1818,7 +1844,7 @@ static int prvDwcEpEnable(udc_t *udc, usbEp_t *ep_)
     OSI_LOGI(0, "DWC ep %x enable", ep_->address);
     uint32_t critical = osiEnterCritical();
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
+    dwcEp_t *ep = EP2DWCEP(ep_);
     int result = prvEpEnableLocked(dwc, ep);
     osiExitCritical(critical);
     return result;
@@ -1829,7 +1855,7 @@ static void prvDwcEpDisable(udc_t *udc, usbEp_t *ep_)
     OSI_LOGI(0, "DWC ep %x disable", ep_->address);
     uint32_t critical = osiEnterCritical();
     dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
+    dwcEp_t *ep = EP2DWCEP(ep_);
     prvEpDisableLocked(dwc, ep);
     osiExitCritical(critical);
     prvEpCancelXferInQueue(ep);
@@ -1882,8 +1908,7 @@ static usbEp_t *prvDwcEpAllocate(udc_t *udc, usb_endpoint_descriptor_t *desc)
 static void prvDwcEpFree(udc_t *udc, usbEp_t *ep_)
 {
     uint32_t critical = osiEnterCritical();
-    dwcUdc_t *dwc = prvGadgetGetDwc(udc);
-    dwcEp_t *ep = prvAddressGetEndpoint(dwc, ep_->address);
+    dwcEp_t *ep = EP2DWCEP(ep_);
     ep->used = 0;
     osiExitCritical(critical);
 }
@@ -1916,11 +1941,12 @@ static void prvDwcInit(udc_t *udc, dwcUdc_t *dwc)
     dwc->ep0_buf = _ep0_dma;        // 32 bytes
     dwc->setup_buf = &_ep0_dma[32]; // 64 bytes
     dwc->gadget = udc;
-    dwc->dedicated_fifo = 1;
+    dwc->dedicated_fifo = 0;
     dwc->connected = 0;
     dwc->hw = hwp_usbc;
     dwc->tx_fifo_map |= (1 << 0); // ep 0x80 use fifo 0
 
+    STAILQ_INIT(&dwc->pending_eps);
     memset(&dwc->iep[0], 0, sizeof(dwcEp_t) * dwc->iep_count);
     memset(&dwc->oep[0], 0, sizeof(dwcEp_t) * dwc->oep_count);
     for (uint8_t i = 0; i < dwc->iep_count; ++i)
@@ -1944,7 +1970,6 @@ static void prvDwcInit(udc_t *udc, dwcUdc_t *dwc)
     }
 
     dwc->iep[0].periodic = 0;
-    dwc->iep[0].fifo_index = 0;
 
     udc->controller_priv = (unsigned long)dwc;
 }

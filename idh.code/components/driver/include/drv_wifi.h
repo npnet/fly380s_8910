@@ -44,6 +44,13 @@ typedef struct
 } wifiScanRequest_t;
 
 /**
+ * \brief function type, will be call in IRQ.
+ *        report new scanned ap information
+ * \param[out] info wifi ap info
+ */
+typedef void (*wifiScanAsyncCb_t)(const wifiApInfo_t *info, void *ctx);
+
+/**
  * \brief open wifi
  *
  * \return
@@ -59,7 +66,7 @@ drvWifi_t *drvWifiOpen(void);
 void drvWifiClose(drvWifi_t *d);
 
 /**
- * \brief scan all channels
+ * \brief scan all channels, this API is deprecated
  *
  * \param d     wifi context
  * \param req   wifi scan request context
@@ -67,7 +74,7 @@ void drvWifiClose(drvWifi_t *d);
  * \return
  *      - true on succeed else fail
  */
-bool drvWifiScanAllChannel(drvWifi_t *d, wifiScanRequest_t *req, uint32_t round);
+bool drvWifiScanAllChannel(drvWifi_t *d, wifiScanRequest_t *req, uint32_t round) __attribute__((deprecated));
 
 /**
  * \brief scan a specific channel
@@ -79,6 +86,26 @@ bool drvWifiScanAllChannel(drvWifi_t *d, wifiScanRequest_t *req, uint32_t round)
  *      - true on succeed else fail
  */
 bool drvWifiScanChannel(drvWifi_t *d, wifiScanRequest_t *req, uint32_t ch);
+
+/**
+ * \brief start scan a channel and capture the result by cb
+ *        this API is asynchornous and not stop scan before call `drvWifiScanAsyncStop`
+ * \note the `cb` maybe called in ISR, do not do time-consuming operations
+ *
+ * \param d     wifi device
+ * \param cb    the scan callback
+ * \param ctx   caller context
+ * \return
+ *      - true on success else fail
+ */
+bool drvWifiScanAsyncStart(drvWifi_t *d, uint32_t ch, wifiScanAsyncCb_t cb, void *ctx);
+
+/**
+ * \brief stop the async scan
+ *
+ * \param d     wifi device
+ */
+void drvWifiScanAsyncStop(drvWifi_t *d);
 
 OSI_EXTERN_C_END
 

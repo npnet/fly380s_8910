@@ -374,11 +374,7 @@ void dhcps_reply(drvEther_t *ether, drvEthPacket_t *pkt, uint32_t size, struct n
             pbuf_free(p);
         }
 
-        if (!drvEtherTxReqSubmit(ether, tx_req, sizeof(dhcp_offer)))
-        {
-            drvEtherTxReqFree(ether, tx_req);
-        }
-
+        drvEtherTxReqSubmit(ether, tx_req, sizeof(dhcp_offer));
         sys_arch_dump(dhcp_offer_reply, sizeof(dhcp_offer));
         g_dhcpDiscover_received = 1;
     }
@@ -488,10 +484,7 @@ void dhcps_reply(drvEther_t *ether, drvEthPacket_t *pkt, uint32_t size, struct n
             OSI_LOGI(0, "UDP chksum 0x%x", udp_hdr_reply->chksum);
             pbuf_free(p);
         }
-        if (!drvEtherTxReqSubmit(ether, tx_req, sizeof(dhcp_ack)))
-        {
-            drvEtherTxReqFree(ether, tx_req);
-        }
+        drvEtherTxReqSubmit(ether, tx_req, sizeof(dhcp_ack));
         sys_arch_dump(dhcp_offer_reply, sizeof(dhcp_ack));
     }
 }
@@ -543,9 +536,6 @@ void ARP_reply(drvEther_t *ether, drvEthPacket_t *pkt, uint32_t size, struct net
             arp_rely->ar_sha[5] += ++idx;
         }
 
-        if (!drvEtherTxReqSubmit(ether, tx_req, sizeof(arp_pkt_t)))
-        {
-            drvEtherTxReqFree(ether, tx_req);
-        }
+        drvEtherTxReqSubmit(ether, tx_req, sizeof(arp_pkt_t));
     }
 }

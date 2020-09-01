@@ -231,6 +231,10 @@ typedef enum
      * Play to uplink remote during voice call.
      */
     AUDEV_PLAY_TYPE_VOICE,
+    /**
+     * Play to local audio path during poc mode.
+     */
+    AUDEV_PLAY_TYPE_POC,
 } audevPlayType_t;
 
 /**
@@ -260,6 +264,10 @@ typedef enum
      * PCM dump, for debug only.
      */
     AUDEV_RECORD_TYPE_DEBUG_DUMP,
+    /**
+     * Record from microphone, during poc mode.
+     */
+    AUDEV_RECORD_TYPE_POC,
 } audevRecordType_t;
 
 /**

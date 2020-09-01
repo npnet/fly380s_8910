@@ -27,6 +27,7 @@
 
 #include "usb_utils.h"
 #include "drv_usb.h"
+#include "drv_config.h"
 #include "rndis_data.h"
 #include "rndis.h"
 
@@ -36,7 +37,6 @@ typedef struct f_rndis
     rndisData_t data_channel;
     uint8_t ctrl_id;
     uint8_t data_id;
-    uint8_t host_addr[ETH_ALEN];
     uint32_t vendorID;
     rndisParams_t *params;
     char manufacturer[16];
@@ -44,6 +44,9 @@ typedef struct f_rndis
     usbXfer_t *notify_xfer;
     uint32_t notify_count;
 } rndis_t;
+
+static const uint8_t kRndisHostMac[ETH_ALEN] = CONFIG_USB_ETHER_HOST_MAC;
+static const uint8_t kRndisDevMac[ETH_ALEN] = CONFIG_USB_ETHER_DEV_MAC;
 
 static inline rndis_t *_f2rndis(copsFunc_t *f)
 {
@@ -300,6 +303,8 @@ static int _rndisBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
     rndis->data_channel.epout_desc = &rndis_ep_out_desc;
     rndis->data_channel.rndis_open = prvRndisOpenCB;
     rndis->data_channel.rndis_close = prvRndisCloseCB;
+    rndis->data_channel.host_mac = kRndisHostMac;
+    rndis->data_channel.dev_mac = kRndisDevMac;
 
     int retval = rndisEtherBind(&rndis->data_channel);
     if (retval < 0)
@@ -352,7 +357,6 @@ static int _rndisBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
     rndis_notify_ep_desc.bEndpointAddress = rndis->notify_ep->address;
 
     rndis_set_param_medium(rndis->params, RNDIS_MEDIUM_802_3, 0);
-    rndis_set_host_mac(rndis->params, rndis->host_addr);
 
     if (rndis->manufacturer && rndis->vendorID &&
         rndis_set_param_vendor(rndis->params, rndis->vendorID, &rndis->manufacturer[0]))
@@ -455,6 +459,16 @@ static int _rndisSetup(copsFunc_t *f, const usb_device_request_t *ctrl)
         }
         break;
 
+    case ((UT_DIR_OUT | UT_CLASS | UT_RECIP_INTERFACE) << 8) |
+        UCDC_NCM_SET_ETHERNET_PACKET_FILTER:
+        if (w_length == 0 && w_index == rndis->ctrl_id)
+        {
+            rndis->data_channel.cdc_filter = w_value;
+            OSI_LOGI(0, "rndis packet filter %x", w_value);
+            value = 0;
+            break;
+        }
+
     default:
     invalid:
         OSI_LOGE(0, "invalid control %02x/%02x value/%04x index/%04x length/%u\n",
@@ -463,7 +477,7 @@ static int _rndisSetup(copsFunc_t *f, const usb_device_request_t *ctrl)
         return -1;
     }
 
-    if (value >= 0)
+    if (value > 0)
     {
         xfer->zlp = (value < w_length) && UT_GET_DIR(ctrl->bmRequestType) == UT_DIR_IN;
         xfer->length = value;
@@ -507,7 +521,6 @@ static int _rndisSetAlt(copsFunc_t *f, uint8_t intf, uint8_t alt)
             return retval;
         }
 
-        rndis->data_channel.cdc_filter = 0;
         rndis_set_param_dev(rndis->params, &rndis->data_channel,
                             &rndis->data_channel.cdc_filter);
     }
@@ -523,6 +536,7 @@ static void _rndisDisable(copsFunc_t *f)
     rndis_uninit(rndis->params);
     udcEpDisable(f->controller, rndis->notify_ep);
     rndisEtherDisable(&rndis->data_channel);
+    rndis->data_channel.cdc_filter = 0;
 }
 
 static void _rndisDestroy(copsFunc_t *f)
@@ -582,12 +596,6 @@ copsFunc_t *createRndisFunc(void)
     rndis->ctrl_id = -1;
     rndis->data_id = -1;
     rndis->vendorID = USB_VID_SPRD;
-    rndis->host_addr[0] = 0x02;
-    rndis->host_addr[1] = 0x4b;
-    rndis->host_addr[2] = 0xb3;
-    rndis->host_addr[3] = 0xb9;
-    rndis->host_addr[4] = 0xeb;
-    rndis->host_addr[5] = 0xe5;
     memcpy(rndis->manufacturer, "UNISOC", sizeof("UNISOC"));
 
     rndis->func.name = OSI_MAKE_TAG('N', 'D', 'I', 'S');

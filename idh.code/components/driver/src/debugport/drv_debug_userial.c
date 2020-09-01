@@ -278,7 +278,7 @@ static int prvUserialModemBufOutputLocked(drvDebugUserialPort_t *d, modemLogBuf_
     wr_index = OSI_ALIGN_DOWN(wr_index, 4);
     overflow_index = OSI_ALIGN_DOWN(overflow_index, 4);
 
-    unsigned wsize1 = (wr_index < rd_index) ? buf->overflow_index - rd_index : 0;
+    unsigned wsize1 = (wr_index < rd_index) ? overflow_index - rd_index : 0;
     if (wsize1 > 0)
     {
         unsigned tsize = OSI_MIN(unsigned, wsize1, MODEM_USB_TX_MAX_SIZE);

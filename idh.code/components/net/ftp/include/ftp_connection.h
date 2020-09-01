@@ -64,6 +64,7 @@ typedef struct _ftp_sock_t
     int errcode;
     ftp_con_status_t status;
     uint8_t *availBuf;
+    uint32_t availableBufSize;
     uint32_t availableSize;
     uint32_t availableoffset;
     struct sockaddr_storage addr;
