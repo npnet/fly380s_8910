@@ -24,7 +24,9 @@
 #include "ecm_data.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <sys/errno.h>
+#include "drv_config.h"
 
 #define ECM_STATUS_INTERVAL_MS 32
 #define ECM_STATUS_BYTECOUNT 16 /* 8 byte header + data */
@@ -47,14 +49,18 @@ struct f_ecm
     enum ecm_notify_state notify_state;
     bool is_open;
     bool is_data_enable;
+    char host_mac_str[14];
     uint8_t *notify_buffer; // size: ECM_STATUS_BYTECOUNT
 };
+
+static const uint8_t kEcmHostMac[ETH_ALEN] = CONFIG_USB_ETHER_HOST_MAC;
+static const uint8_t kEcmDevMac[ETH_ALEN] = CONFIG_USB_ETHER_DEV_MAC;
 
 static usbString_t ecm_string[] = {
     [0] = {.s = "CDC Ethernet Control Modle (ECM)"},
     [1] = {.s = "CDC Ethernet Data"},
     [2] = {.s = "CDC ECM"},
-    [3] = {.s = "024bb3b9ebe5"},
+    [3] = {.s = ""},
     {}};
 
 static inline struct f_ecm *prvF2ECM(copsFunc_t *func) { return (struct f_ecm *)func; }
@@ -293,8 +299,15 @@ static int prvEcmFuncBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
     ecm->data_channel.epout_desc = &ecm_ep_out_desc;
     ecm->data_channel.ecm_open = prvEcmOpen;
     ecm->data_channel.ecm_close = prvEcmClose;
+    ecm->data_channel.host_mac = kEcmHostMac;
+    ecm->data_channel.dev_mac = kEcmDevMac;
     if (!ecmDataBind(&ecm->data_channel))
         goto fail_data_intf;
+
+    snprintf(ecm->host_mac_str, 14, "%02x%02x%02x%02x%02x%02x",
+             kEcmHostMac[0], kEcmHostMac[1], kEcmHostMac[2],
+             kEcmHostMac[3], kEcmHostMac[4], kEcmHostMac[5]);
+    ecm_string[3].s = ecm->host_mac_str;
 
     copsAssignStringId(cops, &ecm_string[0]);
     copsAssignStringId(cops, &ecm_string[1]);

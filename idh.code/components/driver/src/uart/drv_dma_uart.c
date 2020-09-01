@@ -522,14 +522,11 @@ static bool _startConfig(drvUart_t *d)
 
 static int _sendFifoMode(drvUart_t *d, const uint8_t *data, size_t size)
 {
-    osiIrqDisable(d->irqn);
+    uint32_t critical = osiEnterCritical();
 
     int send = 0;
     if (osiFifoIsEmpty(&d->tx_fifo))
     {
-        // enabled tx interrupt
-        _setTxInt(d, true);
-
         // send to HW fifo only when there are no pending data in SW fifo
         size_t tx_space = _txSpace(d);
         if (tx_space > size)
@@ -540,13 +537,16 @@ static int _sendFifoMode(drvUart_t *d, const uint8_t *data, size_t size)
 
         size -= tx_space;
         send += tx_space;
+
+         // enabled tx interrupt
+        _setTxInt(d, true);
     }
 
     // put remaining in SW fifo, and SW fifo will check zero size
     send += osiFifoPut(&d->tx_fifo, data, size);
     d->tx_complete_needed = true;
 
-    osiIrqEnable(d->irqn);
+    osiExitCritical(critical);
     return send;
 }
 

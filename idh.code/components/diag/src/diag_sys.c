@@ -98,7 +98,7 @@ static void _handleWriteSecurityFlag(const diagMsgHead_t *cmd)
     if (writeSecuriyFlag())
     {
         ret = 1;
-        OSI_LOGD(0, "EFUSE wirte security flag ok...");
+        OSI_LOGV(0, "EFUSE wirte security flag ok...");
     }
     else
     {

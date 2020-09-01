@@ -330,5 +330,15 @@ static inline void auReadBufSetDataStart(auReadBuf_t *d, unsigned data_start) { 
  */
 static inline void auReadBufSetDataEnd(auReadBuf_t *d, unsigned data_end) { d->data_end = data_end; }
 
+/**
+ * \brief data read is finish
+ *
+ * \param d         read buffer
+ * \return
+ *      - true  finish
+ *      - false not finish
+ */
+static inline bool auReadBufFetchAllData(auReadBuf_t *d) { return (d->file_pos >= d->data_end); }
+
 OSI_EXTERN_C_END
 #endif

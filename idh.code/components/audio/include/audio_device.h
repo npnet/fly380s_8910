@@ -443,6 +443,36 @@ bool audevPlayTone(audevTone_t tone, unsigned duration);
 bool audevStopTone(void);
 
 /**
+ * \brief start poc mode
+ *
+ * we need create a poc type audioplayer and a poc type audiorecorder before call this api
+ * \param duplexmode true:full duplex mode record send and play recv false:half duplex mode play recv
+ * \return
+ *      - true on success
+ *      - false on failed
+ */
+bool audevStartPocMode(bool duplexmode);
+
+/**
+ * \brief stop poc mode
+ *
+ * \return
+ *      - true on success
+ *      - false on failed
+ */
+bool audevStopPocMode(void);
+
+/**
+ * \brief switch poc half duplex mode
+ *
+ * \param mode  1:half duplex mode record send 2:half duplex mode play recv
+ * \return
+ *      - true switch success
+ *      - false switch failed
+ */
+bool audevPocModeSwitch(uint8_t mode);
+
+/**
  * \brief start PCM output
  *
  * Only stream information in \p frame will be used.

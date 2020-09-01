@@ -16,96 +16,66 @@
 #include "ecm_data.h"
 #include "usb_ether.h"
 #include <stdlib.h>
+#include <string.h>
 #include <sys/errno.h>
 #include "osi_log.h"
+#include "osi_api.h"
 #include "netdev_interface.h"
 
 typedef struct
 {
     usbEp_t *ep_in;
     usbEp_t *ep_out;
-    drvEther_t *eth;
+    usbEther_t *usbe;
     bool enable;
 } ecmPriv_t;
 
-static inline ecmData_t *prvEth2Data(drvEther_t *eth)
+static inline ecmData_t *prvUsbe2Ecm(usbEther_t *usbe)
 {
-    return (ecmData_t *)eth->impl_ctx;
+    return (ecmData_t *)usbEtherConfig(usbe)->dev_priv;
 }
 
-static inline ecmPriv_t *prvEth2Priv(drvEther_t *eth)
+static inline ecmPriv_t *prvUsbe2Priv(usbEther_t *usbe)
 {
-    return (ecmPriv_t *)(prvEth2Data(eth)->priv);
+    return (ecmPriv_t *)(prvUsbe2Ecm(usbe)->priv);
 }
 
-static int prvEcmOpen(drvEther_t *eth)
+static int prvEcmNetup(usbEther_t *usbe)
 {
-    ecmData_t *ecm = prvEth2Data(eth);
-    ecmPriv_t *p = prvEth2Priv(eth);
+    ecmPriv_t *p = prvUsbe2Priv(usbe);
+    ecmData_t *ecm = prvUsbe2Ecm(usbe);
+    OSI_LOGI(0, "ECM netup %d", p->enable);
     if (!p->enable)
-    {
-        OSI_LOGE(0, "ECM open not enable");
-        return -ENODEV;
-    }
+        return -ENOTCONN;
 
     ecm->ecm_open(ecm->func);
-
     return 0;
 }
 
-static void prvEcmClose(drvEther_t *eth)
+static void prvEcmNetdown(usbEther_t *usbe)
 {
-    ecmData_t *ecm = prvEth2Data(eth);
+    ecmData_t *ecm = prvUsbe2Ecm(usbe);
+    OSI_LOGI(0, "ECM netdown %d", prvUsbe2Priv(usbe)->enable);
     ecm->ecm_close(ecm->func);
 }
 
-static bool prvEcmCheckReady(drvEther_t *eth)
+static usbEther_t *prvUsbeCreate(ecmData_t *ecm, ecmPriv_t *p)
 {
-    return prvEth2Priv(eth)->enable;
-}
+    usbEtherConfig_t config = {};
+    config.ops.netup_cb = prvEcmNetup;
+    config.ops.netdown_cb = prvEcmNetdown;
 
-static void prvEcmAddHead(drvEther_t *eth, uint8_t *buf, uint32_t datalen)
-{
-    ;
-}
+    config.udc = ecm->func->controller;
+    config.tx_ep = p->ep_in;
+    config.rx_ep = p->ep_out;
+    config.dev_proto_head_len = 0;
+    config.payload_max_size = 2048;
+    config.dev_priv = ecm;
 
-static int prvEcmRemoveHead(drvEther_t *eth, drvEthReq_t *req, uint8_t *buf, uint32_t size)
-{
-    req->payload = (drvEthPacket_t *)buf;
-    req->payload_size = size;
-    return 0;
-}
+    config.host_mac = ecm->host_mac;
+    config.dev_mac = ecm->dev_mac;
 
-static drvEther_t *prvEthCreate(ecmData_t *ecm, ecmPriv_t *p)
-{
-    usbEthCfg_t cfg = {};
-    cfg.ops.wrap = prvEcmAddHead;
-    cfg.ops.unwrap = prvEcmRemoveHead;
-    cfg.ops.ready = prvEcmCheckReady;
-    cfg.ops.on_open = prvEcmOpen;
-    cfg.ops.on_close = prvEcmClose;
-
-    cfg.udc = ecm->func->controller;
-    cfg.tx_ep = p->ep_in;
-    cfg.rx_ep = p->ep_out;
-    cfg.header_len = 0;
-
-    cfg.host_mac[0] = 0x02;
-    cfg.host_mac[1] = 0x4b;
-    cfg.host_mac[2] = 0xb3;
-    cfg.host_mac[3] = 0xb9;
-    cfg.host_mac[4] = 0xeb;
-    cfg.host_mac[5] = 0xe5;
-
-    cfg.dev_mac[0] = 0xfa;
-    cfg.dev_mac[1] = 0x32;
-    cfg.dev_mac[2] = 0x47;
-    cfg.dev_mac[3] = 0x15;
-    cfg.dev_mac[4] = 0xe1;
-    cfg.dev_mac[5] = 0x88;
-    cfg.priv = ecm;
-
-    return usbEthCreate(&cfg);
+    return usbEtherCreate(&config);
 }
 
 ecmPriv_t *prvCreate(ecmData_t *ecm)
@@ -122,8 +92,8 @@ ecmPriv_t *prvCreate(ecmData_t *ecm)
     if (p->ep_out == NULL)
         goto fail_ep_out;
 
-    p->eth = prvEthCreate(ecm, p);
-    if (p->eth == NULL)
+    p->usbe = prvUsbeCreate(ecm, p);
+    if (p->usbe == NULL)
         goto fail_ether;
 
     return p;
@@ -154,7 +124,7 @@ bool ecmDataBind(ecmData_t *ecm)
     ecm->epin_desc->bEndpointAddress = priv->ep_in->address;
     ecm->epout_desc->bEndpointAddress = priv->ep_out->address;
     ecm->priv = priv;
-    netdevInit(priv->eth);
+    netdevInit(usbEtherGetEther(priv->usbe));
     return true;
 }
 
@@ -165,7 +135,7 @@ void ecmDataUnbind(ecmData_t *ecm)
 
     ecmPriv_t *p = (ecmPriv_t *)ecm->priv;
     netdevExit();
-    drvEtherDestroy(p->eth);
+    usbEtherDestroy(p->usbe);
     udcEpFree(ecm->func->controller, p->ep_in);
     udcEpFree(ecm->func->controller, p->ep_out);
     ecm->priv = NULL;
@@ -195,7 +165,7 @@ bool ecmDataEnable(ecmData_t *ecm)
         goto fail_out;
 
     p->enable = true;
-    drvEtherEnable(p->eth);
+    usbEtherStart(p->usbe);
     return true;
 
 fail_out:
@@ -216,7 +186,7 @@ void ecmDataDisable(ecmData_t *ecm)
     p->enable = false;
     osiExitCritical(critical);
 
-    drvEtherDisable(p->eth);
+    usbEtherStop(p->usbe);
     udc_t *udc = ecm->func->controller;
     udcEpDisable(udc, p->ep_in);
     udcEpDisable(udc, p->ep_out);

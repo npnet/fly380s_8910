@@ -44,7 +44,7 @@
 #include "drv_sdmmc.h"
 #include "drv_charger.h"
 #include "drv_lcd.h"
-
+#include "drv_headset.h"
 #ifdef CONFIG_DIAG_BT_AUTOTEST_SUPPORT
 #include "bt_abs.h"
 #endif
@@ -190,6 +190,7 @@ typedef enum
 {
     MISC_VIBRATOR = 0x03,
     MISC_CAM_FLASH = 0x04,
+    MISC_AUD_HEADSETCHECK = 0x06,
     MISC_RGB_LIGHT = 0x09,
     MISC_BAT_TEMPERATURE = 0x0a,
     MISC_MAX
@@ -280,8 +281,9 @@ typedef struct
 typedef struct
 {
     diagMsgHead_t msg_head;
-    uint8_t command; // mode : 00 speaker ; 01 receiver : 02 eraphone
-    uint8_t data;    // operate : 01 paly the inner data ; 02 play use  data from PC ; 03 stop 05 set volume
+    uint8_t data;    //Select mic
+    uint8_t command; //Case value of command
+    uint8_t pagenum; //Record data page num
 } diagMsgAudio_t;
 
 typedef struct
@@ -1225,7 +1227,7 @@ static uint32_t _handleSPILcdTest(
         drvLcdBlockTransfer(&dataBufferWin, &lcdRec);
         respMsg.len = sizeof(diagMsgHead_t) + 4;
         //respMsg.type = msg_head->msg_head.type;
-        //respMsg.subtype = 0;
+        respMsg.subtype = 0;
 
         diagOutputPacket2(&respMsg, NULL, 0);
 
@@ -1252,7 +1254,8 @@ static uint32_t _handleMiscTest(
 {
     uint32_t value;
     diagMsgHead_t respMsg;
-
+    drvHeadSetStatus_t status;
+    uint8_t headsettype;
     diagMsgMisc_t *msg_head = (diagMsgMisc_t *)src_ptr;
 
     memcpy(&respMsg, msg_head, sizeof(diagMsgHead_t));
@@ -1288,6 +1291,33 @@ static uint32_t _handleMiscTest(
         _autotestGenerateRspMsg(&respMsg);
         break;
 
+    case MISC_AUD_HEADSETCHECK:
+        OSI_LOGI(0, "bbat: check headset and mic");
+        drvGetHeadsetStatus(&status);
+        if (status.isplugin == 1)
+        {
+            respMsg.subtype = BBAT_SUCCESS;
+            if (status.mictype == 1 || status.mictype == 3 || status.mictype == 4)
+            {
+                headsettype = 0x01;
+            }
+            else if (status.mictype == 2)
+            {
+                headsettype = 0x02;
+            }
+            else
+            {
+                respMsg.subtype = BBAT_FAILURE;
+                _autotestGenerateRspMsg(&respMsg);
+            }
+        }
+        else
+        {
+            headsettype = 0x00;
+            respMsg.subtype = BBAT_SUCCESS;
+        }
+        diagOutputPacket2(&respMsg, &headsettype, 1);
+        break;
     case MISC_RGB_LIGHT:
         OSI_LOGI(0, "bbat:  misc rgb light test");
         if (msg_head->sub_cmd_info.rgb_light.light_switch)
@@ -1865,6 +1895,7 @@ static uint32_t _handleUartAutotest(
 #define BBAT_MIC_BUF_SIZE (400)
 #define BBAT_MIC_BUF_COUNT (4)
 #define BBAT_MIC_BUF_SIZE_ALL (BBAT_MIC_BUF_SIZE * BBAT_MIC_BUF_COUNT)
+static uint8_t outdevSave = 0;
 
 static bool prvPlayTest(audevOutput_t dev, const void *data)
 {
@@ -1900,38 +1931,45 @@ static uint32_t _handleSpeakerAutotest(
     OSI_LOGI(0, "bbat speaker test, command=%d data=%d lens=%d",
              msg_head_speaker->command, msg_head_speaker->data, pcm_len);
 
-    switch (msg_head_speaker->data)
+    switch (msg_head_speaker->command)
     {
     case 0x1: //play local data
-        if (msg_head_speaker->command == 0)
+        if (msg_head_speaker->data == 0)
             outdev = AUDEV_OUTPUT_SPEAKER;
-        else if (msg_head_speaker->command == 1)
-            outdev = AUDEV_OUTPUT_RECEIVER;
-        else
+        else if (msg_head_speaker->data == 1)
             outdev = AUDEV_OUTPUT_HEADPHONE;
+        else
+            outdev = AUDEV_OUTPUT_RECEIVER;
 
+        outdevSave = msg_head_speaker->data;
         respMsg.subtype = prvPlayTest(outdev, NULL) ? BBAT_SUCCESS : BBAT_FAILURE;
         _autotestGenerateRspMsg(&respMsg);
         break;
 
-    case 0x02: //play PC data
-        if (msg_head_speaker->command == 0)
+    case 0x02: //Select output channel ,play PC data
+        if (msg_head_speaker->data == 0)
             outdev = AUDEV_OUTPUT_SPEAKER;
-        else if (msg_head_speaker->command == 1)
-            outdev = AUDEV_OUTPUT_RECEIVER;
-        else
+        else if (msg_head_speaker->data == 1)
             outdev = AUDEV_OUTPUT_HEADPHONE;
+        else
+            outdev = AUDEV_OUTPUT_RECEIVER;
 
         pcm_buffer = &msg_head_speaker->data + 1 + 1;
+        outdevSave = msg_head_speaker->data;
         respMsg.subtype = prvPlayTest(outdev, pcm_buffer) ? BBAT_SUCCESS : BBAT_FAILURE;
         _autotestGenerateRspMsg(&respMsg);
         break;
 
     case 0x03: // stop
-        audevStopPlayTest();
-        respMsg.subtype = BBAT_SUCCESS;
-        _autotestGenerateRspMsg(&respMsg);
+        if (outdevSave == msg_head_speaker->data)
+        {
+            audevStopPlayTest();
+            respMsg.subtype = BBAT_SUCCESS;
+        }
+        else
+            respMsg.subtype = BBAT_FAILURE;
 
+        _autotestGenerateRspMsg(&respMsg);
         break;
     case 0x05: // AUDIO_SetVolume(msg_head_speaker->command);
         respMsg.subtype = BBAT_SUCCESS;
@@ -1981,44 +2019,95 @@ static bool prvStopRecord(void)
     return ok;
 }
 
+static uint8_t indevSave = 0;
+
 static uint32_t _handleMicAutotest(
     const uint8_t *src_ptr, // Pointer of the input message.
     uint16_t src_len        // Size of the source buffer in uint8.
 )
 {
-    diagMsgHead_t respMsg;
     diagMsgAudio_t *msg_head_mic = (diagMsgAudio_t *)src_ptr;
+    diagMsgHead_t respMsg;
+    drvHeadSetStatus_t status;
+    audevInput_t indev = 0;
     osiBuffer_t recbuf = {};
     memcpy(&respMsg, msg_head_mic, sizeof(diagMsgHead_t));
 
-    OSI_LOGI(0, "bbat mic test, command=%d data=%d",
-             msg_head_mic->command, msg_head_mic->data);
+    OSI_LOGI(0, "bbat mic test, command=%d data=%d", msg_head_mic->command, msg_head_mic->data);
 
     auMemWriter_t *writer = (gBbatRecorder == NULL) ? NULL : (auMemWriter_t *)auRecorderGetWriter(gBbatRecorder);
-    switch (msg_head_mic->data)
+    drvGetHeadsetStatus(&status);
+    switch (msg_head_mic->command)
     {
-    case 0x01: // init recoding
-        respMsg.subtype = prvStartRecord() ? BBAT_SUCCESS : BBAT_FAILURE;
-        _autotestGenerateRspMsg(&respMsg);
+    case 0x01: // init recoding ,open mic
+        OSI_LOGI(0, "bbat HandleMicAutotest Start");
+        if (msg_head_mic->data == 0)
+            indev = AUDEV_INPUT_MAINMIC;
+        else if (msg_head_mic->data == 1)
+            indev = AUDEV_INPUT_HPMIC_L;
+        else
+            indev = AUDEV_INPUT_AUXMIC;
+
+        if (indev == AUDEV_INPUT_HPMIC_L)
+        {
+            if (status.mictype != 2)
+            {
+                respMsg.subtype = BBAT_FAILURE;
+                _autotestGenerateRspMsg(&respMsg);
+            }
+            else
+            {
+                indevSave = msg_head_mic->data;
+                audevSetInput(indev);
+                respMsg.subtype = prvStartRecord() ? BBAT_SUCCESS : BBAT_FAILURE;
+                _autotestGenerateRspMsg(&respMsg);
+            }
+        }
+        else
+        {
+            indevSave = msg_head_mic->data;
+            audevSetInput(indev);
+            respMsg.subtype = prvStartRecord() ? BBAT_SUCCESS : BBAT_FAILURE;
+            _autotestGenerateRspMsg(&respMsg);
+            OSI_LOGI(0, "bbat msg_head_mic->data=%d", msg_head_mic->data);
+        }
         break;
 
     case 0x02: //get record status
-        if (writer != NULL)
-            recbuf = auMemWriterGetBuf(writer);
 
-        respMsg.subtype = (recbuf.size >= BBAT_MIC_BUF_SIZE_ALL) ? BBAT_SUCCESS : BBAT_FAILURE;
+        if (msg_head_mic->data == indevSave)
+        {
+            if (writer != NULL)
+                recbuf = auMemWriterGetBuf(writer);
+
+            OSI_LOGI(0, "bbat check MIC record status, recbuf.size:%d", recbuf.size);
+            respMsg.subtype = (recbuf.size >= BBAT_MIC_BUF_SIZE_ALL) ? BBAT_SUCCESS : BBAT_FAILURE;
+        }
+        else
+            respMsg.subtype = BBAT_FAILURE;
+
         _autotestGenerateRspMsg(&respMsg);
         break;
 
     case 0x03: // send the record dada.
-        if (writer != NULL)
+
+        if (msg_head_mic->data == indevSave)
         {
-            recbuf = auMemWriterGetBuf(writer);
-            uint8_t count_num = *(&msg_head_mic->data + 1);
-            count_num %= BBAT_MIC_BUF_COUNT;
-            uintptr_t address = recbuf.ptr + BBAT_MIC_BUF_SIZE * count_num;
-            respMsg.subtype = BBAT_SUCCESS;
-            _autotestGenerateRspDataMsg(&respMsg, (void *)address, BBAT_MIC_BUF_SIZE);
+            if (writer != NULL)
+            {
+                recbuf = auMemWriterGetBuf(writer);
+                uint8_t count_num = *(&msg_head_mic->pagenum + 1);
+                count_num %= BBAT_MIC_BUF_COUNT;
+                uintptr_t address = recbuf.ptr + BBAT_MIC_BUF_SIZE * count_num;
+                OSI_LOGI(0, "bbat count_num=%d address:0x%x", count_num, address);
+                respMsg.subtype = BBAT_SUCCESS;
+                _autotestGenerateRspDataMsg(&respMsg, (void *)address, BBAT_MIC_BUF_SIZE);
+            }
+            else
+            {
+                respMsg.subtype = BBAT_FAILURE;
+                _autotestGenerateRspMsg(&respMsg);
+            }
         }
         else
         {
@@ -2027,8 +2116,23 @@ static uint32_t _handleMicAutotest(
         }
         break;
 
-    case 0x04: // close the eraphone mic
-        respMsg.subtype = prvStopRecord() ? BBAT_SUCCESS : BBAT_FAILURE;
+    case 0x04: // close the  mic
+        if (msg_head_mic->data == indevSave)
+        {
+            if (msg_head_mic->data == 0)
+                indev = AUDEV_INPUT_MAINMIC;
+            else if (msg_head_mic->data == 1)
+                indev = AUDEV_INPUT_HPMIC_L;
+            if (msg_head_mic->data == 2)
+                indev = AUDEV_INPUT_AUXMIC;
+
+            audevSetInput(indev);
+            respMsg.subtype = prvStopRecord() ? BBAT_SUCCESS : BBAT_FAILURE;
+        }
+        else
+            respMsg.subtype = BBAT_FAILURE;
+
+        indevSave = 0;
         _autotestGenerateRspMsg(&respMsg);
         break;
 
@@ -2094,4 +2198,5 @@ void diagAutoTestInit(void) //use uart baud 961200
     // hwp_iomux->pad_keyout_5_cfg_reg = 4;
 
     halPmuSwitchPower(HAL_POWER_SD, true, true);
+    drvChargeDisable();
 }

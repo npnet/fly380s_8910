@@ -30,7 +30,7 @@ void *osi_malloc(size_t size)
         memset(p, 0, alloc_size);
     }
     
-    OSI_LOGI(0,"BT malloc:0x%x", ((unsigned int)p));
+//    OSI_LOGI(0,"BT malloc:0x%x", ((unsigned int)p));
     
     return p;
 }
@@ -50,7 +50,7 @@ void *osi_calloc(size_t size)
 void osi_free(void *ptr)
 {
 //    vPortFree(ptr);
-    OSI_LOGI(0,"BT free:0x%x", ((unsigned int)ptr));
+//    OSI_LOGI(0,"BT free:0x%x", ((unsigned int)ptr));
     free(ptr);
 }
 
@@ -67,7 +67,7 @@ void osi_free(void *ptr)
  *----------------------------------------------------------------------------*/
 void osi_freeAndSetNull(void **ptr)
 {
-    OSI_LOGI(0,"BT free:0x%x", ((unsigned int)*ptr));
+//    OSI_LOGI(0,"BT free:0x%x", ((unsigned int)*ptr));
     
     free(*ptr);
     *ptr = (void*)0;

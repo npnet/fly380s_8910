@@ -10,6 +10,11 @@
  * without further testing or modification.
  */
 
+#define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('E', 'F', 'U', 'S')
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+
+#include <sys/queue.h>
+#include <stdlib.h>
 #include "drv_efuse.h"
 #include "hal_config.h"
 #include "hal_efuse.h"
@@ -18,6 +23,38 @@
 #include <stdarg.h>
 
 static osiMutex_t *gEfuseAccessLock = NULL;
+
+typedef SLIST_ENTRY(efuseBlock) efuseCacheIter_t;
+typedef SLIST_HEAD(efuseCacheHead, efuseBlock) efuseCacheHead_t;
+typedef struct efuseBlock
+{
+    efuseCacheIter_t iter;
+    uint32_t index;
+    uint32_t data;
+} efuseBlock_t;
+
+typedef struct
+{
+    efuseCacheHead_t single_bit_list;
+    efuseCacheHead_t double_bit_list;
+    bool sw_cache_enable;
+    bool init;
+} drvEfuseContext_t;
+
+static drvEfuseContext_t gDrvEfuseCtx;
+
+static void prvEfuseInit(void)
+{
+    drvEfuseContext_t *d = &gDrvEfuseCtx;
+
+    if (d->init)
+        return;
+
+    SLIST_INIT(&d->single_bit_list);
+    SLIST_INIT(&d->double_bit_list);
+    d->init = true;
+    d->sw_cache_enable = true;
+}
 
 static void prvEfuseEnable()
 {
@@ -31,6 +68,7 @@ static void prvEfuseEnable()
     osiExitCritical(critical);
 
     osiMutexLock(gEfuseAccessLock);
+    prvEfuseInit();
     halEfuseOpen();
 }
 
@@ -40,8 +78,78 @@ static void prvEfuseDisable()
     osiMutexUnlock(gEfuseAccessLock);
 }
 
+static void prvEfuseCacheClean(bool double_block, uint32_t block_index)
+{
+    drvEfuseContext_t *d = &gDrvEfuseCtx;
+    efuseBlock_t *block;
+    efuseCacheHead_t *cache_list;
+
+    if (d->sw_cache_enable)
+    {
+        cache_list = double_block ? &d->double_bit_list : &d->single_bit_list;
+
+        SLIST_FOREACH(block, cache_list, iter)
+        {
+            if (block->index == block_index)
+            {
+                SLIST_REMOVE(cache_list, block, efuseBlock, iter);
+                OSI_LOGD(0, "cache clean block %d = 0x%08x", block->index, block->data);
+            }
+        }
+    }
+}
+
+static bool prvEfuseCacheRead(bool double_block, uint32_t block_index, uint32_t *value)
+{
+    drvEfuseContext_t *d = &gDrvEfuseCtx;
+    efuseBlock_t *block;
+    efuseCacheHead_t *cache_list;
+
+    if (d->sw_cache_enable)
+    {
+        cache_list = double_block ? &d->double_bit_list : &d->single_bit_list;
+
+        SLIST_FOREACH(block, cache_list, iter)
+        {
+            if (block->index == block_index)
+            {
+                *value = block->data;
+                OSI_LOGD(0, "cache block %d = 0x%08x", block->index, block->data);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+static bool prvEfuseCacheWrite(bool double_block, uint32_t block_index, uint32_t *value)
+{
+    drvEfuseContext_t *d = &gDrvEfuseCtx;
+    efuseBlock_t *block;
+    efuseCacheHead_t *cache_list;
+
+    if (d->sw_cache_enable)
+    {
+        block = (efuseBlock_t *)malloc(sizeof(efuseBlock_t));
+        if (block == NULL)
+            return false;
+
+        block->index = block_index;
+        block->data = *value;
+
+        OSI_LOGD(0, "uncache block %d = 0x%08x", block->index, block->data);
+
+        cache_list = double_block ? &d->double_bit_list : &d->single_bit_list;
+        SLIST_INSERT_HEAD(cache_list, block, iter);
+    }
+
+    return true;
+}
+
 bool drvEfuseBatchRead(bool double_block, uint32_t index, uint32_t *value, ...)
 {
+
     bool (*read_func)(uint32_t index, uint32_t * value) = NULL;
     if (double_block)
     {
@@ -56,6 +164,7 @@ bool drvEfuseBatchRead(bool double_block, uint32_t index, uint32_t *value, ...)
     va_start(ap, value);
 
     bool result = true;
+    bool cache_read = true;
     bool first = true;
     prvEfuseEnable();
     for (;;)
@@ -69,9 +178,18 @@ bool drvEfuseBatchRead(bool double_block, uint32_t index, uint32_t *value, ...)
         }
 
         OSI_LOGV(0, "EFUSE read %u/%d", index, double_block);
-        result = read_func(index, value);
+        cache_read = prvEfuseCacheRead(double_block, index, value);
+        if (cache_read)
+            result = true;
+        else
+            result = read_func(index, value);
+
         if (result == false)
             break;
+
+        if (result && !cache_read)
+            prvEfuseCacheWrite(double_block, index, value);
+
         first = false;
     }
     prvEfuseDisable();
@@ -112,6 +230,9 @@ bool drvEfuseBatchWrite(bool double_block, uint32_t index, uint32_t value, ...)
         result = write_func(index, value);
         if (result == false)
             break;
+        else
+            prvEfuseCacheClean(double_block, index);
+
         first = false;
     }
     prvEfuseDisable();

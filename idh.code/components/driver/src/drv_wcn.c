@@ -172,6 +172,9 @@ static inline void _wcnRfInit()
     hwp_wcnWlan->phy_reg_offset_addr = 0x0;
     hwp_wcnWlan->phy_reg_write_data = 0xfb1f810;
 
+    hwp_wcnWlan->phy_reg_offset_addr = 0x5;
+    hwp_wcnWlan->phy_reg_write_data = 0xa620a452;
+
     hwp_wcnWlan->phy_reg_offset_addr = 0x8;
     hwp_wcnWlan->phy_reg_write_data = 0x25211aa8;
 

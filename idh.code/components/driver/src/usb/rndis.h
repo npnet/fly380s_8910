@@ -587,6 +587,5 @@ void rndis_free_response(struct rndis_params *params, rndisResp_t *resp);
 void rndis_uninit(struct rndis_params *params);
 int rndis_signal_connect(struct rndis_params *params);
 int rndis_signal_disconnect(struct rndis_params *params);
-void rndis_set_host_mac(struct rndis_params *params, const uint8_t *addr);
 
 #endif /* _LINUX_RNDIS_H */

@@ -98,7 +98,7 @@ static void prvSetIdleTimerForSleep(int64_t sleep_ms)
     REG_CP_IDLE_IDL_OSW2_EN_T idl_osw2_en = {};
     if (sleep_ms != INT64_MAX)
     {
-        uint32_t ticks = OSI_MS_TO_TICK32K((unsigned)sleep_ms);
+        int64_t ticks = OSI_MS_TO_TICK16K(sleep_ms);
         idl_osw2_en.b.osw2_en = 1;
         idl_osw2_en.b.osw2_time = (ticks >= 0x7fffffff) ? 0x7fffffff : ticks;
     }
@@ -114,7 +114,7 @@ static void prvSaveTickRef32K(void)
 static void prvRestoreTickRef32K(void)
 {
     uint32_t sleep_32k = hwp_idle->idl_32k_ref - gOsiChipCtx.ref32k;
-    osiSetUpHWTick(gOsiChipCtx.uptick + osiChip32kToTick(sleep_32k));
+    osiSetUpHWTick(gOsiChipCtx.uptick + OSI_32K_TO_HWTICK((int64_t)sleep_32k));
 }
 
 static void _resumeReleaseCP(osiSuspendMode_t mode, bool aborted)
@@ -573,6 +573,11 @@ OSI_SECTION_SRAM_TEXT static uint32_t prv32KSleepSram(void)
     // enable branch prediction
     __set_SCTLR(__get_SCTLR() | SCTLR_Z_Msk);
     __ISB();
+
+    pwr_hwen.v = hwp_pwrctrl->pwr_hwen;
+    pwr_hwen.b.ap_pwr_en = 1;
+    pwr_hwen.b.aon_lp_pon_en = 1;
+    hwp_pwrctrl->pwr_hwen = pwr_hwen.v;
 
     return source;
 }

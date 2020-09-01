@@ -155,7 +155,6 @@ static void prvNdevProcessPsData(void *ctx)
             OSI_LOGE(0x1000756f, "PsIntfRead %d", rsize);
             if (!drvEtherTxReqSubmit(nc->ether, tx_req, rsize))
             {
-                drvEtherTxReqFree(nc->ether, tx_req);
                 OSI_LOGW(0x10007570, "PS to NC error %d", rsize);
                 return;
             }
@@ -221,7 +220,7 @@ static void prvProcessNdevConnect(void *par)
         return;
 
     drvEtherSetULDataCB(nc->ether, prvEthUploadDataCB, nc);
-    if (!drvEtherOpen(nc->ether))
+    if (!drvEtherNetUp(nc->ether))
     {
         OSI_LOGI(0x10007575, "NC connect ether open fail");
         prvNdevSessionDelete(nc->session);
@@ -267,7 +266,7 @@ void netdevDisconnect()
     {
 #endif
         netdevIntf_t *nc = &gNetIntf;
-        drvEtherClose(nc->ether);
+        drvEtherNetDown(nc->ether);
         prvNdevSessionDelete(nc->session);
         nc->session = NULL;
         if (nc->connect_timer != NULL)
@@ -309,7 +308,7 @@ void netdevNetUp()
             return;
 
         drvEtherSetULDataCB(nc->ether, prvEthUploadDataCB, nc);
-        if (!drvEtherOpen(nc->ether))
+        if (!drvEtherNetUp(nc->ether))
         {
             OSI_LOGI(0x10007578, "NC net up ether open fail.");
             prvNdevSessionDelete(nc->session);
@@ -347,7 +346,7 @@ void netdevNetDown(uint8_t nSimID, uint8_t nCID)
             if ((inp_netif != NULL) && ((nSimID << 4 | nCID) == inp_netif->sim_cid))
             {
                 OSI_LOGI(0x1000757a, "netdevNetDown");
-                drvEtherClose(nc->ether);
+                drvEtherNetDown(nc->ether);
                 prvNdevSessionDelete(nc->session);
                 nc->session = NULL;
             }

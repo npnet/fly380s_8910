@@ -34,6 +34,7 @@
 #include "drv_md_nvm.h"
 #include "drv_ipc_at.h"
 #include "hal_spi_flash.h"
+#include "hal_efuse.h"
 #include <string.h>
 
 #if 0
@@ -253,6 +254,8 @@ OSI_NO_RETURN void osiBootStart(uint32_t param)
 
     halIomuxInit();
     halAdiBusInit();
+    halEfuseOpen();
+    halEfuseClose();
 
     halPmuInit();
     halPmuExtFlashPowerOn();
@@ -445,6 +448,14 @@ OSI_NO_INLINE static uint32_t prvSuspendFailed(void)
         halPmuAbortPm1();
     else
         halPmuAbortPm2();
+
+    // At suspend fail, it is possible that AON_LP is already power off and
+    // power on. And sysmail is needed to be cleared at power on.
+    OSI_LOOP_WAIT((hwp_pwrctrl->aon_lp_pwr_stat & 0x3) == 0x3);
+    for (uintptr_t address = (uintptr_t)&hwp_mailbox->sysmail0;
+         address <= (uintptr_t)&hwp_mailbox->sysmail191; address += 4)
+        *(volatile unsigned *)address = 0;
+
     return source;
 }
 
@@ -467,6 +478,9 @@ OSI_NO_INLINE static uint32_t prvSuspendResume(void)
     {
         hwp_sysCtrl->cfg_misc_cfg = gCpuSuspendCtx.sys_ctrl_cfg_misc_cfg;
     }
+
+    // wait cp sleep request again after resume
+    ipc_cp_wake_lock();
     return prvGetClearWakeSource(false);
 }
 

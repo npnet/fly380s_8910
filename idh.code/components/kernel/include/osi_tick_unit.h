@@ -86,6 +86,7 @@ extern "C" {
 #define OSI_US_TO_HWTICK(us) OSI_US_TO_TICK2M(us)
 #define OSI_HWTICK_TO_16K(tick) OSI_TICK2M_TO_TICK16K(tick)
 #define OSI_16K_TO_HWTICK(tick) OSI_TICK16K_TO_TICK2M(tick)
+#define OSI_32K_TO_HWTICK(tick) OSI_TICK32K_TO_TICK2M(tick)
 #endif
 
 #if (CONFIG_KERNEL_HWTICK_FREQ == 1000000)

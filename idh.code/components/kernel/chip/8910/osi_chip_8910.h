@@ -81,7 +81,6 @@ static inline void osiChipTimerStart(osiCallback_t cb, void *ctx)
     osiIrqEnable(IDLE_IRQN);
 }
 
-static inline int64_t osiChip32kToTick(int64_t tick32k) { return osiTick32kToTick2m(tick32k); }
 static inline uint32_t osiChipTraceTick(void) { return hwp_idle->idl_32k_ref >> 1; }
 
 static inline uint32_t osiChipProfileTick(void)

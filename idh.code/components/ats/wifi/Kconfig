@@ -17,4 +17,12 @@ config AT_WIFISCAN_SUPPORT
     help
         When enabled, CONFIG_AT_WIFISCAN_SUPPORT will be defined
 
+if AT_WIFISCAN_SUPPORT
+    config AT_WIFI_SENSITIVITY_TEST_SUPPORT
+        bool "AT SENSITIVITY TEST SUPPORT"
+        default n
+        help
+            When enabled, AT+WIFISENTEST command will be support
+endif
+
 endmenu

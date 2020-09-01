@@ -441,18 +441,17 @@ static void prvSuspend(osiPmContext_t *d, osiSuspendMode_t mode, int64_t sleep_m
         }
     }
 
-    WDT_ENTER_DEEPSLEEP(OSI_MIN(int64_t, osiCpDeepSleepTime(), sleep_ms) + SUSPEND_WDT_MARGIN_TIME);
     osiProfileEnter(PROFCODE_DEEP_SLEEP);
+    WDT_ENTER_DEEPSLEEP(OSI_MIN(int64_t, osiCpDeepSleepTime(), sleep_ms) + SUSPEND_WDT_MARGIN_TIME);
 
     osiChipSuspend(mode);
-
-    osiProfileExit(PROFCODE_DEEP_SLEEP);
 
     uint32_t source = osiPmCpuSuspend(mode, sleep_ms);
     OSI_LOGI(0, "suspend resume source 0x%08x", source);
 
     osiChipResume(mode, source);
     WDT_EXIT_DEEPSLEEP();
+    osiProfileExit(PROFCODE_DEEP_SLEEP);
 
     TAILQ_FOREACH(p, &d->resume_list, resume_iter)
     {

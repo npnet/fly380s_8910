@@ -251,6 +251,7 @@ static void initCacheData(ftp_sock_t *sockset)
     {
         free(sockset->availBuf);
         sockset->availBuf = NULL;
+        sockset->availableBufSize = 0;
     }
     sockset->availableSize = 0;
     sockset->availableoffset = 0;
@@ -307,6 +308,7 @@ static void getRemainData(ftp_sock_t *sockset)
         {
             free(sockset->availBuf);
             sockset->availBuf = NULL;
+            sockset->availableBufSize = 0;
         }
 
         sockset->availBuf = malloc(sockset->availableSize);
@@ -317,12 +319,14 @@ static void getRemainData(ftp_sock_t *sockset)
             {
                 sockset->availableSize = numBytes;
                 sockset->availableoffset = 0;
+                sockset->availableBufSize = sockset->availableSize;
             }
             else
             {
                 FTPLOGI(FTPLOG_CON, "read data remaining failed");
                 free(sockset->availBuf);
                 sockset->availBuf = NULL;
+                sockset->availableBufSize = 0;
             }
         }
         else
@@ -1090,7 +1094,7 @@ int32_t ftp_conn_read(uint8_t *buf, uint32_t buflen, ftp_sock_e flag)
     {
         if (sockset->availBuf != NULL)
         {
-            if (sockset->availableoffset + Readsize <= sockset->availableSize)
+            if (sockset->availableoffset + Readsize <= sockset->availableBufSize)
             {
                 memcpy(buf, sockset->availBuf + sockset->availableoffset, Readsize);
                 sockset->availableSize -= Readsize;

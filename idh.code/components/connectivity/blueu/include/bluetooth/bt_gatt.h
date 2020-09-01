@@ -175,6 +175,14 @@ typedef struct
     UINT8 *max_event;
 }gatt_extend_adv_enable_t;
 
+typedef struct
+{
+    UINT8 scanType;
+    UINT16 scanInterval;
+    UINT16 scanWindow;
+    UINT8 filterPolicy;
+} gatt_scan_param_t;
+
 typedef struct{
     UINT8 own_addr_type;
     UINT8 scan_type;
@@ -220,10 +228,32 @@ typedef struct
 typedef struct
 {
     bt_status_t (*ble_client_init) (UINT16 module, UINT16 uuid, ap_module_cb func);
+    bt_status_t (*set_scan_param) (gatt_scan_param_t *param, UINT8 own_addr_type);
+    bt_status_t (*start_scan) (void);
+    bt_status_t (*stop_scan) (void);
+    bt_status_t (*filter_manufacturer) (UINT8 *data);
+    bt_status_t (*filter_name) (UINT8 *name);
+    bt_status_t (*filter_uuid) (UINT8 *uuid);
+    bt_status_t (*client_connect) (bdaddr_t *address, UINT8 module, UINT8 addr_type);//add 
+    bt_status_t (*connect_cancel) (bdaddr_t *address);
+    bt_status_t (*disconnect) (UINT16 handle);
+	
+    bt_status_t (*discover_all_primary_service) (UINT16 module, UINT16 acl_handle);
     bt_status_t (*discover_primary_service_by_uuid) (UINT16 module, UINT8 *uuid_l, UINT16 uuid_s, UINT16 acl_handle);
     bt_status_t (*discover_all_characteristic) (UINT16 module, UINT16 start_handle, UINT16 end_handle, UINT16 acl_handle);
+    bt_status_t (*read_char_value_by_handle) (UINT16 module, UINT16 att_handle, UINT8 is_long_att, UINT16 acl_handle);
+    bt_status_t (*read_char_value_by_uuid) (UINT16 module, UINT8 *uuid_l, UINT16 uuid_s, UINT16 start_handle, UINT16 end_handle, UINT16 acl_handle);
+    bt_status_t (*read_multiple_char_value) (UINT16 module, UINT8* handle, UINT8 length, UINT16 acl_handle);
+    bt_status_t (*write_char_value) (UINT16 module, UINT16 att_handle, void *value, UINT16 length, UINT16 acl_handle);
+    bt_status_t (*write_char_value_without_rsp) (UINT16 module, UINT16 att_handle, void *value, UINT16 length, UINT16 acl_handle);
+    bt_status_t (*write_char_value_signed) (UINT16 module, UINT16 att_handle, void *value, UINT16 length, UINT16 acl_handle);
+    bt_status_t (*write_char_value_reliable) (UINT16 module, UINT16 att_handle, void *value, UINT16 length, UINT16 acl_handle);
+    bt_status_t (*find_include_service) (UINT16 module, UINT16 start_handle, UINT16 end_handle, UINT16 acl_handle);
+    bt_status_t (*get_char_descriptor) (UINT16 module, UINT16 start_handle, UINT16 end_handle, UINT16 acl_handle);
+    bt_status_t (*read_char_descriptor) (UINT16 module, UINT16 att_handle, UINT8 is_long_att, UINT16 acl_handle);
+    bt_status_t (*write_char_descriptor) (UINT16 module, UINT16 att_handle, void *value, UINT16 length, UINT16 acl_handle);
+    bt_status_t (*gc_init) (void);
 } btgatt_client_interface_t;
-
 
 typedef struct
 {
@@ -232,9 +262,23 @@ typedef struct
 
 typedef struct
 {
-    void (*connection_callback) (int conn_id, int connected, bdaddr_t *addr);
+    bt_status_t (*connection_state_change_cb) (int conn_id, int connected, bdaddr_t *addr);
+    bt_status_t (*discover_service_by_uuid_cb) (void *);
+    bt_status_t (*discover_service_all_cb) (void *);
+    bt_status_t (*char_des_data) (void *);
+    bt_status_t (*char_data) (void *, UINT8 more_data);
+    bt_status_t (*read_cb) (void *);
+    bt_status_t (*read_blob_cb) (void *);
+    bt_status_t (*read_multi_cb) (void *);
+    bt_status_t (*recv_notification_cb) (void *);
+    bt_status_t (*recv_indication_cb) (void *);
+    bt_status_t (*write_cb) (void *);
+    bt_status_t (*write_rsp_cb) (void *);
+    bt_status_t (*scan_cb) (void *,UINT8 adv_len);
+    void 		(*smp_pair_success_cb) (void);
+    void 		(*smp_pair_failed_cb) (void);
+    void		(*att_error_cb) (UINT8 error_code);
 } btgatt_client_callbacks_t;
-
 
 typedef struct
 {

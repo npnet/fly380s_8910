@@ -1875,7 +1875,7 @@ void AT_SPBLE_CmdFunc_ADV(atCommand_t *pParam)
             }
             else
             {
-                AdvMin = AdvMin * 625 / 1000;
+                //AdvMin = AdvMin * 625 / 1000;
             }
 
             AdvMax = StringsToUnsignedInt(pParam->params[2]->value);
@@ -1890,7 +1890,7 @@ void AT_SPBLE_CmdFunc_ADV(atCommand_t *pParam)
             }
             else
             {
-                AdvMax = AdvMax * 625 / 1000;
+                //    AdvMax = AdvMax * 625 / 1000;
             }
 
             if (AdvMin > AdvMax)
@@ -1913,7 +1913,7 @@ void AT_SPBLE_CmdFunc_ADV(atCommand_t *pParam)
             case 2:
             case 3:
             {
-                if ((AdvMin < (0xA0 * 625 / 1000)) || (AdvMax < (0xA0 * 625 / 1000)))
+                if (AdvMin < 0xA0)
                 {
                     TraceBuf[0] = '\0';
                     sprintf(TraceBuf, "%s %s(%d): %s param[AdvMin, AdvMax, AdvType] error.", TRACE_HEAD, __func__, __LINE__, CmdStr[Index]);

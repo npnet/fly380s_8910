@@ -166,11 +166,7 @@ void routerAdvertisement_reply(drvEther_t *ether, drvEthPacket_t *pkt, uint32_t 
         pbuf_free(p);
     }
 
-    if (!drvEtherTxReqSubmit(ether, tx_req, sizeof(router_advertisement)))
-    {
-        drvEtherTxReqFree(ether, tx_req);
-    }
-
+    drvEtherTxReqSubmit(ether, tx_req, sizeof(router_advertisement));
     sys_arch_dump(RS_reply, sizeof(router_advertisement));
 }
 
@@ -300,10 +296,6 @@ void neighborAdvertisement_reply(drvEther_t *ether, drvEthPacket_t *pkt, uint32_
         pbuf_free(p);
     }
 
-    if (!drvEtherTxReqSubmit(ether, tx_req, sizeof(Neighbor_advertisement)))
-    {
-        drvEtherTxReqFree(ether, tx_req);
-    }
-
+    drvEtherTxReqSubmit(ether, tx_req, sizeof(Neighbor_advertisement));
     sys_arch_dump(NS_reply, sizeof(Neighbor_advertisement));
 }

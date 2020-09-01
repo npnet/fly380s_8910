@@ -16,6 +16,7 @@
 #include "at_engine.h"
 #include "at_response.h"
 #include "drv_wifi.h"
+#include "ats_config.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -25,6 +26,7 @@
 #define WIFI_SCAN_MAX_AP_CNT (300)
 #define WIFI_SCAN_DEFAULT_AP_CNT (100)
 #define WIFI_SCAN_DEFAULT_ROUND (1)
+#define WIFI_SCAN_MAX_ROUND (10)
 
 static drvWifi_t *gDrvWifi = NULL;
 
@@ -106,6 +108,7 @@ void atCmdHandleWifiScan(atCommand_t *cmd)
     uint8_t ch = 0;
     uint32_t timeout = WIFI_SCAN_DEFAULT_TIME;
     uint32_t maxap = WIFI_SCAN_DEFAULT_AP_CNT;
+    uint32_t round = WIFI_SCAN_DEFAULT_ROUND;
     if (cmd->type == AT_CMD_SET)
     {
         bool paramok = true;
@@ -118,12 +121,22 @@ void atCmdHandleWifiScan(atCommand_t *cmd)
             goto param_end;
 
         maxap = atParamDefUintInRange(cmd->params[2], WIFI_SCAN_DEFAULT_AP_CNT, 1, WIFI_SCAN_MAX_AP_CNT, &paramok);
+        if (!paramok)
+            goto param_end;
+
+        if (ch != 0 && cmd->param_count > 3)
+        {
+            paramok = false;
+            goto param_end;
+        }
+
+        round = atParamDefIntInRange(cmd->params[3], WIFI_SCAN_DEFAULT_ROUND, 1, WIFI_SCAN_MAX_ROUND, &paramok);
     param_end:
         if (!paramok)
             RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
     }
 
-    OSI_LOGI(0, "wifi scan channel %u/%u/%u", ch, timeout, maxap);
+    OSI_LOGI(0, "wifi scan channel %u/%u/%u(/%u)", ch, timeout, maxap, round);
     wifiApInfo_t *aps = (wifiApInfo_t *)calloc(maxap, sizeof(wifiApInfo_t));
     if (aps == NULL)
     {
@@ -138,11 +151,25 @@ void atCmdHandleWifiScan(atCommand_t *cmd)
         .maxtimeout = timeout,
     };
 
-    bool r;
+    bool r = true;
     if (ch != 0)
+    {
         r = drvWifiScanChannel(d, &req, ch);
+    }
     else
-        r = drvWifiScanAllChannel(d, &req, WIFI_SCAN_DEFAULT_ROUND);
+    {
+        for (unsigned n = 0; n < round; ++n)
+        {
+            for (ch = 1; ch <= WIFI_CHANNEL_MAX; ++ch)
+            {
+                r = drvWifiScanChannel(d, &req, ch);
+                if (!r)
+                {
+                    break;
+                }
+            }
+        }
+    }
 
     if (r)
     {
@@ -159,7 +186,7 @@ void atCmdHandleWifiScan(atCommand_t *cmd)
     free(aps);
     if (!r)
     {
-        OSI_LOGE(0, "WIFI Scan start fail");
+        OSI_LOGE(0, "WIFI Scan %u start fail", ch);
         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
     }
     else
@@ -167,3 +194,136 @@ void atCmdHandleWifiScan(atCommand_t *cmd)
         RETURN_OK(cmd->engine);
     }
 }
+
+#ifdef CONFIG_AT_WIFI_SENSITIVITY_TEST_SUPPORT
+
+typedef struct
+{
+    uint32_t count;
+    bool running;
+} wifiSenTest_t;
+
+static wifiSenTest_t gWifiSenTest = {};
+
+static void _wifiScanIsrCB(const wifiApInfo_t *info, void *ctx)
+{
+    (*(uint32_t *)ctx) += 1;
+}
+
+void atCmdHandleWifiSensitivityTest(atCommand_t *cmd)
+{
+    const unsigned resp_size = 64;
+    char resp[resp_size];
+    if (cmd->type == AT_CMD_TEST)
+    {
+        // mode == 0, scan channel and report every <interval> milliseconds, report <1-100> times
+        // mode == 1, start scan a channel, or stop scan and report beacon received count
+        atCmdRespInfoText(cmd->engine, "+WIFISENTEST: 0, <1-13>, <interval>, <1-100>");
+        atCmdRespInfoText(cmd->engine, "+WIFISENTEST: 1, <0-1>, <1-13>");
+        RETURN_OK(cmd->engine);
+    }
+    else if (cmd->type == AT_CMD_SET)
+    {
+        drvWifi_t *d = gDrvWifi;
+        if (d == NULL)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+        uint8_t mode, start = 0;
+        uint8_t ch = 0;
+        unsigned interval = 1;
+        unsigned round = 1;
+        bool paramok = true;
+        uint32_t pcnt = 0;
+        do
+        {
+            mode = atParamUintInRange(cmd->params[pcnt++], 0, 1, &paramok);
+            if (!paramok)
+                break;
+
+            if (mode == 1)
+            {
+                start = atParamUintInRange(cmd->params[pcnt++], 0, 1, &paramok);
+                if (!paramok)
+                    break;
+
+                if (start == 0)
+                    break;
+            }
+
+            ch = atParamUintInRange(cmd->params[pcnt++], 1, 13, &paramok);
+            if (!paramok)
+                break;
+
+            if (mode == 0)
+            {
+                interval = atParamUint(cmd->params[pcnt++], &paramok);
+                if (!paramok)
+                    break;
+
+                round = atParamUintInRange(cmd->params[pcnt++], 1, 100, &paramok);
+            }
+        } while (0);
+
+        if (!paramok)
+            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+
+        if (mode == 0)
+        {
+            uint32_t count = 0, total = 0;
+            bool r = drvWifiScanAsyncStart(d, ch, _wifiScanIsrCB, &count);
+            if (!r)
+                RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+
+            for (unsigned i = 0; i < round; ++i)
+            {
+                osiThreadSleep(interval);
+                uint32_t critical = osiEnterCritical();
+                uint32_t tmp = count;
+                total += count;
+                count = 0;
+                osiExitCritical(critical);
+                snprintf(resp, resp_size, "+WIFISENTEST: %u -> %lu (%u)", mode, tmp, i);
+                atCmdRespInfoText(cmd->engine, resp);
+            }
+            drvWifiScanAsyncStop(d);
+            snprintf(resp, resp_size, "+WIFISENTEST: %u -> %lu (total)", mode, total);
+            atCmdRespInfoText(cmd->engine, resp);
+            RETURN_OK(cmd->engine);
+        }
+        else
+        {
+            wifiSenTest_t *ctx = &gWifiSenTest;
+            if (start)
+            {
+                if (ctx->running)
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                ctx->running = true;
+                ctx->count = 0;
+                bool r = drvWifiScanAsyncStart(d, ch, _wifiScanIsrCB, &ctx->count);
+                if (!r)
+                {
+                    ctx->running = false;
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                }
+                RETURN_OK(cmd->engine);
+            }
+            else
+            {
+                if (!ctx->running)
+                    RETURN_CME_ERR(cmd->engine, ERR_AT_CME_EXE_FAIL);
+                snprintf(resp, resp_size, "+WIFISENTEST: %u -> %lu", mode, ctx->count);
+                drvWifiScanAsyncStop(d);
+                ctx->count = 0;
+                ctx->running = false;
+                atCmdRespInfoText(cmd->engine, resp);
+                RETURN_OK(cmd->engine);
+            }
+        }
+    }
+    else
+    {
+        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_OPERATION_NOT_SUPPORTED);
+    }
+}
+
+#endif

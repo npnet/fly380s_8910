@@ -22,20 +22,19 @@
 #include <osi_log.h>
 
 #include "rndis_data.h"
-#include "drv_usb.h"
 #include "drv_names.h"
 #include "rndis.h"
 #include "netdev_interface.h"
 
 typedef struct
 {
-    usbEthCfg_t cfg;
+    usbEtherConfig_t cfg;
     bool enable; ///< ether port state
 } rndisPriv_t;
 
-static inline rndisData_t *prvEth2Rndis(drvEther_t *eth)
+static inline rndisData_t *prvEth2Rndis(usbEther_t *usbe)
 {
-    return (rndisData_t *)eth->impl_ctx;
+    return (rndisData_t *)usbEtherConfig(usbe)->dev_priv;
 }
 
 static inline rndisPriv_t *prvRndis2Priv(rndisData_t *rnd)
@@ -43,9 +42,9 @@ static inline rndisPriv_t *prvRndis2Priv(rndisData_t *rnd)
     return (rndisPriv_t *)rnd->priv;
 }
 
-static int prvRndisOpen(drvEther_t *eth)
+static int prvRndisNetup(usbEther_t *usbe)
 {
-    rndisData_t *rnd = prvEth2Rndis(eth);
+    rndisData_t *rnd = prvEth2Rndis(usbe);
     rndisPriv_t *priv = prvRndis2Priv(rnd);
 
     if (!priv->enable)
@@ -56,45 +55,38 @@ static int prvRndisOpen(drvEther_t *eth)
     return 0;
 }
 
-static void prvRndisClose(drvEther_t *eth)
+static void prvRndisNetdown(usbEther_t *usbe)
 {
-    rndisData_t *rnd = prvEth2Rndis(eth);
+    rndisData_t *rnd = prvEth2Rndis(usbe);
     rnd->rndis_close(rnd->func);
 }
 
-static bool prvRndisReadyCB(drvEther_t *eth)
+static void prvRndisAddCommonHead(usbEther_t *usbe, uint8_t *buf)
 {
-    rndisData_t *rnd = prvEth2Rndis(eth);
-    return prvRndis2Priv(rnd)->enable;
+    struct rndis_packet_msg_type *head = (struct rndis_packet_msg_type *)buf;
+    memset(head, 0, sizeof(*head));
+    head->MessageType = cpu_to_le32(RNDIS_MSG_PACKET);
+    head->DataOffset = cpu_to_le32(36);
 }
 
-static void prvRndisAddHead(drvEther_t *eth, uint8_t *buf, uint32_t rndis_len)
+static void prvRndisAddHead(usbEther_t *usbe, const drvEthReq_t *req, uint8_t *buf)
 {
-    struct rndis_packet_msg_type *header;
-
-    header = (struct rndis_packet_msg_type *)buf;
-    memset(header, 0, sizeof *header);
-    header->MessageType = cpu_to_le32(RNDIS_MSG_PACKET);
-    header->MessageLength = cpu_to_le32(rndis_len);
-    header->DataOffset = cpu_to_le32(36);
-    header->DataLength = cpu_to_le32(rndis_len - sizeof(*header));
+    struct rndis_packet_msg_type *head = (struct rndis_packet_msg_type *)buf;
+    head->MessageLength = cpu_to_le32(req->actual_size + sizeof(*head));
+    head->DataLength = cpu_to_le32(req->actual_size);
 }
 
-static int prvRndisRemoveHead(drvEther_t *eth, drvEthReq_t *req, uint8_t *buf, uint32_t size)
+static bool prvRndisRemoveHead(usbEther_t *usbe, uint8_t *buf, uint32_t size, drvEthReq_t *req)
 {
-    struct rndis_packet_msg_type *header;
-
-    /* MessageType, MessageLength */
-    header = (struct rndis_packet_msg_type *)buf;
-    if (header->MessageType != RNDIS_MSG_PACKET)
+    struct rndis_packet_msg_type *head = (struct rndis_packet_msg_type *)buf;
+    if (head->MessageType != cpu_to_le32(RNDIS_MSG_PACKET))
     {
-        return -EINVAL;
+        OSI_LOGE(0, "Invalid RNDIS data packet 0x%x", head->MessageType);
+        return false;
     }
-
-    /* DataOffset, DataLength */
-    req->payload = (drvEthPacket_t *)(buf + header->DataOffset + 8);
-    req->payload_size = size - sizeof(*header);
-    return 0;
+    req->payload = (drvEthPacket_t *)(buf + head->DataOffset + 8);
+    req->actual_size = size - sizeof(*head);
+    return true;
 }
 
 static rndisPriv_t *prvRndisPrivCreate(rndisData_t *rnd)
@@ -106,21 +98,8 @@ static rndisPriv_t *prvRndisPrivCreate(rndisData_t *rnd)
         return NULL;
     }
 
-    /* For PC */
-    p->cfg.host_mac[0] = 0x02;
-    p->cfg.host_mac[1] = 0x4b;
-    p->cfg.host_mac[2] = 0xb3;
-    p->cfg.host_mac[3] = 0xb9;
-    p->cfg.host_mac[4] = 0xeb;
-    p->cfg.host_mac[5] = 0xe5;
-
-    /* For Module */
-    p->cfg.dev_mac[0] = 0xfa;
-    p->cfg.dev_mac[1] = 0x32;
-    p->cfg.dev_mac[2] = 0x47;
-    p->cfg.dev_mac[3] = 0x15;
-    p->cfg.dev_mac[4] = 0xe1;
-    p->cfg.dev_mac[5] = 0x88;
+    p->cfg.host_mac = rnd->host_mac;
+    p->cfg.dev_mac = rnd->dev_mac;
 
     udc_t *udc = rnd->func->controller;
     p->cfg.tx_ep = udcEpAlloc(udc, rnd->epin_desc);
@@ -131,14 +110,16 @@ static rndisPriv_t *prvRndisPrivCreate(rndisData_t *rnd)
     if (p->cfg.rx_ep == NULL)
         goto fail_rx_ep;
 
-    p->cfg.priv = rnd;
-    p->cfg.udc = udc;
+    p->cfg.dev_priv = rnd;
+    p->cfg.ops.netup_cb = prvRndisNetup;
+    p->cfg.ops.netdown_cb = prvRndisNetdown;
+    p->cfg.ops.wrap_pre = prvRndisAddCommonHead;
     p->cfg.ops.wrap = prvRndisAddHead;
     p->cfg.ops.unwrap = prvRndisRemoveHead;
-    p->cfg.ops.ready = prvRndisReadyCB;
-    p->cfg.ops.on_open = prvRndisOpen;
-    p->cfg.ops.on_close = prvRndisClose;
-    p->cfg.header_len = sizeof(struct rndis_packet_msg_type);
+    p->cfg.name = OSI_MAKE_TAG('N', 'D', 'I', 'S');
+    p->cfg.udc = udc;
+    p->cfg.payload_max_size = 2048;
+    p->cfg.dev_proto_head_len = sizeof(struct rndis_packet_msg_type);
 
     return p;
 
@@ -174,14 +155,14 @@ int rndisEtherBind(rndisData_t *rnd)
         return -1;
     }
 
-    rnd->eth = usbEthCreate(&priv->cfg);
-    if (rnd->eth == NULL)
+    rnd->usbe = usbEtherCreate(&priv->cfg);
+    if (rnd->usbe == NULL)
         goto failed;
 
     rnd->epin_desc->bEndpointAddress = priv->cfg.tx_ep->address;
     rnd->epout_desc->bEndpointAddress = priv->cfg.rx_ep->address;
     rnd->priv = (unsigned long)priv;
-    netdevInit(rnd->eth);
+    netdevInit(usbEtherGetEther(rnd->usbe));
 
     return 0;
 
@@ -198,13 +179,13 @@ void rndisEtherUnbind(rndisData_t *rnd)
 
     uint32_t critical = osiEnterCritical();
     rndisPriv_t *priv = prvRndis2Priv(rnd);
-    drvEther_t *eth = rnd->eth;
-    rnd->eth = NULL;
+    usbEther_t *usbe = rnd->usbe;
+    rnd->usbe = NULL;
     rnd->priv = 0;
     osiExitCritical(critical);
 
     netdevExit();
-    drvEtherDestroy(eth);
+    usbEtherDestroy(usbe);
     prvRndisPrivDestroy(rnd, priv);
 }
 
@@ -228,7 +209,7 @@ int rndisEtherEnable(rndisData_t *rnd)
         goto fail_rx;
 
     priv->enable = true;
-    drvEtherEnable(rnd->eth);
+    usbEtherStart(rnd->usbe);
     return 0;
 
 fail_rx:
@@ -253,7 +234,7 @@ void rndisEtherDisable(rndisData_t *rnd)
     priv->enable = false;
     osiExitCritical(critical);
 
-    drvEtherDisable(rnd->eth);
+    usbEtherStop(rnd->usbe);
     udc_t *udc = rnd->func->controller;
     udcEpDisable(udc, priv->cfg.tx_ep);
     udcEpDisable(udc, priv->cfg.rx_ep);

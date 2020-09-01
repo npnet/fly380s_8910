@@ -10,66 +10,66 @@
  * without further testing or modification.
  */
 
+#define CONFIG_SOC_8910
+
 #include "drv_wifi.h"
 #include "hwregs.h"
+#include "hwreg_access.h"
 #include "osi_api.h"
+#include "osi_log.h"
 #include <stdlib.h>
 
 #include "drv_wcn.h"
 
 #define WIFI_SCAN_MIN_INTERVAL (120)
-#define WIFI_RSSI_CALIB_OFFSET (28)
-
-typedef struct
-{
-    bool scan_all;
-    wifiScanRequest_t *req;
-    union {
-        uint32_t channel;
-        uint32_t round;
-    };
-} scanCtx_t;
+#define WIFI_RSSI_CALIB_OFFSET (25)
 
 struct drv_wifi
 {
-    osiWorkQueue_t *work_queue;
-    osiWork_t *work_scan;
-    osiMutex_t *lock;
-    osiSemaphore_t *sema_sync;
+    uint32_t irqn;
     drvWcn_t *wcn;
-    scanCtx_t context;
+    osiMutex_t *lock;
+    osiSemaphore_t *sema;
+    bool async;
+    bool running;
+    union {
+        wifiScanRequest_t *cur_req;
+        struct
+        {
+            wifiScanAsyncCb_t async_cb;
+            void *async_ctx;
+        };
+    };
 };
 
-static void prvWifiOpen()
+static inline void prvWifiOpen(drvWifi_t *d)
 {
+    drvWcnRequest(d->wcn);
     hwp_wcnRfIf->sys_control = 0x267;
     hwp_wcnWlan->config_reg = 0x802;
 }
 
-static void prvWifiClose()
+static inline void prvWifiClose(drvWifi_t *d)
 {
     hwp_wcnRfIf->wf_control = 0x2;
     hwp_wcnRfIf->sys_control = 0x63;
+    drvWcnRelease(d->wcn);
 }
 
-static void prvWifiSetChannel(uint8_t ch)
+static inline void prvWifiSetChannel(uint8_t ch)
 {
     REG_WCN_RF_IF_WF_CONTROL_T wf_control = {};
     wf_control.b.wf_tune = 0;
-    wf_control.b.wf_chn = ch;
+    wf_control.b.wf_chn = (ch & 0xf);
     hwp_wcnRfIf->wf_control = wf_control.v;
-    osiThreadSleep(1);
+    OSI_NOP;
+    REG_WAIT_FIELD_EQZ(wf_control, hwp_wcnRfIf->wf_control, wf_tune);
+
     wf_control.b.wf_tune = 1;
     hwp_wcnRfIf->wf_control = wf_control.v;
 }
 
-static bool prvWifiDataReady()
-{
-    REG_WCN_WLAN_DATARDYINT_T dataready = {hwp_wcnWlan->datardyint};
-    return dataready.b.datardyint == 1;
-}
-
-static void prvWifiClearReady()
+static inline void prvWifiClearReady()
 {
     REG_WCN_WLAN_CONFIG_REG_T conf_reg = {hwp_wcnWlan->config_reg};
     conf_reg.b.apb_clear = 1;
@@ -81,31 +81,28 @@ static void prvWifiClearReady()
     REG_WAIT_FIELD_EQZ(conf_reg, hwp_wcnWlan->config_reg, apb_clear);
 }
 
-static inline void prvLoadApInfo(wifiApInfo_t *info)
+static void prvWifiDestroy(drvWifi_t *d)
 {
-    REG_WCN_WLAN_CONFIG_REG_T conf_reg = {hwp_wcnWlan->config_reg};
-    conf_reg.b.apb_hold = 1;
-    hwp_wcnWlan->config_reg = conf_reg.v;
-    REG_WAIT_FIELD_NEZ(conf_reg, hwp_wcnWlan->config_reg, apb_hold);
-
-    info->bssid_low = hwp_wcnWlan->bssidaddr_l;
-    info->bssid_high = (hwp_wcnWlan->bssidaddr_h & 0xffff);
-    info->rssival = (int8_t)hwp_wcnWlan->rssival + WIFI_RSSI_CALIB_OFFSET;
-
-    conf_reg.b.apb_hold = 0;
-    hwp_wcnWlan->config_reg = conf_reg.v;
-    REG_WAIT_FIELD_EQZ(conf_reg, hwp_wcnWlan->config_reg, apb_hold);
+    osiSemaphoreDelete(d->sema);
+    osiMutexDelete(d->lock);
+    drvWcnClose(d->wcn);
+    free(d);
 }
 
-static bool prvSaveApInfo(wifiApInfo_t *info, wifiScanRequest_t *req)
+/**
+ * @return continue scaning
+ */
+static bool prvSaveApInfo(wifiScanRequest_t *req, wifiApInfo_t *info)
 {
     if (req->found >= req->max)
         return false;
 
-    bool new_ap = true;
+    uint32_t critical = osiEnterCritical();
+    wifiApInfo_t *s;
+    bool newap = true;
     for (unsigned i = req->found; i > 0; --i)
     {
-        wifiApInfo_t *s = &req->aps[i - 1];
+        s = &req->aps[i - 1];
         if (s->bssid_high == info->bssid_high && s->bssid_low == info->bssid_low)
         {
             if (info->rssival > s->rssival)
@@ -113,80 +110,115 @@ static bool prvSaveApInfo(wifiApInfo_t *info, wifiScanRequest_t *req)
                 s->rssival = info->rssival;
                 s->channel = info->channel;
             }
-            new_ap = false;
+            newap = false;
             break;
         }
     }
 
-    if (new_ap)
+    if (newap)
+    {
         req->aps[req->found++] = *info;
-
+    }
+    osiExitCritical(critical);
     return true;
 }
 
-static void prvWifiScanChannel_(uint8_t ch, uint32_t timeout, wifiScanRequest_t *req)
+static void prvWcnWlanISR(void *param)
 {
-    osiElapsedTimer_t elapsed;
-    osiElapsedTimerStart(&elapsed);
-    while (osiElapsedTime(&elapsed) < timeout)
+    REG_WCN_WLAN_CONFIG_REG_T conf = {hwp_wcnWlan->config_reg};
+    conf.b.apb_clear = 1;
+    hwp_wcnWlan->config_reg = conf.v;
+    REG_WAIT_FIELD_NEZ(conf, hwp_wcnWlan->config_reg, apb_clear);
+
+    REG_WCN_RF_IF_WF_CONTROL_T wf_control = {hwp_wcnRfIf->wf_control};
+    wifiApInfo_t info = {
+        .bssid_low = hwp_wcnWlan->bssidaddr_l,
+        .bssid_high = (hwp_wcnWlan->bssidaddr_h & 0xffff),
+        .channel = wf_control.b.wf_chn,
+        .rssival = (int8_t)hwp_wcnWlan->rssival + WIFI_RSSI_CALIB_OFFSET,
+    };
+    drvWifi_t *d = (drvWifi_t *)param;
+    if (d->async)
     {
-        if (prvWifiDataReady())
-        {
-            wifiApInfo_t info = {.channel = ch};
-            prvLoadApInfo(&info);
-            prvWifiClearReady();
-            if (!prvSaveApInfo(&info, req))
-                return;
-        }
-    }
-}
-
-static void prvWifiScanChannel(uint8_t ch, uint32_t timeout, wifiScanRequest_t *req)
-{
-    uint32_t tout1 = WIFI_SCAN_MIN_INTERVAL;
-    if (tout1 > timeout)
-        tout1 = timeout;
-    uint32_t tout2 = timeout - tout1;
-
-    prvWifiSetChannel(ch);
-    prvWifiScanChannel_(ch, tout1, req);
-
-    // the broadcast interval from wifi ap is 100 ms, if got none
-    // during 120 ms, we can presume there is no ap on this channel
-    if (req->found != 0 && tout2 != 0 && req->found < req->max)
-    {
-        prvWifiScanChannel_(ch, tout2, req);
-    }
-}
-
-static void prvWifiScan(void *p)
-{
-    drvWifi_t *d = (drvWifi_t *)p;
-    prvWifiOpen();
-    if (d->context.scan_all)
-    {
-        for (unsigned n = 0; n < d->context.round; ++n)
-        {
-            for (uint8_t c = 1; c <= WIFI_CHANNEL_MAX; ++c)
-                prvWifiScanChannel(c, d->context.req->maxtimeout, d->context.req);
-        }
+        if (d->async_cb)
+            d->async_cb(&info, d->async_ctx);
     }
     else
     {
-        prvWifiScanChannel(d->context.channel, d->context.req->maxtimeout, d->context.req);
+        if (!prvSaveApInfo(d->cur_req, &info))
+        {
+            osiSemaphoreRelease(d->sema);
+            return;
+        }
     }
 
-    prvWifiClose();
-    osiSemaphoreRelease(d->sema_sync);
+    conf.b.apb_clear = 0;
+    hwp_wcnWlan->config_reg = conf.v;
+    REG_WAIT_FIELD_EQZ(conf, hwp_wcnWlan->config_reg, apb_clear);
 }
 
-static void prvWifiDestroy(drvWifi_t *w)
+static inline void prvStopScan(drvWifi_t *d)
 {
-    osiWorkQueueDelete(w->work_queue);
-    osiWorkDelete(w->work_scan);
-    osiMutexDelete(w->lock);
-    osiSemaphoreDelete(w->sema_sync);
-    free(w);
+    REG_WCN_WLAN_CONFIG_REG_T conf = {hwp_wcnWlan->config_reg};
+    conf.b.apb_clear = 1;
+    hwp_wcnWlan->config_reg = conf.v;
+    osiIrqDisable(d->irqn);
+}
+
+static inline void prvStartScan(drvWifi_t *d)
+{
+    REG_WCN_WLAN_CONFIG_REG_T conf = {hwp_wcnWlan->config_reg};
+    conf.b.apb_hold = 1;
+    conf.b.apb_clear = 0;
+    hwp_wcnWlan->config_reg = conf.v;
+
+    osiIrqEnable(d->irqn);
+}
+
+static void prvScanChannel_(drvWifi_t *d, uint8_t ch, wifiScanRequest_t *req, uint32_t tout)
+{
+    // acquire sema anyway
+    osiSemaphoreTryAcquire(d->sema, 0);
+    prvStartScan(d);
+
+    osiSemaphoreTryAcquire(d->sema, tout);
+    prvStopScan(d);
+}
+
+static void prvScanChannel(drvWifi_t *d, uint8_t ch, wifiScanRequest_t *req)
+{
+    uint32_t tout1 = WIFI_SCAN_MIN_INTERVAL;
+    if (tout1 > req->maxtimeout)
+        tout1 = req->maxtimeout;
+
+    d->cur_req = req;
+    uint32_t found = req->found;
+    prvWifiSetChannel(ch);
+    prvScanChannel_(d, ch, req, tout1);
+
+    if (found != req->found)
+    {
+        uint32_t tout2 = req->maxtimeout - tout1;
+        if (tout2 != 0)
+            prvScanChannel_(d, ch, req, tout2);
+    }
+}
+
+static void prvScanChannelAsync(drvWifi_t *d, uint8_t ch)
+{
+    prvWifiSetChannel(ch);
+    prvStartScan(d);
+}
+
+static void prvScanAllChannels(drvWifi_t *d, wifiScanRequest_t *req, uint32_t round)
+{
+    for (unsigned n = 0; n < round; ++n)
+    {
+        for (uint8_t c = 1; c <= WIFI_CHANNEL_MAX; ++c)
+        {
+            prvScanChannel(d, c, req);
+        }
+    }
 }
 
 drvWifi_t *drvWifiOpen()
@@ -195,24 +227,21 @@ drvWifi_t *drvWifiOpen()
     if (d == NULL)
         return NULL;
 
-    d->work_queue = osiWorkQueueCreate("wcn-wifi", 1, OSI_PRIORITY_NORMAL, 1024);
-    if (d->work_queue == NULL)
-        goto fail;
-
-    d->work_scan = osiWorkCreate(prvWifiScan, NULL, d);
-    if (d->work_scan == NULL)
+    d->wcn = drvWcnOpen(WCN_USER_WIFI);
+    if (d->wcn == NULL)
         goto fail;
 
     d->lock = osiMutexCreate();
     if (d->lock == NULL)
         goto fail;
 
-    d->sema_sync = osiSemaphoreCreate(1, 0);
-    if (d->sema_sync == NULL)
+    d->sema = osiSemaphoreCreate(1, 0);
+    if (d->sema == NULL)
         goto fail;
 
-    d->wcn = drvWcnOpen(WCN_USER_WIFI);
-
+    d->irqn = HAL_SYSIRQ_NUM(SYS_IRQ_ID_WCN_WLAN);
+    osiIrqSetHandler(d->irqn, prvWcnWlanISR, d);
+    osiIrqSetPriority(d->irqn, SYS_IRQ_PRIO_WCN_WLAN);
     return d;
 
 fail:
@@ -225,52 +254,85 @@ void drvWifiClose(drvWifi_t *d)
 {
     if (d)
     {
-        drvWcnClose(d->wcn);
+        prvWifiClose(d);
+        osiIrqDisable(d->irqn);
+        osiIrqSetHandler(d->irqn, NULL, NULL);
         prvWifiDestroy(d);
     }
 }
 
-bool drvWifiScanAllChannel(drvWifi_t *d, wifiScanRequest_t *req, uint32_t round)
+static bool prvLockCheckSetRunning(drvWifi_t *d)
 {
     osiMutexLock(d->lock);
-    osiSemaphoreTryAcquire(d->sema_sync, 0);
-    drvWcnRequest(d->wcn);
-
-    d->context.scan_all = true;
-    d->context.req = req;
-    d->context.round = round;
-    d->context.req->found = 0;
-    bool result = osiWorkEnqueue(d->work_scan, d->work_queue);
-    if (result)
+    if (d->running)
     {
-        osiSemaphoreAcquire(d->sema_sync);
+        osiMutexUnlock(d->lock);
+        return false;
     }
-    drvWcnRelease(d->wcn);
+    d->running = true;
+    return true;
+}
+
+bool drvWifiScanAllChannel(drvWifi_t *d, wifiScanRequest_t *req, uint32_t round)
+{
+    if (d == NULL || req == NULL)
+        return false;
+
+    if (!prvLockCheckSetRunning(d))
+        return false;
+
+    prvWifiOpen(d);
+    prvScanAllChannels(d, req, round);
+    prvWifiClose(d);
+
+    d->running = false;
     osiMutexUnlock(d->lock);
-    return result;
+
+    return true;
 }
 
 bool drvWifiScanChannel(drvWifi_t *d, wifiScanRequest_t *req, uint32_t channel)
 {
-    if (d == NULL || req == NULL)
-        return false;
-    if (channel < 1 || channel > WIFI_CHANNEL_MAX)
+    if (d == NULL || req == NULL || channel < 1 || channel > WIFI_CHANNEL_MAX)
         return false;
 
-    osiMutexLock(d->lock);
-    osiSemaphoreTryAcquire(d->sema_sync, 0);
-    drvWcnRequest(d->wcn);
+    if (!prvLockCheckSetRunning(d))
+        return false;
 
-    d->context.scan_all = false;
-    d->context.req = req;
-    d->context.channel = channel;
-    d->context.req->found = 0;
-    bool result = osiWorkEnqueue(d->work_scan, d->work_queue);
-    if (result)
-    {
-        osiSemaphoreAcquire(d->sema_sync);
-    }
-    drvWcnRelease(d->wcn);
+    prvWifiOpen(d);
+    prvScanChannel(d, channel, req);
+    prvWifiClose(d);
+
+    d->running = false;
     osiMutexUnlock(d->lock);
-    return result;
+    return true;
+}
+
+bool drvWifiScanAsyncStart(drvWifi_t *d, uint32_t ch, wifiScanAsyncCb_t cb, void *param)
+{
+    if (d == NULL || cb == NULL || !prvLockCheckSetRunning(d))
+        return false;
+
+    d->async = true;
+    d->async_cb = cb;
+    d->async_ctx = param;
+
+    prvWifiOpen(d);
+    prvScanChannelAsync(d, ch);
+    osiMutexUnlock(d->lock);
+
+    return true;
+}
+
+void drvWifiScanAsyncStop(drvWifi_t *d)
+{
+    osiMutexLock(d->lock);
+    if (d->running && d->async)
+    {
+        prvStopScan(d);
+        prvWifiClose(d);
+        d->async = false;
+        d->running = false;
+    }
+    osiMutexUnlock(d->lock);
 }

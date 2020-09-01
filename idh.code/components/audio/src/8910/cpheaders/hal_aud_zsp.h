@@ -580,8 +580,11 @@ typedef struct
     UINT32 streamStatus; /* stream status */
 
     //other paras
-    UINT16 channelMode;
-    UINT16 layer;
+    //UINT16 channelMode;
+    //UINT16 layer;
+    /* reuse channelMode and layer param space for poc mode sharemem ctrl*/
+    UINT16 readOffset;
+    UINT16 writeOffset;
     UINT32 bitrate;
 } AUDIO_OUTPUT_PARAM_T;
 

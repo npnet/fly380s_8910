@@ -118,7 +118,7 @@ static void prvHeadsetDetectWork(void *ctx)
                 d->notify_cb(d->notify_cb_ctx, MSG_HEADSET_PLUGOUT, 0);
 
             __sprd_codec_set_headset_connection_status(false);
-
+            d->type = DRV_HEADSET_TYPE_UNKNOWN_MIC_TYPE;
             drvPmicEicDisable(DRV_PMIC_EIC_AUDIO_HEAD_BUTTON);
         }
     }
@@ -282,5 +282,12 @@ void drvHandsetInit(void)
         if (d->notify_cb != NULL)
             d->notify_cb(d->notify_cb_ctx, MSG_HEADSET_PLUGIN, d->type);
     }
+}
+
+void drvGetHeadsetStatus(drvHeadSetStatus_t *status)
+{
+    drvHeadsetContext_t *d = &gDrvHeadsetCtx;
+    status->isplugin = d->s_headset_ctl.status;
+    status->mictype = d->type;
 }
 #endif

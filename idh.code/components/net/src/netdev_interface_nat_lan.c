@@ -134,7 +134,6 @@ wan_to_netdev_lan_datainput(struct pbuf *p, struct netif *nif)
     pbuf_free(p);
     if (!drvEtherTxReqSubmit(nc->ether, tx_req, size))
     {
-        drvEtherTxReqFree(nc->ether, tx_req);
         OSI_LOGW(0x0, "Wan to NC error %d", size);
         return -1;
     }
@@ -247,7 +246,7 @@ static void prvProcessNdevLanConnect(void *par)
         return;
 
     drvEtherSetULDataCB(nc->ether, prvEthLanUploadDataCB, nc);
-    if (!drvEtherOpen(nc->ether))
+    if (!drvEtherNetUp(nc->ether))
     {
         OSI_LOGI(0x10007575, "NC connect ether open fail");
         prvNdevLanSessionDelete(nc->session);
@@ -268,7 +267,7 @@ void netdevLanConnect()
 void netdevLanDisconnect()
 {
     netdevIntf_t *nc = &gNetIntf;
-    drvEtherClose(nc->ether);
+    drvEtherNetDown(nc->ether);
     prvNdevLanSessionDelete(nc->session);
     nc->session = NULL;
     if (nc->connect_timer != NULL)
@@ -296,7 +295,7 @@ void netdevLanNetUp(uint8_t nSimID, uint8_t nCID)
         return;
 
     drvEtherSetULDataCB(nc->ether, prvEthLanUploadDataCB, nc);
-    if (!drvEtherOpen(nc->ether))
+    if (!drvEtherNetUp(nc->ether))
     {
         OSI_LOGI(0x10007578, "NC net up ether open fail.");
         prvNdevLanSessionDelete(nc->session);
@@ -315,7 +314,7 @@ void netdevLanNetDown(uint8_t nSimID, uint8_t nCID)
         if ((inp_netif != NULL) && ((nSimID << 4 | nCID) == inp_netif->sim_cid))
         {
             OSI_LOGI(0x1000757a, "netdevNetDown");
-            drvEtherClose(nc->ether);
+            drvEtherNetDown(nc->ether);
             prvNdevLanSessionDelete(nc->session);
             nc->session = NULL;
         }
