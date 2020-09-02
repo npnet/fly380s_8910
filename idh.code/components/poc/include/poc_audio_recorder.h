@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -83,7 +83,24 @@ bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE recorder_id);
  *
  * return true is recording
  */
-bool pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id);
+int pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id);
+
+/*
+    name : lv_poc_start_recordwriter
+   param : none
+  author : wangls
+describe : 开始录音
+    date : 2020-09-01
+*/
+void lv_poc_start_recordwriter(void);
+/*
+    name : lv_poc_start_playfile
+   param : none
+  author : wangls
+describe : 播放录音文件
+    date : 2020-09-01
+*/
+void lv_poc_start_playfile(void);
 
 OSI_EXTERN_C_END
 

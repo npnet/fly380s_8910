@@ -394,6 +394,7 @@ void lv_poc_shutdown_task(lv_task_t * task)
 	}
 	else if(user_data_type == LVPOCSHUTDOWN_TYPE_REBOOT)
 	{
+		osiSetBootCause(OSI_BOOTCAUSE_PWRKEY);/*as reboot*/
 		osiShutdown(OSI_SHUTDOWN_RESET);
 	}
 

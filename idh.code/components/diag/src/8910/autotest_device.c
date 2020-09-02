@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -1293,7 +1293,11 @@ static uint32_t _handleMiscTest(
 
     case MISC_AUD_HEADSETCHECK:
         OSI_LOGI(0, "bbat: check headset and mic");
+		#ifdef CONFIG_HEADSET_DETECT_SUPPORT
         drvGetHeadsetStatus(&status);
+		#else
+		memset(&status, 0 , sizeof(drvHeadSetStatus_t));
+		#endif
         if (status.isplugin == 1)
         {
             respMsg.subtype = BBAT_SUCCESS;
@@ -2036,7 +2040,11 @@ static uint32_t _handleMicAutotest(
     OSI_LOGI(0, "bbat mic test, command=%d data=%d", msg_head_mic->command, msg_head_mic->data);
 
     auMemWriter_t *writer = (gBbatRecorder == NULL) ? NULL : (auMemWriter_t *)auRecorderGetWriter(gBbatRecorder);
-    drvGetHeadsetStatus(&status);
+	#ifdef CONFIG_HEADSET_DETECT_SUPPORT
+	drvGetHeadsetStatus(&status);
+	#else
+	memset(&status, 0 , sizeof(drvHeadSetStatus_t));
+	#endif
     switch (msg_head_mic->command)
     {
     case 0x01: // init recoding ,open mic

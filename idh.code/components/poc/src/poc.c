@@ -60,8 +60,8 @@ static void pocIdtStartHandleTask(void * ctx)
 	pocAudioPlayerSound();/*new player test*/
 	#endif
 	osiThreadSleep(2000);
-	/*login task*/
 	lvPocGuiIdtCom_log();
+
 	osiThreadExit();
 }
 
@@ -73,6 +73,9 @@ static void pocStartAnimation(void *ctx)
 	lv_task_t * task = lv_task_create(lv_poc_network_config_task,
 		50, LV_TASK_PRIO_HIGH, NULL);
 	lv_task_once(task);
+
+	/*set audev*/
+	lv_poc_set_audev_in_out(AUDEV_INPUT_MAINMIC, AUDEV_OUTPUT_RECEIVER);
 
 	if(lv_poc_watchdog_power_on_mode == false)
 	{
@@ -167,6 +170,7 @@ void pocStart(void *ctx)
 		//设备为充电启动||设备充电启动并且从PSM唤醒启动
 	{
 		OSI_LOGI(0, "[song]poc boot mode is charge power on");
+		poc_set_red_blacklight(true);
 		lvGuiInit(pocLvgl_ShutdownCharge_Start);
 	}//看门狗重启
 	else if(boot_causes == OSI_BOOTCAUSE_WDG

@@ -9492,7 +9492,7 @@
     ITEM_NAME    = nw_sim_freq_band[0]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xEC
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 944
     ITEM_PARENT  = 943
     ITEM_DESC    =  
@@ -9502,7 +9502,7 @@
     ITEM_NAME    = nw_sim_freq_band[1]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xEC
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 945
     ITEM_PARENT  = 943
     ITEM_DESC    =  

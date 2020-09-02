@@ -179,11 +179,13 @@ void halBootCauseMode(void)
         if (por_src_flag.v & (1 << 6))
             osiSetBootCause(OSI_BOOTCAUSE_ALARM);
 
+		if (chgr_status.b.chgr_int && chgr_status.b.chgr_on)
+            osiSetBootCause(OSI_BOOTCAUSE_CHARGE);
     }
-
+	#if 0
     if (chgr_status.b.chgr_int && chgr_status.b.chgr_on)
             osiSetBootCause(OSI_BOOTCAUSE_CHARGE);
-
+	#endif
 
     REG_ADI_CHANGE1(hwp_rda2720mGlobal->por_src_flag, por_src_flag,
                     reg_soft_rst_flg_clr, 1); // clear bit14
@@ -621,8 +623,8 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
         REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_pd_ctrl, bltc_pd_ctrl,
                         hw_pd, 0,
                         sw_pd, enabled ? 0 : 1);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x0);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x0);
         REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x20);
         REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v3, rg_rgb_v3, rg_rgb_v3, 0x20);
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, enabled ? 1 : 0);

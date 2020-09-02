@@ -8,8 +8,8 @@ extern "C" {
 
 #define AT_SNTP_SERVER_MAX_LENTH 128
 
-/*授时中心IP地址 美国时间*/
-static char *serverip = "40.81.188.85";//40.81.188.85 //210.72.145.44
+/*授时中心*/
+static char *serverip = "time.windows.com";
 
 /*sntp 外部定义函数*/
 extern CFW_SNTP_CONFIG *sntpClient;

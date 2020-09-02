@@ -148,8 +148,8 @@ static uint16_t chg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
 static chgDischarge_t dischg_param =
     {
         3400, //warning_vol
-        3300, //shutdown_vol
-        3000, //deadline_vol
+        3350, //shutdown_vol
+        3300, //deadline_vol
         24,   //warning_count,warning interval
 };
 

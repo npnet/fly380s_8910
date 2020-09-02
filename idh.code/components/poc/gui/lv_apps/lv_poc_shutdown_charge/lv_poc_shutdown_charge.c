@@ -5,6 +5,9 @@ extern "C" {
 #include "lv_include/lv_poc.h"
 #include <stdlib.h>
 #include "lv_gui_main.h"
+#include "hal_chip.h"
+#include "drv_lcd_v2.h"
+#include "drv_names.h"
 
 /*掉电多长时间后关机*/
 #define POC_CHARGE_POWER_DOWN_TIME 1/*2000*/
@@ -59,6 +62,7 @@ void lv_poc_shutdown_charge_Animation_Task(void *ctx)
 {
 	lv_poc_shutdown_charge_power_on_logo();
 	poc_charge_poweron_status = true;//为充电开机
+	lv_poc_set_power_on_status(true);/*设备就绪*/
 	//lv刷新图标
 	lv_task_create(lv_poc_charge_poweron_battery_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_800
 	, LV_TASK_PRIO_HIGH, NULL);
@@ -84,6 +88,10 @@ void lv_poc_shutdown_charge_power_on_logo(void)
 	//魔方图片
 	lv_poc_refr_task_once(lv_poc_show_sprd_image, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGHEST);
 	osiThreadSleep(3000);
+
+	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+	drvLcdSetBackLightEnable(lcd, true);
+	poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
 	//熄屏时间
 	lvGuiSetInactiveTimeout(8000);
 	lv_obj_del(poc_power_on_backgroup_sprd_image);

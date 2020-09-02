@@ -21,10 +21,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+
 /*add adc*/
 #include "drv_adc.h"
 #include "hwregs/8910/rda2720m_adc.h"
 #include "hal_adi_bus.h"
+#include "hal_adi_bus.h"/*register include*/
+#include "hwreg_access.h"
 
 static nv_poc_setting_msg_t poc_setting_conf_local = {0};
 static nv_poc_theme_msg_node_t theme_white = {0};
@@ -78,6 +81,8 @@ static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
 
 static uint16_t poc_cur_unopt_status;
+static void poc_Lcd_Set_BackLightNess(uint32_t level);
+static void poc_SetPowerLevel(uint32_t mv);
 
 /*
       name : lv_poc_get_keypad_dev
@@ -396,12 +401,98 @@ poc_get_lcd_status(void)
 /*
       name : poc_set_lcd_blacklight
     return : set lcd blacklight
-      date : 2020-03-30
+      date : 2020-08-27
 */
 void
 poc_set_lcd_blacklight(IN int8_t blacklight)
 {
-	drvLcdSetBackLightNess(NULL, blacklight);
+	poc_Lcd_Set_BackLightNess(blacklight);
+}
+
+/*
+      name : poc_Lcd_Set_BackLightNess
+    return : set lcd backlight level
+      date : 2020-08-27
+*/
+static
+void poc_Lcd_Set_BackLightNess(uint32_t level)
+{
+	uint32_t backlightness = level;
+
+	if(backlightness >= POC_LCD_BACKLIGHT_LEVEL_END)
+	{
+		backlightness = POC_LCD_BACKLIGHT_LEVEL_8;
+	}
+	else if(backlightness < POC_LCD_BACKLIGHT_LEVEL_0)
+	{
+		backlightness = POC_LCD_BACKLIGHT_LEVEL_0;
+	}
+
+	poc_SetPowerLevel(backlightness);
+}
+
+/*
+      name : poc_SetPowerLevel
+    return : set lcd power register
+      date : 2020-08-27
+*/
+static
+void poc_SetPowerLevel(uint32_t mv)
+{
+	REG_RDA2720M_BLTC_RG_RGB_V0_T rg_rgb_v0;
+    REG_RDA2720M_BLTC_RG_RGB_V1_T rg_rgb_v1;
+
+    switch (mv)
+    {
+    case POC_LCD_BACKLIGHT_LEVEL_0:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x00);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x00);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_1:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x04);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x04);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_2:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x08);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x08);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_3:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x0c);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x0c);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_4:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x10);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x10);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_5:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x14);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x14);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_6:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x18);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x18);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_7:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x1c);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x1c);
+        break;
+
+    case POC_LCD_BACKLIGHT_LEVEL_8:
+		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
+        break;
+
+    default:
+        // ignore silently
+        break;
+    }
 }
 
 static osiThread_t * prv_play_btn_voice_one_time_thread = NULL;
@@ -1875,12 +1966,61 @@ void poc_group_page_down_key_irq(void *ctx)
 }
 
 /*
+	  name : lv_poc_set_audev_in_out
+	 param : none
+	author : wangls
+  describe : set audev type
+	  date : 2020-08-31
+*/
+bool
+lv_poc_set_audev_in_out(audevInput_t in_type, audevOutput_t out_type)
+{
+	audevSetOutput((audevOutput_t)out_type);
+	audevSetInput((audevInput_t)in_type);
+	return true;
+}
+/*
+    name : lv_poc_get_mic_gain
+   param : none
+  author : wangls
+describe : 获取mic增益
+    date : 2020-09-01
+*/
+bool lv_poc_get_mic_gain(void)
+{
+    uint8_t mode = 0;
+    uint8_t path = 0;
+    uint16_t anaGain = 0;
+    uint16_t adcGain = 0;
+
+    audevGetMicGain(mode, path, &anaGain, &adcGain);
+    OSI_LOGI(0, "[song]normal mode is = %d, path is =%d , anaGain is = %d, adcGain is = %d",
+        mode, path, anaGain, adcGain);
+
+    return true;
+}
+
+/*
+    name : lv_poc_set_record_mic_gain
+   param : none
+  author : wangls
+describe : 设置record mic增益
+    date : 2020-09-01
+*/
+void lv_poc_set_record_mic_gain(void)
+{
+	bool setstatus = audevSetRecordMicGain(mode, path, anaGain, adcGain);
+    OSI_LOGI(0, "[song] set record mode is = %d, path is =%d , anaGain is = %d, adcGain is = %d, setstatus is = %d",
+        mode, path, anaGain, adcGain, setstatus);
+    return true;
+}
+
+/*
 	  name : poc_sos_key_irq
 	 param : none
 	author : wangls
   describe : sos 中断
 	  date : 2020-08-14
-*/
 static
 void poc_sos_key_irq(void *ctx)
 {
@@ -1893,6 +2033,27 @@ void poc_sos_key_irq(void *ctx)
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"SOS功能", (const uint8_t *)"未设置");
 		OSI_LOGI(0, "[song]sos key is press\n");
 	}
+}
+
+/*
+	name : lv_poc_set_record_mic_gain
+	param : none
+  author : wangls
+describe : 设置record mic增益
+	date : 2020-09-01
+*/
+bool lv_poc_get_record_mic_gain(void)
+{
+	uint8_t mode = MUSICRECORD;
+	uint8_t path = Handfree;
+	uint16_t anaGain = 0;
+	uint16_t adcGain = 0;
+
+	audevGetRecordMicGain(mode, path, &anaGain, &adcGain);
+	OSI_LOGI(0, "[song]record mode is = %d, path is =%d , anaGain is = %d, adcGain is = %d",
+		mode, path, anaGain, adcGain);
+
+	return true;
 }
 
 /*

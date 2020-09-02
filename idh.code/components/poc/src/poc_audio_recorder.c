@@ -418,7 +418,7 @@ bool pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
 	{
 		recorder->status = false;
 	}
-	return ret;
+	return auRecorderGetStatus(recorder->recorder);//recorder->status;
 }
 
 /**
@@ -509,7 +509,7 @@ bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE       recorder_id)
  *
  * return true is recording
  */
-bool pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id)
+int pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id)
 {
 	if(recorder_id == 0)
 	{
@@ -519,6 +519,63 @@ bool pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id)
 
 	return recorder->status;
 }
+
+#if 1
+/*自测录音*/
+#define RECORDER_FILE_NAME "/example.pcm"
+static auWriter_t *pocwriter = NULL;
+static auRecorder_t *pocrecorder = NULL;
+extern ssize_t vfs_file_size(const char *path);
+/*
+	 name : lv_poc_start_recordwriter
+	param : none
+  author : wangls
+describe : 开始录音
+	 date : 2020-09-01
+*/
+void lv_poc_start_recordwriter(void)
+{
+	 pocwriter = (auWriter_t *)auFileWriterCreate(RECORDER_FILE_NAME);
+	 pocrecorder = auRecorderCreate();
+	 auRecorderStartWriter(pocrecorder, AUDEV_RECORD_TYPE_MIC, AUSTREAM_FORMAT_PCM, NULL, pocwriter);
+}
+/*
+	 name : lv_poc_stop_recordwriter
+	param : none
+  author : wangls
+describe : 停止录音
+	 date : 2020-09-01
+*/
+static
+void lv_poc_stop_recordwriter(void)
+{
+	 if(pocrecorder == NULL || pocwriter == NULL)
+	 {
+		 return ;
+	 }
+	 auRecorderStop(pocrecorder);
+	 auRecorderDelete(pocrecorder);
+	 auWriterDelete(pocwriter);
+	 vfs_file_size(RECORDER_FILE_NAME);
+}
+/*
+	 name : lv_poc_start_playfile
+	param : none
+  author : wangls
+describe : 播放录音文件
+	 date : 2020-09-01
+*/
+void lv_poc_start_playfile(void)
+{
+	 lv_poc_stop_recordwriter();/*stop record*/
+	 auPlayer_t *player = auPlayerCreate();
+	 auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
+	 auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
+	 auPlayerStartFile(player, AUSTREAM_FORMAT_PCM, params, RECORDER_FILE_NAME);
+	 auPlayerWaitFinish(player, OSI_WAIT_FOREVER);
+	 auPlayerDelete(player);
+}
+#endif
 
 #endif
 

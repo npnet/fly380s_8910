@@ -236,6 +236,12 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 
     d->keypad_pending = false;
     osiExitCritical(critical);
+
+	if(!lv_poc_get_poweron_is_ready())
+	{
+		return false;
+	}
+
     if (keypad_pending)
     {
         data->state = (last_key_state & KEY_STATE_RELEASE) ? LV_INDEV_STATE_REL : LV_INDEV_STATE_PR;

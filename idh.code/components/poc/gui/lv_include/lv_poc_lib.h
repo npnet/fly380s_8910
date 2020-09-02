@@ -10,6 +10,7 @@
 #include "hal_iomux.h"
 #include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
 #include "guiIdtCom_api.h"
+#include "audio_types.h"
 
 #define LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE (10)
 
@@ -825,6 +826,34 @@ uint8_t lv_poc_get_adc_to_volum(void);
 */
 LVPOCIDTCOM_UNREFOPT_SignalType_t
 lv_poc_opt_refr_status(LVPOCIDTCOM_UNREFOPT_SignalType_t status);
+
+/*
+	  name : lv_poc_set_audev_in_out
+	 param : none
+	author : wangls
+  describe : set audev type
+	  date : 2020-08-31
+*/
+bool
+lv_poc_set_audev_in_out(audevInput_t in_type, audevOutput_t out_type);
+
+/*
+	name : lv_poc_get_record_mic_gain
+	param : none
+  author : wangls
+describe : 获取record mic增益
+	date : 2020-09-01
+*/
+bool lv_poc_get_record_mic_gain(void);
+
+/*
+	name : lv_poc_set_record_mic_gain
+	param : none
+  author : wangls
+describe : 设置record mic增益
+	date : 2020-09-01
+*/
+bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_path path, lv_poc_record_mic_anaGain anaGain, lv_poc_record_mic_adcGain adcGain);
 
 #ifdef __cplusplus
 }

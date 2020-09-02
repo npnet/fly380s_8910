@@ -1,4 +1,5 @@
-﻿
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -132,7 +133,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_style_t * style_label;
     poc_setting_conf = lv_poc_setting_conf_read();
     style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_about_label;
-    style_label->text.font = (lv_font_t *)poc_setting_conf->font.list_btn_small_font;
+    style_label->text.font = (lv_font_t *)poc_setting_conf->font.about_label_current_font;
 
 	int label_array_size = sizeof(lv_poc_about_label_array)/sizeof(lv_poc_about_label_struct_t);
 	lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
@@ -156,7 +157,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	strcpy(lv_poc_about_text_model, "FLY380S");
 
 	lv_poc_about_text_version[0] = 0;
-	strcpy(lv_poc_about_text_version, "V1.0");
+	strcpy(lv_poc_about_text_version, "V35.2-D9.3");
 
 	lv_poc_about_text_update[0] = 0;
 	strcpy(lv_poc_about_text_update, "检查更新");
@@ -176,9 +177,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 
 		lv_label_set_text(label, lv_poc_about_label_content[i]);
 
-		lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
+		lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
 		lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-		lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL);
+		lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
 		lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
 
 		lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
@@ -214,7 +215,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	btn_label = lv_list_get_btn_label(btn);
 	label = lv_label_create(btn, NULL);
 	btn->user_data = (void *)label;
-	lv_label_set_text(label, "V1.0");
+	lv_label_set_text(label, lv_poc_about_text_version);
 	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
 	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
 	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
@@ -243,7 +244,6 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
 	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
 	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
-
 
     lv_list_set_btn_selected(list, btn_array[0]);
 }

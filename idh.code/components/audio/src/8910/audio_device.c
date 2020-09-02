@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -1455,7 +1455,7 @@ OSI_UNUSED static unsigned prvAudInUpdate(AUD_ZSP_SHAREMEM_T *p, void *buf, unsi
         }
     }
 
-    /*OSI_LOGI(0, "1read_availBytes = %d,need_bytes = %d,readoffset:%d, writeoffset:%d \n", 
+    /*OSI_LOGI(0, "1read_availBytes = %d,need_bytes = %d,readoffset:%d, writeoffset:%d \n",
 	bytes-size,size,p->audInPara.readOffset,p->audInPara.writeOffset);*/
 
     return size;
@@ -2739,7 +2739,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     if (frame == NULL)
         return false;
 
-    OSI_LOGI(0, "audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
+    OSI_LOGI(0, "[song]audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
              frame->sample_format, frame->channel_count,
              frame->sample_rate, d->clk_users);
 
@@ -2751,7 +2751,9 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     if (frame->sample_format != AUSAMPLE_FORMAT_S16)
         return false;
     if (frame->channel_count != 1 && frame->channel_count != 2)
+    {
         return false;
+    }
 
     osiMutexLock(d->lock);
     d->play.type = type;
@@ -2893,15 +2895,19 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         memcpy(&(d->play.stream), &stream, sizeof(HAL_AIF_STREAM_T));
         memcpy(&(d->play.level), &level, sizeof(AUD_LEVEL_T));
 
+		/*open pa*/
 		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
-	    {
-		    extern bool poc_set_ext_pa_status(bool open);
+		{
+			extern bool poc_set_ext_pa_status(bool open);
 			poc_set_ext_pa_status(true);
-			OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d\n", __LINE__);
-	    }
+
+			OSI_LOGI(0, "[songpa] open");
+		}
 
         osiWorkEnqueue(d->ipc_work, d->wq);
         osiMutexUnlock(d->lock);
+
+		OSI_LOGI(0, "[song]audio type AUDEV_PLAY_TYPE_LOCAL");
         return true;
     }
     else if (type == AUDEV_PLAY_TYPE_VOICE)
@@ -2958,25 +2964,6 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         }
         return true;
     }
-    else if (type == AUDEV_PLAY_TYPE_POC) //poc
-    {
-        if (d->clk_users != 0) // disable when any other users is working
-            goto failed;
-        if ((frame->sample_rate != 8000) && (frame->sample_rate != 16000)) //only support 8k 16k
-            goto failed;
-        if (frame->sample_rate != d->cfg.sample_rate) //only support play and record in same sample rate
-            goto failed;
-
-        d->play.channel_count = frame->channel_count;
-        d->play.sample_rate = frame->sample_rate;
-        d->play.total_bytes = 0;
-        d->play.eos_error = false;
-        d->play.ops = *play_ops;
-        d->play.ops_ctx = play_ctx;
-
-        osiMutexUnlock(d->lock);
-        return true;
-    }
 
 failed_disable_clk:
 #ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
@@ -3005,15 +2992,16 @@ bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
 bool audevStopPlayV2(void)
 {
     audevContext_t *d = &gAudevCtx;
-    OSI_LOGI(0, "audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
+    OSI_LOGI(0, "[song]audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
 
     osiMutexLock(d->lock);
 
-	if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+    if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
     {
 	    extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(false);
-		OSI_LOGI(0, "[poc][audio][PA] audio_device line <- %d\n", __LINE__);
+
+		OSI_LOGI(0, "[songpa] close");
     }
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
@@ -3101,7 +3089,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
     if (rec_ops == NULL || rec_ops->put_frame == NULL)
         return false;
 
-    OSI_LOGI(0, "audio record start, type/%d user/0x%x", type, d->clk_users);
+    OSI_LOGI(0, "[song]audio record start, type/%d user/0x%x", type, d->clk_users);
 
     osiMutexLock(d->lock);
 
@@ -3337,7 +3325,7 @@ failed:
 bool audevStopRecord(void)
 {
     audevContext_t *d = &gAudevCtx;
-    OSI_LOGI(0, "audio record stop, user/0x%x", d->clk_users);
+    OSI_LOGI(0, "[song]audio record stop, user/0x%x", d->clk_users);
 
     osiMutexLock(d->lock);
 
