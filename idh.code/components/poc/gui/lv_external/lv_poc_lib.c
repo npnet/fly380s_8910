@@ -1805,8 +1805,8 @@ describe : 获取record mic增益
 */
 bool lv_poc_get_record_mic_gain(void)
 {
-	uint8_t mode = 0;
-	uint8_t path = 0;
+	uint8_t mode = MUSICRECORD;
+	uint8_t path = Handfree;
 	uint16_t anaGain = 0;
 	uint16_t adcGain = 0;
 
@@ -1827,9 +1827,9 @@ describe : 设置record mic增益
 */
 bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_path path, lv_poc_record_mic_anaGain anaGain, lv_poc_record_mic_adcGain adcGain)
 {
-	audevSetRecordMicGain(mode, path, anaGain, adcGain);
-	OSI_LOGI(0, "[song] set record mode is = %d, path is =%d , anaGain is = %d, adcGain is = %d",
-		mode, path, anaGain, adcGain);
+	bool setstatus = audevSetRecordMicGain(mode, path, anaGain, adcGain);
+	OSI_LOGI(0, "[song] set record mode is = %d, path is =%d , anaGain is = %d, adcGain is = %d, setstatus is = %d",
+		mode, path, anaGain, adcGain, setstatus);
 	return true;
 }
 
