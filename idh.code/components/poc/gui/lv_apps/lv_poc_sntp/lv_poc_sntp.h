@@ -16,7 +16,7 @@ extern "C" {
   describe : 网络更新时间
 	  date : 2020-06-09
 */
-void lv_poc_sntp_Update_Time(void *sntpopt);
+void lv_poc_sntp_Update_Time(void);
 
 
 #ifdef __cplusplus

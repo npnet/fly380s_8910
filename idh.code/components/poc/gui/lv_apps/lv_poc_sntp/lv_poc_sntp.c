@@ -8,13 +8,13 @@ extern "C" {
 
 #define AT_SNTP_SERVER_MAX_LENTH 128
 
-/*授时中心IP地址 美国时间*/
-static char *serverip = "40.81.188.85";//40.81.188.85 //210.72.145.44
-static CFW_SNTP_CONFIG *sntpClientOpt = NULL;
+/*授时中心*/
+static char *serverip = "time.windows.com";
 
 /*sntp 外部定义函数*/
 extern void sntpConfigInit();
 extern sntp_status_t sntpUpdateStart();
+extern CFW_SNTP_CONFIG *sntpClient;
 
 /*外部nas信令校时*/
 extern bool Net_Time_flag;
@@ -27,45 +27,41 @@ extern bool Net_Time_flag;
   describe : 网络更新时间
 	  date : 2020-06-09
 */
-void lv_poc_sntp_Update_Time(void *sntpopt)
+void lv_poc_sntp_Update_Time(void)
 {
 	sntp_status_t result;//同步更新时间结果
-	sntpClientOpt =(CFW_SNTP_CONFIG *)sntpopt;
+
 	if(Net_Time_flag == true) return;//外部已通过nas信令完成校时 判断为移动或电信卡
 
-	if (sntpClientOpt == NULL)
+	if (sntpClient == NULL)
 	{
 		sntpConfigInit();
-		if (sntpClientOpt == NULL)
+		if (sntpClient == NULL)
 		{
-			OSI_LOGI(0, "[song]AT_CmdFunc_SNTP:  malloc failed,ERR_AT_CME_NO_MEMORY\n");
+			OSI_LOGI(0, "[song]sntpClient NULL\n");
 		}
 	}
-	else
-	{
-		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP:  sync time processing,ERR_AT_CME_SNTP_SYNCING\n");
-	}
 
-	strncpy(sntpClientOpt->cServer, serverip, AT_SNTP_SERVER_MAX_LENTH);
-	sntpClientOpt->cServer[AT_SNTP_SERVER_MAX_LENTH] = '\0';
+	strncpy(sntpClient->cServer, serverip, AT_SNTP_SERVER_MAX_LENTH);
+	sntpClient->cServer[AT_SNTP_SERVER_MAX_LENTH] = '\0';
 
-	OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]AT_CmdFunc_SNTP: ntpServer = %s", sntpClientOpt->cServer);
+	OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]ntpServer = %s", sntpClient->cServer);
 
-	result = sntpUpdateStart(sntpClientOpt);
+	result = sntpUpdateStart(sntpClient);
 
 	if (result == CFW_SNTP_READY)
 	{
-		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP: CFW_SNTP_READY\n");
+		OSI_LOGI(0, "[song]sntp ready\n");
 	}
 	else if (result == CFW_SNTP_PARAM_INVALID)
 	{
-		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP: CFW_SNTP_PARAM_INVALID\n");
-		free(sntpClientOpt);//ERR_AT_CME_PARAM_INVALID
-		sntpClientOpt = NULL;
+		OSI_LOGI(0, "[song]param invalid\n");
+		free(sntpClient);
+		sntpClient = NULL;
 	}
 	else
 	{
-		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP:  sync time is processing,ERR_AT_CME_SNTP_SYNCING\n");
+		OSI_LOGI(0, "[song]sync time is processing!\n");
 	}
 
 }

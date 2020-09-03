@@ -150,10 +150,7 @@ void AT_CmdFunc_SNTP(atCommand_t *cmd)
                 RETURN_CME_ERR(engine, ERR_AT_CME_PARAM_INVALID);
             }
         }
-		/*add your func*/
-		extern void lv_poc_sntp_Update_Time(void *sntpopt);
-		lv_poc_sntp_Update_Time(sntpClient);
-		return;
+
         if (sntpClient == NULL)
         {
             sntpConfigInit();
