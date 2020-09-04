@@ -564,7 +564,7 @@ bool lv_poc_setting_init(void)
 	lv_poc_ear_ppt_key_init();
 	lv_poc_ppt_key_init();
 	lv_poc_key_init();
-	lv_poc_set_adc_current_sense(true);
+	//lv_poc_set_adc_current_sense(true);
 	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 
     return true;

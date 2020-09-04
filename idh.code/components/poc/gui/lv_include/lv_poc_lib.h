@@ -26,9 +26,9 @@ enum {
 	poc_green_led   = 13,//IO greenled
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set  = 8,//IO headset
-    poc_group_page_up  = 20,//IO volum up
+    poc_group_page_up  = 20,//group up page
     poc_ppt       = 21,//IO ppt
-    poc_group_page_down  = 18,//IO volum down
+    poc_group_page_down  = 18,//group down page
     poc_sos  = 19,//IO sos
 };
 
@@ -744,36 +744,6 @@ bool lv_poc_get_earppt_state(void);
 char *lv_poc_get_self_name_count(void);
 
 /*
-	  name : poc_set_touch_blacklight
-	 param : none
-	author : wangls
-  describe : 配置手电筒
-	  date : 2020-08-08
-*/
-void
-poc_set_touch_blacklight(bool status);
-
-/*
-	  name : poc_set_red_blacklight
-	 param : none
-	author : wangls
-  describe : 配置RED
-	  date : 2020-08-08
-*/
-void
-poc_set_red_blacklight(bool status);
-
-/*
-	  name : poc_set_green_blacklight
-	 param : none
-	author : wangls
-  describe : 配置GREEN
-	  date : 2020-08-08
-*/
-void
-poc_set_green_blacklight(bool status);
-
-/*
 	  name : lv_poc_get_ppt_state
 	 param : none
 	author : wangls
@@ -786,7 +756,7 @@ bool lv_poc_get_ppt_state(void);
 	  name : lv_poc_key_init
 	 param : none
 	author : wangls
-  describe : volum key 配置
+  describe : poc key 配置
 	  date : 2020-08-14
 */
 void lv_poc_key_init(void);
@@ -854,6 +824,22 @@ describe : 设置record mic增益
 	date : 2020-09-01
 */
 bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_path path, lv_poc_record_mic_anaGain anaGain, lv_poc_record_mic_adcGain adcGain);
+
+/*
+	  name : lv_poc_set_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+void
+lv_poc_set_power_on_status(bool status);
+
+/*
+	  name : lv_poc_get_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+bool
+lv_poc_get_poweron_is_ready(void);
 
 #ifdef __cplusplus
 }

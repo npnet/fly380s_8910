@@ -19,7 +19,11 @@
         "keyout_2",
         "keyout_3",
         "keyout_4",
-        "keyout_5"
+        "keyout_5",
+        "gpio_18",
+        "gpio_19",
+        "gpio_20",
+        "gpio_21"
     ],
     "fun_prop": {
         "sim_1_clk": {
@@ -66,6 +70,18 @@
         },
         "keyout_5": {
             "pull": "pull_none"
+        },
+        "gpio_18": {
+            "pull": "pull_up_1"
+        },
+        "gpio_19": {
+            "pull": "pull_up_1"
+        },
+        "gpio_20": {
+            "pull": "pull_up_1"
+        },
+        "gpio_21": {
+            "pull": "pull_up_1"
         }
     },
     "fun_def_pad": {
@@ -85,7 +101,6 @@
         "aud_sclk": "aud_sclk",
         "camera_pwdn": "camera_pwdn",
         "camera_ref_clk": "camera_ref_clk",
-        "camera_rst_l": "camera_rst_l",
         "debug_clk": "gpio_0",
         "debug_host_clk": "debug_host_clk",
         "debug_host_rx": "debug_host_rx",
@@ -113,10 +128,9 @@
         "gpio_15": "gpio_15",
         "gpio_16": "i2c_m1_scl",
         "gpio_17": "i2c_m1_sda",
-        "gpio_18": "camera_rst_l",
+        "camera_rst_l": "camera_rst_l",
         "gpio_19": "gpio_19",
         "gpio_2": "gpio_2",
-        "gpio_20": "camera_ref_clk",
         "gpio_21": "gpio_21",
         "gpio_22": "gpio_22",
         "gpio_23": "gpio_23",
@@ -260,11 +274,13 @@
         "spi_lvds_cs": "spi_camera_si_1",
         "spi_lvds_di": "camera_ref_clk",
         "spi_lvds_do": "spi_camera_si_0",
-        "uart_1_cts": "gpio_18",
+        "gpio_18": "gpio_18",
+        "uart_1_cts": "sim_2_dio",
         "uart_1_rts": "gpio_19",
         "uart_1_rxd": "uart_1_rxd",
         "uart_1_txd": "uart_1_txd",
-        "uart_2_rxd": "gpio_20",
+        "gpio_20": "gpio_20",
+        "uart_2_rxd": "sdmmc1_data_0",
         "uart_2_txd": "gpio_21",
         "uart_3_rxd": "keyout_4",
         "uart_3_txd": "keyout_5",

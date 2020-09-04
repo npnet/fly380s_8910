@@ -36,6 +36,9 @@
 
 // #define DEBUG_NOT_START_CP
 
+/*Ê¹ÄÜGPIO8µÄVBAT*/
+#define EN_POWER_VBAT_RF 0
+
 #define SUPPORT_SOFTLZMA
 #undef SUPPORT_HARDLZMA2
 #define SUPPORT_HARDLZMA3
@@ -284,7 +287,9 @@ bool halCpLoad(void)
 #endif
 
 #ifdef CONFIG_GPIO_USED_FOR_VBAT_RF_SWITCH
+	#if EN_POWER_VBAT_RF
     halPmuSwitchPower(HAL_POWER_VBAT_RF, true, false);
+	#endif
 #endif
 
     halShmemUpdateRamAccess();

@@ -51,6 +51,7 @@ static drvGpio_t * poc_sos_gpio = NULL;
 static drvGpio_t * poc_ppt_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
+static bool poc_power_on_status = false;
 
 /*********************volum***********************/
 
@@ -1151,7 +1152,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
-	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
+	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 13);
 	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 45);//主界面时间time
 	poc_setting->font.idle_date_label_font = (uint32_t)LV_POC_FONT_MSYH(2500, 18);//主界面日期label
 	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
@@ -1237,8 +1238,9 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 #endif
 	poc_setting->font.big_font_switch = 1;
 	poc_setting->font.list_page_colum_count = 3;
+	/*close font---南极星统一使用小号字体*/
 	poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
-	poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
+	poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
 	poc_setting->volume = 5;
 	poc_setting->language = 0;
 #ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
@@ -1279,14 +1281,16 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 	if(poc_setting->font.big_font_switch == 0)
 	{
 		poc_setting->font.list_page_colum_count = 4;
+		/*close font---南极星统一使用小号字体*/
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
 	}
 	else if(poc_setting->font.big_font_switch == 1)
 	{
 		poc_setting->font.list_page_colum_count = 3;
-		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;/*close font*/
-		poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
+		/*close font---南极星统一使用小号字体*/
+		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
+		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
 	}
 #endif
 }
@@ -2007,7 +2011,7 @@ bool lv_poc_get_mic_gain(void)
 describe : 设置record mic增益
     date : 2020-09-01
 */
-void lv_poc_set_record_mic_gain(void)
+bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_path path, lv_poc_record_mic_anaGain anaGain, lv_poc_record_mic_adcGain adcGain)
 {
 	bool setstatus = audevSetRecordMicGain(mode, path, anaGain, adcGain);
     OSI_LOGI(0, "[song] set record mode is = %d, path is =%d , anaGain is = %d, adcGain is = %d, setstatus is = %d",
@@ -2021,6 +2025,7 @@ void lv_poc_set_record_mic_gain(void)
 	author : wangls
   describe : sos 中断
 	  date : 2020-08-14
+*/
 static
 void poc_sos_key_irq(void *ctx)
 {
@@ -2060,7 +2065,7 @@ bool lv_poc_get_record_mic_gain(void)
 	  name : lv_poc_key_init
 	 param : none
 	author : wangls
-  describe : volum key 配置
+  describe : poc key 配置
 	  date : 2020-08-14
 */
 void lv_poc_key_init(void)
@@ -2667,13 +2672,16 @@ lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
 */
 bool lv_poc_set_adc_current_sense(bool status)
 {
-#if 1
+
+#if 0/*误使用，死机*/
 	REG_RDA2720M_ADC_AUXAD_CTL0_T adc_auxad_ctl0_t;
 
 	adc_auxad_ctl0_t.b.rg_auxad_currentsen_en = 1;
 	halAdiBusWrite(&hwp_rda2720mAdc->auxad_ctl0, adc_auxad_ctl0_t.v);
-#endif
+
 	return ((halAdiBusRead(&adc_auxad_ctl0_t.v) & 0x1) == 1 ? true : false);
+#endif
+	return true;
 }
 
 /*
@@ -2725,5 +2733,27 @@ lv_poc_opt_refr_status(LVPOCIDTCOM_UNREFOPT_SignalType_t status)
 	poc_cur_unopt_status = status;
 
 	return poc_cur_unopt_status;
+}
+
+/*
+	  name : lv_poc_set_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+void
+lv_poc_set_power_on_status(bool status)
+{
+	poc_power_on_status = status;
+}
+
+/*
+	  name : lv_poc_get_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+bool
+lv_poc_get_poweron_is_ready(void)
+{
+	return poc_power_on_status;
 }
 

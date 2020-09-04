@@ -12,6 +12,7 @@
 configure_file(include/poc_config.h.in ${BINARY_TOP_DIR}/include/poc_config.h)
 
 set(target poc)
+add_app_libraries($<TARGET_FILE:${target}>)
 add_library(${target} STATIC
 	src/poc.c
 	src/poc_audio_player.c

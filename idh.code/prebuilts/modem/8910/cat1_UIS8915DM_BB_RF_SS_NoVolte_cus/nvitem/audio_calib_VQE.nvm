@@ -22,7 +22,7 @@
     ITEM_NAME    = CALIB_VERSION_TAG
     ITEM_ID      = 632
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xCA020109
+    ITEM_CONTENT = 0xFFFFFFFF
     ITEM_INDEX   = 1
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -36802,7 +36802,7 @@
     ITEM_NAME    = adc
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x7
     ITEM_INDEX   = 3679
     ITEM_PARENT  = 3677
     ITEM_DESC    =  
@@ -43018,7 +43018,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4300
     ITEM_PARENT  = 4298
     ITEM_DESC    =  
@@ -43068,7 +43068,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4305
     ITEM_PARENT  = 4303
     ITEM_DESC    =  
@@ -43118,7 +43118,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4310
     ITEM_PARENT  = 4308
     ITEM_DESC    =  
@@ -43168,7 +43168,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4315
     ITEM_PARENT  = 4313
     ITEM_DESC    =  
@@ -43218,7 +43218,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4320
     ITEM_PARENT  = 4318
     ITEM_DESC    =  
@@ -43268,7 +43268,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4325
     ITEM_PARENT  = 4323
     ITEM_DESC    =  
@@ -43318,7 +43318,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4330
     ITEM_PARENT  = 4328
     ITEM_DESC    =  
@@ -43368,7 +43368,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4335
     ITEM_PARENT  = 4333
     ITEM_DESC    =  
@@ -43418,7 +43418,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4340
     ITEM_PARENT  = 4338
     ITEM_DESC    =  
@@ -43468,7 +43468,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4345
     ITEM_PARENT  = 4343
     ITEM_DESC    =  
@@ -43518,7 +43518,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4350
     ITEM_PARENT  = 4348
     ITEM_DESC    =  
@@ -43568,7 +43568,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4355
     ITEM_PARENT  = 4353
     ITEM_DESC    =  
@@ -43618,7 +43618,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 4360
     ITEM_PARENT  = 4358
     ITEM_DESC    =  
@@ -47768,7 +47768,7 @@
     ITEM_NAME    = adc
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0xB
     ITEM_INDEX   = 4775
     ITEM_PARENT  = 4773
     ITEM_DESC    =  
@@ -59134,7 +59134,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5911
     ITEM_PARENT  = 5909
     ITEM_DESC    =  
@@ -59184,7 +59184,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5916
     ITEM_PARENT  = 5914
     ITEM_DESC    =  
@@ -59234,7 +59234,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5921
     ITEM_PARENT  = 5919
     ITEM_DESC    =  
@@ -59284,7 +59284,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5926
     ITEM_PARENT  = 5924
     ITEM_DESC    =  
@@ -59334,7 +59334,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5931
     ITEM_PARENT  = 5929
     ITEM_DESC    =  
@@ -59384,7 +59384,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5936
     ITEM_PARENT  = 5934
     ITEM_DESC    =  
@@ -59434,7 +59434,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5941
     ITEM_PARENT  = 5939
     ITEM_DESC    =  
@@ -59484,7 +59484,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5946
     ITEM_PARENT  = 5944
     ITEM_DESC    =  
@@ -59534,7 +59534,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5951
     ITEM_PARENT  = 5949
     ITEM_DESC    =  
@@ -59584,7 +59584,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5956
     ITEM_PARENT  = 5954
     ITEM_DESC    =  
@@ -59634,7 +59634,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5961
     ITEM_PARENT  = 5959
     ITEM_DESC    =  
@@ -59684,7 +59684,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5966
     ITEM_PARENT  = 5964
     ITEM_DESC    =  
@@ -59734,7 +59734,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5971
     ITEM_PARENT  = 5969
     ITEM_DESC    =  
@@ -59784,7 +59784,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5976
     ITEM_PARENT  = 5974
     ITEM_DESC    =  
@@ -59834,7 +59834,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5981
     ITEM_PARENT  = 5979
     ITEM_DESC    =  
@@ -59884,7 +59884,7 @@
     ITEM_NAME    = dac
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 5986
     ITEM_PARENT  = 5984
     ITEM_DESC    =  

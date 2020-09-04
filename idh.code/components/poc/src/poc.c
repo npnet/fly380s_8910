@@ -45,6 +45,8 @@ static void pocIdtStartHandleTask(void * ctx)
 		osiThreadSleep(5000);
 	}
 
+	lv_poc_set_power_on_status(true);/*设备就绪*/
+
 	while(!poc_get_network_register_status(POC_SIM_1))
 	{
 		OSI_LOGI(0, "[poc][idt] checking network\n");
@@ -73,9 +75,6 @@ static void pocStartAnimation(void *ctx)
 	lv_task_t * task = lv_task_create(lv_poc_network_config_task,
 		50, LV_TASK_PRIO_HIGH, NULL);
 	lv_task_once(task);
-
-	/*set audev*/
-	lv_poc_set_audev_in_out(AUDEV_INPUT_MAINMIC, AUDEV_OUTPUT_RECEIVER);
 
 	if(lv_poc_watchdog_power_on_mode == false)
 	{
@@ -122,6 +121,10 @@ static void pocStartAnimation(void *ctx)
 	lvGuiUpdateLastActivityTime();
 	/*网络校时*/
 	lv_poc_sntp_Update_Time();
+	lv_poc_get_record_mic_gain();
+	osiThreadSleep(500);
+	lv_poc_set_record_mic_gain(MUSICRECORD, Handfree, POC_MIC_ANA_GAIN_LEVEL_7, POC_MIC_ADC_GAIN_LEVEL_15);/*set record mic gain*/
+
 	lvGuiReleaseScreenOn(3);
 	osiThreadExit();
 }
@@ -170,7 +173,6 @@ void pocStart(void *ctx)
 		//设备为充电启动||设备充电启动并且从PSM唤醒启动
 	{
 		OSI_LOGI(0, "[song]poc boot mode is charge power on");
-		poc_set_red_blacklight(true);
 		lvGuiInit(pocLvgl_ShutdownCharge_Start);
 	}//看门狗重启
 	else if(boot_causes == OSI_BOOTCAUSE_WDG

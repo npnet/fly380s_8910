@@ -177,9 +177,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 
 		lv_label_set_text(label, lv_poc_about_label_content[i]);
 
-		lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
+		lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
 		lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-		lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
+		lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL);
 		lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
 
 		lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
@@ -198,9 +198,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	label = lv_label_create(btn, NULL);
 	btn->user_data = (void *)label;
 	lv_label_set_text(label, "FLY380S");
-	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
 	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL);
 	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
 	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
 	lv_obj_set_width(btn_label, btn_width/4);
@@ -216,9 +216,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	label = lv_label_create(btn, NULL);
 	btn->user_data = (void *)label;
 	lv_label_set_text(label, lv_poc_about_text_version);
-	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
 	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL);
 	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
 	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
 	lv_obj_set_width(btn_label, btn_width/4);
@@ -235,9 +235,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	label = lv_label_create(btn, NULL);
 	btn->user_data = (void *)label;
 	lv_label_set_text(label, "检查更新");
-	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL);
 	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
+	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL);
 	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
 	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
 	lv_obj_set_width(btn_label, btn_width/4);
