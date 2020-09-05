@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -663,6 +663,7 @@ $MYSYSMODE,     atCmdHandleMYSYSMODE, 0
 +NETMSG,        atCmdHandleNETMSG,     0      //Get netinfo
 +GTCCINFO,      atCmdHandleGTCCINFO,   0      //inqury GSM/LTE service cell and neighbor cell
 +LOGACCOUNT,    atCmdHandleLOGACCOUNT, 0      //write/read current account
++POC,    		atCmdHandleLOGAPZZD, 0        //write/read apzzd param data
 
 #ifdef CONFIG_SOC_8910
 +NCESIM,        atCmdHandleNCESIM, 0          // close or open network card authentication

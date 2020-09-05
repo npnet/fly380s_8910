@@ -7,7 +7,7 @@ extern "C" {
 #include "lv_include/lv_poc.h"
 #include <stdlib.h>
 #include <string.h>
-#include "guiIdtCom_api.h"
+#include "guiZzdCom_api.h"
 #include "lv_objx/lv_poc_obj/lv_poc_obj.h"
 
 

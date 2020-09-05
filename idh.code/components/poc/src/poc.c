@@ -27,8 +27,6 @@
 #include "drv_lcd_v2.h"
 #include "drv_names.h"
 #include "lv_include/lv_poc.h"
-#include "app_test.h"
-#include "guiIdtCom_api.h"
 #include "guiZzdCom_api.h"
 #include "hal_chip.h"
 
@@ -61,9 +59,8 @@ static void pocIdtStartHandleTask(void * ctx)
 	pocAudioPlayerSound();/*new player test*/
 	#endif
 	osiThreadSleep(2000);
-	lvPocGuiIdtCom_log();
 	/*zzd platform*/
-	//guiZzdComInit();
+	lvPocGuiZzdCom_Init();
 
 	osiThreadExit();
 }

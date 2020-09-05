@@ -1,27 +1,20 @@
-﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
- * All rights reserved.
- *
- * This software is supplied "AS IS" without any warranties.
- * RDA assumes no responsibility or liability for the use of the software,
- * conveys no license or title under any patent, copyright, or mask work
- * right to the product. RDA reserves the right to make changes in the
- * software without notification.  RDA also make no representation or
- * warranty that such application will be suitable for the specified use
- * without further testing or modification.
- */
-
-#ifndef _INCLUDE_GUIIDTCOM_API_H_
-#define _INCLUDE_GUIIDTCOM_API_H_
+﻿#ifndef _INCLUDE_GUIZZDCOM_API_H_
+#define _INCLUDE_GUIZZDCOM_API_H_
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "../../gui/lv_include/lv_poc_type.h"
+#include "at_engine.h"
 
 OSI_EXTERN_C_BEGIN
 ;
 typedef enum
 {
 	LVPOCGUIIDTCOM_SIGNAL_START = (1 << 8) - 1,
+
+	LVPOCGUIZZDCOM_SIGNAL_AP_POC_IND,
+	LVPOCGUIZZDCOM_SIGNAL_AP_POC_REP,
 
     LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND,
     LVPOCGUIIDTCOM_SIGNAL_LOGIN_REP,
@@ -118,7 +111,7 @@ typedef enum{/*登陆状态*/
 	LVPOCLEDIDTCOM_SIGNAL_LOGIN_END	,
 }LVPOCIDTCOM_LOGIN_STATUS_T;
 
-
+#if 1/*确信*/
 typedef struct
 {
 	int status;
@@ -155,6 +148,20 @@ bool lvPocGuiIdtCom_get_listen_status(void);
 void *lvPocGuiIdtCom_get_current_lock_group(void);
 
 bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str);
+#endif
+
+/**********************EXTERN**********************/
+extern atCmdEngine_t *ap_zzd_engine;
+
+void lvPocGuiZzdCom_Init(void);
+
+bool lvPocGuiZzdCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx1, void * ctx2);
+
+int OEM_SendUart(char *uf,int len);
+
+void OEM_TTS_Stop();
+
+int OEM_TTS_Spk(char* atxt);
 
 OSI_EXTERN_C_END
 

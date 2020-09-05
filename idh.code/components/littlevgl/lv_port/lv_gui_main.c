@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "poc_keypad.h"
-#include "guiIdtCom_api.h"
+#include "guiZzdCom_api.h"
 #include "lv_include/lv_poc.h"
 
 
