@@ -23,6 +23,9 @@
 #include "hwregs.h"
 #include "drv_config.h"
 #include "drv_efuse_pmic.h"
+/*poc*/
+#include "lv_include/lv_poc_type.h"
+#include "guiIdtCom_api.h"
 
 #include <string.h>
 
@@ -118,14 +121,14 @@ static uint16_t dischg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
         {4101, 90},
         {4013, 80},
         {3925, 70},
-        {3837, 60},
-        {3749, 50},
-        {3661, 40},
-        {3573, 30},
-        {3485, 20},
-        {3441, 15},
-        {3353, 5},
-        {3309, 0},
+        {3840, 60},
+        {3800, 50},
+        {3760, 40},
+        {3730, 30},
+        {3700, 20},
+        {3650, 15},
+        {3600, 5},
+        {3501, 0},
 };
 
 static uint16_t chg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
@@ -133,23 +136,23 @@ static uint16_t chg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
         {4280, 100},
         {4193, 90},
         {4111, 80},
-        {4029, 70},
-        {3947, 60},
-        {3863, 50},
-        {3779, 40},
-        {3695, 30},
-        {3611, 20},
-        {3569, 15},
-        {3485, 5},
-        {3443, 0},//3251
+        {4080, 70},
+        {4020, 60},
+        {3970, 50},
+        {3920, 40},
+        {3880, 30},
+        {3860, 20},
+        {3830, 15},
+        {3730, 5},
+        {3251, 0},//3251
 };
 
 
 static chgDischarge_t dischg_param =
     {
         3400, //warning_vol
-        3350, //shutdown_vol
-        3300, //deadline_vol
+        3380, //shutdown_vol
+        3000, //deadline_vol
         24,   //warning_count,warning interval
 };
 
@@ -947,7 +950,11 @@ static void _drvChargerSendMsgToClient(CHR_SVR_MSG_SERVICE_E msg, uint32_t param
 {
     drvChargerContext_t *p = &gDrvChargeCtx;
     if (p->notice_cb)
+    {
         p->notice_cb();
+    }
+
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SET_SHUTDOWN_POC, (void *)msg);
 }
 
 /*****************************************************************************/

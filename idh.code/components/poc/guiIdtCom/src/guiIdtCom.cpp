@@ -29,6 +29,7 @@
 #include "guiIdtCom_api.h"
 #include "audio_device.h"
 #include <sys/time.h>
+#include "drv_charger_monitor.h"
 
 #include "cJSON.h"
 
@@ -3392,6 +3393,36 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 	}
 }
 
+static void prvPocGuiIdtTaskHandleChargerOpt(uint32_t id, uint32_t ctx)
+{
+
+	switch(ctx)
+	{
+		case CHR_CHARGE_START_IND:
+		{
+			break;
+		}
+
+		case CHR_CHARGE_END_IND:
+		{
+			break;
+		}
+
+		case CHR_WARNING_IND:
+		{
+			break;
+		}
+
+		case CHR_SHUTDOWN_IND:
+		{
+			/*add shutdown opt*/
+			osiShutdown(OSI_SHUTDOWN_POWER_OFF);
+			break;
+		}
+	}
+
+}
+
 static void pocGuiIdtComTaskEntry(void *argument)
 {
 
@@ -3587,6 +3618,13 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			case LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE://获取对讲原因
 			{
 				prvPocGuiIdtTaskHandleCallFailed(event.param1, event.param2, event.param3);
+				break;
+			}
+
+
+			case LVPOCGUIIDTCOM_SIGNAL_SET_SHUTDOWN_POC:
+			{
+				prvPocGuiIdtTaskHandleChargerOpt(event.param1, event.param2);
 				break;
 			}
 
