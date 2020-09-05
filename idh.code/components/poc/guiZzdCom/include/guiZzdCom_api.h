@@ -10,12 +10,14 @@
  * without further testing or modification.
  */
 
-#ifndef _INCLUDE_GUIIDTCOM_API_H_
-#define _INCLUDE_GUIIDTCOM_API_H_
+#ifndef _INCLUDE_GUIZZDCOM_API_H_
+#define _INCLUDE_GUIZZDCOM_API_H_
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "../../gui/lv_include/lv_poc_type.h"
+#include "at_engine.h"
 
 OSI_EXTERN_C_BEGIN
 ;
@@ -23,7 +25,10 @@ typedef enum
 {
 	LVPOCGUIIDTCOM_SIGNAL_START = (1 << 8) - 1,
 
-    LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND,
+	LVPOCGUIZZDCOM_SIGNAL_AP_POC_IND,
+	LVPOCGUIZZDCOM_SIGNAL_AP_POC_REP,
+
+	LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND,
     LVPOCGUIIDTCOM_SIGNAL_LOGIN_REP,
 
     LVPOCGUIIDTCOM_SIGNAL_EXIT_IND,
@@ -158,6 +163,7 @@ typedef enum{//组状态
 	LVPOCGROUPIDTCOM_SIGNAL_SELF_END,
 }LVPOCIDTCOM_SELFGROUP_STATUS_T;
 
+#if 1//确信
 typedef struct
 {
 	int status;
@@ -202,6 +208,21 @@ int lvPocGuiIdtCom_get_current_exist_selfgroup(void);
 void lvPocGuiComLogSwitch(bool status);
 
 void lvPocGuiIdtCom_stop_check_ack(void);
+
+#endif
+
+/**********************EXTERN**********************/
+extern atCmdEngine_t *ap_zzd_engine;
+
+void lvPocGuiZzdCom_Init(void);
+
+bool lvPocGuiZzdCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx1, void * ctx2);
+
+int OEM_SendUart(char *uf,int len);
+
+void OEM_TTS_Stop();
+
+int OEM_TTS_Spk(char* atxt);
 
 OSI_EXTERN_C_END
 

@@ -10,7 +10,7 @@
 #include "drv_gpio.h"
 #include "hal_iomux.h"
 #include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
-#include "guiIdtCom_api.h"
+#include "guiZzdCom_api.h"
 #include "audio_types.h"
 #include "../../cfw/include/cfw.h"
 #include "../../newlib/include/stdlib.h"

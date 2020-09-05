@@ -28,7 +28,7 @@
 #include "at_cfg.h"
 #include "ppp_interface.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiIdtCom_api.h"
+#include "guiZzdCom_api.h"
 
 
 void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
@@ -66,17 +66,17 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 	    strcat(rspStr, poc_config->account_passwd);
 	    do
 	    {
-		    if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
-		    {
-			    strcat(rspStr, "\nexit log:");
-			    //lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_IND, (void *)2000);
-			    //strcat(rspStr, "\nwait a moment:");
-		    }
+//		    if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
+//		    {
+//			    strcat(rspStr, "\nexit log:");
+//			    //lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_IND, (void *)2000);
+//			    //strcat(rspStr, "\nwait a moment:");
+//		    }
 
-		    if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
-		    {
-			    break;
-		    }
+//		    if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
+//		    {
+//			    break;
+//		    }
 		    strcat(rspStr, "\nrestart log:");
 	    }while(0);
 
@@ -119,17 +119,17 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 					}
 					if(userOpt < 1)
 					{
-						if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
-						{
-							atCmdRespInfoText(cmd->engine, "+LOGACCOUNT:exit log\n");
-						}
+//						if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
+//						{
+//							atCmdRespInfoText(cmd->engine, "+LOGACCOUNT:exit log\n");
+//						}
 					}
 					else
 					{
-						if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
-						{
-							atCmdRespInfoText(cmd->engine, "+LOGACCOUNT:restart log\n");
-						}
+//						if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
+//						{
+//							atCmdRespInfoText(cmd->engine, "+LOGACCOUNT:restart log\n");
+//						}
 					}
 			    }while(0);
 			    break;

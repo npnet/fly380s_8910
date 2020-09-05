@@ -673,15 +673,15 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
 	do
 	{
-		if(!ttsIsPlaying()
-			&& !lvPocGuiIdtCom_get_listen_status()
-			&& !lvPocGuiIdtCom_get_speak_status())
-		{
-			poc_set_ext_pa_status(true);
-			audevSetPlayVolume(35);
-			char playkey[4] = "9";
-			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
-		}
+//		if(!ttsIsPlaying()
+//			&& !lvPocGuiIdtCom_get_listen_status()
+//			&& !lvPocGuiIdtCom_get_speak_status())
+//		{
+//			poc_set_ext_pa_status(true);
+//			audevSetPlayVolume(35);
+//			char playkey[4] = "9";
+//			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
+//		}
 	}while(0);
 	prv_play_btn_voice_one_time_thread = NULL;
 	osiThreadExit();
@@ -4043,7 +4043,7 @@ float lv_poc_type_flash_cb(bool status)
 */
 void lv_poc_type_plog_switch_cb(bool status)
 {
-	lvPocGuiComLogSwitch(status);
+	//lvPocGuiComLogSwitch(status);
 }
 
 /*

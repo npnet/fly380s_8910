@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -677,6 +677,7 @@ $MYSYSMODE,     atCmdHandleMYSYSMODE, 0
 #endif
 
 +LOGACCOUNT,    atCmdHandleLOGACCOUNT, 0      //write/read current account
++POC,    		atCmdHandleLOGAPZZD, 0        //write/read apzzd param data
 
 %%
 

@@ -13,7 +13,7 @@ configure_file(include/poc_config.h.in ${BINARY_TOP_DIR}/include/poc_config.h)
 
 set(target poc)
 add_app_libraries($<TARGET_FILE:${target}>)
-add_library(${target} STATIC
+add_library(${target} STATIC 
 	src/poc.c
 	src/poc_audio_player.c
 	src/poc_audio_recorder.c
@@ -317,16 +317,13 @@ add_library(${target} STATIC
 	gps/gps_nmea.c 
 	gps/uart3_gps.c
 
-	idt/src/app_test.cpp
-	idt/core/idt-freertos.o
-
-	guiIdtCom/src/guiIdtCom.cpp
+	guiZzdCom/src/guiZzdCom.c
 
 	)
 
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_POC)
-target_include_directories(${target} PUBLIC include gui idt/include idt/src guiIdtCom/include guiIdtCom/src cJSON ../audio/include gps)
+target_include_directories(${target} PUBLIC include gui guiZzdCom/include guiZzdCom/src cJSON ../audio/include gps ../atr/include)
 target_link_group(${target} PRIVATE abup_pub abup_lib ${libc_file_name} ${libgcc_file_name})
 target_link_libraries(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts net lwip ats atr)
 
