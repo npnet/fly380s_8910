@@ -9095,7 +9095,7 @@
     ITEM_NAME    = imsi[0]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x8
     ITEM_INDEX   = 905
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9105,7 +9105,7 @@
     ITEM_NAME    = imsi[1]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x49
     ITEM_INDEX   = 906
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9115,7 +9115,7 @@
     ITEM_NAME    = imsi[2]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 907
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9125,7 +9125,7 @@
     ITEM_NAME    = imsi[3]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x60
     ITEM_INDEX   = 908
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9135,7 +9135,7 @@
     ITEM_NAME    = imsi[4]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x9
     ITEM_INDEX   = 909
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9145,7 +9145,7 @@
     ITEM_NAME    = imsi[5]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x40
     ITEM_INDEX   = 910
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9155,7 +9155,7 @@
     ITEM_NAME    = imsi[6]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x80
     ITEM_INDEX   = 911
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9165,7 +9165,7 @@
     ITEM_NAME    = imsi[7]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x39
     ITEM_INDEX   = 912
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9175,7 +9175,7 @@
     ITEM_NAME    = imsi[8]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x11
     ITEM_INDEX   = 913
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9185,7 +9185,7 @@
     ITEM_NAME    = imsi[9]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xFF
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 914
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -11511,7 +11511,7 @@
     ITEM_NAME    = sms_sim_over_ind[0]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 1144
     ITEM_PARENT  = 1143
     ITEM_DESC    =  
@@ -11716,7 +11716,7 @@
     ITEM_NAME    = len
     ITEM_ID      = 631
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x16
+    ITEM_CONTENT = 0x1A
     ITEM_INDEX   = 1164
     ITEM_PARENT  = 1163
     ITEM_DESC    =  
@@ -11817,7 +11817,7 @@
     ITEM_NAME    = sim_param[8]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x8
     ITEM_INDEX   = 1174
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11827,7 +11827,7 @@
     ITEM_NAME    = sim_param[9]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x91
     ITEM_INDEX   = 1175
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11837,7 +11837,7 @@
     ITEM_NAME    = sim_param[10]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x68
     ITEM_INDEX   = 1176
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11847,7 +11847,7 @@
     ITEM_NAME    = sim_param[11]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x31
     ITEM_INDEX   = 1177
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11857,7 +11857,7 @@
     ITEM_NAME    = sim_param[12]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x10
     ITEM_INDEX   = 1178
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11867,7 +11867,7 @@
     ITEM_NAME    = sim_param[13]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x30
     ITEM_INDEX   = 1179
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11877,7 +11877,7 @@
     ITEM_NAME    = sim_param[14]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x44
     ITEM_INDEX   = 1180
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11887,7 +11887,7 @@
     ITEM_NAME    = sim_param[15]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 1181
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11897,7 +11897,7 @@
     ITEM_NAME    = sim_param[16]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0
     ITEM_INDEX   = 1182
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11907,7 +11907,7 @@
     ITEM_NAME    = sim_param[17]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 1183
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11917,7 +11917,7 @@
     ITEM_NAME    = sim_param[18]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 1184
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11927,7 +11927,7 @@
     ITEM_NAME    = sim_param[19]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFF
     ITEM_INDEX   = 1185
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -14837,7 +14837,7 @@
     ITEM_NAME    = sms_sim_option[0]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x44
     ITEM_INDEX   = 1475
     ITEM_PARENT  = 1474
     ITEM_DESC    =  
@@ -14899,7 +14899,7 @@
     ITEM_NAME    = sms_sim_optstor[0]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x20
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 1481
     ITEM_PARENT  = 1480
     ITEM_DESC    =  
@@ -21258,7 +21258,7 @@
     ITEM_NAME    = sequence
     ITEM_ID      = 631
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF
     ITEM_INDEX   = 2115
     ITEM_PARENT  = 0
     ITEM_DESC    =  

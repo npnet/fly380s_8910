@@ -122,7 +122,7 @@ static void pocStartAnimation(void *ctx)
 	lv_poc_sntp_Update_Time();
 	lv_poc_get_record_mic_gain();
 	osiThreadSleep(500);
-	lv_poc_set_record_mic_gain(MUSICRECORD, Handfree, POC_MIC_ANA_GAIN_LEVEL_7, POC_MIC_ADC_GAIN_LEVEL_15);/*set record mic gain*/
+	lv_poc_set_record_mic_gain(MUSICRECORD, Handfree, POC_MIC_ANA_GAIN_LEVEL_5, POC_MIC_ADC_GAIN_LEVEL_12);/*set record mic gain*/
 
 	lvGuiReleaseScreenOn(3);
 	osiThreadExit();

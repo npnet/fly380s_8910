@@ -2289,6 +2289,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 		{
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 			charge_status = false;
+			lv_poc_set_charge_status(charge_status);
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		}
 
@@ -2339,6 +2340,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 		if(charge_status == false)
 		{
 			charge_status = true;
+			lv_poc_set_charge_status(charge_status);
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 		}
 

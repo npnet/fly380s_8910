@@ -3624,7 +3624,13 @@ static void pocGuiIdtComTaskEntry(void *argument)
 
 			case LVPOCGUIIDTCOM_SIGNAL_SET_SHUTDOWN_POC:
 			{
-				prvPocGuiIdtTaskHandleChargerOpt(event.param1, event.param2);
+				bool status;
+
+				status = lv_poc_get_charge_status();
+				if(status == false)
+				{
+					prvPocGuiIdtTaskHandleChargerOpt(event.param1, event.param2);
+				}
 				break;
 			}
 

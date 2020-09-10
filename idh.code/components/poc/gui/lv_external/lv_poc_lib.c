@@ -40,8 +40,8 @@ static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_green_gpio = NULL;
-
 drvGpioConfig_t* configport = NULL;
+static bool poc_charging_status = false;//是否正在充电
 
 static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
@@ -2423,5 +2423,49 @@ lv_poc_opt_refr_status(LVPOCIDTCOM_UNREFOPT_SignalType_t status)
 	poc_cur_unopt_status = status;
 
 	return poc_cur_unopt_status;
+}
+
+/*
+	  name : lv_poc_set_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+void
+lv_poc_set_power_on_status(bool status)
+{
+	poc_power_on_status = status;
+}
+
+/*
+	  name : lv_poc_get_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+bool
+lv_poc_get_poweron_is_ready(void)
+{
+	return poc_power_on_status;
+}
+
+/*
+	  name : lv_poc_set_charge_status
+	  param :
+	  date : 2020-09-10
+*/
+void
+lv_poc_set_charge_status(bool status)
+{
+	poc_charging_status = status;
+}
+
+/*
+	  name : lv_poc_get_charge_status
+	  param :
+	  date : 2020-09-10
+*/
+bool
+lv_poc_get_charge_status(void)
+{
+	return poc_charging_status;
 }
 

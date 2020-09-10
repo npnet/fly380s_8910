@@ -156,7 +156,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	strcpy(lv_poc_about_text_model, "FLY380S");
 
 	lv_poc_about_text_version[0] = 0;
-	strcpy(lv_poc_about_text_version, "V35.2-D9.3");
+	strcpy(lv_poc_about_text_version, "V35.2-D9.12");
 
 	lv_poc_about_text_update[0] = 0;
 	strcpy(lv_poc_about_text_update, "检查更新");
@@ -243,7 +243,6 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
 	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
 	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
-
 
     lv_list_set_btn_selected(list, btn_array[0]);
 }

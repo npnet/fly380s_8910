@@ -742,7 +742,6 @@ lv_poc_opt_refr_status(LVPOCIDTCOM_UNREFOPT_SignalType_t status);
   author : wangls
 describe : 获取record mic增益
 	date : 2020-09-01
-
 */
 bool lv_poc_get_record_mic_gain(void);
 
@@ -752,7 +751,6 @@ bool lv_poc_get_record_mic_gain(void);
   author : wangls
 describe : 设置record mic增益
 	date : 2020-09-01
-
 */
 bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_path path, lv_poc_record_mic_anaGain anaGain, lv_poc_record_mic_adcGain adcGain);
 
@@ -762,6 +760,22 @@ bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_p
 	  date : 2020-09-12
 */
 void poc_config_Lcd_power_vol(void);
+
+/*
+	  name : lv_poc_set_charge_status
+	  param :
+	  date : 2020-09-10
+*/
+void
+lv_poc_set_charge_status(bool status);
+
+/*
+	  name : lv_poc_get_charge_status
+	  param :
+	  date : 2020-09-10
+*/
+bool
+lv_poc_get_charge_status(void);
 
 #ifdef __cplusplus
 }

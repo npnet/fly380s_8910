@@ -22,7 +22,7 @@
     ITEM_NAME    = CALIB_VERSION_TAG
     ITEM_ID      = 632
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xFFFFFFFF
+    ITEM_CONTENT = 0xCA020109
     ITEM_INDEX   = 1
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -47758,7 +47758,7 @@
     ITEM_NAME    = ana
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x7
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 4774
     ITEM_PARENT  = 4773
     ITEM_DESC    =  
@@ -47768,7 +47768,7 @@
     ITEM_NAME    = adc
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xB
+    ITEM_CONTENT = 0xC
     ITEM_INDEX   = 4775
     ITEM_PARENT  = 4773
     ITEM_DESC    =  

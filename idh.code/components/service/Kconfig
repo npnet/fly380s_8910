@@ -80,7 +80,7 @@ config SRV_POWER_ON_VOLTAGE
 
 config SRV_POWER_OFF_VOLTAGE
     int "Power off voltage"
-    default 3250
+    default 3000
 
 config SRV_POWER_OFF_CHARGE_SUPPORT
     bool "Power off charge support"
