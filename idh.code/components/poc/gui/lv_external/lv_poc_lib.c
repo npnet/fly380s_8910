@@ -197,15 +197,11 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
 		poc_volum = 0;
 	}
 	nv_poc_setting_msg_t * config = lv_poc_setting_conf_read();
-	if(type == POC_MMI_VOICE_MSG)
-	{
-		config->tonevolume = poc_volum / 10;
-		audevSetVoiceVolume(poc_volum);
-	}
-	else if(type == POC_MMI_VOICE_PLAY)
+
+	if(type == POC_MMI_VOICE_PLAY)
 	{
 		config->volume = poc_volum / 10;
-		audevSetPlayVolume(poc_volum);
+		audevSetVoiceVolume(poc_volum);
 	}
 	else if(type == POC_MMI_VOICE_VOICE)
 	{
@@ -215,10 +211,10 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
  	}
 	lv_poc_setting_conf_write();
 
-//	if(play && !ttsIsPlaying())
-//	{
-//		poc_play_btn_voice_one_time(config->volume, play);
-//	}
+	if(play && !ttsIsPlaying())
+	{
+		poc_play_btn_voice_one_time(config->volume, play);
+	}
 }
 
 /*
@@ -406,53 +402,53 @@ static
 void poc_SetPowerLevel(uint32_t mv)
 {
 	REG_RDA2720M_BLTC_RG_RGB_V0_T rg_rgb_v0;
-    REG_RDA2720M_BLTC_RG_RGB_V1_T rg_rgb_v1;
+    REG_RDA2720M_BLTC_RG_RGB_V2_T rg_rgb_v2;
 
     switch (mv)
     {
     case POC_LCD_BACKLIGHT_LEVEL_0:
 		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x00);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x00);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x00);
         break;
 
     case POC_LCD_BACKLIGHT_LEVEL_1:
 		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x04);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x04);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x04);
         break;
 
     case POC_LCD_BACKLIGHT_LEVEL_2:
 		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x08);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x08);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x08);
         break;
 
     case POC_LCD_BACKLIGHT_LEVEL_3:
 		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x0c);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x0c);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x0c);
         break;
 
     case POC_LCD_BACKLIGHT_LEVEL_4:
 		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x10);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x10);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x10);
         break;
 
     case POC_LCD_BACKLIGHT_LEVEL_5:
 		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x14);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x14);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x14);
         break;
 
     case POC_LCD_BACKLIGHT_LEVEL_6:
 		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x18);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x18);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x18);
         break;
 
     case POC_LCD_BACKLIGHT_LEVEL_7:
 		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x1c);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x1c);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x1c);
         break;
 
     case POC_LCD_BACKLIGHT_LEVEL_8:
 		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x20);
         break;
 
     default:
@@ -1669,7 +1665,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		ear_key_attr.ear_key_press = true;
 		poc_earkey_state = true;
 		OSI_LOGI(0, "[song]key is press,start speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_IND, NULL);
 	}
 	else
 	{
@@ -1731,7 +1727,7 @@ void poc_ear_ppt_irq(void *ctx)
 			ear_key_attr.ear_key_press = false;
 			poc_earkey_state = false;
 			OSI_LOGI(0, "[song]key is release,stop speak\n");
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+			lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		}
 		else
 		{

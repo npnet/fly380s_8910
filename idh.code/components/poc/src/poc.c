@@ -27,7 +27,7 @@
 #include "drv_lcd_v2.h"
 #include "drv_names.h"
 #include "lv_include/lv_poc.h"
-#include "guiZzdCom_api.h"
+#include "guiOemCom_api.h"
 #include "hal_chip.h"
 
 static void lv_poc_network_config_task(lv_task_t * task);
@@ -60,7 +60,7 @@ static void pocIdtStartHandleTask(void * ctx)
 	#endif
 	osiThreadSleep(2000);
 	/*zzd platform*/
-	lvPocGuiZzdCom_Init();
+	lvPocGuiOemCom_Init();
 
 	osiThreadExit();
 }
@@ -154,7 +154,7 @@ void pocStart(void *ctx)
 {
     OSI_LOGI(0, "[song]lvgl poc start");
 
-    poc_Status_Led_Task();
+    //poc_Status_Led_Task();
     lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
     drvLcdInitV2();
 

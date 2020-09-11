@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiZzdCom_api.h"
+#include "guiOemCom_api.h"
 #include "lv_include/lv_poc.h"
 #include "lv_gui_main.h"
 #include "poc_audio_recorder.h"
@@ -66,7 +66,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 			{
 				#if POC_RECORD_OR_SPEAK_CALL
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
-				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_IND, NULL);
 				#else
 				lv_poc_start_recordwriter();/*自录*/
 				#endif
@@ -75,7 +75,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 			{
 				#if POC_RECORD_OR_SPEAK_CALL
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
-				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 				#else
 				lv_poc_start_playfile();/*自播*/
 				#endif

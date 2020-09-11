@@ -17,6 +17,7 @@
 #include "osi_log.h"
 #include "stdio.h"
 #include "string.h"
+#include "stdlib.h"
 #include "at_response.h"
 #include "at_cfw.h"
 #include "at_engine.h"
@@ -28,23 +29,19 @@
 #include "at_cfg.h"
 #include "ppp_interface.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiZzdCom_api.h"
+#include "guiOemCom_api.h"
 
 
 void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 {
 	char rspStr[200];
-	char tempStr[10];
 	bool paramok = true;
-	char *userName = NULL;
-	char *userPasswd = NULL;
-	char *ip_address = NULL;
-	int ip_port = -1;
-	int userOpt = 0;
+	char *pocparam = NULL;
+	//int userOpt = 0;
 
 	if(cmd->type == AT_CMD_TEST)
 	{
-        atCmdRespInfoText(cmd->engine, "+LOGACCOUNT=<opt>\n<account>,<passwd>,[<ip>[,<port>]]");
+        atCmdRespInfoText(cmd->engine, "+LOGACCOUNT=<opt>\n<pocparam>");
         atCmdRespOK(cmd->engine);
         return;
 	}
@@ -60,23 +57,19 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
     switch (cmd->type)
     {
     case AT_CMD_EXE:
-	    strcpy(rspStr, "account:");
+	    strcpy(rspStr, "pocparam:");
 	    strcat(rspStr, poc_config->account_name);
-	    strcat(rspStr, "\npasswd:");
-	    strcat(rspStr, poc_config->account_passwd);
 	    do
 	    {
-//		    if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
-//		    {
-//			    strcat(rspStr, "\nexit log:");
-//			    //lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_IND, (void *)2000);
-//			    //strcat(rspStr, "\nwait a moment:");
-//		    }
+		    if(lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_IND, NULL))
+		    {
+			    strcat(rspStr, "\nexit log:");
+		    }
 
-//		    if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
-//		    {
-//			    break;
-//		    }
+		    if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOGIN_IND, NULL))
+		    {
+			    break;
+		    }
 		    strcat(rspStr, "\nrestart log:");
 	    }while(0);
 
@@ -85,18 +78,8 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
         break;
 
     case AT_CMD_READ:
-	    strcpy(rspStr, "account:");
+	    strcpy(rspStr, "pocparam:");
 	    strcat(rspStr, poc_config->account_name);
-	    strcat(rspStr, "\npasswd:");
-	    strcat(rspStr, poc_config->account_passwd);
-	    strcat(rspStr, "\nip:");
-	    strcat(rspStr, poc_config->ip_address);
-	    strcat(rspStr, "\nport:");
-	    sprintf(tempStr, "%d", poc_config->ip_port);
-	    strcat(rspStr, tempStr);
-	    strcat(rspStr, "\nstatus:");
-	    sprintf(tempStr, "%d", lvPocGuiIdtCom_get_status());
-	    strcat(rspStr, tempStr);
         atCmdRespInfoText(cmd->engine, rspStr);
         atCmdRespOK(cmd->engine);
         break;
@@ -111,82 +94,29 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 		    else if(cmd->param_count == 1)
 		    {
 			    do{
-				    userOpt = atParamInt(cmd->params[0], &paramok);
+				    //userOpt = atParamInt(cmd->params[0], &paramok);
 					if (!paramok)
 					{
 						RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 						break;
 					}
-					if(userOpt < 1)
-					{
-//						if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
-//						{
-//							atCmdRespInfoText(cmd->engine, "+LOGACCOUNT:exit log\n");
-//						}
-					}
-					else
-					{
-//						if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
-//						{
-//							atCmdRespInfoText(cmd->engine, "+LOGACCOUNT:restart log\n");
-//						}
-					}
+					/*get set poc param*/
+					pocparam = (char *)atParamStr(cmd->params[0], &paramok);
+
+					if (!paramok || strlen((char *)pocparam) > 128)
+			        {
+			            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+			            break;
+		            }
+
+					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)pocparam);
+					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]pocParam is %s", pocparam);
 			    }while(0);
 			    break;
 		    }
-		    else if(cmd->param_count >= 2)
-		    {
-			    do{
-			        userName = (char *)atParamStr(cmd->params[0], &paramok);
-			        if (!paramok || strlen((char *)userName) > 32)
-			        {
-			            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-			            break;
-		            }
-			        userPasswd = (char *)atParamStr(cmd->params[1], &paramok);
-			        if (!paramok || strlen((char *)userPasswd) > 32)
-			        {
-			            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-			            break;
-		            }
-					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]userName is %s", userName);
-					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]userPasswd is %s", userPasswd);
-			    }while(0);
-		    }
 
-		    if(cmd->param_count >= 3)
-		    {
-			    ip_address = (char *)atParamStr(cmd->params[2], &paramok);
-		        if (!paramok || strlen((char *)ip_address) > 20)
-		        {
-		            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-		            break;
-	            }
-				OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]ip_address is %s", ip_address);
-		    }
-
-		    if(cmd->param_count >= 4)
-		    {
-			    ip_port = atParamInt(cmd->params[3], &paramok);
-				if (!paramok)
-				{
-					RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
-					break;
-				}
-				OSI_LOGI(0, "[song]ip_port is %d", ip_port);
-		    }
-
-		    if(userName != NULL)
-			    strcpy(poc_config->account_name, userName);
-
-		    if(userPasswd != NULL)
-			    strcpy(poc_config->account_passwd, userPasswd);
-
-		    if(ip_address != NULL)
-			    strcpy(poc_config->ip_address, ip_address);
-
-		    if(ip_port > -1)
-			    poc_config->ip_port = ip_port;
+		    if(pocparam != NULL)
+			    strcpy(poc_config->account_name, (char *)pocparam);
 
 		    if(lv_poc_setting_conf_write() < 1)
 		    {
