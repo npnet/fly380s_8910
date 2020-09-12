@@ -395,6 +395,19 @@ void poc_Lcd_Set_BackLightNess(uint32_t level)
 }
 
 /*
+      name : poc_config_Lcd_power_vol
+    return : none
+      date : 2020-09-12
+*/
+void poc_config_Lcd_power_vol(void)
+{
+	REG_RDA2720M_GLOBAL_LDO_LCD_REG1_T lcd_reg1 = {};
+	//目前配为2.3v
+    lcd_reg1.b.ldo_lcd_v = 0x37; // (2.3 - 1.6125)=0.0125*n---000 0000
+    halAdiBusWrite(&hwp_rda2720mGlobal->ldo_lcd_reg1, lcd_reg1.v);
+}
+
+/*
       name : poc_SetPowerLevel
     return : set lcd power register
       date : 2020-08-27
