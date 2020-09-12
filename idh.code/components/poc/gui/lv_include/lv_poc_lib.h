@@ -756,6 +756,13 @@ describe : 设置record mic增益
 */
 bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_path path, lv_poc_record_mic_anaGain anaGain, lv_poc_record_mic_adcGain adcGain);
 
+/*
+	  name : poc_config_Lcd_power_vol
+	return : none
+	  date : 2020-09-12
+*/
+void poc_config_Lcd_power_vol(void);
+
 #ifdef __cplusplus
 }
 #endif
