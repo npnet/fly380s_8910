@@ -42,7 +42,7 @@ static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_green_gpio = NULL;
 drvGpioConfig_t* configport = NULL;
 static bool poc_charging_status = false;//是否正在充电
-
+static bool poc_power_on_status = false;
 static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
 
