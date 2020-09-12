@@ -59,6 +59,7 @@ void lv_poc_shutdown_charge_Animation_Task(void *ctx)
 {
 	lv_poc_shutdown_charge_power_on_logo();
 	poc_charge_poweron_status = true;//为充电开机
+	lv_poc_set_power_on_status(true);//设备准备就绪
 	//lv刷新图标
 	lv_task_create(lv_poc_charge_poweron_battery_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_800
 	, LV_TASK_PRIO_HIGH, NULL);

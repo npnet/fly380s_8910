@@ -729,6 +729,22 @@ bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_p
 */
 void poc_config_Lcd_power_vol(void);
 
+/*
+	  name : lv_poc_set_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+void
+lv_poc_set_power_on_status(bool status);
+
+/*
+	  name : lv_poc_get_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+bool
+lv_poc_get_poweron_is_ready(void);
+
 #ifdef __cplusplus
 }
 #endif
