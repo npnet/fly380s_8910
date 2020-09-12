@@ -44,6 +44,7 @@ static void pocIdtStartHandleTask(void * ctx)
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, 50, true);
 		osiThreadSleep(5000);
 	}
+	lv_poc_set_power_on_status(true);//设备准备就绪
 
 	lv_poc_set_power_on_status(true);/*设备就绪*/
 

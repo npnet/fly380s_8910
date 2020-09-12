@@ -841,6 +841,22 @@ lv_poc_set_power_on_status(bool status);
 bool
 lv_poc_get_poweron_is_ready(void);
 
+/*
+	  name : lv_poc_set_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+void
+lv_poc_set_power_on_status(bool status);
+
+/*
+	  name : lv_poc_get_power_on_status
+	  param :
+	  date : 2020-08-27
+*/
+bool
+lv_poc_get_poweron_is_ready(void);
+
 #ifdef __cplusplus
 }
 #endif

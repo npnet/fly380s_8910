@@ -52,7 +52,6 @@ static drvGpio_t * poc_ppt_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
-
 /*********************volum***********************/
 
 typedef struct PocVolumAttribute_t{
@@ -1697,6 +1696,21 @@ typedef struct _PocEarKeyComAttr_t
 static PocEarKeyComAttr_t ear_key_attr = {0};
 static void Lv_ear_ppt_timer_cb(void *ctx);
 
+static void Lv_ear_ppt_timer_cb(void *ctx)
+{
+	OSI_LOGI(0, "[song]ear time cb\n");
+	if(drvGpioRead(poc_ear_ppt_gpio) == false)/*press*/
+	{
+		ear_key_attr.ear_key_press = true;
+		poc_earkey_state = true;
+		OSI_LOGI(0, "[song]key is press,start speak\n");
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+	}
+	else
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机未插好", (const uint8_t *)"请重新插入");
+	}
+}
 /*
 	  name : lv_poc_ear_ppt_key_init
 	 param : none
@@ -1726,10 +1740,11 @@ void lv_poc_ear_ppt_key_init(void)
 	else
 	{
 		OSI_LOGI(0, "[song]ear gpio open success\n");
-		/*ear time*/
-		memset(&ear_key_attr, 0, sizeof(PocEarKeyComAttr_t));
-		ear_key_attr.ear_press_timer = osiTimerCreate(ear_key_attr.ear_ppt_thread, Lv_ear_ppt_timer_cb, NULL);/*误触碰定时器*/
 	}
+
+	/*ear time*/
+	memset(&ear_key_attr, 0, sizeof(PocEarKeyComAttr_t));
+	ear_key_attr.ear_press_timer = osiTimerCreate(ear_key_attr.ear_ppt_thread, Lv_ear_ppt_timer_cb, NULL);/*误触碰定时器*/
 }
 
 /*
@@ -1762,29 +1777,6 @@ void poc_ear_ppt_irq(void *ctx)
 	{
 		osiTimerStart(ear_key_attr.ear_press_timer, 200);
 		OSI_LOGI(0, "[song]ear time start\n");
-	}
-}
-
-/*
-	  name : Lv_ear_ppt_timer_cb
-	 param : none
-	author : wangls
-  describe : ear ppt cb
-	  date : 2020-08-14
-*/
-static void Lv_ear_ppt_timer_cb(void *ctx)
-{
-	OSI_LOGI(0, "[song]ear time cb\n");
-	if(drvGpioRead(poc_ear_ppt_gpio) == false)/*press*/
-	{
-		ear_key_attr.ear_key_press = true;
-		poc_earkey_state = true;
-		OSI_LOGI(0, "[song]key is press,start speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
-	}
-	else
-	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机未插好", (const uint8_t *)"请重新插入");
 	}
 }
 
