@@ -13,6 +13,8 @@
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_lib.h"
 #include "tts_player.h"
+#include <wchar.h>
+#include <locale.h>
 
 #include "at_engine.h"
 
@@ -34,11 +36,33 @@ atCmdEngine_t *ap_Oem_engine = NULL;
 /**********************STATIC**********************/
 typedef struct _PocGuiOemApSendAttr_t
 {
-	char *oembuf;
+	char  oembuf[64];
 	int   oemlen;
 }PocGuiOemApSendAttr_t;
 
-static PocGuiOemApSendAttr_t pOemCome;//存储消息队列
+typedef struct _PocGuiOemGroupAttr_t
+{
+	char  OemGroupName[64];
+	char  OemGroupID[32];
+}PocGuiOemGroupAttr_t;
+
+typedef struct _PocGuiOemUserAttr_t
+{
+	char  OemUserName[64];
+	char  OemUserID[32];
+}PocGuiOemUserAttr_t;
+
+//Queue
+typedef struct QNode{
+
+	PocGuiOemApSendAttr_t data;
+	struct QNode *next;
+}QNode, *QueuePtr;
+
+typedef struct{
+	QueuePtr p_Head;
+	QueuePtr p_rear;
+}LinkQueue;
 
 typedef struct _PocGuiOemComAttr_t
 {
@@ -51,19 +75,25 @@ typedef struct _PocGuiOemComAttr_t
 	int   rOemMessageID;
 	int   DealMessageQueuePeroid;
 
+	//Info
+	PocGuiOemGroupAttr_t OemCurrentGroupInfo;
+	PocGuiOemGroupAttr_t OemGroupInfo;
+	PocGuiOemUserAttr_t  OemUserInfo;
+
 	bool 		isReady;
 	int 		pocnetstatus;
 
 	char 		pocIpAccoutaPassword[128];
 	size_t      pocIpAccoutaPasswordLen;
 
+	//status
 	bool is_member_call;
 	int  m_status;
 	bool is_pocconfig;
+	int  loginstatus_t;
+	int  groupstatus_t;
 
 }PocGuiOemComAttr_t;
-
-static PocGuiOemComAttr_t pocOemAttr = {0};
 
 enum{
 	USER_OPRATOR_START_SPEAK = 3,
@@ -72,29 +102,31 @@ enum{
 	USER_OPRATOR_LISTENNING = 6,
 };
 
+/*******************STATIC PARAM********************/
+static PocGuiOemComAttr_t pocOemAttr = {0};
+static LinkQueue OemQueue = {0};
+
 /*******************STATIC FUNC********************/
 static void pocGuiOemComTaskEntry(void *argument);
 static void pocGuiOemApTaskEntry(void *argument);
+static bool OemEnQueue(LinkQueue *Queue, PocGuiOemApSendAttr_t e);
+static bool OemDeQueue(LinkQueue *Queue, PocGuiOemApSendAttr_t *e);
+static PocGuiOemGroupAttr_t PocOem_Get_Group_Infomation(char * Information);
+static PocGuiOemUserAttr_t PocOem_Get_User_Infomation(char * Information);
 
-#ifndef ENABLEPOCOemINTERFACE
-/*-----------Oem platform-------------*/
-
-/* 1:TTS正在播放  0:TTS播放完毕 */
+// 1:TTS正在播放  0:TTS播放完毕
 extern void OEM_TTS_Status_CB(int type);
 
-/*过滤串口数据  buf为 AT+POC= 等号后面的数据*/
+//过滤串口数据  buf为 AT+POC= 等号后面的数据
 extern void OEMPOC_AT_Recv(char* buf ,int len);
 
-/* 实现开机自动联网，并上报联网状态 */
-/* 1 NET_CONNECTED 0 NET_DISCONNECTED */
+// 实现开机自动联网，并上报联网状态 1 NET_CONNECTED 0 NET_DISCONNECTED
 extern void OEMNetworkStatusChange(int result);
 
-/*链接库并调用初始化接口*/
+//链接库并调用初始化接口
 extern void OEM_PocInit();
 
-/*-----------本地端实现接口-----------*/
-
-/*TTS接口 unicode*/
+//TTS接口 unicode
 int OEM_TTS_Spk(char* atxt)
 {
 	return true;
@@ -108,21 +140,15 @@ void OEM_TTS_Stop()
 //OEM CB
 int OEM_SendUart(char *uf,int len)
 {
-	PocGuiOemApSendAttr_t *apopt = &pOemCome;
+	PocGuiOemApSendAttr_t apopt = {0};
 
-	apopt->oembuf = uf;
-	apopt->oemlen = len;
+	strcpy(apopt.oembuf, uf);
+	apopt.oemlen = len;
 
-	if(!lvPocGuiOemCom_MessageQueue(pocOemAttr.xQueue, (void *)&apopt))
-	{
-		if(lvPocGuiOemCom_MessageQueue(pocOemAttr.xQueue, (void *)&apopt))
-		{
-			return len;
-		}
-		return 0;
-	}
-
+	OemEnQueue(&OemQueue, apopt);
+	#if 0
 	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OEM_SendUart ack %s", apopt->oembuf);
+	#endif
 
 	return len;
 }
@@ -137,11 +163,69 @@ int OEM_GetModeVersion(char *version)
 
 	return 0;
 }
-/*------------------END----------------*/
-#endif
+
+/*****************************************POC*******************************************/
+
+bool OemInitQueue(LinkQueue *Queue)
+{
+	Queue->p_Head = Queue->p_rear = (QueuePtr)malloc(sizeof(QNode));
+
+	if(!Queue)
+		return false;
+	Queue->p_Head->next = NULL;
+
+	return true;
+}
+
+bool OemDestroyQueue(LinkQueue *Queue)
+{
+	while(Queue->p_Head){
+		Queue->p_rear = Queue->p_Head->next;
+		free(Queue->p_Head);
+		Queue->p_Head = Queue->p_rear;
+	}
+
+	return true;
+}
+
+static
+bool OemEnQueue(LinkQueue *Queue, PocGuiOemApSendAttr_t e)
+{
+	QueuePtr p;
+
+	p = (QueuePtr)malloc(sizeof(QNode));
+	if(!p)
+		return false;
+
+	p->data = e;
+	p->next = NULL;
+	Queue->p_rear->next = p;
+	Queue->p_rear = p;
+
+	return true;
+}
+
+static
+bool OemDeQueue(LinkQueue *Queue, PocGuiOemApSendAttr_t *e)
+{
+	QueuePtr p;
+
+	if(Queue->p_Head == Queue->p_rear)
+		return false;
+
+	p = Queue->p_Head->next;
+	*e = p->data;
+	Queue->p_Head->next = p->next;
+	if(Queue->p_rear == p)
+		Queue->p_rear = Queue->p_Head;
+	free(p);
+
+	return true;
+}
 
 void lvPocGuiOemCom_Login(void)
 {
+	OSI_LOGI(0, "[song]logining");
 	OEMPOC_AT_Recv(LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN, strlen(LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN));
 }
 
@@ -222,18 +306,28 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 		{
 			PocGuiOemApSendAttr_t *apopt = (PocGuiOemApSendAttr_t *)ctx1;
 
-			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]oem msg code %s", apopt->oembuf);
+			//软件已启动
+			if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_POCSTARTED_ACK))
+			{
+				if(pocOemAttr.loginstatus_t != LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS)
+				{
+					lvPocGuiOemCom_Request_PocParam();
+				}
+				break;
+			}
 			//OPEN POC
 			if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC_ACK))
 			{
-				OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]open poc success");
-				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_OPENPOC_REP, (void*)apopt->oembuf);
+				if(pocOemAttr.loginstatus_t != LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS)
+				{
+					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_OPENPOC_REP, (void*)apopt->oembuf);
+				}
 				break;
 			}
 			//SET POC
 			else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETPARAM_ACK))
 			{
-				OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]set poc success");
+				OSI_LOGI(0, "[song]set poc success");
 				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_REP, (void*)apopt->oembuf);
 				break;
 			}
@@ -253,24 +347,31 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 				}
 				break;
 			}
+
+			//NOLOGIN
+			else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK))
+			{
+				pocOemAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_EXIT;
+				break;
+			}
 			//LOGINNING
 			else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGINING_ACK))
 			{
+				pocOemAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING;
 				break;
 			}
 			//LOGIN SUCCESS
 			else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_SUCCESS_ACK))
 			{
-				OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]login success");
+
+				if(pocOemAttr.loginstatus_t != LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS)
+				{
+					pocOemAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS;
+					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOGIN_REP, apopt);
+				}
 				break;
 			}
-			//软件已启动
-			else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_POCSTARTED_ACK))
-			{
-				//请求参数
-				lvPocGuiOemCom_Request_PocParam();
-				break;
-			}
+
 			//listen
 			else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTLISTEN_ACK))
 			{
@@ -296,6 +397,17 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 				break;
 			}
 
+			//GROUP INFO
+			else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_JNIO_ACK))
+			{
+				if(pocOemAttr.groupstatus_t != LVPOCOEMCOM_SIGNAL_GROUP_JOIN)
+				{
+					pocOemAttr.groupstatus_t = LVPOCOEMCOM_SIGNAL_GROUP_JOIN;
+					lvPocGuiOemCom_Msg(LVPOCGUIIDTCOM_SIGNAL_JOIN_GROUP_REP, apopt);
+				}
+				break;
+			}
+
 			break;
 		}
 
@@ -318,7 +430,7 @@ void prvPocGuiOemTaskHandleSetPOC(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 
 			memset(&pocOemAttr.pocIpAccoutaPassword, 0, sizeof(pocOemAttr.pocIpAccoutaPassword));
 			//转义StrHex
-			Data_StrToStrHex(ufs, (char *)ctx1, strlen((char *)ctx1));
+			OemData_StrToStrHex(ufs, (char *)ctx1, strlen((char *)ctx1));
 
 			//组合
 			strcpy(pocOemAttr.pocIpAccoutaPassword, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETPARAM);
@@ -383,6 +495,15 @@ void prvPocGuiOemTaskHandleLogin(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 
 		case LVPOCGUIOEMCOM_SIGNAL_LOGIN_REP:
 		{
+			PocGuiOemApSendAttr_t *apopt = (PocGuiOemApSendAttr_t *)ctx1;
+
+			//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Login, 50, true);
+			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "成功登录");
+			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
+			//User Info
+			pocOemAttr.OemUserInfo = PocOem_Get_User_Infomation(apopt->oembuf);
+
 			break;
 		}
 
@@ -537,6 +658,31 @@ void prvPocGuiOemTaskHandleListen(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 }
 
 static
+void prvPocGuiOemTaskHandleGroupInfo(uint32_t id, uint32_t ctx)
+{
+	switch(id)
+	{
+		case LVPOCGUIIDTCOM_SIGNAL_JOIN_GROUP_REP:
+		{
+			PocGuiOemApSendAttr_t *apopt = (PocGuiOemApSendAttr_t *)ctx;
+
+			pocOemAttr.OemCurrentGroupInfo = PocOem_Get_Group_Infomation(apopt->oembuf);
+
+
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Join_Group, 50, true);
+			//idle page2 info
+			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocOemAttr.OemUserInfo.OemUserName, pocOemAttr.OemCurrentGroupInfo.OemGroupName);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+}
+
+static
 void LvGuiOemCom_OemSendMsgQueue_timer_cb(void *ctx)
 {
 
@@ -563,6 +709,11 @@ void lvPocGuiOemCom_Init(void)
 	//参数 1:队列深度
 	//参数 2:队列项内容大小
 	pocOemAttr.xQueue = osiMessageQueueCreate(10, sizeof(struct _PocGuiOemComAttr_t*));
+
+	bool status = OemInitQueue(&OemQueue);
+	if(!status){
+		OemDestroyQueue(&OemQueue);
+	}
 
 	PocGuiOemComStart();
 }
@@ -658,6 +809,13 @@ void pocGuiOemComTaskEntry(void *argument)
 			{
 				//open poc
 				lvPocGuiOemCom_OpenPOC(OEM_FUNC_CLOSE, OEM_FUNC_OPEN, OEM_FUNC_OPEN);
+				break;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_JOIN_GROUP_REP:
+			{
+				prvPocGuiOemTaskHandleGroupInfo(event.param1, event.param2);
+				break;
 			}
 
 			default:
@@ -673,19 +831,24 @@ void pocGuiOemApTaskEntry(void *argument)
 {
 
 	PocGuiOemApSendAttr_t *apopt = NULL;
+	PocGuiOemApSendAttr_t oemopt = {0};
+	bool OemStatus = false;
 
     while(1)
     {
     	if(!osiMessageQueueTryGet(pocOemAttr.xQueue, (void *)&apopt, 200))
 		{
+			OemStatus = OemDeQueue(&OemQueue, &oemopt);
+			if(OemStatus)
+			{
+				if(NULL != oemopt.oembuf)
+				{
+					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]linkqueue %s", oemopt.oembuf);
+					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_AP_POC_REP, (void *)&oemopt);
+				}
+			}
 			continue;
     	}
-
-		if(NULL != apopt->oembuf)
-		{
-			//send data
-			lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_AP_POC_REP, (void *)apopt);
-		}
     }
 }
 
@@ -697,6 +860,60 @@ bool lvPocGuiOemCom_MessageQueue(osiMessageQueue_t *mq, const void *msg)
 	}
 
 	return osiMessageQueueTryPut(mq, (void *)msg, 200);
+}
+
+static
+PocGuiOemGroupAttr_t PocOem_Get_Group_Infomation(char * Information)
+{
+	PocGuiOemGroupAttr_t GInfo;
+	char *pGInfo = NULL;
+
+	memset(&GInfo, 0, sizeof(PocGuiOemGroupAttr_t));
+	if(!Information)
+		return GInfo;
+
+	pGInfo = strstr(Information, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_JNIO_ACK);
+	if(!pGInfo)
+		return GInfo;
+
+	strncpy(GInfo.OemGroupID, pGInfo + 4, 8);
+ 	GInfo.OemGroupID[8] = '\0';
+ 	strncpy(GInfo.OemGroupName, pGInfo + 12, strlen(pGInfo) - 12);
+ 	GInfo.OemGroupName[strlen(pGInfo) - 12 - 1] = '\0';
+
+	#if 0
+	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemGroupID %s", GInfo.OemGroupID);
+	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemGroupName %s", GInfo.OemGroupName);
+	#endif
+
+	return GInfo;
+}
+
+static
+PocGuiOemUserAttr_t PocOem_Get_User_Infomation(char * Information)
+{
+	PocGuiOemUserAttr_t UInfo;
+	char *pUInfo = NULL;
+
+	memset(&UInfo, 0, sizeof(PocGuiOemUserAttr_t));
+	if(!Information)
+		return UInfo;
+
+	pUInfo = strstr(Information, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_SUCCESS_ACK);
+	if(!pUInfo)
+		return UInfo;
+
+	strncpy(UInfo.OemUserID, pUInfo + 4, 8);
+ 	UInfo.OemUserID[8] = '\0';
+ 	strncpy(UInfo.OemUserName, pUInfo + 12, strlen(pUInfo) - 12);
+ 	UInfo.OemUserName[strlen(pUInfo) - 12 - 1] = '\0';
+
+	#if 1
+	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemUserID %s", UInfo.OemUserID);
+	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemUserName %s", UInfo.OemUserName);
+	#endif
+
+	return UInfo;
 }
 
 bool lvPocGuiOemCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
@@ -720,7 +937,7 @@ bool lvPocGuiOemCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
 	return osiEventSend(pocOemAttr.thread, &event);
 }
 
-void Data_StrToStrHex(char *pszDest, char *pbSrc, int nLen)
+void OemData_StrToStrHex(char *pszDest, char *pbSrc, int nLen)
 {
 	char ddl, ddh;
 	uint32_t i;
@@ -736,6 +953,201 @@ void Data_StrToStrHex(char *pszDest, char *pbSrc, int nLen)
 	pszDest[nLen * 2] = '\0';
 }
 
+/*
+	  name : persist_ssl_hashKeyConvert
+	 param : none
+	author : wangls
+  describe : 字符串->(char)16进制->(wchar)16进制
+	  date : 2020-09-14
+*/
+unsigned int persist_ssl_hashKeyConvert(char *pUserInput, wchar_t *pKeyArray) //98de---de98
+{
+	if (NULL == pUserInput || NULL == pKeyArray)
+	{
+			return 0;
+	}
+
+	unsigned int uiKeySize = strlen(pUserInput) / 4;
+	int i = 0;
+	char cTempor = 0;
+
+	while(i < uiKeySize)
+	{
+		//1
+		if (*pUserInput >= '0' && *pUserInput <= '9')//9
+		{
+			cTempor = *pUserInput - 48;
+		}
+		else
+		{
+			cTempor = 0xa + (*pUserInput - 'a');
+		}
+
+		pKeyArray[i] = cTempor;
+		pUserInput++;
+		//2
+		if (*pUserInput >= '0' && *pUserInput <= '9')//8
+		{
+			cTempor = *pUserInput - 48;
+		}
+		else
+		{
+			cTempor = 0xa + (*pUserInput - 'a');
+		}
+
+		pKeyArray[i] = (pKeyArray[i] << 4) | cTempor;
+		pUserInput++;
+		//3
+		if (*pUserInput >= '0' && *pUserInput <= '9')//d098
+		{
+			cTempor = *pUserInput - 48;
+		}
+		else
+		{
+			cTempor = 0xa + (*pUserInput - 'a');
+		}
+
+		pKeyArray[i] = (cTempor << 12) | pKeyArray[i];//(pKeyArray[i] << 4) | cTempor;
+		pUserInput++;
+		//4
+		if (*pUserInput >= '0' && *pUserInput <= '9')//de98
+		{
+			cTempor = *pUserInput - 48;
+		}
+		else
+		{
+			cTempor = 0xa + (*pUserInput - 'a');
+		}
+
+		pKeyArray[i] = (cTempor << 8) | pKeyArray[i];//(pKeyArray[i] << 4) | cTempor;
+		pUserInput++;
+		i++;
+	}
+
+	return uiKeySize;
+}
+
+/*
+	  name : persist_ssl_hashKeyConvert
+	 param : none
+	author : wangls
+  describe : unicode to gb2312
+	  date : 2020-09-14
+*/
+void Unicode_To_Gb2312_Convert(char *pUserInput, char *pUserOutput)
+{
+	wchar_t oembufBrr[64] = {0};
+	wchar_t oembufArr[64] = {0};
+	wchar_t wstr[64];
+	char str[64];
+
+	#if 0
+	wchar_t oemwstr[] = {0x98de,0x56fe,0x540c,0x8f89,0x6d4b,0x8bd5,0x0031,0x7ec4};//    ori:{0x52B3,0x788c,0};
+	char oemstr[64];
+	wcstombs(oemstr, oemwstr, sizeof(oemstr)/sizeof(char));
+	int oemsize = persist_ssl_hashKeyConvert(pUserInput, oembufBrr);
+	printf("[song]oemstr%s \n", oemstr);
+	#endif
+
+	int oemsize = persist_ssl_hashKeyConvert(pUserInput, oembufBrr);
+	for(int i = 0; i < oemsize; i++)
+	{
+		oembufArr[i] = (oembufBrr[i])|(oembufBrr[i]&0x0f);
+	}
+	wcscpy(wstr, (wchar_t *)oembufArr);
+	setlocale(LC_ALL,"");
+	wcstombs(str, wstr, sizeof(str)/sizeof(char));
+
+	strcpy(pUserOutput, str);//copy
+}
+
+/*
+	  name : unicode_to_utf
+	 param : none
+	author : wangls
+  describe : unicode to utf8
+	  date : 2020-09-14
+*/
+int
+unicode_to_utf( unsigned long unicode, unsigned char *utf )
+{
+    assert( utf );
+
+    int size = 0;
+    if ( unicode <= 0x7F )
+    {
+        *( utf + size++ ) = unicode & 0x7F;
+    }
+    else if ( unicode >= 0x80 && unicode <= 0x7FF )
+    {
+        *( utf + size++ ) = ( ( unicode >> 6 ) & 0x1F ) | 0xC0;
+        *( utf + size++ ) = ( unicode & 0x3F ) | 0x80;
+    }
+    else if ( unicode >= 0x800 && unicode <= 0xFFFF )
+    {
+        *( utf + size++ ) = ( ( unicode >> 12 ) & 0x0F ) | 0xE0;
+        *( utf + size++ ) = ( ( unicode >> 6  ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( unicode & 0x3F  ) | 0x80;
+    }
+    else if ( unicode >= 0x10000 && unicode <= 0x10FFFF )
+    {
+        *( utf + size++ ) = ( (unicode >> 18 ) & 0x7  ) | 0xF0;
+        *( utf + size++ ) = ( (unicode >> 12 ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( (unicode >> 6  ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( unicode & 0x3F ) | 0x80;
+    }
+    else if ( unicode >= 0x200000 && unicode <= 0x3FFFFFF )
+    {
+        *( utf + size++ ) = ( (unicode >> 24 ) & 0x3  ) | 0xF8;
+        *( utf + size++ ) = ( (unicode >> 18 ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( (unicode >> 12 ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( (unicode >> 6  ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( unicode & 0x3F ) | 0x80;
+    }
+    else if ( unicode >= 0x4000000 && unicode <= 0x7FFFFFFF )
+    {
+        *( utf + size++ ) = ( (unicode >> 30 ) & 0x1  ) | 0xFC;
+        *( utf + size++ ) = ( (unicode >> 24 ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( (unicode >> 18 ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( (unicode >> 12 ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( (unicode >> 6  ) & 0x3F ) | 0x80;
+        *( utf + size++ ) = ( unicode & 0x3F ) | 0x80;
+    }
+    else
+    {
+        printf( "Error : unknow scope\n" );
+        return -1;
+    }
+    *( utf + size ) = '\0';
+
+    return size;
+}
+
+/*
+	  name : Oem_Unicode_To_Utf8_Convert
+	 param : none
+	author : wangls
+  describe : oem unicode to utf8
+	  date : 2020-09-14
+*/
+void Oem_Unicode_To_Utf8_Convert(char *pUserInput, char *pUserOutput)
+{
+	wchar_t oembufBrr[64] = {0};
+	wchar_t oembufArr[64] = {0};
+	wchar_t wstr[64];
+	char str[64];
+
+	int oemsize = persist_ssl_hashKeyConvert(pUserInput, oembufBrr);
+	for(int i = 0; i < oemsize; i++)
+	{
+		oembufArr[i] = (oembufBrr[i])|(oembufBrr[i]&0x0f);
+	}
+	wcscpy(wstr, (wchar_t *)oembufArr);
+	setlocale(LC_ALL,"");
+	wcstombs(str, wstr, sizeof(str)/sizeof(char));
+
+	strcpy(pUserOutput, str);//copy
+}
 
 #if 1/*确信*/
 bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
