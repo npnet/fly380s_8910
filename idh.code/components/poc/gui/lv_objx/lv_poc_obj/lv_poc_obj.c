@@ -1407,7 +1407,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
                 lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
             }
         }
-        else if(cur_key != LV_GROUP_KEY_POC)
+        else if(cur_key != LV_GROUP_KEY_POC)//按键音
         {
 		    poc_play_btn_voice_one_time(vol_cur,
 #ifdef CONFIG_POC_TTS_SUPPORT

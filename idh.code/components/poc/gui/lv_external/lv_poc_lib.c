@@ -17,6 +17,7 @@
 #include "ml.h"
 #include <stdlib.h>
 #include "lv_include/lv_poc_type.h"
+#include "tts_player.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -249,10 +250,10 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
  	}
 	lv_poc_setting_conf_write();
 
-//	if(play && !ttsIsPlaying())
-//	{
-//		poc_play_btn_voice_one_time(config->volume, play);
-//	}
+	if(play && !ttsIsPlaying())
+	{
+		poc_play_btn_voice_one_time(config->volume, play);
+	}
 }
 
 /*
@@ -580,6 +581,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
 	do
 	{
+		#if 0
 		if(NULL == prv_play_btn_voice_one_time_player)
 		{
 			prv_play_btn_voice_one_time_player = auPlayerCreate();
@@ -594,6 +596,14 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 		auPlayerStartMem(prv_play_btn_voice_one_time_player, AUSTREAM_FORMAT_PCM, params, lv_poc_audio_msg.data, lv_poc_audio_msg.data_size);
 		osiThreadSleep(140);
 		auPlayerStop(prv_play_btn_voice_one_time_player);
+		#endif
+		audevSetPlayVolume(60);
+
+		char playkey[4] = "9";
+		ttsPlayText(playkey, strlen(playkey), ML_UTF8);
+		osiThreadSleep(140);
+		if(!ttsIsPlaying())
+			lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 	}while(0);
 	prv_play_btn_voice_one_time_thread = NULL;
 	osiThreadExit();
