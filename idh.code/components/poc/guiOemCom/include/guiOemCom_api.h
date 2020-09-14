@@ -40,6 +40,7 @@ typedef enum
     LVPOCGUIOEMCOM_SIGNAL_LISTEN_STOP_REP,
     LVPOCGUIOEMCOM_SIGNAL_LISTEN_SPEAKER_REP,
 
+	LVPOCGUIIDTCOM_SIGNAL_JOIN_GROUP_REP,
 
 
     LVPOCGUIIDTCOM_SIGNAL_MIC_IND,
@@ -121,8 +122,18 @@ typedef enum{/*登陆状态*/
 	LVPOCLEDIDTCOM_SIGNAL_LOGIN_END	,
 }LVPOCIDTCOM_LOGIN_STATUS_T;
 
+typedef enum{/*登陆状态*/
+
+	LVPOCOEMCOM_SIGNAL_GROUP_START = 0,
+
+	LVPOCOEMCOM_SIGNAL_GROUP_JOIN = 1 ,
+	LVPOCOEMCOM_SIGNAL_GROUP_EXIT = 2 ,
+
+	LVPOCOEMCOM_SIGNAL_GROUP_END	,
+}LVPOCOEMCOM_GROUP_STATUS_T;
+
 //OPT SEND CODE
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC 			  "000000"
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC 			  "000500"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETPARAM 			  "010000"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GETPARAM 			  "020000"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN    			  "030000"
@@ -139,16 +150,19 @@ typedef enum{/*登陆状态*/
 
 //OPT ACK CODE
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_POCSTARTED_ACK 		  "ff00"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC_ACK             "0000000501"
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC_ACK             "00000500"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETPARAM_ACK   		  "01000000"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GETPARAM_ACK   		  "02000000"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_ACK      		  "030000"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGOUT_ACK     		  "040000"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_ACK      		  "030000"
 
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK             "8200"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGINING_ACK            "8201"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_SUCCESS_ACK       "8202"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_CANCELLATION_ACK  "8203"
+
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_JNIO_ACK  		  "8600"
 
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ADDLISTENGROUP_ACK      "070000"
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CANNELLISTENGROUP_ACK   "080000"
@@ -224,7 +238,44 @@ void OEM_TTS_Stop();
 
 int OEM_TTS_Spk(char* atxt);
 
-void Data_StrToStrHex(char *pszDest, char *pbSrc, int nLen);
+void OemData_StrToStrHex(char *pszDest, char *pbSrc, int nLen);
+
+/*
+	  name : persist_ssl_hashKeyConvert
+	 param : none
+	author : wangls
+  describe : 字符串->(char)16进制->(wchar)16进制
+	  date : 2020-09-14
+*/
+unsigned int persist_ssl_hashKeyConvert(char *pUserInput, wchar_t *pKeyArray);
+
+/*
+	  name : persist_ssl_hashKeyConvert
+	 param : none
+	author : wangls
+  describe : unicode to gb2312
+	  date : 2020-09-14
+*/
+void Unicode_To_Gb2312_Convert(char *pUserInput, char *pUserOutput);
+
+/*
+	  name : unicode_to_utf
+	 param : none
+	author : wangls
+  describe : unicode to utf8
+	  date : 2020-09-14
+*/
+int
+unicode_to_utf(unsigned long unicode, unsigned char *utf);
+
+/*
+	  name : Oem_Unicode_To_Utf8_Convert
+	 param : none
+	author : wangls
+  describe : oem unicode to utf8
+	  date : 2020-09-14
+*/
+void Oem_Unicode_To_Utf8_Convert(char *pUserInput, char *pUserOutput);
 
 OSI_EXTERN_C_END
 
