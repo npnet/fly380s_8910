@@ -29,6 +29,7 @@
 #include "lv_include/lv_poc.h"
 #include "guiOemCom_api.h"
 #include "hal_chip.h"
+#include "tts_player.h"
 
 static void lv_poc_network_config_task(lv_task_t * task);
 static void lv_poc_power_on_picture(lv_task_t * task);
