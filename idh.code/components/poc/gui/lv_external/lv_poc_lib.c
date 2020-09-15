@@ -581,7 +581,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
 	do
 	{
-		#if 0
+		#if 1
 		if(NULL == prv_play_btn_voice_one_time_player)
 		{
 			prv_play_btn_voice_one_time_player = auPlayerCreate();
@@ -590,13 +590,15 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 				break;
 			}
 		}
+		audevSetPlayVolume(60);
 		auPlayerStop(prv_play_btn_voice_one_time_player);
 	    auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
 	    auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
 		auPlayerStartMem(prv_play_btn_voice_one_time_player, AUSTREAM_FORMAT_PCM, params, lv_poc_audio_msg.data, lv_poc_audio_msg.data_size);
 		osiThreadSleep(140);
 		auPlayerStop(prv_play_btn_voice_one_time_player);
-		#endif
+		lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
+		#else
 		audevSetPlayVolume(60);
 
 		char playkey[4] = "9";
@@ -604,6 +606,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 		osiThreadSleep(140);
 		if(!ttsIsPlaying())
 			lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
+		#endif
 	}while(0);
 	prv_play_btn_voice_one_time_thread = NULL;
 	osiThreadExit();
@@ -639,7 +642,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
 					//还原音量
-					lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
+					//lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 				}
 			}
 			else if(isPlayVoice)
