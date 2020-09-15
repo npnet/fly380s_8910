@@ -328,7 +328,10 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 			else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETPARAM_ACK))
 			{
 				OSI_LOGI(0, "[song]set poc success");
-				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_REP, (void*)apopt->oembuf);
+				if(pocOemAttr.loginstatus_t != LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS)
+				{
+					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_REP, NULL);
+				}
 				break;
 			}
 			//GET POC
@@ -445,7 +448,7 @@ void prvPocGuiOemTaskHandleSetPOC(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 
 		case LVPOCGUIOEMCOM_SIGNAL_SETPOC_REP:
 		{
-			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]poc param %s", (char *)ctx1);
+			lvPocGuiOemCom_Login();
 			break;
 		}
 
@@ -546,11 +549,11 @@ void prvPocGuiOemTaskHandleSpeak(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 			{
 				char speak_name[100] = "";
 				strcpy((char *)speak_name, (const char *)"主讲:");
-				strcat((char *)speak_name, (const char *)"");//pocIdtAttr.self_info.ucName);
+				strcat((char *)speak_name, (const char *)pocOemAttr.OemUserInfo.OemUserName);
 				if(!pocOemAttr.is_member_call)
 				{
 					char group_name[100] = "";
-					strcpy((char *)group_name, (const char *)"飞图同辉测试1组");//pocIdtAttr.speaker_group.m_ucGName
+					strcpy((char *)group_name, (const char *)pocOemAttr.OemCurrentGroupInfo.OemGroupName);
 					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, speak_name, group_name);
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)speak_name, (const uint8_t *)group_name);
 				}
@@ -625,13 +628,13 @@ void prvPocGuiOemTaskHandleListen(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 		case LVPOCGUIOEMCOM_SIGNAL_LISTEN_SPEAKER_REP:
 		{
 			char speaker_name[100];
-			char *speaker_group = (char *)"飞图同辉测试1组";//pocIdtAttr.speaker_group.m_ucGName;
+			char *speaker_group = (char *)pocOemAttr.OemCurrentGroupInfo.OemGroupName;
 			memset(speaker_name, 0, sizeof(char) * 100);
-			strcpy(speaker_name, (const char *)"");//pocIdtAttr.speaker.ucName);
+			strcpy(speaker_name, (const char *)pocOemAttr.OemUserInfo.OemUserName);
 			strcat(speaker_name, (const char *)"正在讲话");
 
 			/*开始闪烁*/
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+			//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 			#if 0
 			if(pocOemAttr.membercall_count > 1 && pocOemAttr.is_member_call)/*单呼进入第二次*/
 			{
@@ -866,9 +869,12 @@ static
 PocGuiOemGroupAttr_t PocOem_Get_Group_Infomation(char * Information)
 {
 	PocGuiOemGroupAttr_t GInfo;
+	PocGuiOemGroupAttr_t GInfoOpt;
 	char *pGInfo = NULL;
+	unsigned char pGInfoUtf8[64] = {0};
 
 	memset(&GInfo, 0, sizeof(PocGuiOemGroupAttr_t));
+	memset(&GInfoOpt, 0, sizeof(PocGuiOemGroupAttr_t));
 	if(!Information)
 		return GInfo;
 
@@ -881,21 +887,31 @@ PocGuiOemGroupAttr_t PocOem_Get_Group_Infomation(char * Information)
  	strncpy(GInfo.OemGroupName, pGInfo + 12, strlen(pGInfo) - 12);
  	GInfo.OemGroupName[strlen(pGInfo) - 12 - 1] = '\0';
 
-	#if 0
-	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemGroupID %s", GInfo.OemGroupID);
-	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemGroupName %s", GInfo.OemGroupName);
+	//TO UTF8
+	Oem_Unicode_To_Utf8_Convert(GInfo.OemGroupName, pGInfoUtf8);
+
+	//opt
+	strcpy(GInfoOpt.OemGroupID, GInfo.OemGroupID);
+	strcpy(GInfoOpt.OemGroupName, (char *)pGInfoUtf8);//UTF8
+
+	#if 1
+	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemGroupID %s", GInfoOpt.OemGroupID);
+	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemGroupName %s", GInfoOpt.OemGroupName);
 	#endif
 
-	return GInfo;
+	return GInfoOpt;
 }
 
 static
 PocGuiOemUserAttr_t PocOem_Get_User_Infomation(char * Information)
 {
 	PocGuiOemUserAttr_t UInfo;
+	PocGuiOemUserAttr_t UInfoOpt;
 	char *pUInfo = NULL;
+	unsigned char pUInfoUtf8[64] = {0};
 
 	memset(&UInfo, 0, sizeof(PocGuiOemUserAttr_t));
+	memset(&UInfoOpt, 0, sizeof(PocGuiOemUserAttr_t));
 	if(!Information)
 		return UInfo;
 
@@ -908,12 +924,19 @@ PocGuiOemUserAttr_t PocOem_Get_User_Infomation(char * Information)
  	strncpy(UInfo.OemUserName, pUInfo + 12, strlen(pUInfo) - 12);
  	UInfo.OemUserName[strlen(pUInfo) - 12 - 1] = '\0';
 
-	#if 1
+	//TO UTF8
+	Oem_Unicode_To_Utf8_Convert(UInfo.OemUserName, pUInfoUtf8);
+
+	//opt
+	strcpy(UInfoOpt.OemUserID, UInfo.OemUserID);
+	strcpy(UInfoOpt.OemUserName, (char *)pUInfoUtf8);//UTF8
+
+	#if 0
 	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemUserID %s", UInfo.OemUserID);
 	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]OemUserName %s", UInfo.OemUserName);
 	#endif
 
-	return UInfo;
+	return UInfoOpt;
 }
 
 bool lvPocGuiOemCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
@@ -957,7 +980,7 @@ void OemData_StrToStrHex(char *pszDest, char *pbSrc, int nLen)
 	  name : persist_ssl_hashKeyConvert
 	 param : none
 	author : wangls
-  describe : 字符串->(char)16进制->(wchar)16进制
+  describe : 字符串->(char)16进制->(wchar)16进制:小端(Little Endian)转化为大端(Big Endian)
 	  date : 2020-09-14
 */
 unsigned int persist_ssl_hashKeyConvert(char *pUserInput, wchar_t *pKeyArray) //98de---de98
@@ -1027,6 +1050,84 @@ unsigned int persist_ssl_hashKeyConvert(char *pUserInput, wchar_t *pKeyArray) //
 	return uiKeySize;
 }
 
+/*****************************************************************************
+ * 将一个字符的Unicode(UCS-2和UCS-4)编码转换成UTF-8编码.
+ *
+ * 参数:
+ *    unic     字符的Unicode编码值
+ *    pOutput  指向输出的用于存储UTF8编码值的缓冲区的指针
+ *    outsize  pOutput缓冲的大小
+ *
+ * 返回值:
+ *    返回转换后的字符的UTF8编码所占的字节数, 如果出错则返回 0 .
+ *
+ * 注意:
+ *     1. UTF8没有字节序问题, 但是Unicode有字节序要求;
+ *        字节序分为大端(Big Endian)和小端(Little Endian)两种;
+ *        在Intel处理器中采用小端法表示, 在此采用小端法表示. (低地址存低位)
+ *     2. 请保证 pOutput 缓冲区有最少有 6 字节的空间大小!
+ ****************************************************************************/
+int enc_unicode_to_utf8_one(unsigned long unic, unsigned char *pOutput,
+        int outSize)
+{
+//    assert(pOutput != NULL);
+//    assert(outSize >= 6);
+
+    if ( unic <= 0x0000007F )
+    {
+        // * U-00000000 - U-0000007F:  0xxxxxxx
+        *pOutput     = (unic & 0x7F);
+        return 1;
+    }
+    else if ( unic >= 0x00000080 && unic <= 0x000007FF )
+    {
+        // * U-00000080 - U-000007FF:  110xxxxx 10xxxxxx
+        *(pOutput+1) = (unic & 0x3F) | 0x80;
+        *pOutput     = ((unic >> 6) & 0x1F) | 0xC0;
+        return 2;
+    }
+    else if ( unic >= 0x00000800 && unic <= 0x0000FFFF )
+    {
+        // * U-00000800 - U-0000FFFF:  1110xxxx 10xxxxxx 10xxxxxx
+        *(pOutput+2) = (unic & 0x3F) | 0x80;
+        *(pOutput+1) = ((unic >>  6) & 0x3F) | 0x80;
+        *pOutput     = ((unic >> 12) & 0x0F) | 0xE0;
+        return 3;
+    }
+    else if ( unic >= 0x00010000 && unic <= 0x001FFFFF )
+    {
+        // * U-00010000 - U-001FFFFF:  11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        *(pOutput+3) = (unic & 0x3F) | 0x80;
+        *(pOutput+2) = ((unic >>  6) & 0x3F) | 0x80;
+        *(pOutput+1) = ((unic >> 12) & 0x3F) | 0x80;
+        *pOutput     = ((unic >> 18) & 0x07) | 0xF0;
+        return 4;
+    }
+    else if ( unic >= 0x00200000 && unic <= 0x03FFFFFF )
+    {
+        // * U-00200000 - U-03FFFFFF:  111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+        *(pOutput+4) = (unic & 0x3F) | 0x80;
+        *(pOutput+3) = ((unic >>  6) & 0x3F) | 0x80;
+        *(pOutput+2) = ((unic >> 12) & 0x3F) | 0x80;
+        *(pOutput+1) = ((unic >> 18) & 0x3F) | 0x80;
+        *pOutput     = ((unic >> 24) & 0x03) | 0xF8;
+        return 5;
+    }
+    else if ( unic >= 0x04000000 && unic <= 0x7FFFFFFF )
+    {
+        // * U-04000000 - U-7FFFFFFF:  1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+        *(pOutput+5) = (unic & 0x3F) | 0x80;
+        *(pOutput+4) = ((unic >>  6) & 0x3F) | 0x80;
+        *(pOutput+3) = ((unic >> 12) & 0x3F) | 0x80;
+        *(pOutput+2) = ((unic >> 18) & 0x3F) | 0x80;
+        *(pOutput+1) = ((unic >> 24) & 0x3F) | 0x80;
+        *pOutput     = ((unic >> 30) & 0x01) | 0xFC;
+        return 6;
+    }
+
+    return 0;
+}
+
 /*
 	  name : persist_ssl_hashKeyConvert
 	 param : none
@@ -1062,91 +1163,39 @@ void Unicode_To_Gb2312_Convert(char *pUserInput, char *pUserOutput)
 }
 
 /*
-	  name : unicode_to_utf
-	 param : none
-	author : wangls
-  describe : unicode to utf8
-	  date : 2020-09-14
-*/
-int
-unicode_to_utf( unsigned long unicode, unsigned char *utf )
-{
-    assert( utf );
-
-    int size = 0;
-    if ( unicode <= 0x7F )
-    {
-        *( utf + size++ ) = unicode & 0x7F;
-    }
-    else if ( unicode >= 0x80 && unicode <= 0x7FF )
-    {
-        *( utf + size++ ) = ( ( unicode >> 6 ) & 0x1F ) | 0xC0;
-        *( utf + size++ ) = ( unicode & 0x3F ) | 0x80;
-    }
-    else if ( unicode >= 0x800 && unicode <= 0xFFFF )
-    {
-        *( utf + size++ ) = ( ( unicode >> 12 ) & 0x0F ) | 0xE0;
-        *( utf + size++ ) = ( ( unicode >> 6  ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( unicode & 0x3F  ) | 0x80;
-    }
-    else if ( unicode >= 0x10000 && unicode <= 0x10FFFF )
-    {
-        *( utf + size++ ) = ( (unicode >> 18 ) & 0x7  ) | 0xF0;
-        *( utf + size++ ) = ( (unicode >> 12 ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( (unicode >> 6  ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( unicode & 0x3F ) | 0x80;
-    }
-    else if ( unicode >= 0x200000 && unicode <= 0x3FFFFFF )
-    {
-        *( utf + size++ ) = ( (unicode >> 24 ) & 0x3  ) | 0xF8;
-        *( utf + size++ ) = ( (unicode >> 18 ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( (unicode >> 12 ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( (unicode >> 6  ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( unicode & 0x3F ) | 0x80;
-    }
-    else if ( unicode >= 0x4000000 && unicode <= 0x7FFFFFFF )
-    {
-        *( utf + size++ ) = ( (unicode >> 30 ) & 0x1  ) | 0xFC;
-        *( utf + size++ ) = ( (unicode >> 24 ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( (unicode >> 18 ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( (unicode >> 12 ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( (unicode >> 6  ) & 0x3F ) | 0x80;
-        *( utf + size++ ) = ( unicode & 0x3F ) | 0x80;
-    }
-    else
-    {
-        printf( "Error : unknow scope\n" );
-        return -1;
-    }
-    *( utf + size ) = '\0';
-
-    return size;
-}
-
-/*
 	  name : Oem_Unicode_To_Utf8_Convert
 	 param : none
 	author : wangls
   describe : oem unicode to utf8
 	  date : 2020-09-14
 */
-void Oem_Unicode_To_Utf8_Convert(char *pUserInput, char *pUserOutput)
+int Oem_Unicode_To_Utf8_Convert(char *pUserInput, unsigned char *pUserOutput)
 {
+	unsigned char oembufArr[64] = {0};
+	int oemlen = 0;
+	int alllen = 0;
+	int k =0;
+
 	wchar_t oembufBrr[64] = {0};
-	wchar_t oembufArr[64] = {0};
-	wchar_t wstr[64];
-	char str[64];
 
 	int oemsize = persist_ssl_hashKeyConvert(pUserInput, oembufBrr);
+	//printf("[song]oemsize %d \n", oemsize);
 	for(int i = 0; i < oemsize; i++)
 	{
-		oembufArr[i] = (oembufBrr[i])|(oembufBrr[i]&0x0f);
+		oemlen = enc_unicode_to_utf8_one(oembufBrr[i], oembufArr, sizeof(oembufBrr)/sizeof(char));
+		if(oemlen)
+		{
+			//printf("[song]oemlen %d \n", oemlen);
+			for(int j = 0; j < oemlen; j++)
+			{
+				pUserOutput[k++] = oembufArr[j];
+				//printf("[song]outpututf8 %d %x \n",j, pUserOutput[j]);
+			}
+			alllen+=oemlen;
+		}
 	}
-	wcscpy(wstr, (wchar_t *)oembufArr);
-	setlocale(LC_ALL,"");
-	wcstombs(str, wstr, sizeof(str)/sizeof(char));
 
-	strcpy(pUserOutput, str);//copy
+	return alllen;
 }
 
 #if 1/*确信*/

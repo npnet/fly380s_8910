@@ -275,7 +275,7 @@ unicode_to_utf(unsigned long unicode, unsigned char *utf);
   describe : oem unicode to utf8
 	  date : 2020-09-14
 */
-void Oem_Unicode_To_Utf8_Convert(char *pUserInput, char *pUserOutput);
+int Oem_Unicode_To_Utf8_Convert(char *pUserInput, unsigned char *pUserOutput);
 
 OSI_EXTERN_C_END
 

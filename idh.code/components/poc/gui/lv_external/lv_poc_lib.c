@@ -561,7 +561,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 		osiThreadSleep(140);
 		auPlayerStop(prv_play_btn_voice_one_time_player);
 		#endif
-		audevSetPlayVolume(60);
+		audevSetVoiceVolume(60);
 
 		char playkey[4] = "9";
 		ttsPlayText(playkey, strlen(playkey), ML_UTF8);
@@ -622,7 +622,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
 					//还原音量
-					lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
+					//lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 				}
 				else
 				{
@@ -674,7 +674,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
-				audevSetPlayVolume(60);
+				audevSetVoiceVolume(60);
 				break;
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
 			case LVPOCAUDIO_Type_Tone_Lost_Mic:
@@ -685,7 +685,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
 				/*tone volum*/
-				audevSetPlayVolume(40);
+				audevSetVoiceVolume(40);
 				break;
 
 			default:
