@@ -8,7 +8,7 @@ extern "C" {
 #define __attribute__(x)
 #endif
 
-static lv_poc_member_list_t * lv_poc_member_call_member_list_obj = NULL;
+static lv_poc_oem_member_list * lv_poc_member_call_member_list_obj = NULL;
 
 static lv_obj_t * lv_poc_member_call_activity_create(lv_poc_display_t *display);
 
@@ -54,7 +54,7 @@ static void lv_poc_member_call_activity_destory(lv_obj_t *obj)
 {
 	lv_poc_win_t *win = activity_win;
 	activity_win = NULL;
-	lv_poc_member_list_t *m_list = lv_poc_member_call_member_list_obj;
+	lv_poc_oem_member_list *m_list = lv_poc_member_call_member_list_obj;
 	lv_poc_member_call_member_list_obj = NULL;
 	activity_list = NULL;
 
@@ -73,8 +73,8 @@ static void lv_poc_member_call_activity_destory(lv_obj_t *obj)
 
 	if(m_list != NULL)
 	{
-		list_element_t * cur_p = m_list->online_list;
-		list_element_t * temp_p;
+		oem_list_element_t * cur_p = m_list->online_list;
+		oem_list_element_t * temp_p;
 		while(cur_p != NULL)
 		{
 			temp_p = cur_p;
@@ -297,7 +297,7 @@ void lv_poc_member_call_open(void * information)
 		return;
 	}
 
-    lv_poc_member_call_member_list_obj = (lv_poc_member_list_t *)lv_mem_alloc(sizeof(lv_poc_member_list_t));
+    lv_poc_member_call_member_list_obj = (lv_poc_oem_member_list *)lv_mem_alloc(sizeof(lv_poc_oem_member_list));
 	if(lv_poc_member_call_member_list_obj == NULL)
 	{
 		OSI_LOGI(0, "[member_call] apply memory of member list failed!\n");
@@ -335,7 +335,7 @@ void lv_poc_member_call_close(void)
 	lv_poc_member_call_delay_exit_task_create(5);
 }
 
-lv_poc_status_t lv_poc_member_call_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information)
+lv_poc_status_t lv_poc_member_call_add(lv_poc_oem_member_list *member_list_obj, const char * name, bool is_online, void * information)
 {
 	if(member_list_obj == NULL)
 	{
@@ -350,22 +350,7 @@ lv_poc_status_t lv_poc_member_call_add(lv_poc_member_list_t *member_list_obj, co
 	return lv_poc_member_list_add(member_list_obj, name, is_online, information);
 }
 
-void lv_poc_member_call_remove(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
-{
-	if(member_list_obj == NULL)
-	{
-		member_list_obj = lv_poc_member_call_member_list_obj;
-	}
-
-	if(member_list_obj == NULL)
-	{
-		return;
-	}
-
-	lv_poc_member_list_remove(member_list_obj, name, information);
-}
-
-void lv_poc_member_call_clear(lv_poc_member_list_t *member_list_obj)
+void lv_poc_member_call_clear(lv_poc_oem_member_list *member_list_obj)
 {
 	if(member_list_obj == NULL)
 	{
@@ -380,7 +365,7 @@ void lv_poc_member_call_clear(lv_poc_member_list_t *member_list_obj)
 	lv_poc_member_list_clear(member_list_obj);
 }
 
-int lv_poc_member_call_get_information(lv_poc_member_list_t *member_list_obj, const char * name, void *** information)
+int lv_poc_member_call_get_information(lv_poc_oem_member_list *member_list_obj, const char * name, void *** information)
 {
 	if(member_list_obj == NULL)
 	{
@@ -397,11 +382,11 @@ int lv_poc_member_call_get_information(lv_poc_member_list_t *member_list_obj, co
 
 void lv_poc_member_call_refresh(lv_task_t *task_t)
 {
-	lv_poc_member_list_t *member_list_obj = NULL;
+	lv_poc_oem_member_list *member_list_obj = NULL;
 
 	if(task_t != NULL)
 	{
-		member_list_obj = (lv_poc_member_list_t *)task_t->user_data;
+		member_list_obj = (lv_poc_oem_member_list *)task_t->user_data;
 	}
 
 	if(member_list_obj == NULL)
@@ -419,7 +404,7 @@ void lv_poc_member_call_refresh(lv_task_t *task_t)
 		return;
 	}
 
-    list_element_t * p_cur;
+    oem_list_element_t * p_cur;
     lv_obj_t * btn;
     lv_coord_t btn_height = (member_call_display_area.y2 - member_call_display_area.y1)/LV_POC_LIST_COLUM_COUNT;
 
@@ -445,67 +430,7 @@ void lv_poc_member_call_refresh(lv_task_t *task_t)
     }
 }
 
-lv_poc_status_t lv_poc_member_call_move_top(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
-{
-	if(member_list_obj == NULL)
-	{
-		member_list_obj = lv_poc_member_call_member_list_obj;
-	}
-
-	if(member_list_obj == NULL)
-	{
-		return POC_OPERATE_FAILD;
-	}
-
-	return lv_poc_member_list_move_top(member_list_obj, name, information);
-}
-
-lv_poc_status_t lv_poc_member_call_move_bottom(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
-{
-	if(member_list_obj == NULL)
-	{
-		member_list_obj = lv_poc_member_call_member_list_obj;
-	}
-
-	if(member_list_obj == NULL)
-	{
-		return POC_OPERATE_FAILD;
-	}
-
-	return lv_poc_member_list_move_bottom(member_list_obj, name, information);
-}
-
-lv_poc_status_t lv_poc_member_call_move_up(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
-{
-	if(member_list_obj == NULL)
-	{
-		member_list_obj = lv_poc_member_call_member_list_obj;
-	}
-
-	if(member_list_obj == NULL)
-	{
-		return POC_OPERATE_FAILD;
-	}
-
-	return lv_poc_member_list_move_up(member_list_obj, name, information);
-}
-
-lv_poc_status_t lv_poc_member_call_move_down(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
-{
-	if(member_list_obj == NULL)
-	{
-		member_list_obj = lv_poc_member_call_member_list_obj;
-	}
-
-	if(member_list_obj == NULL)
-	{
-		return POC_OPERATE_FAILD;
-	}
-
-	return lv_poc_member_list_move_down(member_list_obj, name, information);
-}
-
-lv_poc_status_t lv_poc_member_call_set_state(lv_poc_member_list_t *member_list_obj, const char * name, void * information, bool is_online)
+lv_poc_status_t lv_poc_member_call_set_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information, bool is_online)
 {
 	if(member_list_obj == NULL)
 	{
@@ -530,7 +455,7 @@ lv_poc_status_t lv_poc_member_call_set_state(lv_poc_member_list_t *member_list_o
 	return lv_poc_member_list_set_state(member_list_obj, name, information, is_online);
 }
 
-lv_poc_status_t lv_poc_member_call_is_exists(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
+lv_poc_status_t lv_poc_member_call_is_exists(lv_poc_oem_member_list *member_list_obj, const char * name, void * information)
 {
 	if(member_list_obj == NULL)
 	{
@@ -545,7 +470,7 @@ lv_poc_status_t lv_poc_member_call_is_exists(lv_poc_member_list_t *member_list_o
 	return lv_poc_member_list_is_exists(member_list_obj, name, information);
 }
 
-lv_poc_status_t lv_poc_member_call_get_state(lv_poc_member_list_t *member_list_obj, const char * name, void * information)
+lv_poc_status_t lv_poc_member_call_get_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information)
 {
 	if(member_list_obj == NULL)
 	{

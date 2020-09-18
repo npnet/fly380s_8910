@@ -714,14 +714,6 @@ typedef void * lv_poc_group_info_t;
 
 typedef void * lv_poc_member_info_t;
 
-typedef struct {
-	bool hide_offline;
-    unsigned int online_number;
-    unsigned int offline_number;
-    list_element_t * online_list;
-    list_element_t * offline_list;
-} lv_poc_member_list_t;
-
 typedef struct _lv_poc_audio_dsc_t
 {
 	uint32_t data_size;
@@ -741,6 +733,47 @@ struct PocPcmToFileAttr_s
 	int fd;
 	struct PocPcmToFileInfo_s InfoAttr_s[5];
 };
+
+typedef struct _oem_list_element_t
+{
+	char  name[64];
+	lv_obj_t * list_item;
+	void *information;
+	struct _oem_list_element_t *next;
+}oem_list_element_t;
+
+//通过消息获取的组成员信息
+typedef struct _OemCGroupMember
+{
+    uint8_t   m_ucUID[64];       //用户ID
+    uint8_t   m_ucUName[64];     //用户名字
+    uint8_t   m_ucUStatus[64];   //用户状态
+    uint8_t   m_ucUIndex;        //用户索引--第几个用户
+}OemCGroupMember;
+
+typedef struct{
+	bool hide_offline;
+	unsigned int offline_number;
+	unsigned int online_number;
+	oem_list_element_t *online_list;
+	oem_list_element_t *offline_list;
+}lv_poc_oem_member_list;
+
+//通过消息获取的组信息
+typedef struct _OemCGroup
+{
+    uint8_t   m_ucGID[64];       //组ID
+    uint8_t   m_ucGName[64];     //组名字
+    uint8_t   m_ucGMonitor[64];  //组是否被监听
+    uint8_t   m_ucGMemberNum;    //组中成员个数
+    uint8_t   m_ucGIndex;        //组索引--第几个组
+}OemCGroup;
+
+//群组
+typedef struct{
+	int group_number;
+	oem_list_element_t *group_list;
+}lv_poc_oem_group_list;
 
 #endif // __LV_POC_TYPR_H_
 

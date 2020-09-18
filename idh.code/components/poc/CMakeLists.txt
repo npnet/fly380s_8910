@@ -29,7 +29,6 @@ add_library(${target} STATIC
 
 	gui/lv_apps/lv_poc_about/lv_poc_about.c
 	gui/lv_apps/lv_poc_state_info/lv_poc_state_info.c
-	gui/lv_apps/lv_poc_build_group/lv_poc_build_group.c
 	gui/lv_apps/lv_poc_edeg_key/lv_poc_edeg_key.c
 	gui/lv_apps/lv_poc_group_list/lv_poc_group_list.c
 	gui/lv_apps/lv_poc_idle/lv_poc_idle.c

@@ -25,8 +25,8 @@ static lv_obj_t * main_menu_list;
 static lv_poc_win_t * main_menu_win;
 static char is_poc_main_menu_update_UI_task_running = 0;
 
-lv_poc_member_list_t * poc_member_list;
-lv_poc_group_list_t  * poc_group_list;
+lv_poc_oem_member_list * poc_member_list;
+lv_poc_oem_group_list  * poc_group_list;
 
 lv_poc_activity_t * main_menu_activity;
 
@@ -35,9 +35,9 @@ static int main_menu_selecte_item_index = 0;
 static const int8_t lv_poc_main_menu_item_text_member_list[] = "成员列表";
 
 static const int8_t lv_poc_main_menu_item_text_group_list[] = "群组";
-
+#if 0
 static const int8_t lv_poc_main_menu_item_text_new_group[] = "新建群组";
-
+#endif
 static const int8_t lv_poc_main_menu_item_text_setting[] = "设置";
 
 static const int8_t lv_poc_main_menu_item_text_about[] = "关于本机";
@@ -86,10 +86,6 @@ static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
 		{
 			lv_poc_setting_open();
 		}
-		else if(0 == strcmp(text, (const char *)lv_poc_main_menu_item_text_new_group))
-		{
-			lv_poc_build_group_open();
-		}
 		else if(0 == strcmp(text, (const char *)lv_poc_main_menu_item_text_about))
 		{
 			lv_poc_about_open();
@@ -124,25 +120,25 @@ static void  lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
     btns[1] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
-
+#if 0
     btn = lv_list_add_btn(list, &ic_group, (const char *)lv_poc_main_menu_item_text_new_group);
     lv_obj_set_event_cb(btn, lv_poc_main_menu_press_cb);
     lv_obj_set_click(btn, true);
     btns[2] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
-
+#endif
     btn = lv_list_add_btn(list, &ic_setting, (const char *)lv_poc_main_menu_item_text_setting);
     lv_obj_set_event_cb(btn, lv_poc_main_menu_press_cb);
     lv_obj_set_click(btn, true);
-    btns[3] = btn;
+    btns[2] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
 
     btn = lv_list_add_btn(list, &ic_menu_about, (const char *)lv_poc_main_menu_item_text_about);
     lv_obj_set_event_cb(btn, lv_poc_main_menu_press_cb);
     lv_obj_set_click(btn, true);
-    btns[4] = btn;
+    btns[3] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
 

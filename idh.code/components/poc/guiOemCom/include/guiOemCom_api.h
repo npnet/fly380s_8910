@@ -40,12 +40,24 @@ typedef enum
     LVPOCGUIOEMCOM_SIGNAL_LISTEN_STOP_REP,
     LVPOCGUIOEMCOM_SIGNAL_LISTEN_SPEAKER_REP,
 
-	LVPOCGUIIDTCOM_SIGNAL_JOIN_GROUP_REP,
+	LVPOCGUIOEMCOM_SIGNAL_JOIN_GROUP_REP,
+	LVPOCGUIOEMCOM_SIGNAL_GROUPLIST_DATA_REP,
 
+	LVPOCGUIOEMCOM_SIGNAL_MEMBERLIST_INFO_IN,
+	LVPOCGUIOEMCOM_SIGNAL_MEMBERLIST_INFO_REP,
+	LVPOCGUIOEMCOM_SIGNAL_MEMBERLIST_DATA_REP,
 
-    LVPOCGUIIDTCOM_SIGNAL_MIC_IND,
-    LVPOCGUIIDTCOM_SIGNAL_MIC_REP,
+	LVPOCGUIOEMCOM_SIGNAL_MEMBER_LIST_QUERY_IND,
+	LVPOCGUIOEMCOM_SIGNAL_MEMBER_LIST_QUERY_REP,
+	LVPOCGUIOEMCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND,
+	LVPOCGUIOEMCOM_SIGNAL_CANCEL_REGISTER_GET_MEMBER_LIST_CB_IND,
 
+	LVPOCGUIOEMCOM_SIGNAL_GROUP_LIST_QUERY_IND,
+	LVPOCGUIOEMCOM_SIGNAL_GROUP_LIST_QUERY_REP,
+	LVPOCGUIOEMCOM_SIGNAL_REGISTER_GET_GROUP_LIST_CB_IND,
+	LVPOCGUIOEMCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND,
+
+	/*****************************************/
     LVPOCGUIIDTCOM_SIGNAL_GROUP_LIST_QUERY_IND,
     LVPOCGUIIDTCOM_SIGNAL_GROUP_LIST_QUERY_REP,
     LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_GROUP_LIST_CB_IND,
@@ -112,14 +124,13 @@ typedef enum
 
 typedef enum{/*登陆状态*/
 
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_START = 0,
+	LVPOCOEMCOM_SIGNAL_LOGIN_START = 0,
 
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED = 1 ,
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING = 2 ,
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS = 3 ,
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_EXIT = 4 ,
+	LVPOCOEMCOM_SIGNAL_LOGIN_FAILED = 1 ,
+	LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS = 2 ,
+	LVPOCOEMCOM_SIGNAL_LOGIN_EXIT = 3 ,
 
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_END	,
+	LVPOCOEMCOM_SIGNAL_LOGIN_END	,
 }LVPOCIDTCOM_LOGIN_STATUS_T;
 
 typedef enum{/*登陆状态*/
@@ -132,50 +143,82 @@ typedef enum{/*登陆状态*/
 	LVPOCOEMCOM_SIGNAL_GROUP_END	,
 }LVPOCOEMCOM_GROUP_STATUS_T;
 
+/*******************************************OPT REQUEST CODE***********************************************************/
 //OPT SEND CODE
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC 			  "000500"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETPARAM 			  "010000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GETPARAM 			  "020000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN    			  "030000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGOUT   			  "040000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ADDLISTENGROUP      "070000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CANNELLISTENGROUP   "080000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTSPEAK 		  "0B0000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPSPEAK  		  "0C0000"
-#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETVOLUM   		  "250000"
-#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPEN_LOG 			  "7E000001"
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC 			  "005200"//请求打开POC
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETPARAM 			  "015300"//请求设置POC
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GETPARAM 			  "020000"//请求获取POC
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN    			  "030000"//请求登入
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGOUT   			  "040000"//请求登出
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTSPEAK 		  "0B0000"//请求开始讲话
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPSPEAK  		  "0C0000"//请求停止讲话
+
+//MEMBER REQUEST
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_MEMBERCALL 		         "0A0000"//请求发起单呼
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LAUNCH_MEMBERVOICECALL     "420000"//请求发起语音通话
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_RECEIVE_MEMBERVOICECALL    "430001"//请求接听语音通话
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CANNEL_MEMBERVOICECALL     "430000"//请求挂断语音通话
+
+//GROUP REQUEST
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ADDLISTENGROUP      		"072200"//请求监听组
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CANNELLISTENGROUP   		"082200"//请求取消监听组
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_REQUESTJOINGROUP    		"092200"//请求加入群组
+#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_INDEX               "0D0000"//请求组的个数
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ALL_MEMBER_INDEX          "0E000000000001"//请求所有成员信息
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_MEMBER_INDEX        "130000"//请求某个组的成员信息
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GET_GROUP_MEMBER_ONLINE   "3B0000"//请求组成员在线人数
+
+
+#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETVOLUM   		  "250000"  //请求设置音量
+#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPEN_LOG 			  "7E000001"//开关LOG
 
 #define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ACCOUT 			  "66747468"//ftth---账号
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_END        		  "00"
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_END        		  "00"		//结尾符
 
-//OPT ACK CODE
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_POCSTARTED_ACK 		  "ff00"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC_ACK             "00000500"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETPARAM_ACK   		  "01000000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GETPARAM_ACK   		  "02000000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_ACK      		  "030000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGOUT_ACK     		  "040000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_ACK      		  "030000"
+/****************************************OPT ACK CODE*************************************************/
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_POCSTARTED_ACK 		  "POC:ff00"     //POC已启动应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC_ACK             "POC:00005200" //打开POC应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETPARAM_ACK   		  "POC:01005300" //设置POC参数应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GETPARAM_ACK   		  "POC:02000000" //获取POC参数应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_ACK      		  "POC:030000"   //登入成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGOUT_ACK     		  "POC:040000"   //登出成功应答
 
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK             "8200"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGINING_ACK            "8201"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_SUCCESS_ACK       "8202"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_CANCELLATION_ACK  "8203"
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK             "POC:8200" //未登录应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGINING_ACK            "POC:8201" //正在登录应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_SUCCESS_ACK       "POC:8202" //登录成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_CANCELLATION_ACK  "POC:8203" //登出成功应答
 
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_JNIO_ACK  		  "8600"
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ADDLISTENGROUP_ACK      "07002200" //请求监听组成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CANNELLISTENGROUP_ACK   "08002200" //取消监听组成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_REQUESTJOINGROUP_ACK    "09002200" //请求加入群组成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTSPEAK_ACK          "0b000000" //开始讲话成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPSPEAK_ACK 		  "0c000000" //停止讲话成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTLISTEN_ACK 		  "8b0001"   //开始接听成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPLISTEN_ACK 		  "8b0000"   //停止接听成功应答
+#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETVOLUM_ACK    		  "250000"   //设置音量成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NETWORK_CONNECTED_ACK   "970001"   //POC已连接网络应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NETWORK_NOT_CONNECT_ACK "970000"   //POC未连接网络应答
 
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ADDLISTENGROUP_ACK      "070000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CANNELLISTENGROUP_ACK   "080000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTSPEAK_ACK          "0b000000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPSPEAK_ACK 		  "0c000000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTLISTEN_ACK 		  "8b0001"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPLISTEN_ACK 		  "8b0000"
-#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETVOLUM_ACK    		  "250000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NETWORK_CONNECTED_ACK   "970001"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NETWORK_NOT_CONNECT_ACK "970000"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_VOICECALLSTART_ACK      "a301"
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_VOICECALLEND_ACK        "a300"
+//MEMBER ACK
+#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_MEMBERCALL_ACK          "POC:0a000000"//单呼用户成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CALL_FAILED_ACK         "POC:8400"//提示--"呼叫失败"应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_UPDATEDATAUI_ACK  	  "POC:8501"//用户信息需更新
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_UPDATEDATAUSERNAME_ACK  "POC:8700"//用户名字更新
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_VOICECALLSTART_ACK      "POC:a301"//来电
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_VOICECALLEND_ACK        "POC:a300"//结束通话
+//0E0000->请求组中的成员个数---应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_MEMBERLISTINFO_ACK      "POC:81"  //返回群组成员信息
 
+//GROUP ACK
+#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_INDEX_ACK              "0d000000"//请求组的个数成功
+#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_MEMBER_INDEX_ACK       "0e000000"//请求组中的成员个数成功
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_JNIO_ACK  		       "8600"  //加入群组,当前群组
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_UPDATEDATAGI_ACK  	       "POC:8500"//组信息需更新
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_QUERY_X_GROUPMEMBERINFO_ACK  "POC:13"//某个群组的成员
+//0D0000->请求组的个数---应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUPLISTINFO_ACK       "POC:80"//返回群组信息
+
+/********************************************************************************************************/
 //SET POC FUNC
 //A:TTS_FUNC B:NOTIFY_FUNC C:OFFLINEPLAY_FUNC
 //1:open 0:close
@@ -183,6 +226,66 @@ typedef enum{/*登陆状态*/
 #define OEM_FUNC_CLOSE "00"
 #define OEM_DTOS(x)    #x
 #define LVPOCPOCOEMCOM_SIGNAL_OPENPOC(A,B,C,D)  A##0##B##0##C##0##D
+
+/**********************EXTERN**********************/
+
+typedef struct _PocGuiOemUserAttr_t
+{
+	char  OemUserName[64];
+	char  OemUserID[32];
+	int   OemUserNumber;
+}PocGuiOemUserAttr_t;
+
+typedef struct _PocGuiOemGroupAttr_t
+{
+	char  OemGroupName[64];
+	char  OemGroupID[32];
+	int   OemGroupNumber;
+}PocGuiOemGroupAttr_t;
+
+extern atCmdEngine_t *ap_Oem_engine;
+
+void lvPocGuiOemCom_Init(void);
+
+bool lvPocGuiOemCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
+
+bool lvPocGuiOemCom_MessageQueue(osiMessageQueue_t *mq, const void *msg);
+
+int OEM_SendUart(char *uf,int len);
+
+void OEM_TTS_Stop();
+
+int OEM_TTS_Spk(char* atxt);
+
+void lv_poc_oemdata_strtostrhex(char *pszDest, char *pbSrc, int nLen);
+
+unsigned int lv_poc_persist_ssl_hashKeyConvert(char *pUserInput, wchar_t *pKeyArray);
+
+void lv_poc_unicode_to_gb2312_convert(char *pUserInput, char *pUserOutput);
+
+int unicode_to_utf(unsigned long unicode, unsigned char *utf);
+
+int lv_poc_oem_unicode_to_utf8_convert(char *pUserInput, unsigned char *pUserOutput);
+
+OemCGroup lv_poc_get_oem_current_groupInfo(void);
+
+PocGuiOemUserAttr_t lv_poc_get_oem_self_info(void);
+
+uint64_t lv_poc_oemdata_strtodec(char *data,uint32_t len);
+
+lv_poc_oem_group_list *pub_lv_poc_get_group_list_all_info(void);
+
+bool pub_lv_poc_free_group_list(void);
+
+lv_poc_oem_member_list *pub_lv_poc_get_member_list_info(void);
+
+bool pub_lv_poc_free_member_list(void);
+
+void *lvPocGuiOemCom_get_monitor_group(void);
+
+void *lvPocGuiOemCom_get_current_group_info(void);
+
+void lvPocGuiOemCom_Request_Groupx_MemeberInfo(char *GroupID);
 
 #if 1/*确信*/
 typedef struct
@@ -222,60 +325,6 @@ void *lvPocGuiIdtCom_get_current_lock_group(void);
 
 bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str);
 #endif
-
-/**********************EXTERN**********************/
-extern atCmdEngine_t *ap_Oem_engine;
-
-void lvPocGuiOemCom_Init(void);
-
-bool lvPocGuiOemCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
-
-bool lvPocGuiOemCom_MessageQueue(osiMessageQueue_t *mq, const void *msg);
-
-int OEM_SendUart(char *uf,int len);
-
-void OEM_TTS_Stop();
-
-int OEM_TTS_Spk(char* atxt);
-
-void OemData_StrToStrHex(char *pszDest, char *pbSrc, int nLen);
-
-/*
-	  name : persist_ssl_hashKeyConvert
-	 param : none
-	author : wangls
-  describe : 字符串->(char)16进制->(wchar)16进制
-	  date : 2020-09-14
-*/
-unsigned int persist_ssl_hashKeyConvert(char *pUserInput, wchar_t *pKeyArray);
-
-/*
-	  name : persist_ssl_hashKeyConvert
-	 param : none
-	author : wangls
-  describe : unicode to gb2312
-	  date : 2020-09-14
-*/
-void Unicode_To_Gb2312_Convert(char *pUserInput, char *pUserOutput);
-
-/*
-	  name : unicode_to_utf
-	 param : none
-	author : wangls
-  describe : unicode to utf8
-	  date : 2020-09-14
-*/
-int
-unicode_to_utf(unsigned long unicode, unsigned char *utf);
-
-/*
-	  name : Oem_Unicode_To_Utf8_Convert
-	 param : none
-	author : wangls
-  describe : oem unicode to utf8
-	  date : 2020-09-14
-*/
-int Oem_Unicode_To_Utf8_Convert(char *pUserInput, unsigned char *pUserOutput);
 
 OSI_EXTERN_C_END
 
