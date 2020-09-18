@@ -77,6 +77,7 @@ typedef struct _PocGuiOemComAttr_t
 
 	//Info
 	OemCGroup OemCurrentGroupInfo;
+	OemCGroup OemMonitorGroupInfo;
 	PocGuiOemUserAttr_t  OemUserInfo;
 
 	PocGuiOemGroupAttr_t OemAllGroupInfo;
@@ -85,6 +86,7 @@ typedef struct _PocGuiOemComAttr_t
 	//cb
 	lv_poc_get_member_list_cb_t pocGetMemberListCb;
 	lv_poc_get_group_list_cb_t pocGetGroupListCb;
+	poc_set_current_group_cb pocSetCurrentGroupCb;
 
 	bool 		isReady;
 	int 		pocnetstatus;
@@ -318,14 +320,34 @@ void lvPocGuiOemCom_Request_AllMemeberInfo(void)
 	OEMPOC_AT_Recv((char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ALL_MEMBER_INDEX, strlen((char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ALL_MEMBER_INDEX));
 }
 
-void lvPocGuiOemCom_Request_Groupx_MemeberInfo(char *GroupID)
+bool lvPocGuiOemCom_Request_Groupx_MemeberInfo(char *GroupID)
 {
 	char pGroup[64] = {0};
+	if(GroupID == NULL)
+	{
+		return false;
+	}
 	strcpy(pGroup, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_MEMBER_INDEX);
 	strcat(pGroup, GroupID);
 
 	OEMPOC_AT_Recv((char *)pGroup, strlen((char *)pGroup));
+	return true;
 }
+
+bool lvPocGuiOemCom_Request_Join_Groupx(char *GroupID)
+{
+	char pGroup[64] = {0};
+	if(GroupID == NULL)
+	{
+		return false;
+	}
+	strcpy(pGroup, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_REQUESTJOINGROUP);
+	strcat(pGroup, GroupID);
+
+	OEMPOC_AT_Recv((char *)pGroup, strlen((char *)pGroup));
+	return true;
+}
+
 
 static
 void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
@@ -427,6 +449,12 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_QUERY_X_GROUPMEMBERINFO_ACK))
 					{
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_MEMBER_LIST_QUERY_REP, apopt);
+						break;
+					}
+					//grouplist join other group ack(加入群组应答)--09应答
+					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_REQUESTJOINGROUP_ACK))
+					{
+						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_CURRENT_GROUP_REP, apopt);
 						break;
 					}
 
@@ -740,7 +768,7 @@ void prvPocGuiOemTaskHandleListen(uint32_t id, uint32_t ctx)
 }
 
 static
-void prvPocGuiOemTaskHandleGroupOpt(uint32_t id, uint32_t ctx)
+void prvPocGuiOemTaskHandlePoweronGroupOpt(uint32_t id, uint32_t ctx)
 {
 	switch(id)
 	{
@@ -794,7 +822,7 @@ void prvPocGuiOemTaskHandleGroupList(uint32_t id, uint32_t ctx)
 
 			PocGuiOemApSendAttr_t *apopt = (PocGuiOemApSendAttr_t *)ctx;
 			PocGuiOemAtBufferAttr_t Grouplist;
-			PocGuiOemAtTableAttr_t table[7] = {
+			PocGuiOemAtTableAttr_t table[4] = {
 				{5,2},//应答号--0D
 				{7,2},//结果码
 				{9,4},//操作ID--忽略
@@ -828,8 +856,68 @@ void prvPocGuiOemTaskHandleGroupList(uint32_t id, uint32_t ctx)
 		case LVPOCGUIOEMCOM_SIGNAL_GROUPLIST_DATA_REP:
 		{
 			PocGuiOemApSendAttr_t *apopt = (PocGuiOemApSendAttr_t *)ctx;
-			prv_lv_poc_oem_get_group_list_info(apopt->oembuf);
 
+			prv_lv_poc_oem_get_group_list_info(apopt->oembuf);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+}
+
+static
+void prvPocGuiOemTaskHandleSetCurrentGroup(uint32_t id, uint32_t ctx)
+{
+	switch(id)
+	{
+		case LVPOCGUIOEMCOM_SIGNAL_SET_CURRENT_GROUP_IND:
+		{
+			if(pocOemAttr.pocSetCurrentGroupCb == NULL)
+			{
+				break;
+			}
+			OemCGroup *SetCGroup = (OemCGroup *)ctx;
+			//request join group
+			lvPocGuiOemCom_Request_Join_Groupx((char *)SetCGroup->m_ucGID);
+			break;
+		}
+
+		case LVPOCGUIOEMCOM_SIGNAL_SET_CURRENT_GROUP_REP:
+		{
+			PocGuiOemApSendAttr_t *apopt = (PocGuiOemApSendAttr_t *)ctx;
+			PocGuiOemAtBufferAttr_t CurrentGroup;
+			PocGuiOemAtTableAttr_t table[3] = {
+				{5,2},//应答号--09
+				{7,2},//结果码
+				{9,4},//操作ID--忽略
+			};
+
+			CurrentGroup = prv_lv_poc_oem_get_global_atcmd_info(apopt->oembuf, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
+
+			if(0 == strcmp(CurrentGroup.buf[1].oembuf, "ff"))//same group
+			{
+				pocOemAttr.pocSetCurrentGroupCb(2);
+				break;
+			}else{
+			//set success
+				pocOemAttr.pocSetCurrentGroupCb(1);
+			}
+
+			break;
+		}
+
+    	case LVPOCGUIOEMCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND:
+    	{
+			pocOemAttr.pocSetCurrentGroupCb = (poc_set_current_group_cb)ctx;
+			break;
+		}
+
+    	case LVPOCGUIOEMCOM_SIGNAL_CANCEL_REGISTER_SET_CURRENT_GROUP_CB_IND:
+    	{
+			pocOemAttr.pocSetCurrentGroupCb = NULL;
 			break;
 		}
 
@@ -894,16 +982,24 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 			}
 			if(ctx == 0)
 			{
-				pocOemAttr.pocGetMemberListCb(0, 0, NULL);
+				//get current group's memberlist info
+				OemCGroup *CurrentGUInfo = (OemCGroup *)lvPocGuiOemCom_get_current_group_info();
+
+				if(CurrentGUInfo->m_ucGID != NULL)
+				{
+					//OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]current group id get member info %s", CurrentGUInfo->m_ucGID);
+					lvPocGuiOemCom_Request_Groupx_MemeberInfo((char *)CurrentGUInfo->m_ucGID);
+				}
 				break;
 			}
 			else
 			{
-				OemCGroup *group_info = (OemCGroup *)ctx;
-				if(group_info->m_ucGID != NULL)
+				//grouplist x group get member
+				OemCGroup *xgroup_info = (OemCGroup *)ctx;
+				if(xgroup_info->m_ucGID != NULL)
 				{
-					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]group id get member info %s", group_info->m_ucGID);
-					lvPocGuiOemCom_Request_Groupx_MemeberInfo((char *)group_info->m_ucGID);
+					//OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]group id get member info %s", xgroup_info->m_ucGID);
+					lvPocGuiOemCom_Request_Groupx_MemeberInfo((char *)xgroup_info->m_ucGID);
 				}
 			}
 
@@ -1104,7 +1200,7 @@ void pocGuiOemComTaskEntry(void *argument)
 
 			case LVPOCGUIOEMCOM_SIGNAL_JOIN_GROUP_REP:
 			{
-				prvPocGuiOemTaskHandleGroupOpt(event.param1, event.param2);
+				prvPocGuiOemTaskHandlePoweronGroupOpt(event.param1, event.param2);
 				break;
 			}
 
@@ -1132,6 +1228,15 @@ void pocGuiOemComTaskEntry(void *argument)
 			case LVPOCGUIOEMCOM_SIGNAL_GROUPLIST_DATA_REP:
 			{
 				prvPocGuiOemTaskHandleGroupList(event.param1, event.param2);
+				break;
+			}
+
+			case LVPOCGUIOEMCOM_SIGNAL_SET_CURRENT_GROUP_IND:
+			case LVPOCGUIOEMCOM_SIGNAL_SET_CURRENT_GROUP_REP:
+    		case LVPOCGUIOEMCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND:
+    		case LVPOCGUIOEMCOM_SIGNAL_CANCEL_REGISTER_SET_CURRENT_GROUP_CB_IND:
+    		{
+				prvPocGuiOemTaskHandleSetCurrentGroup(event.param1, event.param2);
 				break;
 			}
 
@@ -1494,16 +1599,6 @@ bool pub_lv_poc_free_member_list(void)
 	return true;
 }
 
-OemCGroup lv_poc_get_oem_current_groupInfo(void)
-{
-	return pocOemAttr.OemCurrentGroupInfo;
-}
-
-PocGuiOemUserAttr_t lv_poc_get_oem_self_info(void)
-{
-	return pocOemAttr.OemUserInfo;
-}
-
 bool lvPocGuiOemCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
 {
 	if(pocOemAttr.thread == NULL)
@@ -1824,6 +1919,16 @@ PocGuiOemAtBufferAttr_t prv_lv_poc_oem_get_global_atcmd_info(void *info, int ind
 	return oematbuf;
 }
 
+void *lvPocGuiOemCom_get_oem_self_info(void)
+{
+	if(pocOemAttr.loginstatus_t != LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS)
+	{
+		return NULL;
+	}
+
+	return &pocOemAttr.OemUserInfo;
+}
+
 void *lvPocGuiOemCom_get_current_group_info(void)
 {
 	if(pocOemAttr.loginstatus_t != LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS)
@@ -1834,6 +1939,18 @@ void *lvPocGuiOemCom_get_current_group_info(void)
 	return &pocOemAttr.OemCurrentGroupInfo;
 }
 
+bool lvPocGuiOemCom_modify_current_group_info(OemCGroup *CurrentGroup)
+{
+	if(pocOemAttr.loginstatus_t != LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS || CurrentGroup == NULL)
+	{
+		return false;
+	}
+	memcpy(&pocOemAttr.OemCurrentGroupInfo, CurrentGroup, sizeof(OemCGroup));
+	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocOemAttr.OemUserInfo.OemUserName, pocOemAttr.OemCurrentGroupInfo.m_ucGName);
+
+	return true;
+}
+
 void *lvPocGuiOemCom_get_monitor_group(void)
 {
 	if(pocOemAttr.loginstatus_t != LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS)
@@ -1841,7 +1958,7 @@ void *lvPocGuiOemCom_get_monitor_group(void)
 		return NULL;
 	}
 
-	return &pocOemAttr.OemCurrentGroupInfo;
+	return &pocOemAttr.OemMonitorGroupInfo;
 }
 
 #if 1/*确信*/

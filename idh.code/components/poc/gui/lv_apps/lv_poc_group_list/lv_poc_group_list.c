@@ -26,7 +26,6 @@ static bool lv_poc_group_list_design_func(struct _lv_obj_t * obj, const lv_area_
 
 static void lv_poc_get_group_list_cb(int result_type);
 
-static void lv_poc_group_list_title_refr(lv_task_t * task);
 static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt);
 
 static void lv_poc_group_delete_oprator_cb(int result_type);
@@ -42,8 +41,6 @@ static void lv_poc_unlock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t ev
 static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
 
 static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
-
-static void lv_poc_set_current_group_informartion_task(lv_task_t * task);
 
 static void lv_poc_group_list_notation(lv_task_t * task);
 
@@ -102,9 +99,10 @@ static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 	activity_list = NULL;
 	if(lv_poc_group_list != NULL)
 	{
+		lv_mem_free(lv_poc_group_list);
 		//oem free mem
 		pub_lv_poc_free_group_list();
-		lv_mem_free(lv_poc_group_list);
+		OSI_LOGI(0, "[song]free group_list");
 	}
 	lv_poc_group_list = NULL;
 
@@ -117,6 +115,7 @@ static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 	if(lv_poc_member_list != NULL)
 	{
 		lv_mem_free(lv_poc_member_list);
+		OSI_LOGI(0, "[song]free group_member_list");
 	}
 	lv_poc_member_list = NULL;
 	poc_group_list_activity = NULL;
@@ -124,6 +123,14 @@ static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 
 static void lv_poc_group_list_list_config(lv_obj_t * list, lv_area_t list_area)
 {
+}
+
+static
+void lv_poc_group_list_title_refr(lv_task_t * task)
+{
+	lv_poc_member_list_open(lv_poc_group_member_list_title,
+		lv_poc_member_list,
+		lv_poc_member_list->hide_offline);
 }
 
 static void lv_poc_group_list_get_membet_list_cb(int msg_type)
@@ -155,13 +162,53 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     }
 }
 
-/*
-	  name : lv_poc_group_list_set_current_group_cb
-	 param : none
-	author : wangls
-  describe : lv任务刷新
-	  date : 2020-07-28
-*/
+static
+void lv_poc_set_current_group_informartion_task(lv_task_t * task)
+{
+	int result_type = (int)task->user_data;
+
+	if(result_type == 1)
+	{
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Join_Group, 50, false);
+		if(lv_poc_group_current_info != NULL && activity_list != NULL)
+		{
+			lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
+			if(cur_btn == NULL) return;
+			//restore before group name
+			lv_poc_group_list_item_info_t *group_info = lv_poc_group_current_info;
+			if(group_info == NULL) return;
+			oem_list_element_t * group_item = (oem_list_element_t *)group_info->item_information;
+			if(group_item == NULL) return;
+			lv_obj_t *btn_label = lv_list_get_btn_label(group_item->list_item);
+			lv_label_set_text(btn_label, " ");
+			lv_label_set_text(btn_label, lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
+			//modify current group name
+			group_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
+			group_item = (oem_list_element_t *)group_info->item_information;
+			btn_label = lv_list_get_btn_label(group_item->list_item);
+	    	strcpy(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
+          	strcat(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
+			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
+
+			lvPocGuiOemCom_modify_current_group_info((OemCGroup *)group_item->information);
+			lv_poc_group_current_info = group_info;
+
+			OSI_LOGI(0, "[song]set current group");
+		}
+		//delay display notation
+		lv_poc_refr_task_once(lv_poc_group_list_notation, LVPOCLISTIDTCOM_LIST_PERIOD_300, LV_TASK_PRIO_LOW);
+	}
+	else if(result_type == 2)//已在群组
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", (const uint8_t *)"");
+	}
+	else
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"失败");
+	}
+
+}
+
 static void lv_poc_group_list_set_current_group_cb(int result_type)
 {
 	lv_poc_refr_func_ui(lv_poc_set_current_group_informartion_task, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)result_type);
@@ -177,12 +224,10 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 	oem_list_element_t * p_element = (oem_list_element_t *)p_info->item_information;
 	Ap_OSI_ASSERT((p_element != NULL), "[song]group_list list_element_t NULL");
 
-	OSI_LOGI(0, "[song]poc_group_list_signal event_cb %d", event);
-
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
 		//lv_poc_group_lock_info = p_info;
-		//lv_poc_set_current_group((lv_poc_group_info_t)p_element->information, lv_poc_group_list_set_current_group_cb);
+		lv_poc_set_current_group((lv_poc_group_info_t)p_element->information, lv_poc_group_list_set_current_group_cb);
 
 		if(lv_poc_member_list == NULL)
 		{
@@ -905,83 +950,6 @@ lv_poc_status_t lv_poc_group_list_lock_group(lv_poc_oem_group_list *group_list_o
 	lv_task_once(fresh_task);
 
     return POC_GROUP_NONENTITY;
-}
-
-/*
-	  name : lv_poc_group_list_title_refr
-	 param : none
-	author : wangls
-  describe : refr title
-	  date : 2020-07-02
-*/
-static
-void lv_poc_group_list_title_refr(lv_task_t * task)
-{
-	lv_poc_member_list_open(lv_poc_group_member_list_title,
-		lv_poc_member_list,
-		lv_poc_member_list->hide_offline);
-}
-
-/*
-	  name : lv_poc_set_current_group_informartion_task
-	 param : none
-	author : wangls
-  describe : 刷新群组信息
-	  date : 2020-07-28
-*/
-static
-void lv_poc_set_current_group_informartion_task(lv_task_t * task)
-{
-	int result_type = (int)task->user_data;
-
-	if(result_type == 1)
-	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Join_Group, 50, false);
-		if(lv_poc_group_current_info != NULL && activity_list != NULL)
-		{
-			lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
-			if(cur_btn == NULL) return;
-
-			lv_poc_group_list_item_info_t *group_info = lv_poc_group_current_info;
-			if(group_info == NULL) return;
-
-			oem_list_element_t * group_item = (oem_list_element_t *)group_info->item_information;
-			if(group_item == NULL) return;
-			lv_obj_t *btn_label = lv_list_get_btn_label(group_item->list_item);
-			lv_label_set_text(btn_label, " ");
-			lv_label_set_text(btn_label, lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-			lv_img_set_src(group_info->monitor_img, &unlock);
-			group_info->is_monitor = false;
-			/*当前选的group list*/
-			group_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
-			group_item = (oem_list_element_t *)group_info->item_information;
-			btn_label = lv_list_get_btn_label(group_item->list_item);
-	    	strcpy(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
-          	strcat(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
-			lv_img_set_src(group_info->monitor_img, &unlock);
-			group_info->is_monitor = false;/*锁组*/
-
-			if(group_info == NULL) return;
-			lv_poc_group_current_info = group_info;
-
-			if(lv_poc_get_monitor_group() != NULL)
-			{
-				lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_LOCK, (lv_poc_group_info_t)group_item->information, lv_poc_group_lock_oprator_cb);
-			}
-		}
-		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
-		lv_poc_refr_task_once(lv_poc_group_list_notation, LVPOCLISTIDTCOM_LIST_PERIOD_300, LV_TASK_PRIO_LOW);
-	}
-	else if(result_type == 2)
-	{
-		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
-	}
-	else
-	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"失败");
-	}
-
 }
 
 /*
