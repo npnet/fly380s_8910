@@ -27024,7 +27024,7 @@
     ITEM_NAME    = band[5]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x7
     ITEM_INDEX   = 2701
     ITEM_PARENT  = 2695
     ITEM_DESC    = BAND7
@@ -27054,7 +27054,7 @@
     ITEM_NAME    = band[8]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x14
     ITEM_INDEX   = 2704
     ITEM_PARENT  = 2695
     ITEM_DESC    = BAND20
@@ -27084,7 +27084,7 @@
     ITEM_NAME    = band[11]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x26
     ITEM_INDEX   = 2707
     ITEM_PARENT  = 2695
     ITEM_DESC    = BAND38
@@ -27094,7 +27094,7 @@
     ITEM_NAME    = band[12]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x27
     ITEM_INDEX   = 2708
     ITEM_PARENT  = 2695
     ITEM_DESC    = BAND39
@@ -27114,7 +27114,7 @@
     ITEM_NAME    = band[14]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x22
     ITEM_INDEX   = 2710
     ITEM_PARENT  = 2695
     ITEM_DESC    =  
@@ -27194,7 +27194,7 @@
     ITEM_NAME    = band[22]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x28
     ITEM_INDEX   = 2718
     ITEM_PARENT  = 2695
     ITEM_DESC    = BAND40
@@ -27384,7 +27384,7 @@
     ITEM_NAME    = active_flag
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 2737
     ITEM_PARENT  = 2736
     ITEM_DESC    =  
@@ -27474,7 +27474,7 @@
     ITEM_NAME    = active_flag
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 2746
     ITEM_PARENT  = 2745
     ITEM_DESC    =  
@@ -27564,7 +27564,7 @@
     ITEM_NAME    = active_flag
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 2755
     ITEM_PARENT  = 2754
     ITEM_DESC    =  
@@ -27594,7 +27594,7 @@
     ITEM_NAME    = active_flag
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 2758
     ITEM_PARENT  = 2757
     ITEM_DESC    =  
@@ -27654,7 +27654,7 @@
     ITEM_NAME    = active_flag
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 2764
     ITEM_PARENT  = 2763
     ITEM_DESC    =  
@@ -27894,7 +27894,7 @@
     ITEM_NAME    = active_flag
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 2788
     ITEM_PARENT  = 2787
     ITEM_DESC    =  
@@ -28384,7 +28384,7 @@
     ITEM_NAME    = u16_tx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4
     ITEM_INDEX   = 2837
     ITEM_PARENT  = 2835
     ITEM_DESC    =  
@@ -28464,7 +28464,7 @@
     ITEM_NAME    = u16_rx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 2845
     ITEM_PARENT  = 2844
     ITEM_DESC    =  
@@ -28474,7 +28474,7 @@
     ITEM_NAME    = u16_tx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 2846
     ITEM_PARENT  = 2844
     ITEM_DESC    =  
@@ -28564,7 +28564,7 @@
     ITEM_NAME    = u16_tx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4
     ITEM_INDEX   = 2855
     ITEM_PARENT  = 2853
     ITEM_DESC    =  
@@ -28584,7 +28584,7 @@
     ITEM_NAME    = u16_rx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 2857
     ITEM_PARENT  = 2856
     ITEM_DESC    =  
@@ -28594,7 +28594,7 @@
     ITEM_NAME    = u16_tx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 2858
     ITEM_PARENT  = 2856
     ITEM_DESC    =  
@@ -28894,7 +28894,7 @@
     ITEM_NAME    = u16_tx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4
     ITEM_INDEX   = 2888
     ITEM_PARENT  = 2886
     ITEM_DESC    =  
@@ -29922,7 +29922,7 @@
     ITEM_NAME    = lte_calib_txpwr_comp[4]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 2990
     ITEM_PARENT  = 2985
     ITEM_DESC    =  
@@ -29932,7 +29932,7 @@
     ITEM_NAME    = lte_calib_txpwr_comp[5]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x8
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 2991
     ITEM_PARENT  = 2985
     ITEM_DESC    =  
@@ -29992,7 +29992,7 @@
     ITEM_NAME    = lte_calib_txpwr_comp[11]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xFFFC
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 2997
     ITEM_PARENT  = 2985
     ITEM_DESC    =  
@@ -30002,7 +30002,7 @@
     ITEM_NAME    = lte_calib_txpwr_comp[12]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xFFFC
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 2998
     ITEM_PARENT  = 2985
     ITEM_DESC    =  
@@ -30102,7 +30102,7 @@
     ITEM_NAME    = lte_calib_txpwr_comp[22]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xFFFC
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 3008
     ITEM_PARENT  = 2985
     ITEM_DESC    =  
@@ -30112,7 +30112,7 @@
     ITEM_NAME    = lte_calib_txpwr_comp[23]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xFFFC
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 3009
     ITEM_PARENT  = 2985
     ITEM_DESC    =  
@@ -30283,7 +30283,7 @@
     ITEM_NAME    = u16_rx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 3026
     ITEM_PARENT  = 3025
     ITEM_DESC    =  
@@ -30293,7 +30293,7 @@
     ITEM_NAME    = u16_tx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xA
     ITEM_INDEX   = 3027
     ITEM_PARENT  = 3025
     ITEM_DESC    =  
@@ -30313,7 +30313,7 @@
     ITEM_NAME    = u16_rx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 3029
     ITEM_PARENT  = 3028
     ITEM_DESC    =  
@@ -30323,7 +30323,7 @@
     ITEM_NAME    = u16_tx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xA
     ITEM_INDEX   = 3030
     ITEM_PARENT  = 3028
     ITEM_DESC    =  
@@ -30343,7 +30343,7 @@
     ITEM_NAME    = u16_rx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 3032
     ITEM_PARENT  = 3031
     ITEM_DESC    =  
@@ -30353,7 +30353,7 @@
     ITEM_NAME    = u16_tx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x9
     ITEM_INDEX   = 3033
     ITEM_PARENT  = 3031
     ITEM_DESC    =  
@@ -30373,7 +30373,7 @@
     ITEM_NAME    = u16_rx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 3035
     ITEM_PARENT  = 3034
     ITEM_DESC    =  
@@ -30383,7 +30383,7 @@
     ITEM_NAME    = u16_tx
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x9
     ITEM_INDEX   = 3036
     ITEM_PARENT  = 3034
     ITEM_DESC    =  
@@ -30645,7 +30645,7 @@
     ITEM_NAME    = mipi_init[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF1D2C
+    ITEM_CONTENT = 0xE1D96
     ITEM_INDEX   = 3062
     ITEM_PARENT  = 3061
     ITEM_DESC    =  
@@ -30655,7 +30655,7 @@
     ITEM_NAME    = mipi_init[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF1E9A
+    ITEM_CONTENT = 0xE1E9A
     ITEM_INDEX   = 3063
     ITEM_PARENT  = 3061
     ITEM_DESC    =  
@@ -30665,7 +30665,7 @@
     ITEM_NAME    = mipi_init[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF1F2F
+    ITEM_CONTENT = 0xE1F2D
     ITEM_INDEX   = 3064
     ITEM_PARENT  = 3061
     ITEM_DESC    =  
@@ -30675,7 +30675,7 @@
     ITEM_NAME    = mipi_init[3]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF1C38
+    ITEM_CONTENT = 0xD1C38
     ITEM_INDEX   = 3065
     ITEM_PARENT  = 3061
     ITEM_DESC    =  
@@ -30685,7 +30685,7 @@
     ITEM_NAME    = mipi_init[4]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF1D2C
     ITEM_INDEX   = 3066
     ITEM_PARENT  = 3061
     ITEM_DESC    =  
@@ -30695,7 +30695,7 @@
     ITEM_NAME    = mipi_init[5]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF1E9A
     ITEM_INDEX   = 3067
     ITEM_PARENT  = 3061
     ITEM_DESC    =  
@@ -30705,7 +30705,7 @@
     ITEM_NAME    = mipi_init[6]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF1F2F
     ITEM_INDEX   = 3068
     ITEM_PARENT  = 3061
     ITEM_DESC    =  
@@ -30715,7 +30715,7 @@
     ITEM_NAME    = mipi_init[7]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF1C38
     ITEM_INDEX   = 3069
     ITEM_PARENT  = 3061
     ITEM_DESC    =  
@@ -30926,7 +30926,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0008
     ITEM_INDEX   = 3090
     ITEM_PARENT  = 3089
     ITEM_DESC    =  
@@ -31048,7 +31048,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0009
     ITEM_INDEX   = 3102
     ITEM_PARENT  = 3101
     ITEM_DESC    =  
@@ -31170,7 +31170,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0002
     ITEM_INDEX   = 3114
     ITEM_PARENT  = 3113
     ITEM_DESC    =  
@@ -31231,7 +31231,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0004
     ITEM_INDEX   = 3120
     ITEM_PARENT  = 3119
     ITEM_DESC    =  
@@ -31292,7 +31292,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0001
     ITEM_INDEX   = 3126
     ITEM_PARENT  = 3125
     ITEM_DESC    =  
@@ -31414,7 +31414,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0010
     ITEM_INDEX   = 3138
     ITEM_PARENT  = 3137
     ITEM_DESC    =  
@@ -31597,7 +31597,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0019
     ITEM_INDEX   = 3156
     ITEM_PARENT  = 3155
     ITEM_DESC    =  
@@ -31658,7 +31658,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0005
     ITEM_INDEX   = 3162
     ITEM_PARENT  = 3161
     ITEM_DESC    =  
@@ -31780,7 +31780,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0019
     ITEM_INDEX   = 3174
     ITEM_PARENT  = 3173
     ITEM_DESC    =  
@@ -32268,7 +32268,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0019
     ITEM_INDEX   = 3222
     ITEM_PARENT  = 3221
     ITEM_DESC    =  
@@ -32329,7 +32329,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0019
     ITEM_INDEX   = 3228
     ITEM_PARENT  = 3227
     ITEM_DESC    =  
@@ -32400,7 +32400,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3235
     ITEM_PARENT  = 3234
     ITEM_DESC    =  
@@ -32522,7 +32522,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3247
     ITEM_PARENT  = 3246
     ITEM_DESC    =  
@@ -32644,7 +32644,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3259
     ITEM_PARENT  = 3258
     ITEM_DESC    =  
@@ -32705,7 +32705,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3265
     ITEM_PARENT  = 3264
     ITEM_DESC    =  
@@ -32766,7 +32766,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3271
     ITEM_PARENT  = 3270
     ITEM_DESC    =  
@@ -32888,7 +32888,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3283
     ITEM_PARENT  = 3282
     ITEM_DESC    =  
@@ -33071,7 +33071,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3301
     ITEM_PARENT  = 3300
     ITEM_DESC    =  
@@ -33132,7 +33132,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3307
     ITEM_PARENT  = 3306
     ITEM_DESC    =  
@@ -33254,7 +33254,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3319
     ITEM_PARENT  = 3318
     ITEM_DESC    =  
@@ -33742,7 +33742,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3367
     ITEM_PARENT  = 3366
     ITEM_DESC    =  
@@ -33803,7 +33803,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3373
     ITEM_PARENT  = 3372
     ITEM_DESC    =  
@@ -36822,7 +36822,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0008
     ITEM_INDEX   = 3670
     ITEM_PARENT  = 3669
     ITEM_DESC    =  
@@ -36944,7 +36944,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0009
     ITEM_INDEX   = 3682
     ITEM_PARENT  = 3681
     ITEM_DESC    =  
@@ -37066,7 +37066,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0002
     ITEM_INDEX   = 3694
     ITEM_PARENT  = 3693
     ITEM_DESC    =  
@@ -37127,7 +37127,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0004
     ITEM_INDEX   = 3700
     ITEM_PARENT  = 3699
     ITEM_DESC    =  
@@ -37188,7 +37188,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0001
     ITEM_INDEX   = 3706
     ITEM_PARENT  = 3705
     ITEM_DESC    =  
@@ -37310,7 +37310,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0010
     ITEM_INDEX   = 3718
     ITEM_PARENT  = 3717
     ITEM_DESC    =  
@@ -37493,7 +37493,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD000D
     ITEM_INDEX   = 3736
     ITEM_PARENT  = 3735
     ITEM_DESC    =  
@@ -37554,7 +37554,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0018
     ITEM_INDEX   = 3742
     ITEM_PARENT  = 3741
     ITEM_DESC    =  
@@ -37676,7 +37676,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0018
     ITEM_INDEX   = 3754
     ITEM_PARENT  = 3753
     ITEM_DESC    =  
@@ -38164,7 +38164,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD000D
     ITEM_INDEX   = 3802
     ITEM_PARENT  = 3801
     ITEM_DESC    =  
@@ -38225,7 +38225,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD000D
     ITEM_INDEX   = 3808
     ITEM_PARENT  = 3807
     ITEM_DESC    =  
@@ -38601,7 +38601,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3845
     ITEM_PARENT  = 3844
     ITEM_DESC    =  
@@ -38784,7 +38784,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3863
     ITEM_PARENT  = 3862
     ITEM_DESC    =  
@@ -38967,7 +38967,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3881
     ITEM_PARENT  = 3880
     ITEM_DESC    =  
@@ -39028,7 +39028,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3887
     ITEM_PARENT  = 3886
     ITEM_DESC    =  
@@ -39150,7 +39150,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3899
     ITEM_PARENT  = 3898
     ITEM_DESC    =  
@@ -39638,7 +39638,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0000
     ITEM_INDEX   = 3947
     ITEM_PARENT  = 3946
     ITEM_DESC    =  
@@ -39780,7 +39780,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 3961
     ITEM_PARENT  = 3960
     ITEM_DESC    =  
@@ -39790,7 +39790,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF01A8
+    ITEM_CONTENT = 0xF0155
     ITEM_INDEX   = 3962
     ITEM_PARENT  = 3960
     ITEM_DESC    =  
@@ -39841,7 +39841,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 3967
     ITEM_PARENT  = 3966
     ITEM_DESC    =  
@@ -39902,7 +39902,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 3973
     ITEM_PARENT  = 3972
     ITEM_DESC    =  
@@ -40166,7 +40166,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 3999
     ITEM_PARENT  = 3998
     ITEM_DESC    =  
@@ -40227,7 +40227,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4005
     ITEM_PARENT  = 4004
     ITEM_DESC    =  
@@ -40288,7 +40288,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4011
     ITEM_PARENT  = 4010
     ITEM_DESC    =  
@@ -40552,7 +40552,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4037
     ITEM_PARENT  = 4036
     ITEM_DESC    =  
@@ -40562,7 +40562,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF01C9
+    ITEM_CONTENT = 0xF017A
     ITEM_INDEX   = 4038
     ITEM_PARENT  = 4036
     ITEM_DESC    =  
@@ -40613,7 +40613,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4043
     ITEM_PARENT  = 4042
     ITEM_DESC    =  
@@ -40674,7 +40674,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4049
     ITEM_PARENT  = 4048
     ITEM_DESC    =  
@@ -40755,7 +40755,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF01BB
+    ITEM_CONTENT = 0xF0177
     ITEM_INDEX   = 4057
     ITEM_PARENT  = 4055
     ITEM_DESC    =  
@@ -40938,7 +40938,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4075
     ITEM_PARENT  = 4074
     ITEM_DESC    =  
@@ -40948,7 +40948,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF01C9
+    ITEM_CONTENT = 0xF013F
     ITEM_INDEX   = 4076
     ITEM_PARENT  = 4074
     ITEM_DESC    =  
@@ -40999,7 +40999,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4081
     ITEM_PARENT  = 4080
     ITEM_DESC    =  
@@ -41060,7 +41060,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF0200
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4087
     ITEM_PARENT  = 4086
     ITEM_DESC    =  
@@ -41324,7 +41324,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4113
     ITEM_PARENT  = 4112
     ITEM_DESC    =  
@@ -41334,7 +41334,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF017A
     ITEM_INDEX   = 4114
     ITEM_PARENT  = 4112
     ITEM_DESC    =  
@@ -41344,7 +41344,7 @@
     ITEM_NAME    = value[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF001C
     ITEM_INDEX   = 4115
     ITEM_PARENT  = 4112
     ITEM_DESC    =  
@@ -41385,7 +41385,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4119
     ITEM_PARENT  = 4118
     ITEM_DESC    =  
@@ -41395,7 +41395,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0144
     ITEM_INDEX   = 4120
     ITEM_PARENT  = 4118
     ITEM_DESC    =  
@@ -41405,7 +41405,7 @@
     ITEM_NAME    = value[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF001C
     ITEM_INDEX   = 4121
     ITEM_PARENT  = 4118
     ITEM_DESC    =  
@@ -41446,7 +41446,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4125
     ITEM_PARENT  = 4124
     ITEM_DESC    =  
@@ -41456,7 +41456,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0159
     ITEM_INDEX   = 4126
     ITEM_PARENT  = 4124
     ITEM_DESC    =  
@@ -41466,7 +41466,7 @@
     ITEM_NAME    = value[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF001E
     ITEM_INDEX   = 4127
     ITEM_PARENT  = 4124
     ITEM_DESC    =  
@@ -41913,7 +41913,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF01BB
+    ITEM_CONTENT = 0xF01CC
     ITEM_INDEX   = 4171
     ITEM_PARENT  = 4169
     ITEM_DESC    =  
@@ -42482,7 +42482,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4227
     ITEM_PARENT  = 4226
     ITEM_DESC    =  
@@ -42492,7 +42492,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF01A8
     ITEM_INDEX   = 4228
     ITEM_PARENT  = 4226
     ITEM_DESC    =  
@@ -42502,7 +42502,7 @@
     ITEM_NAME    = value[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0034
     ITEM_INDEX   = 4229
     ITEM_PARENT  = 4226
     ITEM_DESC    =  
@@ -42543,7 +42543,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4233
     ITEM_PARENT  = 4232
     ITEM_DESC    =  
@@ -42553,7 +42553,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0176
     ITEM_INDEX   = 4234
     ITEM_PARENT  = 4232
     ITEM_DESC    =  
@@ -42563,7 +42563,7 @@
     ITEM_NAME    = value[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0034
     ITEM_INDEX   = 4235
     ITEM_PARENT  = 4232
     ITEM_DESC    =  
@@ -42604,7 +42604,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF020F
     ITEM_INDEX   = 4239
     ITEM_PARENT  = 4238
     ITEM_DESC    =  
@@ -42614,7 +42614,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0154
     ITEM_INDEX   = 4240
     ITEM_PARENT  = 4238
     ITEM_DESC    =  
@@ -42624,7 +42624,7 @@
     ITEM_NAME    = value[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0036
     ITEM_INDEX   = 4241
     ITEM_PARENT  = 4238
     ITEM_DESC    =  
@@ -44036,7 +44036,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF01BB
+    ITEM_CONTENT = 0xF01CC
     ITEM_INDEX   = 4380
     ITEM_PARENT  = 4378
     ITEM_DESC    =  
@@ -44046,7 +44046,7 @@
     ITEM_NAME    = value[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF005C
+    ITEM_CONTENT = 0xF006C
     ITEM_INDEX   = 4381
     ITEM_PARENT  = 4378
     ITEM_DESC    =  
@@ -44107,7 +44107,7 @@
     ITEM_NAME    = value[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF005C
+    ITEM_CONTENT = 0xF006C
     ITEM_INDEX   = 4387
     ITEM_PARENT  = 4384
     ITEM_DESC    =  
@@ -44168,7 +44168,7 @@
     ITEM_NAME    = value[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF005E
+    ITEM_CONTENT = 0xF006E
     ITEM_INDEX   = 4393
     ITEM_PARENT  = 4390
     ITEM_DESC    =  
@@ -44229,7 +44229,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xF01BB
+    ITEM_CONTENT = 0xF01CC
     ITEM_INDEX   = 4399
     ITEM_PARENT  = 4397
     ITEM_DESC    =  
@@ -44422,7 +44422,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0200
     ITEM_INDEX   = 4418
     ITEM_PARENT  = 4416
     ITEM_DESC    =  
@@ -44544,7 +44544,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0200
     ITEM_INDEX   = 4430
     ITEM_PARENT  = 4428
     ITEM_DESC    =  
@@ -44666,7 +44666,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0200
     ITEM_INDEX   = 4442
     ITEM_PARENT  = 4440
     ITEM_DESC    =  
@@ -44788,7 +44788,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0200
     ITEM_INDEX   = 4454
     ITEM_PARENT  = 4452
     ITEM_DESC    =  
@@ -44900,7 +44900,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0000
     ITEM_INDEX   = 4465
     ITEM_PARENT  = 4464
     ITEM_DESC    =  
@@ -44910,7 +44910,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0200
     ITEM_INDEX   = 4466
     ITEM_PARENT  = 4464
     ITEM_DESC    =  
@@ -45083,7 +45083,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0000
     ITEM_INDEX   = 4483
     ITEM_PARENT  = 4482
     ITEM_DESC    =  
@@ -45144,7 +45144,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0000
     ITEM_INDEX   = 4489
     ITEM_PARENT  = 4488
     ITEM_DESC    =  
@@ -45154,7 +45154,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0200
     ITEM_INDEX   = 4490
     ITEM_PARENT  = 4488
     ITEM_DESC    =  
@@ -45266,7 +45266,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0000
     ITEM_INDEX   = 4501
     ITEM_PARENT  = 4500
     ITEM_DESC    =  
@@ -45276,7 +45276,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0200
     ITEM_INDEX   = 4502
     ITEM_PARENT  = 4500
     ITEM_DESC    =  
@@ -45754,7 +45754,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF0000
     ITEM_INDEX   = 4549
     ITEM_PARENT  = 4548
     ITEM_DESC    =  
@@ -47316,7 +47316,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0011
     ITEM_INDEX   = 4702
     ITEM_PARENT  = 4701
     ITEM_DESC    =  
@@ -47377,7 +47377,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0011
     ITEM_INDEX   = 4708
     ITEM_PARENT  = 4707
     ITEM_DESC    =  
@@ -47438,7 +47438,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD001C
     ITEM_INDEX   = 4714
     ITEM_PARENT  = 4713
     ITEM_DESC    =  
@@ -47499,7 +47499,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD001C
     ITEM_INDEX   = 4720
     ITEM_PARENT  = 4719
     ITEM_DESC    =  
@@ -47570,7 +47570,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD000A
     ITEM_INDEX   = 4727
     ITEM_PARENT  = 4726
     ITEM_DESC    =  
@@ -47580,7 +47580,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0100
     ITEM_INDEX   = 4728
     ITEM_PARENT  = 4726
     ITEM_DESC    =  
@@ -47631,7 +47631,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD000A
     ITEM_INDEX   = 4733
     ITEM_PARENT  = 4732
     ITEM_DESC    =  
@@ -47641,7 +47641,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0100
     ITEM_INDEX   = 4734
     ITEM_PARENT  = 4732
     ITEM_DESC    =  
@@ -47692,7 +47692,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD000E
     ITEM_INDEX   = 4739
     ITEM_PARENT  = 4738
     ITEM_DESC    =  
@@ -47702,7 +47702,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0100
     ITEM_INDEX   = 4740
     ITEM_PARENT  = 4738
     ITEM_DESC    =  
@@ -47753,7 +47753,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD000E
     ITEM_INDEX   = 4745
     ITEM_PARENT  = 4744
     ITEM_DESC    =  
@@ -47763,7 +47763,7 @@
     ITEM_NAME    = value[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD0100
     ITEM_INDEX   = 4746
     ITEM_PARENT  = 4744
     ITEM_DESC    =  
@@ -47946,7 +47946,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xD0000
+    ITEM_CONTENT = 0xD000C
     ITEM_INDEX   = 4764
     ITEM_PARENT  = 4763
     ITEM_DESC    =  
@@ -48007,7 +48007,7 @@
     ITEM_NAME    = value[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0xD0000
+    ITEM_CONTENT = 0xD000C
     ITEM_INDEX   = 4770
     ITEM_PARENT  = 4769
     ITEM_DESC    =  
@@ -48674,7 +48674,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4836
     ITEM_PARENT  = 4835
     ITEM_DESC    =  
@@ -48684,7 +48684,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x30
+    ITEM_CONTENT = 0x40
     ITEM_INDEX   = 4837
     ITEM_PARENT  = 4835
     ITEM_DESC    =  
@@ -48734,7 +48734,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4842
     ITEM_PARENT  = 4841
     ITEM_DESC    =  
@@ -48744,7 +48744,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x20
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 4843
     ITEM_PARENT  = 4841
     ITEM_DESC    =  
@@ -48794,7 +48794,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4848
     ITEM_PARENT  = 4847
     ITEM_DESC    =  
@@ -48824,7 +48824,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4851
     ITEM_PARENT  = 4850
     ITEM_DESC    =  
@@ -48834,7 +48834,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x80
     ITEM_INDEX   = 4852
     ITEM_PARENT  = 4850
     ITEM_DESC    =  
@@ -48854,7 +48854,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4854
     ITEM_PARENT  = 4853
     ITEM_DESC    =  
@@ -48864,7 +48864,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x10
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 4855
     ITEM_PARENT  = 4853
     ITEM_DESC    =  
@@ -48914,7 +48914,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4860
     ITEM_PARENT  = 4859
     ITEM_DESC    =  
@@ -48924,7 +48924,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x8
     ITEM_INDEX   = 4861
     ITEM_PARENT  = 4859
     ITEM_DESC    =  
@@ -49004,7 +49004,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4869
     ITEM_PARENT  = 4868
     ITEM_DESC    =  
@@ -49014,7 +49014,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xC0
     ITEM_INDEX   = 4870
     ITEM_PARENT  = 4868
     ITEM_DESC    =  
@@ -49034,7 +49034,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4872
     ITEM_PARENT  = 4871
     ITEM_DESC    =  
@@ -49044,7 +49044,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4
     ITEM_INDEX   = 4873
     ITEM_PARENT  = 4871
     ITEM_DESC    =  
@@ -49094,7 +49094,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4878
     ITEM_PARENT  = 4877
     ITEM_DESC    =  
@@ -49104,7 +49104,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xC0
     ITEM_INDEX   = 4879
     ITEM_PARENT  = 4877
     ITEM_DESC    =  
@@ -49334,7 +49334,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4902
     ITEM_PARENT  = 4901
     ITEM_DESC    =  
@@ -49344,7 +49344,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xC0
     ITEM_INDEX   = 4903
     ITEM_PARENT  = 4901
     ITEM_DESC    =  
@@ -49364,7 +49364,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4905
     ITEM_PARENT  = 4904
     ITEM_DESC    =  
@@ -49374,7 +49374,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x2C
+    ITEM_CONTENT = 0xC0
     ITEM_INDEX   = 4906
     ITEM_PARENT  = 4904
     ITEM_DESC    =  
@@ -49404,7 +49404,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4909
     ITEM_PARENT  = 4908
     ITEM_DESC    =  
@@ -49464,7 +49464,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4915
     ITEM_PARENT  = 4914
     ITEM_DESC    =  
@@ -49524,7 +49524,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4921
     ITEM_PARENT  = 4920
     ITEM_DESC    =  
@@ -49554,7 +49554,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4924
     ITEM_PARENT  = 4923
     ITEM_DESC    =  
@@ -49584,7 +49584,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4927
     ITEM_PARENT  = 4926
     ITEM_DESC    =  
@@ -49644,7 +49644,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4933
     ITEM_PARENT  = 4932
     ITEM_DESC    =  
@@ -49734,7 +49734,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4942
     ITEM_PARENT  = 4941
     ITEM_DESC    =  
@@ -49764,7 +49764,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4945
     ITEM_PARENT  = 4944
     ITEM_DESC    =  
@@ -49824,7 +49824,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4951
     ITEM_PARENT  = 4950
     ITEM_DESC    =  
@@ -50064,7 +50064,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4975
     ITEM_PARENT  = 4974
     ITEM_DESC    =  
@@ -50094,7 +50094,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0xCC
     ITEM_INDEX   = 4978
     ITEM_PARENT  = 4977
     ITEM_DESC    =  
@@ -51594,7 +51594,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5128
     ITEM_PARENT  = 5127
     ITEM_DESC    =  
@@ -51604,7 +51604,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x30
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5129
     ITEM_PARENT  = 5127
     ITEM_DESC    =  
@@ -51654,7 +51654,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5134
     ITEM_PARENT  = 5133
     ITEM_DESC    =  
@@ -51664,7 +51664,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x20
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5135
     ITEM_PARENT  = 5133
     ITEM_DESC    =  
@@ -51714,7 +51714,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5140
     ITEM_PARENT  = 5139
     ITEM_DESC    =  
@@ -51774,7 +51774,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5146
     ITEM_PARENT  = 5145
     ITEM_DESC    =  
@@ -51784,7 +51784,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x10
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5147
     ITEM_PARENT  = 5145
     ITEM_DESC    =  
@@ -52284,7 +52284,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5197
     ITEM_PARENT  = 5196
     ITEM_DESC    =  
@@ -52294,7 +52294,7 @@
     ITEM_NAME    = u16_value
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x38
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5198
     ITEM_PARENT  = 5196
     ITEM_DESC    =  
@@ -52324,7 +52324,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5201
     ITEM_PARENT  = 5200
     ITEM_DESC    =  
@@ -52384,7 +52384,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5207
     ITEM_PARENT  = 5206
     ITEM_DESC    =  
@@ -52444,7 +52444,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5213
     ITEM_PARENT  = 5212
     ITEM_DESC    =  
@@ -52504,7 +52504,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5219
     ITEM_PARENT  = 5218
     ITEM_DESC    =  
@@ -53014,7 +53014,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x3C
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 5270
     ITEM_PARENT  = 5269
     ITEM_DESC    =  
@@ -57565,7 +57565,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xC4
     ITEM_INDEX   = 5725
     ITEM_PARENT  = 5724
     ITEM_DESC    =  
@@ -57595,7 +57595,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xC4
     ITEM_INDEX   = 5728
     ITEM_PARENT  = 5727
     ITEM_DESC    =  
@@ -57625,7 +57625,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xC4
     ITEM_INDEX   = 5731
     ITEM_PARENT  = 5730
     ITEM_DESC    =  
@@ -57655,7 +57655,7 @@
     ITEM_NAME    = u16_mask
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xC4
     ITEM_INDEX   = 5734
     ITEM_PARENT  = 5733
     ITEM_DESC    =  
@@ -65914,7 +65914,7 @@
     ITEM_NAME    = apt_status
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 6559
     ITEM_PARENT  = 6558
     ITEM_DESC    =  
@@ -65924,7 +65924,7 @@
     ITEM_NAME    = apt_fix_dac
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34D
     ITEM_INDEX   = 6560
     ITEM_PARENT  = 6558
     ITEM_DESC    =  
@@ -65934,7 +65934,7 @@
     ITEM_NAME    = apt_volt_step
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x19
     ITEM_INDEX   = 6561
     ITEM_PARENT  = 6558
     ITEM_DESC    =  
@@ -65944,7 +65944,7 @@
     ITEM_NAME    = reserve
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 6562
     ITEM_PARENT  = 6558
     ITEM_DESC    =  
@@ -65965,7 +65965,7 @@
     ITEM_NAME    = APT_Seg_DAC[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34D
     ITEM_INDEX   = 6564
     ITEM_PARENT  = 6563
     ITEM_DESC    =  
@@ -65975,7 +65975,7 @@
     ITEM_NAME    = APT_Seg_DAC[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2E9
     ITEM_INDEX   = 6565
     ITEM_PARENT  = 6563
     ITEM_DESC    =  
@@ -65985,7 +65985,7 @@
     ITEM_NAME    = APT_Seg_DAC[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x253
     ITEM_INDEX   = 6566
     ITEM_PARENT  = 6563
     ITEM_DESC    =  
@@ -65995,7 +65995,7 @@
     ITEM_NAME    = APT_Seg_DAC[3]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1EF
     ITEM_INDEX   = 6567
     ITEM_PARENT  = 6563
     ITEM_DESC    =  
@@ -66005,7 +66005,7 @@
     ITEM_NAME    = APT_Seg_DAC[4]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x172
     ITEM_INDEX   = 6568
     ITEM_PARENT  = 6563
     ITEM_DESC    =  
@@ -66015,7 +66015,7 @@
     ITEM_NAME    = APT_Seg_DAC[5]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x91
     ITEM_INDEX   = 6569
     ITEM_PARENT  = 6563
     ITEM_DESC    =  
@@ -66055,7 +66055,7 @@
     ITEM_NAME    = HPM_start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x17
     ITEM_INDEX   = 6573
     ITEM_PARENT  = 6572
     ITEM_DESC    =  
@@ -66065,7 +66065,7 @@
     ITEM_NAME    = HPM_stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xB
     ITEM_INDEX   = 6574
     ITEM_PARENT  = 6572
     ITEM_DESC    =  
@@ -66075,7 +66075,7 @@
     ITEM_NAME    = MPM_start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD
     ITEM_INDEX   = 6575
     ITEM_PARENT  = 6572
     ITEM_DESC    =  
@@ -66085,7 +66085,7 @@
     ITEM_NAME    = MPM_stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFE
     ITEM_INDEX   = 6576
     ITEM_PARENT  = 6572
     ITEM_DESC    =  
@@ -66105,7 +66105,7 @@
     ITEM_NAME    = LPM_stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFD5
     ITEM_INDEX   = 6578
     ITEM_PARENT  = 6572
     ITEM_DESC    =  
@@ -66125,7 +66125,7 @@
     ITEM_NAME    = use_seg_num
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x3
     ITEM_INDEX   = 6580
     ITEM_PARENT  = 6579
     ITEM_DESC    =  
@@ -66155,7 +66155,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x17
     ITEM_INDEX   = 6583
     ITEM_PARENT  = 6582
     ITEM_DESC    =  
@@ -66165,7 +66165,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x14
     ITEM_INDEX   = 6584
     ITEM_PARENT  = 6582
     ITEM_DESC    =  
@@ -66195,7 +66195,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x13
     ITEM_INDEX   = 6587
     ITEM_PARENT  = 6586
     ITEM_DESC    =  
@@ -66205,7 +66205,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x10
     ITEM_INDEX   = 6588
     ITEM_PARENT  = 6586
     ITEM_DESC    =  
@@ -66215,7 +66215,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 6589
     ITEM_PARENT  = 6586
     ITEM_DESC    =  
@@ -66235,7 +66235,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF
     ITEM_INDEX   = 6591
     ITEM_PARENT  = 6590
     ITEM_DESC    =  
@@ -66245,7 +66245,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xB
     ITEM_INDEX   = 6592
     ITEM_PARENT  = 6590
     ITEM_DESC    =  
@@ -66255,7 +66255,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 6593
     ITEM_PARENT  = 6590
     ITEM_DESC    =  
@@ -66315,7 +66315,7 @@
     ITEM_NAME    = use_seg_num
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 6599
     ITEM_PARENT  = 6598
     ITEM_DESC    =  
@@ -66345,7 +66345,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD
     ITEM_INDEX   = 6602
     ITEM_PARENT  = 6601
     ITEM_DESC    =  
@@ -66355,7 +66355,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 6603
     ITEM_PARENT  = 6601
     ITEM_DESC    =  
@@ -66365,7 +66365,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x3
     ITEM_INDEX   = 6604
     ITEM_PARENT  = 6601
     ITEM_DESC    =  
@@ -66385,7 +66385,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4
     ITEM_INDEX   = 6606
     ITEM_PARENT  = 6605
     ITEM_DESC    =  
@@ -66395,7 +66395,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFE
     ITEM_INDEX   = 6607
     ITEM_PARENT  = 6605
     ITEM_DESC    =  
@@ -66405,7 +66405,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4
     ITEM_INDEX   = 6608
     ITEM_PARENT  = 6605
     ITEM_DESC    =  
@@ -66505,7 +66505,7 @@
     ITEM_NAME    = use_seg_num
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x7
     ITEM_INDEX   = 6618
     ITEM_PARENT  = 6617
     ITEM_DESC    =  
@@ -66545,7 +66545,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF5
     ITEM_INDEX   = 6622
     ITEM_PARENT  = 6620
     ITEM_DESC    =  
@@ -66555,7 +66555,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 6623
     ITEM_PARENT  = 6620
     ITEM_DESC    =  
@@ -66575,7 +66575,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF9
     ITEM_INDEX   = 6625
     ITEM_PARENT  = 6624
     ITEM_DESC    =  
@@ -66585,7 +66585,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF4
     ITEM_INDEX   = 6626
     ITEM_PARENT  = 6624
     ITEM_DESC    =  
@@ -66595,7 +66595,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 6627
     ITEM_PARENT  = 6624
     ITEM_DESC    =  
@@ -66615,7 +66615,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF3
     ITEM_INDEX   = 6629
     ITEM_PARENT  = 6628
     ITEM_DESC    =  
@@ -66625,7 +66625,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFEE
     ITEM_INDEX   = 6630
     ITEM_PARENT  = 6628
     ITEM_DESC    =  
@@ -66635,7 +66635,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 6631
     ITEM_PARENT  = 6628
     ITEM_DESC    =  
@@ -66655,7 +66655,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFED
     ITEM_INDEX   = 6633
     ITEM_PARENT  = 6632
     ITEM_DESC    =  
@@ -66665,7 +66665,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFE8
     ITEM_INDEX   = 6634
     ITEM_PARENT  = 6632
     ITEM_DESC    =  
@@ -66675,7 +66675,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 6635
     ITEM_PARENT  = 6632
     ITEM_DESC    =  
@@ -66695,7 +66695,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFE7
     ITEM_INDEX   = 6637
     ITEM_PARENT  = 6636
     ITEM_DESC    =  
@@ -66705,7 +66705,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFE2
     ITEM_INDEX   = 6638
     ITEM_PARENT  = 6636
     ITEM_DESC    =  
@@ -66715,7 +66715,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 6639
     ITEM_PARENT  = 6636
     ITEM_DESC    =  
@@ -66735,7 +66735,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFE1
     ITEM_INDEX   = 6641
     ITEM_PARENT  = 6640
     ITEM_DESC    =  
@@ -66745,7 +66745,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFDC
     ITEM_INDEX   = 6642
     ITEM_PARENT  = 6640
     ITEM_DESC    =  
@@ -66755,7 +66755,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 6643
     ITEM_PARENT  = 6640
     ITEM_DESC    =  
@@ -66775,7 +66775,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFDB
     ITEM_INDEX   = 6645
     ITEM_PARENT  = 6644
     ITEM_DESC    =  
@@ -66785,7 +66785,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFD5
     ITEM_INDEX   = 6646
     ITEM_PARENT  = 6644
     ITEM_DESC    =  
@@ -66795,7 +66795,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 6647
     ITEM_PARENT  = 6644
     ITEM_DESC    =  
@@ -71560,7 +71560,7 @@
     ITEM_NAME    = apt_status
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 7123
     ITEM_PARENT  = 7122
     ITEM_DESC    =  
@@ -71570,7 +71570,7 @@
     ITEM_NAME    = apt_fix_dac
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34D
     ITEM_INDEX   = 7124
     ITEM_PARENT  = 7122
     ITEM_DESC    =  
@@ -71580,7 +71580,7 @@
     ITEM_NAME    = apt_volt_step
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x19
     ITEM_INDEX   = 7125
     ITEM_PARENT  = 7122
     ITEM_DESC    =  
@@ -71590,7 +71590,7 @@
     ITEM_NAME    = reserve
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 7126
     ITEM_PARENT  = 7122
     ITEM_DESC    =  
@@ -71611,7 +71611,7 @@
     ITEM_NAME    = APT_Seg_DAC[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34D
     ITEM_INDEX   = 7128
     ITEM_PARENT  = 7127
     ITEM_DESC    =  
@@ -71621,7 +71621,7 @@
     ITEM_NAME    = APT_Seg_DAC[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2E9
     ITEM_INDEX   = 7129
     ITEM_PARENT  = 7127
     ITEM_DESC    =  
@@ -71631,7 +71631,7 @@
     ITEM_NAME    = APT_Seg_DAC[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x253
     ITEM_INDEX   = 7130
     ITEM_PARENT  = 7127
     ITEM_DESC    =  
@@ -71641,7 +71641,7 @@
     ITEM_NAME    = APT_Seg_DAC[3]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1EF
     ITEM_INDEX   = 7131
     ITEM_PARENT  = 7127
     ITEM_DESC    =  
@@ -71651,7 +71651,7 @@
     ITEM_NAME    = APT_Seg_DAC[4]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x172
     ITEM_INDEX   = 7132
     ITEM_PARENT  = 7127
     ITEM_DESC    =  
@@ -71661,7 +71661,7 @@
     ITEM_NAME    = APT_Seg_DAC[5]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x91
     ITEM_INDEX   = 7133
     ITEM_PARENT  = 7127
     ITEM_DESC    =  
@@ -71701,7 +71701,7 @@
     ITEM_NAME    = HPM_start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x17
     ITEM_INDEX   = 7137
     ITEM_PARENT  = 7136
     ITEM_DESC    =  
@@ -71711,7 +71711,7 @@
     ITEM_NAME    = HPM_stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xB
     ITEM_INDEX   = 7138
     ITEM_PARENT  = 7136
     ITEM_DESC    =  
@@ -71721,7 +71721,7 @@
     ITEM_NAME    = MPM_start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD
     ITEM_INDEX   = 7139
     ITEM_PARENT  = 7136
     ITEM_DESC    =  
@@ -71731,7 +71731,7 @@
     ITEM_NAME    = MPM_stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFE
     ITEM_INDEX   = 7140
     ITEM_PARENT  = 7136
     ITEM_DESC    =  
@@ -71751,7 +71751,7 @@
     ITEM_NAME    = LPM_stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFD5
     ITEM_INDEX   = 7142
     ITEM_PARENT  = 7136
     ITEM_DESC    =  
@@ -71771,7 +71771,7 @@
     ITEM_NAME    = use_seg_num
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x3
     ITEM_INDEX   = 7144
     ITEM_PARENT  = 7143
     ITEM_DESC    =  
@@ -71801,7 +71801,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x17
     ITEM_INDEX   = 7147
     ITEM_PARENT  = 7146
     ITEM_DESC    =  
@@ -71811,7 +71811,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x14
     ITEM_INDEX   = 7148
     ITEM_PARENT  = 7146
     ITEM_DESC    =  
@@ -71841,7 +71841,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x13
     ITEM_INDEX   = 7151
     ITEM_PARENT  = 7150
     ITEM_DESC    =  
@@ -71851,7 +71851,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x10
     ITEM_INDEX   = 7152
     ITEM_PARENT  = 7150
     ITEM_DESC    =  
@@ -71861,7 +71861,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 7153
     ITEM_PARENT  = 7150
     ITEM_DESC    =  
@@ -71881,7 +71881,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xF
     ITEM_INDEX   = 7155
     ITEM_PARENT  = 7154
     ITEM_DESC    =  
@@ -71891,7 +71891,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xB
     ITEM_INDEX   = 7156
     ITEM_PARENT  = 7154
     ITEM_DESC    =  
@@ -71901,7 +71901,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 7157
     ITEM_PARENT  = 7154
     ITEM_DESC    =  
@@ -71961,7 +71961,7 @@
     ITEM_NAME    = use_seg_num
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 7163
     ITEM_PARENT  = 7162
     ITEM_DESC    =  
@@ -71991,7 +71991,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD
     ITEM_INDEX   = 7166
     ITEM_PARENT  = 7165
     ITEM_DESC    =  
@@ -72001,7 +72001,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 7167
     ITEM_PARENT  = 7165
     ITEM_DESC    =  
@@ -72011,7 +72011,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x3
     ITEM_INDEX   = 7168
     ITEM_PARENT  = 7165
     ITEM_DESC    =  
@@ -72031,7 +72031,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4
     ITEM_INDEX   = 7170
     ITEM_PARENT  = 7169
     ITEM_DESC    =  
@@ -72041,7 +72041,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFE
     ITEM_INDEX   = 7171
     ITEM_PARENT  = 7169
     ITEM_DESC    =  
@@ -72051,7 +72051,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4
     ITEM_INDEX   = 7172
     ITEM_PARENT  = 7169
     ITEM_DESC    =  
@@ -72151,7 +72151,7 @@
     ITEM_NAME    = use_seg_num
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x7
     ITEM_INDEX   = 7182
     ITEM_PARENT  = 7181
     ITEM_DESC    =  
@@ -72191,7 +72191,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFA
     ITEM_INDEX   = 7186
     ITEM_PARENT  = 7184
     ITEM_DESC    =  
@@ -72201,7 +72201,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 7187
     ITEM_PARENT  = 7184
     ITEM_DESC    =  
@@ -72221,7 +72221,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF9
     ITEM_INDEX   = 7189
     ITEM_PARENT  = 7188
     ITEM_DESC    =  
@@ -72231,7 +72231,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF4
     ITEM_INDEX   = 7190
     ITEM_PARENT  = 7188
     ITEM_DESC    =  
@@ -72241,7 +72241,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 7191
     ITEM_PARENT  = 7188
     ITEM_DESC    =  
@@ -72261,7 +72261,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF3
     ITEM_INDEX   = 7193
     ITEM_PARENT  = 7192
     ITEM_DESC    =  
@@ -72271,7 +72271,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFEE
     ITEM_INDEX   = 7194
     ITEM_PARENT  = 7192
     ITEM_DESC    =  
@@ -72281,7 +72281,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 7195
     ITEM_PARENT  = 7192
     ITEM_DESC    =  
@@ -72301,7 +72301,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFED
     ITEM_INDEX   = 7197
     ITEM_PARENT  = 7196
     ITEM_DESC    =  
@@ -72311,7 +72311,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFE8
     ITEM_INDEX   = 7198
     ITEM_PARENT  = 7196
     ITEM_DESC    =  
@@ -72321,7 +72321,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 7199
     ITEM_PARENT  = 7196
     ITEM_DESC    =  
@@ -72341,7 +72341,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFE7
     ITEM_INDEX   = 7201
     ITEM_PARENT  = 7200
     ITEM_DESC    =  
@@ -72351,7 +72351,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFE2
     ITEM_INDEX   = 7202
     ITEM_PARENT  = 7200
     ITEM_DESC    =  
@@ -72361,7 +72361,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 7203
     ITEM_PARENT  = 7200
     ITEM_DESC    =  
@@ -72381,7 +72381,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFE1
     ITEM_INDEX   = 7205
     ITEM_PARENT  = 7204
     ITEM_DESC    =  
@@ -72391,7 +72391,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFDC
     ITEM_INDEX   = 7206
     ITEM_PARENT  = 7204
     ITEM_DESC    =  
@@ -72421,7 +72421,7 @@
     ITEM_NAME    = start_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFDB
     ITEM_INDEX   = 7209
     ITEM_PARENT  = 7208
     ITEM_DESC    =  
@@ -72431,7 +72431,7 @@
     ITEM_NAME    = stop_pwr
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFD5
     ITEM_INDEX   = 7210
     ITEM_PARENT  = 7208
     ITEM_DESC    =  
@@ -72441,7 +72441,7 @@
     ITEM_NAME    = apt_index
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 7211
     ITEM_PARENT  = 7208
     ITEM_DESC    =  
@@ -82210,7 +82210,7 @@
     ITEM_NAME    = tx_comp[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFED
     ITEM_INDEX   = 8186
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82220,7 +82220,7 @@
     ITEM_NAME    = tx_comp[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF0
     ITEM_INDEX   = 8187
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82230,7 +82230,7 @@
     ITEM_NAME    = tx_comp[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF2
     ITEM_INDEX   = 8188
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82240,7 +82240,7 @@
     ITEM_NAME    = tx_comp[3]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF4
     ITEM_INDEX   = 8189
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82250,7 +82250,7 @@
     ITEM_NAME    = tx_comp[4]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF7
     ITEM_INDEX   = 8190
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82260,7 +82260,7 @@
     ITEM_NAME    = tx_comp[5]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFC
     ITEM_INDEX   = 8191
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82270,7 +82270,7 @@
     ITEM_NAME    = tx_comp[6]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 8192
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82280,7 +82280,7 @@
     ITEM_NAME    = tx_comp[7]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x7
     ITEM_INDEX   = 8193
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82290,7 +82290,7 @@
     ITEM_NAME    = tx_comp[8]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xB
     ITEM_INDEX   = 8194
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82300,7 +82300,7 @@
     ITEM_NAME    = tx_comp[9]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x10
     ITEM_INDEX   = 8195
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82310,7 +82310,7 @@
     ITEM_NAME    = tx_comp[10]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x14
     ITEM_INDEX   = 8196
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82320,7 +82320,7 @@
     ITEM_NAME    = tx_comp[11]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x19
     ITEM_INDEX   = 8197
     ITEM_PARENT  = 8185
     ITEM_DESC    =  
@@ -82996,7 +82996,7 @@
     ITEM_NAME    = tx_comp[0]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFE9
     ITEM_INDEX   = 8264
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83006,7 +83006,7 @@
     ITEM_NAME    = tx_comp[1]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFEC
     ITEM_INDEX   = 8265
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83016,7 +83016,7 @@
     ITEM_NAME    = tx_comp[2]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFEE
     ITEM_INDEX   = 8266
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83026,7 +83026,7 @@
     ITEM_NAME    = tx_comp[3]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF1
     ITEM_INDEX   = 8267
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83036,7 +83036,7 @@
     ITEM_NAME    = tx_comp[4]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFF5
     ITEM_INDEX   = 8268
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83046,7 +83046,7 @@
     ITEM_NAME    = tx_comp[5]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFB
     ITEM_INDEX   = 8269
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83056,7 +83056,7 @@
     ITEM_NAME    = tx_comp[6]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 8270
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83066,7 +83066,7 @@
     ITEM_NAME    = tx_comp[7]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x9
     ITEM_INDEX   = 8271
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83076,7 +83076,7 @@
     ITEM_NAME    = tx_comp[8]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xD
     ITEM_INDEX   = 8272
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83086,7 +83086,7 @@
     ITEM_NAME    = tx_comp[9]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x12
     ITEM_INDEX   = 8273
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83096,7 +83096,7 @@
     ITEM_NAME    = tx_comp[10]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x17
     ITEM_INDEX   = 8274
     ITEM_PARENT  = 8263
     ITEM_DESC    =  
@@ -83106,7 +83106,7 @@
     ITEM_NAME    = tx_comp[11]
     ITEM_ID      = 620
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1D
     ITEM_INDEX   = 8275
     ITEM_PARENT  = 8263
     ITEM_DESC    =  

@@ -68,7 +68,7 @@ typedef struct _CGroup
 	  date : 2020-05-12
 */
 typedef void (*get_group_list_cb)(int result_type);
-typedef void (*lv_poc_get_group_list_cb_t)(int msg_type, uint32_t num, CGroup *group);
+typedef void (*lv_poc_get_group_list_cb_t)(int msg_type, uint32_t num, lv_poc_oem_group_list *grouplist);
 
 /*
 	  name :回调函数
@@ -76,7 +76,7 @@ typedef void (*lv_poc_get_group_list_cb_t)(int msg_type, uint32_t num, CGroup *g
 	  date : 2020-05-12
 */
 typedef void (*get_member_list_cb)(int msg_type);
-typedef void (*lv_poc_get_member_list_cb_t)(int msg_type, unsigned long num, Msg_GData_s *pGroup);
+typedef void (*lv_poc_get_member_list_cb_t)(int msg_type, unsigned long num, lv_poc_oem_member_list *memberlist);
 /*
 	  name :回调函数
 	  param :
@@ -103,54 +103,31 @@ typedef void (*poc_set_member_call_status_cb)(int current_status, int dest_statu
 */
 typedef void (*poc_set_current_group_cb)(int result_type);
 
-typedef lv_poc_status_t (*lv_poc_member_list_add_cb)(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information);
+typedef lv_poc_status_t (*lv_poc_member_list_add_cb)(lv_poc_oem_member_list *member_list_obj, const char * name, bool is_online, void * information);
 
-typedef void (*lv_poc_member_list_remove_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+typedef void (*lv_poc_member_list_clear_cb)(lv_poc_oem_member_list *member_list_obj);
 
-typedef void (*lv_poc_member_list_clear_cb)(lv_poc_member_list_t *member_list_obj);
-
-typedef int (*lv_poc_member_list_get_information_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void *** information);
+typedef int (*lv_poc_member_list_get_information_cb)(lv_poc_oem_member_list *member_list_obj, const char * name, void *** information);
 
 typedef void (*lv_poc_member_list_refresh_cb)(lv_task_t *task);
 
-typedef void (*lv_poc_member_list_refresh_with_data_cb)(lv_poc_member_list_t *member_list_obj);
+typedef void (*lv_poc_member_list_refresh_with_data_cb)(lv_poc_oem_member_list *member_list_obj);
 
-typedef lv_poc_status_t (*lv_poc_member_list_move_top_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+typedef lv_poc_status_t (*lv_poc_member_list_set_state_cb)(lv_poc_oem_member_list *member_list_obj, const char * name, void * information, bool is_online);
 
-typedef lv_poc_status_t (*lv_poc_member_list_move_bottom_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+typedef lv_poc_status_t (*lv_poc_member_list_is_exists_cb)(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
 
-typedef lv_poc_status_t (*lv_poc_member_list_move_up_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
+typedef lv_poc_status_t (*lv_poc_member_list_get_state_cb)(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
 
-typedef lv_poc_status_t (*lv_poc_member_list_move_down_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
-
-typedef lv_poc_status_t (*lv_poc_member_list_set_state_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information, bool is_online);
-
-typedef lv_poc_status_t (*lv_poc_member_list_is_exists_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
-
-typedef lv_poc_status_t (*lv_poc_member_list_get_state_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
-
-
-typedef lv_poc_status_t (*lv_poc_group_list_add_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
-
-typedef void (*lv_poc_group_list_remove_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
-
-typedef int (*lv_poc_group_list_get_information_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void *** information);
+typedef int (*lv_poc_group_list_get_information_cb)(lv_poc_oem_group_list *group_list_obj, const char * name, void *** information);
 
 typedef void (*lv_poc_group_list_refresh_cb)(lv_task_t *task);
 
-typedef void (*lv_poc_group_list_refresh_with_data_cb)(lv_poc_group_list_t *group_list_obj);
+typedef void (*lv_poc_group_list_refresh_with_data_cb)(lv_poc_oem_group_list *group_list_obj);
 
-typedef lv_poc_status_t (*lv_poc_group_list_move_top_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
+typedef lv_poc_status_t (*lv_poc_group_list_is_exists_cb)(lv_poc_oem_group_list *group_list_obj, const char * name, void * information);
 
-typedef lv_poc_status_t (*lv_poc_group_list_move_bottom_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
-
-typedef lv_poc_status_t (*lv_poc_group_list_move_up_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
-
-typedef lv_poc_status_t (*lv_poc_group_list_move_down_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
-
-typedef lv_poc_status_t (*lv_poc_group_list_is_exists_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
-
-typedef lv_poc_status_t (*lv_poc_group_list_lock_group_cb)(lv_poc_group_list_t *group_list_obj, lv_poc_group_oprator_type opt);
+typedef lv_poc_status_t (*lv_poc_group_list_lock_group_cb)(lv_poc_oem_group_list *group_list_obj, lv_poc_group_oprator_type opt);
 
 
 /*
@@ -177,30 +154,19 @@ typedef struct _lv_poc_activity_attribute_cb_set
 {
 	struct{
 		lv_poc_member_list_add_cb add;
-		lv_poc_member_list_remove_cb remove;
 		lv_poc_member_list_clear_cb clear;
 		lv_poc_member_list_get_information_cb get_info;
 		lv_poc_member_list_refresh_with_data_cb refresh;
 		lv_poc_member_list_refresh_with_data_cb refresh_with_data;
-		lv_poc_member_list_move_top_cb move_to_top;
-		lv_poc_member_list_move_bottom_cb move_to_bottom;
-		lv_poc_member_list_move_up_cb move_up;
-		lv_poc_member_list_move_down_cb move_down;
 		lv_poc_member_list_set_state_cb set_state;
 		lv_poc_member_list_is_exists_cb exists;
 		lv_poc_member_list_get_state_cb get_state;
 	} member_list;
 
 	struct{
-		lv_poc_group_list_add_cb add;
-		lv_poc_group_list_remove_cb remove;
 		lv_poc_group_list_get_information_cb get_info;
 		lv_poc_group_list_refresh_with_data_cb refresh;
 		lv_poc_group_list_refresh_with_data_cb refresh_with_data;
-		lv_poc_group_list_move_top_cb move_to_top;
-		lv_poc_group_list_move_bottom_cb move_to_bottom;
-		lv_poc_group_list_move_up_cb move_up;
-		lv_poc_group_list_move_down_cb move_down;
 		lv_poc_group_list_is_exists_cb exists;
 		lv_poc_group_list_lock_group_cb lock_group;
 	} group_list;
@@ -574,10 +540,10 @@ poc_set_green_status(bool ledstatus);
 /*
 	  name : lv_poc_get_group_list
 	  param :member_list{@group information} func{@callback GUI}
-	  date : 2020-05-14
+	  date : 2020-09-16
 */
 bool
-lv_poc_get_group_list(lv_poc_group_list_t * member_list, get_group_list_cb func);
+lv_poc_get_group_list(lv_poc_oem_group_list *group_list, get_group_list_cb func);
 
 /*
 	  name : lv_poc_check_group_equation
@@ -593,7 +559,7 @@ lv_poc_check_group_equation(void * A, void *B, void *C, void *D, void *E);
 	  date : 2020-05-12
 */
 bool
-lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * member_list, int type, get_member_list_cb func);
+lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_oem_member_list * member_list, int type, get_member_list_cb func);
 
 /*
 	  name : lv_poc_check_member_equation
@@ -668,12 +634,12 @@ bool
 lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_member_call_status_cb func);
 
 /*
-	  name : lv_poc_get_lock_group
+	  name : lv_poc_get_monitor_group
 	  param :
 	  date : 2020-06-30
 */
 lv_poc_group_info_t
-lv_poc_get_lock_group(void);
+lv_poc_get_monitor_group(void);
 
 /*
 	  name : lv_poc_set_lock_group

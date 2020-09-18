@@ -433,15 +433,10 @@ typedef struct _lv_poc_activity_attribute_cb_set_obj
 		lv_poc_Activity_Id_t activity_id;
 		bool active;
 		lv_poc_member_list_add_cb add;
-		lv_poc_member_list_remove_cb remove;
 		lv_poc_member_list_clear_cb clear;
 		lv_poc_member_list_get_information_cb get_info;
 		lv_poc_member_list_refresh_cb refresh;
 		lv_poc_member_list_refresh_with_data_cb refresh_with_data;
-		lv_poc_member_list_move_top_cb move_to_top;
-		lv_poc_member_list_move_bottom_cb move_to_bottom;
-		lv_poc_member_list_move_up_cb move_up;
-		lv_poc_member_list_move_down_cb move_down;
 		lv_poc_member_list_set_state_cb set_state;
 		lv_poc_member_list_is_exists_cb exists;
 		lv_poc_member_list_get_state_cb get_state;
@@ -450,15 +445,9 @@ typedef struct _lv_poc_activity_attribute_cb_set_obj
 	struct{
 		lv_poc_Activity_Id_t activity_id;
 		bool active;
-		lv_poc_group_list_add_cb add;
-		lv_poc_group_list_remove_cb remove;
 		lv_poc_group_list_get_information_cb get_info;
 		lv_poc_group_list_refresh_cb refresh;
 		lv_poc_group_list_refresh_with_data_cb refresh_with_data;
-		lv_poc_group_list_move_top_cb move_to_top;
-		lv_poc_group_list_move_bottom_cb move_to_bottom;
-		lv_poc_group_list_move_up_cb move_up;
-		lv_poc_group_list_move_down_cb move_down;
 		lv_poc_group_list_is_exists_cb exists;
 		lv_poc_group_list_lock_group_cb lock_group;
 	} group_list[LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE];
