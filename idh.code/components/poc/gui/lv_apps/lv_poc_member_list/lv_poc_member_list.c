@@ -62,25 +62,24 @@ static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, false);
 	lv_poc_member_call_obj = NULL;
 
-	lv_poc_member_list_get_member_type = -1;
 	activity_list = NULL;
 	if(activity_win != NULL)
 	{
 		lv_mem_free(activity_win);
 		activity_win = NULL;
 	}
-
-	if(lv_poc_member_list_need_free_member_list == true && lv_poc_member_list_obj != NULL)
+	//当传入的成员列表不为空才能清除头结点
+	if(lv_poc_member_list_obj != NULL && lv_poc_member_list_need_free_member_list == true)
 	{
-		//free mem
-		pub_lv_poc_free_member_list();
 		lv_mem_free(lv_poc_member_list_obj);
-		lv_poc_member_list_need_free_member_list = false;
-		OSI_LOGI(0, "[song]free memberlist");
 	}
 	lv_poc_member_list_obj = NULL;
+
+	//free mem
+	pub_lv_poc_free_member_list();
 	poc_member_list_activity = NULL;
 	lv_poc_member_call_obj_information = NULL;
+	OSI_LOGI(0, "[song]memberlist destory");
 }
 
 static void * lv_poc_member_list_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -311,7 +310,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
     		lv_poc_member_list_activity_create,
 			lv_poc_member_list_activity_destory};
 
-    if(lv_poc_member_list_obj != NULL || poc_member_list_activity != NULL)
+    if(lv_poc_member_list_obj != NULL || lv_poc_member_list_obj != NULL || poc_member_list_activity != NULL)
     {
     	return;
     }
@@ -323,14 +322,12 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
         lv_poc_member_list_obj->offline_number = 0;
         lv_poc_member_list_obj->online_list = NULL;
         lv_poc_member_list_obj->online_number = 0;
-        lv_poc_member_list_need_free_member_list = true;
-        lv_poc_member_list_get_member_type = 1;
+		lv_poc_member_list_need_free_member_list = true;
     }
     else
     {
 	    lv_poc_member_list_obj = (lv_poc_oem_member_list *)members;
-	    lv_poc_member_list_need_free_member_list = false;
-	    lv_poc_member_list_get_member_type = 2;
+		lv_poc_member_list_need_free_member_list = false;
     }
 
     if(lv_poc_member_list_obj == NULL)
@@ -355,12 +352,12 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
 
     if(members == NULL)
     {
-		OSI_LOGI(0, "[song]member null to get\n");
-//		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
-//		{
+		//get current group's memberlist info
+		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
+		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
-//		}
+		}
     }
     else
     {

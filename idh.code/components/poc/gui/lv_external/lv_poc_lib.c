@@ -1890,7 +1890,6 @@ lv_poc_get_group_list(lv_poc_oem_group_list *group_list, get_group_list_cb func)
 
 	prv_group_list = group_list;
 	prv_group_list_cb = func;
-	OSI_LOGI(0, "[song]get group list enter!");
 	if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_REGISTER_GET_GROUP_LIST_CB_IND, prv_lv_poc_get_group_list_cb))
 	{
 		prv_group_list_cb = NULL;
@@ -1909,7 +1908,6 @@ lv_poc_get_group_list(lv_poc_oem_group_list *group_list, get_group_list_cb func)
 		return false;
 	}
 
-	OSI_LOGI(0, "[song]get group list exit!");
 	return true;
 }
 
@@ -1962,8 +1960,6 @@ static int prv_member_list_type  = 0;
 static void
 prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, lv_poc_oem_member_list *member_list)
 {
-
-	OSI_LOGI(0, "[song]prv_lv_poc_get_member_list_cb is enter\n");
 	if(prv_member_list == NULL
 		|| prv_member_list_cb == NULL
 		|| (prv_member_list_type < 1 || prv_member_list_type > 3))
@@ -1992,9 +1988,12 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, lv_poc_oem_member
 	memcpy(prv_member_list, member_list, sizeof(lv_poc_oem_member_list));
 	if(prv_member_list == NULL)
 	{
+		OSI_LOGI(0, "[song]prv_lv_poc_get_member_list_cb is prv_member_list NULL\n");
 		prv_member_list_cb(0);
+		return;
 	}
 
+	OSI_LOGI(0, "[song]prv_lv_poc_get_member_list_cb start refr\n");
 	prv_member_list_cb(1);
 	prv_member_list_cb = NULL;
 	prv_member_list = NULL;
@@ -2080,20 +2079,20 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_BIUILD_GROUP_CB_IND, func))
-	{
-		return false;
-	}
-	static lv_poc_build_new_group_t group_member = {0};
-	memset(&group_member, 0, sizeof(lv_poc_build_new_group_t));
-	group_member.members = members;
-	group_member.num = num;
-
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND, &group_member))
-	{
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_BIUILD_GROUP_CB_IND, func);
-		return false;
-	}
+//	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_BIUILD_GROUP_CB_IND, func))
+//	{
+//		return false;
+//	}
+//	static lv_poc_build_new_group_t group_member = {0};
+//	memset(&group_member, 0, sizeof(lv_poc_build_new_group_t));
+//	group_member.members = members;
+//	group_member.num = num;
+//
+//	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND, &group_member))
+//	{
+//		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_BIUILD_GROUP_CB_IND, func);
+//		return false;
+//	}
 	return true;
 }
 
@@ -2122,7 +2121,7 @@ lv_poc_get_current_group(void)
 /*
 	  name : lv_poc_set_current_group
 	  param :
-	  date : 2020-05-22
+	  date : 2020-09-18
 */
 bool
 lv_poc_set_current_group(lv_poc_group_info_t group, poc_set_current_group_cb func)
@@ -2132,12 +2131,12 @@ lv_poc_set_current_group(lv_poc_group_info_t group, poc_set_current_group_cb fun
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND, func))
+	if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND, func))
 	{
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SET_CURRENT_GROUP_IND, group))
+	if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_CURRENT_GROUP_IND, group))
 	{
 		return false;
 	}
@@ -2191,15 +2190,15 @@ lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb 
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP, func))
-	{
-		return false;
-	}
-
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND, members))
-	{
-		return false;
-	}
+//	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP, func))
+//	{
+//		return false;
+//	}
+//
+//	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND, members))
+//	{
+//		return false;
+//	}
 	return true;;
 }
 
