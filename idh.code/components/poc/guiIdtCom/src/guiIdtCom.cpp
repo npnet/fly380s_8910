@@ -2496,14 +2496,6 @@ static void prvPocGuiIdtTaskHandlePlay(uint32_t id, uint32_t ctx)
 				break;
 			}
 
-			#if 0 /*测试播放*/
-			if(pocIdtAttr.record_fist == false)
-			{
-				pocIdtAttr.record_fist = true;
-				pocAudioPlayerSound();
-			}
-			#endif
-
 			pocAudioPlayerStart(pocIdtAttr.player);
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
 			break;

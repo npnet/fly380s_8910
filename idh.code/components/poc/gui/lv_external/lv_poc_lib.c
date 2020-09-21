@@ -215,11 +215,6 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
 		audevSetPlayVolume(poc_volum);
  	}
 	lv_poc_setting_conf_write();
-
-	if(play && !ttsIsPlaying())
-	{
-		poc_play_btn_voice_one_time(config->volume, play);
-	}
 }
 
 /*
@@ -565,12 +560,14 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 		osiThreadSleep(140);
 		auPlayerStop(prv_play_btn_voice_one_time_player);
 		#endif
-		lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, 4, true);
 
+		bool status = audevSetPlayVolume(60);
+		if(status == false)
+			return;
+		ttsStop();
 		char playkey[4] = "9";
 		ttsPlayText(playkey, strlen(playkey), ML_UTF8);
 		osiThreadSleep(140);
-		if(!ttsIsPlaying())
 		lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 	}while(0);
 	prv_play_btn_voice_one_time_thread = NULL;
@@ -606,8 +603,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
-					//还原音量
-					lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 				}
 			}
 			else if(isPlayVoice)
@@ -677,8 +672,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
 			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 				voice_formate = AUSTREAM_FORMAT_MP3;
-				/*audio volum*/
-				lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, 6, true);
 				break;
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
 			case LVPOCAUDIO_Type_Tone_Lost_Mic:
@@ -688,8 +681,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
-				/*tone volum*/
-				lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, 4, true);
 				break;
 
 			default:
@@ -753,12 +744,14 @@ poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN b
 	{
 		prv_play_voice_one_time_thread = osiThreadCreate("play_voice", prv_play_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024*3, 64);
 		if(prv_play_voice_one_time_thread == NULL)
-	{
+		{
 			return;
 		}
 	}
-//	/*设置音量*/
-//	audevSetPlayVolume(volume);
+
+	bool status = audevSetPlayVolume(60);
+	if(status == false)
+		return;
 
 	osiEvent_t event = {0};
 	event.id = 101;

@@ -1936,11 +1936,7 @@ bool audevSetPlayVolume(unsigned vol)
     d->cfg.play_vol = vol;
     if (d->clk_users & AUDEV_CLK_USER_PLAY)
     {
-		#if 1
         prvSetPlayConfig();/*官方*/
-		#else
-		pocsetplayconfig();/*old*/
-		#endif
     }
     audevSetting_t cfg = d->cfg;
     osiMutexUnlock(d->lock);
