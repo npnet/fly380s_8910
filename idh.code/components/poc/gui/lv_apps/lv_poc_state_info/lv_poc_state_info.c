@@ -59,9 +59,12 @@ typedef struct
 static char lv_poc_state_info_text_account[64] = {0};
 static char lv_poc_state_info_imei_str[16] = {0};
 static char lv_poc_state_info_text_iccid_str[20] = {0};
-static char lv_poc_state_info_text_model[64] = {0};
-static char lv_poc_state_info_text_version[64] = {0};
-static char lv_poc_state_info_text_update[64] = {0};
+static char lv_poc_state_info_text_battery_state[64] = {0};
+static char lv_poc_state_info_text_battery_capacity[64] = {0};
+static char lv_poc_state_info_text_signal_strength[64] = {0};
+static char lv_poc_state_info_text_local_network[64] = {0};
+static char lv_poc_state_info_text_service_status[64] = {0};
+static char lv_poc_state_info_text_mobile_network[64] = {0};
 
 lv_poc_state_info_label_struct_t lv_poc_state_info_label_array[] = {
 	{
@@ -85,52 +88,38 @@ lv_poc_state_info_label_struct_t lv_poc_state_info_label_array[] = {
 	{
 		NULL,
 		"电池状态"                   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_state_info_text_model, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_state_info_text_battery_state, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
 		"电池电量"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_state_info_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_state_info_text_battery_capacity, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
 		"信号强度"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_state_info_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_state_info_text_signal_strength, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
 		"本机网络"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_state_info_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_state_info_text_local_network, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
 		"服务状态"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_state_info_text_update, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_state_info_text_service_status, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
 		"移动网络"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_state_info_text_update, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_state_info_text_mobile_network, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
-};
-
-char *lv_poc_state_info_label_title[6] =
-{
-	"账号",
-	"IMEI",
-	"ICCID",
-};
-
-char *lv_poc_state_info_label_content[6] =
-{
-	lv_poc_state_info_text_account,
-	lv_poc_state_info_imei_str,
-	lv_poc_state_info_text_iccid_str,
 };
 
 static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
@@ -149,7 +138,6 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
 	char *temp_str = NULL;
-
 	temp_str = poc_get_device_account_rep(poc_setting_conf->main_SIM);
 	if(temp_str != NULL)
 	{
@@ -165,9 +153,16 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_poc_state_info_text_iccid_str[0] = 0;
     poc_get_device_iccid_rep((int8_t *)lv_poc_state_info_text_iccid_str);
 
-    for(int i = 0; i < 3; i++)
+	strcpy(lv_poc_state_info_text_battery_state, "良好");
+	strcpy(lv_poc_state_info_text_battery_capacity, "56%");
+	strcpy(lv_poc_state_info_text_signal_strength, "-97 dBm");
+	strcpy(lv_poc_state_info_text_local_network, "LTE");
+	strcpy(lv_poc_state_info_text_service_status, "Voice:正在使用中/Data:正在使用中");
+	strcpy(lv_poc_state_info_text_mobile_network, "已连接");
+
+    for(int i = 0; i < label_array_size; i++)
     {
-	    btn = lv_list_add_btn(list, NULL, lv_poc_state_info_label_title[i]);
+	    btn = lv_list_add_btn(list, NULL, lv_poc_state_info_label_array[i].title);
 	    btn_array[i] = btn;
 	    lv_btn_set_fit(btn, LV_FIT_NONE);
 	    lv_obj_set_height(btn, btn_height);
@@ -175,110 +170,20 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 		label = lv_label_create(btn, NULL);
 		btn->user_data = (void *)label;
 
-		lv_label_set_text(label, lv_poc_state_info_label_content[i]);
+		lv_label_set_text(label, lv_poc_state_info_label_array[i].content);
 
-		lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
-		lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-		lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
-		lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
+		lv_label_set_long_mode(btn_label, lv_poc_state_info_label_array[i].content_long_mode);
+		lv_label_set_align(btn_label, lv_poc_state_info_label_array[i].content_text_align);
+		lv_label_set_long_mode(label, lv_poc_state_info_label_array[i].content_long_mode);
+		lv_label_set_align(label, lv_poc_state_info_label_array[i].content_text_align);
 
 		lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
 
 		lv_obj_set_width(btn_label, btn_width/4);
 		lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
-		lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-		lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
+		lv_obj_align(btn_label, btn, lv_poc_state_info_label_array[i].title_align, lv_poc_state_info_label_array[i].content_align_x, lv_poc_state_info_label_array[i].content_align_y);
+		lv_obj_align(label, btn_label, lv_poc_state_info_label_array[i].content_align, lv_poc_state_info_label_array[i].content_align_x, lv_poc_state_info_label_array[i].content_align_y);
     }
-
-    btn = lv_list_add_btn(list, NULL, "型号");
-    btn_array[3] = btn;
-    lv_btn_set_fit(btn, LV_FIT_NONE);
-    lv_obj_set_height(btn, btn_height);
-    btn_label = lv_list_get_btn_label(btn);
-	label = lv_label_create(btn, NULL);
-	btn->user_data = (void *)label;
-	lv_label_set_text(label, "T2Y");
-	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
-	lv_obj_set_width(btn_label, btn_width/4);
-	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
-	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
-
-	btn = lv_list_add_btn(list, NULL, "处理器信息");
-    btn_array[4] = btn;
-    lv_btn_set_fit(btn, LV_FIT_NONE);
-    lv_obj_set_height(btn, btn_height);
-    btn_label = lv_list_get_btn_label(btn);
-	label = lv_label_create(btn, NULL);
-	btn->user_data = (void *)label;
-	lv_label_set_text(label, "UIS8910DM_IE_AIOT_AIM");
-	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
-	lv_obj_set_width(btn_label, btn_width/4);
-	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
-	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
-
-	btn = lv_list_add_btn(list, NULL, "系统版本");
-	btn_array[5] = btn;
-	lv_btn_set_fit(btn, LV_FIT_NONE);
-	lv_obj_set_height(btn, btn_height);
-	btn_label = lv_list_get_btn_label(btn);
-	label = lv_label_create(btn, NULL);
-	btn->user_data = (void *)label;
-	lv_label_set_text(label, "8910_MODULE_V1_3_W20.35.2");
-	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
-	lv_obj_set_width(btn_label, btn_width/4);
-	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
-	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
-
-	btn = lv_list_add_btn(list, NULL, "版本号");
-	btn_array[6] = btn;
-	lv_btn_set_fit(btn, LV_FIT_NONE);
-	lv_obj_set_height(btn, btn_height);
-	btn_label = lv_list_get_btn_label(btn);
-	label = lv_label_create(btn, NULL);
-	btn->user_data = (void *)label;
-	lv_label_set_text(label, "V20.35.2-D9.21");
-	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
-	lv_obj_set_width(btn_label, btn_width/4);
-	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
-	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
-
-	btn = lv_list_add_btn(list, NULL, "软件");
-	btn_array[7] = btn;
-	lv_btn_set_fit(btn, LV_FIT_NONE);
-	lv_obj_set_height(btn, btn_height);
-	btn_label = lv_list_get_btn_label(btn);
-	label = lv_label_create(btn, NULL);
-	btn->user_data = (void *)label;
-	lv_label_set_text(label, "检查更新");
-	lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL_CIRC);
-	lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
-	lv_label_set_style(label, LV_LABEL_STYLE_MAIN, style_label);
-	lv_obj_set_width(btn_label, btn_width/4);
-	lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
-	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-	lv_obj_align(label, btn_label, LV_ALIGN_IN_RIGHT_MID, 0, 0);
 
     lv_list_set_btn_selected(list, btn_array[0]);
 }
