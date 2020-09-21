@@ -2568,7 +2568,6 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, lv_poc_oem_member
 		return;
 	}
 
-	OSI_LOGI(0, "[song]prv_lv_poc_get_member_list_cb start refr\n");
 	prv_member_list_cb(1);
 	prv_member_list_cb = NULL;
 	prv_member_list = NULL;
@@ -2674,12 +2673,12 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 /*
 	  name : lv_poc_get_self_info
 	  param :
-	  date : 2020-05-20
+	  date : 2020-09-18
 */
 lv_poc_member_info_t
 lv_poc_get_self_info(void)
 {
-	return (lv_poc_member_info_t)lvPocGuiIdtCom_get_self_info();
+	return (lv_poc_member_info_t)lvPocGuiOemCom_get_oem_self_info();
 }
 
 /*
@@ -2738,7 +2737,7 @@ lv_poc_get_group_name(lv_poc_group_info_t group)
 /*
 	  name : lv_poc_get_member_name
 	  param :
-	  date : 2020-05-20
+	  date : 2020-09-18
 */
 char *
 lv_poc_get_member_name(lv_poc_member_info_t members)
@@ -2748,14 +2747,14 @@ lv_poc_get_member_name(lv_poc_member_info_t members)
 		return NULL;
 	}
 
-	Msg_GROUP_MEMBER_s * member_info = (Msg_GROUP_MEMBER_s *)members;
-	return (char *)member_info->ucName;
+	PocGuiOemUserAttr_t * member_info = (PocGuiOemUserAttr_t *)members;
+	return (char *)member_info->OemUserName;
 }
 
 /*
 	  name : lv_poc_get_member_status
 	  param :
-	  date : 2020-05-21
+	  date : 2020-09-18
 */
 bool
 lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb func)
@@ -2765,22 +2764,22 @@ lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb 
 		return false;
 	}
 
-//	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP, func))
-//	{
-//		return false;
-//	}
-//
-//	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND, members))
-//	{
-//		return false;
-//	}
-	return true;;
+	if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP, func))
+	{
+		return false;
+	}
+
+	if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_MEMBER_INFO_IND, members))
+	{
+		return false;
+	}
+	return true;
 }
 
 /*
 	  name : lv_poc_get_member_status
 	  param :
-	  date : 2020-05-21
+	  date : 2020-09-18
 */
 bool
 lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_member_call_status_cb func)
@@ -2796,7 +2795,7 @@ lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_
 	member_call_config.members = member,
 	member_call_config.enable = enable;
 	member_call_config.func = func;
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_IND, &member_call_config))
+	if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_IND, &member_call_config))
 	{
 		return false;
 	}

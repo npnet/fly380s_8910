@@ -143,17 +143,15 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 	{
 		if(status == 1)
 		{
-			lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, true);
-			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_online, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
-			lv_task_once(once_task);
 			lv_poc_activity_func_cb_set.member_call_open(lv_poc_member_call_obj_information);
+		}
+		else if(status == 2)
+		{
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在组内", NULL);
 		}
 		else
 		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, 50, true);
-			lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, false);
-			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_offline, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
-			lv_task_once(once_task);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
 		}
 	}
@@ -171,19 +169,8 @@ static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 		}
 
 		lv_poc_member_call_obj_information = obj->user_data;
-
-		/*获取该列表单呼对象是不是自己*/
-		lv_obj_t * sigal_member_list;
-		sigal_member_list = lv_list_get_btn_selected(activity_list);
-		if(NULL != strstr(lv_list_get_btn_text(sigal_member_list),"我"))//如果是自己
-		{
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Unable_To_Call_Yourself, 50, true);
-			lv_poc_member_call_obj_information = NULL;
-			return;
-		}
-		/*获取结束*/
-
 		lv_poc_member_call_obj = obj;
+
 		if(!lv_poc_get_member_status(lv_poc_member_call_obj_information, lv_poc_member_list_get_member_status_cb))
 		{
 			lv_poc_member_call_obj = NULL;
@@ -454,10 +441,6 @@ lv_poc_status_t lv_poc_member_list_add(lv_poc_oem_member_list *member_list_obj, 
         member_list_obj->offline_number = member_list_obj->offline_number + 1;
     }
 
-    //if(member_list != NULL && current_activity == poc_member_list_activity)
-    //{
-	//	lv_poc_member_list_refresh();
-    //}
     return POC_OPERATE_SECCESS;
 }
 

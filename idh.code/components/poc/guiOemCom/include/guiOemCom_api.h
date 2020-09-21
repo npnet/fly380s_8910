@@ -62,6 +62,13 @@ typedef enum
 	LVPOCGUIOEMCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND,
 	LVPOCGUIOEMCOM_SIGNAL_CANCEL_REGISTER_SET_CURRENT_GROUP_CB_IND,
 
+	LVPOCGUIOEMCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP,
+	LVPOCGUIOEMCOM_SIGNAL_MEMBER_INFO_IND,
+
+	LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_IND,
+	LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP,
+	LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP,
+
 	/*****************************************/
 
     LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND,
@@ -113,7 +120,7 @@ typedef enum{/*登陆状态*/
 	LVPOCOEMCOM_SIGNAL_LOGIN_END	,
 }LVPOCIDTCOM_LOGIN_STATUS_T;
 
-typedef enum{/*登陆状态*/
+typedef enum{/*群组*/
 
 	LVPOCOEMCOM_SIGNAL_GROUP_START = 0,
 
@@ -199,6 +206,11 @@ typedef enum{/*登陆状态*/
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUPLISTINFO_ACK       "POC:80"//返回群组信息
 
 /********************************************************************************************************/
+#define OEM_GROUP_MEMBER_OFFLINE     "01"//离线
+#define OEM_GROUP_MEMBER_ONLINE_OUT  "02"//在线--组外
+#define OEM_GROUP_MEMBER_ONLINE_IN   "03"//在线--组内
+
+/********************************************************************************************************/
 //SET POC FUNC
 //A:TTS_FUNC B:NOTIFY_FUNC C:OFFLINEPLAY_FUNC
 //1:open 0:close
@@ -268,6 +280,8 @@ bool lvPocGuiOemCom_Request_Groupx_MemeberInfo(char *GroupID);
 bool lvPocGuiOemCom_Request_Join_Groupx(char *GroupID);
 
 bool lvPocGuiOemCom_modify_current_group_info(OemCGroup *CurrentGroup);
+
+bool lvPocGuiOemCom_Request_Member_Call(char *UserID);
 
 #if 1/*确信*/
 typedef struct

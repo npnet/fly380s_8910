@@ -71,25 +71,8 @@ static void lv_poc_member_call_activity_destory(lv_obj_t *obj)
 		lv_mem_free(win);
 	}
 
-	if(m_list != NULL)
+	if(m_list != NULL)//free head node
 	{
-		oem_list_element_t * cur_p = m_list->online_list;
-		oem_list_element_t * temp_p;
-		while(cur_p != NULL)
-		{
-			temp_p = cur_p;
-			cur_p =cur_p->next;
-			lv_mem_free(temp_p);
-		}
-
-		cur_p = m_list->offline_list;
-		while(cur_p != NULL)
-		{
-			temp_p = cur_p;
-			cur_p =cur_p->next;
-			lv_mem_free(temp_p);
-		}
-
 		lv_mem_free(m_list);
 	}
 }
@@ -173,10 +156,11 @@ static lv_res_t lv_poc_member_call_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_ESC:
 				{
-					if(lvPocGuiIdtCom_get_listen_status())//正在接听讲话时不准退出
-						break;
-					lv_poc_member_call_exit_by_self = 1;
-					lv_poc_member_call_delay_exit_task_create(5);
+					if(!lvPocGuiIdtCom_get_listen_status())
+					{
+						lv_poc_member_call_exit_by_self = 1;
+						lv_poc_member_call_delay_exit_task_create(5);
+					}
 					break;
 				}
 			}
@@ -293,14 +277,14 @@ void lv_poc_member_call_open(void * information)
 
 	if(information == NULL)
 	{
-		OSI_LOGI(0, "[member_call] infomation of call obj is empty\n");
+		OSI_LOGI(0, "[songmembercall] infomation of call obj is empty\n");
 		return;
 	}
 
     lv_poc_member_call_member_list_obj = (lv_poc_oem_member_list *)lv_mem_alloc(sizeof(lv_poc_oem_member_list));
 	if(lv_poc_member_call_member_list_obj == NULL)
 	{
-		OSI_LOGI(0, "[member_call] apply memory of member list failed!\n");
+		OSI_LOGI(0, "[songmembercall] apply memory of member list failed!\n");
 		return;
 	}
 	lv_poc_member_call_member_list_obj->offline_list = NULL;
