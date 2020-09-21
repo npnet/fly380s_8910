@@ -5473,7 +5473,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x5
+    ITEM_CONTENT = 0xB
     ITEM_INDEX   = 545
     ITEM_PARENT  = 544
     ITEM_DESC    =  
@@ -5553,7 +5553,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x4C08
+    ITEM_CONTENT = 0x4C07
     ITEM_INDEX   = 553
     ITEM_PARENT  = 552
     ITEM_DESC    =  
@@ -5573,7 +5573,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x4C29
+    ITEM_CONTENT = 0x4C08
     ITEM_INDEX   = 555
     ITEM_PARENT  = 554
     ITEM_DESC    =  
@@ -5593,7 +5593,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C26
     ITEM_INDEX   = 557
     ITEM_PARENT  = 556
     ITEM_DESC    =  
@@ -5613,7 +5613,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C27
     ITEM_INDEX   = 559
     ITEM_PARENT  = 558
     ITEM_DESC    =  
@@ -5633,7 +5633,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C28
     ITEM_INDEX   = 561
     ITEM_PARENT  = 560
     ITEM_DESC    =  
@@ -5653,7 +5653,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C29
     ITEM_INDEX   = 563
     ITEM_PARENT  = 562
     ITEM_DESC    =  
@@ -5673,7 +5673,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C22
     ITEM_INDEX   = 565
     ITEM_PARENT  = 564
     ITEM_DESC    =  
@@ -5693,7 +5693,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x4C14
     ITEM_INDEX   = 567
     ITEM_PARENT  = 566
     ITEM_DESC    =  
@@ -6364,7 +6364,7 @@
     ITEM_NAME    = defaultRat
     ITEM_ID      = 601
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x0
     ITEM_INDEX   = 634
     ITEM_PARENT  = 614
     ITEM_DESC    =  

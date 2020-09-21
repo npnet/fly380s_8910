@@ -272,8 +272,8 @@ void lv_poc_show_sprd_image(lv_task_t *task)
 {
 	poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
 	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
-	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
-	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 132, 132);
+	lv_img_set_src(poc_power_on_backgroup_sprd_image, &poc_power_on_t2y);
 }
 
 #ifdef __cplusplus

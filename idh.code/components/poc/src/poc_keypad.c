@@ -35,8 +35,9 @@ static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
 static lv_indev_state_t prvPttKeyState = 0xff;
 static lv_indev_state_t prvPowerKeyState = 0xff;
-static osiTimer_t * prvPowerTimer = NULL;
 static bool isScreenCurrentStatus = false;
+static osiTimer_t * prvPowerTimer = NULL;
+//static bool isReadyPowerOff = false;
 
 static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
 
@@ -54,7 +55,7 @@ static void prvPowerKeyCb(void *ctx)
 		osiSetBootCause(OSI_BOOTCAUSE_PWRKEY);/*as reboot*/
 		osiShutdown(OSI_SHUTDOWN_RESET);//重启设备
 	}
-	#endif 
+	#endif
 }
 
 bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
@@ -167,6 +168,25 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		}
 		prvPttKeyState = state;
 		ret = false;
+	}
+	else if(id == LV_GROUP_KEY_PREV)
+	{
+		if(prvPowerKeyState != state)
+		{
+			if(state == LV_INDEV_STATE_PR)
+			{
+				if(lv_poc_charge_poweron_status())//充电开机
+				{
+					poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
+				}
+				else
+				{
+					poc_set_lcd_status(!poc_get_lcd_status());
+				}
+			}
+		}
+		prvPowerKeyState = state;
+		ret = true;
 	}
 	preKey = id;
 	preKeyState = state;

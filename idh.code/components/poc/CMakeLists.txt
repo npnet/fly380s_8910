@@ -27,6 +27,7 @@ add_library(${target} STATIC
 	gui/lv_external/lv_poc_lib.c
 
 	gui/lv_apps/lv_poc_about/lv_poc_about.c
+	gui/lv_apps/lv_poc_state_info/lv_poc_state_info.c
 	gui/lv_apps/lv_poc_build_group/lv_poc_build_group.c
 	gui/lv_apps/lv_poc_edeg_key/lv_poc_edeg_key.c
 	gui/lv_apps/lv_poc_group_list/lv_poc_group_list.c
@@ -122,9 +123,8 @@ add_library(${target} STATIC
 	gui/resource/image/signal/stat_sys_data_fully_connected_3g_sprd_reliance.c
 	gui/resource/image/signal/ic_signal_no_server.c
 	gui/resource/image/signal/stat_sys_data_connected_2g_sprd.c
-	gui/resource/image/poweron/img_poweron_poc_logo_unicom.c
-	gui/resource/image/poweron/img_poweron_poc_logo_sprd.c
-	gui/resource/image/poweroff/img_poweroff_poc_logo_unicom.c
+	gui/resource/image/poweron/poc_power_on_t2y.c
+	gui/resource/image/poweroff/poc_power_off_t2y.c
 	gui/resource/image/power_off_reboot/power_off.c
 	gui/resource/image/power_off_reboot/reboot.c
 	gui/resource/image/lock/locked.c

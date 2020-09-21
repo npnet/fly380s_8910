@@ -90,17 +90,17 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {/*song is here*/
     {KEY_MAP_5,      LV_GROUP_KEY_DOWN},/*下*/
     {KEY_MAP_6,      LV_GROUP_KEY_GP},/*群组列表-广播android.ptt.curr.group*/
     {KEY_MAP_7,      LV_GROUP_KEY_ESC},/*返回*/
-    {KEY_MAP_8,      LV_GROUP_KEY_END},/*(13)无定义*/
+    {KEY_MAP_8,      LV_GROUP_KEY_PREV},/*(13)无定义---熄屏*/
     {KEY_MAP_9,      LV_GROUP_KEY_LOCK_SCREEN},/*长按锁屏/解屏,广播android.intent.action.elink.lockscreen,android.intent.action.elink.unlockscreen*/
-    {KEY_MAP_STAR,   LV_GROUP_KEY_END},
-    {KEY_MAP_SHARP,   LV_GROUP_KEY_END},
-    {KEY_MAP_OK,     LV_GROUP_KEY_END},
-    {KEY_MAP_LEFT,   LV_GROUP_KEY_END},
-    {KEY_MAP_RIGHT,  LV_GROUP_KEY_END},
-    {KEY_MAP_UP,     LV_GROUP_KEY_END},
-    {KEY_MAP_DOWN,   LV_GROUP_KEY_END},
-    {KEY_MAP_SOFT_L, LV_GROUP_KEY_END},
-    {KEY_MAP_SOFT_R, LV_GROUP_KEY_END},
+    {KEY_MAP_STAR,   0x21},
+    {KEY_MAP_SHARP,  0x22},
+    {KEY_MAP_OK,     0x23},
+    {KEY_MAP_LEFT,   0x24},
+    {KEY_MAP_RIGHT,  0x25},
+    {KEY_MAP_UP,     0x26},
+    {KEY_MAP_DOWN,   0x27},
+    {KEY_MAP_SOFT_L, 0x28},
+    {KEY_MAP_SOFT_R, 0x29},
 };
 #endif
 

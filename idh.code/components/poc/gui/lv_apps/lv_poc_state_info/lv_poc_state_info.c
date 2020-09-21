@@ -1,6 +1,4 @@
-﻿
-
-#ifdef __cplusplus
+﻿#ifdef __cplusplus
 extern "C" {
 #endif
 #include "lv_include/lv_poc.h"
@@ -9,35 +7,35 @@ static lv_obj_t * activity_create(lv_poc_display_t *display);
 
 static void activity_destory(lv_obj_t *obj);
 
-static void * about_list_create(lv_obj_t * parent, lv_area_t display_area);
+static void * state_info_list_create(lv_obj_t * parent, lv_area_t display_area);
 
-static void about_list_config(lv_obj_t * list, lv_area_t list_area);
+static void state_info_list_config(lv_obj_t * list, lv_area_t list_area);
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param);
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_poc_win_t * about_win;
+static lv_poc_win_t * state_info_win;
 
 static lv_obj_t * activity_list;
 
-lv_poc_activity_t * poc_about_activity;
+lv_poc_activity_t * poc_state_info_activity;
 
 
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
-    about_win = lv_poc_win_create(display, "关于本机", about_list_create);
-    return (lv_obj_t *)about_win;
+    state_info_win = lv_poc_win_create(display, "状态信息", state_info_list_create);
+    return (lv_obj_t *)state_info_win;
 }
 
 static void activity_destory(lv_obj_t *obj)
 {
 }
 
-static void * about_list_create(lv_obj_t * parent, lv_area_t display_area)
+static void * state_info_list_create(lv_obj_t * parent, lv_area_t display_area)
 {
-    activity_list = lv_poc_list_create(parent, NULL, display_area, about_list_config);
+    activity_list = lv_poc_list_create(parent, NULL, display_area, state_info_list_config);
 	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
 	return (void *)activity_list;
 }
@@ -55,81 +53,87 @@ typedef struct
 	lv_align_t content_align;
 	lv_coord_t content_align_x;
 	lv_coord_t content_align_y;
-} lv_poc_about_label_struct_t;
+} lv_poc_state_info_label_struct_t;
 
 
-static char lv_poc_about_text_account[64] = {0};
-static char lv_poc_about_imei_str[16] = {0};
-static char lv_poc_about_text_iccid_str[20] = {0};
-static char lv_poc_about_text_model[64] = {0};
-static char lv_poc_about_text_version[64] = {0};
-static char lv_poc_about_text_update[64] = {0};
+static char lv_poc_state_info_text_account[64] = {0};
+static char lv_poc_state_info_imei_str[16] = {0};
+static char lv_poc_state_info_text_iccid_str[20] = {0};
+static char lv_poc_state_info_text_model[64] = {0};
+static char lv_poc_state_info_text_version[64] = {0};
+static char lv_poc_state_info_text_update[64] = {0};
 
-lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
+lv_poc_state_info_label_struct_t lv_poc_state_info_label_array[] = {
 	{
 		NULL,
 		"账号"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_account, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_state_info_text_account, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
 		"IMEI"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_imei_str, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_state_info_imei_str, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
 		"ICCID"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_iccid_str, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_state_info_text_iccid_str, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
-		"型号"                   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_model, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		"电池状态"                   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		lv_poc_state_info_text_model, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
-		"处理器信息"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		"电池电量"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		lv_poc_state_info_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
-		"系统版本"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		"信号强度"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		lv_poc_state_info_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
-		"版本号"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		"本机网络"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		lv_poc_state_info_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
 	{
 		NULL,
-		"软件"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_update, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		"服务状态"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		lv_poc_state_info_text_update, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+	},
+
+	{
+		NULL,
+		"移动网络"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		lv_poc_state_info_text_update, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 };
 
-char *lv_poc_about_label_title[6] =
+char *lv_poc_state_info_label_title[6] =
 {
 	"账号",
 	"IMEI",
 	"ICCID",
 };
 
-char *lv_poc_about_label_content[6] =
+char *lv_poc_state_info_label_content[6] =
 {
-	lv_poc_about_text_account,
-	lv_poc_about_imei_str,
-	lv_poc_about_text_iccid_str,
+	lv_poc_state_info_text_account,
+	lv_poc_state_info_imei_str,
+	lv_poc_state_info_text_iccid_str,
 };
 
-static void about_list_config(lv_obj_t * list, lv_area_t list_area)
+static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 {
     lv_obj_t *btn;
     lv_obj_t *label;
@@ -141,7 +145,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_about_label;
     style_label->text.font = (lv_font_t *)poc_setting_conf->font.about_label_current_font;
 
-	int label_array_size = sizeof(lv_poc_about_label_array)/sizeof(lv_poc_about_label_struct_t);
+	int label_array_size = sizeof(lv_poc_state_info_label_array)/sizeof(lv_poc_state_info_label_struct_t);
 	lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
 	char *temp_str = NULL;
@@ -149,21 +153,21 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	temp_str = poc_get_device_account_rep(poc_setting_conf->main_SIM);
 	if(temp_str != NULL)
 	{
-		strcpy(lv_poc_about_text_account, temp_str);
+		strcpy(lv_poc_state_info_text_account, temp_str);
 	}
 	else
 	{
-		lv_poc_about_text_account[0] = 0;
+		lv_poc_state_info_text_account[0] = 0;
 	}
 
-	lv_poc_about_imei_str[0] = 0;
-    poc_get_device_imei_rep((int8_t *)lv_poc_about_imei_str);
-	lv_poc_about_text_iccid_str[0] = 0;
-    poc_get_device_iccid_rep((int8_t *)lv_poc_about_text_iccid_str);
+	lv_poc_state_info_imei_str[0] = 0;
+    poc_get_device_imei_rep((int8_t *)lv_poc_state_info_imei_str);
+	lv_poc_state_info_text_iccid_str[0] = 0;
+    poc_get_device_iccid_rep((int8_t *)lv_poc_state_info_text_iccid_str);
 
     for(int i = 0; i < 3; i++)
     {
-	    btn = lv_list_add_btn(list, NULL, lv_poc_about_label_title[i]);
+	    btn = lv_list_add_btn(list, NULL, lv_poc_state_info_label_title[i]);
 	    btn_array[i] = btn;
 	    lv_btn_set_fit(btn, LV_FIT_NONE);
 	    lv_obj_set_height(btn, btn_height);
@@ -171,7 +175,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 		label = lv_label_create(btn, NULL);
 		btn->user_data = (void *)label;
 
-		lv_label_set_text(label, lv_poc_about_label_content[i]);
+		lv_label_set_text(label, lv_poc_state_info_label_content[i]);
 
 		lv_label_set_long_mode(btn_label, LV_LABEL_LONG_SROLL_CIRC);
 		lv_label_set_align(btn_label, LV_LABEL_ALIGN_LEFT);
@@ -332,7 +336,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 				case LV_KEY_ESC:
 				{
-					lv_poc_del_activity(poc_about_activity);
+					lv_poc_del_activity(poc_state_info_activity);
 					break;
 				}
 			}
@@ -363,14 +367,14 @@ static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_des
 }
 
 
-void lv_poc_about_open(void)
+void lv_poc_state_info_open(void)
 {
-    lv_poc_activity_ext_t activity_ext = {ACT_ID_POC_ABOUT,
+    lv_poc_activity_ext_t activity_ext = {ACT_ID_POC_STATE_INFO,
 											activity_create,
 											activity_destory};
-    poc_about_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
-    lv_poc_activity_set_signal_cb(poc_about_activity, signal_func);
-    lv_poc_activity_set_design_cb(poc_about_activity, design_func);
+    poc_state_info_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
+    lv_poc_activity_set_signal_cb(poc_state_info_activity, signal_func);
+    lv_poc_activity_set_design_cb(poc_state_info_activity, design_func);
 }
 
 

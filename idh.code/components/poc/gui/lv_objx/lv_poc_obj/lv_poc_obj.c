@@ -3462,14 +3462,12 @@ void lv_poc_set_volum_opt(lv_task_t *task)
 	static uint8_t vol_last = 0;
 
 	vol_cur = lv_poc_get_adc_to_volum();
-
 	if(vol_cur == vol_last || (vol_cur == 0 && vol_last == 0))
 	{
 		return;
 	}
 
 	vol_last = vol_cur;
-
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
 }
 

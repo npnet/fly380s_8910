@@ -63,18 +63,18 @@ typedef struct PocVolumAttribute_t{
 }PocVolumAttribute_t;
 
 static PocVolumAttribute_t lv_poc_volum_set[]= {
-	{150, 0},
-	{380, 1},
-	{760, 2},
-	{1100, 3},
-	{1440, 4},
-	{1780, 5},
-	{2120, 6},
-	{2460, 7},
-	{2800, 8},
-	{3140, 9},
-	{3820, 10},
-	{4096, 11}
+	{230, 0},
+	{380, 1},//380
+	{530, 2},//530
+	{820, 3},//820
+	{1040, 4},//1040
+	{1380, 5},//1380
+	{1520, 6},//1520
+	{1820, 7},//1860
+	{2120, 8},//2120
+	{2520, 9},//2540
+	{2720, 10},//2720
+	{2952, 11}//2952
 };
 
 #define POC_VOLUM_LEVEL_SIZE (sizeof(lv_poc_volum_set)/sizeof(lv_poc_volum_set[0]))
@@ -600,6 +600,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 		}
 		audevSetPlayVolume(60);
 		auPlayerStop(prv_play_btn_voice_one_time_player);
+		audevSetPlayVolume(40);
 	    auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
 	    auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
 		auPlayerStartMem(prv_play_btn_voice_one_time_player, AUSTREAM_FORMAT_PCM, params, lv_poc_audio_msg.data, lv_poc_audio_msg.data_size);
@@ -1130,9 +1131,11 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	CFW_NW_STATUS_INFO nStatusInfo;
     uint8_t nSim = POC_SIM_1;
 	uint8_t status;
+	static bool poc_network_voice_play = true;
 
-	if(!poc_check_sim_prsent(POC_SIM_1))
+	if(!poc_check_sim_prsent(POC_SIM_1) && poc_network_voice_play == true)
 	{
+		poc_network_voice_play = false;//only play once
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, 50, false);
 		return false;
@@ -2719,7 +2722,7 @@ uint8_t lv_poc_get_adc_to_volum(void)
 	int i;
 
 	adc_cur_value = drvAdcGetRawValue(ADC_CHANNEL_1, ADC_SCALE_1V250);
-
+	OSI_LOGI(0, "[song]adc vlaue is =%d", adc_cur_value);
 	for(i = 0; i < POC_VOLUM_LEVEL_SIZE; i++)
 	{
 		if(adc_cur_value <= lv_poc_volum_set[i].adc_level)
@@ -2727,13 +2730,13 @@ uint8_t lv_poc_get_adc_to_volum(void)
 			break;
 		}
 	}
-
-	if(i == POC_VOLUM_LEVEL_SIZE)
+	OSI_LOGI(0, "[song]vol_cur is =%d", lv_poc_volum_set[i].volum_level);
+	if(i > POC_VOLUM_LEVEL_SIZE)
 	{
 		return false;
 	}
 #if 0
-	OSI_LOGI(0, "[song]adc vlaue is =%d", *adcvlaue);
+	OSI_LOGI(0, "[song]adc vlaue is =%d", adc_cur_value);
 #endif
 
 	return lv_poc_volum_set[i].volum_level;
