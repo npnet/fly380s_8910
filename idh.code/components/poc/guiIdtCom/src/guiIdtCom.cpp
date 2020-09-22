@@ -419,16 +419,18 @@ public:
 	bool start_speak_voice_timer_running;
 	char self_info_cjson_str[GUIIDTCOM_SELF_INFO_SZIE];
 	cJSON * self_info_cjson;
-	bool   speak_status;/*是否正在讲话状态*/
+	bool   listen_status;/*是否正在接听状态*/
 	bool   record_fist;/*记录第一包数据*/
 	uint16_t   membercall_count;/*记录第一次进入单呼*/
 	int runcount;/*记录次数，当延时使用*/
 	uint16_t loginstatus_t;/*记录登陆状态*/
 	osiTimer_t * try_login_timer;/*尝试登录定时器*/
 	osiTimer_t * auto_login_timer;/*自动登录定时器*/
+	osiTimer_t * monitor_pptkey_timer;/*检查ppt键*/
 	bool onepoweron;/*记录第一次开机状态*/
 	char build_self_name[16];/*存储自建群组尾序号*/
 	int buildgroupnumber;/*自编组号码*/
+	bool   is_makeout_call;/*是否进入呼叫状态*/
 } PocGuiIIdtComAttr_t;
 
 typedef struct
@@ -1308,6 +1310,25 @@ static void LvGuiIdtCom_auto_login_timer_cb(void *ctx)
 		}
 	}
 }
+/*检查ppt键是否释放*/
+static void LvGuiIdtCom_ppt_release_timer_cb(void *ctx)
+{
+	static int makecallcnt = 0;
+	bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
+	if(true == pttStatus && pocIdtAttr.is_makeout_call == true)
+	{
+		osiTimerStart(pocIdtAttr.monitor_pptkey_timer, 50);
+		makecallcnt++;
+	}
+	else//ppt release
+	{
+		if(makecallcnt < 10)//press time < 500ms
+		{
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)USER_OPRATOR_SPEAKING);
+		}
+		makecallcnt = 0;
+	}
+}
 
 //--------------------------------------------------------------------------------
 //      用户调试函数
@@ -1587,7 +1608,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND:
 		{
 
-			#if 1
 			if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED)/*加入尝试登录中功能*/
 			{
 				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING;/*登陆中*/
@@ -1604,14 +1624,13 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				OSI_LOGI(0, "[song]relogin ing[3]\n");
 				break;
 			}
-			#endif
 
 			if(m_IdtUser.m_status < UT_STATUS_ONLINE)
 			{
 				break;
 			}
 			/*加入该条件是指用于接听状态下*/
-			if(pocIdtAttr.speak_status == true)
+			if(pocIdtAttr.listen_status == true)
 			{
 				//对方正在讲话时ppt键无效
 				return;
@@ -1716,6 +1735,8 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, speak_name, "");
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)speak_name, (const uint8_t *)"");
 				}
+				pocIdtAttr.is_makeout_call = true;
+				osiTimerStart(pocIdtAttr.monitor_pptkey_timer, 50);
 			}
 			break;
 		}
@@ -1733,7 +1754,10 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP:
 		{
-			if(ctx == USER_OPRATOR_SPEAKING)
+			bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
+			if(ctx == USER_OPRATOR_SPEAKING
+				&& pocIdtAttr.is_makeout_call == true
+				&& pttStatus == false)
 			{
 				/*恢复run闪烁*/
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
@@ -1744,6 +1768,8 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"停止对讲", NULL);
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, NULL, NULL);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				pocIdtAttr.is_makeout_call = false;
+				osiTimerStop(pocIdtAttr.monitor_pptkey_timer);
 			}
 			break;
 		}
@@ -1833,7 +1859,6 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 
 				if(status >= USER_OPRATOR_START_SPEAK && status <= USER_OPRATOR_SPEAKING)
 				{
-					//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "释放话权", NULL);
 			        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)status);
 				}
 				pocIdtAttr.mic_ctl = mic_ctl;
@@ -2556,7 +2581,7 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			    break;
 		    }
 
-			if(pocIdtAttr.speak_status == true)
+			if(pocIdtAttr.listen_status == true)
 			{
 				/*speak cannot membercall*/
 				return;
@@ -2716,7 +2741,7 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			//lv_task_del(pcm_task);
 			#endif
 
-			pocIdtAttr.speak_status = false;
+			pocIdtAttr.listen_status = false;
 
 			/*恢复run闪烁*/
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
@@ -2744,7 +2769,7 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			strcpy(speaker_name, (const char *)pocIdtAttr.speaker.ucName);
 			strcat(speaker_name, (const char *)"正在讲话");
 
-			pocIdtAttr.speak_status = true;
+			pocIdtAttr.listen_status = true;
 			/*开始闪烁*/
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 
@@ -3654,6 +3679,7 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.check_listen_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_check_listen_timer_cb, NULL);
 	pocIdtAttr.try_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_try_login_timer_cb, NULL);/*注册尝试登录定时器*/
 	pocIdtAttr.auto_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_auto_login_timer_cb, NULL);/*注册自动登录定时器*/
+	pocIdtAttr.monitor_pptkey_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_ppt_release_timer_cb, NULL);/*检查ppt键定时器*/
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
@@ -3729,7 +3755,7 @@ bool lvPocGuiIdtCom_get_status(void)
 
 bool lvPocGuiIdtCom_get_listen_status(void)
 {
-	return pocIdtAttr.speak_status;
+	return pocIdtAttr.listen_status;
 }
 
 
