@@ -561,9 +561,9 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 
 void lv_poc_build_group_refresh_with_data(lv_poc_member_list_t *member_list_obj)
 {
-
 	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)/*防止一些界面刷新数据混乱导致死机问题*/
 	{
+		lv_poc_set_group_refr(true);//记录有信息待刷新
 		return;
 	}
 

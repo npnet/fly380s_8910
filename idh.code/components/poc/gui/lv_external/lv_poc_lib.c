@@ -53,6 +53,7 @@ static drvGpio_t * poc_ppt_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
+static bool poc_charging_status = false;
 /*********************volum***********************/
 
 typedef struct PocVolumAttribute_t{
@@ -79,6 +80,8 @@ static PocVolumAttribute_t lv_poc_volum_set[]= {
 
 /*************************************************/
 static uint8_t poc_earkey_state = false;
+static int lv_poc_inside_group = false;
+static int lv_poc_group_list_refr = false;
 static void poc_ear_ppt_irq(void *ctx);
 
 static uint16_t poc_cur_unopt_status;
@@ -641,8 +644,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
-					//还原音量
-					//lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 				}
 			}
 			else if(isPlayVoice)
@@ -654,6 +655,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		}
 		else
 		{
+			//get volum
+			#if 0
+			unsigned volum = audevGetPlayVolume();
+			OSI_LOGI(0, "[song]play volum %d", volum);
+			#endif
+
 			if(isPlayVoice)
 			{
 				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 20))
@@ -2335,13 +2342,11 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 			prv_member_list->offline_number++;//计算离线人数
 			if(prv_member_list->offline_list != NULL)
 			{
-				OSI_LOGI(0, "[song]offline nonull");
 				p_offline_cur->next = p_element;
 				p_offline_cur = p_offline_cur->next;
 			}
 			else
 			{
-				OSI_LOGI(0, "[song]offline null");
 				prv_member_list->offline_list = p_element;
 				p_offline_cur = p_element;
 			}
@@ -2760,5 +2765,73 @@ bool
 lv_poc_get_poweron_is_ready(void)
 {
 	return poc_power_on_status;
+}
+
+/*
+	  name : lv_poc_set_charge_status
+	  param :
+	  date : 2020-09-10
+*/
+void
+lv_poc_set_charge_status(bool status)
+{
+	poc_charging_status = status;
+}
+
+/*
+	  name : lv_poc_get_charge_status
+	  param :
+	  date : 2020-09-10
+*/
+bool
+lv_poc_get_charge_status(void)
+{
+	return poc_charging_status;
+}
+
+/*
+	  name : lv_poc_set_group_status
+	  describe :设置设备在组里还是外,true为组内
+	  param :
+	  date : 2020-09-22
+*/
+void lv_poc_set_group_status(bool status)
+{
+	lv_poc_inside_group = status;
+}
+
+/*
+	  name : lv_poc_is_inside_group
+	  describe :设备是否在组里面
+	  param :
+	  date : 2020-09-22
+*/
+bool lv_poc_is_inside_group(void)
+{
+	return lv_poc_inside_group;
+}
+
+/*
+	  name : lv_poc_set_group_refr
+	  describe :记录当设备在组内返回群组列表时是否有刷新信息
+	  example  :设备在组内时的群组列表需刷新的消息，设备弹出锁组信息、设备弹出关机、
+			    设备弹出删组弹框时由于其他设备建组、删组导致的刷新问题
+	  param :
+	  date : 2020-09-22
+*/
+void lv_poc_set_group_refr(bool status)
+{
+	lv_poc_group_list_refr = status;
+}
+
+/*
+	  name : lv_poc_is_group_list_refr
+	  describe :返回群组列表是否有刷新信息
+	  param :
+	  date : 2020-09-22
+*/
+bool lv_poc_is_group_list_refr(void)
+{
+	return lv_poc_group_list_refr;
 }
 

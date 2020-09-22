@@ -60,7 +60,6 @@ static lv_poc_group_list_item_info_t * lv_poc_group_current_info = NULL;
 
 lv_poc_group_info_t *lv_poc_group_list_get_member_list_info = NULL;
 
-
 static lv_area_t display_area;
 
 lv_poc_activity_t * poc_group_list_activity;
@@ -332,11 +331,13 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 		case LV_SIGNAL_FOCUS:
 		{
-			/*解决白屏问题*/
-			#if 0
-			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
-				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
-			#endif
+			OSI_LOGI(0, "[grouprefr]grouplist focus\n");
+			if(lv_poc_is_group_list_refr())
+			{
+				OSI_LOGI(0, "[grouprefr]grouplist focus have refr\n");
+				lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
+				lv_poc_set_group_refr(false);
+			}
 			break;
 		}
 
@@ -1004,14 +1005,20 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
 void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
 {
-
-	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)/*防止一些界面刷新数据混乱导致死机问题*/
+	if(lv_poc_is_inside_group())//若当前设备在某个群组里,禁止群组的所有更新(包括添组、删组、组信息更新)
 	{
-		OSI_LOGI(0, "[song]grouplist can't refresh\n");
+		OSI_LOGI(0, "[grouprefr]grouplist have refresh info\n");
+		lv_poc_set_group_refr(true);//记录有信息待刷新
 		return;
 	}
 
-	OSI_LOGI(0, "[song]grouplist refreshing");
+	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)/*防止一些界面刷新数据混乱导致死机问题*/
+	{
+		lv_poc_set_group_refr(true);//记录有信息待刷新
+		OSI_LOGI(0, "[grouprefr]grouplist can't refresh\n");
+		return;
+	}
+	OSI_LOGI(0, "[grouprefr]grouplist refresh_with_data running");
 
 	if(group_list_obj == NULL)
 	{
@@ -1355,11 +1362,12 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 				lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_LOCK, (lv_poc_group_info_t)group_item->information, lv_poc_group_lock_oprator_cb);
 			}
 		}
-		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
 		lv_poc_refr_task_once(lv_poc_group_list_notation, LVPOCLISTIDTCOM_LIST_PERIOD_300, LV_TASK_PRIO_LOW);
+		lv_poc_set_group_status(true);
 	}
 	else if(result_type == 2)
 	{
+		lv_poc_set_group_status(true);
 		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
 	}
 	else
@@ -1381,7 +1389,6 @@ void lv_poc_group_list_notation(lv_task_t * task)
 {
 	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
 }
-
 
 #ifdef __cplusplus
 }

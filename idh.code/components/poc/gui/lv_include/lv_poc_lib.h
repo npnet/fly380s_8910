@@ -857,6 +857,40 @@ lv_poc_set_power_on_status(bool status);
 bool
 lv_poc_get_poweron_is_ready(void);
 
+/*
+	  name : lv_poc_get_charge_status
+	  describe :设置设备在组里还是外,true为组内
+	  param :
+	  date : 2020-09-22
+*/
+void lv_poc_set_group_status(bool status);
+
+/*
+	  name : lv_poc_get_charge_status
+	  describe :设备是否在组里面
+	  param :
+	  date : 2020-09-22
+*/
+bool lv_poc_is_inside_group(void);
+
+/*
+	  name : lv_poc_set_group_refr
+	  describe :记录当设备在组内返回群组列表时是否有刷新信息
+	  example  :设备在组内时的群组列表需刷新的消息，设备弹出锁组信息、设备弹出关机、
+				设备弹出删组弹框时由于其他设备建组、删组导致的刷新问题
+	  param :
+	  date : 2020-09-22
+*/
+void lv_poc_set_group_refr(bool status);
+
+/*
+	  name : lv_poc_is_group_list_refr
+	  describe :返回群组列表是否有刷新信息
+	  param :
+	  date : 2020-09-22
+*/
+bool lv_poc_is_group_list_refr(void);
+
 #ifdef __cplusplus
 }
 #endif
