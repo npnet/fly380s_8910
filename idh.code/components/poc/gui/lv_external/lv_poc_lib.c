@@ -728,6 +728,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		}
 		else
 		{
+			//get volum
+			#if 0
+			unsigned volum = audevGetPlayVolume();
+			OSI_LOGI(0, "[song]play volum %d", volum);
+			#endif
+
 			if(isPlayVoice)
 			{
 				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 50))

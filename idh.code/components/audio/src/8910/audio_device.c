@@ -2755,9 +2755,17 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     if (frame == NULL)
     {
         return false;
+    }
+	/*open pa*/
+	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+	{
+		extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(true);
+
+		//OSI_LOGI(0, "[songpa] open");
 	}
 
-    OSI_LOGI(0, "[poc][startplay]audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
+    OSI_LOGI(0, "audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
              frame->sample_format, frame->channel_count,
              frame->sample_rate, d->clk_users);
 
@@ -3031,7 +3039,7 @@ bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
 bool audevStopPlayV2(void)
 {
     audevContext_t *d = &gAudevCtx;
-    OSI_LOGI(0, "[poc][stopplay]audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
+    OSI_LOGI(0, "audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
 
     osiMutexLock(d->lock);
 
@@ -3039,6 +3047,8 @@ bool audevStopPlayV2(void)
     {
 	    extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(false);
+
+		//OSI_LOGI(0, "[songpa] close");
     }
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
