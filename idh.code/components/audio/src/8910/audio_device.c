@@ -2935,7 +2935,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         osiWorkEnqueue(d->ipc_work, d->wq);
         osiMutexUnlock(d->lock);
 
-		//OSI_LOGI(0, "[song]audio type AUDEV_PLAY_TYPE_LOCAL");
+		OSI_LOGI(0, "audio type AUDEV_PLAY_TYPE_LOCAL");
         return true;
     }
     else if (type == AUDEV_PLAY_TYPE_VOICE)

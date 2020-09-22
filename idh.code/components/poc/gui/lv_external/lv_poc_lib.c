@@ -1766,7 +1766,7 @@ void poc_ear_ppt_irq(void *ctx)
 	}
 	else/*press*/
 	{
-		osiTimerStart(ear_key_attr.ear_press_timer, 200);
+		osiTimerStart(ear_key_attr.ear_press_timer, 50);
 		OSI_LOGI(0, "[song]ear time start\n");
 	}
 }
