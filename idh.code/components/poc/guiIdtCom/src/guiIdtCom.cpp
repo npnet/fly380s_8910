@@ -853,7 +853,7 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 	{
 	    m_IdtUser.m_iRxCount = m_IdtUser.m_iRxCount + 1;
 
-		#if 1
+		#if 0
 		if(m_IdtUser.m_iRxCount == 1)
 		{
 			audevSetPlayVolume(0);/*关闭音量*/
@@ -995,12 +995,11 @@ void callback_IDT_UOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes, UData_s* pUser
 	    memcpy(&UOpt.pUser, pUser, sizeof(UData_s));
     }
 
-    if(dwOptCode == OPT_USER_QUERY)/*build group update*/
+    if(dwOptCode == OPT_USER_QUERY)
     {
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP, &UOpt);
     }
-
-    if(dwOptCode == OPT_GMEMBER_EXTINFO)
+    else if(dwOptCode == OPT_GMEMBER_EXTINFO)
     {
 	    unsigned int result = (unsigned int)wRes;
 	    if(pocIdtAttr.lockGroupOpt == LV_POC_GROUP_OPRATOR_TYPE_LOCK)/*锁组*/
@@ -1416,8 +1415,8 @@ void IDT_Entry(void*)
     m_IdtUser.Reset();
 
     // 0关闭日志,1打开日志
-    //g_iLog = 0;
-    g_iLog = 1;
+    g_iLog = 0;
+    //g_iLog = 1;
 
     static IDT_CALLBACK_s CallBack;
     memset(&CallBack, 0, sizeof(CallBack));
@@ -2296,13 +2295,13 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 			break;
 		}
 
-		case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP:/**/
+		case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP:
 		{
 			if(ctx == 0)
 			{
 				break;
 			}
-			OSI_LOGI(0, "[song]enter LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP");
+			//OSI_LOGI(0, "[song]enter LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP");
 			LvPocGuiIdtCom_User_Operator_t * UOpt = (LvPocGuiIdtCom_User_Operator_t *)ctx;
 
 			Msg_GData_s *pPocMemberList = pocIdtAttr.pPocMemberList;
@@ -2913,12 +2912,12 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 					Msg_GData_s *pPocMemberList = NULL;
 					if(pocIdtAttr.isPocMemberListBuf)
 					{
-						OSI_LOGI(0,"[song]pPocMemberListBuf have enter!");
+						IDT_TRACE(0,"[song]pPocMemberListBuf have enter!");
 						pPocMemberList = pocIdtAttr.pPocMemberListBuf;
 					}
 					else
 					{
-						OSI_LOGI(0,"[song]pPocMemberList have enter!");
+						IDT_TRACE(0,"[song]pPocMemberList have enter!");
 						pPocMemberList = pocIdtAttr.pPocMemberList;/*上电填充成员列表*/
 					}
 

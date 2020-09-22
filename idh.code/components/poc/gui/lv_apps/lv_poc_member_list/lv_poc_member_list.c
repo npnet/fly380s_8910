@@ -49,8 +49,6 @@ static lv_obj_t * lv_poc_member_call_obj = NULL;
 
 static int lv_poc_member_list_get_member_type = -1;
 
-
-
 static lv_obj_t * lv_poc_member_list_activity_create(lv_poc_display_t *display)
 {
     activity_win = lv_poc_win_create(display, (const char *)lv_poc_member_list_title, lv_poc_member_list_list_create);
@@ -264,6 +262,8 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_ESC:
 				{
+					lv_poc_set_group_status(false);
+					OSI_LOGI(0, "[grouprefr]exit memberlist\n");
 					lv_poc_del_activity(poc_member_list_activity);
 					break;
 				}
@@ -722,6 +722,12 @@ void lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj)
 		return;
 	}
 
+	if(lv_poc_is_inside_group())//若当前设备在某个群组里,禁止群组的所有更新(包括添组、删组、组信息更新)
+	{
+		lv_poc_set_group_refr(true);//记录有信息待刷新
+		return;
+	}
+
 	extern lv_poc_group_info_t *lv_poc_group_list_get_member_list_info;
 
 	if(lv_poc_member_list_get_member_type == 1)/*成员列表为空*/
@@ -1047,7 +1053,7 @@ lv_poc_status_t lv_poc_member_list_move_down(lv_poc_member_list_t *member_list_o
         p_cur = p_cur->next;
     }
 
-    p_cur = member_list_obj->offline_list;/*p_cur != NULL 防止内存泄露*/
+    p_cur = member_list_obj->offline_list;
     if(p_cur != NULL && MEMBER_EQUATION((void *)p_cur->name, (void *)name, (void *)p_cur->information, (void *)information, NULL))
     {
         if(NULL != p_cur->next)
