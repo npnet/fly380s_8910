@@ -1936,11 +1936,7 @@ bool audevSetPlayVolume(unsigned vol)
     d->cfg.play_vol = vol;
     if (d->clk_users & AUDEV_CLK_USER_PLAY)
     {
-		#if 1
-        prvSetPlayConfig();/*官方*/
-		#else
-		pocsetplayconfig();/*old*/
-		#endif
+        prvSetPlayConfig();
     }
     audevSetting_t cfg = d->cfg;
     osiMutexUnlock(d->lock);
@@ -2777,12 +2773,12 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
 		extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(true);
 
-//		OSI_LOGI(0, "[songpa] open");
+		//OSI_LOGI(0, "[songpa] open");
 	}
 
-//    OSI_LOGI(0, "[song]audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
-//             frame->sample_format, frame->channel_count,
-//             frame->sample_rate, d->clk_users);
+    OSI_LOGI(0, "audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
+             frame->sample_format, frame->channel_count,
+             frame->sample_rate, d->clk_users);
 
     const uint32_t valid_samplerate[] = {
         8000, 9600, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 96000};
@@ -3044,7 +3040,7 @@ bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
 bool audevStopPlayV2(void)
 {
     audevContext_t *d = &gAudevCtx;
-    //OSI_LOGI(0, "[song]audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
+    OSI_LOGI(0, "audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
 
     osiMutexLock(d->lock);
 
@@ -3053,6 +3049,8 @@ bool audevStopPlayV2(void)
     {
 	    extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(false);
+
+		//OSI_LOGI(0, "[songpa] close");
     }
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)

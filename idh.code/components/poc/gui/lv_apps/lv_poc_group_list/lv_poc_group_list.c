@@ -344,6 +344,13 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 		case LV_SIGNAL_FOCUS:
 		{
+			OSI_LOGI(0, "[grouprefr]grouplist focus\n");
+			if(lv_poc_is_group_list_refr())
+			{
+				OSI_LOGI(0, "[grouprefr]grouplist focus have refr\n");
+				lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
+				lv_poc_set_group_refr(false);
+			}
 			break;
 		}
 
@@ -783,14 +790,20 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
 void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj)
 {
-
-	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)
+	if(lv_poc_is_inside_group())//若当前设备在某个群组里,禁止群组的所有更新(包括添组、删组、组信息更新)
 	{
-		OSI_LOGI(0, "[song]grouplist can't refresh\n");
+		OSI_LOGI(0, "[grouprefr]grouplist have refresh info\n");
+		lv_poc_set_group_refr(true);//记录有信息待刷新
 		return;
 	}
 
-	OSI_LOGI(0, "[song]grouplist refreshing");
+	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)
+	{
+		lv_poc_set_group_refr(true);//记录有信息待刷新
+		OSI_LOGI(0, "[grouprefr]grouplist can't refresh\n");
+		return;
+	}
+	OSI_LOGI(0, "[grouprefr]grouplist refresh_with_data running");
 
 	if(group_list_obj == NULL)
 	{

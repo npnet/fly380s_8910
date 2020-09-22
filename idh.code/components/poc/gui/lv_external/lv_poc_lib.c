@@ -47,6 +47,8 @@ static bool poc_power_on_status = false;
 static bool is_poc_play_voice = false;
 static bool is_poc_network_status = false;
 static uint8_t poc_earkey_state = false;
+static int lv_poc_inside_group = false;
+static int lv_poc_group_list_refr = false;
 static void poc_ear_ppt_irq(void *ctx);
 
 static uint16_t poc_cur_unopt_status;
@@ -628,6 +630,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		}
 		else
 		{
+			//get volum
+			#if 0
+			unsigned volum = audevGetPlayVolume();
+			OSI_LOGI(0, "[song]play volum %d", volum);
+			#endif
+
 			if(isPlayVoice)
 			{
 				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 20))
@@ -2403,4 +2411,49 @@ lv_poc_get_network_status_is_ready(void)
 	return is_poc_network_status;
 }
 
+/*
+	  name : lv_poc_set_group_status
+	  describe :设置设备在组里还是外,true为组内
+	  param :
+	  date : 2020-09-22
+*/
+void lv_poc_set_group_status(bool status)
+{
+	lv_poc_inside_group = status;
+}
+
+/*
+	  name : lv_poc_is_inside_group
+	  describe :设备是否在组里面
+	  param :
+	  date : 2020-09-22
+*/
+bool lv_poc_is_inside_group(void)
+{
+	return lv_poc_inside_group;
+}
+
+/*
+	  name : lv_poc_set_group_refr
+	  describe :记录当设备在组内返回群组列表时是否有刷新信息
+	  example  :设备在组内时的群组列表需刷新的消息，设备弹出锁组信息、设备弹出关机、
+			    设备弹出删组弹框时由于其他设备建组、删组导致的刷新问题
+	  param :
+	  date : 2020-09-22
+*/
+void lv_poc_set_group_refr(bool status)
+{
+	lv_poc_group_list_refr = status;
+}
+
+/*
+	  name : lv_poc_is_group_list_refr
+	  describe :返回群组列表是否有刷新信息
+	  param :
+	  date : 2020-09-22
+*/
+bool lv_poc_is_group_list_refr(void)
+{
+	return lv_poc_group_list_refr;
+}
 
