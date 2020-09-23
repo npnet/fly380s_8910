@@ -1,4 +1,4 @@
-#ifndef __LV_POC_GROUP_LIST_H_
+﻿#ifndef __LV_POC_GROUP_LIST_H_
 #define __LV_POC_GROUP_LIST_H_
 
 #ifdef __cplusplus
@@ -41,6 +41,8 @@ lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj,
 lv_poc_status_t lv_poc_group_list_lock_group(lv_poc_group_list_t *group_list_obj, lv_poc_group_oprator_type opt);
 
 //lv_poc_status lv_poc_group_list_get_state(const char * name);
+
+void lv_poc_group_list_set_hightlight_index(void);
 
 #ifdef __cplusplus
 }

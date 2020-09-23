@@ -10,6 +10,7 @@ typedef struct
 	void        * item_information;
 	lv_obj_t    * checkbox;
 	bool          is_selected;
+	bool          is_self;
 } lv_poc_build_group_item_info_t;
 
 extern lv_poc_activity_t * poc_build_group_activity;

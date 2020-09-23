@@ -68,6 +68,8 @@ char group_member_list_is_open = 0;
 
 static int prv_group_list_cur_opt = 0;
 
+//hightlight
+static char prv_group_list_last_index_groupname[64] = {0};
 
 static char lv_poc_group_member_list_title[LIST_ELEMENT_NAME_MAX_LENGTH];
 
@@ -321,6 +323,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_KEY_ESC:
 				{
+					lv_poc_group_list_set_hightlight_index();
 					lv_poc_del_activity(poc_group_list_activity);
 					break;
 				}
@@ -821,7 +824,6 @@ void lv_poc_group_list_clear(lv_poc_group_list_t *group_list_obj)
 	{
 		temp_p = cur_p;
 		cur_p =cur_p->next;
-		//lv_obj_del(temp_p->list_item);
 		lv_mem_free(temp_p);
 	}
 	group_list_obj->group_list = NULL;
@@ -884,24 +886,20 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 		return;
 	}
 
-	int current_index = -1;
-	int list_btn_count = -1;
-	lv_obj_t *current_btn = lv_list_get_btn_selected(activity_list);
-	if(current_btn != NULL)
-	{
-		current_index = lv_list_get_btn_index(activity_list, current_btn);
-	}
+	int current_index = 0;
+	int list_btn_count = 0;
 
     list_element_t * p_cur = NULL;
     lv_obj_t * btn;
+	lv_obj_t * btn_index[32];//assume group number is 32
     lv_obj_t * img;
 	lv_obj_t * btn_label = NULL;
     lv_coord_t btn_height = (display_area.y2 - display_area.y1)/(LV_POC_LIST_COLUM_COUNT + 1);
 	lv_coord_t btn_width = (display_area.x2 - display_area.x1);
 
-    char is_first_item = 1;
     char is_set_current_group = 1;
     char is_set_lock_group = 1;
+	char is_set_btn_selected = 0;
 
     lv_list_clean(activity_list);
 
@@ -947,23 +945,20 @@ void lv_poc_group_list_refresh(lv_task_t * task)
         btn->user_data = (lv_obj_user_data_t)p_group_info;
         lv_btn_set_fit(btn, LV_FIT_NONE);
         lv_obj_set_height(btn, btn_height);
+		btn_index[list_btn_count] = btn;
         list_btn_count++;
-        if(is_first_item == 1)
-	    {
-		    if(current_index != -1)
-		    {
-			    if(current_index == list_btn_count)
-			    {
-		        	is_first_item = 0;
-		        	lv_list_set_btn_selected(activity_list, btn);
-			    }
-		    }
-		    else
-		    {
-	        	is_first_item = 0;
-	        	lv_list_set_btn_selected(activity_list, btn);
-        	}
-        }
+
+		#if 0
+		OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]refresh index name %s", p_cur->name);
+		OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]refresh cp name %s", prv_group_list_last_index_groupname);
+		#endif
+		if(NULL != prv_group_list_last_index_groupname
+			&& NULL != strstr(p_cur->name, prv_group_list_last_index_groupname)
+			&& is_set_btn_selected == 0)
+		{
+			lv_list_set_btn_selected(activity_list, btn);
+			is_set_btn_selected = 1;
+		}
 
 		btn_label = lv_list_get_btn_label(btn);
         if(is_set_current_group == 1
@@ -974,6 +969,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
         	strcat(lv_poc_group_list_current_group_title, (const char *)p_cur->name);
         	lv_label_set_text(btn_label, (const char *)lv_poc_group_list_current_group_title);
         	lv_poc_group_current_info = p_group_info;
+			current_index = list_btn_count - 1;
 		}
 
 		img = lv_img_create(btn, NULL);
@@ -998,6 +994,11 @@ void lv_poc_group_list_refresh(lv_task_t * task)
         p_cur = p_cur->next;
         p_group_info++;
     }
+	//not find group
+	if(0 == is_set_btn_selected)
+	{
+		lv_list_set_btn_selected(activity_list, btn_index[current_index]);
+	}
 }
 
 void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
@@ -1026,6 +1027,9 @@ void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
 	{
 		return;
 	}
+	//set hight index
+	lv_poc_group_list_set_hightlight_index();
+
 	lv_list_clean(activity_list);
 	lv_poc_group_list_clear(group_list_obj);
 
@@ -1296,13 +1300,6 @@ lv_poc_status_t lv_poc_group_list_lock_group(lv_poc_group_list_t *group_list_obj
     return POC_GROUP_NONENTITY;
 }
 
-/*
-	  name : lv_poc_build_group_list_refr
-	 param : none
-	author : wangls
-  describe : 刷新新建群组列表信息
-	  date : 2020-07-02
-*/
 static
 void lv_poc_group_list_title_refr(lv_task_t * task)
 {
@@ -1311,13 +1308,6 @@ void lv_poc_group_list_title_refr(lv_task_t * task)
 		member_list->hide_offline);
 }
 
-/*
-	  name : lv_poc_set_current_group_informartion_task
-	 param : none
-	author : wangls
-  describe : 刷新群组信息
-	  date : 2020-07-28
-*/
 static
 void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 {
@@ -1374,17 +1364,20 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 
 }
 
-/*
-	  name : lv_poc_group_list_notation
-	 param : none
-	author : wangls
-  describe : 延时弹框
-	  date : 2020-07-30
-*/
 static
 void lv_poc_group_list_notation(lv_task_t * task)
 {
 	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
+}
+
+void lv_poc_group_list_set_hightlight_index(void)
+{
+	lv_obj_t *current_btn = lv_list_get_btn_selected(activity_list);
+
+	if(current_btn != NULL)
+	{
+		strcpy(prv_group_list_last_index_groupname, lv_list_get_btn_text(current_btn));
+	}
 }
 
 #ifdef __cplusplus
