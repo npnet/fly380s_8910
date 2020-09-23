@@ -553,7 +553,6 @@ bool lv_poc_setting_init(void)
 {
     lv_poc_setting_conf_init();
     poc_setting_conf = lv_poc_setting_conf_read();
-	poc_setting_conf->voicevolume = 3;
 	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);

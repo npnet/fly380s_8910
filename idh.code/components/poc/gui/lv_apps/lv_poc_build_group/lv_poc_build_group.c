@@ -200,7 +200,7 @@ static void lv_poc_build_group_pressed_cb(lv_obj_t * obj, lv_event_t event)
 		}
 
 		lv_poc_build_group_item_info_t * p_info = (lv_poc_build_group_item_info_t *)obj->user_data;
-		if(p_info == NULL)
+		if(p_info == NULL || p_info->is_self == true)
 		{
 			return;
 		}
@@ -496,6 +496,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 		/*把自己选上*/
 		if(NULL != strstr(lv_list_get_btn_text(btn),"我"))//如果是自己
 		{
+			p_info->is_self = true;
 			p_info->is_selected = true;
 			lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_PR);
 
@@ -508,6 +509,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 		}
 		else
 		{
+			p_info->is_self = false;
 			p_info->is_selected = false;
 			lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
 		}
