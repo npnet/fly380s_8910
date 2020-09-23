@@ -106,25 +106,7 @@ static void poc_Led_Entry(void *param)
 
 				break;
 
-		    case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
-		    {
-				switch(pocLedIdtAttr.before_status)
-				{
-					case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
-					{
-						pocLedIdtAttr.jumpperiod = pocLedIdtAttr.before_jumpperiod;
-						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
-						break;
-					}
-					default:
-					{
-						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
-						break;
-					}
-				}
-				break;
-		    }
-
+			case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
 			{
 				switch(pocLedIdtAttr.before_status)
@@ -148,6 +130,11 @@ static void poc_Led_Entry(void *param)
 					{
 						pocLedIdtAttr.jumpperiod = pocLedIdtAttr.before_jumpperiod;
 						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
+						break;
+					}
+					default:
+					{
+						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
 						break;
 					}
 				}
