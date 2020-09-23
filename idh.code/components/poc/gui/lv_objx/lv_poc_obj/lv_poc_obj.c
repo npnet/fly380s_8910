@@ -2225,26 +2225,22 @@ uint8_t lv_poc_get_battery_cnt(OUT battery_values_t *values)
     {
 		battery_img_cnt=5;
     }
-    else if(values->battery_value >= 71)
+    else if(values->battery_value >= 65)
     {
 		battery_img_cnt=4;
     }
-    else if(values->battery_value >= 57)
+    else if(values->battery_value >= 42)
     {
 		battery_img_cnt=3;
     }
-    else if(values->battery_value >= 43)
+    else if(values->battery_value >= 20)
     {
 		battery_img_cnt=2;
     }
-    else if(values->battery_value >= 28)
+    else if(values->battery_value >= 8)
     {
 		battery_img_cnt=1;
     }
-//    else if(values->battery_value >= 15)
-//    {
-//		battery_img_cnt=1;
-//    }
     else if(values->battery_value >= 0)
     {
 		battery_img_cnt=0;
@@ -2301,26 +2297,22 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         {
             battery_img = &stat_sys_battery_85;
         }
-        else if(battery_t.battery_value >= 71)
+        else if(battery_t.battery_value >= 65)
         {
             battery_img = &stat_sys_battery_71;
         }
-        else if(battery_t.battery_value >= 57)
+        else if(battery_t.battery_value >= 42)
         {
             battery_img = &stat_sys_battery_57;
         }
-        else if(battery_t.battery_value >= 43)
+        else if(battery_t.battery_value >= 20)
         {
             battery_img = &stat_sys_battery_43;
         }
-        else if(battery_t.battery_value >= 28)
+        else if(battery_t.battery_value >= 8)
         {
             battery_img = &stat_sys_battery_28;
         }
-//        else if(battery_t.battery_value >= 15)
-//        {
-//            battery_img = &stat_sys_battery_15;
-//        }
         else if(battery_t.battery_value >= 0)
         {
             battery_img = &stat_sys_battery_0;
@@ -2336,7 +2328,6 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
     }
     else
     {
-#if 1
 		if(charge_status == false)
 		{
 			charge_status = true;
@@ -2357,7 +2348,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			if(battery_img_cur>6)
 			battery_img_cur=6;
         }
-        else if(battery_t.battery_value >= 71)
+        else if(battery_t.battery_value >= 65)
         {
 			battery_img = battery_img_dispaly[battery_img_cur];
 
@@ -2365,34 +2356,27 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			if(battery_img_cur>6)
 			battery_img_cur=5;
         }
-        else if(battery_t.battery_value >= 57)
+        else if(battery_t.battery_value >= 42)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
 			battery_img_cur=4;
         }
-        else if(battery_t.battery_value >= 43)
+        else if(battery_t.battery_value >= 20)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
 			battery_img_cur=3;
         }
-        else if(battery_t.battery_value >= 28)
+        else if(battery_t.battery_value >= 8)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
 			battery_img_cur=2;
         }
-//        else if(battery_t.battery_value >= 15)
-//        {
-//            battery_img = battery_img_dispaly[battery_img_cur];
-//			battery_img_cur++;
-//			if(battery_img_cur>7)
-//			battery_img_cur=1;
-//        }
         else if(battery_t.battery_value >= 0)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
@@ -2400,42 +2384,6 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			if(battery_img_cur>6)
 			battery_img_cur=0;
         }
-
-#else
-        if(battery_t.battery_value >= 100)
-        {
-            battery_img = &stat_sys_battery_charge_anim100;
-        }
-        else if(battery_t.battery_value >= 85)
-        {
-            battery_img = &stat_sys_battery_charge_anim85;
-        }
-        else if(battery_t.battery_value >= 71)
-        {
-            battery_img = &stat_sys_battery_charge_anim71;
-        }
-        else if(battery_t.battery_value >= 57)
-        {
-            battery_img = &stat_sys_battery_charge_anim57;
-        }
-        else if(battery_t.battery_value >= 43)
-        {
-            battery_img = &stat_sys_battery_charge_anim43;
-        }
-        else if(battery_t.battery_value >= 28)
-        {
-            battery_img = &stat_sys_battery_charge_anim28;
-        }
-        else if(battery_t.battery_value >= 15)
-        {
-            battery_img = &stat_sys_battery_charge_anim15;
-        }
-        else if(battery_t.battery_value >= 0)
-        {
-            battery_img = &stat_sys_battery_charge_anim0;
-        }
-#endif
-
     }
     return (lv_img_dsc_t *)battery_img;
 }
