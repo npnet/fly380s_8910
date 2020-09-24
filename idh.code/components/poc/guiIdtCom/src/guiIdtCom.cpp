@@ -54,10 +54,14 @@ extern "C" lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
 #define GUIIDTCOM_MEMBER_CALL_MARK "{\"pfCallIn\": \"HALFSINGLE\"}"
 #define GUIIDTCOM_GROUP_CALL_MARK "{\"pfCallIn\": \"NORMAL\"}"
 
-//debug log info
-#define GUIIDTCOM_BUILDGROUP_DEBUG_LOG 1 //[buildgroup]
-#define GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG 1 //[grouprefr]
-#define GUIIDTCOM_MEMBERREFR_DEBUG_LOG 1 //[memberrefr]
+//debug log info config                      cool watch搜索项
+#define GUIIDTCOM_BUILDGROUP_DEBUG_LOG    1  //[buildgroup]
+#define GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG 1  //[grouprefr]
+#define GUIIDTCOM_MEMBERREFR_DEBUG_LOG    1  //[memberrefr]
+#define GUIIDTCOM_IDTSPEAK_DEBUG_LOG      1  //[idtspeak]
+#define GUIIDTCOM_IDTSINGLECALL_DEBUG_LOG 1  //[idtsinglecall]
+#define GUIIDTCOM_IDTLISTEN_DEBUG_LOG     1  //[idtlisten]
+#define GUIIDTCOM_IDTERRORINFO_DEBUG_LOG  1  //[idterrorinfo]
 
 enum{
 	USER_OPRATOR_START_SPEAK = 3,
@@ -608,12 +612,30 @@ int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName
 		if(m_IdtUser.m_iCallId != -1)
 		{
 			IDT_CallMicCtrl(m_IdtUser.m_iCallId, false);
+
+			#if GUIIDTCOM_IDTSINGLECALL_DEBUG_LOG
+			OSI_LOGI(0, "[idtsinglecall][server]m_iCallId != -1");
+			#endif
 		}
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP, NULL);
+
+		#if GUIIDTCOM_IDTSINGLECALL_DEBUG_LOG
+		char cOutstr[256] = {0};
+		cOutstr[0] = '\0';
+		sprintf(cOutstr, "[idtsinglecall]%s(%d):[server]receive single_call_ack --> call_status_ok_rep send msg", __func__, __LINE__);
+		OSI_LOGI(0, cOutstr);
+		#endif
 	}
 
 	if(m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)
 	{
+		#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+		char cOutstr[256] = {0};
+		cOutstr[0] = '\0';
+		sprintf(cOutstr, "[idtspeak]%s(%d):[server]receive start_speak_ack --> mic_rep send msg", __func__, __LINE__);
+		OSI_LOGI(0, cOutstr);
+		#endif
+
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, (void *)2);
     }
 
@@ -650,13 +672,32 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 			if(IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO) == -1)
 			{
 				IDT_CallRel(ID, NULL, CAUSE_CALL_CONFLICT);
+
+				#if GUIIDTCOM_IDTSINGLECALL_DEBUG_LOG
+				OSI_LOGI(0, "[idtsinglecall][callback_IDT_CallIn]call conflict");
+				#endif
 				return 0;
 			}
 			m_IdtUser.m_iCallId = -1;
+
+			#if GUIIDTCOM_IDTSINGLECALL_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtsinglecall]%s(%d):[server]m_iCallId != -1 and have conf to release single call", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
 		}
 		else
 		{
 			IDT_CallRel(ID, NULL, CAUSE_HAVE_CONF);
+
+			#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG|GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtspeak]%s(%d):[server]m_iCallId != -1 and have conf to release group call", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
+
 			return 0;
 		}
 	}
@@ -673,6 +714,13 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 	        {
 		        IDT_CallRel(ID, NULL, CAUSE_SRV_NOTSUPPORT);
 		        m_IdtUser.m_iCallId = -1;
+
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG|GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak][idtlisten]%s(%d):[server]call failed", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
 	        }
 	        break;
 
@@ -705,6 +753,13 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 					pocIdtAttr.is_member_call = true;
 		            lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
 					pocIdtAttr.membercall_count = 0;/*复位单呼数据计数*/
+
+					#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG|GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+					char cOutstr[256] = {0};
+					cOutstr[0] = '\0';
+					sprintf(cOutstr, "[idtspeak][idtlisten][idtsinglecall]%s(%d):[server]rec single call", __func__, __LINE__);
+					OSI_LOGI(0, cOutstr);
+					#endif
 	            }
 	            else
 	            {
@@ -725,6 +780,13 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 					{
 						pocIdtAttr.speaker_group.m_ucGNum[0] = 0;
 					}
+
+					#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG|GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+					char cOutstr[256] = {0};
+					cOutstr[0] = '\0';
+					sprintf(cOutstr, "[idtspeak][idtlisten]%s(%d):[server]rec group call", __func__, __LINE__);
+					OSI_LOGI(0, cOutstr);
+					#endif
 	           }
 	        }
 	        break;
@@ -732,6 +794,14 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 	    default:
 	        IDT_CallRel(ID, NULL, CAUSE_SRV_NOTSUPPORT);
 	        m_IdtUser.m_iCallId = -1;
+
+			#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG|GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtspeak][idtlisten]%s(%d):[server]not support srv", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
+
 	        break;
     }
     return 0;
@@ -749,9 +819,18 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 {
     IDT_TRACE("callback_IDT_CallRelInd: ID=%d, pUsrCtx=0x%x, uiCause=%d, m_iCallId=%d", ID, pUsrCtx, uiCause, m_IdtUser.m_iCallId);
-    m_IdtUser.m_iCallId = -1;
+
+	//reset call cnt
+	m_IdtUser.m_iCallId = -1;
     m_IdtUser.m_iRxCount = 0;
     m_IdtUser.m_iTxCount = 0;
+
+	#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+	char cOutstr[256] = {0};
+	cOutstr[0] = '\0';
+	sprintf(cOutstr, "[idtspeak]%s(%d):[server]release call and reset m_iCallId = -1", __func__, __LINE__);
+	OSI_LOGI(0, cOutstr);
+	#endif
 
     int status = m_IdtUser.m_status;
     if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
@@ -770,6 +849,13 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 
     if(status >= USER_OPRATOR_START_LISTEN && status <= USER_OPRATOR_LISTENNING)
     {
+		#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+		char cOutstr[256] = {0};
+		cOutstr[0] = '\0';
+		sprintf(cOutstr, "[idtlisten]%s(%d):[server]listen release call", __func__, __LINE__);
+		OSI_LOGI(0, cOutstr);
+		#endif
+
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
     }
@@ -793,9 +879,18 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 int callback_IDT_CallMicInd(void *pUsrCtx, UINT uiInd)
 {
     IDT_TRACE("callback_IDT_CallMicInd: pUsrCtx=0x%x", pUsrCtx);
-    // 0本端不讲话
+
+    #if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+	char cOutstr[256] = {0};
+	cOutstr[0] = '\0';
+	sprintf(cOutstr, "[idtspeak]%s(%d):[server]call instruction=(%s)", __func__, __LINE__, (uiInd + 1) == 1?"release the call":"obtain the call");
+	OSI_LOGI(0, cOutstr);
+	#endif
+
+	// 0本端不讲话
     // 1本端讲话
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, (void *)(uiInd + 1));
+
     return 0;
 }
 #if 0
@@ -924,6 +1019,13 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 			    osiTimerStop(pocIdtAttr.check_listen_timer);
 			    osiTimerStart(pocIdtAttr.delay_close_listen_timer, 560);
 			    pocIdtAttr.delay_close_listen_timer_running = true;
+
+				#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtlisten]%s(%d):delayclose listen timer start", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
 		    }
 		    else
 		    {
@@ -936,12 +1038,33 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 			    m_IdtUser.m_iTxCount = 0;
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
+
+				#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtlisten]%s(%d):delay_close_listen_timer is NULL, stop listen", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
 		    }
 	    }
+
+		#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+		char cOutstr[256] = {0};
+		cOutstr[0] = '\0';
+		sprintf(cOutstr, "[idtlisten]%s(%d):pcNum & pcName NULL", __func__, __LINE__);
+		OSI_LOGI(0, cOutstr);
+		#endif
 	    return 0;
     }
     strcpy((char *)pocIdtAttr.speaker.ucNum, (const char *)pcNum);
     strcpy((char *)pocIdtAttr.speaker.ucName, (const char *)pcName);
+
+	#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+	char cOutstr[256] = {0};
+	cOutstr[0] = '\0';
+	sprintf(cOutstr, "[idtlisten]%s(%d):pcNum & pcName isn't NULL, status %d", __func__, __LINE__, m_IdtUser.m_status);
+	OSI_LOGI(0, cOutstr);
+	#endif
 
     pocIdtAttr.speaker.ucStatus = UT_STATUS_ONLINE;
     if(m_IdtUser.m_status < USER_OPRATOR_START_LISTEN || m_IdtUser.m_status > USER_OPRATOR_LISTENNING)
@@ -965,6 +1088,13 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_START_REP, NULL);
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_SPEAKER_REP, NULL);
 		pocIdtAttr.membercall_count++;/*记录单呼数据帧*/
+
+		#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+		char cOutstr[256] = {0};
+		cOutstr[0] = '\0';
+		sprintf(cOutstr, "[idtlisten]%s(%d):start listen", __func__, __LINE__);
+		OSI_LOGI(0, cOutstr);
+		#endif
 	}
     return 0;
 }
@@ -1215,6 +1345,13 @@ static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx)
     m_IdtUser.m_iTxCount = 0;
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
+
+	#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+	char cOutstr[256] = {0};
+	cOutstr[0] = '\0';
+	sprintf(cOutstr, "[idtlisten]%s(%d):delayclose_listen_timer cb", __func__, __LINE__);
+	OSI_LOGI(0, cOutstr);
+	#endif
 }
 
 static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
@@ -1223,6 +1360,13 @@ static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+
+	#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+	char cOutstr[256] = {0};
+	cOutstr[0] = '\0';
+	sprintf(cOutstr, "[idtspeak]%s(%d):start speak, timer cb", __func__, __LINE__);
+	OSI_LOGI(0, cOutstr);
+	#endif
 }
 
 static void LvGuiIdtCom_get_member_list_timer_cb(void *ctx)
@@ -1444,8 +1588,8 @@ void IDT_Entry(void*)
     m_IdtUser.Reset();
 
     // 0关闭日志,1打开日志
-    g_iLog = 0;
-    //g_iLog = 1;
+    //g_iLog = 0;
+    g_iLog = 1;
 
     static IDT_CALLBACK_s CallBack;
     memset(&CallBack, 0, sizeof(CallBack));
@@ -1623,12 +1767,10 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "尝试登陆中...");
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"发出申请", (const uint8_t *)"");
 				osiTimerStart(pocIdtAttr.try_login_timer, 2000);/*为了播放语音加的延时登陆功能*/
-				OSI_LOGI(0, "[song]relogin start[3]\n");
 				break;
 			}/*尝试登陆中*/
-			if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING)
+			else if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING)
 			{
-				OSI_LOGI(0, "[song]relogin ing[3]\n");
 				break;
 			}
 
@@ -1671,8 +1813,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					user_mark = (char *)GUIIDTCOM_GROUP_CALL_MARK;
 				}
 
-				IDT_TRACE("call %s\n", dest_num);
-
 				m_IdtUser.m_iCallId = IDT_CallMakeOut(dest_num,
 					srv_type,
 					&pocIdtAttr.attr,
@@ -1682,12 +1822,33 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					0,
 					1,
 					user_mark);
-			}
+
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak]%s(%d):IDT_CallMakeOut start request call out", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
+			}//group call, speak group number and current group number is different
 			else if(!pocIdtAttr.is_member_call && strcmp((const char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum) != 0)
 			{
-				if(0 == IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO))
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak]%s(%d):group call,but speak group_number and current_group_number is different", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
+
+				if(0 == IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO))//若要改为立马释放呼叫的话加入该原因值：CAUSE_CALL_REJ_BY_USER
 				{
 					m_IdtUser.m_iCallId = -1;
+
+					#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+					char cOutstr1[64] = {0};
+					cOutstr1[0] = '\0';
+					sprintf(cOutstr1, "[idtspeak]%s(%d):call release", __func__, __LINE__);
+					OSI_LOGI(0, cOutstr1);
+					#endif
 				}
 
 				char *dest_num = NULL;
@@ -1700,21 +1861,34 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				strcpy((char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum);
 				dest_num = (char *)pocIdtAttr.speaker_group.m_ucGNum;
 				user_mark = (char *)GUIIDTCOM_GROUP_CALL_MARK;
-				IDT_TRACE("restart call %s\n", dest_num);
 
-				m_IdtUser.m_iCallId = IDT_CallMakeOut(dest_num,
-					srv_type,
-					&pocIdtAttr.attr,
+				m_IdtUser.m_iCallId = IDT_CallMakeOut(dest_num,//对方号码
+					srv_type,//会议
+					&pocIdtAttr.attr,//媒体属性
 					NULL,
 					NULL,
-					1,
-					0,
-					1,
-					user_mark);
+					1,//直接呼出
+					0,//会议结束后不删除组
+					1,//自动话权
+					user_mark);//用户标识字符串
+
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr2[64] = {0};
+				cOutstr2[0] = '\0';
+				sprintf(cOutstr2, "[idtspeak]%s(%d):restart group call", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr2);
+				#endif
 			}
 			else
 			{
 		        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_REQUEST_MIC);
+
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr2[256] = {0};
+				cOutstr2[0] = '\0';
+				sprintf(cOutstr2, "[idtspeak]%s(%d):request mic ind", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr2);
+				#endif
 			}
 			break;
 		}
@@ -1744,6 +1918,13 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				}
 				pocIdtAttr.is_makeout_call = true;
 				osiTimerStart(pocIdtAttr.monitor_pptkey_timer, 50);
+
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak]%s(%d):start speak rep to dispaly idleview", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
 			}
 			break;
 		}
@@ -1756,6 +1937,14 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				break;
 			}
 	        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_RELEASE_MIC);
+
+			#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtspeak]%s(%d):stop speak ind, to mic ind and release mic", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
+
 			break;
 		}
 
@@ -1777,6 +1966,13 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 				pocIdtAttr.is_makeout_call = false;
 				osiTimerStop(pocIdtAttr.monitor_pptkey_timer);
+
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak]%s(%d):receive stop_speak_rep", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
 			}
 			break;
 		}
@@ -1803,14 +1999,26 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 			if(mic_ctl <= 1)
 			{
 		        //释放话权
-		        OSI_LOGI(0, "[gic][gicmic] release mic ctl\n");
 		        IDT_CallMicCtrl(m_IdtUser.m_iCallId, false);
+
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak]%s(%d):release mic ind to start", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
 			}
 			else
 			{
 		        //请求话权
-		        OSI_LOGI(0, "[gic][gicmic] request mic ctl\n");
 		        IDT_CallMicCtrl(m_IdtUser.m_iCallId, true);
+
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak]%s(%d):request mic ind to start", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
 			}
 			break;
 		}
@@ -1819,6 +2027,13 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 		{
 			if(ctx == 0 || m_IdtUser.m_iCallId == -1)
 			{
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak]%s(%d):mic rep --> m_iCallId = -1", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
+
 				break;
 			}
 			unsigned int mic_ctl = (unsigned int)ctx;
@@ -1843,12 +2058,26 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				    }
 
 				    pocIdtAttr.mic_ctl = mic_ctl;
+
+					#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+					char cOutstr[256] = {0};
+					cOutstr[0] = '\0';
+					sprintf(cOutstr, "[idtspeak]%s(%d):start_speak_voice_timer is starting", __func__, __LINE__);
+					OSI_LOGI(0, cOutstr);
+					#endif
 			    }
 			    else
 			    {
 				    poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Cannot_Speak, 30, false);
 				    IDT_CallMicCtrl(m_IdtUser.m_iCallId, false);
 				    pocIdtAttr.mic_ctl = 0;
+
+					#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+					char cOutstr[256] = {0};
+					cOutstr[0] = '\0';
+					sprintf(cOutstr, "[idtspeak]%s(%d):start speak, but ppt release", __func__, __LINE__);
+					OSI_LOGI(0, cOutstr);
+					#endif
 			    }
 			}
 			else if(mic_ctl <= 1 && pocIdtAttr.mic_ctl > 1) // 释放话权
@@ -1862,13 +2091,35 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				m_IdtUser.m_iRxCount = 0;
 				m_IdtUser.m_iTxCount = 0;
 
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak]%s(%d):stop_record_ind send msg", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 
 				if(status >= USER_OPRATOR_START_SPEAK && status <= USER_OPRATOR_SPEAKING)
 				{
 			        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)status);
+
+					#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+					char cOutstr[256] = {0};
+					cOutstr[0] = '\0';
+					sprintf(cOutstr, "[idtspeak]%s(%d):stop_speak_rep send msg", __func__, __LINE__);
+					OSI_LOGI(0, cOutstr);
+					#endif
 				}
 				pocIdtAttr.mic_ctl = mic_ctl;
+			}
+			else
+			{
+				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtspeak]%s(%d):mic rep --> not obtain call and not release call", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
 			}
 			break;
 		}
@@ -2719,8 +2970,8 @@ static void prvPocGuiIdtTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			OSI_LOGI(0, "poc_check_member_call close LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_REP");
 
 			if(ctx != CAUSE_ZERO)
-			{	/*单呼错误提示*/
-				//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)LvPocGetCauseStr(ctx), NULL);
+			{
+				//单呼错误提示
 				lvPocGuiIdtCase_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE, (void *)ctx, LvPocGetCauseStr(ctx));
 			}
 			else
@@ -2750,12 +3001,6 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP:
 		{
-			#if 0
-			pocIdtAttr.record_fist = false;/*恢复数据包标志*/
-			//if(pcm_task != NULL)
-			//lv_task_del(pcm_task);
-			#endif
-
 			pocIdtAttr.listen_status = false;
 
 			/*恢复run闪烁*/
@@ -2773,6 +3018,13 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, NULL, NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 
+			#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtlisten]%s(%d):stop listen rep and destory idle,windows", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
+
 			break;
 		}
 
@@ -2788,13 +3040,12 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			/*开始闪烁*/
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 
+			//member call
 			if(pocIdtAttr.membercall_count > 1 && pocIdtAttr.is_member_call)/*单呼进入第二次*/
 			{
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)"");
 			}
 
-			//lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "正在聆听", NULL);
-			//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在聆听", NULL);
 			if(!pocIdtAttr.is_member_call)
 			{
 				char speaker_group_name[100];
@@ -2802,6 +3053,14 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, speaker_name, speaker_group);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)speaker_group_name);
 			}
+
+			#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtlisten]%s(%d):start listen_speaker rep and display idle,windows", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
+
 			break;
 		}
 
@@ -3834,8 +4093,6 @@ extern "C" bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * c
 static
 void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_str)
 {
-	OSI_LOGI(0, "[song]case is = %d",ctx);
-
 	switch(id)
 	{
 		case LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE:
@@ -3903,7 +4160,13 @@ void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_
 				default:
 				{
 					/*此处可以显示所有异常状态*/
-					//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+					#if GUIIDTCOM_IDTERRORINFO_DEBUG_LOG
+					char cOutstr[256] = {0};
+					cOutstr[0] = '\0';
+					sprintf(cOutstr, "[idterrorinfo]%s(%d):call error (%d)(%s)", __func__, __LINE__, (int)id, (uint8_t *)cause_str);
+					OSI_LOGI(0, cOutstr);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+					#endif
 					break;
 				}
 
