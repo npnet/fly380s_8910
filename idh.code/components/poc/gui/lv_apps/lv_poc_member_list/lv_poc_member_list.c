@@ -165,6 +165,7 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_online, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
 			lv_task_once(once_task);
 			lv_poc_activity_func_cb_set.member_call_open(lv_poc_member_call_obj_information);
+			lv_poc_member_list_set_hightlight_index();
 		}
 		else
 		{
