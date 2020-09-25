@@ -245,7 +245,7 @@ static void prvPowerOn(void *arg)
     drvDebugPort_t *diag_port = drvDebugPortFindByName(diag_device);
     if (osiGetBootMode() == OSI_BOOTMODE_NORMAL)
     {
-        diagRunMode_t run_mode = diagRunModeCheck(diag_port);
+        diagRunMode_t run_mode = diagRunModeCheck(diag_port);//里面有修改进入校准模式---延时时间
         if (run_mode == DIAG_RM_CALIB)
             osiSetBootMode(OSI_BOOTMODE_CALIB);
         else if (run_mode == DIAG_RM_CALIB_POST)

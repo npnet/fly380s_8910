@@ -44,6 +44,7 @@ static drvGpio_t * poc_green_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
+static bool is_poc_play_voice = false;//是否正在播放语音
 static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
 
@@ -401,8 +402,7 @@ void poc_Lcd_Set_BackLightNess(uint32_t level)
 */
 void poc_config_Lcd_power_vol(void)
 {
-	REG_RDA2720M_GLOBAL_LDO_LCD_REG1_T lcd_reg1 = {};
-
+	REG_RDA2720M_GLOBAL_LDO_LCD_REG1_T lcd_reg1 = {};
 	//目前配为2.3v
     lcd_reg1.b.ldo_lcd_v = 0x37; // (2.3 - 1.6125)=0.0125*n---000 0000
     halAdiBusWrite(&hwp_rda2720mGlobal->ldo_lcd_reg1, lcd_reg1.v);
@@ -559,7 +559,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
 	do
 	{
-		#if 1
+		#if 0
 		if(NULL == prv_play_btn_voice_one_time_player)
 		{
 			prv_play_btn_voice_one_time_player = auPlayerCreate();
@@ -575,13 +575,12 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 		osiThreadSleep(140);
 		auPlayerStop(prv_play_btn_voice_one_time_player);
 		#else
-		audevSetVoiceVolume(60);
-
-		char playkey[4] = "9";
-		ttsPlayText(playkey, strlen(playkey), ML_UTF8);
-		osiThreadSleep(140);
-		if(!ttsIsPlaying())
-			lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
+		if(!ttsIsPlaying() && (!lvPocGuiIdtCom_get_listen_status()))
+		{
+			audevSetPlayVolume(40);
+			char playkey[4] = "9";
+			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
+		}
 		#endif
 	}while(0);
 	prv_play_btn_voice_one_time_thread = NULL;
@@ -601,7 +600,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 	auStreamFormat_t voice_formate = AUSTREAM_FORMAT_UNKNOWN;
 
 	while(1)
-{
+	{
 		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 20))
 		{
 			if(event.id != 101)
@@ -634,8 +633,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
-					//还原音量
-					lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
+					is_poc_play_voice = false;
 				}
 				else
 				{
@@ -687,7 +685,8 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
-				audevSetPlayVolume(60);
+				audevSetPlayVolume(70);
+			    is_poc_play_voice = true;
 				break;
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
 			case LVPOCAUDIO_Type_Tone_Lost_Mic:
@@ -698,17 +697,21 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
 				/*tone volum*/
-				audevSetPlayVolume(40);
+				audevSetPlayVolume(60);
+			    is_poc_play_voice = true;
 				break;
 
 			default:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
 				break;
 		}
-		osiThreadSleep(50);
 
 		if(prv_lv_poc_audio_array[voice_type] != NULL)
 		{
+			while(ttsIsPlaying())//tts
+			{
+				osiDelayUS(5000);
+			}
 			auPlayerStartMem(prv_play_voice_one_time_player, voice_formate, params, prv_lv_poc_audio_array[voice_type]->data, prv_lv_poc_audio_array[voice_type]->data_size);
 			isPlayVoice = true;
 		}
@@ -729,7 +732,7 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 {
 	if(!quiet)
 	{
-		if(prv_play_btn_voice_one_time_thread != NULL)
+		if(prv_play_btn_voice_one_time_thread != NULL || is_poc_play_voice == true)
 		{
 			return;
 		}prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_LOW, 1024*3, 64);
@@ -763,7 +766,7 @@ poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN b
 	{
 		prv_play_voice_one_time_thread = osiThreadCreate("play_voice", prv_play_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024*3, 64);
 		if(prv_play_voice_one_time_thread == NULL)
-	{
+		{
 			return;
 		}
 	}
@@ -1507,21 +1510,21 @@ poc_set_ext_pa_status(bool open)
 	{
 		//one
 		drvGpioWrite(poc_ext_pa_gpio, true);
-		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+		osiDelayUS(POC_EXT_PA_DELAY_US);//不要使用 osiThreadSleepUS 加延时，导致线程阻塞，声音忽高忽低
 		drvGpioWrite(poc_ext_pa_gpio, false);
-		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+		osiDelayUS(POC_EXT_PA_DELAY_US);
 
 		//two
 		drvGpioWrite(poc_ext_pa_gpio, true);
-		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+		osiDelayUS(POC_EXT_PA_DELAY_US);
 		drvGpioWrite(poc_ext_pa_gpio, false);
-		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+		osiDelayUS(POC_EXT_PA_DELAY_US);
 
 		//three
 		drvGpioWrite(poc_ext_pa_gpio, true);
-		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+		osiDelayUS(POC_EXT_PA_DELAY_US);
 		drvGpioWrite(poc_ext_pa_gpio, false);
-		osiThreadSleepUS(POC_EXT_PA_DELAY_US);
+		osiDelayUS(POC_EXT_PA_DELAY_US);
 
 		//four
 		drvGpioWrite(poc_ext_pa_gpio, true);

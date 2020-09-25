@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -30,7 +30,7 @@ typedef uint32_t uint32;
 #include "osi_hdlc.h"
 
 #define CHECK_MODE_BUF_SIZE (24)
-#define CHECK_MODE_USB_READY_TIMEOUT (500)
+#define CHECK_MODE_USB_READY_TIMEOUT (4*500)//延长等待PC工具连接时间
 #define CHECK_MODE_COMMAND_TIMEOUT (200)
 
 typedef struct
