@@ -2772,8 +2772,6 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
 	{
 		extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(true);
-
-		//OSI_LOGI(0, "[songpa] open");
 	}
 
     OSI_LOGI(0, "audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
@@ -3049,8 +3047,6 @@ bool audevStopPlayV2(void)
     {
 	    extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(false);
-
-		//OSI_LOGI(0, "[songpa] close");
     }
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
