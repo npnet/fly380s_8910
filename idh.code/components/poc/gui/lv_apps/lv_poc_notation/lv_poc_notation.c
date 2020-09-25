@@ -511,6 +511,30 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 			return;
 		}
 
+		case LV_POC_NOTATION_ERROR_MSG:
+		{
+			lv_poc_notation_listen_speak_status = false;
+			lv_poc_notation_normal_msg((const int8_t *)notation_msg->label_1_text,
+				(const int8_t *)notation_msg->label_2_text);
+
+			if(lv_poc_notation_delay_close_task != NULL)
+			{
+				lv_task_del(lv_poc_notation_delay_close_task);
+				lv_poc_notation_delay_close_task = NULL;
+			}
+
+			lv_poc_notation_delay_close_task = lv_task_create(lv_poc_notation_normal_msg_delay_close_task,
+				6000,
+				LV_TASK_PRIO_LOWEST,
+				NULL);
+
+			if(lv_poc_notation_delay_close_task != NULL)
+			{
+				lv_task_once(lv_poc_notation_delay_close_task);
+			}
+			return;
+		}
+
 		case LV_POC_NOTATION_DESTORY:
 		{
 			lv_poc_notation_destory();

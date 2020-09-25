@@ -253,7 +253,14 @@ typedef enum
 	LV_POC_NOTATION_LISTENING  = 4,
 	LV_POC_NOTATION_SPEAKING   = 5,
 	LV_POC_NOTATION_NORMAL_MSG = 6,
+	LV_POC_NOTATION_ERROR_MSG  = 7,
 } lv_poc_notation_msg_type_t;
+
+typedef enum
+{
+	LV_POC_CALL_ERROR_NONE               = 0,
+	LV_POC_CALL_ERROR_GROUP_IS_BUSY      = 1,
+} lv_poc_call_error_type_t;
 
 typedef enum {
 	lv_poc_idle_page2_none_msg = 0,

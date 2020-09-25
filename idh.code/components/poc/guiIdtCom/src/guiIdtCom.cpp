@@ -435,10 +435,15 @@ public:
 	osiTimer_t * try_login_timer;/*尝试登录定时器*/
 	osiTimer_t * auto_login_timer;/*自动登录定时器*/
 	osiTimer_t * monitor_pptkey_timer;/*检查ppt键*/
+	osiTimer_t * threegroup_callexist_timer;/*检查三人群组时是否有两人占用呼叫*/
 	bool onepoweron;/*记录第一次开机状态*/
 	char build_self_name[16];/*存储自建群组尾序号*/
 	int buildgroupnumber;/*自编组号码*/
 	bool   is_makeout_call;/*是否进入呼叫状态*/
+	bool   is_release_call;/*是否释放呼叫*/
+	bool   is_justnow_listen;/*是否刚接听完*/
+	int    call_error_case;/*错误原因*/
+	int    current_group_member_dwnum;/*当前群组用户个数*/
 } PocGuiIIdtComAttr_t;
 
 typedef struct
@@ -606,6 +611,17 @@ int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName
 {
     IDT_TRACE("callback_IDT_CallPeerAnswer: pUsrCtx=0x%x, pcPeerNum=%s, pcPeerName=%s, SrvType=%s(%d), pcUserMark=%s, pcUserCallRef=%s",
         pUsrCtx, pcPeerNum, pcPeerName, GetSrvTypeStr(SrvType), SrvType, pcUserMark, pcUserCallRef);
+
+	#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
+	char cOutstr[256] = {0};
+	cOutstr[0] = '\0';
+	sprintf(cOutstr, "[idtspeak]%s(%d):[server]receive call_ack", __func__, __LINE__);
+	OSI_LOGI(0, cOutstr);
+	#endif
+
+	pocIdtAttr.is_release_call = false;//obtain call
+	pocIdtAttr.is_justnow_listen = false;
+	osiTimerStop(pocIdtAttr.threegroup_callexist_timer);
 
 	if(pocIdtAttr.is_member_call)
 	{
@@ -787,6 +803,9 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 					sprintf(cOutstr, "[idtspeak][idtlisten]%s(%d):[server]rec group call", __func__, __LINE__);
 					OSI_LOGI(0, cOutstr);
 					#endif
+					//write flag
+					pocIdtAttr.is_justnow_listen = true;
+					pocIdtAttr.is_release_call = false;//obtain call
 	           }
 	        }
 	        break;
@@ -824,6 +843,7 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 	m_IdtUser.m_iCallId = -1;
     m_IdtUser.m_iRxCount = 0;
     m_IdtUser.m_iTxCount = 0;
+	pocIdtAttr.is_release_call = true;//release call
 
 	#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
 	char cOutstr[256] = {0};
@@ -883,7 +903,7 @@ int callback_IDT_CallMicInd(void *pUsrCtx, UINT uiInd)
     #if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
 	char cOutstr[256] = {0};
 	cOutstr[0] = '\0';
-	sprintf(cOutstr, "[idtspeak]%s(%d):[server]call instruction=(%s)", __func__, __LINE__, (uiInd + 1) == 1?"release the call":"obtain the call");
+	sprintf(cOutstr, "[idtspeak]%s(%d):[server]call instruction=(%s)", __func__, __LINE__, (uiInd + 1) == 1?"release the words right":"obtain the words right");
 	OSI_LOGI(0, cOutstr);
 	#endif
 
@@ -1187,7 +1207,7 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
     grop.dwSn = dwSn;
     grop.wRes = wRes;
     memcpy(&grop.pGroup, (const void *)pGroup, sizeof(GData_s));
-
+	/*组操作响应*/
     lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GROUP_OPERATOR_REP, (void *)&grop);
 }
 
@@ -1479,6 +1499,14 @@ static void LvGuiIdtCom_ppt_release_timer_cb(void *ctx)
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)USER_OPRATOR_SPEAKING);
 		}
 		makecallcnt = 0;
+	}
+}
+/*检查在组内有ABC三用户时且释放呼叫时AB在单呼，C要群呼时若2s未收到呼叫应答则提示错误*/
+static void LvGuiIdtCom_three_member_groupcall_conflict__timer_cb(void *ctx)
+{
+	if(pocIdtAttr.is_release_call == true)
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_ERROR_MSG, (const uint8_t *)"组呼失败,组内用户正在单呼", (const uint8_t *)"");
 	}
 }
 
@@ -1823,6 +1851,13 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					1,
 					user_mark);
 
+				//针对于组内只有2个及以上用户---组内其他用户正在单呼，剩余落单的用户要群呼---弹出提示框(响应阈值2s)
+				if(pocIdtAttr.current_group_member_dwnum >= 2
+					&& pocIdtAttr.is_release_call == true)
+				{
+					osiTimerStart(pocIdtAttr.threegroup_callexist_timer, 2000);//响应单次周期阈值
+				}
+
 				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
 				char cOutstr[256] = {0};
 				cOutstr[0] = '\0';
@@ -1838,6 +1873,14 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				sprintf(cOutstr, "[idtspeak]%s(%d):group call,but speak group_number and current_group_number is different", __func__, __LINE__);
 				OSI_LOGI(0, cOutstr);
 				#endif
+
+				//note call failed case
+				if(pocIdtAttr.is_release_call == false && pocIdtAttr.is_justnow_listen == true)
+				{
+					pocIdtAttr.call_error_case = LV_POC_CALL_ERROR_GROUP_IS_BUSY;
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_ERROR_MSG, (const uint8_t *)"组呼失败,其他组呼叫线路存在", (const uint8_t *)"");
+					return;
+				}
 
 				if(0 == IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO))//若要改为立马释放呼叫的话加入该原因值：CAUSE_CALL_REJ_BY_USER
 				{
@@ -2592,7 +2635,6 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 			{
 				break;
 			}
-			//OSI_LOGI(0, "[song]enter LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP");
 			LvPocGuiIdtCom_User_Operator_t * UOpt = (LvPocGuiIdtCom_User_Operator_t *)ctx;
 
 			Msg_GData_s *pPocMemberList = pocIdtAttr.pPocMemberList;
@@ -3253,16 +3295,19 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 					Msg_GData_s *pPocMemberList = NULL;
 					if(pocIdtAttr.isPocMemberListBuf)
 					{
-						IDT_TRACE(0,"[song]pPocMemberListBuf have enter!");
 						pPocMemberList = pocIdtAttr.pPocMemberListBuf;
 					}
 					else
 					{
-						IDT_TRACE(0,"[song]pPocMemberList have enter!");
 						pPocMemberList = pocIdtAttr.pPocMemberList;/*上电填充成员列表*/
 					}
 
 					pPocMemberList->dwNum = grop->pGroup.dwNum;
+					if(grop->pGroup.ucNum != 0)//抛弃群组号码为0的成员个数
+					{
+						pocIdtAttr.current_group_member_dwnum = pPocMemberList->dwNum;/*组用户个数*/
+					}
+
 					for(unsigned long i = 0; i < pPocMemberList->dwNum; i++)
 					{
 						strcpy((char *)pPocMemberList->member[i].ucName, (char *)grop->pGroup.member[i].ucName);
@@ -3334,6 +3379,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 				IDT_TRACE("[song]OPT_U_QUERYGROUP opt");
 			    m_IdtUser.m_Group.Reset();
 			    m_IdtUser.m_Group.m_Group_Num = grop->pGroup.dwNum;/*有几个组*/
+				pocIdtAttr.current_group_member_dwnum = grop->pGroup.dwNum;/*组用户个数*/
 			    bool checked_current = false;
 				nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 
@@ -3391,7 +3437,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 
 			    if(!pocIdtAttr.isPocMemberListBuf)
 			    {
-					IDT_TRACE("[song]isPocMemberListBuf false line=3026 query group \n");
+					IDT_TRACE("[song]isPocMemberListBuf false query group \n");
 					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_CUR_GROUP, NULL);
 				}
 				else
@@ -3724,6 +3770,123 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 	}
 }
 
+/*
+	  name : lvPocGuiIdtCase_Msg
+	 param : id：消息类型
+	 		 ctx：失败枚举原因
+	 		 cause_str：当前失败的字符串原因
+	author : wangls
+  describe : 处理对讲失败消息
+	  date : 2020-07-09
+*/
+static
+void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_str)
+{
+	switch(id)
+	{
+		case LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE:
+		{
+			switch(ctx)
+			{
+				case CAUSE_ZERO://错误0
+				{
+
+					switch(pocIdtAttr.call_error_case)
+					{
+						case LV_POC_CALL_ERROR_GROUP_IS_BUSY:
+						{
+							lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+							lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"呼叫释放", (const uint8_t *)"");
+							pocIdtAttr.call_error_case = LV_POC_CALL_ERROR_NONE;
+							break;
+						}
+
+						default:
+						{
+							break;
+						}
+					}
+
+					break;
+				}
+
+				case CAUSE_U_OFFLINE_G://组中没有在线成员
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+
+					break;
+				}
+				case CAUSE_U_LOCK_G://用户锁定在其他组
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+
+					break;
+				}
+				case CAUSE_G_NOUSER://组中没有用户
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+
+					break;
+				}
+				case CAUSE_MS_POWEROFF://用户关机
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+
+					break;
+				}
+				case CAUSE_RESOURCE_UNAVAIL://资源不可用---用户忙线中
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"用户忙线中", (const uint8_t *)"");
+
+					break;
+				}
+				case CAUSE_TIMER_EXPIRY://定时器超时
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"呼叫超时", (const uint8_t *)"");
+
+					break;
+				}
+				case 18702://用户关机
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"用户关机", (const uint8_t *)"");
+
+					break;
+				}
+				case CAUSE_CALL_CONFLICT://呼叫冲突
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"呼叫冲突", (const uint8_t *)"");
+
+					break;
+				}
+
+				case 8462://上次呼叫存在--->释放呼叫
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"呼叫释放", (const uint8_t *)"");
+
+					break;
+				}
+
+				default:
+				{
+					/*此处可以显示所有异常状态*/
+					#if GUIIDTCOM_IDTERRORINFO_DEBUG_LOG
+					char cOutstr[256] = {0};
+					cOutstr[0] = '\0';
+					sprintf(cOutstr, "[idterrorinfo]%s(%d):call error (%d)(%s)", __func__, __LINE__, (int)id, (uint8_t *)cause_str);
+					OSI_LOGI(0, cOutstr);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
+					#endif
+					break;
+				}
+
+			}
+
+			break;
+		}
+	}
+}
+
 static void pocGuiIdtComTaskEntry(void *argument)
 {
 
@@ -3944,6 +4107,7 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.try_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_try_login_timer_cb, NULL);/*注册尝试登录定时器*/
 	pocIdtAttr.auto_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_auto_login_timer_cb, NULL);/*注册自动登录定时器*/
 	pocIdtAttr.monitor_pptkey_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_ppt_release_timer_cb, NULL);/*检查ppt键定时器*/
+	pocIdtAttr.threegroup_callexist_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_three_member_groupcall_conflict__timer_cb, NULL);/*检查群组3人时2s是否得到呼出应答定时器*/
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
@@ -3970,6 +4134,7 @@ extern "C" void lvPocGuiIdtCom_Init(void)
 {
 	memset(&pocIdtAttr, 0, sizeof(PocGuiIIdtComAttr_t));
 	pocIdtAttr.membercall_count = 0;
+	pocIdtAttr.is_release_call = true;
 	pocIdtAttr.pPocMemberList = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
 	pocIdtAttr.pPocMemberListBuf = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
 	pocIdtAttr.pLockGroup = (CGroup *)malloc(sizeof(CGroup));
@@ -4079,102 +4244,6 @@ extern "C" bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * c
 	osiExitCritical(critical);
 
 	return osiEventSend(pocIdtAttr.thread, &event);
-}
-
-/*
-	  name : lvPocGuiIdtCase_Msg
-	 param : id：消息类型
-	 		 ctx：失败枚举原因
-	 		 cause_str：当前失败的字符串原因
-	author : wangls
-  describe : 处理对讲失败消息
-	  date : 2020-07-09
-*/
-static
-void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_str)
-{
-	switch(id)
-	{
-		case LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE:
-		{
-			switch(ctx)
-			{
-
-				case CAUSE_U_OFFLINE_G://组中没有在线成员
-				{
-					OSI_LOGI(0, "[song]no member offline in group");
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
-
-					break;
-				}
-				case CAUSE_U_LOCK_G://用户锁定在其他组
-				{
-					OSI_LOGI(0, "[song]user lock in other group");
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
-
-					break;
-				}
-				case CAUSE_G_NOUSER://组中没有用户
-				{
-					OSI_LOGI(0, "[song]no member in this group");
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
-
-					break;
-				}
-				case CAUSE_MS_POWEROFF://用户关机
-				{
-					OSI_LOGI(0, "[song]user power off");
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
-
-					break;
-				}
-				case CAUSE_RESOURCE_UNAVAIL://资源不可用---用户忙线中
-				{
-					OSI_LOGI(0, "[song]resource unavail");
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"用户忙线中", (const uint8_t *)"");
-
-					break;
-				}
-				case CAUSE_TIMER_EXPIRY://定时器超时
-				{
-					OSI_LOGI(0, "[song]timer out");
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"呼叫超时", (const uint8_t *)"");
-
-					break;
-				}
-				case 18702://用户关机
-				{
-					OSI_LOGI(0, "[song]power off");
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"用户关机", (const uint8_t *)"");
-
-					break;
-				}
-				case CAUSE_CALL_CONFLICT://呼叫冲突
-				{
-					OSI_LOGI(0, "[song]call conlict");
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"呼叫冲突", (const uint8_t *)"");
-
-					break;
-				}
-
-				default:
-				{
-					/*此处可以显示所有异常状态*/
-					#if GUIIDTCOM_IDTERRORINFO_DEBUG_LOG
-					char cOutstr[256] = {0};
-					cOutstr[0] = '\0';
-					sprintf(cOutstr, "[idterrorinfo]%s(%d):call error (%d)(%s)", __func__, __LINE__, (int)id, (uint8_t *)cause_str);
-					OSI_LOGI(0, cOutstr);
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
-					#endif
-					break;
-				}
-
-			}
-
-			break;
-		}
-	}
 }
 
 /*
