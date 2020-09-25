@@ -327,11 +327,10 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 	{
 		return false;
 	}
-	#if 0
+
 	/*对讲前还原音量*/
 	lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
-	#endif
-#if 1
+
 	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
    	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
@@ -339,12 +338,6 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 	player->status = auPlayerStartReader(player->player, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
 
 	return player->status;
-#endif
-
-#if 0/*new player*/
-
-
-#endif
 }
 
 /**
