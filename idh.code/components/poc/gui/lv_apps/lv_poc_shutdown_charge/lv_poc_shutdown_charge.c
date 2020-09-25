@@ -5,6 +5,9 @@ extern "C" {
 #include "lv_include/lv_poc.h"
 #include <stdlib.h>
 #include "lv_gui_main.h"
+#include "hal_chip.h"
+#include "drv_lcd_v2.h"
+#include "drv_names.h"
 
 /*掉电多长时间后关机*/
 #define POC_CHARGE_POWER_DOWN_TIME 1/*2000*/
@@ -84,9 +87,15 @@ void lv_poc_shutdown_charge_power_on_logo(void)
 
 	//魔方图片
 	lv_poc_refr_task_once(lv_poc_show_sprd_image, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGHEST);
-	osiThreadSleep(3000);
+	osiThreadSleep(2000);
+
+	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+   	drvLcdSetBackLightEnable(lcd, true);
+   	poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
+
 	//熄屏时间
 	lvGuiSetInactiveTimeout(8000);
+	osiThreadSleep(3000);
 	lv_obj_del(poc_power_on_backgroup_sprd_image);
 
 	//背景框
@@ -267,31 +276,6 @@ void lv_poc_show_sprd_image(lv_task_t *task)
 	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
 	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
 }
-
-#if 0
-/*
-	  name : poc_power_on_charge_set_lcd_status
-	 param : none
-	author : wangls
-  describe : 充电时开关屏幕
-	  date : 2020-07-28
-*/
-static
-void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus)
-{
-
-	if(lcdstatus != 0)
-	{
-		lvGuiChargeScreenOn();
-	}
-	else
-	{
-		lvGuiScreenOff();
-	}
-
-}
-#endif
-
 
 #ifdef __cplusplus
 }
