@@ -93,6 +93,12 @@ int pocAudioPlayerWriteData(POCAUDIOPLAYER_HANDLE player_id, const uint8_t *data
  */
 bool pocAudioPlayerGetStatus(POCAUDIOPLAYER_HANDLE player_id);
 
+bool pocAudioLaunchPocMode(bool status);
+
+bool pocAudioSetMode(bool mode);
+
+bool pocAudioStopPocMode(void);
+
 bool pocAudioPlayerSound(void);
 
 OSI_EXTERN_C_END
