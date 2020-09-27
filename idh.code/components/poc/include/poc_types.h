@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -96,6 +96,18 @@ typedef struct
 	pocAudioRecorderCallback_t callback;//user specify func
 	bool              status;           //status of recorder
 } pocAudioRecorder_t;
+
+enum
+{
+	LV_POC_MODE_RECORDER = 1,
+	LV_POC_MODE_PLAYER = 2,
+};
+
+enum
+{
+	AUPOC_STATUS_HALF_DUPLEX = 0,
+	AUPOC_STATUS_FULL_DUPLEX = 1,
+};
 
 OSI_EXTERN_C_END
 

@@ -443,8 +443,7 @@ void poc_Lcd_Set_BackLightNess(uint32_t level)
 */
 void poc_config_Lcd_power_vol(void)
 {
-	REG_RDA2720M_GLOBAL_LDO_LCD_REG1_T lcd_reg1 = {};
-
+	REG_RDA2720M_GLOBAL_LDO_LCD_REG1_T lcd_reg1 = {};
 	//目前配为2.3v
     lcd_reg1.b.ldo_lcd_v = 0x37; // (2.3 - 1.6125)=0.0125*n---000 0000
     halAdiBusWrite(&hwp_rda2720mGlobal->ldo_lcd_reg1, lcd_reg1.v);
@@ -727,7 +726,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
-            	audevSetPlayVolume(60);
+				audevSetPlayVolume(70);
 			    is_poc_play_voice = true;
 				break;
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
@@ -739,7 +738,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
 				/*tone volum*/
-            	audevSetPlayVolume(40);
+				audevSetPlayVolume(60);
 			    is_poc_play_voice = true;
 				break;
 

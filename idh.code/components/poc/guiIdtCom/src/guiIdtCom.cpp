@@ -62,6 +62,7 @@ extern "C" lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
 #define GUIIDTCOM_IDTSINGLECALL_DEBUG_LOG 1  //[idtsinglecall]
 #define GUIIDTCOM_IDTLISTEN_DEBUG_LOG     1  //[idtlisten]
 #define GUIIDTCOM_IDTERRORINFO_DEBUG_LOG  1  //[idterrorinfo]
+#define GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG  1  //[idtlockgroup]
 
 enum{
 	USER_OPRATOR_START_SPEAK = 3,
@@ -435,7 +436,7 @@ public:
 	osiTimer_t * try_login_timer;/*尝试登录定时器*/
 	osiTimer_t * auto_login_timer;/*自动登录定时器*/
 	osiTimer_t * monitor_pptkey_timer;/*检查ppt键*/
-	osiTimer_t * threegroup_callexist_timer;/*检查三人群组时是否有两人占用呼叫*/
+	osiTimer_t * twogroup_callexist_timer;/*检查两人及以上的群组是否有落单的用户要群呼*/
 	bool onepoweron;/*记录第一次开机状态*/
 	char build_self_name[16];/*存储自建群组尾序号*/
 	int buildgroupnumber;/*自编组号码*/
@@ -621,7 +622,7 @@ int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName
 
 	pocIdtAttr.is_release_call = false;//obtain call
 	pocIdtAttr.is_justnow_listen = false;
-	osiTimerStop(pocIdtAttr.threegroup_callexist_timer);
+	osiTimerStop(pocIdtAttr.twogroup_callexist_timer);
 
 	if(pocIdtAttr.is_member_call)
 	{
@@ -1153,10 +1154,21 @@ void callback_IDT_UOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes, UData_s* pUser
 	    UOpt.haveUser = true;
 	    memcpy(&UOpt.pUser, pUser, sizeof(UData_s));
     }
+	else
+	{
+		UOpt.haveUser = false;
+	}
 
     if(dwOptCode == OPT_USER_QUERY)
     {
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP, &UOpt);
+
+		#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+		char cOutstr[256] = {0};
+		cOutstr[0] = '\0';
+		sprintf(cOutstr, "[idtlockgroup]%s(%d):[server]member info ack", __func__, __LINE__);
+		OSI_LOGI(0, cOutstr);
+		#endif
     }
     else if(dwOptCode == OPT_GMEMBER_EXTINFO)
     {
@@ -1164,15 +1176,35 @@ void callback_IDT_UOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes, UData_s* pUser
 	    if(pocIdtAttr.lockGroupOpt == LV_POC_GROUP_OPRATOR_TYPE_LOCK)/*锁组*/
 	    {
 		    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_REP, (void *)result);
+
+			#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtlockgroup]%s(%d):[server]lock group success ack", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
 	    }
 	    else if(pocIdtAttr.lockGroupOpt == LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)/*解锁*/
 	    {
 		    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_REP, (void *)result);
+
+			#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtlockgroup]%s(%d):[server]unlock group success ack", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
 	    }
 	    else
 	    {
-		    OSI_LOGI(0, "get invalid lock group msg [%d], check lock group status from server\n", pocIdtAttr.lockGroupOpt);
 		    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_LOCK_GROUP_STATUS_IND, NULL);
+
+			#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtlockgroup]%s(%d):[server]get invalid lock group msg, check lock group status from server", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
 	    }
     }
 }
@@ -1405,7 +1437,6 @@ static void LvGuiIdtCom_get_member_list_timer_cb(void *ctx)
 
 static void LvGuiIdtCom_get_group_list_timer_cb(void *ctx)
 {
-	IDT_TRACE("group_list_timer cb query group \n");
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL))
 	{
 		if(pocIdtAttr.isReady)
@@ -1414,8 +1445,18 @@ static void LvGuiIdtCom_get_group_list_timer_cb(void *ctx)
 		}
 		return;
 	}
+
+	#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG|GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG
+	char cOutstr[256] = {0};
+	cOutstr[0] = '\0';
+	sprintf(cOutstr, "[idtlockgroup][grouprefr]%s(%d):start get lock_group_status and query include_self group", __func__, __LINE__);
+	OSI_LOGI(0, cOutstr);
+	#endif
 	osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 100);
-	//osiTimerStart(pocIdtAttr.get_group_list_timer, 1000 * 60 * 5);
+
+	#if 0
+	osiTimerStart(pocIdtAttr.get_group_list_timer, 1000 * 60 * 5);
+	#endif
 }
 
 static void LvGuiIdtCom_get_lock_group_status_timer_cb(void *ctx)
@@ -1424,6 +1465,14 @@ static void LvGuiIdtCom_get_lock_group_status_timer_cb(void *ctx)
 	{
 		OSI_LOGI(0, "[song]LvGuiIdtCom_get_lock_group_status_timer_cb is running");
 		osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 1000);
+
+		#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+		char cOutstr[256] = {0};
+		cOutstr[0] = '\0';
+		sprintf(cOutstr, "[idtlockgroup]%s(%d):get lock group status timer cb -> restart 1s timer", __func__, __LINE__);
+		OSI_LOGI(0, cOutstr);
+		#endif
+
 		return;
 	}
 
@@ -1435,6 +1484,13 @@ static void LvGuiIdtCom_get_lock_group_status_timer_cb(void *ctx)
 		}
 		return;
 	}
+
+	#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+	char cOutstr[256] = {0};
+	cOutstr[0] = '\0';
+	sprintf(cOutstr, "[idtlockgroup]%s(%d):send msg to get lock group status", __func__, __LINE__);
+	OSI_LOGI(0, cOutstr);
+	#endif
 }
 
 static void LvGuiIdtCom_check_listen_timer_cb(void *ctx)
@@ -1501,8 +1557,8 @@ static void LvGuiIdtCom_ppt_release_timer_cb(void *ctx)
 		makecallcnt = 0;
 	}
 }
-/*检查在组内有ABC三用户时且释放呼叫时AB在单呼，C要群呼时若2s未收到呼叫应答则提示错误*/
-static void LvGuiIdtCom_three_member_groupcall_conflict__timer_cb(void *ctx)
+/*检查在组内有两个及以上的用户时且释放呼叫时其他在单呼，落单的用户要群呼时若2s未收到呼叫应答则提示错误*/
+static void LvGuiIdtCom_member_groupcall_conflict__timer_cb(void *ctx)
 {
 	if(pocIdtAttr.is_release_call == true)
 	{
@@ -1855,7 +1911,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				if(pocIdtAttr.current_group_member_dwnum >= 2
 					&& pocIdtAttr.is_release_call == true)
 				{
-					osiTimerStart(pocIdtAttr.threegroup_callexist_timer, 2000);//响应单次周期阈值
+					osiTimerStart(pocIdtAttr.twogroup_callexist_timer, 2000);//响应单次周期阈值
 				}
 
 				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
@@ -2572,12 +2628,12 @@ static void prvPocGuiIdtTaskHandleCurrentGroup(uint32_t id, uint32_t ctx)
 			{
 				pocIdtAttr.pocSetCurrentGroupCb(0);
 			}
-			else if(index == pocIdtAttr.current_group)
+			else if(index == pocIdtAttr.current_group)//已在群组
 			{
 				pocIdtAttr.pocSetCurrentGroupCb(2);
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocIdtAttr.self_info.ucName, m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGName);
 			}
-			else
+			else//切组成功
 			{
 				pocIdtAttr.current_group = index;
 				nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
@@ -2626,6 +2682,14 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 			}
 			Msg_GROUP_MEMBER_s * member = (Msg_GROUP_MEMBER_s *)ctx;
 			IDT_UQuery(0, member->ucNum);
+
+			#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtlockgroup]%s(%d):query user info", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
+
 			break;
 		}
 
@@ -2691,15 +2755,27 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 						{
 							osiTimerStop(pocIdtAttr.get_lock_group_status_timer);
 							osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 2000);
-							OSI_LOGI(0, "don't parse lock group cjson string, try again in 2s\n");
 							check_self_workinfo_count++;
+
+							#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+							char cOutstr[256] = {0};
+							cOutstr[0] = '\0';//不解析cjson锁组字符串
+							sprintf(cOutstr, "[idtlockgroup]%s(%d):don't parse lock group cjson string, try again in 2s", __func__, __LINE__);
+							OSI_LOGI(0, cOutstr);
+							#endif
 						}
 						else
 						{
 							osiTimerStop(pocIdtAttr.get_lock_group_status_timer);
 							osiTimerStart(pocIdtAttr.get_lock_group_status_timer, 1000 * 60 * 1);
-							OSI_LOGI(0, "don't parse lock group cjson string, try again in 1min\n");
 							check_self_workinfo_count = 0;
+
+							#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+							char cOutstr[256] = {0};
+							cOutstr[0] = '\0';//不解析cjson锁组字符串
+							sprintf(cOutstr, "[idtlockgroup]%s(%d):don't parse lock group cjson string, try again in 1min", __func__, __LINE__);
+							OSI_LOGI(0, cOutstr);
+							#endif
 						}
 						break;
 					}
@@ -2708,12 +2784,24 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 
 					if(lock_group_num != NULL)
 					{
-						IDT_TRACE("current lock group info [%s]\n", lock_group_num);
+						#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+						char cOutstr[256] = {0};
+						cOutstr[0] = '\0';
+						sprintf(cOutstr, "[idtlockgroup]%s(%d):current lock group info [%s]", __func__, __LINE__, strcmp(lock_group_num, "#") == 0?"no lock group":"exist lock group");
+						OSI_LOGI(0, cOutstr);
+						#endif
 					}
 
 					if(lock_group_num == NULL || strcmp((const char *)lock_group_num, (const char *)"#") == 0)
 					{
-						pocIdtAttr.isLockGroupStatus = false;
+						pocIdtAttr.isLockGroupStatus = false;//未锁组
+
+						#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+						char cOutstr[256] = {0};
+						cOutstr[0] = '\0';
+						sprintf(cOutstr, "[idtlockgroup]%s(%d):current no lock group", __func__, __LINE__);
+						OSI_LOGI(0, cOutstr);
+						#endif
 					}
 					else
 					{
@@ -2733,26 +2821,35 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 
 						if(!checked_lock_group)
 						{
-							IDT_TRACE("don't find group[%s], unlock group\n", lock_group_num);
 							IDT_SetGMemberExtInfo(0, NULL, (UCHAR *)"#", NULL);
 							pocIdtAttr.current_group = 0;
 							pocIdtAttr.isLockGroupStatus = false;
 
-							OSI_LOGI(0, "[song]checked_lock_group == false LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP\n");
 							lv_poc_activity_func_cb_set.group_list.lock_group(NULL, LV_POC_GROUP_OPRATOR_TYPE_UNLOCK);
+
+							#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+							char cOutstr[256] = {0};
+							cOutstr[0] = '\0';
+							sprintf(cOutstr, "[idtlockgroup]%s(%d):don't find group[%s], unlock group", __func__, __LINE__, lock_group_num);
+							OSI_LOGI(0, cOutstr);
+							#endif
 						}
 						else
 						{
-							IDT_TRACE("find group[%s], lock group\n", lock_group_num);
 							pocIdtAttr.isLockGroupStatus = true;
-
-							OSI_LOGI(0, "[song]checked_lock_group == true LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP\n");
 							lv_poc_activity_func_cb_set.group_list.lock_group(NULL, LV_POC_GROUP_OPRATOR_TYPE_LOCK);
 
 							nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 							strcpy((char *)poc_config->old_account_current_group, lock_group_num);
 					        lv_poc_setting_conf_write();
 							lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocIdtAttr.self_info.ucName, m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGName);
+
+							#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+							char cOutstr[256] = {0};
+							cOutstr[0] = '\0';
+							sprintf(cOutstr, "[idtlockgroup]%s(%d):find group[%s], lock group", __func__, __LINE__, lock_group_num);
+							OSI_LOGI(0, cOutstr);
+							#endif
 						}
 					}
 
@@ -2829,14 +2926,6 @@ static void prvPocGuiIdtTaskHandlePlay(uint32_t id, uint32_t ctx)
 				break;
 			}
 
-			#if 0 /*测试播放*/
-			if(pocIdtAttr.record_fist == false)
-			{
-				pocIdtAttr.record_fist = true;
-				pocAudioPlayerSound();
-			}
-			#endif
-
 			pocAudioPlayerStart(pocIdtAttr.player);
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
 			break;
@@ -2866,6 +2955,7 @@ static void prvPocGuiIdtTaskHandleRecord(uint32_t id, uint32_t ctx)
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_REP, GUIIDTCOM_RELEASE_MIC);
 				break;
 			}
+
 			pocAudioRecorderStart(pocIdtAttr.recorder);
 			m_IdtUser.m_status = USER_OPRATOR_SPEAKING;
 			break;
@@ -3482,13 +3572,11 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 			LvPocGuiIdtCom_lock_group_t *msg = (LvPocGuiIdtCom_lock_group_t *)ctx;
 			if(msg->opt != LV_POC_GROUP_OPRATOR_TYPE_LOCK || msg->group_info == NULL)
 			{
-				OSI_LOGI(0, "[song]don't lock group, opt=%d,cb=%p,group=%p\n", msg->opt, msg->cb, msg->group_info);
 				break;
 			}
 
 			if(pocIdtAttr.lockGroupOpt > LV_POC_GROUP_OPRATOR_TYPE_NONE && pocIdtAttr.lockGroupOpt != LV_POC_GROUP_OPRATOR_TYPE_LOCK_FAILED)
 			{
-				OSI_LOGI(0, "[song]don't lock group, current operating other group\n");
 				break;
 			}
 
@@ -3499,6 +3587,14 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 			strcpy((char *)pocIdtAttr.LockGroupTemp.m_ucGName, (const char *)group_info->m_ucGName);
 			strcpy((char *)pocIdtAttr.LockGroupTemp.m_ucGNum, (const char *)group_info->m_ucGNum);
 			IDT_SetGMemberExtInfo(0, NULL, (UCHAR *)group_info->m_ucGNum, NULL);
+
+			#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+			char cOutstr[256] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtlockgroup]%s(%d):lock group ind, send msg to server", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
+
 			break;
 		}
 
@@ -3510,8 +3606,6 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 			}
 
 			lv_poc_group_oprator_type opt = LV_POC_GROUP_OPRATOR_TYPE_LOCK_FAILED;
-
-			OSI_LOGI(0, "[song]lock group rep cause[%d] from server\n", ctx);
 			if(ctx == CAUSE_ZERO)/*锁组操作是否成功*/
 			{
 				CGroup * p_group = NULL;
@@ -3533,30 +3627,49 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 
 				if(i < m_IdtUser.m_Group.m_Group_Num)
 				{
-					opt = LV_POC_GROUP_OPRATOR_TYPE_LOCK_OK;
 					pocIdtAttr.isLockGroupStatus = true;
+					opt = LV_POC_GROUP_OPRATOR_TYPE_LOCK_OK;
+					if(pocIdtAttr.pocLockGroupCb != NULL)
+					{
+						#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+						char cOutstr3[128] = {0};
+						cOutstr3[0] = '\0';
+						sprintf(cOutstr3, "[idtlockgroup]%s(%d):lock success->start cb", __func__, __LINE__);
+						OSI_LOGI(0, cOutstr3);
+						#endif
+
+						pocIdtAttr.pocLockGroupCb(opt);
+					}
+
+					pocIdtAttr.pocLockGroupCb = NULL;
 					pocIdtAttr.lockGroupOpt = LV_POC_GROUP_OPRATOR_TYPE_NONE;
 				}
 				else
 				{
-					OSI_LOGI(0, "[song]lock group failed,no group\n");
-					pocIdtAttr.lockGroupOpt = LV_POC_GROUP_OPRATOR_TYPE_LOCK_FAILED;
+					pocIdtAttr.lockGroupOpt = opt;
 					pocIdtAttr.pocLockGroupCb = NULL;
 					lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_UNLOCK, NULL, NULL);
+
+					#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+					char cOutstr1[128] = {0};
+					cOutstr1[0] = '\0';
+					sprintf(cOutstr1, "[idtlockgroup]%s(%d):lock failed->no group", __func__, __LINE__);
+					OSI_LOGI(0, cOutstr1);
+					#endif
 				}
 			}
 			else/*锁组失败*/
 			{
-				OSI_LOGI(0, "[song]lock group failed,ctx error\n");
-				pocIdtAttr.lockGroupOpt = LV_POC_GROUP_OPRATOR_TYPE_LOCK_FAILED;
+				pocIdtAttr.lockGroupOpt = opt;
 				pocIdtAttr.pocLockGroupCb = NULL;
 				lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_UNLOCK, NULL, NULL);
-			}
 
-			if(pocIdtAttr.pocLockGroupCb != NULL)
-			{
-				pocIdtAttr.pocLockGroupCb(opt);
-				pocIdtAttr.pocLockGroupCb = NULL;
+				#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+				char cOutstr2[128] = {0};
+				cOutstr2[0] = '\0';
+				sprintf(cOutstr2, "[idtlockgroup]%s(%d):lock failed,opt code no correct", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr2);
+				#endif
 			}
 
 			break;
@@ -3568,19 +3681,25 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 			LvPocGuiIdtCom_lock_group_t *msg = (LvPocGuiIdtCom_lock_group_t *)ctx;
 			if(msg->opt != LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
 			{
-				OSI_LOGI(0, "[song]don't unlock group, opt=%d,cb=%p,group=%p\n", msg->opt, msg->cb, msg->group_info);
 				break;
 			}
 
 			if(pocIdtAttr.lockGroupOpt > LV_POC_GROUP_OPRATOR_TYPE_NONE && pocIdtAttr.lockGroupOpt != LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_FAILED)
 			{
-				OSI_LOGI(0, "[song]don't unlock group, current operating other group\n");
 				break;
 			}
 
 			pocIdtAttr.lockGroupOpt = LV_POC_GROUP_OPRATOR_TYPE_UNLOCK;
 			pocIdtAttr.pocLockGroupCb = msg->cb;
-			IDT_SetGMemberExtInfo(0, NULL, (UCHAR *)"#", NULL);
+			IDT_SetGMemberExtInfo(0, NULL, (UCHAR *)"#", NULL);//不锁定组
+
+			#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+			char cOutstr[128] = {0};
+			cOutstr[0] = '\0';
+			sprintf(cOutstr, "[idtlockgroup]%s(%d):unlock group ind, send msg to server", __func__, __LINE__);
+			OSI_LOGI(0, cOutstr);
+			#endif
+
 			break;
 		}
 
@@ -3593,7 +3712,6 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 
 			lv_poc_group_oprator_type opt = LV_POC_GROUP_OPRATOR_TYPE_NONE;
 
-			OSI_LOGI(0, "[song]unlock group rep cause[%d] from server\n", ctx);
 			if(ctx == CAUSE_ZERO)
 			{
 				opt = LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_OK;
@@ -3603,6 +3721,13 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 				{
 					pocIdtAttr.pocLockGroupCb(opt);
 					pocIdtAttr.pocLockGroupCb = NULL;
+
+					#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+					char cOutstr1[128] = {0};
+					cOutstr1[0] = '\0';
+					sprintf(cOutstr1, "[idtlockgroup]%s(%d):unlock success->start cb", __func__, __LINE__);
+					OSI_LOGI(0, cOutstr1);
+					#endif
 				}
 
 				pocIdtAttr.lockGroupOpt = LV_POC_GROUP_OPRATOR_TYPE_NONE;
@@ -3610,8 +3735,16 @@ static void prvPocGuiIdtTaskHandleLockGroup(uint32_t id, uint32_t ctx)
 			}
 			else
 			{
+				opt = LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_FAILED;
 				pocIdtAttr.pocLockGroupCb = NULL;
-				pocIdtAttr.lockGroupOpt = LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_FAILED;
+				pocIdtAttr.lockGroupOpt = opt;
+
+				#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+				char cOutstr1[128] = {0};
+				cOutstr1[0] = '\0';
+				sprintf(cOutstr1, "[idtlockgroup]%s(%d):unlock failed", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr1);
+				#endif
 			}
 
 			break;
@@ -3754,6 +3887,13 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 		{
 			if(ctx == 0)
 			{
+				#if GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG
+				char cOutstr[256] = {0};
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[idtlockgroup]%s(%d):get_lock_group_status, start to query user info ind", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
+				#endif
+
 				if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND, &pocIdtAttr.self_info))
 				{
 					osiTimerStop(pocIdtAttr.get_lock_group_status_timer);
@@ -4107,7 +4247,7 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.try_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_try_login_timer_cb, NULL);/*注册尝试登录定时器*/
 	pocIdtAttr.auto_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_auto_login_timer_cb, NULL);/*注册自动登录定时器*/
 	pocIdtAttr.monitor_pptkey_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_ppt_release_timer_cb, NULL);/*检查ppt键定时器*/
-	pocIdtAttr.threegroup_callexist_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_three_member_groupcall_conflict__timer_cb, NULL);/*检查群组3人时2s是否得到呼出应答定时器*/
+	pocIdtAttr.twogroup_callexist_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_member_groupcall_conflict__timer_cb, NULL);/*检查群组3人时2s是否得到呼出应答定时器*/
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
