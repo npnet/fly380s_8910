@@ -438,6 +438,7 @@ void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t even
 		if(lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_IND, NULL))
 		{
 		}
+		lv_poc_set_power_on_status(false);//设备挂起
 		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
 			LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
 		lv_task_once(task);
@@ -493,6 +494,7 @@ void lv_poc_reboot_warning_apply_event_handler(lv_obj_t *obj, lv_event_t event)
 {
 	//回调事件
 	if(event == LV_EVENT_APPLY){//确认重新启动
+		lv_poc_set_power_on_status(false);//设备挂起
 		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
 			LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_REBOOT);
 		lv_task_once(task);

@@ -138,7 +138,7 @@ typedef struct
 	uint8_t net_type;                 //[0]4G/3G/2G  [1]only 3G/2G    [default 0]
 #endif
 	uint8_t volume;                   //[0-10]    [default 5]
-	uint8_t tonevolume;               //[0-10]    [default 3]
+	uint8_t tonevolume;               //[0-10]    [default 4]
 	uint8_t voicevolume;              //[0-10]    [default 4]
 	uint8_t language;                 //[0]简体中文       [default 0]
 	nv_poc_font_size_msg_t font;

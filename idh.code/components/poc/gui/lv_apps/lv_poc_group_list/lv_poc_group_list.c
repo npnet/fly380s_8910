@@ -6,6 +6,7 @@ extern "C" {
 #include <string.h>
 
 #define CURRENR_GROUP_NAME_EXTERN 20
+#define GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG 1
 
 //oem
 static lv_poc_oem_group_list * lv_poc_group_list = NULL;
@@ -222,7 +223,6 @@ static void lv_poc_group_list_set_current_group_cb(int result_type)
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 {
 	lv_poc_group_list_item_info_t * p_info = (lv_poc_group_list_item_info_t *)obj->user_data;
-
 
 	Ap_OSI_ASSERT((p_info != NULL), "[song]group_list_item NULL");
 	lv_area_t monitor_window_area = {0};
@@ -790,9 +790,13 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
 void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj)
 {
+	if(!lv_poc_get_poweron_is_ready())
+	{
+		return;
+	}
+
 	if(lv_poc_is_inside_group())//若当前设备在某个群组里,禁止群组的所有更新(包括添组、删组、组信息更新)
 	{
-		OSI_LOGI(0, "[grouprefr]grouplist have refresh info\n");
 		lv_poc_set_group_refr(true);//记录有信息待刷新
 		return;
 	}
@@ -800,10 +804,8 @@ void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj)
 	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)
 	{
 		lv_poc_set_group_refr(true);//记录有信息待刷新
-		OSI_LOGI(0, "[grouprefr]grouplist can't refresh\n");
 		return;
 	}
-	OSI_LOGI(0, "[grouprefr]grouplist refresh_with_data running");
 
 	if(group_list_obj == NULL)
 	{
