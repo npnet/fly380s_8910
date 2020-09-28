@@ -200,11 +200,7 @@ OUT uint8_t
 lv_poc_setting_get_current_volume(IN POC_MMI_VOICE_TYPE_E type)
 {
 	nv_poc_setting_msg_t * config = lv_poc_setting_conf_read();
-	if(type == POC_MMI_VOICE_MSG)
-	{
-		return config->tonevolume;
-	}
-	else if(type == POC_MMI_VOICE_PLAY)
+	if(type == POC_MMI_VOICE_PLAY)
 	{
 		return config->volume;
 	}
@@ -236,12 +232,7 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
 		poc_volum = 0;
 	}
 	nv_poc_setting_msg_t * config = lv_poc_setting_conf_read();
-	if(type == POC_MMI_VOICE_MSG)
-	{
-		config->tonevolume = poc_volum / 10;
-		audevSetVoiceVolume(poc_volum);
-	}
-	else if(type == POC_MMI_VOICE_PLAY)
+	if(type == POC_MMI_VOICE_PLAY)
 	{
 		config->volume = poc_volum / 10;
 		audevSetPlayVolume(poc_volum);
@@ -250,7 +241,7 @@ lv_poc_setting_set_current_volume(IN POC_MMI_VOICE_TYPE_E type, IN uint8_t volum
 	{
 		if(config->voicevolume == poc_volum / 10)return;
 		config->voicevolume = poc_volum / 10;
-		audevSetPlayVolume(poc_volum);
+		audevSetVoiceVolume(poc_volum);
  	}
 	lv_poc_setting_conf_write();
 
@@ -648,6 +639,13 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			{
 				continue;
 			}
+
+			#if 1
+			uint8_t voice_vol = audevGetVoiceVolume();
+			uint8_t play_vol = audevGetPlayVolume();
+
+			OSI_LOGI(0, "[idtvol]voice(%d),play(%d)", voice_vol, play_vol);
+			#endif
 
 			voice_type = event.param1;
 

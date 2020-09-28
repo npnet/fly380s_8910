@@ -15,6 +15,7 @@
 #include "poc_audio_player.h"
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc.h"
+#include "audio_device.h"
 
 #ifdef CONFIG_POC_AUDIO_PLAYER_SUPPORT
 
@@ -332,10 +333,29 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 	lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 
 	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
+
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
    	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
 
-	player->status = auPlayerStartReader(player->player, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
+	player->status = auPlayerStartReaderV2(player->player, AUDEV_PLAY_TYPE_POC, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
+
+	//poc mode
+	if(!audevStartPocMode(AUPOC_STATUS_HALF_DUPLEX) && !player->status)
+    {
+		OSI_LOGI(0, "[idtpoc]start poc mode failed");
+        auPlayerStop((auPlayer_t *)player->player);
+        return false;
+    }
+
+	if(!audevPocModeSwitch(LV_POC_MODE_PLAYER))
+	{
+		if(!audevPocModeSwitch(LV_POC_MODE_PLAYER))
+		{
+			OSI_LOGI(0, "[idtpoc]switch player failed");
+			return false;
+		}
+		OSI_LOGI(0, "[idtpoc]switch player success");
+	}
 
 	return player->status;
 }
@@ -383,6 +403,12 @@ bool pocAudioPlayerStop(POCAUDIOPLAYER_HANDLE player_id)
 {
 	if(player_id == 0)
 	{
+		return false;
+	}
+
+	if(!audevStopPocMode())
+	{
+		OSI_LOGI(0, "[idtpoc][player]stop poc mode failed");
 		return false;
 	}
 

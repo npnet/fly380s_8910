@@ -2925,7 +2925,6 @@ static void prvPocGuiIdtTaskHandlePlay(uint32_t id, uint32_t ctx)
 			    m_IdtUser.m_iTxCount = 0;
 				break;
 			}
-
 			pocAudioPlayerStart(pocIdtAttr.player);
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
 			break;

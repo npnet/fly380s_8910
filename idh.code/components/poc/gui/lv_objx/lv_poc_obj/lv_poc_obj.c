@@ -556,6 +556,7 @@ bool lv_poc_setting_init(void)
 	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
+	lv_poc_set_volum(POC_MMI_VOICE_VOICE, poc_setting_conf->voicevolume, false, false);
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_keypad_led_init();
 #endif
@@ -1384,7 +1385,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
         //return ret;
     }
 
-    uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+    uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_VOICE);
     if(is_keypad_msg)
     {
 		cur_key = *((uint32_t *)param);
@@ -1395,7 +1396,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
             if(vol_cur > 0)
             {
                 vol_cur = vol_cur - 1;
-                lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+                lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
             }
         }
         else if(cur_key == LV_GROUP_KEY_VOL_UP)
@@ -1403,12 +1404,12 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
             if(vol_cur < 11)
             {
                 vol_cur = vol_cur + 1;
-                lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+                lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
             }
         }
         else if(cur_key != LV_GROUP_KEY_POC)//按键音
         {
-		    poc_play_btn_voice_one_time(vol_cur,
+		    poc_play_btn_voice_one_time(0,
 #ifdef CONFIG_POC_TTS_SUPPORT
 			    poc_setting_conf->voice_broadcast_switch ||
 #endif
