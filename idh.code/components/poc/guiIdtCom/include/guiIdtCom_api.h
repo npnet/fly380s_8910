@@ -100,6 +100,8 @@ typedef enum
 
     LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND,
     LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP,
+	LVPOCGUIIDTCOM_SIGNAL_UNLOCK_BE_DELETED_LOCK_GROUP_IND,
+    LVPOCGUIIDTCOM_SIGNAL_UNLOCK_BE_DELETED_LOCK_GROUP_REP,
 
 	LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE,
 
@@ -118,6 +120,15 @@ typedef enum{/*登陆状态*/
 	LVPOCLEDIDTCOM_SIGNAL_LOGIN_END	,
 }LVPOCIDTCOM_LOGIN_STATUS_T;
 
+typedef enum{/*组状态*/
+
+	LVPOCGROUPIDTCOM_SIGNAL_SELF_START = 0,
+
+	LVPOCGROUPIDTCOM_SIGNAL_SELF_NO    = 1 ,
+	LVPOCGROUPIDTCOM_SIGNAL_SELF_EXIST = 2 ,
+
+	LVPOCGROUPIDTCOM_SIGNAL_SELF_END,
+}LVPOCIDTCOM_SELFGROUP_STATUS_T;
 
 typedef struct
 {
@@ -155,6 +166,8 @@ bool lvPocGuiIdtCom_get_listen_status(void);
 void *lvPocGuiIdtCom_get_current_lock_group(void);
 
 bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str);
+
+int lvPocGuiIdtCom_get_current_exist_selfgroup(void);
 
 OSI_EXTERN_C_END
 

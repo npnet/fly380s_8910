@@ -19,6 +19,8 @@
 
 #ifdef CONFIG_POC_AUDIO_PLAYER_SUPPORT
 
+#define PLAYER_POC_MODE 0
+
 static void prvPocAudioPlayerMemWriterDelete(auWriter_t *d)
 {
     auPocMemWriter_t *p = (auPocMemWriter_t *)d;
@@ -337,6 +339,7 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
    	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
 
+#if PLAYER_POC_MODE
 	player->status = auPlayerStartReaderV2(player->player, AUDEV_PLAY_TYPE_POC, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
 
 	//poc mode
@@ -356,6 +359,11 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 		}
 		OSI_LOGI(0, "[idtpoc]switch player success");
 	}
+#else
+
+	player->status = auPlayerStartReader(player->player, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
+
+#endif
 
 	return player->status;
 }
@@ -406,11 +414,15 @@ bool pocAudioPlayerStop(POCAUDIOPLAYER_HANDLE player_id)
 		return false;
 	}
 
+#if PLAYER_POC_MODE
+
 	if(!audevStopPocMode())
 	{
 		OSI_LOGI(0, "[idtpoc][player]stop poc mode failed");
 		return false;
 	}
+
+#endif
 
 	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
 	if(auPlayerStop((auPlayer_t *)player->player))

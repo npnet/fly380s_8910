@@ -18,7 +18,9 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 
 static bool lv_poc_build_group_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static void lv_poc_build_group_success_refresh(lv_task_t *tsak);
+static void lv_poc_build_group_success_refresh(lv_task_t *task);
+
+static void lv_poc_build_group_is_exist(lv_task_t *task);
 
 static lv_obj_t * activity_list;
 
@@ -271,8 +273,18 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_KEY_ESC:
 				{
-					lv_poc_refr_task_once(lv_poc_build_group_success_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
-					//lv_poc_del_activity(poc_build_group_activity);
+					if(lvPocGuiIdtCom_get_current_exist_selfgroup() == 2)
+					{
+						lv_task_t *task = lv_task_create(lv_poc_build_group_is_exist, 200, LV_TASK_PRIO_HIGH, NULL);
+						lv_task_once(task);
+
+						lv_poc_del_activity(poc_build_group_activity);
+					}
+					else
+					{
+						lv_poc_refr_task_once(lv_poc_build_group_success_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+					}
+
 					break;
 				}
 			}
@@ -763,31 +775,24 @@ lv_poc_status_t lv_poc_build_group_get_state(lv_poc_member_list_t *member_list_o
 	return lv_poc_member_list_get_state(member_list_obj, name, information);
 }
 
-/*
-	  name : lv_poc_build_group_success_refresh
-	 param : none
-	author : wangls
-  describe : 新建群组成功后刷新(lv-刷新)
-	  date : 2020-07-22
-*/
 static
-void lv_poc_build_group_success_refresh(lv_task_t *tsak)
+void lv_poc_build_group_success_refresh(lv_task_t *task)
 {
 	lv_poc_build_group_operator(lv_poc_build_group_info,
 							lv_poc_build_group_member_list->offline_number + lv_poc_build_group_member_list->online_number,
 							lv_poc_build_group_selected_num);
 }
 
-/*
-	  name : lv_poc_get_self_name_count
-	 param : none
-	author : wangls
-  describe : 获取自己的号码
-	  date : 2020-07-22
-*/
 char *lv_poc_get_self_name_count(void)
 {
 	return lv_poc_member_myself_name;
+}
+
+static
+void lv_poc_build_group_is_exist(lv_task_t *task)
+{
+	poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup, 50, false);
+	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"已有自建群组", (const uint8_t *)"");
 }
 
 #ifdef __cplusplus
