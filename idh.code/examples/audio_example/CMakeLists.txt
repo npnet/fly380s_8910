@@ -12,7 +12,7 @@
 if((CONFIG_APPIMG_LOAD_FLASH) AND (CONFIG_SOC_8910))
     set(target audio_example)
     add_appimg_flash_example(${target} audio_example.c)
-    target_include_targets(${target} PRIVATE kernel audio fs)
+    target_include_targets(${target} PRIVATE kernel audio fs poc)
 endif()
 
 relative_glob(srcs *.[ch])

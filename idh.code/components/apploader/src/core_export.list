@@ -67,6 +67,7 @@ osiTimerStartMicrosecond
 osiTimerStartPeriodic
 osiTimerStartPeriodicRelaxed
 osiTimerStop
+osiSendQuitEvent
 osiMessageQueueCreate
 osiMessageQueueDelete
 osiMessageQueuePut
@@ -124,6 +125,8 @@ osiPipeStop
 osiPipeIsStopped
 osiPipeSetEof
 osiPipeIsEof
+osiPipeReset
+osiPipeReadAll
 
 // memory
 malloc
@@ -319,6 +322,12 @@ auPlayerStartMemV2
 auPlayerStartPipeV2
 auPlayerStartReaderV2
 auPlayerGetType
+auPlayerGetReader
+auPipeReaderSetWait
+audevStartPocMode
+audevStopPocMode
+audevPocModeSwitch
+auInitSampleFormat
 
 auRecorderCreate
 auRecorderDelete
@@ -331,6 +340,7 @@ auRecorderStartWriter
 auRecorderStop
 auRecorderGetEncoder
 auRecorderGetWriter
+audevSetRecordSampleRate
 
 auFileReaderCreate
 auMemReaderCreate

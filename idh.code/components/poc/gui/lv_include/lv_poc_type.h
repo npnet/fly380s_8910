@@ -133,6 +133,8 @@ typedef struct
 	uint8_t volume;                   //[0-10]    [default 5]
 	uint8_t voicevolume;              //[0-10]    [default 4]
 	uint8_t language;                 //[0]简体中文       [default 0]
+	uint8_t is_exist_selfgroup;       //[1]无自建群组 [2]存在自建群组
+	char selfbuild_group_num[24];     //[NULL]无自建群组号码
 	nv_poc_font_size_msg_t font;
 	nv_poc_theme_msg_t theme;
 #ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
@@ -444,6 +446,8 @@ typedef enum _lv_poc_group_oprator_type
 	LV_POC_GROUP_OPRATOR_TYPE_LOCK_OK,
 	LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_FAILED,
 	LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_OK,
+	LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_BE_DELETED_GROUP,
+	LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_BE_DELETED_GROUP_OK,
 } lv_poc_group_oprator_type;
 
 typedef enum _lv_poc_record_mic_mode/*mic gain mode*/

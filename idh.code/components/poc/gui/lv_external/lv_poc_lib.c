@@ -607,7 +607,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				continue;
 			}
 
-			#if 1
+			#if 0
 			uint8_t voice_vol = audevGetVoiceVolume();
 			uint8_t play_vol = audevGetPlayVolume();
 
@@ -1237,6 +1237,8 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
 	poc_setting->volume = 5;
 	poc_setting->language = 0;
+	poc_setting->is_exist_selfgroup = 1;
+	strcpy(poc_setting->selfbuild_group_num, "");
 #ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
 	strcpy(poc_setting->account_name, "00000");
 	strcpy(poc_setting->account_passwd, "00000");

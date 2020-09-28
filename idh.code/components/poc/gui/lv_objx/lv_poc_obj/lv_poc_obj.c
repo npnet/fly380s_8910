@@ -305,6 +305,8 @@ const lv_img_dsc_t *battery_img_dispaly[9] = { &stat_sys_battery_charge_anim0
 												,&stat_sys_battery_charge_anim85
 												,&stat_sys_battery_charge_anim100};
 
+#define IDT_POC_MODE 0//录音及播放使用POC模式
+
 static __attribute__((const)) lv_poc_activity_attribute_cb_set_obj * lv_poc_get_activity_attribute_cb_set_obj(void)
 {
 	return &prv_lv_poc_activity_attribute_cb_set;
@@ -1403,6 +1405,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
         //return ret;
     }
 
+#if IDT_POC_MODE
     uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_VOICE);
     if(is_keypad_msg)
     {
@@ -1433,6 +1436,41 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 #endif
 			    !(poc_setting_conf->btn_voice_switch));
         }
+#else
+
+		uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+		if(is_keypad_msg)
+		{
+			cur_key = *((uint32_t *)param);
+
+			OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] cur_key <- %d \n", cur_key);
+			if(cur_key == LV_GROUP_KEY_VOL_DOWN)
+			{
+				if(vol_cur > 0)
+				{
+					vol_cur = vol_cur - 1;
+					lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+				}
+			}
+			else if(cur_key == LV_GROUP_KEY_VOL_UP)
+			{
+				if(vol_cur < 11)
+				{
+					vol_cur = vol_cur + 1;
+					lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+				}
+			}
+			else if(cur_key != LV_GROUP_KEY_POC)//按键音
+			{
+				poc_play_btn_voice_one_time(0,
+#ifdef CONFIG_POC_TTS_SUPPORT
+					poc_setting_conf->voice_broadcast_switch ||
+#endif
+					!(poc_setting_conf->btn_voice_switch));
+			}
+
+#endif
+
     }
 
     if(NULL != activity->signal_func)
