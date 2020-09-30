@@ -331,9 +331,6 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 		return false;
 	}
 
-	/*对讲前还原音量*/
-	lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
-
 	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
 
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
@@ -361,6 +358,7 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 	}
 #else
 
+	lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 	player->status = auPlayerStartReader(player->player, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
 
 #endif

@@ -979,19 +979,11 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 	{
 	    m_IdtUser.m_iRxCount = m_IdtUser.m_iRxCount + 1;
 
-		#if 0
+		#if 1
 		if(m_IdtUser.m_iRxCount == 1)
 		{
 			audevSetPlayVolume(0);/*关闭音量*/
-			#if 0
-			pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)audio_voice_buff, 44);
-			#endif
 		}
-		/*临时方案*/
-        if(m_IdtUser.m_iRxCount == 5)/*音量设置需要时间 --- 需调节*/
-        {/*还原音量---去掉啪音*/
-            lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
-        }
 		#endif
 
 		pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pucBuf, iLen);
@@ -1107,7 +1099,7 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 		    pocIdtAttr.delay_close_listen_timer_running = false;
 	    }
 		osiTimerStop(pocIdtAttr.check_listen_timer);
-		pocIdtAttr.check_listen_count = 40;
+		pocIdtAttr.check_listen_count = 60;//容许3帧的网络延时
 		osiTimerStartPeriodic(pocIdtAttr.check_listen_timer, 20);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Listen, 30, true);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_START_REP, NULL);
