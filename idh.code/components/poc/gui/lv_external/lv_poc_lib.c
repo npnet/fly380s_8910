@@ -1695,6 +1695,16 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 	OSI_LOGI(0, "[song]ear time cb\n");
 	if(drvGpioRead(poc_ear_ppt_gpio) == false)/*press*/
 	{
+		static int checkcbpress = 0;
+
+		checkcbpress++;
+		if(checkcbpress < 2)
+		{
+			osiTimerStart(ear_key_attr.ear_press_timer, 50);
+			return;
+		}
+
+		checkcbpress = 0;
 		ear_key_attr.ear_key_press = true;
 		poc_earkey_state = true;
 		OSI_LOGI(0, "[song]key is press,start speak\n");
@@ -1702,7 +1712,16 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 	}
 	else
 	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机未插好", (const uint8_t *)"请重新插入");
+		static int checkcbnum = 0;
+
+	    checkcbnum++;
+	    if(osiTimerStop(ear_key_attr.ear_press_timer))
+	    {
+		   if(checkcbnum < 2)
+			  osiTimerStart(ear_key_attr.ear_press_timer, 50);
+		   else
+			  checkcbnum = 0;
+	    }
 	}
 }
 
@@ -1732,10 +1751,6 @@ void lv_poc_ear_ppt_key_init(void)
 		Ap_OSI_ASSERT((poc_ear_ppt_gpio != NULL), "[song]ear config io NULL"); /*assert verified*/
 		OSI_LOGI(0, "[song]ear gpio open failed\n");
 	}
-	else
-	{
-		OSI_LOGI(0, "[song]ear gpio open success\n");
-	}
 
 	/*ear time*/
 	memset(&ear_key_attr, 0, sizeof(PocEarKeyComAttr_t));
@@ -1752,25 +1767,24 @@ void lv_poc_ear_ppt_key_init(void)
 static
 void poc_ear_ppt_irq(void *ctx)
 {
-
-	if(drvGpioRead(poc_ear_ppt_gpio))/*release*/
+	if(ear_key_attr.ear_key_press == false)
 	{
-		if(ear_key_attr.ear_key_press == true)
+		if(!osiTimerStop(ear_key_attr.ear_press_timer))
 		{
-			ear_key_attr.ear_key_press = false;
-			poc_earkey_state = false;
-			OSI_LOGI(0, "[song]key is release,stop speak\n");
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
-		}
-		else
-		{
-			OSI_LOGI(0, "[song]ear time stop\n");
 			osiTimerStop(ear_key_attr.ear_press_timer);
 		}
 	}
+
+	if(drvGpioRead(poc_ear_ppt_gpio) && ear_key_attr.ear_key_press == true)/*release*/
+	{
+		ear_key_attr.ear_key_press = false;
+		poc_earkey_state = false;
+		OSI_LOGI(0, "[song]key is release,stop speak\n");
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+	}
 	else/*press*/
 	{
-		osiTimerStart(ear_key_attr.ear_press_timer, 50);
+		osiTimerStart(ear_key_attr.ear_press_timer, 80);
 		OSI_LOGI(0, "[song]ear time start\n");
 	}
 }
