@@ -764,6 +764,7 @@ typedef struct _OemCGroup
 {
     uint8_t   m_ucGID[64];       //组ID
     uint8_t   m_ucGName[64];     //组名字
+    uint8_t   m_ucGTemporary[64];//临时组标志
     uint8_t   m_ucGMonitor[64];  //组是否被监听
     uint8_t   m_ucGMemberNum;    //组中成员个数
     uint8_t   m_ucGIndex;        //组索引--第几个组
