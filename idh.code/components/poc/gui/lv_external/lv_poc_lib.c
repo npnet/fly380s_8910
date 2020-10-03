@@ -1347,13 +1347,13 @@ poc_get_device_iccid_rep(int8_t * iccid)
 char *
 poc_get_device_account_rep(POC_SIM_ID nSim)
 {
-	char * name = NULL;
-	name = lv_poc_get_member_name(lv_poc_get_self_info());
-	if(name == NULL)
+	PocGuiOemUserAttr_t * selfinfo;
+	selfinfo = (PocGuiOemUserAttr_t *)lv_poc_get_self_info();
+	if(selfinfo->OemUserName == NULL)
 	{
 		return "";
 	}
-	return name;
+	return selfinfo->OemUserName;
 }
 
 /*
@@ -2189,8 +2189,8 @@ lv_poc_get_member_name(lv_poc_member_info_t members)
 		return NULL;
 	}
 
-	PocGuiOemUserAttr_t * member_info = (PocGuiOemUserAttr_t *)members;
-	return (char *)member_info->OemUserName;
+	OemCGroupMember * member_info = (OemCGroupMember *)members;
+	return (char *)member_info->m_ucUName;
 }
 
 /*
