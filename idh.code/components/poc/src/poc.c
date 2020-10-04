@@ -156,7 +156,7 @@ void pocStart(void *ctx)
 {
     OSI_LOGI(0, "[song]lvgl poc start");
 
-    //poc_Status_Led_Task();
+    poc_Status_Led_Task();
     lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 	poc_config_Lcd_power_vol();
 	drvLcdInitV2();

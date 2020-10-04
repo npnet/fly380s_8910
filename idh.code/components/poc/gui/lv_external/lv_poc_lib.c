@@ -735,7 +735,7 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 		if(prv_play_btn_voice_one_time_thread != NULL || is_poc_play_voice == true)
 		{
 			return;
-		}prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_LOW, 1024*3, 64);
+		}prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024*3, 64);
 	}
 }
 
@@ -1623,13 +1623,12 @@ poc_set_port_status(uint32_t port, drvGpioConfig_t *config,bool open)
 bool
 poc_set_red_status(bool ledstatus)
 {
-#if 1
     if(configport==NULL)
     {
 		configport=poc_port_init();
     }
 	poc_set_port_status(poc_red_led,configport,ledstatus);
-#endif
+
 	return ledstatus;
 }
 
@@ -1641,27 +1640,18 @@ poc_set_red_status(bool ledstatus)
 bool
 poc_set_green_status(bool ledstatus)
 {
-#if 0
-	//reg
-	hwp_gpio1->gpio_oen_val &= (0<<poc_green_led);//set gpio direction
-	hwp_gpio1->gpio_oen_set_out |= (1<<poc_green_led);//set gpio output
-    if(ledstatus)
-	hwp_gpio1->gpio_set_reg = (1<<poc_green_led);//open status
-	else
-	hwp_gpio1->gpio_clr_reg = (1<<poc_green_led);//close status
-#endif
+	if(poc_green_gpio == NULL)
+	{
+		/*配置green IO*/
+	    drvGpioConfig_t cfg = {
+	        .mode = DRV_GPIO_OUTPUT,
+			.debounce = true,
+	        .out_level = false,
+	    };
 
-#if 1
-	/*配置green IO*/
-    drvGpioConfig_t cfg = {
-        .mode = DRV_GPIO_OUTPUT,
-		.debounce = true,
-        .out_level = false,
-    };
-
-	poc_green_gpio = drvGpioOpen(poc_green_led, &cfg, NULL, NULL);
+		poc_green_gpio = drvGpioOpen(poc_green_led, &cfg, NULL, NULL);
+	}
 	drvGpioWrite(poc_green_gpio, ledstatus);
-#endif
 
 	return ledstatus;
 }

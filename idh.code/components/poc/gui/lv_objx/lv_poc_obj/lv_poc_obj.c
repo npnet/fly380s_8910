@@ -503,6 +503,7 @@ bool lv_poc_setting_init(void)
 #endif
 	poc_ext_pa_init();
 	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
+	lv_poc_ear_ppt_key_init();
 
     return true;
 }

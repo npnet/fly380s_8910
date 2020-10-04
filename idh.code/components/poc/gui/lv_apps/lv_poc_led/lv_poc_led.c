@@ -56,14 +56,12 @@ void poc_Status_Led_Task(void)
 
 	pocLedIdtAttr.jumpperiod = 1000;//默认周期1s
 
-	lv_poc_ear_ppt_key_init();
-
 	lv_poc_led_status_callback(NULL);//注销回调
 
 	/*LED MSG TASK*/
-	pocLedIdtAttr.thread = osiThreadCreate("status led", poc_Led_Entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
+	pocLedIdtAttr.thread = osiThreadCreate("status led", poc_Led_Entry, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 	/*JUMP TASK*/
-	pocLedIdtAttr.jumpThread = osiThreadCreate("jump led task", poc_Led_Jump_Entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
+	pocLedIdtAttr.jumpThread = osiThreadCreate("jump led task", poc_Led_Jump_Entry, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 }
 
 /*
@@ -77,9 +75,6 @@ static void poc_Led_Entry(void *param)
 	bool isValid = true;
 	lv_poc_led_status_all_close();
 	pocLedIdtAttr.isReady = true;
-	#if 0
-	int count = 0;
-	#endif
 	while(1)
 	{
 		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 300))
