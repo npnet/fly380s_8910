@@ -300,7 +300,6 @@ static void lv_poc_led_entry(void *param)
                     break;
                 }
 #endif
-
                 case LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND:
                 case LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND:
                 case LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND:

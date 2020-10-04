@@ -536,6 +536,7 @@ bool lv_poc_setting_init(void)
 	lv_poc_virt_at_init();
 	lv_poc_set_loopback_recordplay(false);
 	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
+	lv_poc_ear_ppt_key_init();
 
     return true;
 }

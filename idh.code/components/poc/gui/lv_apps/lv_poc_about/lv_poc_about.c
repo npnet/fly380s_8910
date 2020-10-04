@@ -143,7 +143,6 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	poc_get_device_imei_rep((int8_t *)lv_poc_about_text_imei);
 	lv_poc_about_text_iccid[0] = 0;
 	poc_get_device_iccid_rep((int8_t *)lv_poc_about_text_iccid);
-
     strcpy(lv_poc_about_text_sysversion, "A500L");
     strcpy(lv_poc_about_text_version_number, "V20.35.2-D12.24");
     strcpy(lv_poc_about_text_update, "检查更新");

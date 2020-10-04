@@ -860,7 +860,7 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 		if(prv_play_btn_voice_one_time_thread != NULL || is_poc_play_voice == true)
 		{
 			return;
-		}prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_LOW, 1024*3, 64);
+		}prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024*3, 64);
 	}
 }
 
