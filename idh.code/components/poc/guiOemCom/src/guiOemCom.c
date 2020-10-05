@@ -473,7 +473,7 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_GROUP_LIST_QUERY_REP, apopt);
 						break;
 					}
-					//all group info(所有群组信息)--0D应答
+					//all group info(所有群组信息)--80应答
 					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUPLISTINFO_ACK))
 					{
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_GROUPLIST_DATA_REP, apopt);
@@ -485,7 +485,7 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_MEMBERLIST_INFO_REP, apopt);
 						break;
 					}
-					//index 1 group's member info(成员信息)--0E/13应答
+					//index 1 group's member info(成员信息)--81应答
 					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_MEMBERLISTINFO_ACK))
 					{
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_MEMBERLIST_DATA_REP, apopt);
@@ -1689,22 +1689,19 @@ void pocGuiOemApTaskEntry(void *argument)
 
 	PocGuiOemApSendAttr_t *apopt = NULL;
 	PocGuiOemApSendAttr_t oemopt = {0};
-	bool OemStatus = false;
 
     while(1)
     {
-    	if(!osiMessageQueueTryGet(pocOemAttr.xQueue, (void *)&apopt, 200))
+    	if(!osiMessageQueueTryGet(pocOemAttr.xQueue, (void *)&apopt, 20))//此处delay关系AP ack speed
 		{
-			OemStatus = OemDeQueue(&OemQueue, &oemopt);
-			if(OemStatus)
+			if(!OemDeQueue(&OemQueue, &oemopt))
 			{
-				if(NULL != oemopt.oembuf)
-				{
-					#if 0
-					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]linkqueue %s", oemopt.oembuf);
-					#endif
-					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_AP_POC_REP, (void *)&oemopt);
-				}
+				continue;
+			}
+
+			if(NULL != oemopt.oembuf)
+			{
+				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_AP_POC_REP, (void *)&oemopt);
 			}
 			continue;
     	}
@@ -1790,7 +1787,9 @@ void prv_lv_poc_oem_get_group_list_info(void *information)
 	};
 	PocGuiOemAtBufferAttr_t grouplistbuf;
 	OemCGroup prv_group_info = {0};
-
+	memset(&grouplistbuf, 0, sizeof(PocGuiOemAtBufferAttr_t));
+	memset(&prv_group_info, 0, sizeof(OemCGroup));
+	
 	grouplistbuf = prv_lv_poc_oem_get_global_atcmd_info(information, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
 
 	strcpy((char *)prv_group_info.m_ucGMonitor, grouplistbuf.buf[1].oembuf);
@@ -1859,8 +1858,10 @@ void prv_lv_poc_oem_get_group_member_info(void *information)
 		{17,8},//用户id
 		{25,0},//用户名字(unicode码) *尾部填0为取到'\0'
 	};
-	PocGuiOemAtBufferAttr_t groupxmemberlistbuf;
+	PocGuiOemAtBufferAttr_t groupxmemberlistbuf = {0};
 	OemCGroupMember prv_user_info = {0};
+	memset(&groupxmemberlistbuf, 0, sizeof(PocGuiOemAtBufferAttr_t));
+	memset(&prv_user_info, 0, sizeof(OemCGroupMember));
 
 	groupxmemberlistbuf = prv_lv_poc_oem_get_global_atcmd_info(information, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
 
@@ -1914,7 +1915,7 @@ void prv_lv_poc_oem_get_group_member_info(void *information)
 	strcpy(p_element->name, (char *)prv_user_info.m_ucUName);
 	memcpy((void *)p_element->information, (void *)&prv_user_info, sizeof(OemCGroupMember));
 
-	if(0 == strcmp(groupxmemberlistbuf.buf[1].oembuf, "03"))
+	if(0 == strcmp(groupxmemberlistbuf.buf[1].oembuf, OEM_GROUP_MEMBER_ONLINE_IN))
 	{
 		//online
 		if(prv_member_list->online_list != NULL){

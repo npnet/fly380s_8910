@@ -139,7 +139,7 @@ static void lv_poc_setting_big_font_btn_cb(lv_obj_t * obj)
 
 	lv_poc_setting_conf_write();
 	lv_poc_refresh_ui_next();
-	lv_task_t * task = lv_task_create(poc_setting_update_UI_task, 10, LV_TASK_PRIO_LOWEST, NULL);
+	lv_task_t * task = lv_task_create(poc_setting_update_UI_task, 10, LV_TASK_PRIO_MID, NULL);
 	lv_task_once(task);
 }
 
@@ -620,7 +620,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			if(lv_poc_get_refresh_ui())
 			{
-				//lv_task_t * task = lv_task_create(poc_setting_update_UI_task, 10, LV_TASK_PRIO_LOWEST, NULL);
+				//lv_task_t * task = lv_task_create(poc_setting_update_UI_task, 10, LV_TASK_PRIO_MID, NULL);
 				//lv_task_once(task);
 				poc_setting_update_UI_task(NULL);
 				lv_poc_refresh_ui_next();

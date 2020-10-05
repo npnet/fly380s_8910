@@ -850,9 +850,8 @@ static bool lv_poc_status_bar_init(void)
 
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
-    lv_task_create(lv_poc_stabar_task,1000,LV_TASK_PRIO_LOWEST,NULL);
-    //lv_poc_status_bar_task_ext_add(lv_poc_stabar_battery_task);
-    lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
+    lv_task_create(lv_poc_stabar_task,1000,LV_TASK_PRIO_MID,NULL);
+    lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_MID);
     lv_poc_status_bar_task_ext_add(lv_poc_stabar_signal_task);
     return ret_val;
 

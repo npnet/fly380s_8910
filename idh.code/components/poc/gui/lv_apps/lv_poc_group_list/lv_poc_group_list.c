@@ -197,7 +197,7 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 			OSI_LOGI(0, "[song]set current group");
 		}
 		//delay display notation
-		lv_poc_refr_task_once(lv_poc_group_list_notation, LVPOCLISTIDTCOM_LIST_PERIOD_300, LV_TASK_PRIO_LOW);
+		lv_poc_refr_task_once(lv_poc_group_list_notation, LVPOCLISTIDTCOM_LIST_PERIOD_300, LV_TASK_PRIO_MID);
 	}
 	else if(result_type == 2)//已在群组
 	{

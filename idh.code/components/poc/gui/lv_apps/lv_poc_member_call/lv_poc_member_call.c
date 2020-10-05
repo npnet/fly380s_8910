@@ -226,11 +226,11 @@ static void lv_poc_member_call_delay_exit_task_create(const int delay_time_ms)
 
 	if(delay_time_ms <= 0)
 	{
-		lv_poc_member_call_exit_task = lv_task_create(lv_poc_member_call_delay_exit_task_cb, 1500, LV_TASK_PRIO_LOWEST, NULL);
+		lv_poc_member_call_exit_task = lv_task_create(lv_poc_member_call_delay_exit_task_cb, 1500, LV_TASK_PRIO_MID, NULL);
 	}
 	else
 	{
-		lv_poc_member_call_exit_task = lv_task_create(lv_poc_member_call_delay_exit_task_cb, delay_time_ms, LV_TASK_PRIO_LOWEST, NULL);
+		lv_poc_member_call_exit_task = lv_task_create(lv_poc_member_call_delay_exit_task_cb, delay_time_ms, LV_TASK_PRIO_MID, NULL);
 	}
 	lv_task_once(lv_poc_member_call_exit_task);
 }
@@ -248,7 +248,7 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 		else if(current_status == 0)
 		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Member_Call, 50, false);
-			lv_task_t *task = lv_task_create(lv_poc_member_call_delay_notation, 300, LV_TASK_PRIO_LOWEST, (void *)NULL);
+			lv_task_t *task = lv_task_create(lv_poc_member_call_delay_notation, 300, LV_TASK_PRIO_MID, (void *)NULL);
 			lv_task_once(task);
 		}
 		else

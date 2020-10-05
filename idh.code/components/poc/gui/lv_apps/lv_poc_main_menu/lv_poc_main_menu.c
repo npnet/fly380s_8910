@@ -209,7 +209,7 @@ static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t s
 		{
 			if(lv_poc_get_refresh_ui())
 			{
-				//lv_task_t * task = lv_task_create(poc_main_menu_update_UI_task, 10, LV_TASK_PRIO_LOWEST, NULL);
+				//lv_task_t * task = lv_task_create(poc_main_menu_update_UI_task, 10, LV_TASK_PRIO_MID, NULL);
 				//lv_task_once(task);
 				poc_main_menu_update_UI_task(NULL);
 			}

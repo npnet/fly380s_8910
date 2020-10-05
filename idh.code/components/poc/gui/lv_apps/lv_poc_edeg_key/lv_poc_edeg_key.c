@@ -295,7 +295,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 				}
 				lv_task_t * task = lv_task_create(lv_poc_edeg_key_setting_update_UI_task,
 													100,
-													LV_TASK_PRIO_LOWEST,
+													LV_TASK_PRIO_MID,
 													NULL);
 				lv_task_once(task);
 			}
