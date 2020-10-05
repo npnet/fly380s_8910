@@ -202,7 +202,7 @@ static void lv_poc_display_press_btn_action(lv_obj_t * obj, lv_event_t event)
 
     			lv_poc_setting_conf_write();
     			lv_poc_refresh_ui_next();
-    			lv_task_t * task = lv_task_create(poc_display_update_UI_task, 100, LV_TASK_PRIO_LOWEST, NULL);
+    			lv_task_t * task = lv_task_create(poc_display_update_UI_task, 100, LV_TASK_PRIO_MID, NULL);
     			lv_task_once(task);
 
     			break;
@@ -355,7 +355,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			if(lv_poc_get_refresh_ui())
 			{
-				lv_task_t * task = lv_task_create(poc_display_update_UI_task, 100, LV_TASK_PRIO_LOWEST, NULL);
+				lv_task_t * task = lv_task_create(poc_display_update_UI_task, 100, LV_TASK_PRIO_MID, NULL);
 				lv_task_once(task);
 			}
 			break;

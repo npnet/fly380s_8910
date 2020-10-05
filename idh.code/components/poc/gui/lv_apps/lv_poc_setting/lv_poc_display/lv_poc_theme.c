@@ -138,7 +138,7 @@ static void lv_poc_theme_press_btn_action(lv_obj_t * obj, lv_event_t event)
 			}
 			lv_poc_rb_press(theme_switch_rb, obj);
 			lv_poc_setting_conf_write();
-			lv_task_t * task = lv_task_create(poc_theme_update_UI_task, 10, LV_TASK_PRIO_LOWEST, NULL);
+			lv_task_t * task = lv_task_create(poc_theme_update_UI_task, 10, LV_TASK_PRIO_MID, NULL);
 			lv_task_once(task);
 			lv_poc_refresh_ui_next();
 		}
