@@ -1558,7 +1558,7 @@ static void LvGuiIdtCom_auto_login_timer_cb(void *ctx)
 static void LvGuiIdtCom_ppt_release_timer_cb(void *ctx)
 {
 	static int makecallcnt = 0;
-	bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
+	bool pttStatus = lv_poc_get_ppt_state();//|lv_poc_get_earppt_state();
 	if(true == pttStatus && pocIdtAttr.is_makeout_call == true)
 	{
 		osiTimerStart(pocIdtAttr.monitor_pptkey_timer, 50);
@@ -2067,7 +2067,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP:
 		{
-			bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
+			bool pttStatus = lv_poc_get_ppt_state();//|lv_poc_get_earppt_state();
 			if(ctx == USER_OPRATOR_SPEAKING
 				&& pocIdtAttr.is_makeout_call == true
 				&& pttStatus == false)
@@ -2154,7 +2154,7 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				break;
 			}
 			unsigned int mic_ctl = (unsigned int)ctx;
-			bool pttStatus = lv_poc_get_earppt_state()|lv_poc_get_ppt_state();//pocGetPttKeyState()|
+			bool pttStatus = lv_poc_get_ppt_state();//|lv_poc_get_earppt_state();
 
 			if(mic_ctl > 1 && pocIdtAttr.mic_ctl <= 1 && m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)  //获得话权
 			{

@@ -1389,7 +1389,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 
 #if IDT_POC_MODE
     uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_VOICE);
-    if(is_keypad_msg)
+	if(is_keypad_msg)
     {
 		cur_key = *((uint32_t *)param);
 
@@ -1418,42 +1418,40 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 #endif
 			    !(poc_setting_conf->btn_voice_switch));
         }
-#else
-
-		uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
-		if(is_keypad_msg)
-		{
-			cur_key = *((uint32_t *)param);
-
-			OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] cur_key <- %d \n", cur_key);
-			if(cur_key == LV_GROUP_KEY_VOL_DOWN)
-			{
-				if(vol_cur > 0)
-				{
-					vol_cur = vol_cur - 1;
-					lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
-				}
-			}
-			else if(cur_key == LV_GROUP_KEY_VOL_UP)
-			{
-				if(vol_cur < 11)
-				{
-					vol_cur = vol_cur + 1;
-					lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
-				}
-			}
-			else if(cur_key != LV_GROUP_KEY_POC)//按键音
-			{
-				poc_play_btn_voice_one_time(0,
-#ifdef CONFIG_POC_TTS_SUPPORT
-					poc_setting_conf->voice_broadcast_switch ||
-#endif
-					!(poc_setting_conf->btn_voice_switch));
-			}
-
-#endif
-
     }
+#else
+	uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+	if(is_keypad_msg)
+	{
+		cur_key = *((uint32_t *)param);
+
+		OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] cur_key <- %d \n", cur_key);
+		if(cur_key == LV_GROUP_KEY_VOL_DOWN)
+		{
+			if(vol_cur > 0)
+			{
+				vol_cur = vol_cur - 1;
+				lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+			}
+		}
+		else if(cur_key == LV_GROUP_KEY_VOL_UP)
+		{
+			if(vol_cur < 11)
+			{
+				vol_cur = vol_cur + 1;
+				lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+			}
+		}
+		else if(cur_key != LV_GROUP_KEY_POC)//按键音
+		{
+			poc_play_btn_voice_one_time(0,
+#ifdef CONFIG_POC_TTS_SUPPORT
+				poc_setting_conf->voice_broadcast_switch ||
+#endif
+				!(poc_setting_conf->btn_voice_switch));
+		}
+	}
+#endif
 
     if(NULL != activity->signal_func)
     {
