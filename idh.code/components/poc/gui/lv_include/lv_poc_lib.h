@@ -25,19 +25,19 @@ enum {
 	poc_red_led     = 10,//IO redled
 	poc_green_led   = 13,//IO greenled
 	poc_horn_sound  = 9,//IO horn
-	poc_head_set  = 8,//IO headset
-    poc_group_page_up  = 20,//group up page
-    poc_ppt       = 21,//IO ppt
-    poc_group_page_down  = 18,//group down page
-    poc_sos  = 19,//IO sos
+	poc_head_set    = 8,//IO headset
+    poc_volum_down  = 20,//volum down
+    poc_ppt         = 21,//IO ppt
+    poc_volum_up    = 19,//volum up
 };
 
 enum {
 	LV_POC_LED_START = 0,
 
-	LV_POC_LED_RED = 1,
-	LV_POC_LED_GREEN = 2,
-	LV_POC_LED_TOUCH = 3,
+	POC_LED_TYPE_RED_T = 1,
+	POC_LED_TYPE_GREEN_T = 2,
+	POC_LED_TYPE_TOUCH_T = 3,
+	POC_LED_TYPE_LCD_T = 4,
 
 	LV_POC_LED_END,
 };
@@ -906,6 +906,26 @@ void lv_poc_set_group_refr(bool status);
 	  date : 2020-09-22
 */
 bool lv_poc_is_group_list_refr(void);
+
+/*
+	  name : poc_set_red_blacklight
+	 param : none
+	author : wangls
+  describe : 开关RED
+	  date : 2020-08-08
+*/
+void
+poc_set_red_blacklight(bool status);
+
+/*
+	  name : poc_set_green_blacklight
+	 param : none
+	author : wangls
+  describe : 开关GREEN
+	  date : 2020-08-08
+*/
+void
+poc_set_green_blacklight(bool status);
 
 #ifdef __cplusplus
 }

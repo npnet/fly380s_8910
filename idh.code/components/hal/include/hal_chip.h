@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -152,6 +152,8 @@ enum
     HAL_POWER_ANALOG = OSI_MAKE_TAG('A', 'N', 'A', 'L'),
     HAL_POWER_CAMFLASH = OSI_MAKE_TAG('C', 'A', 'M', 'F'),
     HAL_POWER_VBAT_RF = OSI_MAKE_TAG('V', 'B', 'R', 'F'),
+    HAL_POWER_REDLED,
+    HAL_POWER_GREENLED,
 };
 
 typedef enum

@@ -591,8 +591,10 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
                         flash_pon, enabled ? 1 : 0);
         break;
     case HAL_POWER_KEYLED:
+		#if 0
         REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
                         b_sel, 1, b_sw, 1);
+		#endif
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->kpled_ctrl0, kpled_ctrl0,
                         kpled_v, 0xb);
 
@@ -610,25 +612,24 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
         break;
 
     case HAL_POWER_BACK_LIGHT:
-        REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, 1);
-
-        REG_ADI_CHANGE4(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
-                        g_sel, enabled ? 1 : 0, g_sw, enabled ? 1 : 0,
-                        r_sel, enabled ? 1 : 0, r_sw, enabled ? 1 : 0);
-
-        REG_ADI_CHANGE4(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
-                        wled_sel, enabled ? 1 : 0, wled_sw, enabled ? 1 : 0,
-                        b_sel, enabled ? 1 : 0, b_sw, enabled ? 1 : 0);
-
-        REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_pd_ctrl, bltc_pd_ctrl,
-                        hw_pd, 0,
-                        sw_pd, enabled ? 0 : 1);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x0);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x0);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x20);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v3, rg_rgb_v3, rg_rgb_v3, 0x20);
-        REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, enabled ? 1 : 0);
-        break;
+        if(enabled == true)
+        {
+            REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, 1);
+            REG_ADI_CHANGE4(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                            r_sel, 1, r_sw, 1, g_sel, 1, g_sw, 1);
+            REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_pd_ctrl, bltc_pd_ctrl,
+                            hw_pd, 0,
+                            sw_pd, enabled ? 0 : 1);
+            REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
+            REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
+            REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, enabled ? 1 : 0);
+        }
+        else
+        {
+            REG_ADI_CHANGE4(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                            r_sel, 0, r_sw, 0, g_sel, 0, g_sw, 0);
+        }
+		break;
 
     case HAL_POWER_BUCK_PA:
         REG_ADI_CHANGE1(hwp_rda2720mGlobal->dcdc_wpa_reg2, dcdc_wpa_reg2,
@@ -651,6 +652,26 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
 
     case HAL_POWER_VBAT_RF:
         prvPowerOnVbatRf(enabled);
+        break;
+
+	case HAL_POWER_REDLED:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, 1);
+        REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                        wled_sel, 0, wled_sw, 0);/*close*/
+        REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_pd_ctrl, bltc_pd_ctrl,
+                        hw_pd, 0,
+                        sw_pd, enabled ? 0 : 1);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v3, rg_rgb_v3, rg_rgb_v3, 0x01);
+        break;
+
+    case HAL_POWER_GREENLED:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->module_en0, module_en0, bltc_en, 1);
+        REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                        b_sel, 0, b_sw, 0);/*close*/
+        REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_pd_ctrl, bltc_pd_ctrl,
+                        hw_pd, 0,
+                        sw_pd, enabled ? 0 : 1);
+        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x01);
         break;
 
     default:

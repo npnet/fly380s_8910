@@ -86,7 +86,7 @@ config POC_AUDIO_SPEAKER_WOMEN
 
 config POC_GUI_KEYPAD_LIGHT_SUPPORT
     bool "POC gui keypad light supported"
-    default n
+    default y
     help
         poc gui should be supported.
 

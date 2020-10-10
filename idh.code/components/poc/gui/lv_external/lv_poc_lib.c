@@ -41,10 +41,9 @@ static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_green_gpio = NULL;
-static drvGpio_t * poc_group_page_up_gpio = NULL;
-static drvGpio_t * poc_group_page_down_gpio = NULL;
-static drvGpio_t * poc_sos_gpio = NULL;
 static drvGpio_t * poc_ppt_gpio = NULL;
+static drvGpio_t * poc_volum_up_gpio = NULL;
+static drvGpio_t * poc_volum_down_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
@@ -59,7 +58,7 @@ static void poc_ear_ppt_irq(void *ctx);
 
 static uint16_t poc_cur_unopt_status;
 static void poc_Lcd_Set_BackLightNess(uint32_t level);
-static void poc_SetPowerLevel(uint32_t mv);
+static void poc_SetPowerLevel(uint32_t id, uint32_t mv);
 
 /*
       name : lv_poc_get_keypad_dev
@@ -396,7 +395,7 @@ void poc_Lcd_Set_BackLightNess(uint32_t level)
 		backlightness = POC_LCD_BACKLIGHT_LEVEL_0;
 	}
 
-	poc_SetPowerLevel(backlightness);
+	poc_SetPowerLevel(POC_LED_TYPE_LCD_T, backlightness);
 }
 
 /*
@@ -418,62 +417,116 @@ void poc_config_Lcd_power_vol(void)
       date : 2020-08-27
 */
 static
-void poc_SetPowerLevel(uint32_t mv)
+void poc_SetPowerLevel(uint32_t id, uint32_t mv)
 {
+	REG_RDA2720M_BLTC_BLTC_CTRL_T bltc_ctrl;
 	REG_RDA2720M_BLTC_RG_RGB_V0_T rg_rgb_v0;
     REG_RDA2720M_BLTC_RG_RGB_V1_T rg_rgb_v1;
+	REG_RDA2720M_BLTC_RG_RGB_V3_T rg_rgb_v3;/*red*/
+    REG_RDA2720M_BLTC_RG_RGB_V2_T rg_rgb_v2;/*green*/
 
-    switch (mv)
+	if(id == POC_LED_TYPE_LCD_T)
     {
-    case POC_LCD_BACKLIGHT_LEVEL_0:
-		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x00);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x00);
-        break;
+		switch (mv)
+	    {
+		    case POC_LCD_BACKLIGHT_LEVEL_0:
+				REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x00);
+		        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x00);
+		        break;
 
-    case POC_LCD_BACKLIGHT_LEVEL_1:
-		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x04);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x04);
-        break;
+		    case POC_LCD_BACKLIGHT_LEVEL_1:
+				REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x04);
+		        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x04);
+		        break;
 
-    case POC_LCD_BACKLIGHT_LEVEL_2:
-		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x08);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x08);
-        break;
+		    case POC_LCD_BACKLIGHT_LEVEL_2:
+				REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x08);
+		        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x08);
+		        break;
 
-    case POC_LCD_BACKLIGHT_LEVEL_3:
-		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x0c);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x0c);
-        break;
+		    case POC_LCD_BACKLIGHT_LEVEL_3:
+				REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x0c);
+		        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x0c);
+		        break;
 
-    case POC_LCD_BACKLIGHT_LEVEL_4:
-		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x10);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x10);
-        break;
+		    case POC_LCD_BACKLIGHT_LEVEL_4:
+				REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x10);
+		        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x10);
+		        break;
 
-    case POC_LCD_BACKLIGHT_LEVEL_5:
-		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x14);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x14);
-        break;
+		    case POC_LCD_BACKLIGHT_LEVEL_5:
+				REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x14);
+		        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x14);
+		        break;
 
-    case POC_LCD_BACKLIGHT_LEVEL_6:
-		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x18);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x18);
-        break;
+		    case POC_LCD_BACKLIGHT_LEVEL_6:
+				REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x18);
+		        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x18);
+		        break;
 
-    case POC_LCD_BACKLIGHT_LEVEL_7:
-		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x1c);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x1c);
-        break;
+		    case POC_LCD_BACKLIGHT_LEVEL_7:
+				REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x1c);
+		        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x1c);
+		        break;
 
-    case POC_LCD_BACKLIGHT_LEVEL_8:
-		REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
-        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
-        break;
+		    case POC_LCD_BACKLIGHT_LEVEL_8:
+				REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v0, rg_rgb_v0, rg_rgb_v0, 0x20);
+		        REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v1, rg_rgb_v1, rg_rgb_v1, 0x20);
+		        break;
 
-    default:
-        // ignore silently
-        break;
-    }
+		    default:
+		        // ignore silently
+		        break;
+	    }
+	}
+	else if(id == POC_LED_TYPE_RED_T)
+	{
+		switch(mv)
+		{
+			case POC_LCD_BACKLIGHT_LEVEL_0:
+            {
+                REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                        wled_sel, 0, wled_sw, 0);
+                REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v3, rg_rgb_v3, rg_rgb_v3, 0x00);
+                break;
+            }
+            case POC_LCD_BACKLIGHT_LEVEL_1:
+            {
+                REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                        wled_sel, 1, wled_sw, 1);
+                REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v3, rg_rgb_v3, rg_rgb_v3, 0x20);
+                break;
+            }
+            default:
+            {
+                break;
+            }
+		}
+	}
+	else if(id == POC_LED_TYPE_GREEN_T)
+	{
+		switch(mv)
+		{
+			case POC_LCD_BACKLIGHT_LEVEL_0:
+            {
+                REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                        b_sel, 0, b_sw, 0);
+                REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x00);
+                break;
+            }
+            case POC_LCD_BACKLIGHT_LEVEL_1:
+            {
+                REG_ADI_CHANGE2(hwp_rda2720mBltc->bltc_ctrl, bltc_ctrl,
+                        b_sel, 1, b_sw, 1);
+                REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x20);
+                break;
+            }
+            default:
+            {
+                break;
+            }
+		}
+	}
 }
 
 static osiThread_t * prv_play_btn_voice_one_time_thread = NULL;
@@ -1154,7 +1207,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.list_btn_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
 	poc_setting->font.list_btn_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.about_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
-	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
+	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 13);
@@ -1511,7 +1564,7 @@ poc_keypad_led_init(void)
 		config->debounce = true;
 		config->out_level = poc_setting->keypad_led_switch;
 	}
-	poc_keypad_led_gpio = drvGpioOpen(15, config, NULL, NULL);
+	poc_keypad_led_gpio = drvGpioOpen(18, config, NULL, NULL);
 	free(config);
 }
 #endif
@@ -1676,6 +1729,75 @@ poc_set_green_status(bool ledstatus)
 }
 
 /*
+      name : drvledxSetBackLight
+     param : none
+    author : wangls
+  describe : 配置LEDx亮度
+      date : 2020-08-28
+*/
+static
+void drvledxSetBackLight(uint8_t ledx, bool status)
+{
+    uint32_t backlightness = 0;
+    uint8_t ledx_t = 0;
+    if(status == true)
+    {
+        backlightness = 1;
+    }
+    else
+    {
+        backlightness = 0;
+    }
+
+    switch(ledx)
+    {
+        case 3:
+        {
+            ledx_t = POC_LED_TYPE_TOUCH_T;
+            break;
+        }
+        case 1:
+        {
+            ledx_t = POC_LED_TYPE_RED_T;
+            break;
+        }
+        case 2:
+        {
+            ledx_t = POC_LED_TYPE_GREEN_T;
+            break;
+        }
+    }
+
+    poc_SetPowerLevel(ledx_t, backlightness);
+}
+
+/*
+      name : poc_set_red_blacklight
+     param : none
+    author : wangls
+  describe : 开关RED
+      date : 2020-08-08
+*/
+void
+poc_set_red_blacklight(bool status)
+{
+    drvledxSetBackLight(POC_LED_TYPE_RED_T, status);
+}
+
+/*
+      name : poc_set_green_blacklight
+     param : none
+    author : wangls
+  describe : 开关GREEN
+      date : 2020-08-08
+*/
+void
+poc_set_green_blacklight(bool status)
+{
+    drvledxSetBackLight(POC_LED_TYPE_GREEN_T, status);
+}
+
+/*
 	  name : Lv_ear_ppt_timer_cb
 	 param : none
 	author : wangls
@@ -1694,7 +1816,6 @@ static void Lv_ear_ppt_timer_cb(void *ctx);
 
 static void Lv_ear_ppt_timer_cb(void *ctx)
 {
-	OSI_LOGI(0, "[song]ear time cb\n");
 	if(drvGpioRead(poc_ear_ppt_gpio) == false)/*press*/
 	{
 		static int checkcbpress = 0;
@@ -1865,19 +1986,16 @@ void poc_ppt_irq(void *ctx)
 		{
 			poc_ppt_key_attr.poc_key_press = false;
 			poc_pptkey_state = false;
-			OSI_LOGI(0, "[song]key is release,stop speak\n");
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		}
 		else
 		{
-			OSI_LOGI(0, "[song]ppt time stop\n");
 			osiTimerStop(poc_ppt_key_attr.ppt_press_timer);
 		}
 	}
 	else/*press*/
 	{
 		osiTimerStart(poc_ppt_key_attr.ppt_press_timer, 200);
-		OSI_LOGI(0, "[song]ppt key is press\n");
 	}
 }
 
@@ -1912,58 +2030,58 @@ bool lv_poc_get_ppt_state(void)
 }
 
 /*
-	  name : poc_group_page_up_key_irq
+	  name : poc_volum_up_key_irq
 	 param : none
 	author : wangls
-  describe : group page up
-	  date : 2020-08-14
+  describe : volum up key 中断
+	  date : 2020-10-10
 */
 static
-void poc_group_page_up_key_irq(void *ctx)
+void poc_volum_up_key_irq(void *ctx)
 {
-	/*group page opt*/
-	extern lv_poc_activity_t * poc_group_list_activity;
-	if(current_activity != poc_group_list_activity)
+	if(drvGpioRead(poc_volum_up_gpio))/*release*/
 	{
-		return;
-	}
-
-	if(drvGpioRead(poc_group_page_up_gpio))/*release*/
-	{
-		OSI_LOGI(0, "[song]group page up key is release\n");
+		OSI_LOGI(0, "[song]volum_up key release\n");
 	}
 	else/*press*/
 	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"群组向上翻页", (const uint8_t *)"未设置");
-		OSI_LOGI(0, "[song]group page up key is press\n");
+		nv_poc_setting_msg_t * poc_config = lv_poc_setting_conf_read();
+		uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+
+		if(vol_cur < 11)
+		{
+			vol_cur = vol_cur + 1;
+			extern bool lv_poc_set_volum(POC_MMI_VOICE_TYPE_E type, uint8_t volume, bool play, bool display);
+			lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_config->btn_voice_switch, true);
+		}
 	}
 }
 
 /*
-	  name : poc_group_page_down_key_irq
+	  name : poc_volum_down_key_irq
 	 param : none
 	author : wangls
-  describe : group page down
-	  date : 2020-08-14
+  describe : volum down key
+	  date : 2020-10-10
 */
 static
-void poc_group_page_down_key_irq(void *ctx)
+void poc_volum_down_key_irq(void *ctx)
 {
-	/*group page opt*/
-	extern lv_poc_activity_t * poc_group_list_activity;
-	if(current_activity != poc_group_list_activity)
+	if(drvGpioRead(poc_volum_down_gpio))/*release*/
 	{
-		return;
-	}
-
-	if(drvGpioRead(poc_group_page_down_gpio))/*release*/
-	{
-		OSI_LOGI(0, "[song]group page down key is release\n");
+		OSI_LOGI(0, "[song]volum_down key release\n");
 	}
 	else/*press*/
 	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"群组向下翻页", (const uint8_t *)"未设置");
-		OSI_LOGI(0, "[song]group page down key is press\n");
+		nv_poc_setting_msg_t * poc_config = lv_poc_setting_conf_read();
+		uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+
+		if(vol_cur > 0)
+		{
+			vol_cur = vol_cur - 1;
+			extern bool lv_poc_set_volum(POC_MMI_VOICE_TYPE_E type, uint8_t volume, bool play, bool display);
+			lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_config->btn_voice_switch, true);
+		}
 	}
 }
 
@@ -2018,27 +2136,6 @@ bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_p
 }
 
 /*
-	  name : poc_sos_key_irq
-	 param : none
-	author : wangls
-  describe : sos 中断
-	  date : 2020-08-14
-*/
-static
-void poc_sos_key_irq(void *ctx)
-{
-	if(drvGpioRead(poc_sos_gpio))/*release*/
-	{
-		OSI_LOGI(0, "[song]sos key is release\n");
-	}
-	else/*press*/
-	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"SOS功能", (const uint8_t *)"未设置");
-		OSI_LOGI(0, "[song]sos key is press\n");
-	}
-}
-
-/*
 	name : lv_poc_set_record_mic_gain
 	param : none
   author : wangls
@@ -2078,15 +2175,13 @@ void lv_poc_key_init(void)
         .debounce = true,
     };
 
-	poc_group_page_up_gpio = drvGpioOpen(poc_group_page_up, &cfg, poc_group_page_up_key_irq, NULL);
-	poc_group_page_down_gpio = drvGpioOpen(poc_group_page_down, &cfg, poc_group_page_down_key_irq, NULL);
-	poc_sos_gpio = drvGpioOpen(poc_sos, &cfg, poc_sos_key_irq, NULL);
+	poc_volum_down_gpio = drvGpioOpen(poc_volum_down, &cfg, poc_volum_down_key_irq, NULL);
+	poc_volum_up_gpio = drvGpioOpen(poc_volum_up, &cfg, poc_volum_up_key_irq, NULL);
 
-	if(poc_group_page_up_gpio == NULL
-	   || poc_group_page_down_gpio == NULL
-	   || poc_sos_gpio == NULL)
+	if(poc_volum_down_gpio == NULL
+	   || poc_volum_up_gpio == NULL)
 	{
-		Ap_OSI_ASSERT((poc_group_page_up_gpio != NULL), "[song]group io NULL"); /*assert verified*/
+		Ap_OSI_ASSERT((poc_volum_down_gpio != NULL), "[song]group io NULL"); /*assert verified*/
 		return;
 	}
 }

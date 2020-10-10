@@ -410,8 +410,8 @@ void lv_poc_shutdown_task(lv_task_t * task)
 static
 void lv_poc_shutdown_note_power_off_warning_create(lv_task_t * task)
 {
-	char *title = "关机";
-	char *context = "您的对讲机将会\n关机。";
+	char *title = " 关机";
+	char *context = " 您的对讲机将会\n 关机。";
 	char *opt_left_str = "            确定            ";//28格才能填满
 	lv_area_t warnningarea = {10, 24, 124, 122};//提示框大小
 
@@ -473,8 +473,8 @@ void lv_poc_power_off_warning_cancel_event_handler(lv_obj_t *obj, lv_event_t eve
 static
 void lv_poc_shutdown_note_reboot_warning_create(lv_task_t * task)
 {
-	char *title = "重新启动";
-	char *context = "您确定需要重新\n启动对讲机吗？";
+	char *title = " 重新启动";
+	char *context = " 您确定需要重新\n 启动对讲机吗？";
 	char *opt_left_str = "            确定            ";//28格才能填满
 	lv_area_t warnningarea = {10, 24, 124, 122};//提示框大小
 

@@ -274,8 +274,8 @@ static void
 lv_poc_led_status_all_close(void)
 {
 	Led_CallBack.pf_poc_led_jump_status = NULL;
-	poc_set_green_status(false);
-	poc_set_red_status(false);
+	poc_set_green_blacklight(false);
+    poc_set_red_blacklight(false);
 }
 
 /*
@@ -287,8 +287,8 @@ static void
 lv_poc_led_status_all_open(void)
 {
 	Led_CallBack.pf_poc_led_jump_status = NULL;
-	poc_set_green_status(true);
-	poc_set_red_status(true);
+	poc_set_green_blacklight(true);
+	poc_set_red_blacklight(true);
 }
 
 /*
@@ -300,8 +300,8 @@ static void
 lv_poc_red_open_green_close(void)
 {
 	Led_CallBack.pf_poc_led_jump_status = NULL;
-	poc_set_green_status(false);
-	poc_set_red_status(true);
+	poc_set_green_blacklight(false);
+	poc_set_red_blacklight(true);
 }
 
 /*
@@ -313,8 +313,8 @@ static void
 lv_poc_red_close_green_open(void)
 {
 	Led_CallBack.pf_poc_led_jump_status = NULL;
-	poc_set_green_status(true);
-	poc_set_red_status(false);
+	poc_set_green_blacklight(true);
+	poc_set_red_blacklight(false);
 }
 
 /*
@@ -325,9 +325,9 @@ lv_poc_red_close_green_open(void)
 static void
 callback_lv_poc_red_close_green_jump(osiEvent_t *event)
 {
-	poc_set_red_status(false);
+	poc_set_red_blacklight(false);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
-	poc_set_green_status(pocLedIdtAttr.ledstatus);
+	poc_set_green_blacklight(pocLedIdtAttr.ledstatus);
 }
 
 /*
@@ -338,9 +338,9 @@ callback_lv_poc_red_close_green_jump(osiEvent_t *event)
 static void
 callback_lv_poc_red_open_green_jump(osiEvent_t *event)
 {
-	poc_set_red_status(true);
+	poc_set_red_blacklight(true);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
-	poc_set_green_status(pocLedIdtAttr.ledstatus);
+	poc_set_green_blacklight(pocLedIdtAttr.ledstatus);
 }
 
 /*
@@ -351,9 +351,9 @@ callback_lv_poc_red_open_green_jump(osiEvent_t *event)
 static void
 callback_lv_poc_green_close_red_jump(osiEvent_t *event)
 {
-	poc_set_green_status(false);
+	poc_set_green_blacklight(false);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
-	poc_set_red_status(pocLedIdtAttr.ledstatus);
+	poc_set_red_blacklight(pocLedIdtAttr.ledstatus);
 }
 
 /*
@@ -364,9 +364,9 @@ callback_lv_poc_green_close_red_jump(osiEvent_t *event)
 static void
 callback_lv_poc_green_open_red_jump(osiEvent_t *event)
 {
-	poc_set_green_status(true);
+	poc_set_green_blacklight(true);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
-	poc_set_red_status(pocLedIdtAttr.ledstatus);
+	poc_set_red_blacklight(pocLedIdtAttr.ledstatus);
 }
 
 /*
@@ -379,9 +379,9 @@ static void
 callback_lv_poc_green_jump_red_jump(osiEvent_t *event)
 {
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
-	poc_set_red_status(pocLedIdtAttr.ledstatus);
+	poc_set_red_blacklight(pocLedIdtAttr.ledstatus);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
-	poc_set_green_status(pocLedIdtAttr.ledstatus);
+	poc_set_green_blacklight(pocLedIdtAttr.ledstatus);
 }
 
 /*

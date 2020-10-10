@@ -83,7 +83,7 @@ static void pocStartAnimation(void *ctx)
 		//魔方图片
         lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
         lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
-        lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
+        lv_obj_set_size(poc_power_on_backgroup_sprd_image, 132, 132);
         lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
         osiThreadSleep(2000);
 
@@ -97,7 +97,7 @@ static void pocStartAnimation(void *ctx)
         //开机图片
         lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
         lv_img_set_auto_size(poc_power_on_backgroup_image, false);
-        lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
+        lv_obj_set_size(poc_power_on_backgroup_image, 132, 132);
         extern lv_img_dsc_t img_poweron_poc_logo_unicom;
         lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
 		lv_poc_setting_init();/*开机配置*/
@@ -166,6 +166,15 @@ void pocStart(void *ctx)
     drvLcdOpenV2(lcd);
     drvLcdFill(lcd, 0, NULL, true);
     drvLcdSetBackLightEnable(lcd, false);
+
+	/*LED Init*/
+    halPmuSwitchPower(HAL_POWER_REDLED, true, false);
+    halPmuSwitchPower(HAL_POWER_GREENLED, true, false);
+
+    /*close led*/
+    poc_set_red_blacklight(false);
+    poc_set_green_blacklight(false);
+    poc_set_keypad_led_status(false);
 
 	//获取开机方式
 	uint32_t boot_causes = osiGetBootCauses();

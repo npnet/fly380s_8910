@@ -583,8 +583,8 @@ static bool lv_poc_theme_init(void)
 	#define LV_POC_SWITCH_ON_OFF_INDIC_COLOR LV_COLOR_MAKE(0x77, 0x77, 0x77);
 // 初始化白色主题
     lv_style_copy(&theme_white_style_base,&lv_style_scr);
-    theme_white_style_base.body.main_color = LV_COLOR_MAKE(0x00,0x00,0x00);
-    theme_white_style_base.body.grad_color = LV_COLOR_MAKE(0x00,0x00,0x00);
+    theme_white_style_base.body.main_color = LV_COLOR_WHITE;
+    theme_white_style_base.body.grad_color = LV_COLOR_WHITE;
     theme_white_style_base.body.radius = 0;
     theme_white_style_base.body.opa = 255;
     theme_white_style_base.image.color = LV_COLOR_MAKE(0xFF, 0xF5, 0x98);//天蓝色
