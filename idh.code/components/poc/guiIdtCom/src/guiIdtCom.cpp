@@ -438,7 +438,6 @@ public:
 	osiTimer_t * try_login_timer;/*尝试登录定时器*/
 	osiTimer_t * auto_login_timer;/*自动登录定时器*/
 	osiTimer_t * monitor_pptkey_timer;/*检查ppt键*/
-	osiTimer_t * twogroup_callexist_timer;/*检查两人及以上的群组是否有落单的用户要群呼*/
 	bool onepoweron;/*记录第一次开机状态*/
 	char build_self_name[16];/*存储自建群组尾序号*/
 #ifndef MUCHGROUP
@@ -626,7 +625,6 @@ int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName
 
 	pocIdtAttr.is_release_call = false;//obtain call
 	pocIdtAttr.is_justnow_listen = false;
-	osiTimerStop(pocIdtAttr.twogroup_callexist_timer);
 
 	if(pocIdtAttr.is_member_call)
 	{
@@ -1422,12 +1420,19 @@ static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx)
 	#endif
 }
 
-static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
+static void LvGuiIdtCom_start_speak_voice(void)
 {
 	pocIdtAttr.start_speak_voice_timer_running = false;
-    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
-    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
-    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+}
+
+static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
+{
+	//goto play start speak tone
+	poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Speak, 30, true);
+	lv_poc_set_speak_tone_status(true);
 
 	#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
 	char cOutstr[256] = {0};
@@ -1571,15 +1576,6 @@ static void LvGuiIdtCom_ppt_release_timer_cb(void *ctx)
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)USER_OPRATOR_SPEAKING);
 		}
 		makecallcnt = 0;
-	}
-}
-/*检查在组内有两个及以上的用户时且释放呼叫时其他在单呼，落单的用户要群呼时若2s未收到呼叫应答则提示错误*/
-static void LvGuiIdtCom_member_groupcall_conflict__timer_cb(void *ctx)
-{
-	if(pocIdtAttr.is_release_call == true)
-	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_ERROR_MSG, (const uint8_t *)"组呼失败,组内用户正在单呼", (const uint8_t *)"");
 	}
 }
 
@@ -1887,9 +1883,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			}
 
 			m_IdtUser.m_status = USER_OPRATOR_START_SPEAK;
-
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Speak, 30, true);
-
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"正在申请", (const uint8_t *)"");
 			if(m_IdtUser.m_iCallId == -1)
 			{
 				memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
@@ -1923,13 +1917,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					0,
 					1,
 					user_mark);
-
-				//针对于组内只有2个及以上用户---组内其他用户正在单呼，剩余落单的用户要群呼---弹出提示框(响应阈值2s)
-				if(pocIdtAttr.current_group_member_dwnum >= 2
-					&& pocIdtAttr.is_release_call == true)
-				{
-					osiTimerStart(pocIdtAttr.twogroup_callexist_timer, 2000);//响应单次周期阈值
-				}
 
 				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
 				char cOutstr[256] = {0};
@@ -2012,6 +1999,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP:
 		{
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "开始对讲", NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
 			/*开始闪烁*/
@@ -2091,6 +2079,12 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				OSI_LOGI(0, cOutstr);
 				#endif
 			}
+			break;
+		}
+
+		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP_RECORD_IND:
+		{
+			LvGuiIdtCom_start_speak_voice();
 			break;
 		}
 
@@ -4149,18 +4143,21 @@ void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_
 
 				case CAUSE_U_OFFLINE_G://组中没有在线成员
 				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
 
 					break;
 				}
 				case CAUSE_U_LOCK_G://用户锁定在其他组
 				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
 
 					break;
 				}
 				case CAUSE_G_NOUSER://组中没有用户
 				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
 
 					break;
@@ -4281,6 +4278,7 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP:
 			case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND:
 			case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP:
+			case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP_RECORD_IND:
 			{
 				prvPocGuiIdtTaskHandleSpeak(event.param1, event.param2);
 				break;
@@ -4446,7 +4444,6 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.try_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_try_login_timer_cb, NULL);/*注册尝试登录定时器*/
 	pocIdtAttr.auto_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_auto_login_timer_cb, NULL);/*注册自动登录定时器*/
 	pocIdtAttr.monitor_pptkey_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_ppt_release_timer_cb, NULL);/*检查ppt键定时器*/
-	pocIdtAttr.twogroup_callexist_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_member_groupcall_conflict__timer_cb, NULL);/*检查群组3人时2s是否得到呼出应答定时器*/
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)

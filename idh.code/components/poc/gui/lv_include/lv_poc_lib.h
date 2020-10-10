@@ -927,6 +927,22 @@ poc_set_red_blacklight(bool status);
 void
 poc_set_green_blacklight(bool status);
 
+/*
+	  name : lv_poc_set_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+void
+lv_poc_set_speak_tone_status(bool status);
+
+/*
+	  name : lv_poc_get_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+bool
+lv_poc_get_speak_tone_status(void);
+
 #ifdef __cplusplus
 }
 #endif
