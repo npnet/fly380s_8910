@@ -80,19 +80,26 @@ static void pocStartAnimation(void *ctx)
 
 	if(lv_poc_watchdog_power_on_mode == false)
 	{
-		//开机图片
-		lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
-		lv_img_set_auto_size(poc_power_on_backgroup_image, false);
-		lv_obj_set_size(poc_power_on_backgroup_image, 132, 132);
-		lv_img_set_src(poc_power_on_backgroup_image, &poc_power_on_t2y);
+		//魔方图片
+        lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
+        lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
+        lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
+        lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+        osiThreadSleep(2000);
 
-		/*打开屏幕，除去花屏问题*/
-		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
-		drvLcdSetBackLightEnable(lcd, true);
-		osiThreadSleep(2000);
+        /*打开屏幕，除去花屏问题*/
+        drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+        drvLcdSetBackLightEnable(lcd, true);
 
-		poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
-		osiThreadSleep(3000);
+        poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
+        osiThreadSleep(3000);
+        lv_obj_del(poc_power_on_backgroup_sprd_image);
+        //开机图片
+        lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
+        lv_img_set_auto_size(poc_power_on_backgroup_image, false);
+        lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
+        extern lv_img_dsc_t img_poweron_poc_logo_unicom;
+        lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
 		lv_poc_setting_init();/*开机配置*/
 		osiThreadSleep(4000);
 		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
@@ -210,7 +217,6 @@ static
 void lv_poc_power_on_picture(lv_task_t * task)
 {
 	lv_poc_create_idle();
-	lv_poc_check_volum_task(LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500);
 }
 
 #endif

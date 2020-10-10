@@ -859,23 +859,13 @@ uint8_t lv_poc_get_battery_cnt(OUT battery_values_t *values);
 ********************/
 bool lv_poc_stabar_show_gps_img(bool enable);
 
-/*
-	  name : lv_poc_set_volum_opt
-	 param : none
-	author : wangls
-  describe : adc to 设置音量
-	  date : 2020-08-18
-*/
-void lv_poc_set_volum_opt(lv_task_t *task);
-
-/*
-	  name : lv_poc_check_volum_task
-	 param : none
-	author : wangls
-  describe : 创建检索音量旋钮任务
-	  date : 2020-08-18
-*/
-void lv_poc_check_volum_task(LVPOCIDTCOM_Led_Period_t period);
+/*******************
+*	  NAME:    lv_poc_get_current_activity
+*	AUTHOR:    wangls
+* DESCRIPT:    获取当前窗口
+*	  DATE:    2020-10-09
+********************/
+lv_poc_activity_t *lv_poc_get_current_activity(void);
 
 #ifdef __cplusplus
 }

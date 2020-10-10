@@ -29,21 +29,21 @@
 #include "lv_gui_main.h"
 #include "poc_audio_recorder.h"
 
-#define POC_RECORD_OR_SPEAK_CALL 1/*1-正常对讲，0-自录自播*/
+#define POC_RECORD_OR_SPEAK_CALL 1       /*1-正常对讲，0-自录自播*/
+#define POC_SUPPORT_LONGPRESS_POWEROFF 1 /*支持长按关机*/
 
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
 static lv_indev_state_t prvPttKeyState = 0xff;
 static lv_indev_state_t prvPowerKeyState = 0xff;
-static bool isScreenCurrentStatus = false;
 static osiTimer_t * prvPowerTimer = NULL;
-//static bool isReadyPowerOff = false;
 
+#if POC_SUPPORT_LONGPRESS_POWEROFF
+static bool isReadyPowerOff = false;
 static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
 
 static void prvPowerKeyCb(void *ctx)
 {
-	#if 0
 	isReadyPowerOff = true;
 	if(!lv_poc_charge_poweron_status())//正常开机
 	{
@@ -55,8 +55,8 @@ static void prvPowerKeyCb(void *ctx)
 		osiSetBootCause(OSI_BOOTCAUSE_PWRKEY);/*as reboot*/
 		osiShutdown(OSI_SHUTDOWN_RESET);//重启设备
 	}
-	#endif
 }
+#endif
 
 bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 {
@@ -87,44 +87,63 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		prvPttKeyState = state;
 		ret = false;
 	}
-	else if(id == LV_GROUP_KEY_LOCK_SCREEN)
-	{
-		if(prvPowerTimer == NULL)
-		{
-			prvPowerTimer = osiTimerCreate(NULL, prvPowerKeyCb, NULL);
-		}
-
-		if(prvPowerKeyState != state)
-		{
-			if(state == LV_INDEV_STATE_PR)
-			{
-				if(prvPowerTimer != NULL)
-				{
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"长按锁屏/解屏", (const uint8_t *)"未设置");
-					osiTimerStart(prvPowerTimer, LONGPRESS_SHUTDOWN_TIME);
-				}
-			}
-		}
-		prvPowerKeyState = state;
-		ret = true;
-	}
 	else if(id == 0xf0)/*电源按键*/
 	{
-		if(prvPttKeyState != state)
-		{
-			if(state == LV_INDEV_STATE_PR)
+		#if POC_SUPPORT_LONGPRESS_POWEROFF
+		if(prvPowerTimer == NULL)
+        {
+            prvPowerTimer = osiTimerCreate(NULL, prvPowerKeyCb, NULL);
+        }
+
+        if(prvPowerKeyState != state)
+        {
+			if(lv_poc_get_current_activity() != activity_idle)
 			{
-				OSI_LOGI(0, "[song]power key press");
+				lv_poc_set_idle_esc_status(true);
 			}
 			else
 			{
-				OSI_LOGI(0, "[song]power key release");
-				lv_poc_refr_func_ui(lv_poc_shutdown_animation, LVPOCLISTIDTCOM_LIST_PERIOD_10,
-					LV_TASK_PRIO_HIGH, (void *)2);
+				lv_poc_set_idle_esc_status(false);
 			}
-		}
-		prvPttKeyState = state;
-		ret = false;
+
+            if(state == LV_INDEV_STATE_PR)
+            {
+                if(prvPowerTimer != NULL)
+                {
+                    osiTimerStart(prvPowerTimer, LONGPRESS_SHUTDOWN_TIME);
+                    isReadyPowerOff = false;
+                }
+            }
+            else
+            {
+                if(prvPowerTimer != NULL)
+                {
+                    if (isReadyPowerOff)
+                    {
+                        //osiDelayUS(1000 * 100);
+                        //osiShutdown(OSI_SHUTDOWN_POWER_OFF);
+                    }
+                    else
+                    {
+                        osiTimerStop(prvPowerTimer);
+                        if(lv_poc_charge_poweron_status())//充电开机
+                        {
+                            poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
+                        }
+                        else
+                        {
+							if(lv_poc_get_current_activity() == activity_idle)
+							{
+                            	poc_set_lcd_status(!poc_get_lcd_status());
+							}
+                        }
+                    }
+                }
+            }
+        }
+        prvPowerKeyState = state;
+        ret = true;
+		#endif
 	}
 	else if(id == LV_GROUP_KEY_GP)
 	{
@@ -151,19 +170,6 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 			{
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"测试指令模式", (const uint8_t *)"未设置");
 				OSI_LOGI(0, "[song]F2 key press");
-			}
-		}
-		prvPttKeyState = state;
-		ret = false;
-	}
-	else if(id == LV_GROUP_KEY_SET)
-	{
-		if(prvPttKeyState != state)
-		{
-			if(state == LV_INDEV_STATE_PR)
-			{
-				lv_poc_setting_open();
-				OSI_LOGI(0, "[song]9 key press");
 			}
 		}
 		prvPttKeyState = state;

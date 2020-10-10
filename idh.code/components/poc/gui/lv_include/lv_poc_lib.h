@@ -858,6 +858,22 @@ bool
 lv_poc_get_poweron_is_ready(void);
 
 /*
+	  name : lv_poc_set_idle_esc_status
+	  param :
+	  date : 2020-10-09
+*/
+void
+lv_poc_set_idle_esc_status(bool status);
+
+/*
+	  name : lv_poc_get_idle_esc_status
+	  param :
+	  date : 2020-10-09
+*/
+bool
+lv_poc_get_idle_esc_status(void);
+
+/*
 	  name : lv_poc_get_charge_status
 	  describe :设置设备在组里还是外,true为组内
 	  param :

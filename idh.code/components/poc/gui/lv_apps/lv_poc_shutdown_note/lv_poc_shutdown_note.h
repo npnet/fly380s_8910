@@ -11,6 +11,8 @@ extern "C" {
 
 #define LONGPRESS_SHUTDOWN_TIME 2000 /*2s*/
 
+extern lv_poc_activity_t * poc_shutdown_list_activity;
+
 /*
 	  name : lv_poc_shutdown_note
 	 param : none

@@ -106,8 +106,6 @@ LV_IMG_DECLARE(power_off);
 LV_IMG_DECLARE(reboot);
 LV_IMG_DECLARE(img_poweroff_poc_logo_unicom);
 LV_IMG_DECLARE(img_poweron_poc_logo_sprd);
-LV_IMG_DECLARE(poc_power_off_t2y);
-LV_IMG_DECLARE(poc_power_on_t2y);
 
 LV_IMG_DECLARE(no_battery_charging_shutdown);
 LV_IMG_DECLARE(indeterminate0);

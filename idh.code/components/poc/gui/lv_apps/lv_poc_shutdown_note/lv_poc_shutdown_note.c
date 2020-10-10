@@ -360,7 +360,7 @@ void lv_poc_shutdown_animation(lv_task_t * task)
 	lv_obj_t * poc_shut_down_backgroup_image = lv_img_create(shutdown_animation, NULL);
 	lv_img_set_auto_size(poc_shut_down_backgroup_image, false);
 	lv_obj_set_size(poc_shut_down_backgroup_image, 132, 132);
-	lv_img_set_src(poc_shut_down_backgroup_image, &poc_power_off_t2y);
+	lv_img_set_src(poc_shut_down_backgroup_image, &img_poweroff_poc_logo_unicom);
 	lv_obj_align( poc_shut_down_backgroup_image, shutdown_animation, LV_ALIGN_CENTER,  0,  0);
 
 	if(user_data_type == LVPOCSHUTDOWN_TYPE_POWER_OFF)

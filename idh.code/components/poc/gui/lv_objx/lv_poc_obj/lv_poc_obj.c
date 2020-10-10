@@ -3427,13 +3427,12 @@ void lv_poc_group_list_cb_set_active(lv_poc_Activity_Id_t activity_id, bool enab
 	}
 }
 
-/*
-	  name : lv_poc_anim_note
-	 param : none
-	author : wangls
-  describe : 动画虚拟背景
-	  date : 2020-07-06
-*/
+/*******************
+*	  NAME:    lv_poc_anim_note
+*	AUTHOR:    wangls
+* DESCRIPT:    虚拟动画
+*	  DATE:    2020-08-03
+********************/
 void lv_poc_anim_note(lv_obj_t *obj)
 {
 	//动画
@@ -3447,38 +3446,15 @@ void lv_poc_anim_note(lv_obj_t *obj)
 	lv_anim_create(&lv_anim_obj);
 }
 
-/*
-	  name : lv_poc_set_volum_opt
-	 param : none
-	author : wangls
-  describe : adc to 设置音量
-	  date : 2020-08-18
-*/
-void lv_poc_set_volum_opt(lv_task_t *task)
+/*******************
+*	  NAME:    lv_poc_get_current_activity
+*	AUTHOR:    wangls
+* DESCRIPT:    获取当前窗口
+*	  DATE:    2020-10-09
+********************/
+lv_poc_activity_t *lv_poc_get_current_activity(void)
 {
-	static uint8_t vol_cur = 0;
-	static uint8_t vol_last = 0;
-
-	vol_cur = lv_poc_get_adc_to_volum();
-	if(vol_cur == vol_last || (vol_cur == 0 && vol_last == 0))
-	{
-		return;
-	}
-
-	vol_last = vol_cur;
-	lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
-}
-
-/*
-	  name : lv_poc_check_volum_task
-	 param : none
-	author : wangls
-  describe : 创建检索音量旋钮任务
-	  date : 2020-08-18
-*/
-void lv_poc_check_volum_task(LVPOCIDTCOM_Led_Period_t period)
-{
-	lv_task_create(lv_poc_set_volum_opt, period, LV_TASK_PRIO_LOW, NULL);
+	return current_activity;
 }
 
 #ifdef __cplusplus

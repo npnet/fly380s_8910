@@ -22,11 +22,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-
-/*add adc*/
-#include "drv_adc.h"
-#include "hwregs/8910/rda2720m_adc.h"
-#include "hal_adi_bus.h"
 #include "hal_adi_bus.h"/*register include*/
 #include "hwreg_access.h"
 
@@ -55,30 +50,7 @@ drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
 static bool poc_charging_status = false;
 static bool is_poc_play_voice = false;
-/*********************volum***********************/
-
-typedef struct PocVolumAttribute_t{
-	uint32_t adc_level;
-	uint8_t volum_level;
-}PocVolumAttribute_t;
-
-static PocVolumAttribute_t lv_poc_volum_set[]= {
-	{230, 0},
-	{380, 1},//380
-	{530, 2},//530
-	{820, 3},//820
-	{1040, 4},//1040
-	{1380, 5},//1380
-	{1520, 6},//1520
-	{1820, 7},//1860
-	{2120, 8},//2120
-	{2520, 9},//2540
-	{2720, 10},//2720
-	{2952, 11}//2952
-};
-
-#define POC_VOLUM_LEVEL_SIZE (sizeof(lv_poc_volum_set)/sizeof(lv_poc_volum_set[0]))
-
+static bool is_poc_idle_esc = false;
 /*************************************************/
 static uint8_t poc_earkey_state = false;
 static int lv_poc_inside_group = false;
@@ -1045,7 +1017,6 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 
 	if (CFW_NwGetStatus(&nStatusInfo, nSim) != 0)//检索GSM的网络状态
 	{
-		//OSI_LOGI(0, "[song]Failed to retrieve the status of the GSM network!");//检索网络失败
 		strcpy((char *)operat, "UN");
 		_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;
 		goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
@@ -1069,12 +1040,16 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 
 	}
 
-
+	/*0--Not registered and not searching.
+	  1--Registered and in the home area.
+	  2--Not registered and searching for a new operator.
+	  3--Registration denied.
+	  4--Unknown registration.
+	*/
 	if(nStatusInfo.nStatus == 0
 		|| nStatusInfo.nStatus == 3
 		|| nStatusInfo.nStatus == 4)
 	{
-		//OSI_LOGI(0, "[song]Failure to register or refusal to register!");
 		strcpy((char *)operat, "UN");
 		_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//sim卡未注册上GSM网络
 		goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
@@ -2710,39 +2685,6 @@ bool lv_poc_set_adc_current_sense(bool status)
 }
 
 /*
-	  name : lv_poc_get_adc_to_volum
-	 param : none
-	author : wangls
-  describe : 获取滑动阻值adc
-	  date : 2020-08-18
-*/
-uint8_t lv_poc_get_adc_to_volum(void)
-{
-	int32_t adc_cur_value = 0;
-	int i;
-
-	adc_cur_value = drvAdcGetRawValue(ADC_CHANNEL_1, ADC_SCALE_1V250);
-	OSI_LOGI(0, "[song]adc vlaue is =%d", adc_cur_value);
-	for(i = 0; i < POC_VOLUM_LEVEL_SIZE; i++)
-	{
-		if(adc_cur_value <= lv_poc_volum_set[i].adc_level)
-		{
-			break;
-		}
-	}
-	OSI_LOGI(0, "[song]vol_cur is =%d", lv_poc_volum_set[i].volum_level);
-	if(i > POC_VOLUM_LEVEL_SIZE)
-	{
-		return false;
-	}
-#if 0
-	OSI_LOGI(0, "[song]adc vlaue is =%d", adc_cur_value);
-#endif
-
-	return lv_poc_volum_set[i].volum_level;
-}
-
-/*
 	  name : lv_poc_opt_refr_status
 	  param :
 	  date : 2020-08-24
@@ -2802,6 +2744,28 @@ bool
 lv_poc_get_charge_status(void)
 {
 	return poc_charging_status;
+}
+
+/*
+	  name : lv_poc_set_idle_esc_status
+	  param :
+	  date : 2020-10-09
+*/
+void
+lv_poc_set_idle_esc_status(bool status)
+{
+	is_poc_idle_esc = status;
+}
+
+/*
+	  name : lv_poc_get_idle_esc_status
+	  param :
+	  date : 2020-10-09
+*/
+bool
+lv_poc_get_idle_esc_status(void)
+{
+	return is_poc_idle_esc;
 }
 
 /*
