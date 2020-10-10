@@ -305,9 +305,9 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_sw_set_style(sw, LV_SW_STYLE_KNOB_OFF, knob_off_style);
     lv_obj_set_size(sw, lv_obj_get_width(sw)*9/17, btn_sw_height*9/17);
     btn->user_data = (void *)sw;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 10);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 5);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-    lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
+    lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw) - 3, 0);
     if(poc_setting_conf->btn_voice_switch == 1)
     {
     	lv_sw_on(sw, LV_ANIM_OFF);
@@ -335,7 +335,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_sw_set_style(sw, LV_SW_STYLE_KNOB_OFF, knob_off_style);
     lv_obj_set_size(sw, lv_obj_get_width(sw)*9/17, btn_sw_height*9/17);
     btn->user_data = (void *)sw;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 10);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 5);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
     if(poc_setting_conf->voice_broadcast_switch == 1)
@@ -364,7 +364,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_sw_set_style(sw, LV_SW_STYLE_KNOB_OFF, knob_off_style);
     lv_obj_set_size(sw, lv_obj_get_width(sw)*9/17, btn_sw_height*9/17);
     btn->user_data = (void *)sw;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 10);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 5);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
     if(poc_setting_conf->font.big_font_switch == 1)
@@ -393,7 +393,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_sw_set_style(sw, LV_SW_STYLE_KNOB_OFF, knob_off_style);
     lv_obj_set_size(sw, lv_obj_get_width(sw)*9/17, btn_sw_height*9/17);
     btn->user_data = (void *)sw;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 10);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 5);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
     if(poc_setting_conf->keypad_led_switch != 0)
@@ -421,7 +421,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_sw_set_style(sw, LV_SW_STYLE_KNOB_OFF, knob_off_style);
     lv_obj_set_size(sw, lv_obj_get_width(sw)*9/17, btn_sw_height*9/17);
     btn->user_data = (void *)sw;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 10);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 5);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
     if(poc_setting_conf->GPS_switch == 1)
@@ -449,7 +449,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_sw_set_style(sw, LV_SW_STYLE_KNOB_OFF, knob_off_style);
     lv_obj_set_size(sw, lv_obj_get_width(sw)*9/17, btn_sw_height*9/17);
     btn->user_data = (void *)sw;
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 10);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 5);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
     if(poc_get_torch_status())
@@ -473,7 +473,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     label = lv_label_create(btn, NULL);
     btn->user_data = (void *)label;
     lv_label_set_text(label, bright_str[poc_setting_conf->screen_brightness]);
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 20);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
@@ -488,7 +488,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     label = lv_label_create(btn, NULL);
     btn->user_data = (void *)label;
     lv_label_set_text(label, bright_time_str[poc_setting_conf->screen_bright_time]);
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 20);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
@@ -504,7 +504,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     label = lv_label_create(btn, NULL);
     btn->user_data = (void *)label;
     lv_label_set_text(label, theme_str[poc_setting_conf->theme.type]);
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 20);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 #endif
@@ -521,7 +521,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     label = lv_label_create(btn, NULL);
     btn->user_data = (void *)label;
     lv_label_set_text(label, main_sim_str[poc_setting_conf->main_SIM]);
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 20);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 #endif
@@ -538,7 +538,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     label = lv_label_create(btn, NULL);
     btn->user_data = (void *)label;
     lv_label_set_text(label, net_type_str[poc_setting_conf->net_type]);
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 20);
+    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
     lv_label_set_long_mode(btn_label, LV_LABEL_LONG_DOT);

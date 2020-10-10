@@ -1089,7 +1089,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 		}
 
 		lv_img_set_auto_size(img, false);
-		lv_obj_set_width(btn_label, btn_width - (lv_coord_t)unlock.header.w - (lv_coord_t)ic_group.header.w - 19);//-19是减去间隙(两个图标)
+		lv_obj_set_width(btn_label, btn_width - (lv_coord_t)unlock.header.w - (lv_coord_t)ic_group.header.w - 17);//-17是减去间隙(两个图标)
 		lv_obj_align(img, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
         p_cur = p_cur->next;

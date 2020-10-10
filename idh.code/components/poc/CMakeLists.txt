@@ -244,28 +244,6 @@ add_library(${target} STATIC
 	gui/resource/font/lv_poc_font_msyh_1bit_3500_59.c
 	gui/resource/font/lv_poc_font_msyh_1bit_3500_60.c
 	gui/resource/font/lv_poc_font_msyh_1bit_3500_9.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_10.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_11.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_12.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_13.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_14.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_15.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_16.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_17.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_18.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_19.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_20.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_21.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_22.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_23.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_24.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_25.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_26.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_27.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_28.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_29.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_30.c
-	gui/resource/font/lv_poc_font_msyh_1bit_6500_9.c
 
 	gui/resource/audiofile/lv_poc_audio_msg.c
 	gui/resource/audiofile/lv_poc_audio_start_machine.c

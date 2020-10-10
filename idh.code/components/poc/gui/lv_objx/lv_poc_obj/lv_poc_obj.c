@@ -940,7 +940,7 @@ static bool lv_poc_init_stabar_time_label(void)
     lv_poc_status_bar_fptr->time_label  = lv_label_create(lv_poc_status_bar, NULL);
     time_label = lv_poc_status_bar_fptr->time_label;
     lv_label_set_style(time_label, LV_LABEL_STYLE_MAIN,label_style);
-    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 4, 1);
+    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 2, 1);
 
     lv_poc_get_time(&time);
 
@@ -1009,7 +1009,7 @@ static bool lv_poc_init_stabar_battery_img(void)
 
     lv_img_set_src(obj, lv_poc_get_battery_img());
     lv_obj_set_opa_scale_enable(obj, false);
-    lv_obj_align(obj, lv_poc_status_bar, LV_ALIGN_IN_RIGHT_MID, 0, 0);
+    lv_obj_align(obj, lv_poc_status_bar, LV_ALIGN_IN_RIGHT_MID, -5, 0);
     return ret_val;
 }
 
@@ -1193,7 +1193,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
     control->left_button = lv_label_create(control->background,NULL);
     lv_label_set_text(control->left_button,left_text);
     lv_label_set_align(control->left_button, LV_LABEL_ALIGN_CENTER);
-    lv_obj_align(control->left_button, lv_obj_get_parent(control->left_button), LV_ALIGN_IN_LEFT_MID, 4, -1);
+    lv_obj_align(control->left_button, lv_obj_get_parent(control->left_button), LV_ALIGN_IN_LEFT_MID, 1, -1);
 
     control->middle_button = lv_label_create(control->background,NULL);
     lv_label_set_text(control->middle_button, middle_text);
@@ -1203,7 +1203,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
     control->right_button = lv_label_create(control->background,NULL);
     lv_label_set_text(control->right_button, right_text);
     lv_label_set_align(control->right_button, LV_LABEL_ALIGN_CENTER);
-    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, -2, -1);
+    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, -3, -1);
 
 }
 

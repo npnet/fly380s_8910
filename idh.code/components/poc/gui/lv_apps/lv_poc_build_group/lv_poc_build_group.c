@@ -502,7 +502,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 
         btn_checkbox = lv_cb_create(btn, NULL);
 		lv_cb_set_text(btn_checkbox, "");
-		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_online.header.w - 9);/*此处修改图标位置*/
+		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_online.header.w - 7);/*此处修改图标位置*/
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
 		/*把自己选上*/
@@ -555,7 +555,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 
         btn_checkbox = lv_cb_create(btn, NULL);
 		lv_cb_set_text(btn_checkbox, "");
-		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_offline.header.w - 9);
+		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_offline.header.w - 7);
 		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
