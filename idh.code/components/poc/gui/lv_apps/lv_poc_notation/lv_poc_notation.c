@@ -11,7 +11,7 @@
 
 #define LV_POC_NOTATION_TASK_QUEUE_SIZE (15)
 
-#define LV_POC_NOTATIONWINDOW_X (2)
+#define LV_POC_NOTATIONWINDOW_X (0)//偏移
 
 typedef struct
 {
