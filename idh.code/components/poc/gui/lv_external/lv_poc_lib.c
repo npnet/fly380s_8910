@@ -45,6 +45,7 @@ drvGpioConfig_t* configport = NULL;
 static bool poc_charging_status = false;//是否正在充电
 static bool poc_power_on_status = false;
 static bool is_poc_play_voice = false;//是否正在播放语音
+static bool is_play_tone_status = false;
 static uint8_t poc_earkey_state = false;
 static int lv_poc_inside_group = false;
 static int lv_poc_group_list_refr = false;
@@ -640,6 +641,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
 					is_poc_play_voice = false;
+
+					if(lv_poc_get_speak_tone_status())
+					{
+						lv_poc_set_speak_tone_status(false);
+						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP_RECORD_IND, NULL);
+					}
 				}
 				else
 				{
@@ -2541,5 +2548,27 @@ void lv_poc_set_group_refr(bool status)
 bool lv_poc_is_group_list_refr(void)
 {
 	return lv_poc_group_list_refr;
+}
+
+/*
+	  name : lv_poc_set_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+void
+lv_poc_set_speak_tone_status(bool status)
+{
+	is_play_tone_status = status;
+}
+
+/*
+	  name : lv_poc_get_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+bool
+lv_poc_get_speak_tone_status(void)
+{
+	return is_play_tone_status;
 }
 

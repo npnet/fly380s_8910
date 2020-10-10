@@ -827,6 +827,22 @@ void lv_poc_set_group_refr(bool status);
 */
 bool lv_poc_is_group_list_refr(void);
 
+/*
+	  name : lv_poc_set_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+void
+lv_poc_set_speak_tone_status(bool status);
+
+/*
+	  name : lv_poc_get_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+bool
+lv_poc_get_speak_tone_status(void);
+
 #ifdef __cplusplus
 }
 #endif
