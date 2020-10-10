@@ -559,6 +559,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 		lv_btn_set_state(btn_checkbox, LV_BTN_STATE_REL);
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
+		p_info->is_self = false;
         p_info->is_selected = false;
         p_info->item_information = p_cur->information;
         p_info->checkbox = btn_checkbox;
