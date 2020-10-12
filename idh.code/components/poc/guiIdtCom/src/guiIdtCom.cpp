@@ -4553,7 +4553,21 @@ extern "C" void *lvPocGuiIdtCom_get_current_lock_group(void)
 
 extern "C" int lvPocGuiIdtCom_get_current_exist_selfgroup(void)
 {
+	unsigned long i;
 	nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+
+	for (i = 0; i < m_IdtUser.m_Group.m_Group_Num; i++)
+	{
+		if(0 == strcmp((char *)poc_config->selfbuild_group_num, (char *)m_IdtUser.m_Group.m_Group[i].m_ucGNum))
+		{
+			break;
+		}
+	}
+
+	if(i == m_IdtUser.m_Group.m_Group_Num)
+	{
+		poc_config->is_exist_selfgroup = LVPOCGROUPIDTCOM_SIGNAL_SELF_NO;
+	}
 
 	return poc_config->is_exist_selfgroup;
 }
