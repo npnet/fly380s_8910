@@ -154,6 +154,7 @@ enum
     HAL_POWER_VBAT_RF = OSI_MAKE_TAG('V', 'B', 'R', 'F'),
     HAL_POWER_REDLED,
     HAL_POWER_GREENLED,
+    HAL_POWER_TOUCHLED,
 };
 
 typedef enum

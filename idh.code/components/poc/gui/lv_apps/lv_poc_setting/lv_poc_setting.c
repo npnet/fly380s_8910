@@ -31,7 +31,7 @@ static const char * lv_poc_setting_btn_text_big_font = "大号字体";
 static const char * lv_poc_setting_btn_text_key_light = "按键灯";
 #endif
 static const char * lv_poc_setting_btn_text_GPS = "GPS";
-#ifdef CONFIG_POC_TOUCH_SUPPORT
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 static const char * lv_poc_setting_btn_text_tourch = "手电筒";
 #endif
 static const char * lv_poc_setting_btn_text_brightness = "亮度";
@@ -189,20 +189,21 @@ static void lv_poc_setting_GPS_btn_cb(lv_obj_t * obj)
 	//lv_sw_toggle(ext_obj);
 }
 
-#ifdef CONFIG_POC_TOUCH_SUPPORT
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 static void lv_poc_setting_torch_btn_cb(lv_obj_t * obj)
 {
     lv_obj_t * ext_obj = NULL;
 	ext_obj = (lv_obj_t *)obj->user_data;
-	if(poc_get_torch_status())
-    {
-		poc_set_torch_status(false);
-    	lv_sw_off(ext_obj, LV_ANIM_OFF);
+
+	if(poc_get_touch_blacklight())
+	{
+      poc_set_touch_blacklight(false);
+      lv_sw_off(ext_obj, LV_ANIM_OFF);
     }
     else
     {
-		poc_set_torch_status(true);
-    	lv_sw_on(ext_obj, LV_ANIM_OFF);
+      poc_set_touch_blacklight(true);
+      lv_sw_on(ext_obj, LV_ANIM_OFF);
     }
 }
 #endif
@@ -433,7 +434,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     	lv_sw_off(sw, LV_ANIM_OFF);
     }
 
-#ifdef CONFIG_POC_TOUCH_SUPPORT/*touch function*/
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT/*touch function*/
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_tourch);
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
@@ -452,7 +453,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 5);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
-    if(poc_get_torch_status())
+    if(poc_get_torch_status()|poc_get_touch_blacklight())
     {
     	lv_sw_on(sw, LV_ANIM_OFF);
     }

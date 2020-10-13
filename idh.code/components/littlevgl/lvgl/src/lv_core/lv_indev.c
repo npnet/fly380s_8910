@@ -404,9 +404,9 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
             if(indev_reset_check(&i->proc)) return;
             lv_event_send(indev_obj_act, LV_EVENT_PRESSED, NULL);
             if(indev_reset_check(&i->proc)) return;
-        } else if(data->key == LV_KEY_ESC) {
+        } else if(data->key == LV_KEY_ESC) {/*返回按键改为释放触发*/
             /*Send the ESC as a normal KEY*/
-            lv_group_send_data(g, LV_KEY_ESC);
+            //lv_group_send_data(g, LV_KEY_ESC);
 
             lv_event_send(indev_obj_act, LV_EVENT_CANCEL, NULL);
             if(indev_reset_check(&i->proc)) return;
@@ -475,7 +475,7 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
 				lv_group_send_data(g, data->key);
 				if(indev_reset_check(&i->proc)) return;
 			}
-			else if(data->key == 44 || data->key == 43)/*锁组,删除组*/
+			else if(data->key == 44 || data->key == 43 || data->key == LV_KEY_ESC)/*锁组,删除组,返回*/
 			{
 				static uint32_t long_key = 0;
 				long_key = data->key;
@@ -513,6 +513,12 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
             lv_event_send(indev_obj_act, LV_EVENT_RELEASED, NULL);
             if(indev_reset_check(&i->proc)) return;
         }
+		else if(data->key == LV_KEY_ESC)
+        {
+			lv_group_send_data(g, data->key);
+			indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, &data->key);
+            if(indev_reset_check(&i->proc)) return;
+		}
         i->proc.pr_timestamp = 0;
         i->proc.long_pr_sent = 0;
     }

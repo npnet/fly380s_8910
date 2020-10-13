@@ -128,10 +128,10 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
 	strcpy(lv_poc_about_text_stateinfo, "电池状态/网络信号等");
-	strcpy(lv_poc_about_text_model, "NF-01F");
+	strcpy(lv_poc_about_text_model, "NB95-P0");
 	strcpy(lv_poc_about_text_processor, "UIS8910DM_IE_AIOT_AIM");
 	strcpy(lv_poc_about_text_sysversion, "8910_MODULE_V1_3_W20.35.2");
-	strcpy(lv_poc_about_text_version_number, "V20.35.2-D10.10");
+	strcpy(lv_poc_about_text_version_number, "V20.35.2-D10.13");
 	strcpy(lv_poc_about_text_update, "检查更新");
 
     for(int i = 0; i < label_array_size; i++)

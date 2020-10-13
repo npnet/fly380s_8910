@@ -785,7 +785,9 @@ void lv_poc_build_group_success_refresh(lv_task_t *task)
 
 char *lv_poc_get_self_name_count(void)
 {
-	return lv_poc_member_myself_name;
+	nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+
+	return poc_config->account_name;
 }
 
 static

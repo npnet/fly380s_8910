@@ -167,11 +167,27 @@ static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign
 
 				case LV_GROUP_KEY_DOWN:
 				{
+					nv_poc_setting_msg_t * poc_config = lv_poc_setting_conf_read();
+					uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+
+		            if(vol_cur > 0)
+		            {
+		                vol_cur = vol_cur - 1;
+		                lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_config->btn_voice_switch, true);
+		            }
 					break;
 				}
 
 				case LV_GROUP_KEY_UP:
 				{
+					nv_poc_setting_msg_t * poc_config = lv_poc_setting_conf_read();
+					uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+
+		            if(vol_cur < 11)
+		            {
+		                vol_cur = vol_cur + 1;
+		                lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_config->btn_voice_switch, true);
+		            }
 					break;
 				}
 

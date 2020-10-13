@@ -132,10 +132,22 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
                         }
                         else
                         {
-							if(lv_poc_get_current_activity() == activity_idle)
+							#ifdef SUPPORT_BRIGHT_SCREEN_OUT
+                            poc_set_lcd_status(!poc_get_lcd_status());
+							#else
+
+							#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
+							if(poc_get_touch_blacklight())
 							{
-                            	poc_set_lcd_status(!poc_get_lcd_status());
-							}
+						      poc_set_touch_blacklight(false);
+						    }
+						    else
+						    {
+						      poc_set_touch_blacklight(true);
+						    }
+							#endif
+
+							#endif
                         }
                     }
                 }

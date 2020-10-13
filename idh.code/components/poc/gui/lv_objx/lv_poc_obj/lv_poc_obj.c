@@ -525,7 +525,7 @@ static void lv_exec_task(lv_task_t * task);
 * DESCRIPT:    初始化状态栏GPS图标
 *     DATE:    2020-08-03
 ********************/
-static bool lv_poc_init_stabar_gps_img(void);
+static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj);
 
 /*************************************************
 *
@@ -565,8 +565,6 @@ bool lv_poc_setting_init(void)
 	poc_ext_pa_init();
 	lv_poc_ear_ppt_key_init();
 	lv_poc_ppt_key_init();
-	lv_poc_key_init();
-	//lv_poc_set_adc_current_sense(true);
 	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 
     return true;
@@ -910,13 +908,12 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_init_stabar_sim2_img();
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
-	lv_poc_init_stabar_gps_img();/*GPS图标*/
+	lv_poc_init_stabar_gps_img(NULL);
 
+    lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
     lv_task_create(lv_poc_stabar_task,1000,LV_TASK_PRIO_LOWEST,NULL);
-    //lv_poc_status_bar_task_ext_add(lv_poc_stabar_battery_task);
-    lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
     lv_poc_status_bar_task_ext_add(lv_poc_stabar_signal_task);
     return ret_val;
 
@@ -1019,26 +1016,34 @@ static bool lv_poc_init_stabar_battery_img(void)
 * DESCRIPT:    初始化状态栏GPS图标
 *     DATE:    2020-08-03
 ********************/
-static bool lv_poc_init_stabar_gps_img(void)
+static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 {
     bool ret_val = true;
 
-   	lv_poc_status_bar_fptr->gps_img    = (lv_poc_status_bar_gps_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_gps_obj_t));
-    memset(lv_poc_status_bar_fptr->gps_img, 0, sizeof(lv_poc_status_bar_gps_obj_t));
+	if(lv_poc_status_bar_fptr->gps_img == NULL)
+	{
+	   	lv_poc_status_bar_fptr->gps_img    = (lv_poc_status_bar_gps_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_gps_obj_t));
+	    memset(lv_poc_status_bar_fptr->gps_img, 0, sizeof(lv_poc_status_bar_gps_obj_t));
 
-	/*在SIM1左边*/
-	lv_poc_status_bar_fptr->gps_img->align_r_obj = lv_poc_status_bar_fptr->sim1->align_l_obj;
-	lv_poc_status_bar_fptr->gps_img->align_l_obj = lv_poc_status_bar_fptr->gps_img->align_r_obj;
+		/*在SIM1左边*/
+		lv_poc_status_bar_fptr->gps_img->align_r_obj = lv_poc_status_bar_fptr->sim1->align_l_obj;
+		lv_poc_status_bar_fptr->gps_img->align_l_obj = lv_poc_status_bar_fptr->gps_img->align_r_obj;
 
-	lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+		lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+	}
+	lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_gps_on);
+
+	if(align_obj == NULL)
+	{
+		lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+	}
+	else
+	{
+		lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(align_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+	}
 
 	/*获取GPS开关状态*/
 	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
-
-	lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_gps_on);
-	/*在SIM1左边*/
-	lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
-
 	if(gps_config->GPS_switch == 1){
 
 		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, false);
@@ -1126,7 +1131,7 @@ static bool lv_poc_init_stabar_sim1_img(void)
 /*******************
 *     NAME:    lv_poc_init_stabar_sim2_img
 *   AUTHOR:    lugj
-* DESCRIPT:    初始化状态sim1图标
+* DESCRIPT:    初始化状态sim2图标
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_sim2_img(void)
@@ -1384,7 +1389,6 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     if(activity != current_activity)
     {
         OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] current activity is empty or is not current_activity\n");
-        //return ret;
     }
 
 #if IDT_POC_MODE
@@ -1452,6 +1456,54 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 		}
 	}
 #endif
+
+	static int long_press_lockscreen_number = 0;
+
+	if(sign == LV_SIGNAL_LONG_PRESS_REP && long_press_lockscreen_number == 0)
+	{
+		if(param == NULL) return LV_RES_OK;
+		unsigned int c = *(unsigned int *)param;
+		switch(c)
+		{
+			case LV_GROUP_KEY_ESC:
+			{
+				if(lv_poc_get_lock_screen_status())
+				{
+					lv_poc_set_lock_screen_status(false);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"解锁屏幕", (const uint8_t *)"");
+					OSI_LOGI(0, "[song]start nolock scrren");
+					long_press_lockscreen_number = 1;
+					return LV_RES_INV;
+				}
+				else
+				{
+					lv_poc_set_lock_screen_status(true);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"锁定屏幕", (const uint8_t *)"");
+					OSI_LOGI(0, "[song]start lock scrren");
+					long_press_lockscreen_number = 2;
+					return LV_RES_INV;
+				}
+				break;
+			}
+
+			default:
+			{
+				break;
+			}
+		}
+	}
+
+	if(sign ==  LV_SIGNAL_RELEASED)//after
+	{
+		long_press_lockscreen_number = 0;
+	}
+
+	if(lv_poc_get_lock_screen_status()
+		|| long_press_lockscreen_number == 1
+		|| long_press_lockscreen_number == 2)//lock scrren status,because rel msg be delayed
+	{
+		return LV_RES_INV;
+	}
 
     if(NULL != activity->signal_func)
     {
@@ -2471,12 +2523,9 @@ void lv_poc_update_stabar_sim_img(void)
     static unsigned short old_sim_state_code[MAX_SIM_COUNT] = { 0 };
     static bool is_continue = true;
     int k;
-    //static lv_obj_t * obj1 = NULL;
     static lv_obj_t * obj2 = NULL;
     static lv_obj_t * obj3 = NULL;
     static lv_obj_t * obj4 = NULL;
-
-    //static char poc_pro_state = 0;
 
     sim_state_code[0] = lv_poc_get_sim_state_code(POC_SIM_1);
 #if MAX_SIM_COUNT > 1
@@ -2513,49 +2562,49 @@ void lv_poc_update_stabar_sim_img(void)
                 obj2 = lv_img_create(lv_poc_status_bar, NULL);
                 switch((sim_state_code[k] & 0x1e) >> 1)    //判断信号强度是多少
                 {
-                case MMI_MODEM_SIGNAL_BAR_0:
-                {
-                    lv_img_set_src(obj2, sim_signal_img[0]);
-                    break;
-                }
+	                case MMI_MODEM_SIGNAL_BAR_0:
+	                {
+	                    lv_img_set_src(obj2, sim_signal_img[0]);
+	                    break;
+	                }
 
-                case MMI_MODEM_SIGNAL_BAR_1:
-                {
-                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 1]);
-                    break;
-                }
+	                case MMI_MODEM_SIGNAL_BAR_1:
+	                {
+	                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 1]);
+	                    break;
+	                }
 
-                case MMI_MODEM_SIGNAL_BAR_2:
-                case MMI_MODEM_SIGNAL_BAR_3:
-                {
-                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 2]);
-                    break;
-                }
+	                case MMI_MODEM_SIGNAL_BAR_2:
+	                case MMI_MODEM_SIGNAL_BAR_3:
+	                {
+	                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 2]);
+	                    break;
+	                }
 
-                case MMI_MODEM_SIGNAL_BAR_4:
-                {
-                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 3]);
-                    break;
-                }
+	                case MMI_MODEM_SIGNAL_BAR_4:
+	                {
+	                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 3]);
+	                    break;
+	                }
 
-                case MMI_MODEM_SIGNAL_BAR_5:
-                {
-                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 4]);
-                    break;
-                }
+	                case MMI_MODEM_SIGNAL_BAR_5:
+	                {
+	                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 4]);
+	                    break;
+	                }
 
-                default:
-                {
-                    OSI_LOGI(0, "FUNC:%s  get a error net signal strength", __func__);
-                    lv_poc_stabar_sim_clean(sim_cont[k]);
-                    lv_img_set_src(obj2, &ic_no_sim);
-                    lv_obj_align(obj2, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
-                    sim_cont[k]->sim_img = obj2;
-                    sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_img);
-                    old_sim_state_code[k] = sim_state_code[k];
-                    continue;
-                    break;
-                }
+	                default:
+	                {
+	                    OSI_LOGI(0, "FUNC:%s  get a error net signal strength", __func__);
+	                    lv_poc_stabar_sim_clean(sim_cont[k]);
+	                    lv_img_set_src(obj2, &ic_no_sim);
+	                    lv_obj_align(obj2, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
+	                    sim_cont[k]->sim_img = obj2;
+	                    sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_img);
+	                    old_sim_state_code[k] = sim_state_code[k];
+	                    continue;
+	                    break;
+	                }
                 }
                 lv_obj_align(obj2, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
                 sim_cont[k]->sim_signal_strength_img = obj2;
@@ -2564,46 +2613,52 @@ void lv_poc_update_stabar_sim_img(void)
                 obj3 = lv_img_create(lv_poc_status_bar, NULL);
                 switch((sim_state_code[k] & 0xe0) >> 5)   //判断是什么类型的信号
                 {
-                case 1:
-                case 2://2G网络
-                {	//显示G
-                    lv_img_set_src(obj3, &stat_sys_data_connected_2g_sprd);
-                    break;
+	                case 1:
+	                case 2://2G网络
+	                {	//显示G
+	                    lv_img_set_src(obj3, &stat_sys_data_connected_2g_sprd);
+	                    break;
+	                }
+
+	                case 3://3G网络
+	                {
+	                    lv_img_set_src(obj3, &stat_sys_data_fully_connected_3g_sprd_reliance);
+	                    break;
+	                }
+
+	                case 4:
+	                case 5:
+	                {
+	                    lv_img_set_src(obj3, &stat_sys_data_connected_4g_sprd);
+						break;
+	                }
+					case 6://显示无服务
+					{
+						lv_img_set_src(obj3, &ic_signal_no_server);
+						break;
+
+					}
+	                default:
+	                {
+	                    OSI_LOGI(0, "FUNC:%s  get a error net type", __func__);
+						//lv_img_set_src(obj3, &stat_sys_no_sim_sprd_cucc);//未注册网络图标
+	                    //lv_poc_stabar_sim_clean(sim_cont[k]);
+	                    lv_obj_del(obj3);
+	                    old_sim_state_code[k] = sim_state_code[k];
+
+						//refr gps view
+						if(lv_poc_status_bar_fptr->gps_img != NULL)
+						{
+							lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
+							lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+							lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+						}
+	                    continue;
+	                }
                 }
 
-                case 3://3G网络
-                {
-                    lv_img_set_src(obj3, &stat_sys_data_fully_connected_3g_sprd_reliance);
-                    break;
-                }
-
-                case 4:
-                case 5:
-                {
-                    lv_img_set_src(obj3, &stat_sys_data_connected_4g_sprd);
-                    break;
-                }
-				case 6://显示无服务
-				{
-					lv_img_set_src(obj3, &ic_signal_no_server);
-					break;
-
-				}
-                default:
-                {
-                    OSI_LOGI(0, "FUNC:%s  get a error net type", __func__);
-					//lv_img_set_src(obj3, &stat_sys_no_sim_sprd_cucc);//未注册网络图标
-//                    lv_poc_stabar_sim_clean(sim_cont[k]);
-                    lv_obj_del(obj3);
-                    old_sim_state_code[k] = sim_state_code[k];
-                    continue;
-                }
-                }
                 lv_obj_align(obj3, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
-                //OSI_LOGI(0, "func:%s  initialization of poc and mpc task", __func__);
-                //bnd_create_poc_task();
-                //MPC_Create_Handle_Task();
-                sim_cont[k]->sim_net_type_img = obj3;
+				sim_cont[k]->sim_net_type_img = obj3;
                 sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_net_type_img);
             }
             else
@@ -2616,6 +2671,14 @@ void lv_poc_update_stabar_sim_img(void)
                 sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_img);
             }
             old_sim_state_code[k] = sim_state_code[k];
+
+			//refr gps view
+			if(lv_poc_status_bar_fptr->gps_img != NULL)
+			{
+				lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
+				lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+				lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+			}
         }
     }
     is_continue = false;

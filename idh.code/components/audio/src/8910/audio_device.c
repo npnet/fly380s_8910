@@ -2903,8 +2903,6 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
 		{
 			extern bool poc_set_ext_pa_status(bool open);
 			poc_set_ext_pa_status(true);
-
-			OSI_LOGI(0, "[songpa] open");
 		}
 
         osiWorkEnqueue(d->ipc_work, d->wq);

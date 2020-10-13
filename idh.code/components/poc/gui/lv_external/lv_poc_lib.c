@@ -35,23 +35,27 @@ static nv_poc_theme_msg_node_t theme_black = {0};
 #define POC_SETTING_CONFIG_FILESIZE (sizeof(nv_poc_setting_msg_t))
 #define POC_SETTING_CONFIG_BUFFER (&poc_setting_conf_local)
 static bool nv_poc_setting_config_is_writed = false;
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 static drvGpio_t * poc_torch_gpio = NULL;
+#endif
 static drvGpio_t * poc_keypad_led_gpio = NULL;
 static drvGpio_t * poc_ext_pa_gpio = NULL;
-static drvGpio_t * poc_port_Gpio = NULL;
+static drvGpio_t * poc_ext_pa_horn_gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
-static drvGpio_t * poc_green_gpio = NULL;
 static drvGpio_t * poc_ppt_gpio = NULL;
-static drvGpio_t * poc_volum_up_gpio = NULL;
-static drvGpio_t * poc_volum_down_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
 static bool poc_charging_status = false;
 static bool is_poc_play_voice = false;
 static bool is_poc_idle_esc = false;
+
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
+static bool is_poc_touch_status = false;
+#endif
 /*************************************************/
 static bool is_play_tone_status = false;
+static bool is_lock_screen_status = false;
 static uint8_t poc_earkey_state = false;
 static int lv_poc_inside_group = false;
 static int lv_poc_group_list_refr = false;
@@ -60,6 +64,7 @@ static void poc_ear_ppt_irq(void *ctx);
 static uint16_t poc_cur_unopt_status;
 static void poc_Lcd_Set_BackLightNess(uint32_t level);
 static void poc_SetPowerLevel(uint32_t id, uint32_t mv);
+static void drvledxSetBackLight(uint8_t ledx, bool status);
 
 /*
       name : lv_poc_get_keypad_dev
@@ -421,6 +426,7 @@ static
 void poc_SetPowerLevel(uint32_t id, uint32_t mv)
 {
 	REG_RDA2720M_BLTC_BLTC_CTRL_T bltc_ctrl;
+	REG_RDA2720M_GLOBAL_FLASH_CTRL_T rg_flash_ctrl;/*touch*/
 	REG_RDA2720M_BLTC_RG_RGB_V0_T rg_rgb_v0;
     REG_RDA2720M_BLTC_RG_RGB_V1_T rg_rgb_v1;
 	REG_RDA2720M_BLTC_RG_RGB_V3_T rg_rgb_v3;/*red*/
@@ -526,6 +532,28 @@ void poc_SetPowerLevel(uint32_t id, uint32_t mv)
             {
                 break;
             }
+		}
+	}
+	else if(id == POC_LED_TYPE_TOUCH_T)
+	{
+		switch(mv)
+		{
+			case POC_LCD_BACKLIGHT_LEVEL_0:
+	        {
+	            REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, rg_flash_ctrl, flash_pon, 0);
+	            REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, rg_flash_ctrl, flash_v_sw, 0x0);
+	            break;
+	        }
+	        case POC_LCD_BACKLIGHT_LEVEL_1:
+	        {
+	            REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, rg_flash_ctrl, flash_pon, 1);
+	            REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, rg_flash_ctrl, flash_v_sw, 0xf);
+	            break;
+	        }
+	        default:
+	        {
+	            break;
+	        }
 		}
 	}
 }
@@ -1471,6 +1499,7 @@ poc_broadcast_play_rep(uint8_t * text, uint32_t length, uint8_t play, bool force
 #endif
 }
 
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 /*
       name : poc_set_torch_status
      param : open  true is open torch
@@ -1521,6 +1550,31 @@ poc_torch_init(void)
 	poc_torch_gpio = drvGpioOpen(2, config, NULL, NULL);
 	free(config);
 }
+
+/*
+     name : poc_set_touch_blacklight
+    param : none
+     date : 2020-08-08
+*/
+void
+poc_set_touch_blacklight(bool status)
+{
+   drvledxSetBackLight(POC_LED_TYPE_TOUCH_T, status);
+   is_poc_touch_status = status;
+}
+
+/*
+     name : poc_get_touch_blacklight
+    param : none
+     date : 2020-08-08
+*/
+bool
+poc_get_touch_blacklight(void)
+{
+	return is_poc_touch_status;
+}
+
+#endif
 
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 /*
@@ -1586,34 +1640,42 @@ poc_set_ext_pa_status(bool open)
 {
 	#define POC_EXT_PA_DELAY_US 2
 	poc_ext_pa_init();
-	if(poc_ext_pa_gpio == NULL) return false;
-	if(open)
-	{
-		//one
-		drvGpioWrite(poc_ext_pa_gpio, true);
-		osiDelayUS(POC_EXT_PA_DELAY_US);//不要使用 osiThreadSleepUS 加延时，导致线程阻塞，声音忽高忽低
+	if(poc_ext_pa_gpio == NULL || poc_ext_pa_horn_gpio == NULL) return false;
+//	if(open)
+//	{
+//		//one
+//		drvGpioWrite(poc_ext_pa_gpio, false);
+//		drvGpioWrite(poc_ext_pa_horn_gpio, false);
+//		osiDelayUS(POC_EXT_PA_DELAY_US);
+//		drvGpioWrite(poc_ext_pa_gpio, true);
+//		drvGpioWrite(poc_ext_pa_horn_gpio, true);
+//		osiDelayUS(POC_EXT_PA_DELAY_US);//不要使用 osiThreadSleepUS 加延时，导致线程阻塞，声音忽高忽低
+//
+//		//two
+//		drvGpioWrite(poc_ext_pa_gpio, false);
+//		drvGpioWrite(poc_ext_pa_horn_gpio, false);
+//		osiDelayUS(POC_EXT_PA_DELAY_US);
+//		drvGpioWrite(poc_ext_pa_gpio, true);
+//		drvGpioWrite(poc_ext_pa_horn_gpio, true);
+//		osiDelayUS(POC_EXT_PA_DELAY_US);
+//
+//		//three
+//		drvGpioWrite(poc_ext_pa_gpio, false);
+//		drvGpioWrite(poc_ext_pa_horn_gpio, false);
+//		osiDelayUS(POC_EXT_PA_DELAY_US);
+//		drvGpioWrite(poc_ext_pa_gpio, true);
+//		drvGpioWrite(poc_ext_pa_horn_gpio, true);
+//		osiDelayUS(POC_EXT_PA_DELAY_US);
+//
+//		//four
+//		drvGpioWrite(poc_ext_pa_gpio, false);
+//		drvGpioWrite(poc_ext_pa_horn_gpio, false);
+//	}
+//	else
+//	{
 		drvGpioWrite(poc_ext_pa_gpio, false);
-		osiDelayUS(POC_EXT_PA_DELAY_US);
-
-		//two
-		drvGpioWrite(poc_ext_pa_gpio, true);
-		osiDelayUS(POC_EXT_PA_DELAY_US);
-		drvGpioWrite(poc_ext_pa_gpio, false);
-		osiDelayUS(POC_EXT_PA_DELAY_US);
-
-		//three
-		drvGpioWrite(poc_ext_pa_gpio, true);
-		osiDelayUS(POC_EXT_PA_DELAY_US);
-		drvGpioWrite(poc_ext_pa_gpio, false);
-		osiDelayUS(POC_EXT_PA_DELAY_US);
-
-		//four
-		drvGpioWrite(poc_ext_pa_gpio, true);
-	}
-	else
-	{
-		drvGpioWrite(poc_ext_pa_gpio, false);
-	}
+		drvGpioWrite(poc_ext_pa_horn_gpio, false);
+//	}
 
 	return open;
 }
@@ -1628,7 +1690,7 @@ poc_get_ext_pa_status(void)
 {
 	poc_ext_pa_init();
 	if(poc_ext_pa_gpio == NULL) return false;
-	return drvGpioRead(poc_keypad_led_gpio);
+	return drvGpioRead(poc_ext_pa_gpio);
 }
 
 /*
@@ -1639,7 +1701,7 @@ poc_get_ext_pa_status(void)
 void
 poc_ext_pa_init(void)
 {
-	if(poc_ext_pa_gpio != NULL) return;
+	if(poc_ext_pa_gpio != NULL || poc_ext_pa_horn_gpio != NULL) return;
 	drvGpioConfig_t * config = NULL;
 	if(config == NULL)
 	{
@@ -1653,86 +1715,9 @@ poc_ext_pa_init(void)
 		config->debounce = true;
 		config->out_level = false;
 	}
-	poc_ext_pa_gpio = drvGpioOpen(9, config, NULL, NULL);
+	poc_ext_pa_gpio = drvGpioOpen(poc_audio_pa, config, NULL, NULL);
+	poc_ext_pa_horn_gpio = drvGpioOpen(poc_horn_sound, config, NULL, NULL);
 	free(config);
-}
-
-/*
-      name : poc_port_init
-      param : port is the IO that needs to be set
-      date : 2020-05-08
-*/
-drvGpioConfig_t *
-poc_port_init(void)
-{
-	if(poc_port_Gpio != NULL) return false;
-	static drvGpioConfig_t * config = NULL;
-	if(config == NULL)
-	{
-		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
-		if(config == NULL)
-		{
-			return false;
-		}
-		memset(config, 0, sizeof(drvGpioConfig_t));
-		config->mode = DRV_GPIO_OUTPUT;
-		config->debounce = true;
-		config->out_level = false;
-	}
-
-	return config;
-}
-
-/*
-      name : poc_set_port_status
-      param : open true is open port
-      date : 2020-05-08
-*/
-bool
-poc_set_port_status(uint32_t port, drvGpioConfig_t *config,bool open)
-{
-	poc_port_Gpio = drvGpioOpen(port, config, NULL, NULL);
-	drvGpioWrite(poc_port_Gpio , open);
-	return open;
-}
-
-/*
-      name : poc_set_red_status
-      param : if the status is true,open green led,but...
-      date : 2020-05-09
-*/
-bool
-poc_set_red_status(bool ledstatus)
-{
-#if 1
-    if(configport==NULL)
-    {
-		configport=poc_port_init();
-    }
-	poc_set_port_status(poc_red_led,configport,ledstatus);
-#endif
-	return ledstatus;
-}
-
-/*
-      name : poc_set_green_status
-      param : if the status is true,open green led,but...
-      date : 2020-05-09
-*/
-bool
-poc_set_green_status(bool ledstatus)
-{
-	/*配置green IO*/
-    drvGpioConfig_t cfg = {
-        .mode = DRV_GPIO_OUTPUT,
-		.debounce = true,
-        .out_level = false,
-    };
-
-	poc_green_gpio = drvGpioOpen(poc_green_led, &cfg, NULL, NULL);
-	drvGpioWrite(poc_green_gpio, ledstatus);
-
-	return ledstatus;
 }
 
 /*
@@ -2037,62 +2022,6 @@ bool lv_poc_get_ppt_state(void)
 }
 
 /*
-	  name : poc_volum_up_key_irq
-	 param : none
-	author : wangls
-  describe : volum up key 中断
-	  date : 2020-10-10
-*/
-static
-void poc_volum_up_key_irq(void *ctx)
-{
-	if(drvGpioRead(poc_volum_up_gpio))/*release*/
-	{
-		OSI_LOGI(0, "[song]volum_up key release\n");
-	}
-	else/*press*/
-	{
-		nv_poc_setting_msg_t * poc_config = lv_poc_setting_conf_read();
-		uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
-
-		if(vol_cur < 11)
-		{
-			vol_cur = vol_cur + 1;
-			extern bool lv_poc_set_volum(POC_MMI_VOICE_TYPE_E type, uint8_t volume, bool play, bool display);
-			lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_config->btn_voice_switch, true);
-		}
-	}
-}
-
-/*
-	  name : poc_volum_down_key_irq
-	 param : none
-	author : wangls
-  describe : volum down key
-	  date : 2020-10-10
-*/
-static
-void poc_volum_down_key_irq(void *ctx)
-{
-	if(drvGpioRead(poc_volum_down_gpio))/*release*/
-	{
-		OSI_LOGI(0, "[song]volum_down key release\n");
-	}
-	else/*press*/
-	{
-		nv_poc_setting_msg_t * poc_config = lv_poc_setting_conf_read();
-		uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
-
-		if(vol_cur > 0)
-		{
-			vol_cur = vol_cur - 1;
-			extern bool lv_poc_set_volum(POC_MMI_VOICE_TYPE_E type, uint8_t volume, bool play, bool display);
-			lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_config->btn_voice_switch, true);
-		}
-	}
-}
-
-/*
 	  name : lv_poc_set_audev_in_out
 	 param : none
 	author : wangls
@@ -2161,36 +2090,6 @@ bool lv_poc_get_record_mic_gain(void)
 		mode, path, anaGain, adcGain);
 
 	return true;
-}
-
-/*
-	  name : lv_poc_key_init
-	 param : none
-	author : wangls
-  describe : poc key 配置
-	  date : 2020-08-14
-*/
-void lv_poc_key_init(void)
-{
-	/*配置ppt IO*/
-    drvGpioConfig_t cfg = {
-        .mode = DRV_GPIO_INPUT,
-        .intr_enabled = true,
-        .intr_level = false,
-        .rising = true,
-        .falling = true,
-        .debounce = true,
-    };
-
-	poc_volum_down_gpio = drvGpioOpen(poc_volum_down, &cfg, poc_volum_down_key_irq, NULL);
-	poc_volum_up_gpio = drvGpioOpen(poc_volum_up, &cfg, poc_volum_up_key_irq, NULL);
-
-	if(poc_volum_down_gpio == NULL
-	   || poc_volum_up_gpio == NULL)
-	{
-		Ap_OSI_ASSERT((poc_volum_down_gpio != NULL), "[song]group io NULL"); /*assert verified*/
-		return;
-	}
 }
 
 
@@ -2932,5 +2831,27 @@ bool
 lv_poc_get_speak_tone_status(void)
 {
 	return is_play_tone_status;
+}
+
+/*
+	  name : lv_poc_set_lock_screen_status
+	  param :
+	  date : 2020-10-13
+*/
+void
+lv_poc_set_lock_screen_status(bool status)
+{
+	is_lock_screen_status = status;
+}
+
+/*
+	  name : lv_poc_get_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+bool
+lv_poc_get_lock_screen_status(void)
+{
+	return is_lock_screen_status;
 }
 

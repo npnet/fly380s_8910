@@ -674,6 +674,14 @@ bool halPmuSwitchPower(uint32_t id, bool enabled, bool lp_enabled)
         REG_ADI_CHANGE1(hwp_rda2720mBltc->rg_rgb_v2, rg_rgb_v2, rg_rgb_v2, 0x01);
         break;
 
+	case HAL_POWER_TOUCHLED:
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, flash_ctrl,
+                        flash_v_sw, 0x0);
+      	REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, flash_ctrl,
+                        flash_pon, 0);
+        REG_ADI_CHANGE1(hwp_rda2720mGlobal->flash_ctrl, flash_ctrl,
+                        flash_v_hw_en, enabled ? 0 : 1);//lp_enabled
+        break;
     default:
         // ignore silently
         break;

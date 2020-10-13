@@ -89,7 +89,13 @@ config POC_GUI_KEYPAD_LIGHT_SUPPORT
     default y
     help
         poc gui should be supported.
-
+		
+config POC_GUI_TOUCH_SUPPORT
+	bool "POC gui touch supported"
+    default y
+    help
+        poc gui should be supported.
+		
 config POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE
     int "receive idt data by buff"
     default 3

@@ -160,7 +160,8 @@ void pocStart(void *ctx)
 
     poc_Status_Led_Task();
     lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-    drvLcdInitV2();
+	poc_config_Lcd_power_vol();
+	drvLcdInitV2();
 
 	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
     drvLcdOpenV2(lcd);
@@ -170,6 +171,7 @@ void pocStart(void *ctx)
 	/*LED Init*/
     halPmuSwitchPower(HAL_POWER_REDLED, true, false);
     halPmuSwitchPower(HAL_POWER_GREENLED, true, false);
+	halPmuSwitchPower(HAL_POWER_TOUCHLED, true, false);
 
     /*close led*/
     poc_set_red_blacklight(false);

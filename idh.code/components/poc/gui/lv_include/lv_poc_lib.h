@@ -22,13 +22,10 @@
 
 enum {
 	poc_torch_led   = 2,//IO touch
-	poc_red_led     = 10,//IO redled
-	poc_green_led   = 13,//IO greenled
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set    = 8,//IO headset
-    poc_volum_down  = 20,//volum down
-    poc_ppt         = 21,//IO ppt
-    poc_volum_up    = 19,//volum up
+    poc_ppt         = 19,//IO ppt
+    poc_audio_pa    = 13,//audio pa
 };
 
 enum {
@@ -480,6 +477,15 @@ poc_get_device_account_rep(POC_SIM_ID nSim);
 bool
 poc_broadcast_play_rep(uint8_t * text, uint32_t length, uint8_t broadcast_switch, bool force);
 
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
+/*
+      name : poc_set_torch_status
+     param : open  true is open torch
+      date : 2020-04-30
+*/
+bool
+poc_set_torch_status(bool open);
+
 /*
       name : poc_set_torch_status
      param : none
@@ -495,6 +501,24 @@ poc_get_torch_status(void);
 */
 void
 poc_torch_init(void);
+
+/*
+     name : poc_set_touch_blacklight
+    param : none
+     date : 2020-08-08
+*/
+void
+poc_set_touch_blacklight(bool status);
+
+/*
+     name : poc_get_touch_blacklight
+    param : none
+     date : 2020-08-08
+*/
+bool
+poc_get_touch_blacklight(void);
+
+#endif
 
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 /*
@@ -545,46 +569,6 @@ poc_get_ext_pa_status(void);
 */
 void
 poc_ext_pa_init(void);
-
-/*
-      name : poc_port_init
-      param : port is the IO that needs to be set
-      date : 2020-05-08
-*/
-drvGpioConfig_t *
-poc_port_init(void);
-
-/*
-      name : poc_set_port_status
-      param : open true is open port
-      date : 2020-05-08
-*/
-bool
-poc_set_port_status(uint32_t port, drvGpioConfig_t *config,bool open);
-
-/*
-      name : poc_set_torch_status
-     param : open  true is open torch
-      date : 2020-04-30
-*/
-bool
-poc_set_torch_status(bool open);
-
-/*
-	  name : poc_set_red_status
-	  param : if the status is true,open green led,but...
-	  date : 2020-05-09
-*/
-bool
-poc_set_red_status(bool ledstatus);
-
-/*
-	  name : poc_set_green_status
-	  param : if the status is true,open green led,but...
-	  date : 2020-05-09
-*/
-bool
-poc_set_green_status(bool ledstatus);
 
 /*
 	  name : lv_poc_get_group_list
@@ -942,6 +926,29 @@ lv_poc_set_speak_tone_status(bool status);
 */
 bool
 lv_poc_get_speak_tone_status(void);
+
+/*
+	  name : poc_config_Lcd_power_vol
+	return : none
+	  date : 2020-09-12
+*/
+void poc_config_Lcd_power_vol(void);
+
+/*
+	  name : lv_poc_set_lock_screen_status
+	  param :
+	  date : 2020-10-13
+*/
+void
+lv_poc_set_lock_screen_status(bool status);
+
+/*
+	  name : lv_poc_get_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+bool
+lv_poc_get_lock_screen_status(void);
 
 #ifdef __cplusplus
 }

@@ -83,6 +83,12 @@
 #cmakedefine CONFIG_POC_AUDIO_SPEAKER_WOMEN
 
 /**
+ * Wheth the POC touch is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_TOUCH_SUPPORT
+
+/**
  * Wheth the POC keypad light is enabled.
  *
  */
