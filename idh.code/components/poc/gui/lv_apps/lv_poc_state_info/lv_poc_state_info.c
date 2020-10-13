@@ -17,11 +17,11 @@ static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_des
 
 static lv_poc_win_t * state_info_win;
 
+static lv_task_t * state_task;
+
 static lv_obj_t * activity_list;
 
 lv_poc_activity_t * poc_state_info_activity;
-
-
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
@@ -55,7 +55,10 @@ typedef struct
 	lv_coord_t content_align_y;
 } lv_poc_state_info_label_struct_t;
 
-
+typedef void (*status_info_menu_task_t)(void);
+static status_info_menu_task_t status_info_menu_task_ext[LV_POC_STABAR_TASK_EXT_LENGTH];	
+static void lv_poc_info_menu_task(lv_task_t * task);
+static lv_obj_t *label_array[9] = {};
 static char lv_poc_state_info_text_account[64] = {0};
 static char lv_poc_state_info_imei_str[16] = {0};
 static char lv_poc_state_info_text_iccid_str[20] = {0};
@@ -121,6 +124,162 @@ lv_poc_state_info_label_struct_t lv_poc_state_info_label_array[] = {
 		lv_poc_state_info_text_mobile_network, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 };
+		
+bool lv_poc_status_info_menu_task_ext_add(status_info_menu_task_t task)
+{
+    static int stabar_task_ext_count = 0;
+    if(stabar_task_ext_count >= LV_POC_STABAR_TASK_EXT_LENGTH) return false;
+    status_info_menu_task_ext[stabar_task_ext_count] = task;
+    stabar_task_ext_count = stabar_task_ext_count + 1;
+    return true;
+}
+
+static void lv_poc_info_menu_task(lv_task_t * task)
+{
+    int k;
+	
+    for(k = 0; k < LV_POC_STABAR_TASK_EXT_LENGTH; k++)
+    {
+        if(status_info_menu_task_ext[k] != NULL)
+        {
+            (status_info_menu_task_ext[k])();
+        }
+    }
+}
+
+static int lv_poc_state_info_network_server(void)
+{
+	uint8_t uState;
+	uint8_t nSim = POC_SIM_1;
+	int nStatus = 0;
+	
+	CFW_GetGprsAttState(&uState, nSim);
+	if(lvPocGuiIdtCom_get_status() == 1)
+	{
+		if(uState == 0)
+		{
+			strcpy(lv_poc_state_info_text_service_status, "Voice:正在使用中/Data:未使用");
+			nStatus  = 0;
+		}
+		else
+		{
+			strcpy(lv_poc_state_info_text_service_status, "Voice:正在使用中/Data:正在使用中");
+			nStatus  = 1;
+		}
+	}
+	else if(uState == 0)
+	{
+		strcpy(lv_poc_state_info_text_service_status, "Voice:未使用/Data:未使用");
+		nStatus  = 2;
+	}
+	else
+	{
+		strcpy(lv_poc_state_info_text_service_status, "Voice:未使用/Data:正在使用中");
+		nStatus  = 3;
+	}
+
+	return nStatus;
+}
+
+static void lv_poc_state_info_network_connection(void)
+{
+	POC_MMI_MODEM_PLMN_RAT	rat;
+	int8_t	operat;
+	
+	poc_get_operator_network_type_req(POC_SIM_1,&operat,&rat);
+	switch(rat)
+	{
+		case  MMI_MODEM_PLMN_RAT_GSM:                                                 // GSM network
+			strcpy(lv_poc_state_info_text_local_network, "GSM");
+			strcpy(lv_poc_state_info_text_mobile_network, "已连接");
+			break;
+   		case MMI_MODEM_PLMN_RAT_UMTS:                                                    // UTRAN network
+   			strcpy(lv_poc_state_info_text_local_network, "UTRAM");
+			strcpy(lv_poc_state_info_text_mobile_network, "已连接");
+			break;
+    	case MMI_MODEM_PLMN_RAT_LTE:                                                    // LTE network
+    		strcpy(lv_poc_state_info_text_local_network, "LTE");
+			strcpy(lv_poc_state_info_text_mobile_network, "已连接");
+			break;
+		case MMI_MODEM_PLMN_RAT_NO_SERVICE:  											// 无服务 network
+			strcpy(lv_poc_state_info_text_local_network, "无服务");
+			strcpy(lv_poc_state_info_text_mobile_network, "未连接");
+			break;
+		default:
+			strcpy(lv_poc_state_info_text_local_network, "UNKNOW");
+			break;
+	}
+
+}
+
+static void lv_poc_state_info_battery(void)
+{
+	char battery[24] = {0};
+	battery_values_t values;
+	
+	poc_battery_get_status(&values);
+	__itoa(values.battery_value, (char *)&battery, 10);
+	strcat(battery,"%");
+	strcpy(lv_poc_state_info_text_battery_capacity, battery);
+	if(values.battery_status)
+	{
+		if(values.charging == POC_CHG_CONNECTED)
+		{
+			strcpy(lv_poc_state_info_text_battery_state, "充电");
+		}
+		else
+		{
+			strcpy(lv_poc_state_info_text_battery_state, "良好");
+		}	
+	}
+	else
+	{
+		strcpy(lv_poc_state_info_text_battery_state, "故障");
+	}
+}
+
+static void lv_poc_state_info_signalbdm(void)
+{
+	char sing[24] = "-";
+	uint8_t nSignalDBM;
+	
+	poc_get_signal_dBm(&nSignalDBM);
+	__itoa(nSignalDBM, (char *)&sing[1] , 10);
+	strcat(sing,"dBm");
+ 	strcpy(lv_poc_state_info_text_signal_strength, sing);
+}
+
+static void lv_poc_refresh_state_info_signalbdm(void)
+{
+	lv_poc_state_info_signalbdm();
+	lv_label_set_text(label_array[5], lv_poc_state_info_label_array[5].content);
+}
+
+static void lv_poc_refresh_state_info_network_server(void)
+{
+	int ret = 0;
+	static int cRefresh = 0;
+	
+	ret = lv_poc_state_info_network_server();
+	if(cRefresh != ret)
+	{
+		lv_label_set_text(label_array[7], lv_poc_state_info_label_array[7].content);
+		cRefresh = ret;
+	}
+}
+
+static void lv_poc_refresh_state_info_network_connection(void)
+{
+	lv_poc_state_info_network_connection();
+	lv_label_set_text(label_array[6], lv_poc_state_info_label_array[6].content);
+	lv_label_set_text(label_array[8], lv_poc_state_info_label_array[8].content);
+}
+
+static void lv_poc_refresh_state_info_battery(void)
+{
+	lv_poc_state_info_battery();
+	lv_label_set_text(label_array[3], lv_poc_state_info_label_array[3].content);
+}
 
 static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 {
@@ -152,15 +311,12 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
     poc_get_device_imei_rep((int8_t *)lv_poc_state_info_imei_str);
 	lv_poc_state_info_text_iccid_str[0] = 0;
     poc_get_device_iccid_rep((int8_t *)lv_poc_state_info_text_iccid_str);
-
-	strcpy(lv_poc_state_info_text_battery_state, "良好");
-	strcpy(lv_poc_state_info_text_battery_capacity, "56%");
-	strcpy(lv_poc_state_info_text_signal_strength, "-97 dBm");
-	strcpy(lv_poc_state_info_text_local_network, "LTE");
-	strcpy(lv_poc_state_info_text_service_status, "Voice:正在使用中/Data:正在使用中");
-	strcpy(lv_poc_state_info_text_mobile_network, "已连接");
-
-    for(int i = 0; i < label_array_size; i++)
+	lv_poc_state_info_signalbdm();
+	lv_poc_state_info_battery();
+	lv_poc_state_info_network_server();
+	lv_poc_state_info_network_connection();
+	
+    for(int i = 0;i < label_array_size; i++)
     {
 	    btn = lv_list_add_btn(list, NULL, lv_poc_state_info_label_array[i].title);
 	    btn_array[i] = btn;
@@ -183,11 +339,15 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 		lv_obj_set_width(label, btn_width - lv_obj_get_width(btn_label));
 		lv_obj_align(btn_label, btn, lv_poc_state_info_label_array[i].title_align, lv_poc_state_info_label_array[i].content_align_x, lv_poc_state_info_label_array[i].content_align_y);
 		lv_obj_align(label, btn_label, lv_poc_state_info_label_array[i].content_align, lv_poc_state_info_label_array[i].content_align_x, lv_poc_state_info_label_array[i].content_align_y);
-    }
-
+		label_array[i] = label;
+	}
+	state_task = lv_task_create(lv_poc_info_menu_task,1000,LV_TASK_PRIO_HIGH,NULL);
+	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_network_server);
+	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_signalbdm);
+	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_battery);
+	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_network_connection);	
     lv_list_set_btn_selected(list, btn_array[0]);
 }
-
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
 {
@@ -241,6 +401,10 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 				case LV_KEY_ESC:
 				{
+					if(state_task)
+					{
+						lv_task_del(state_task);
+					}
 					lv_poc_del_activity(poc_state_info_activity);
 					break;
 				}

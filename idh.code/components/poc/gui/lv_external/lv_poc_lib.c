@@ -942,6 +942,61 @@ poc_check_sim_prsent(IN POC_SIM_ID sim)
 }
 
 /*
+      name : poc_get_signal_dBm
+     param : nSignal
+    return : POC_SIGNAL_DBM
+      date : 2020-10-12
+*/
+OUT uint8_t
+poc_get_signal_dBm(uint8_t *nSignal)
+{
+	uint8_t nSignalDBM = 99;
+	uint8_t nBitError = 99;
+	uint32_t ret = 0;
+	uint8_t rat = 0;
+	uint8_t nSim = POC_SIM_1;
+
+	CFW_COMM_MODE nFM = CFW_DISABLE_COMM;
+	ret = CFW_GetComm(&nFM, nSim);
+	if (nFM != CFW_DISABLE_COMM)
+	{
+		rat = CFW_NWGetStackRat(nSim);
+		if (rat == 4)
+		{
+			CFW_NW_QUAL_INFO iQualReport;
+
+			ret = CFW_NwGetLteSignalQuality(&nSignalDBM, &nBitError, nSim);
+			if (ret != 0)
+			{
+				goto LV_POC_GET_SIGNAL_BAR_ENDLE;
+			}
+			ret = CFW_NwGetQualReport(&iQualReport, nSim);
+			if (ret != 0)
+			{
+				goto LV_POC_GET_SIGNAL_BAR_ENDLE;
+			}
+			if(iQualReport.nRssidBm < 0)
+			{
+				iQualReport.nRssidBm = 0 - iQualReport.nRssidBm;
+			
+}
+			OSI_LOGI(0, "[tianli]signal.dbm = %d",iQualReport.nRssidBm);
+			nSignalDBM =(uint8_t)(iQualReport.nRssidBm);
+		}
+		else
+		{
+			ret = CFW_NwGetSignalQuality(&nSignalDBM, &nBitError, nSim);	
+		}
+		if (ret != 0)
+			goto LV_POC_GET_SIGNAL_BAR_ENDLE;
+	}
+	
+LV_POC_GET_SIGNAL_BAR_ENDLE:
+	*nSignal = nSignalDBM;
+	return nSignalDBM;
+}
+
+/*
       name : poc_get_signal_bar_strenth
      param : SIM_ID
     return : POC_MMI_MODEM_SIGNAL_BAR

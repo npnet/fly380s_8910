@@ -47,8 +47,6 @@ static void pocIdtStartHandleTask(void * ctx)
 	}
 	lv_poc_set_power_on_status(true);//设备准备就绪
 
-	lv_poc_set_power_on_status(true);/*设备就绪*/
-
 	while(!poc_get_network_register_status(POC_SIM_1))
 	{
 		OSI_LOGI(0, "[poc][idt] checking network\n");

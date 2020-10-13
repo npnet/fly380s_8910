@@ -11,6 +11,9 @@
 #include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
 #include "guiIdtCom_api.h"
 #include "audio_types.h"
+#include "../../cfw/include/cfw.h"
+#include "../../newlib/include/stdlib.h"
+
 
 #define LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE (10)
 
@@ -363,6 +366,15 @@ poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN b
 */
 void
 poc_battery_get_status(OUT battery_values_t *values);
+
+/*
+      name : poc_get_signal_dBm
+     param : nSignal
+    return : POC_SIGNAL_DBM
+      date : 2020-10-12
+*/
+OUT uint8_t
+poc_get_signal_dBm(uint8_t *nSignal);
 
 /*
       name : poc_check_sim_prsent
