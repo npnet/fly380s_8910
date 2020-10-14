@@ -314,7 +314,7 @@ add_library(${target} STATIC
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_POC)
 target_include_directories(${target} PUBLIC include gui idt/include idt/src guiIdtCom/include guiIdtCom/src cJSON zzd/include)
-target_link_libraries(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts net lwip)
+target_link_libraries(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts net lwip ats atr)
 
 relative_glob(srcs */*.h */*.c)
 beautify_c_code(${target} ${srcs})

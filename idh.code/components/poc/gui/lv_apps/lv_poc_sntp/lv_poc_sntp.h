@@ -17,7 +17,10 @@ extern "C" {
 	  date : 2020-06-09
 */
 void lv_poc_sntp_Update_Time(void);
-
+uint8_t cereg_Respond(bool reportN);
+void _Cereg_UtoBinString(uint8_t *string, uint8_t value);
+uint16_t _Cereg_MemCompare(const void *buf1, const void *buf2, uint16_t count);
+void *_Cereg_MemCopy8(void *dest, const void *src, uint32_t count);
 
 #ifdef __cplusplus
 }

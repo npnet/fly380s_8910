@@ -5,6 +5,7 @@
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_activity.h"
 #include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
+#include "lv_apps/lv_poc_sntp/lv_poc_sntp.h"
 #include "hwregs.h"
 #include "drv_gpio.h"
 #include "hal_iomux.h"
