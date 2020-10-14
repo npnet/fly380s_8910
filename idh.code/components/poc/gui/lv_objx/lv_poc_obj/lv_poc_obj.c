@@ -525,7 +525,7 @@ static void lv_exec_task(lv_task_t * task);
 * DESCRIPT:    初始化状态栏GPS图标
 *     DATE:    2020-08-03
 ********************/
-static bool lv_poc_init_stabar_gps_img(void);
+static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj);
 
 /*************************************************
 *
@@ -906,7 +906,7 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_init_stabar_sim2_img();
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
-	lv_poc_init_stabar_gps_img();/*GPS图标*/
+	lv_poc_init_stabar_gps_img(NULL);
 
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
@@ -1020,26 +1020,33 @@ static bool lv_poc_init_stabar_battery_img(void)
 * DESCRIPT:    初始化状态栏GPS图标
 *     DATE:    2020-08-03
 ********************/
-static bool lv_poc_init_stabar_gps_img(void)
+static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 {
     bool ret_val = true;
 
-   	lv_poc_status_bar_fptr->gps_img    = (lv_poc_status_bar_gps_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_gps_obj_t));
-    memset(lv_poc_status_bar_fptr->gps_img, 0, sizeof(lv_poc_status_bar_gps_obj_t));
+	if(lv_poc_status_bar_fptr->gps_img == NULL)
+   {
+	   	lv_poc_status_bar_fptr->gps_img    = (lv_poc_status_bar_gps_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_gps_obj_t));
+	    memset(lv_poc_status_bar_fptr->gps_img, 0, sizeof(lv_poc_status_bar_gps_obj_t));
 
-	/*在SIM1左边*/
-	lv_poc_status_bar_fptr->gps_img->align_r_obj = lv_poc_status_bar_fptr->sim1->align_l_obj;
-	lv_poc_status_bar_fptr->gps_img->align_l_obj = lv_poc_status_bar_fptr->gps_img->align_r_obj;
+		/*在SIM1左边*/
+		lv_poc_status_bar_fptr->gps_img->align_r_obj = lv_poc_status_bar_fptr->sim1->align_l_obj;
+		lv_poc_status_bar_fptr->gps_img->align_l_obj = lv_poc_status_bar_fptr->gps_img->align_r_obj;
 
-	lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
-
-	/*获取GPS开关状态*/
-	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
+		lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+	}
 
 	lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_gps_on);
-	/*在SIM1左边*/
-	lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+	if(align_obj == NULL)
+    {
+	   lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+    }
+    else
+    {
+	   lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(align_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+    }
 
+	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
 	if(gps_config->GPS_switch == 1){
 
 		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, false);
@@ -2613,9 +2620,17 @@ void lv_poc_update_stabar_sim_img(void)
                 {
                     OSI_LOGI(0, "FUNC:%s  get a error net type", __func__);
 					//lv_img_set_src(obj3, &stat_sys_no_sim_sprd_cucc);//未注册网络图标
-//                    lv_poc_stabar_sim_clean(sim_cont[k]);
+                    //lv_poc_stabar_sim_clean(sim_cont[k]);
                     lv_obj_del(obj3);
                     old_sim_state_code[k] = sim_state_code[k];
+
+					//refr gps view
+                    if(lv_poc_status_bar_fptr->gps_img != NULL)
+                    {
+                       lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
+                       lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+                       lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+                    }
                     continue;
                 }
                 }
@@ -2636,6 +2651,14 @@ void lv_poc_update_stabar_sim_img(void)
                 sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_img);
             }
             old_sim_state_code[k] = sim_state_code[k];
+
+			//refr gps view
+	        if(lv_poc_status_bar_fptr->gps_img != NULL)
+	        {
+	           lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
+	           lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+	           lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+	        }
         }
     }
     is_continue = false;
