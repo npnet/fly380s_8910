@@ -927,7 +927,6 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
 	lv_poc_init_stabar_gps_img(NULL);
-	lv_poc_init_stabar_lockscreen_img();
 
     lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
@@ -1040,7 +1039,7 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
     bool ret_val = true;
 
 	if(lv_poc_status_bar_fptr->gps_img == NULL)
-	{
+   {
 	   	lv_poc_status_bar_fptr->gps_img    = (lv_poc_status_bar_gps_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_gps_obj_t));
 	    memset(lv_poc_status_bar_fptr->gps_img, 0, sizeof(lv_poc_status_bar_gps_obj_t));
 
@@ -1050,18 +1049,17 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 
 		lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
 	}
+
 	lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_gps_on);
-
 	if(align_obj == NULL)
-	{
-		lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
-	}
-	else
-	{
-		lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(align_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
-	}
+    {
+	   lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+    }
+    else
+    {
+	   lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(align_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+    }
 
-	/*获取GPS开关状态*/
 	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
 	if(gps_config->GPS_switch == 1){
 
@@ -2707,6 +2705,25 @@ void lv_poc_update_stabar_sim_img(void)
 	                }
                 }
 
+				}
+                default:
+                {
+                    OSI_LOGI(0, "FUNC:%s  get a error net type", __func__);
+					//lv_img_set_src(obj3, &stat_sys_no_sim_sprd_cucc);//未注册网络图标
+                    //lv_poc_stabar_sim_clean(sim_cont[k]);
+                    lv_obj_del(obj3);
+                    old_sim_state_code[k] = sim_state_code[k];
+
+					//refr gps view
+                    if(lv_poc_status_bar_fptr->gps_img != NULL)
+                    {
+                       lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
+                       lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+                       lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+                    }
+                    continue;
+                }
+                }
                 lv_obj_align(obj3, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
 				sim_cont[k]->sim_net_type_img = obj3;
                 sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_net_type_img);
@@ -2723,18 +2740,12 @@ void lv_poc_update_stabar_sim_img(void)
             old_sim_state_code[k] = sim_state_code[k];
 
 			//refr gps view
-			if(lv_poc_status_bar_fptr->gps_img != NULL)
-			{
-				lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
-				lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
-				lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
-				sim_cont[k]->align_l_obj = &lv_poc_status_bar_fptr->gps_img->gps_location_img;
-			}
-			//refr lock icon
-			if(lv_poc_status_bar_fptr->lock_img != NULL)
-			{
-				lv_poc_stabar_lockscreen_img(sim_cont[k]->align_l_obj);
-			}
+	        if(lv_poc_status_bar_fptr->gps_img != NULL)
+	        {
+	           lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
+	           lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+	           lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+	        }
         }
     }
     is_continue = false;
