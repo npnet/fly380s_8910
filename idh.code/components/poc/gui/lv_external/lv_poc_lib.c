@@ -1186,6 +1186,7 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 	CFW_NW_STATUS_INFO nStatusInfo;
 	uint8_t nSim = POC_SIM_1;
 
+//	atCommand_t *cmd = NULL;
 	static POC_MMI_MODEM_PLMN_RAT _signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//网络类型
 	if(operat == NULL || rat == NULL) return;
 
@@ -1223,13 +1224,23 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 	  3--Registration denied.
 	  4--Unknown registration.
 	*/
+	
+	ret = cereg_Respond(true);
 	if(nStatusInfo.nStatus == 0
 		|| nStatusInfo.nStatus == 3
 		|| nStatusInfo.nStatus == 4)
 	{
-		strcpy((char *)operat, "UN");
-		_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//sim卡未注册上GSM网络
-		goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
+		if (ret != 0)
+		{
+			//OSI_LOGI(0, "[chen]ret = %d", ret);
+		}
+		else
+		{
+			//OSI_LOGI(0, "[song]Failure to register or refusal to register!");
+			strcpy((char *)operat, "UN");
+			_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//sim卡未注册上GSM网络
+			goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
+		}
 	}
 
 	if(* rat == 0 || * rat == 1 || * rat == 3)//2G
