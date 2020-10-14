@@ -297,10 +297,10 @@ typedef struct _lv_poc_status_bar_sim_obj_t
 } lv_poc_status_bar_sim_obj_t;
 
 /*******************
-*     NAME:   lv_poc_status_bar_sim_obj_t
-*   AUTHOR:   lugj
-* DESCRIPT:   status bar of the inter phone
-*     DATE:   2020-1-20
+*     NAME:   lv_poc_status_bar_gps_obj_t
+*   AUTHOR:   wangls
+* DESCRIPT:   gps
+*     DATE:   2020-08-03
 ********************/
 typedef struct lv_poc_status_bar_gps_obj_t
 {
@@ -309,29 +309,34 @@ typedef struct lv_poc_status_bar_gps_obj_t
 } lv_poc_status_bar_gps_obj_t;
 
 /*******************
+*     NAME:   lv_poc_status_bar_lock_obj_t
+*   AUTHOR:   wangls
+* DESCRIPT:   lock screen
+*     DATE:   2020-10-14
+********************/
+typedef struct lv_poc_status_bar_lock_obj_t
+{
+	lv_obj_t ** align_l_obj, ** align_r_obj;	//对齐对象
+	lv_obj_t * lock_screen_img;	//gps信息图标
+} lv_poc_status_bar_lock_obj_t;
+
+/*******************
 *     NAME:   lv_poc_statuc_bar_t
 *   AUTHOR:   lugj
 * DESCRIPT:   status bar of the inter phone
 *     DATE:   2019-10-24
 ********************/
 typedef struct _lv_poc_status_bar_fptr_t{
-//	lv_coord_t area;
 	bool                        has_sim1;
 	bool                        has_sim2;
 	bool                        has_battery;
 	lv_poc_time_format_t time_formate;
-	#if 1
 	lv_poc_status_bar_sim_obj_t  *sim1;
 	lv_poc_status_bar_sim_obj_t  *sim2;
-	#else
-	lv_obj_t                    *sim1;
-	lv_obj_t                    *sim2;
-	#endif
-	lv_obj_t                    *battery_img;
-	lv_obj_t                    *time_label;
-    lv_obj_t                    *signal_type_label;
-    lv_obj_t                    *signal_intensity_img;
-	lv_poc_status_bar_gps_obj_t *gps_img;
+	lv_obj_t                     *battery_img;
+	lv_obj_t                     *time_label;
+	lv_poc_status_bar_gps_obj_t  *gps_img;
+	lv_poc_status_bar_lock_obj_t *lock_img;
 } lv_poc_status_bar_fptr_t;
 
 
@@ -866,6 +871,14 @@ bool lv_poc_stabar_show_gps_img(bool enable);
 *	  DATE:    2020-10-09
 ********************/
 lv_poc_activity_t *lv_poc_get_current_activity(void);
+
+/*******************
+*	  NAME:    lv_poc_stabar_show_lockscreen_img
+*	AUTHOR:    wangls
+* DESCRIPT:    打开或关闭锁屏图标
+*	  DATE:    2020-10-13
+********************/
+bool lv_poc_stabar_show_lockscreen_img(bool enable);
 
 #ifdef __cplusplus
 }

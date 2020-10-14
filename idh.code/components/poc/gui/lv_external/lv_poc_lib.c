@@ -978,19 +978,19 @@ poc_get_signal_dBm(uint8_t *nSignal)
 			if(iQualReport.nRssidBm < 0)
 			{
 				iQualReport.nRssidBm = 0 - iQualReport.nRssidBm;
-			
+
 }
 			OSI_LOGI(0, "[tianli]signal.dbm = %d",iQualReport.nRssidBm);
 			nSignalDBM =(uint8_t)(iQualReport.nRssidBm);
 		}
 		else
 		{
-			ret = CFW_NwGetSignalQuality(&nSignalDBM, &nBitError, nSim);	
+			ret = CFW_NwGetSignalQuality(&nSignalDBM, &nBitError, nSim);
 		}
 		if (ret != 0)
 			goto LV_POC_GET_SIGNAL_BAR_ENDLE;
 	}
-	
+
 LV_POC_GET_SIGNAL_BAR_ENDLE:
 	*nSignal = nSignalDBM;
 	return nSignalDBM;
@@ -1696,41 +1696,16 @@ poc_set_ext_pa_status(bool open)
 	#define POC_EXT_PA_DELAY_US 2
 	poc_ext_pa_init();
 	if(poc_ext_pa_gpio == NULL || poc_ext_pa_horn_gpio == NULL) return false;
-//	if(open)
-//	{
-//		//one
-//		drvGpioWrite(poc_ext_pa_gpio, false);
-//		drvGpioWrite(poc_ext_pa_horn_gpio, false);
-//		osiDelayUS(POC_EXT_PA_DELAY_US);
-//		drvGpioWrite(poc_ext_pa_gpio, true);
-//		drvGpioWrite(poc_ext_pa_horn_gpio, true);
-//		osiDelayUS(POC_EXT_PA_DELAY_US);//不要使用 osiThreadSleepUS 加延时，导致线程阻塞，声音忽高忽低
-//
-//		//two
-//		drvGpioWrite(poc_ext_pa_gpio, false);
-//		drvGpioWrite(poc_ext_pa_horn_gpio, false);
-//		osiDelayUS(POC_EXT_PA_DELAY_US);
-//		drvGpioWrite(poc_ext_pa_gpio, true);
-//		drvGpioWrite(poc_ext_pa_horn_gpio, true);
-//		osiDelayUS(POC_EXT_PA_DELAY_US);
-//
-//		//three
-//		drvGpioWrite(poc_ext_pa_gpio, false);
-//		drvGpioWrite(poc_ext_pa_horn_gpio, false);
-//		osiDelayUS(POC_EXT_PA_DELAY_US);
-//		drvGpioWrite(poc_ext_pa_gpio, true);
-//		drvGpioWrite(poc_ext_pa_horn_gpio, true);
-//		osiDelayUS(POC_EXT_PA_DELAY_US);
-//
-//		//four
-//		drvGpioWrite(poc_ext_pa_gpio, false);
-//		drvGpioWrite(poc_ext_pa_horn_gpio, false);
-//	}
-//	else
-//	{
+	if(open)
+	{
+		drvGpioWrite(poc_ext_pa_gpio, true);
+		drvGpioWrite(poc_ext_pa_horn_gpio, true);
+	}
+	else
+	{
 		drvGpioWrite(poc_ext_pa_gpio, false);
 		drvGpioWrite(poc_ext_pa_horn_gpio, false);
-//	}
+	}
 
 	return open;
 }

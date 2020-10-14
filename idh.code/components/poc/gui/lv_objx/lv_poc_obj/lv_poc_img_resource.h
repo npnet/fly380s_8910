@@ -116,6 +116,7 @@ LV_IMG_DECLARE(indeterminate4);
 LV_IMG_DECLARE(indeterminate5);
 LV_IMG_DECLARE(indeterminate6);
 LV_IMG_DECLARE(ic_gps_on);
+LV_IMG_DECLARE(poc_lock_screen_icon);
 
 #ifdef __cplusplus
 }

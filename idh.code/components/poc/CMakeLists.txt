@@ -130,6 +130,7 @@ add_library(${target} STATIC
 	gui/resource/image/power_off_reboot/reboot.c
 	gui/resource/image/lock/locked.c
 	gui/resource/image/lock/unlock.c
+	gui/resource/image/lock/poc_lock_screen_icon.c
 	gui/resource/image/shutdown_battery/no_battery_charging_shutdown.c
 	gui/resource/image/shutdown_battery/indeterminate0.c
 	gui/resource/image/shutdown_battery/indeterminate1.c

@@ -527,6 +527,22 @@ static void lv_exec_task(lv_task_t * task);
 ********************/
 static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj);
 
+/*******************
+*     NAME:    lv_poc_stabar_gps_img
+*   AUTHOR:    wangls
+* DESCRIPT:    刷新状态栏锁屏图标
+*     DATE:    2020-10-13
+********************/
+static bool lv_poc_stabar_lockscreen_img(lv_obj_t ** align_obj);
+
+/*******************
+*     NAME:    lv_poc_init_stabar_lockscreen_img
+*   AUTHOR:    wangls
+* DESCRIPT:    初始化状态栏锁屏图标
+*     DATE:    2020-10-13
+********************/
+static void lv_poc_init_stabar_lockscreen_img(void);
+
 /*************************************************
 *
 *                  EXTERN
@@ -909,6 +925,7 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
 	lv_poc_init_stabar_gps_img(NULL);
+	lv_poc_init_stabar_lockscreen_img();
 
     lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
@@ -1006,7 +1023,7 @@ static bool lv_poc_init_stabar_battery_img(void)
 
     lv_img_set_src(obj, lv_poc_get_battery_img());
     lv_obj_set_opa_scale_enable(obj, false);
-    lv_obj_align(obj, lv_poc_status_bar, LV_ALIGN_IN_RIGHT_MID, -5, 0);
+    lv_obj_align(obj, lv_poc_status_bar, LV_ALIGN_IN_RIGHT_MID, -2, 0);
     return ret_val;
 }
 
@@ -1071,6 +1088,86 @@ bool lv_poc_stabar_show_gps_img(bool enable)
 	else
 	{
 		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, true);
+	}
+	return true;
+}
+
+/*******************
+*     NAME:    lv_poc_init_stabar_lockscreen_img
+*   AUTHOR:    wangls
+* DESCRIPT:    初始化状态栏锁屏图标
+*     DATE:    2020-10-13
+********************/
+static void lv_poc_init_stabar_lockscreen_img(void)
+{
+	lv_poc_stabar_lockscreen_img(NULL);
+	lv_poc_stabar_show_lockscreen_img(false);
+}
+
+/*******************
+*     NAME:    lv_poc_stabar_gps_img
+*   AUTHOR:    wangls
+* DESCRIPT:    刷新状态栏锁屏图标
+*     DATE:    2020-10-13
+********************/
+static bool lv_poc_stabar_lockscreen_img(lv_obj_t ** align_obj)
+{
+    bool ret_val = true;
+	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
+
+	if(lv_poc_status_bar_fptr->lock_img == NULL)
+	{
+	   	lv_poc_status_bar_fptr->lock_img = (lv_poc_status_bar_lock_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_lock_obj_t));
+	    memset(lv_poc_status_bar_fptr->lock_img, 0, sizeof(lv_poc_status_bar_lock_obj_t));
+
+		lv_poc_status_bar_fptr->lock_img->lock_screen_img = lv_img_create(lv_poc_status_bar, NULL);
+	}
+
+	if(gps_config->GPS_switch == 1)
+	{
+		lv_poc_status_bar_fptr->lock_img->align_r_obj = lv_poc_status_bar_fptr->gps_img->align_l_obj;
+		lv_poc_status_bar_fptr->lock_img->align_l_obj = lv_poc_status_bar_fptr->lock_img->align_r_obj;
+	}
+	else
+	{
+		lv_poc_status_bar_fptr->lock_img->align_r_obj = lv_poc_status_bar_fptr->sim1->align_l_obj;
+		lv_poc_status_bar_fptr->lock_img->align_l_obj = lv_poc_status_bar_fptr->lock_img->align_r_obj;
+	}
+
+	lv_img_set_src(lv_poc_status_bar_fptr->lock_img->lock_screen_img, &poc_lock_screen_icon);
+
+	if(align_obj != NULL)
+	{
+		lv_obj_align(lv_poc_status_bar_fptr->lock_img->lock_screen_img, *(align_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+	}
+	else
+	{
+		if(gps_config->GPS_switch == 1){
+
+			lv_obj_align(lv_poc_status_bar_fptr->lock_img->lock_screen_img, lv_poc_status_bar_fptr->gps_img->gps_location_img, LV_ALIGN_OUT_LEFT_MID, 0, 0);
+		}else{
+
+			lv_obj_align(lv_poc_status_bar_fptr->lock_img->lock_screen_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
+		}
+	}
+	return ret_val;
+}
+
+/*******************
+*     NAME:    lv_poc_stabar_show_lockscreen_img
+*   AUTHOR:    wangls
+* DESCRIPT:    打开或关闭锁屏图标
+*     DATE:    2020-10-13
+********************/
+bool lv_poc_stabar_show_lockscreen_img(bool enable)
+{
+	if(enable == true)
+	{
+		lv_obj_set_hidden(lv_poc_status_bar_fptr->lock_img->lock_screen_img, false);
+	}
+	else
+	{
+		lv_obj_set_hidden(lv_poc_status_bar_fptr->lock_img->lock_screen_img, true);
 	}
 	return true;
 }
@@ -1208,7 +1305,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
     control->right_button = lv_label_create(control->background,NULL);
     lv_label_set_text(control->right_button, right_text);
     lv_label_set_align(control->right_button, LV_LABEL_ALIGN_CENTER);
-    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, -3, -1);
+    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, -1, -1);
 
 }
 
@@ -1471,16 +1568,16 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 				{
 					lv_poc_set_lock_screen_status(false);
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"解锁屏幕", (const uint8_t *)"");
-					OSI_LOGI(0, "[song]start nolock scrren");
 					long_press_lockscreen_number = 1;
+					lv_poc_stabar_show_lockscreen_img(false);
 					return LV_RES_INV;
 				}
 				else
 				{
 					lv_poc_set_lock_screen_status(true);
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"锁定屏幕", (const uint8_t *)"");
-					OSI_LOGI(0, "[song]start lock scrren");
 					long_press_lockscreen_number = 2;
+					lv_poc_stabar_show_lockscreen_img(true);
 					return LV_RES_INV;
 				}
 				break;
@@ -2522,7 +2619,7 @@ void lv_poc_update_stabar_sim_img(void)
 								    };
     static unsigned short old_sim_state_code[MAX_SIM_COUNT] = { 0 };
     static bool is_continue = true;
-    int k;
+	int k;
     static lv_obj_t * obj2 = NULL;
     static lv_obj_t * obj3 = NULL;
     static lv_obj_t * obj4 = NULL;
@@ -2623,7 +2720,7 @@ void lv_poc_update_stabar_sim_img(void)
 	                case 3://3G网络
 	                {
 	                    lv_img_set_src(obj3, &stat_sys_data_fully_connected_3g_sprd_reliance);
-	                    break;
+						break;
 	                }
 
 	                case 4:
@@ -2646,12 +2743,18 @@ void lv_poc_update_stabar_sim_img(void)
 	                    lv_obj_del(obj3);
 	                    old_sim_state_code[k] = sim_state_code[k];
 
-						//refr gps view
+						//refr gps icon
 						if(lv_poc_status_bar_fptr->gps_img != NULL)
 						{
 							lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
 							lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
 							lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+							sim_cont[k]->align_l_obj = &lv_poc_status_bar_fptr->gps_img->gps_location_img;
+						}
+						//refr lock icon
+						if(lv_poc_status_bar_fptr->lock_img != NULL)
+						{
+							lv_poc_stabar_lockscreen_img(sim_cont[k]->align_l_obj);
 						}
 	                    continue;
 	                }
@@ -2678,6 +2781,12 @@ void lv_poc_update_stabar_sim_img(void)
 				lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
 				lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
 				lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+				sim_cont[k]->align_l_obj = &lv_poc_status_bar_fptr->gps_img->gps_location_img;
+			}
+			//refr lock icon
+			if(lv_poc_status_bar_fptr->lock_img != NULL)
+			{
+				lv_poc_stabar_lockscreen_img(sim_cont[k]->align_l_obj);
 			}
         }
     }
