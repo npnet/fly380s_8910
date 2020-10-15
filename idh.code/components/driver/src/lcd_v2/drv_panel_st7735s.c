@@ -22,7 +22,7 @@
 static void prvSt7735sSetDir(drvLcd_t *d, drvLcdDirection_t dir)
 {
     // MY MX MV ML BGR MH x x default value except MY/MX/MV
-    uint8_t ctrl = 0x0; //改此处修改RGB(0x8)或BGR(0x0)模式
+    uint8_t ctrl = 0x8; //改此处修改RGB(0x8)或BGR(0x0)模式
     if (dir & 1)
         ctrl |= 0x80;
     if (dir & 2)
@@ -195,10 +195,10 @@ const drvLcdPanelDesc_t gLcdSt7735sDesc = {
     .dev_id = 0x7c89f0,
     .reset_us = 20 * 1000,
     .init_delay_us = 100 * 1000,
-    .width = 132,
-    .height = 132,
+    .width = 128,
+    .height = 160,
     .out_fmt = DRV_LCD_OUT_FMT_16BIT_RGB565,
-    .dir = DRV_LCD_DIR_ROTATE_270,
+    .dir = DRV_LCD_DIR_NORMAL,
     .line_mode = DRV_LCD_SPI_4WIRE,
     .fmark_enabled = false,
     .fmark_delay = 0x2a000,

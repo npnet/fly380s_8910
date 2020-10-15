@@ -27,8 +27,10 @@ enum {
 	poc_torch_led   = 2,//IO touch
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set    = 8,//IO headset
-    poc_ppt         = 19,//IO ppt
-    poc_audio_pa    = 13,//audio pa
+	poc_lcd_bright  = 18,//IO lcdk
+	poc_top_key     = 19,//IO top key
+	poc_c_key       = 20,//IO c
+    poc_ppt         = 21,//IO ppt
 };
 
 enum {
@@ -41,6 +43,12 @@ enum {
 
 	LV_POC_LED_END,
 };
+
+typedef enum {
+	POC_KEY_TYPE_PPT = 1,
+	POC_KEY_TYPE_SET = 2,
+	POC_KEY_TYPE_TOP = 3,
+}LV_POC_KEY_TYPE_T;
 
 //字符串长度:
 // 1.32字节，号码，参考号(当前时间+序号,包括呼叫参考号等唯一标识，在一个机器内唯一，不同机器不唯一)
@@ -961,6 +969,22 @@ lv_poc_set_lock_screen_status(bool status);
 */
 bool
 lv_poc_get_lock_screen_status(void);
+
+/*
+	  name : poc_set_lcd_brignht_status
+	 param : open  true is open lcd
+	  date : 2020-10-14
+*/
+bool
+poc_set_lcd_brignht_status(bool open);
+
+/*
+	  name : poc_get_lcd_bright_status
+	 param : none
+	  date : 2020-10-14
+*/
+bool
+poc_get_lcd_bright_status(void);
 
 #ifdef __cplusplus
 }

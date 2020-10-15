@@ -396,15 +396,18 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
         i->proc.pr_timestamp = lv_tick_get();
 
         /*Simulate a press on the object if ENTER was pressed*/
-        if(data->key == LV_KEY_ENTER) {
+		#if 0
+        if(data->key == LV_KEY_ENTER) {/*确定按键改为释放触发*/
             /*Send the ENTER as a normal KEY*/
-            lv_group_send_data(g, LV_KEY_ENTER);
+            //lv_group_send_data(g, LV_KEY_ENTER);
 
             indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_PRESSED, NULL);
             if(indev_reset_check(&i->proc)) return;
             lv_event_send(indev_obj_act, LV_EVENT_PRESSED, NULL);
             if(indev_reset_check(&i->proc)) return;
-        } else if(data->key == LV_KEY_ESC) {/*返回按键改为释放触发*/
+        } else
+		#endif
+		if(data->key == LV_KEY_ESC) {
             /*Send the ESC as a normal KEY*/
             //lv_group_send_data(g, LV_KEY_ESC);
 
@@ -447,14 +450,16 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
             i->proc.longpr_rep_timestamp = lv_tick_get();
 
             /*Send LONG_PRESS_REP on ENTER*/
+			#if 0
             if(data->key == LV_KEY_ENTER) {
                 indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, NULL);
                 if(indev_reset_check(&i->proc)) return;
                 lv_event_send(indev_obj_act, LV_EVENT_LONG_PRESSED_REPEAT, NULL);
                 if(indev_reset_check(&i->proc)) return;
             }
+			#endif
             /*Move the focus on NEXT again*/
-            else if(data->key == LV_KEY_NEXT) {
+            if(data->key == LV_KEY_NEXT) {
                 lv_group_set_editing(g, false); /*Editing is not used by KEYPAD is be sure it is disabled*/
                 lv_group_focus_next(g);
                 if(indev_reset_check(&i->proc)) return;
@@ -468,19 +473,14 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
 			#if 1/*自定义需要连续触发的功能按键*/
 			/*up or down or vol_up or vol_down key can long press*/
 			else if(data->key == LV_KEY_UP
-				|| data->key == LV_KEY_DOWN
-				|| data->key == 45/*音量加*/
-				|| data->key == 46/*音量减*/)
+				|| data->key == LV_KEY_DOWN)
 			{
-				lv_group_send_data(g, data->key);
+				indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, &data->key);
 				if(indev_reset_check(&i->proc)) return;
 			}
-			else if(data->key == 44 || data->key == 43 || data->key == LV_KEY_ESC)/*锁组,删除组,返回*/
+			else if(data->key == LV_KEY_ENTER)/*确定*/
 			{
-				static uint32_t long_key = 0;
-				long_key = data->key;
-				indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, &long_key);
-				long_key = 0;
+				indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, &data->key);
 				if(indev_reset_check(&i->proc)) return;
 			}
             /*Just send other keys again to the object (e.g. 'A' or `LV_GORUP_KEY_RIGHT)*/
@@ -497,6 +497,7 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
     else if(data->state == LV_INDEV_STATE_REL && prev_state == LV_INDEV_STATE_PR) {
         /*The user might clear the key when it was released. Always release the pressed key*/
         data->key = prev_key;
+		#if 0
         if(data->key == LV_KEY_ENTER) {
 
             indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, NULL);
@@ -513,7 +514,20 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
             lv_event_send(indev_obj_act, LV_EVENT_RELEASED, NULL);
             if(indev_reset_check(&i->proc)) return;
         }
-		else if(data->key == LV_KEY_ESC)
+		#endif
+		if(data->key == LV_KEY_ENTER)
+        {
+			lv_group_send_data(g, data->key);
+			indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, &data->key);
+            if(indev_reset_check(&i->proc)) return;
+		}
+		else if(data->key == LV_KEY_UP)
+        {
+			lv_group_send_data(g, data->key);
+			indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, &data->key);
+            if(indev_reset_check(&i->proc)) return;
+		}
+		else if(data->key == LV_KEY_DOWN)
         {
 			lv_group_send_data(g, data->key);
 			indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, &data->key);

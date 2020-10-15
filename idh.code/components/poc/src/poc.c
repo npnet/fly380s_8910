@@ -81,21 +81,18 @@ static void pocStartAnimation(void *ctx)
 		//魔方图片
         lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
         lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
-        lv_obj_set_size(poc_power_on_backgroup_sprd_image, 132, 132);
+        lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
         lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
         osiThreadSleep(2000);
 
         /*打开屏幕，除去花屏问题*/
-        drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
-        drvLcdSetBackLightEnable(lcd, true);
-
-        poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
+        poc_set_lcd_brignht_status(true);
         osiThreadSleep(3000);
         lv_obj_del(poc_power_on_backgroup_sprd_image);
         //开机图片
         lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
         lv_img_set_auto_size(poc_power_on_backgroup_image, false);
-        lv_obj_set_size(poc_power_on_backgroup_image, 132, 132);
+        lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
         extern lv_img_dsc_t img_poweron_poc_logo_unicom;
         lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
 		lv_poc_setting_init();/*开机配置*/
@@ -115,8 +112,7 @@ static void pocStartAnimation(void *ctx)
 		osiThreadSleep(2000);
 		lv_poc_refr_task_once(lv_poc_power_on_picture,
 			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
-		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
-		drvLcdSetBackLightEnable(lcd, true);
+		poc_set_lcd_brignht_status(true);
 	}
 	lvGuiUpdateLastActivityTime();
 	/*网络校时*/
@@ -164,7 +160,7 @@ void pocStart(void *ctx)
 	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
     drvLcdOpenV2(lcd);
     drvLcdFill(lcd, 0, NULL, true);
-    drvLcdSetBackLightEnable(lcd, false);
+	poc_set_lcd_brignht_status(false);
 
 	/*LED Init*/
     halPmuSwitchPower(HAL_POWER_REDLED, true, false);
@@ -174,7 +170,10 @@ void pocStart(void *ctx)
     /*close led*/
     poc_set_red_blacklight(false);
     poc_set_green_blacklight(false);
+
+#ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
     poc_set_keypad_led_status(false);
+#endif
 
 	//获取开机方式
 	uint32_t boot_causes = osiGetBootCauses();
@@ -226,6 +225,7 @@ static
 void lv_poc_power_on_picture(lv_task_t * task)
 {
 	lv_poc_create_idle();
+	lv_poc_check_volum_task(LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800);
 }
 
 #endif

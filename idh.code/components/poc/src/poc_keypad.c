@@ -30,17 +30,17 @@
 #include "poc_audio_recorder.h"
 
 #define POC_RECORD_OR_SPEAK_CALL 1       /*1-正常对讲，0-自录自播*/
-#define POC_SUPPORT_LONGPRESS_POWEROFF 1 /*支持长按关机*/
+#define POC_SUPPORT_LONGPRESS_POWEROFF 0 /*支持长按关机*/
 
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
 static lv_indev_state_t prvPttKeyState = 0xff;
 static lv_indev_state_t prvPowerKeyState = 0xff;
-static osiTimer_t * prvPowerTimer = NULL;
+static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
 
 #if POC_SUPPORT_LONGPRESS_POWEROFF
 static bool isReadyPowerOff = false;
-static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
+static osiTimer_t * prvPowerTimer = NULL;
 
 static void prvPowerKeyCb(void *ctx)
 {
@@ -155,6 +155,22 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
         }
         prvPowerKeyState = state;
         ret = true;
+		#else
+		if(prvPttKeyState != state)
+        {
+           if(state == LV_INDEV_STATE_PR)
+           {
+              OSI_LOGI(0, "[song]power key press");
+           }
+           else
+           {
+              OSI_LOGI(0, "[song]power key release");
+              lv_poc_refr_func_ui(lv_poc_shutdown_animation, LVPOCLISTIDTCOM_LIST_PERIOD_10,
+                 LV_TASK_PRIO_HIGH, (void *)2);
+           }
+        }
+        prvPttKeyState = state;
+        ret = false;
 		#endif
 	}
 	else if(id == LV_GROUP_KEY_GP)
@@ -229,11 +245,11 @@ void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus)
 
 	if(lcdstatus != 0)
 	{
-		lvGuiChargeScreenOn();
+		poc_set_lcd_brignht_status(true);
 	}
 	else
 	{
-		lvGuiScreenOff();
+		poc_set_lcd_brignht_status(false);
 	}
 
 }

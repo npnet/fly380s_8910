@@ -26,14 +26,14 @@ config LV_GUI_THREAD_EVENT_COUNT
 
 config LV_GUI_HOR_RES
     int "LittlevGL GUI screen width"
-    default 132
+    default 128
     help
         LittlevGL GUI screen width. Though it is not necessary, usually it
         is the same as LCD width.
 
 config LV_GUI_VER_RES
     int "LittlevGL GUI screen height"
-    default 132
+    default 160
     help
         LittlevGL GUI screen height. Though it is not necessary, usually it
         is the same as LCD height.

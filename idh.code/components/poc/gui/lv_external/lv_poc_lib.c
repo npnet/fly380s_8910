@@ -25,6 +25,10 @@
 #include "hal_adi_bus.h"/*register include*/
 #include "hwreg_access.h"
 
+/*add adc*/
+#include "drv_adc.h"
+#include "hwregs/8910/rda2720m_adc.h"
+
 static nv_poc_setting_msg_t poc_setting_conf_local = {0};
 static nv_poc_theme_msg_node_t theme_white = {0};
 #ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
@@ -38,11 +42,16 @@ static bool nv_poc_setting_config_is_writed = false;
 #ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 static drvGpio_t * poc_torch_gpio = NULL;
 #endif
+#ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 static drvGpio_t * poc_keypad_led_gpio = NULL;
-static drvGpio_t * poc_ext_pa_gpio = NULL;
+#endif
 static drvGpio_t * poc_ext_pa_horn_gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_ppt_gpio = NULL;
+static drvGpio_t * poc_set_gpio = NULL;
+static drvGpio_t * poc_top_gpio = NULL;
+
+static drvGpio_t * poc_lcd_bright_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
@@ -53,6 +62,31 @@ static bool is_poc_idle_esc = false;
 #ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 static bool is_poc_touch_status = false;
 #endif
+
+/*********************volum***********************/
+
+typedef struct PocVolumAttribute_t{
+    uint32_t adc_level;
+    uint8_t volum_level;
+}PocVolumAttribute_t;
+
+static PocVolumAttribute_t lv_poc_volum_set[]= {
+    {130, 0},//230
+    {300, 1},//380
+    {410, 2},//530
+    {520, 3},//820
+    {660, 4},//1040
+    {800, 5},//1380
+    {1300, 6},//1520
+    {1900, 7},//1860
+    {2200, 8},//2120
+    {2600, 9},//2540
+    {2840, 10},//2720
+    {2952, 11}//2952
+};
+
+#define POC_VOLUM_LEVEL_SIZE (sizeof(lv_poc_volum_set)/sizeof(lv_poc_volum_set[0]))
+
 /*************************************************/
 static bool is_play_tone_status = false;
 static bool is_lock_screen_status = false;
@@ -368,7 +402,7 @@ poc_set_lcd_status(IN int8_t wakeup)
 OUT bool
 poc_get_lcd_status(void)
 {
-	return lvGuiGetScreenStatus();
+	return poc_get_lcd_bright_status();
 }
 
 /*
@@ -1695,19 +1729,35 @@ poc_set_ext_pa_status(bool open)
 {
 	#define POC_EXT_PA_DELAY_US 2
 	poc_ext_pa_init();
-	if(poc_ext_pa_gpio == NULL || poc_ext_pa_horn_gpio == NULL) return false;
 	if(open)
-	{
-		drvGpioWrite(poc_ext_pa_gpio, true);
-		drvGpioWrite(poc_ext_pa_horn_gpio, true);
-	}
-	else
-	{
-		drvGpioWrite(poc_ext_pa_gpio, false);
-		drvGpioWrite(poc_ext_pa_horn_gpio, false);
-	}
+    {
+        //one
+        drvGpioWrite(poc_ext_pa_horn_gpio, true);
+        osiDelayUS(POC_EXT_PA_DELAY_US);//不要使用 osiThreadSleepUS 加延时，导致线程阻塞，声音忽高忽低
+        drvGpioWrite(poc_ext_pa_horn_gpio, false);
+        osiDelayUS(POC_EXT_PA_DELAY_US);
 
-	return open;
+        //two
+        drvGpioWrite(poc_ext_pa_horn_gpio, true);
+        osiDelayUS(POC_EXT_PA_DELAY_US);
+        drvGpioWrite(poc_ext_pa_horn_gpio, false);
+        osiDelayUS(POC_EXT_PA_DELAY_US);
+
+        //three
+        drvGpioWrite(poc_ext_pa_horn_gpio, true);
+        osiDelayUS(POC_EXT_PA_DELAY_US);
+        drvGpioWrite(poc_ext_pa_horn_gpio, false);
+        osiDelayUS(POC_EXT_PA_DELAY_US);
+
+        //four
+        drvGpioWrite(poc_ext_pa_horn_gpio, true);
+    }
+    else
+    {
+        drvGpioWrite(poc_ext_pa_horn_gpio, false);
+    }
+
+	return true;
 }
 
 /*
@@ -1719,8 +1769,8 @@ bool
 poc_get_ext_pa_status(void)
 {
 	poc_ext_pa_init();
-	if(poc_ext_pa_gpio == NULL) return false;
-	return drvGpioRead(poc_ext_pa_gpio);
+	if(poc_ext_pa_horn_gpio == NULL) return false;
+	return drvGpioRead(poc_ext_pa_horn_gpio);
 }
 
 /*
@@ -1731,7 +1781,7 @@ poc_get_ext_pa_status(void)
 void
 poc_ext_pa_init(void)
 {
-	if(poc_ext_pa_gpio != NULL || poc_ext_pa_horn_gpio != NULL) return;
+	if(poc_ext_pa_horn_gpio != NULL) return;
 	drvGpioConfig_t * config = NULL;
 	if(config == NULL)
 	{
@@ -1745,10 +1795,61 @@ poc_ext_pa_init(void)
 		config->debounce = true;
 		config->out_level = false;
 	}
-	poc_ext_pa_gpio = drvGpioOpen(poc_audio_pa, config, NULL, NULL);
 	poc_ext_pa_horn_gpio = drvGpioOpen(poc_horn_sound, config, NULL, NULL);
 	free(config);
 }
+
+/*
+      name : poc_lcd_bright_init
+     param : none
+      date : 2020-10-14
+*/
+void
+poc_lcd_bright_init(void)
+{
+	if(poc_lcd_bright_gpio != NULL) return;
+	drvGpioConfig_t * config = NULL;
+	if(config == NULL)
+	{
+		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
+		if(config == NULL)
+		{
+			return;
+		}
+		memset(config, 0, sizeof(drvGpioConfig_t));
+		config->mode = DRV_GPIO_OUTPUT;
+		config->debounce = true;
+		config->out_level = false;
+	}
+	poc_lcd_bright_gpio = drvGpioOpen(poc_lcd_bright, config, NULL, NULL);
+	free(config);
+}
+
+/*
+      name : poc_set_lcd_brignht_status
+     param : open  true is open lcd
+      date : 2020-10-14
+*/
+bool
+poc_set_lcd_brignht_status(bool open)
+{
+	poc_lcd_bright_init();
+	drvGpioWrite(poc_lcd_bright_gpio, !open);
+	return open;
+}
+
+/*
+      name : poc_get_lcd_bright_status
+     param : none
+      date : 2020-10-14
+*/
+bool
+poc_get_lcd_bright_status(void)
+{
+	poc_lcd_bright_init();
+	return drvGpioRead(poc_lcd_bright_gpio);
+}
+
 
 /*
       name : drvledxSetBackLight
@@ -1962,7 +2063,7 @@ typedef struct _PocPptKeyComAttr_t
 static PocPptKeyComAttr_t poc_ppt_key_attr = {0};
 static uint8_t poc_pptkey_state = false;
 static void Lv_poc_ppt_timer_cb(void *ctx);
-static void poc_ppt_irq(void *ctx);
+static void prv_poc_ppt_irq(void *ctx);
 
 void lv_poc_ppt_key_init(void)
 {
@@ -1976,9 +2077,13 @@ void lv_poc_ppt_key_init(void)
         .debounce = true,
     };
 
-	poc_ppt_gpio = drvGpioOpen(poc_ppt, &cfg, poc_ppt_irq, NULL);
+	poc_ppt_gpio = drvGpioOpen(poc_ppt, &cfg, prv_poc_ppt_irq, (LV_POC_KEY_TYPE_T *)POC_KEY_TYPE_PPT);
+	poc_set_gpio = drvGpioOpen(poc_c_key, &cfg, prv_poc_ppt_irq, (LV_POC_KEY_TYPE_T *)POC_KEY_TYPE_SET);
+	poc_top_gpio = drvGpioOpen(poc_top_key, &cfg, prv_poc_ppt_irq, (LV_POC_KEY_TYPE_T *)POC_KEY_TYPE_TOP);
 
-	if(poc_ppt_gpio == NULL)
+	if(poc_ppt_gpio == NULL
+		|| poc_set_gpio == NULL
+		|| poc_top_gpio == NULL)
 	{
 		return;
 	}
@@ -1999,25 +2104,51 @@ void lv_poc_ppt_key_init(void)
 	  date : 2020-08-14
 */
 static
-void poc_ppt_irq(void *ctx)
+void prv_poc_ppt_irq(void *ctx)
 {
+	LV_POC_KEY_TYPE_T type = (LV_POC_KEY_TYPE_T)ctx;
 
-	if(drvGpioRead(poc_ppt_gpio))/*release*/
+	switch(type)
 	{
-		if(poc_ppt_key_attr.poc_key_press == true)
+		case POC_KEY_TYPE_PPT:
 		{
-			poc_ppt_key_attr.poc_key_press = false;
-			poc_pptkey_state = false;
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+			if(drvGpioRead(poc_ppt_gpio))/*release*/
+			{
+				if(poc_ppt_key_attr.poc_key_press == true)
+				{
+					poc_ppt_key_attr.poc_key_press = false;
+					poc_pptkey_state = false;
+					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+				}
+				else
+				{
+					osiTimerStop(poc_ppt_key_attr.ppt_press_timer);
+				}
+			}
+			else/*press*/
+			{
+				osiTimerStart(poc_ppt_key_attr.ppt_press_timer, 200);
+			}
+			break;
 		}
-		else
+
+		case POC_KEY_TYPE_SET:
 		{
-			osiTimerStop(poc_ppt_key_attr.ppt_press_timer);
+			if(drvGpioRead(poc_set_gpio))//release
+			{
+				lv_poc_member_list_open(NULL, NULL, false);
+			}
+			else//press
+			{
+
+			}
+			break;
 		}
-	}
-	else/*press*/
-	{
-		osiTimerStart(poc_ppt_key_attr.ppt_press_timer, 200);
+
+		case POC_KEY_TYPE_TOP:
+		{
+			break;
+		}
 	}
 }
 
@@ -2709,6 +2840,54 @@ bool lv_poc_set_adc_current_sense(bool status)
 	return ((halAdiBusRead(&adc_auxad_ctl0_t.v) & 0x1) == 1 ? true : false);
 #endif
 	return true;
+}
+
+/*
+      name : lv_poc_get_adc_to_volum
+     param : none
+    author : wangls
+  describe : 获取滑动阻值adc
+      date : 2020-08-18
+*/
+uint8_t lv_poc_get_adc_to_volum(void)
+{
+    int32_t adc_cur_value = 0;
+    int i;
+    static int32_t adc_cur_value_old = 0;
+
+    adc_cur_value = drvAdcGetRawValue(ADC_CHANNEL_1, ADC_SCALE_1V250);
+
+    //Volume fluctuation
+    for(i = 0; i < POC_VOLUM_LEVEL_SIZE; i++)
+    {
+        if(adc_cur_value_old <= lv_poc_volum_set[i].adc_level)
+        {
+            break;
+        }
+    }
+    if((adc_cur_value - adc_cur_value_old  <= 10  && adc_cur_value - adc_cur_value_old  > 0) ||
+        (adc_cur_value_old - adc_cur_value <= 10 && adc_cur_value_old - adc_cur_value > 0))
+    {
+        return lv_poc_volum_set[i].volum_level;
+    }
+
+    adc_cur_value_old = adc_cur_value;
+
+    //OSI_LOGI(0, "[song]adc vlaue is =%d", adc_cur_value);
+    for(i = 0; i < POC_VOLUM_LEVEL_SIZE; i++)
+    {
+        if(adc_cur_value <= lv_poc_volum_set[i].adc_level)
+        {
+            break;
+        }
+    }
+    //OSI_LOGI(0, "[song]vol_cur is =%d", lv_poc_volum_set[i].volum_level);
+    if(i > POC_VOLUM_LEVEL_SIZE)
+    {
+        return false;
+    }
+
+    return lv_poc_volum_set[i].volum_level;
 }
 
 /*
