@@ -729,13 +729,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				continue;
 			}
 
-			#if 0
-			uint8_t voice_vol = audevGetVoiceVolume();
-			uint8_t play_vol = audevGetPlayVolume();
-
-			OSI_LOGI(0, "[idtvol]voice(%d),play(%d)", voice_vol, play_vol);
-			#endif
-
 			voice_type = event.param1;
 
 			if(event.param2 > 0)
@@ -757,7 +750,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		{
 			if(isPlayVoice)
 			{
-				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 20))
+				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 50))
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
@@ -817,23 +810,28 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Server_Timeout_To_Try_Again:
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
 			case LVPOCAUDIO_Type_Loginning_Please_Wait:
+			{
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
 				audevSetPlayVolume(70);
 			    is_poc_play_voice = true;
 				break;
+			}
+
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
 			case LVPOCAUDIO_Type_Tone_Lost_Mic:
 			case LVPOCAUDIO_Type_Tone_Note:
 			case LVPOCAUDIO_Type_Tone_Start_Listen:
-			case LVPOCAUDIO_Type_Tone_Start_Speak:
 			case LVPOCAUDIO_Type_Tone_Stop_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
-				voice_formate = AUSTREAM_FORMAT_WAVPCM;
-				/*tone volum*/
-				audevSetPlayVolume(60);
+			case LVPOCAUDIO_Type_Tone_Start_Speak:
+			{
+				voice_formate = AUSTREAM_FORMAT_MP3;
+				/*audio volum*/
+				audevSetPlayVolume(25);
 			    is_poc_play_voice = true;
 				break;
+			}
 
 			default:
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
@@ -1224,7 +1222,6 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 	  3--Registration denied.
 	  4--Unknown registration.
 	*/
-
 	ret = cereg_Respond(true);
 	if(nStatusInfo.nStatus == 0
 		|| nStatusInfo.nStatus == 3
