@@ -82,7 +82,7 @@ static PocVolumAttribute_t lv_poc_volum_set[]= {
     {2200, 8},//2120
     {2600, 9},//2540
     {2840, 10},//2720
-    {2952, 11}//2952
+    {3300, 11}//3300
 };
 
 #define POC_VOLUM_LEVEL_SIZE (sizeof(lv_poc_volum_set)/sizeof(lv_poc_volum_set[0]))
@@ -1224,7 +1224,7 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 	  3--Registration denied.
 	  4--Unknown registration.
 	*/
-	
+
 	ret = cereg_Respond(true);
 	if(nStatusInfo.nStatus == 0
 		|| nStatusInfo.nStatus == 3

@@ -3618,14 +3618,20 @@ void lv_poc_set_volum_opt(lv_task_t *task)
 	static uint8_t vol_last = 0;
 
 	vol_cur = lv_poc_get_adc_to_volum();
-	 if(vol_cur == vol_last || (vol_cur == 0 && vol_last == 0))
+
+	if(vol_cur > 11)
+	{
+		vol_cur = 11;
+	}
+
+	if(vol_cur == vol_last || (vol_cur == 0 && vol_last == 0))
 	{
 		return;
 	}
 	if(vol_last > 1 && vol_cur == 0)
 	{
 		lv_poc_set_volum(POC_MMI_VOICE_PLAY , 1, poc_setting_conf->btn_voice_switch, true);
-		//lv_poc_set_volum(POC_MMI_VOICE_PLAY , 0, poc_setting_conf->btn_voice_switch, true);
+		lv_poc_set_volum(POC_MMI_VOICE_PLAY , 0, poc_setting_conf->btn_voice_switch, true);
 	}
 	else
 	{
