@@ -165,6 +165,12 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
            else
            {
               OSI_LOGI(0, "[song]power key release");
+
+			  if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
+			  {
+
+			  }
+			  lv_poc_set_power_on_status(false);//设备挂起
               lv_poc_refr_func_ui(lv_poc_shutdown_animation, LVPOCLISTIDTCOM_LIST_PERIOD_10,
                  LV_TASK_PRIO_HIGH, (void *)2);
            }

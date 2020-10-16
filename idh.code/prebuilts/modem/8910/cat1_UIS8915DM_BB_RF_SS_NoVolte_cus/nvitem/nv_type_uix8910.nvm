@@ -23,7 +23,7 @@
     ITEM_NAME    = NV_IMEI[0]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x3A
+    ITEM_CONTENT = 0x8A
     ITEM_INDEX   = 1
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -33,7 +33,7 @@
     ITEM_NAME    = NV_IMEI[1]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x25
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 2
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -43,7 +43,7 @@
     ITEM_NAME    = NV_IMEI[2]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x72
+    ITEM_CONTENT = 0x45
     ITEM_INDEX   = 3
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -53,7 +53,7 @@
     ITEM_NAME    = NV_IMEI[3]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x3
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 4
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -63,7 +63,7 @@
     ITEM_NAME    = NV_IMEI[4]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x71
+    ITEM_CONTENT = 0x94
     ITEM_INDEX   = 5
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -73,7 +73,7 @@
     ITEM_NAME    = NV_IMEI[5]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x83
+    ITEM_CONTENT = 0x36
     ITEM_INDEX   = 6
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -83,7 +83,7 @@
     ITEM_NAME    = NV_IMEI[6]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x36
+    ITEM_CONTENT = 0x19
     ITEM_INDEX   = 7
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -93,7 +93,7 @@
     ITEM_NAME    = NV_IMEI[7]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x4
+    ITEM_CONTENT = 0x37
     ITEM_INDEX   = 8
     ITEM_PARENT  = 0
     ITEM_DESC    =  

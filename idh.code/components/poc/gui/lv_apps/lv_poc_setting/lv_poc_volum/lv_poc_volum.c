@@ -250,6 +250,12 @@ static void prv_lv_poc_volum_display_slider_task(lv_task_t * task)
 		return;
 	}
 
+	if(!lv_poc_get_poweron_is_ready() && info->slider != NULL)
+	{
+		lv_obj_set_hidden(info->slider, true);
+		return;
+	}
+
 	if(info->slider == NULL)
 	{
 		info->slider = lv_slider_create(lv_scr_act(), NULL);

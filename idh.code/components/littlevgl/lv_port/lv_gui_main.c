@@ -260,7 +260,7 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
             }
         }
 
-	    if((!pocKeypadHandle(data->key, data->state, NULL))&&(!lv_poc_charge_poweron_status()))
+	    if(!pocKeypadHandle(data->key, data->state, NULL))
 	    {
 			extern bool lv_poc_watchdog_power_on_mode;
 			if(lv_poc_watchdog_power_on_mode == true)
