@@ -24,7 +24,7 @@ void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj);
 
 lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_oem_group_list *group_list_obj, const char * name, void * information);
 
-lv_poc_status_t lv_poc_group_list_lock_group(lv_poc_oem_group_list *group_list_obj, lv_poc_group_oprator_type opt);
+lv_poc_status_t lv_poc_group_list_monitor_group(lv_poc_oem_group_list *group_list_obj, lv_poc_group_oprator_type opt);
 
 void lv_poc_group_list_set_hightlight_index(void);
 

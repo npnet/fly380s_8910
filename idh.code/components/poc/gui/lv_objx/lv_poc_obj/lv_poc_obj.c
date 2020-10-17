@@ -185,7 +185,7 @@ static __attribute__((unused)) lv_poc_activity_attribute_cb_set_obj prv_lv_poc_a
 			.refresh = lv_poc_group_list_refresh,
 			.refresh_with_data = lv_poc_group_list_refresh_with_data,
 			.exists = lv_poc_group_list_is_exists,
-			.lock_group = lv_poc_group_list_lock_group,
+			.lock_group = lv_poc_group_list_monitor_group,
 		},
 
 		{0},

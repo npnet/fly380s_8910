@@ -44,8 +44,8 @@ typedef struct Msg_GData_s
 //组信息
 typedef struct _Msg_CGroup_s
 {
-	unsigned int m_Group_Num;
-    OemCGroup m_Group[USER_MAX_GROUP];
+	unsigned int m_Group_Num;		   //组个数
+    OemCGroup m_Group[USER_MAX_GROUP]; //组
 }Msg_CGroup_s;
 
 /*
@@ -59,16 +59,18 @@ typedef void (*lv_poc_get_group_list_cb_t)(int msg_type, uint32_t num, Msg_CGrou
 /*
 	  name :回调函数
 	  param :
+	  date : 2020-10-17
+*/
+typedef void (*lv_poc_set_monitor_cb_t)(lv_poc_group_oprator_type optcode);
+
+/*
+	  name :回调函数
+	  param :
 	  date : 2020-05-12
 */
 typedef void (*get_member_list_cb)(int msg_type);
 typedef void (*lv_poc_get_member_list_cb_t)(int msg_type, unsigned long num, Msg_GData_s *OempGroup);
-/*
-	  name :回调函数
-	  param :
-	  date : 2020-05-20
-*/
-typedef void (*poc_build_group_cb)(int result_type);
+
 /*
 	  name :回调函数
 	  param :
@@ -556,14 +558,6 @@ bool
 lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E);
 
 /*
-	  name : lv_poc_build_new_group
-	  param :
-	  date : 2020-05-19
-*/
-bool
-lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_group_cb func);
-
-/*
 	  name : lv_poc_get_self_info
 	  param :
 	  date : 2020-05-20
@@ -620,20 +614,12 @@ bool
 lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_member_call_status_cb func);
 
 /*
-	  name : lv_poc_get_monitor_group
-	  param :
-	  date : 2020-06-30
-*/
-lv_poc_group_info_t
-lv_poc_get_monitor_group(void);
-
-/*
-	  name : lv_poc_set_lock_group
+	  name : lv_poc_set_monitor_group
 	  param :
 	  date : 2020-06-30
 */
 bool
-lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, void (*func)(lv_poc_group_oprator_type opt));
+lv_poc_set_monitor_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, void (*func)(lv_poc_group_oprator_type opt));
 
 /*
 	  name : poc_get_operator_network_type_req
@@ -644,14 +630,6 @@ lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, 
 */
 void
 poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT POC_MMI_MODEM_PLMN_RAT * rat);
-
-/*
-	  name : lv_poc_delete_group
-	  param :
-	  date : 2020-07-09
-*/
-bool
-lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type));
 
 /*
 	  name : lv_poc_ear_ppt_key_init

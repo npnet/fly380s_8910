@@ -2167,36 +2167,6 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 }
 
 /*
-	  name : lv_poc_build_new_group
-	  param :
-	  date : 2020-05-19
-*/
-bool
-lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_group_cb func)
-{
-	if(members == NULL || num < 1 || func == NULL)
-	{
-		return false;
-	}
-
-//	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_BIUILD_GROUP_CB_IND, func))
-//	{
-//		return false;
-//	}
-//	static lv_poc_build_new_group_t group_member = {0};
-//	memset(&group_member, 0, sizeof(lv_poc_build_new_group_t));
-//	group_member.members = members;
-//	group_member.num = num;
-//
-//	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND, &group_member))
-//	{
-//		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_BIUILD_GROUP_CB_IND, func);
-//		return false;
-//	}
-	return true;
-}
-
-/*
 	  name : lv_poc_get_self_info
 	  param :
 	  date : 2020-09-18
@@ -2329,26 +2299,15 @@ lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_
 }
 
 /*
-	  name : lv_poc_get_monitor_group
-	  param :
-	  date : 2020-06-30
-*/
-lv_poc_group_info_t
-lv_poc_get_monitor_group(void)
-{
-	return (lv_poc_group_info_t)lvPocGuiOemCom_get_monitor_group();
-}
-
-/*
-	  name : lv_poc_set_lock_group
+	  name : lv_poc_set_monitor_group
 	  param :
 	  date : 2020-06-30
 */
 bool
-lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, void (*func)(lv_poc_group_oprator_type opt))
+lv_poc_set_monitor_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, void (*func)(lv_poc_group_oprator_type opt))
 {
-	static LvPocGuiIdtCom_lock_group_t group_info = {0};
-	if(opt != LV_POC_GROUP_OPRATOR_TYPE_LOCK && opt != LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
+	static LvPocGuiIdtCom_monitor_group_t group_info = {0};
+	if(opt != LV_POC_GROUP_OPRATOR_TYPE_MONITOR && opt != LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR)
 	{
 		return false;
 	}
@@ -2357,49 +2316,19 @@ lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, 
 	group_info.cb = func;
 	group_info.group_info = group;
 
-	if(opt == LV_POC_GROUP_OPRATOR_TYPE_LOCK)
+	if(opt == LV_POC_GROUP_OPRATOR_TYPE_MONITOR)
 	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_IND, &group_info))
+		if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_MONITOR_GROUP_IND, &group_info))
 		{
 			return false;
 		}
 	}
-	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
+	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR)
 	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_IND, &group_info))
+		if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_UNMONITOR_GROUP_IND, &group_info))
 		{
 			return false;
 		}
-	}
-	return true;
-}
-
-/*
-	  name : lv_poc_delete_group
-	  param :
-	  date : 2020-07-09
-*/
-bool
-lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
-{
-	if(group == NULL || func == NULL)
-	{
-		if(func != NULL)
-		{
-			func(1);
-		}
-		return false;
-	}
-
-	static LvPocGuiIdtCom_delete_group_t del_group = {0};
-	del_group.cb = func;
-	del_group.group_info = (void *)group;
-
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND, (void *)&del_group))
-	{
-		memset(&del_group, 0, sizeof(LvPocGuiIdtCom_delete_group_t));
-		func(2);
-		return false;
 	}
 	return true;
 }

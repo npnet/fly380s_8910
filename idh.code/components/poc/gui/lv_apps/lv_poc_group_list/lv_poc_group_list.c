@@ -26,21 +26,15 @@ static bool lv_poc_group_list_design_func(struct _lv_obj_t * obj, const lv_area_
 
 static void lv_poc_get_group_list_cb(int result_type);
 
-static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt);
+static void lv_poc_group_monitor_oprator_cb(lv_poc_group_oprator_type opt);
 
-static void lv_poc_group_delete_oprator_cb(int result_type);
+static void lv_poc_monitor_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
 
-static void lv_poc_lock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
+static void lv_poc_monitor_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
 
-static void lv_poc_lock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
+static void lv_poc_unmonitor_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
 
-static void lv_poc_unlock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
-
-static void lv_poc_unlock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
-
-static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event);
-
-static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
+static void lv_poc_unmonitor_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
 
 static void lv_poc_group_list_notation(lv_task_t * task);
 
@@ -48,11 +42,7 @@ static lv_obj_t * activity_list;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_list_info = NULL;
 
-static lv_poc_group_list_item_info_t * lv_poc_group_lock_info = NULL;
-
-static lv_poc_group_list_item_info_t * lv_poc_group_delete_info = NULL;
-
-static lv_poc_group_list_item_info_t * lv_poc_group_current_lock_info = NULL;
+static lv_poc_group_list_item_info_t * lv_poc_group_monitor_info = NULL;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_current_info = NULL;
 
@@ -74,13 +64,11 @@ static char lv_poc_group_member_list_title[LIST_ELEMENT_NAME_MAX_LENGTH];
 
 static char lv_poc_group_list_current_group_title[LIST_ELEMENT_NAME_MAX_LENGTH * 2];
 
-static const char * lv_poc_lockgroupwindow_label_monitor_text = "监听";
-static const char * lv_poc_lockgroupwindow_label_unmonitor_text = "取消监听";
-static const char * lv_poc_lockgroupwindow_label_monitor_question_text = "是否监听？";
-static const char * lv_poc_lockgroupwindow_label_unmonitor_question_text = "是否取消监听？";
-static const char * lv_poc_lockgroupwindow_label_delete_group_text = "删除";
-static const char * lv_poc_lockgroupwindow_label_delete_group_question_text = "确认删除吗？";
-static const char * lv_poc_lockgroupwindow_label_OK_text = "          确定          ";
+static const char * lv_poc_monitorgroupwindow_label_monitor_text = "监听";
+static const char * lv_poc_monitorgroupwindow_label_unmonitor_text = "取消监听";
+static const char * lv_poc_monitorgroupwindow_label_monitor_question_text = "是否监听？";
+static const char * lv_poc_monitorgroupwindow_label_unmonitor_question_text = "是否取消监听？";
+static const char * lv_poc_monitorgroupwindow_label_OK_text = "          确定          ";
 
 static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
 {
@@ -244,13 +232,12 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 
 
 	Ap_OSI_ASSERT((p_info != NULL), "[song]group_list_item NULL");
-	lv_area_t lock_window_area = {0};
+	lv_area_t monitor_window_area = {0};
 	oem_list_element_t * p_element = (oem_list_element_t *)p_info->item_information;
 	Ap_OSI_ASSERT((p_element != NULL), "[song]group_list list_element_t NULL");
 
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
-		//lv_poc_group_lock_info = p_info;
 		lv_poc_set_current_group((lv_poc_group_info_t)p_element->information, lv_poc_group_list_set_current_group_cb);
 
 		if(lv_poc_member_list == NULL)
@@ -274,44 +261,30 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 	{
 		if(prv_group_list_cur_opt == 1)
 		{
-			lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_LOCKORUNLOCK_GROUP_STATUS);
+			lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_MONITORORUNMONITOR_GROUP_STATUS);
 			Ap_OSI_ASSERT(lv_poc_group_list_info != NULL, "[song]monitor group_list info NULL");
-
-			if(lv_poc_get_monitor_group() != NULL)  //解锁组
-			{
-				lv_poc_group_lock_info = NULL;
-				lv_poc_warnning_open(lv_poc_lockgroupwindow_label_unmonitor_text,
-					lv_poc_lockgroupwindow_label_unmonitor_question_text,
-					lv_poc_lockgroupwindow_label_OK_text,
-					lv_poc_unlock_group_question_OK_cb,
+			lv_poc_group_monitor_info = p_info;
+			
+			if(p_info->is_monitor)//取消监听该组
+			{	
+				lv_poc_warnning_open(lv_poc_monitorgroupwindow_label_unmonitor_text,
+					lv_poc_monitorgroupwindow_label_unmonitor_question_text,
+					lv_poc_monitorgroupwindow_label_OK_text,
+					lv_poc_unmonitor_group_question_OK_cb,
 					NULL,
-					lv_poc_unlock_group_question_CANCEL_cb,
-					lock_window_area);
+					lv_poc_unmonitor_group_question_CANCEL_cb,
+					monitor_window_area);
 			}
-			else  //锁组
+			else  //监听该组
 			{
-				lv_poc_group_lock_info = p_info;
-				lv_poc_warnning_open(lv_poc_lockgroupwindow_label_monitor_text,
-					lv_poc_lockgroupwindow_label_monitor_question_text,
-					lv_poc_lockgroupwindow_label_OK_text,
-					lv_poc_lock_group_question_OK_cb,
+				lv_poc_warnning_open(lv_poc_monitorgroupwindow_label_monitor_text,
+					lv_poc_monitorgroupwindow_label_monitor_question_text,
+					lv_poc_monitorgroupwindow_label_OK_text,
+					lv_poc_monitor_group_question_OK_cb,
 					NULL,
-					lv_poc_lock_group_question_CANCEL_cb,
-					lock_window_area);
+					lv_poc_monitor_group_question_CANCEL_cb,
+					monitor_window_area);
 			}
-		}
-		else if(prv_group_list_cur_opt == 2)
-		{
-			lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_DELETE_GROUP_STATUS);
-
-			lv_poc_group_delete_info = p_info;
-			lv_poc_warnning_open(lv_poc_lockgroupwindow_label_delete_group_text,
-				lv_poc_lockgroupwindow_label_delete_group_question_text,
-				lv_poc_lockgroupwindow_label_OK_text,
-				lv_poc_delete_group_question_OK_cb,
-				NULL,
-				lv_poc_delete_group_question_CANCEL_cb,
-				lock_window_area);
 		}
 		prv_group_list_cur_opt = 0;
 	}
@@ -336,6 +309,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_GROUP_KEY_UP:
 				{
+					lv_poc_group_list_set_hightlight_index();
 					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
@@ -367,7 +341,6 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_KEY_ESC:
 				{
-					lv_poc_group_list_set_hightlight_index();
 					lv_poc_del_activity(poc_group_list_activity);
 					break;
 				}
@@ -377,11 +350,6 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 		case LV_SIGNAL_FOCUS:
 		{
-			/*解决白屏问题*/
-			#if 0
-			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
-				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
-			#endif
 			break;
 		}
 
@@ -408,12 +376,14 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_GROUP_KEY_GP:
 				{
+					#ifdef SUPPORTLONGPRESSGROUPKEY
 					if(prv_group_list_cur_opt > 0)
 					{
 						break;
 					}
 					prv_group_list_cur_opt = 2;
 					lv_signal_send(activity_list, LV_SIGNAL_LONG_PRESS, NULL);
+					#endif
 					break;
 				}
 
@@ -456,102 +426,85 @@ static void lv_poc_get_group_list_cb(int result_type)
 	}
 }
 
-void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
+void lv_poc_group_monitor_oprator_refresh_task(lv_task_t * task)
 {
 	lv_poc_group_oprator_type opt = (lv_poc_group_oprator_type)task->user_data;
 
-	if(opt == LV_POC_GROUP_OPRATOR_TYPE_LOCK)
+	if(opt == LV_POC_GROUP_OPRATOR_TYPE_MONITOR)
 	{
-		if(lv_poc_group_current_info != NULL)
-		{
-			if(lv_poc_group_lock_info == NULL)
-			{
-				if(activity_list == NULL)//ok
-				{
-					return;
-				}
-				lv_obj_t *cur_btn = lv_list_get_btn_selected(activity_list);
-				lv_poc_group_current_info = (lv_poc_group_list_item_info_t *)cur_btn->user_data;
-				if(lv_poc_group_current_info == NULL) return;
-				lv_poc_group_lock_info = lv_poc_group_current_info;
-			}
-
-			lv_poc_group_list_item_info_t *group_info = lv_poc_group_current_info;
-			oem_list_element_t * group_item = (oem_list_element_t *)group_info->item_information;
-			lv_obj_t *btn_label = lv_list_get_btn_label(group_item->list_item);
-			lv_label_set_text(btn_label, lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-			lv_img_set_src(group_info->monitor_img, &unlock);
-			group_info->is_monitor = false;
-
-			group_info = lv_poc_group_lock_info;
-			lv_poc_group_current_lock_info = lv_poc_group_lock_info;
-			lv_poc_group_current_info = lv_poc_group_lock_info;
-			lv_poc_group_lock_info = NULL;
-			group_item = (oem_list_element_t *)group_info->item_information;
-			btn_label = lv_list_get_btn_label(group_item->list_item);
-	    	strcpy(lv_poc_group_list_current_group_title, (const char *)"[当前群组]");
-          	strcat(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
-			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
-			lv_img_set_src(group_info->monitor_img, &locked);
-			group_info->is_monitor = true;
-			#if 0
-			lv_poc_refr_func_ui(lv_poc_group_list_refresh,
-				LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_LOWEST, NULL);
-			#endif
-		}
-	}
-	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
-	{
-		if(lv_poc_group_current_lock_info == NULL)
+		if(lv_poc_group_monitor_info == NULL)
 		{
 			return;
 		}
-		lv_poc_group_list_item_info_t *group_info = lv_poc_group_current_lock_info;
-		lv_poc_group_current_lock_info = NULL;
+		lv_poc_group_list_item_info_t *group_info = lv_poc_group_monitor_info;
+		lv_poc_group_monitor_info = NULL;
+		lv_img_set_src(group_info->monitor_img, &locked);
+		group_info->is_monitor = true;
+		//modify monitored  
+		oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
+		OemCGroup *pGroupInfo = (OemCGroup *)pGroup->information;
+		strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR);
+		
+		OSI_LOGI(0, "[oemmonitorgroup](%d):refr monitor-group icon", __LINE__);
+	}
+	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR)
+	{
+		if(lv_poc_group_monitor_info == NULL)
+		{
+			return;
+		}
+		lv_poc_group_list_item_info_t *group_info = lv_poc_group_monitor_info;
+		lv_poc_group_monitor_info = NULL;
 		lv_img_set_src(group_info->monitor_img, &unlock);
 		group_info->is_monitor = false;
+		//modify cannel monitor
+		oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
+		OemCGroup *pGroupInfo = (OemCGroup *)pGroup->information;
+		strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_UNMONITOR);
+		
+		OSI_LOGI(0, "[oemmonitorgroup](%d):refr cannel-monitor-group icon", __LINE__);
 	}
 }
 
-static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
+static void lv_poc_group_monitor_oprator_cb(lv_poc_group_oprator_type opt)
 {
 	switch(opt)
 	{
-		case LV_POC_GROUP_OPRATOR_TYPE_LOCK_FAILED:
+		case LV_POC_GROUP_OPRATOR_TYPE_MONITOR_FAILED:
 		{
-			OSI_LOGI(0, "lock group fail\n");
-			lv_poc_group_lock_info = NULL;
+			OSI_LOGI(0, "[oemmonitorgroup](%d):monitor group fail", __LINE__);
+			lv_poc_group_monitor_info = NULL;
 			break;
 		}
 
-		case LV_POC_GROUP_OPRATOR_TYPE_LOCK_OK:
+		case LV_POC_GROUP_OPRATOR_TYPE_MONITOR_OK:
 		{
-			if(lv_poc_group_lock_info == NULL || lv_poc_group_current_info == NULL)
+			if(lv_poc_group_monitor_info == NULL || lv_poc_group_current_info == NULL)
 			{
-				OSI_LOGI(0, "lock an empty group\n");
+				OSI_LOGI(0, "[oemmonitorgroup](%d):monitor an empty group", __LINE__);
 				break;
-			}
-			OSI_LOGI(0, "[song]lock group success\n");
-			lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_LOCK);
+			}	
+			OSI_LOGI(0, "[oemmonitorgroup](%d):monitor group success", __LINE__);
+			lv_task_t *fresh_task = lv_task_create(lv_poc_group_monitor_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_MONITOR);
 			lv_task_once(fresh_task);
 			break;
 		}
 
-		case LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_FAILED:
-		{
-			OSI_LOGI(0, "unlock group fail\n");
+		case LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR_FAILED:
+		{		
+			OSI_LOGI(0, "[oemmonitorgroup](%d):cannel monitor group fail", __LINE__);
 			break;
 		}
 
-		case LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_OK:
+		case LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR_OK:
 		{
-			if(lv_poc_group_current_lock_info == NULL)
+			if(lv_poc_group_monitor_info == NULL)
 			{
-				OSI_LOGI(0, "unlock an empty group\n");
+				OSI_LOGI(0, "[oemmonitorgroup](%d):cannel monitor an empty group", __LINE__);
 				break;
 			}
-			OSI_LOGI(0, "[song]unlock group success\n");
-			lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_UNLOCK);
+			OSI_LOGI(0, "[oemmonitorgroup](%d):cannel monitor group success", __LINE__);
+			lv_task_t *fresh_task = lv_task_create(lv_poc_group_monitor_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR);
 			lv_task_once(fresh_task);
 			break;
 		}
@@ -561,67 +514,24 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 	}
 }
 
-static void lv_poc_group_delete_oprator_cb(int result_type)
-{
-	if(poc_group_list_activity == NULL)
-	{
-		return;
-	}
-
-	if(result_type == 0)/*refr delete group*/
-	{
-		#ifndef AP_ASSERT_ENABLE
-		if(lv_poc_group_delete_info == NULL)
-		{
-			return;
-		}
-		#else
-		Ap_OSI_ASSERT((lv_poc_group_delete_info != NULL), "[song]delete group info NULL");
-		#endif
-
-		if(lv_poc_group_list != NULL)
-		{
-			Ap_OSI_ASSERT((activity_list != NULL), "[song]delete group activity_list NULL");
-
-			lv_list_clean(activity_list);
-
-			Ap_OSI_ASSERT((lv_poc_group_list != NULL), "[song]delete group list NULL");
-
-			lv_poc_group_list_clear(lv_poc_group_list);
-
-//			if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
-//			{
-//				poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
-//				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
-//			}
-		}
-	}
-	else
-	{
-		OSI_LOGI(0, "delete group fail, cause:%d\n", result_type);
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"删除群组失败", NULL);
-	}
-	lv_poc_group_delete_info = NULL;
-}
-
-static void lv_poc_lock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
+static void lv_poc_monitor_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
 {
 	if(event == LV_EVENT_APPLY)
 	{
-		if(lv_poc_group_lock_info == NULL)
+		if(lv_poc_group_monitor_info == NULL)
 		{
 			return;
 		}
 
-		oem_list_element_t * item_info = (oem_list_element_t *)lv_poc_group_lock_info->item_information;
+		oem_list_element_t * item_info = (oem_list_element_t *)lv_poc_group_monitor_info->item_information;
 		lv_poc_group_info_t * group_info = (lv_poc_group_info_t)item_info->information;
-		lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_LOCK, (lv_poc_group_info_t)group_info, lv_poc_group_lock_oprator_cb);
+		lv_poc_set_monitor_group(LV_POC_GROUP_OPRATOR_TYPE_MONITOR, (lv_poc_group_info_t)group_info, lv_poc_group_monitor_oprator_cb);
 
 		lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 	}
 }
 
-static void lv_poc_lock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event)
+static void lv_poc_monitor_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event)
 {
 	if(event == LV_EVENT_CANCEL)
 	{
@@ -629,52 +539,28 @@ static void lv_poc_lock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t even
 	}
 }
 
-static void lv_poc_unlock_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
+static void lv_poc_unmonitor_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
 {
 	if(event == LV_EVENT_APPLY)
 	{
-		if(lv_poc_group_current_lock_info == NULL)
+		if(lv_poc_group_monitor_info == NULL)
 		{
 			return;
 		}
-		oem_list_element_t * item_info = (oem_list_element_t *)lv_poc_group_current_lock_info->item_information;
+		oem_list_element_t * item_info = (oem_list_element_t *)lv_poc_group_monitor_info->item_information;
 		lv_poc_group_info_t * group_info = (lv_poc_group_info_t)item_info->information;
-		lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_UNLOCK, (lv_poc_group_info_t)group_info, lv_poc_group_lock_oprator_cb);
+		lv_poc_set_monitor_group(LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR, (lv_poc_group_info_t)group_info, lv_poc_group_monitor_oprator_cb);
 		lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 	}
 }
 
-static void lv_poc_unlock_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event)
+static void lv_poc_unmonitor_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event)
 {
 	if(event == LV_EVENT_CANCEL)
 	{
 		lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 	}
 }
-
-static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
-{
-	if(event == LV_EVENT_APPLY)
-	{
-		lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
-
-		Ap_OSI_ASSERT((lv_poc_group_delete_info != NULL), "[song]delete group NULL"); /*assert verified*/
-
-		oem_list_element_t * item_info = (oem_list_element_t *)lv_poc_group_delete_info->item_information;
-		lv_poc_group_info_t * group_info = (lv_poc_group_info_t)item_info->information;
-		/*delete group*/
-		lv_poc_delete_group((lv_poc_group_info_t)group_info, lv_poc_group_delete_oprator_cb);
-	}
-}
-
-static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event)
-{
-	if(event == LV_EVENT_CANCEL)
-	{
-		lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
-	}
-}
-
 
 void lv_poc_group_list_open(lv_poc_oem_group_list *group_list_obj)
 {
@@ -802,6 +688,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	int list_btn_count = 0;
 
     oem_list_element_t * p_cur = NULL;
+	OemCGroup *pGroupInfo = NULL;
     lv_obj_t * btn;
 	lv_obj_t * btn_index[32];//assume group number is 32
     lv_obj_t * img;
@@ -810,7 +697,6 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	lv_coord_t btn_width = (display_area.x2 - display_area.x1);
 
     char is_set_current_group = 1;
-	char is_set_monitor_group = 1;
 	char is_set_btn_selected = 0;
 
     lv_list_clean(activity_list);
@@ -823,12 +709,6 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
     lv_poc_group_info_t current_group = lv_poc_get_current_group();
     char * current_group_name = lv_poc_get_group_name(current_group);
-	lv_poc_group_info_t monitor_group = lv_poc_get_monitor_group();
-
-	if(monitor_group == NULL)
-	{
-		is_set_monitor_group = 0;
-	}
 
     if(lv_poc_group_list_info != NULL)
     {
@@ -880,12 +760,11 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
 		img = lv_img_create(btn, NULL);
 		p_group_info->monitor_img = img;
-        if(is_set_monitor_group == 1
-			&& GROUP_EQUATION((void *)NULL, (void *)NULL, (void *)p_cur->information, (void *)monitor_group, "monitor"))
+		pGroupInfo = (OemCGroup *)p_cur->information;
+        if(NULL != strstr((char *)pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR))
         {
 			lv_img_set_src(img, &locked);
 			p_group_info->is_monitor = true;
-			//lv_poc_group_current_lock_info = p_group_info;
 		}
 		else
 		{
@@ -968,9 +847,9 @@ lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_oem_group_list *group_list_ob
     return POC_GROUP_NONENTITY;
 }
 
-lv_poc_status_t lv_poc_group_list_lock_group(lv_poc_oem_group_list *group_list_obj, lv_poc_group_oprator_type opt)
+lv_poc_status_t lv_poc_group_list_monitor_group(lv_poc_oem_group_list *group_list_obj, lv_poc_group_oprator_type opt)
 {
-	lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)opt);
+	lv_task_t *fresh_task = lv_task_create(lv_poc_group_monitor_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)opt);
 	lv_task_once(fresh_task);
 
     return POC_GROUP_NONENTITY;

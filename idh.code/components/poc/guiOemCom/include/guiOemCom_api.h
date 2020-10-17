@@ -76,45 +76,15 @@ typedef enum
 	LVPOCGUIOEMCOM_SIGNAL_CALL_TALKING_ID_IND,
 
 	LVPOCGUIOEMCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP,
-	/*****************************************/
 
-    LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND,
-    LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND,
+	LVPOCGUIOEMCOM_SIGNAL_GET_MONITOR_GROUP_STATUS_IND,
 
-    LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND,
-    LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND,
+    LVPOCGUIOEMCOM_SIGNAL_MONITOR_GROUP_IND,
+    LVPOCGUIOEMCOM_SIGNAL_MONITOR_GROUP_REP,
 
-    LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_IND,
-    LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP,
-    LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP,
-
-    LVPOCGUIIDTCOM_SIGNAL_GU_STATUS_REP,
-
-    LVPOCGUIIDTCOM_SIGNAL_GROUP_OPERATOR_REP,
-
-    LVPOCGUIIDTCOM_SIGNAL_RELEASE_LISTEN_TIMER_REP,
-
-    LVPOCGUIIDTCOM_SIGNAL_DELAY_IND,
-
-    LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_CUR_GROUP,
-
-    LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF,
-
-    LVPOCGUIIDTCOM_SIGNAL_GET_LOCK_GROUP_STATUS_IND,
-
-    LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_IND,
-    LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_REP,
-
-    LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_IND,
-    LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_REP,
-
-    LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND,
-    LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP,
-
-	LVPOCGUIIDTCOM_SIGNAL_GET_SPEAK_CALL_CASE,
-
-    LVPOCGUIIDTCOM_SIGNAL_END,
-} LvPocGuiIdtCom_SignalType_t;
+    LVPOCGUIOEMCOM_SIGNAL_UNMONITOR_GROUP_IND,
+    LVPOCGUIOEMCOM_SIGNAL_UNMONITOR_GROUP_REP,
+} LvPocGuiOemCom_SignalType_t;
 
 typedef enum{/*登陆状态*/
 
@@ -235,6 +205,9 @@ typedef enum{
 #define OEM_GROUP_MEMBER_ONLINE_OUT  "02"//在线--组外
 #define OEM_GROUP_MEMBER_ONLINE_IN   "03"//在线--组内
 
+#define OEM_GROUP_MONITOR  "01"//此组被监听组
+#define OEM_GROUP_UNMONITOR  "00"//此组未监听组
+
 /********************************************************************************************************/
 //SET POC FUNC
 //A:TTS_FUNC B:NOTIFY_FUNC C:OFFLINEPLAY_FUNC
@@ -261,11 +234,18 @@ typedef struct _PocGuiOemGroupAttr_t
 	int   OemGroupNumber;
 }PocGuiOemGroupAttr_t;
 
+typedef struct
+{
+	int opt;
+	void *group_info;
+	void (*cb)(lv_poc_group_oprator_type opt);
+} LvPocGuiIdtCom_monitor_group_t;
+
 extern atCmdEngine_t *ap_Oem_engine;
 
 void lvPocGuiOemCom_Init(void);
 
-bool lvPocGuiOemCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
+bool lvPocGuiOemCom_Msg(LvPocGuiOemCom_SignalType_t signal, void * ctx);
 
 bool lvPocGuiOemCom_MessageQueue(osiMessageQueue_t *mq, const void *msg);
 
@@ -289,8 +269,6 @@ uint64_t lv_poc_oemdata_strtodec(char *data,uint32_t len);
 
 void *lvPocGuiOemCom_get_oem_self_info(void);
 
-void *lvPocGuiOemCom_get_monitor_group(void);
-
 void *lvPocGuiOemCom_get_current_group_info(void);
 
 bool lvPocGuiOemCom_Request_Groupx_MemeberInfo(char *GroupID);
@@ -301,44 +279,7 @@ bool lvPocGuiOemCom_modify_current_group_info(OemCGroup *CurrentGroup);
 
 bool lvPocGuiOemCom_Request_Member_Call(char *UserID);
 
-#if 1/*确信*/
-typedef struct
-{
-	int status;
-	unsigned short cause;
-} LvPocGuiIdtCom_login_t;
-
-typedef struct
-{
-	int opt;
-	void *group_info;
-	void (*cb)(lv_poc_group_oprator_type opt);
-} LvPocGuiIdtCom_lock_group_t;
-
-typedef struct
-{
-	void *group_info;
-	void (*cb)(int result_type);
-} LvPocGuiIdtCom_delete_group_t;
-
-void lvPocGuiIdtCom_Init(void);
-
-bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
-
-void lvPocGuiIdtCom_log(void);
-
-bool lvPocGuiIdtCom_get_status(void);
-
-void *lvPocGuiIdtCom_get_self_info(void);
-
-void *lvPocGuiIdtCom_get_current_group_info(void);
-
 bool lvPocGuiIdtCom_get_listen_status(void);
-
-void *lvPocGuiIdtCom_get_current_lock_group(void);
-
-bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str);
-#endif
 
 OSI_EXTERN_C_END
 
