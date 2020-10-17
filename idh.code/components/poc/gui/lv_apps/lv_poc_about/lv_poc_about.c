@@ -146,7 +146,6 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     strcpy(lv_poc_about_text_sysversion, "A500L");
     strcpy(lv_poc_about_text_version_number, "V20.35.2-D12.24");
     strcpy(lv_poc_about_text_update, "检查更新");
-
     for(int i = 0; i < label_array_size; i++)
     {
         btn = lv_list_add_btn(list, NULL, lv_poc_about_label_array[i].title);

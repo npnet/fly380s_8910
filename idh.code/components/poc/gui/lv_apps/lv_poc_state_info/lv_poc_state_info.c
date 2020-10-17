@@ -56,7 +56,7 @@ typedef struct
 } lv_poc_state_info_label_struct_t;
 
 typedef void (*status_info_menu_task_t)(void);
-static status_info_menu_task_t status_info_menu_task_ext[LV_POC_STABAR_TASK_EXT_LENGTH];	
+static status_info_menu_task_t status_info_menu_task_ext[LV_POC_STABAR_TASK_EXT_LENGTH];
 static void lv_poc_info_menu_task(lv_task_t * task);
 static lv_obj_t *label_array[9] = {};
 static char lv_poc_state_info_text_account[64] = {0};
@@ -124,7 +124,7 @@ lv_poc_state_info_label_struct_t lv_poc_state_info_label_array[] = {
 		lv_poc_state_info_text_mobile_network, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 };
-		
+
 bool lv_poc_status_info_menu_task_ext_add(status_info_menu_task_t task)
 {
     static int stabar_task_ext_count = 0;
@@ -137,7 +137,7 @@ bool lv_poc_status_info_menu_task_ext_add(status_info_menu_task_t task)
 static void lv_poc_info_menu_task(lv_task_t * task)
 {
     int k;
-	
+
     for(k = 0; k < LV_POC_STABAR_TASK_EXT_LENGTH; k++)
     {
         if(status_info_menu_task_ext[k] != NULL)
@@ -152,9 +152,9 @@ static int lv_poc_state_info_network_server(void)
 	uint8_t uState;
 	uint8_t nSim = POC_SIM_1;
 	int nStatus = 0;
-	
+
 	CFW_GetGprsAttState(&uState, nSim);
-	if(lvPocGuiIdtCom_get_status() == 1)
+	if( 2== 1)//lvPocGuiIdtCom_get_status()
 	{
 		if(uState == 0)
 		{
@@ -185,7 +185,7 @@ static void lv_poc_state_info_network_connection(void)
 {
 	POC_MMI_MODEM_PLMN_RAT	rat;
 	int8_t	operat;
-	
+
 	poc_get_operator_network_type_req(POC_SIM_1,&operat,&rat);
 	switch(rat)
 	{
@@ -216,7 +216,7 @@ static void lv_poc_state_info_battery(void)
 {
 	char battery[24] = {0};
 	battery_values_t values;
-	
+
 	poc_battery_get_status(&values);
 	__itoa(values.battery_value, (char *)&battery, 10);
 	strcat(battery,"%");
@@ -230,7 +230,7 @@ static void lv_poc_state_info_battery(void)
 		else
 		{
 			strcpy(lv_poc_state_info_text_battery_state, "良好");
-		}	
+		}
 	}
 	else
 	{
@@ -242,7 +242,7 @@ static void lv_poc_state_info_signalbdm(void)
 {
 	char sing[24] = "-";
 	uint8_t nSignalDBM;
-	
+
 	poc_get_signal_dBm(&nSignalDBM);
 	__itoa(nSignalDBM, (char *)&sing[1] , 10);
 	strcat(sing,"dBm");
@@ -259,7 +259,7 @@ static void lv_poc_refresh_state_info_network_server(void)
 {
 	int ret = 0;
 	static int cRefresh = 0;
-	
+
 	ret = lv_poc_state_info_network_server();
 	if(cRefresh != ret)
 	{
@@ -315,7 +315,7 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_poc_state_info_battery();
 	lv_poc_state_info_network_server();
 	lv_poc_state_info_network_connection();
-	
+
     for(int i = 0;i < label_array_size; i++)
     {
 	    btn = lv_list_add_btn(list, NULL, lv_poc_state_info_label_array[i].title);
@@ -345,7 +345,7 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_network_server);
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_signalbdm);
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_battery);
-	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_network_connection);	
+	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_network_connection);
     lv_list_set_btn_selected(list, btn_array[0]);
 }
 

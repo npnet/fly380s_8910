@@ -221,6 +221,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_UP:
 				{
+					lv_poc_member_list_set_hightlight_index();
 					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
@@ -255,7 +256,6 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_ESC:
 				{
-					lv_poc_member_list_set_hightlight_index();
 					lv_poc_del_activity(poc_member_list_activity);
 					break;
 				}
