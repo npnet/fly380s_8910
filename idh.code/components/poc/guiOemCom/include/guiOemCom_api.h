@@ -249,8 +249,8 @@ typedef enum{
 typedef struct _PocGuiOemUserAttr_t
 {
 	char  OemUserName[64];
-	char  OemUserID[32];
-	char  OemUserStatus[32];
+	char  OemUserID[64];
+	char  OemUserStatus[64];
 	int   OemUserNumber;
 }PocGuiOemUserAttr_t;
 
@@ -286,14 +286,6 @@ int unicode_to_utf(unsigned long unicode, unsigned char *utf);
 int lv_poc_oem_unicode_to_utf8_convert(char *pUserInput, unsigned char *pUserOutput);
 
 uint64_t lv_poc_oemdata_strtodec(char *data,uint32_t len);
-
-lv_poc_oem_group_list *pub_lv_poc_get_group_list_all_info(void);
-
-bool pub_lv_poc_free_group_list(void);
-
-lv_poc_oem_member_list *pub_lv_poc_get_member_list_info(void);
-
-bool pub_lv_poc_free_member_list(void);
 
 void *lvPocGuiOemCom_get_oem_self_info(void);
 

@@ -685,7 +685,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
-				audevSetPlayVolume(70);
+				audevSetPlayVolume(30);//70
 			    is_poc_play_voice = true;
 				break;
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
@@ -1848,11 +1848,12 @@ static lv_poc_oem_group_list * prv_group_list = NULL;
 static get_group_list_cb   prv_group_list_cb = NULL;
 
 static void
-prv_lv_poc_get_group_list_cb(int msg_type, uint32_t num, lv_poc_oem_group_list *group_list)
+prv_lv_poc_get_group_list_cb(int msg_type, uint32_t num, Msg_CGroup_s *OempGroupList)
 {
 	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL);
 	if(msg_type == 0
 		|| num == 0
+		|| OempGroupList == NULL
 		|| prv_group_list == NULL
 		|| prv_group_list_cb == NULL)
 	{
@@ -1865,13 +1866,41 @@ prv_lv_poc_get_group_list_cb(int msg_type, uint32_t num, lv_poc_oem_group_list *
 		return;
 	}
 
-	memcpy(prv_group_list, group_list, sizeof(lv_poc_oem_group_list));
-	if(prv_group_list == NULL)
-	{
-		prv_group_list_cb(0);
-	}
 	prv_group_list->group_number = num;
-
+	oem_list_element_t * p_element = NULL;
+	oem_list_element_t * p_cur = NULL;
+	for(int i = 0; i < num; i++)
+	{
+		p_element = (oem_list_element_t *)lv_mem_alloc(sizeof(oem_list_element_t));
+		if(p_element == NULL)
+		{
+			p_element = prv_group_list->group_list;
+			while(p_element)
+			{
+				p_cur = p_element;
+				p_element = p_element->next;
+				lv_mem_free(p_cur);
+			}
+			prv_group_list_cb(0);
+			prv_group_list_cb = NULL;
+			return;
+		}
+		p_element->next = NULL;
+		p_element->list_item = NULL;
+		p_element->information = (void *)(&OempGroupList->m_Group[i]);
+		strcpy(p_element->name, (const char *)OempGroupList->m_Group[i].m_ucGName);
+		if(prv_group_list->group_list != NULL)
+		{
+			p_cur->next = p_element;
+			p_cur = p_cur->next;
+		}
+		else
+		{
+			prv_group_list->group_list = p_element;
+			p_cur = p_element;
+		}
+		p_element = NULL;
+	}
 	prv_group_list_cb(1);
 	prv_group_list_cb = NULL;
 	prv_group_list = NULL;
@@ -1965,8 +1994,11 @@ static get_member_list_cb prv_member_list_cb = NULL;
 static int prv_member_list_type  = 0;
 
 static void
-prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, lv_poc_oem_member_list *member_list)
+prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *OempGroup)
 {
+	//lv_poc_member_info_t self_info = lv_poc_get_self_info();
+	//char *self_name = lv_poc_get_member_name(self_info);
+
 	if(prv_member_list == NULL
 		|| prv_member_list_cb == NULL
 		|| (prv_member_list_type < 1 || prv_member_list_type > 3))
@@ -1981,25 +2013,88 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, lv_poc_oem_member
 		return;
 	}
 
-	if(num < 1)
+	if(msg_type == 0 || num < 1)
 	{
-		if(msg_type == 0)
-			prv_member_list_cb(0);
-		else if(msg_type == 1)
-			prv_member_list_cb(2);
+		prv_member_list_cb(0);
 		prv_member_list_cb = NULL;
 		prv_member_list = NULL;
+		prv_member_list_cb = NULL;
 		return;
 	}
 
-	memcpy(prv_member_list, member_list, sizeof(lv_poc_oem_member_list));
-	if(prv_member_list == NULL)
+	/*构建链表*/
+	oem_list_element_t * p_element = NULL;
+	oem_list_element_t * p_online_cur = NULL;
+	oem_list_element_t * p_offline_cur = NULL;
+
+	for(int i = 0; i < num; i++)
 	{
-		OSI_LOGI(0, "[song]prv_lv_poc_get_member_list_cb is prv_member_list NULL\n");
-		prv_member_list_cb(0);
-		return;
-	}
+		p_element = (oem_list_element_t *)lv_mem_alloc(sizeof(oem_list_element_t));
 
+		if(p_element == NULL)
+		{
+			p_element = prv_member_list->online_list;
+			while(p_element)
+			{
+				p_online_cur = p_element;
+				p_element = p_element->next;
+				lv_mem_free(p_online_cur);
+			}
+
+			p_element = prv_member_list->offline_list;
+			while(p_element)
+			{
+				p_offline_cur = p_element;
+				p_element = p_element->next;
+				lv_mem_free(p_offline_cur);
+			}
+			prv_member_list_cb(0);
+			prv_member_list_cb = NULL;
+			prv_member_list = NULL;
+			prv_member_list_cb = NULL;
+			return;
+		}
+		p_element->next = NULL;
+		p_element->list_item = NULL;
+		p_element->information = (void *)(&OempGroup->member[i]);
+		strcpy(p_element->name, (const char *)(OempGroup->member[i].m_ucUName));
+
+		if((0 == strcmp((char *)OempGroup->member[i].m_ucUStatus, OEM_GROUP_MEMBER_ONLINE_OUT)
+			|| 0 == strcmp((char *)OempGroup->member[i].m_ucUStatus, OEM_GROUP_MEMBER_ONLINE_IN))
+			&& (prv_member_list_type == 2
+			|| prv_member_list_type == 1))//在线
+		{
+			prv_member_list->online_number++;//计算在线人数
+			if(prv_member_list->online_list != NULL)
+			{
+				p_online_cur->next = p_element;
+				p_online_cur = p_online_cur->next;
+			}
+			else
+			{
+				prv_member_list->online_list = p_element;
+				p_online_cur = p_element;
+			}
+		}
+
+		if(0 == strcmp((char *)OempGroup->member[i].m_ucUStatus, OEM_GROUP_MEMBER_OFFLINE)
+			&& (prv_member_list_type == 3
+			|| prv_member_list_type == 1))//离线
+		{
+			prv_member_list->offline_number++;//计算离线人数
+			if(prv_member_list->offline_list != NULL)
+			{
+				p_offline_cur->next = p_element;
+				p_offline_cur = p_offline_cur->next;
+			}
+			else
+			{
+				prv_member_list->offline_list = p_element;
+				p_offline_cur = p_element;
+			}
+		}
+		p_element = NULL;
+	}
 	prv_member_list_cb(1);
 	prv_member_list_cb = NULL;
 	prv_member_list = NULL;
@@ -2055,9 +2150,9 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_oem_member_list * 
 bool
 lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 {
-	Msg_GROUP_MEMBER_s *info1 = (Msg_GROUP_MEMBER_s *)C;
-	Msg_GROUP_MEMBER_s *info2 = (Msg_GROUP_MEMBER_s *)D;
-	bool ret1 = true, ret2 = false;
+	OemCGroup *info1 = (OemCGroup *)C;
+	OemCGroup *info2 = (OemCGroup *)D;
+	bool ret1 = false;
 
 	if(info1 != NULL && info2 != NULL)
 	{
@@ -2065,11 +2160,10 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 		{
 			return true;
 		}
-		//ret1 = (0 == strcmp((const char *)info1->ucName, (const char *)info2->ucName));
-		ret2 = (0 == strcmp((const char *)info1->ucNum, (const char *)info2->ucNum));
+		ret1 = (0 == strcmp((const char *)info1->m_ucGID, (const char *)info2->m_ucGID));
 	}
 
-	return (ret1 && ret2);
+	return ret1;
 }
 
 /*
