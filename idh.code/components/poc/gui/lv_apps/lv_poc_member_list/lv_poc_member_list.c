@@ -71,18 +71,33 @@ static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
 		lv_mem_free(activity_win);
 		activity_win = NULL;
 	}
-	//当传入的成员列表不为空才能清除头结点
-	if(lv_poc_member_list_obj != NULL && lv_poc_member_list_need_free_member_list == true)
+	
+	if(lv_poc_member_list_need_free_member_list == true && lv_poc_member_list_obj != NULL)
 	{
-		lv_mem_free(lv_poc_member_list_obj);
-	}
-	lv_poc_member_list_obj = NULL;
+		oem_list_element_t * cur_p = lv_poc_member_list_obj->online_list;
+		oem_list_element_t * temp_p;
+		while(cur_p != NULL)
+		{
+			temp_p = cur_p;
+			cur_p =cur_p->next;
+			lv_mem_free(temp_p);
+		}
 
-	//free mem
-	pub_lv_poc_free_member_list();
+		cur_p = lv_poc_member_list_obj->offline_list;
+		while(cur_p != NULL)
+		{
+			temp_p = cur_p;
+			cur_p =cur_p->next;
+			lv_mem_free(temp_p);
+		}
+
+		lv_mem_free(lv_poc_member_list_obj);
+		lv_poc_member_list_need_free_member_list = false;
+	}
+
+	lv_poc_member_list_obj = NULL;
 	poc_member_list_activity = NULL;
 	lv_poc_member_call_obj_information = NULL;
-	OSI_LOGI(0, "[song]memberlist destory");
 }
 
 static void * lv_poc_member_list_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -144,15 +159,17 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 {
 	if(lv_poc_member_call_obj != NULL || lv_poc_member_call_obj_information != NULL)
 	{
-		if(status == 1)
+		if(status == 1 || status == 2)
 		{
 			lv_poc_activity_func_cb_set.member_call_open(lv_poc_member_call_obj_information);
 			lv_poc_member_list_set_hightlight_index();
 		}
+#ifdef NOSUPPORTGROUPOUT
 		else if(status == 2)
 		{
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在组内", NULL);
 		}
+#endif
 		else
 		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, 50, true);

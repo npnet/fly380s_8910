@@ -101,10 +101,17 @@ static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 	activity_list = NULL;
 	if(lv_poc_group_list != NULL)
 	{
+		oem_list_element_t * cur_p = lv_poc_group_list->group_list;
+		oem_list_element_t * temp_p;
+		while(cur_p != NULL)
+		{
+			temp_p = cur_p;
+			cur_p =cur_p->next;
+			//lv_obj_del(temp_p->list_item);
+			lv_mem_free(temp_p);
+		}
+
 		lv_mem_free(lv_poc_group_list);
-		//oem free mem
-		pub_lv_poc_free_group_list();
-		OSI_LOGI(0, "[song]free group_list");
 	}
 	lv_poc_group_list = NULL;
 
@@ -116,8 +123,24 @@ static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 
 	if(lv_poc_member_list != NULL)
 	{
+		oem_list_element_t * cur_p = lv_poc_member_list->online_list;
+		oem_list_element_t * temp_p;
+		while(cur_p != NULL)
+		{
+			temp_p = cur_p;
+			cur_p =cur_p->next;
+			lv_mem_free(temp_p);
+		}
+
+		cur_p = lv_poc_member_list->offline_list;
+		while(cur_p != NULL)
+		{
+			temp_p = cur_p;
+			cur_p =cur_p->next;
+			lv_mem_free(temp_p);
+		}
+
 		lv_mem_free(lv_poc_member_list);
-		OSI_LOGI(0, "[song]free group_member_list");
 	}
 	lv_poc_member_list = NULL;
 	poc_group_list_activity = NULL;
