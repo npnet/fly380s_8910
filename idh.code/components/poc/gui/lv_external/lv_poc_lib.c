@@ -1508,6 +1508,11 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	strcpy(poc_setting->ip_address, "124.160.11.21");
 	poc_setting->ip_port = 10000;
 #endif
+	poc_setting->nv_monitor_group_number = 0;
+	for(int i = 0; i < sizeof(poc_setting->nv_monitor_group)/sizeof(nv_poc_monitor_info); i++)
+	{
+		memset(&poc_setting->nv_monitor_group[i], 0, sizeof(nv_poc_monitor_info));
+	}
 }
 
 /*

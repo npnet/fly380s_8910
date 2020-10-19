@@ -967,7 +967,7 @@ void prvPocGuiOemTaskHandleGroupList(uint32_t id, uint32_t ctx)
 			};
 
 			Grouplist = prv_lv_poc_oem_get_global_atcmd_info(apopt->oembuf, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
-			pocOemAttr.GroupData_s.m_Group_Num = lv_poc_oemdata_strtodec(Grouplist.buf[3].oembuf, sizeof(Grouplist.buf[3].oembuf)/sizeof(char));
+			pocOemAttr.GroupData_s.m_Group_Num = lv_poc_oemdata_hexstrtodec(Grouplist.buf[3].oembuf, sizeof(Grouplist.buf[3].oembuf)/sizeof(char));
 			pocOemAttr.OemGroupInfoBufnumber = 0;
 			
 			if(0 == strcmp(Grouplist.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_FAILED))
@@ -1121,7 +1121,7 @@ void prvPocGuiOemTaskHandlePoweronMemberOpt(uint32_t id, uint32_t ctx)
 			};
 
 			Userlist = prv_lv_poc_oem_get_global_atcmd_info(apopt->oembuf, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
-			pocOemAttr.OemAllUserInfo.OemUserNumber = lv_poc_oemdata_strtodec(Userlist.buf[3].oembuf, sizeof(Userlist.buf[3].oembuf)/sizeof(char));
+			pocOemAttr.OemAllUserInfo.OemUserNumber = lv_poc_oemdata_hexstrtodec(Userlist.buf[3].oembuf, sizeof(Userlist.buf[3].oembuf)/sizeof(char));
 			#if 0
 			OSI_LOGI(0, "[song]member index %d", pocOemAttr.OemAllUserInfo.OemUserNumber);
 			#endif
@@ -1183,7 +1183,7 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 			};
 
 			Mmemberlist = prv_lv_poc_oem_get_global_atcmd_info(apopt->oembuf, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
-			pocOemAttr.Msg_GroupMemberData_s.dwNum = lv_poc_oemdata_strtodec(Mmemberlist.buf[3].oembuf, sizeof(Mmemberlist.buf[3].oembuf)/sizeof(char));
+			pocOemAttr.Msg_GroupMemberData_s.dwNum = lv_poc_oemdata_hexstrtodec(Mmemberlist.buf[3].oembuf, sizeof(Mmemberlist.buf[3].oembuf)/sizeof(char));
 			pocOemAttr.OemGroupMemberInfoBufnumber = 0;
 			if(0 == strcmp(Mmemberlist.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_FAILED))
 			{
@@ -1582,6 +1582,25 @@ void prvPocGuiOemTaskHandleMonitorOpt(uint32_t id, uint32_t ctx)
 			#if GUIIDTCOM_OEMMONITORGROUP_DEBUG_LOG
 			OSI_LOGI(0, "[oemmonitorgroup](%d):(server)request monitor ack", __LINE__);
 		    #endif	
+			
+			nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+
+			if(poc_config->nv_monitor_group_number >= 0
+				&& poc_config->nv_monitor_group_number < 5)
+			{
+				int i;
+				for(i = 0; i < poc_config->nv_monitor_group_number; i++)
+				{
+					if(0 == strcmp((char *)poc_config->nv_monitor_group[i].m_ucGID, MonitorGroupInfo.buf[2].oembuf))
+					{
+						return;//exist
+					}
+				}
+				strcpy((char *)poc_config->nv_monitor_group[i].m_ucGID, MonitorGroupInfo.buf[2].oembuf);
+				poc_config->nv_monitor_group_number++;
+				lv_poc_setting_conf_write();
+			}
+
 			pocOemAttr.pocSetMonitorCb(LV_POC_GROUP_OPRATOR_TYPE_MONITOR_OK);
 			pocOemAttr.pocSetMonitorCb = NULL;
 			break;
@@ -1640,6 +1659,26 @@ void prvPocGuiOemTaskHandleMonitorOpt(uint32_t id, uint32_t ctx)
 			#if GUIIDTCOM_OEMMONITORGROUP_DEBUG_LOG
 			OSI_LOGI(0, "[oemmonitorgroup](%d):(server)cannel monitor ack", __LINE__);
 		    #endif	
+
+			nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+
+			if(poc_config->nv_monitor_group_number <= 5
+				&& poc_config->nv_monitor_group_number > 0)
+			{
+				int i;
+				for(i = 0; i < poc_config->nv_monitor_group_number - 1; i++)
+				{
+					if(0 == strcmp((char *)poc_config->nv_monitor_group[i].m_ucGID, CannelMonitorGroupInfo.buf[2].oembuf))
+					{
+						strcpy((char *)poc_config->nv_monitor_group[i].m_ucGID, "");
+						poc_config->nv_monitor_group_number--;
+						lv_poc_setting_conf_write();
+						break;
+					}
+				}
+				
+			}
+			
 			pocOemAttr.pocSetMonitorCb(LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR_OK);
 			pocOemAttr.pocSetMonitorCb = NULL;
 			break;
@@ -1993,9 +2032,9 @@ void prv_lv_poc_oem_get_group_list_info(void *information)
 	grouplistbuf = prv_lv_poc_oem_get_global_atcmd_info(information, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
 
 	strcpy((char *)prv_group_info.m_ucGMonitor, grouplistbuf.buf[1].oembuf);
-	prv_group_info.m_ucGIndex = lv_poc_oemdata_strtodec(grouplistbuf.buf[3].oembuf, sizeof(grouplistbuf.buf[3].oembuf)/sizeof(char));
+	prv_group_info.m_ucGIndex = lv_poc_oemdata_hexstrtodec(grouplistbuf.buf[3].oembuf, sizeof(grouplistbuf.buf[3].oembuf)/sizeof(char));
 	strcpy((char *)prv_group_info.m_ucGID, grouplistbuf.buf[4].oembuf);
-	prv_group_info.m_ucGMemberNum = lv_poc_oemdata_strtodec(grouplistbuf.buf[5].oembuf, sizeof(grouplistbuf.buf[5].oembuf)/sizeof(char));
+	prv_group_info.m_ucGMemberNum = lv_poc_oemdata_hexstrtodec(grouplistbuf.buf[5].oembuf, sizeof(grouplistbuf.buf[5].oembuf)/sizeof(char));
 	lv_poc_oem_unicode_to_utf8_convert(grouplistbuf.buf[6].oembuf, prv_group_info.m_ucGName);
 
 	memcpy((void *)&pocOemAttr.GroupData_s.m_Group[pocOemAttr.OemGroupInfoBufnumber], (void *)&prv_group_info, sizeof(OemCGroup));
@@ -2021,7 +2060,7 @@ void prv_lv_poc_oem_get_group_member_info(void *information)
 	groupxmemberlistbuf = prv_lv_poc_oem_get_global_atcmd_info(information, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
 
 	strcpy((char *)prv_user_info.m_ucUStatus, groupxmemberlistbuf.buf[1].oembuf);
-	prv_user_info.m_ucUIndex = lv_poc_oemdata_strtodec(groupxmemberlistbuf.buf[3].oembuf, sizeof(groupxmemberlistbuf.buf[3].oembuf)/sizeof(char));
+	prv_user_info.m_ucUIndex = lv_poc_oemdata_hexstrtodec(groupxmemberlistbuf.buf[3].oembuf, sizeof(groupxmemberlistbuf.buf[3].oembuf)/sizeof(char));
 	strcpy((char *)prv_user_info.m_ucUID, groupxmemberlistbuf.buf[4].oembuf);
 	lv_poc_oem_unicode_to_utf8_convert(groupxmemberlistbuf.buf[5].oembuf, prv_user_info.m_ucUName);
 
@@ -2049,7 +2088,7 @@ void prv_lv_poc_oem_update_member_status(void *information)
 	groupxmemberstatus = prv_lv_poc_oem_get_global_atcmd_info(information, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
 
 	strcpy((char *)prv_userstatus_info.m_ucUStatus, groupxmemberstatus.buf[1].oembuf);
-	prv_userstatus_info.m_ucUIndex = lv_poc_oemdata_strtodec(groupxmemberstatus.buf[3].oembuf, sizeof(groupxmemberstatus.buf[3].oembuf)/sizeof(char));
+	prv_userstatus_info.m_ucUIndex = lv_poc_oemdata_hexstrtodec(groupxmemberstatus.buf[3].oembuf, sizeof(groupxmemberstatus.buf[3].oembuf)/sizeof(char));
 	strcpy((char *)prv_userstatus_info.m_ucUID, groupxmemberstatus.buf[4].oembuf);
 	lv_poc_oem_unicode_to_utf8_convert(groupxmemberstatus.buf[5].oembuf, prv_userstatus_info.m_ucUName);
 	
@@ -2333,7 +2372,7 @@ int lv_poc_oem_unicode_to_utf8_convert(char *pUserInput, unsigned char *pUserOut
 	  name : lv_poc_oemdata_strtodec
 	 param : none
 	author : wangls
-  describe : 字符串转十进制
+  describe : 十进制字符串转十进制
 	  date : 2020-09-14
 */
 uint64_t lv_poc_oemdata_strtodec(char *data,uint32_t len)
@@ -2348,6 +2387,22 @@ uint64_t lv_poc_oemdata_strtodec(char *data,uint32_t len)
         }
     }
      return n;
+}
+
+/*
+	  name : lv_poc_oemdata_hexstrtodec
+	 param : none
+	author : wangls
+  describe : 十六进制字符串转十进制
+	  date : 2020-10-19
+*/
+uint64_t lv_poc_oemdata_hexstrtodec(char *s, uint32_t len)
+{
+	uint64_t temp = 0;
+	
+	temp  = strtol(s, NULL, 16);
+	
+	return temp;
 }
 
 /*

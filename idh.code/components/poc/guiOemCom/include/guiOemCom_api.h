@@ -267,6 +267,8 @@ int lv_poc_oem_unicode_to_utf8_convert(char *pUserInput, unsigned char *pUserOut
 
 uint64_t lv_poc_oemdata_strtodec(char *data,uint32_t len);
 
+uint64_t lv_poc_oemdata_hexstrtodec(char *s, uint32_t len);
+
 void *lvPocGuiOemCom_get_oem_self_info(void);
 
 void *lvPocGuiOemCom_get_current_group_info(void);
