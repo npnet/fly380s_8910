@@ -604,7 +604,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 
 	while(1)
 	{
-		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 20))
+		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 450))
 		{
 			if(event.id != 101)
 			{
@@ -1105,18 +1105,17 @@ bool
 poc_get_network_register_status(IN POC_SIM_ID sim)
 {
 	CFW_NW_STATUS_INFO nStatusInfo;
-    uint8_t nSim = POC_SIM_1;
 	uint8_t status;
 
-	if(!poc_check_sim_prsent(POC_SIM_1))
+	if(!poc_check_sim_prsent(sim))
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, 50, false);
 		return false;
 	}
 
-	if (CFW_CfgGetNwStatus(&status, nSim) != 0 ||
-		CFW_NwGetStatus(&nStatusInfo, nSim) != 0)
+	if (CFW_CfgGetNwStatus(&status, sim) != 0 ||
+		CFW_NwGetStatus(&nStatusInfo, sim) != 0)
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);

@@ -35,10 +35,8 @@ static void lv_poc_network_config_task(lv_task_t * task);
 static void lv_poc_power_on_picture(lv_task_t * task);
 bool lv_poc_watchdog_power_on_mode = false;
 
-static void pocIdtStartHandleTask(void * ctx)
+static void pocIdtStartHandleTask(void * ctx)//+12ma
 {
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-
 	if(lv_poc_watchdog_power_on_mode == false)
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, 50, true);
@@ -57,9 +55,6 @@ static void pocIdtStartHandleTask(void * ctx)
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, 50, true);
 	}
-	#if 0
-	pocAudioPlayerSound();/*new player test*/
-	#endif
 	osiThreadSleep(2000);
 	/*zzd platform*/
 	lvPocGuiOemCom_Init();
@@ -69,7 +64,7 @@ static void pocIdtStartHandleTask(void * ctx)
 
 #ifdef CONFIG_POC_GUI_START_ANIMATION_SUPPORT
 static void pocStartAnimation(void *ctx)
-{
+{//11ma
 	lvGuiRequestSceenOn(3);
 	//首先启动配网任务，解决第一次下载程序代码登陆不上问题
 	lv_task_t * task = lv_task_create(lv_poc_network_config_task,
@@ -121,10 +116,6 @@ static void pocStartAnimation(void *ctx)
 	lvGuiUpdateLastActivityTime();
 	/*网络校时*/
 	lv_poc_sntp_Update_Time();
-	lv_poc_get_record_mic_gain();
-	osiThreadSleep(500);
-	lv_poc_set_record_mic_gain(MUSICRECORD, Handfree, POC_MIC_ANA_GAIN_LEVEL_7, POC_MIC_ADC_GAIN_LEVEL_15);/*set record mic gain*/
-
 	lvGuiReleaseScreenOn(3);
 	osiThreadExit();
 }
@@ -186,7 +177,7 @@ void pocStart(void *ctx)
 	else//设备重启或正常开机
 	{
 		lv_poc_watchdog_power_on_mode = false;
-		lvGuiInit(pocLvglStart);
+		lvGuiInit(pocLvglStart);//13ma
 	}
 
 	osiThreadExit();

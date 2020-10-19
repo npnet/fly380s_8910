@@ -77,7 +77,7 @@ static void poc_Led_Entry(void *param)
 	pocLedIdtAttr.isReady = true;
 	while(1)
 	{
-		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 300))
+		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 450))
 		{
 			continue;
 		}
