@@ -113,6 +113,13 @@ typedef struct
 
 typedef struct
 {
+	uint8_t   m_ucGID[64];       //组ID
+    uint8_t   m_ucGMonitor[64];  //组是否被监听
+} nv_poc_monitor_info;
+
+
+typedef struct
+{
 	uint8_t read_and_write_check;
 	uint8_t btn_voice_switch;         //[0]close   [1]open   [default 0]
 #ifdef CONFIG_POC_TTS_SUPPORT
@@ -144,6 +151,8 @@ typedef struct
 	char old_account_name[32];
 	char old_account_current_group[32];
 #endif
+	uint8_t nv_monitor_group_number;
+	nv_poc_monitor_info nv_monitor_group[5];
 } nv_poc_setting_msg_t;
 
 typedef enum
