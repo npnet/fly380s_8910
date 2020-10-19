@@ -562,6 +562,7 @@ bool lv_poc_setting_init(void)
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_keypad_led_init();
 #endif
+	lv_poc_ear_ppt_key_init();
 	poc_ext_pa_init();
 	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 

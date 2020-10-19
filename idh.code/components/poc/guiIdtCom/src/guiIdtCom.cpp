@@ -4266,25 +4266,12 @@ static void pocGuiIdtComTaskEntry(void *argument)
 
     while(1)
     {
-    	if(!osiEventTryWait(pocIdtAttr.thread , &event, 100))
+    	if(!osiEventTryWait(pocIdtAttr.thread , &event, 450))
 		{
 			if(UT_STATUS_ONLINE == m_IdtUser.m_status)
 			{
 
 			}
-
-			#if 0
-			if(pocIdtAttr.runcount % 50 == 0)/*若未登陆，5s扫描一次是否有网，尝试登录*/
-			{
-				pocIdtAttr.runcount = 0;
-
-			}
-			else
-			{
-				pocIdtAttr.runcount++;
-			}
-			#endif
-
 			continue;
 		}
 
