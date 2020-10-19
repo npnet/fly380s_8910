@@ -55,6 +55,7 @@ void poc_Status_Led_Task(void)
 	memset(&pocLedIdtAttr, 0, sizeof(PocLedIdtComAttr_t));
 
 	pocLedIdtAttr.jumpperiod = 1000;//默认周期1s
+
 	lv_poc_led_status_callback(NULL);//注销回调
 	/*LED MSG TASK*/
 	pocLedIdtAttr.thread = osiThreadCreate("status led", poc_Led_Entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
@@ -75,7 +76,7 @@ static void poc_Led_Entry(void *param)
 	pocLedIdtAttr.isReady = true;
 	while(1)
 	{
-		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 300))
+		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 450))
 		{
 			continue;
 		}
