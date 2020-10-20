@@ -152,24 +152,22 @@ static void lv_poc_group_list_list_config(lv_obj_t * list, lv_area_t list_area)
 
 static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 {
-	extern lv_poc_activity_t * poc_member_list_activity;
-	if(poc_member_list_activity != NULL)
-    {
-    	return;
-    }
-
     if(member_list == NULL)
     {
+		OSI_LOGI(0, "[grouprefr](%d):member list NULL", __LINE__);
 	    return;
     }
 
     if(msg_type == 1)
     {
+		OSI_LOGI(0, "[grouprefr](%d):success get member list, to refr", __LINE__);
 		lv_poc_refr_task_once(lv_poc_group_list_title_refr,
 			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
     }
     else
     {
+
+		OSI_LOGI(0, "[grouprefr](%d):get failed memberlist", __LINE__);
 	    poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
     }

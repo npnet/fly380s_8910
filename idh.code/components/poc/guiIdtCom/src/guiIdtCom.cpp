@@ -2556,7 +2556,6 @@ static void prvPocGuiIdtTaskHandleMemberList(uint32_t id, uint32_t ctx)
 				}
 				else
 				{
-					OSI_LOGI(0, "[song]ctx NULL,pocIdtAttr.pPocMemberList->dwNum > 1");
 					pocIdtAttr.pocGetMemberListCb(1, pocIdtAttr.pPocMemberList->dwNum, pocIdtAttr.pPocMemberList);
 				}
 				pocIdtAttr.pocGetMemberListCb = NULL;
@@ -2564,7 +2563,13 @@ static void prvPocGuiIdtTaskHandleMemberList(uint32_t id, uint32_t ctx)
 			}
 			else
 			{
-				OSI_LOGI(0, "[song]ctx is OK");
+				#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG
+				char cOutstr[128] = {0};
+	    		cOutstr[0] = '\0';
+	    		sprintf(cOutstr, "[grouprefr]%s(%d):query memberlist ind", __func__, __LINE__);
+	    		OSI_LOGI(0, cOutstr);
+				#endif
+
 				CGroup * group_info = (CGroup *)ctx;
 				for(DWORD i = 0; i < m_IdtUser.m_Group.m_Group_Num; i++)
 				{
@@ -2585,11 +2590,16 @@ static void prvPocGuiIdtTaskHandleMemberList(uint32_t id, uint32_t ctx)
 				pocIdtAttr.query_group = 0;
 				break;
 			}
-			OSI_LOGI(0, "[song]ctx is OK,check mem");
 	        // 查询组成员
 	        pocIdtAttr.isPocMemberListBuf = true;
 	        Func_GQueryU(pocIdtAttr.query_group, m_IdtUser.m_Group.m_Group[pocIdtAttr.query_group].m_ucGNum);
 
+			#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG
+			char cOutstr[128] = {0};
+    		cOutstr[0] = '\0';
+    		sprintf(cOutstr, "[grouprefr]%s(%d):query group member to send msg", __func__, __LINE__);
+    		OSI_LOGI(0, cOutstr);
+			#endif
 			break;
 		}
 
@@ -2645,6 +2655,9 @@ static void prvPocGuiIdtTaskHandleCurrentGroup(uint32_t id, uint32_t ctx)
 			}
 
 			CGroup * group_info = (CGroup *)ctx;
+			lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.member_list.group_member_act, 50, LV_TASK_PRIO_HIGHEST, (void *)group_info->m_ucGName);
+			lv_task_once(oncetask);
+
 			DWORD index = 0;
 			for(index = 0; index < m_IdtUser.m_Group.m_Group_Num; index++)
 			{
@@ -3451,13 +3464,12 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 			    		OSI_LOGI(0, cOutstr);
 						#endif
 					}
-					IDT_TRACE("[song]query group member updated!");
 					lv_poc_activity_func_cb_set.member_list.refresh_with_data(NULL);
 
 					#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG
 					char cOutstr1[128] = {0};
 		    		cOutstr1[0] = '\0';
-		    		sprintf(cOutstr1, "[grouprefr]%s(%d):refresh G_USER", __func__, __LINE__);
+		    		sprintf(cOutstr1, "[grouprefr][server]%s(%d):refresh group member", __func__, __LINE__);
 		    		OSI_LOGI(0, cOutstr1);
 					#endif
 				}
