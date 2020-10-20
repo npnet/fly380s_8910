@@ -264,9 +264,9 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 			lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_MONITORORUNMONITOR_GROUP_STATUS);
 			Ap_OSI_ASSERT(lv_poc_group_list_info != NULL, "[song]monitor group_list info NULL");
 			lv_poc_group_monitor_info = p_info;
-			
+
 			if(p_info->is_monitor)//取消监听该组
-			{	
+			{
 				lv_poc_warnning_open(lv_poc_monitorgroupwindow_label_unmonitor_text,
 					lv_poc_monitorgroupwindow_label_unmonitor_question_text,
 					lv_poc_monitorgroupwindow_label_OK_text,
@@ -341,7 +341,8 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_KEY_ESC:
 				{
-					lv_poc_del_activity(poc_group_list_activity);
+					if(!lvPocGuiIdtCom_get_obtainning_state())
+						lv_poc_del_activity(poc_group_list_activity);
 					break;
 				}
 			}
@@ -440,11 +441,11 @@ void lv_poc_group_monitor_oprator_refresh_task(lv_task_t * task)
 		lv_poc_group_monitor_info = NULL;
 		lv_img_set_src(group_info->monitor_img, &locked);
 		group_info->is_monitor = true;
-		//modify monitored  
+		//modify monitored
 		oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
 		OemCGroup *pGroupInfo = (OemCGroup *)pGroup->information;
 		strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR);
-		
+
 		OSI_LOGI(0, "[oemmonitorgroup](%d):refr monitor-group icon", __LINE__);
 	}
 	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR)
@@ -461,7 +462,7 @@ void lv_poc_group_monitor_oprator_refresh_task(lv_task_t * task)
 		oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
 		OemCGroup *pGroupInfo = (OemCGroup *)pGroup->information;
 		strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_UNMONITOR);
-		
+
 		OSI_LOGI(0, "[oemmonitorgroup](%d):refr cannel-monitor-group icon", __LINE__);
 	}
 }
@@ -483,7 +484,7 @@ static void lv_poc_group_monitor_oprator_cb(lv_poc_group_oprator_type opt)
 			{
 				OSI_LOGI(0, "[oemmonitorgroup](%d):monitor an empty group", __LINE__);
 				break;
-			}	
+			}
 			OSI_LOGI(0, "[oemmonitorgroup](%d):monitor group success", __LINE__);
 			lv_task_t *fresh_task = lv_task_create(lv_poc_group_monitor_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_MONITOR);
 			lv_task_once(fresh_task);
@@ -491,7 +492,7 @@ static void lv_poc_group_monitor_oprator_cb(lv_poc_group_oprator_type opt)
 		}
 
 		case LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR_FAILED:
-		{		
+		{
 			OSI_LOGI(0, "[oemmonitorgroup](%d):cannel monitor group fail", __LINE__);
 			break;
 		}
@@ -737,7 +738,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
         lv_obj_set_height(btn, btn_height);
 		btn_index[list_btn_count] = btn;
         list_btn_count++;
-		
+
         if(NULL != prv_group_list_last_index_groupname
 			&& NULL != strstr(p_cur->name, prv_group_list_last_index_groupname)
 			&& is_set_btn_selected == 0)

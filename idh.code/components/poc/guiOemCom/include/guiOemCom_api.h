@@ -283,6 +283,10 @@ bool lvPocGuiOemCom_Request_Member_Call(char *UserID);
 
 bool lvPocGuiIdtCom_get_listen_status(void);
 
+bool lvPocGuiIdtCom_get_obtainning_state(void);
+
+void lvPocGuiIdtCom_set_obtainning_state(bool status);
+
 OSI_EXTERN_C_END
 
 #endif
