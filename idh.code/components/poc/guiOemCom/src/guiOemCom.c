@@ -1172,6 +1172,8 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 				if(xgroup_info->m_ucGID != NULL)
 				{
 					lvPocGuiOemCom_Request_Groupx_MemeberInfo((char *)xgroup_info->m_ucGID);
+					lvPocGuiIdtCom_set_obtainning_state(true);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组成员...", NULL);
 				}
 			}
 

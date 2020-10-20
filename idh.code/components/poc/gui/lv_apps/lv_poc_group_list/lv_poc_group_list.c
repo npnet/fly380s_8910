@@ -36,8 +36,6 @@ static void lv_poc_unmonitor_group_question_OK_cb(lv_obj_t * obj, lv_event_t eve
 
 static void lv_poc_unmonitor_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
 
-static void lv_poc_group_list_notation(lv_task_t * task);
-
 static lv_obj_t * activity_list;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_list_info = NULL;
@@ -207,12 +205,11 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 
 			OSI_LOGI(0, "[song]set current group");
 		}
-		//delay display notation
-		lv_poc_refr_task_once(lv_poc_group_list_notation, LVPOCLISTIDTCOM_LIST_PERIOD_300, LV_TASK_PRIO_MID);
+		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
 	}
 	else if(result_type == 2)//已在群组
 	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", (const uint8_t *)"");
+		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", (const uint8_t *)"");
 	}
 	else
 	{
@@ -854,12 +851,6 @@ lv_poc_status_t lv_poc_group_list_monitor_group(lv_poc_oem_group_list *group_lis
 	lv_task_once(fresh_task);
 
     return POC_GROUP_NONENTITY;
-}
-
-static
-void lv_poc_group_list_notation(lv_task_t * task)
-{
-	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
 }
 
 void lv_poc_group_list_set_hightlight_index(void)
