@@ -71,7 +71,7 @@ static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
 		lv_mem_free(activity_win);
 		activity_win = NULL;
 	}
-	
+
 	if(lv_poc_member_list_need_free_member_list == true && lv_poc_member_list_obj != NULL)
 	{
 		oem_list_element_t * cur_p = lv_poc_member_list_obj->online_list;
@@ -256,7 +256,8 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_ESC:
 				{
-					lv_poc_del_activity(poc_member_list_activity);
+					if(!lvPocGuiIdtCom_get_obtainning_state())
+						lv_poc_del_activity(poc_member_list_activity);
 					break;
 				}
 			}
@@ -542,7 +543,7 @@ void lv_poc_member_list_refresh(lv_task_t * task)
     lv_obj_t * btn = NULL;
 	lv_obj_t * btn_index[64];//assume member number is 64
     lv_coord_t btn_height = (member_list_display_area.y2 - member_list_display_area.y1)/LV_POC_LIST_COLUM_COUNT;
-	
+
 	int list_item_count = 0;
 	char is_set_btn_selected = 0;
 
@@ -591,7 +592,7 @@ void lv_poc_member_list_refresh(lv_task_t * task)
         lv_btn_set_fit(btn, LV_FIT_NONE);
         lv_obj_set_height(btn, btn_height);
         btn->user_data = p_cur->information;
-		
+
         //set member index
         if(NULL != prv_member_list_last_index_membername
 			&& NULL != strstr(p_cur->name, prv_member_list_last_index_membername)

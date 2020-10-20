@@ -685,7 +685,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
-				audevSetPlayVolume(30);//70
+				audevSetPlayVolume(70);//70
 			    is_poc_play_voice = true;
 				break;
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
