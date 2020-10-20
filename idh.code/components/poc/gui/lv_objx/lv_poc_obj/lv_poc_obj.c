@@ -118,7 +118,7 @@ static void prv_lv_poc_member_list_refresh_with_data(lv_poc_oem_member_list *mem
 static lv_poc_status_t prv_lv_poc_member_list_set_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information, bool is_online);
 static lv_poc_status_t prv_lv_poc_member_list_is_exists(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
 static lv_poc_status_t prv_lv_poc_member_list_get_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
-
+static void prv_lv_poc_group_member_list_activity(lv_task_t *task);
 
 static int prv_lv_poc_group_list_get_information(lv_poc_oem_group_list *group_list_obj, const char * name, void *** information);
 static void prv_lv_poc_group_list_refresh(lv_poc_oem_group_list *group_list_obj);
@@ -148,6 +148,7 @@ static __attribute__((unused)) lv_poc_activity_attribute_cb_set_obj prv_lv_poc_a
 			.set_state = lv_poc_member_list_set_state,
 			.exists = lv_poc_member_list_is_exists,
 			.get_state = lv_poc_member_list_get_state,
+			.group_member_act = lv_poc_memberlist_activity_open,
 		},
 
 		{
@@ -220,6 +221,7 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 		.set_state = prv_lv_poc_member_list_set_state,
 		.exists = prv_lv_poc_member_list_is_exists,
 		.get_state = prv_lv_poc_member_list_get_state,
+		.group_member_act = prv_lv_poc_group_member_list_activity,
 	},
 
 	.group_list = {
@@ -1687,6 +1689,20 @@ static lv_poc_status_t prv_lv_poc_member_list_get_state(lv_poc_oem_member_list *
 	 }
 
 	 return status;
+}
+
+static void prv_lv_poc_group_member_list_activity(lv_task_t *task)
+{
+   lv_poc_activity_attribute_cb_set_obj * cb_set_obj = lv_poc_get_activity_attribute_cb_set_obj();
+
+   for(int i = 0; i < LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE; i++)
+   {
+      if(cb_set_obj->member_list[i].group_member_act != NULL)
+      {
+         lv_task_t *onece_task = lv_task_create(cb_set_obj->member_list[i].group_member_act, 10, LV_TASK_PRIO_HIGHEST, (void *)task->user_data);
+         lv_task_once(onece_task);
+      }
+   }
 }
 
 static int prv_lv_poc_group_list_get_information(lv_poc_oem_group_list *group_list_obj, const char * name, void *** information)

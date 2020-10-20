@@ -107,6 +107,8 @@ typedef lv_poc_status_t (*lv_poc_member_list_is_exists_cb)(lv_poc_oem_member_lis
 
 typedef lv_poc_status_t (*lv_poc_member_list_get_state_cb)(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
 
+typedef void (*lv_poc_group_list_member_act_cb)(lv_task_t * task);
+
 typedef int (*lv_poc_group_list_get_information_cb)(lv_poc_oem_group_list *group_list_obj, const char * name, void *** information);
 
 typedef void (*lv_poc_group_list_refresh_cb)(lv_task_t *task);
@@ -149,6 +151,7 @@ typedef struct _lv_poc_activity_attribute_cb_set
 		lv_poc_member_list_set_state_cb set_state;
 		lv_poc_member_list_is_exists_cb exists;
 		lv_poc_member_list_get_state_cb get_state;
+		lv_poc_group_list_member_act_cb group_member_act;
 	} member_list;
 
 	struct{

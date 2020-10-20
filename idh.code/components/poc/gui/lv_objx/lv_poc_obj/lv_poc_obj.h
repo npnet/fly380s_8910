@@ -440,6 +440,7 @@ typedef struct _lv_poc_activity_attribute_cb_set_obj
 		lv_poc_member_list_set_state_cb set_state;
 		lv_poc_member_list_is_exists_cb exists;
 		lv_poc_member_list_get_state_cb get_state;
+		lv_poc_group_list_member_act_cb group_member_act;
 	} member_list[LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE];
 
 	struct{
