@@ -2322,7 +2322,8 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 	lv_poc_member_info_t self_info = lv_poc_get_self_info();
 	char *self_name = lv_poc_get_member_name(self_info);
 
-	OSI_LOGI(0, "[song]prv_lv_poc_get_member_list_cb is enter\n");
+	OSI_LOGI(0, "[grouprefr](%d):create node member list", __LINE__);
+
 	if(prv_member_list == NULL
 		|| prv_member_list_cb == NULL
 		|| (prv_member_list_type < 1 || prv_member_list_type > 3))
@@ -2467,20 +2468,17 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 
 		return false;
 	}
-	OSI_LOGE(0, "[song][1]LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND is ok\n");
 	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND, group_info))
 	{
-		OSI_LOGI(0, "[song]re register callback");
 		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_MEMBER_LIST_CB_IND, NULL))
 		{
-			OSI_LOGE(0, "cancel register callback[get member list cb] failed!");
 		}
 		prv_member_list = NULL;
 		prv_member_list_type = 0;
 		prv_member_list_cb = NULL;
 		return false;
 	}
-	OSI_LOGE(0, "[song][2]LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND is ok\n");
+	OSI_LOGI(0, "[grouprefr]send event get member list\n");
 	return true;
 }
 

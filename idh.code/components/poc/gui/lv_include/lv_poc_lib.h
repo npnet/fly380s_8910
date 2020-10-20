@@ -153,6 +153,7 @@ typedef lv_poc_status_t (*lv_poc_member_list_is_exists_cb)(lv_poc_member_list_t 
 
 typedef lv_poc_status_t (*lv_poc_member_list_get_state_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 
+typedef void (*lv_poc_group_list_member_act_cb)(lv_task_t * task);
 
 typedef lv_poc_status_t (*lv_poc_group_list_add_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 
@@ -175,7 +176,6 @@ typedef lv_poc_status_t (*lv_poc_group_list_move_down_cb)(lv_poc_group_list_t *g
 typedef lv_poc_status_t (*lv_poc_group_list_is_exists_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void * information);
 
 typedef lv_poc_status_t (*lv_poc_group_list_lock_group_cb)(lv_poc_group_list_t *group_list_obj, lv_poc_group_oprator_type opt);
-
 
 /*
 	  name : lv_poc_notation_msg
@@ -213,6 +213,7 @@ typedef struct _lv_poc_activity_attribute_cb_set
 		lv_poc_member_list_set_state_cb set_state;
 		lv_poc_member_list_is_exists_cb exists;
 		lv_poc_member_list_get_state_cb get_state;
+		lv_poc_group_list_member_act_cb group_member_act;
 	} member_list;
 
 	struct{

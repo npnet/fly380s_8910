@@ -10,6 +10,8 @@ extern "C" {
 
 void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, IN bool hide_offline);
 
+void lv_poc_memberlist_activity_open(lv_task_t * task);
+
 lv_poc_status_t lv_poc_member_list_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information);
 
 void lv_poc_member_list_remove(lv_poc_member_list_t *member_list_obj, const char * name, void * information);

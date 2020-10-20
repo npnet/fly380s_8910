@@ -192,7 +192,6 @@ static lv_res_t lv_poc_member_call_signal_func(struct _lv_obj_t * obj, lv_signal
 			{
 				lv_poc_refr_func_ui(lv_poc_member_call_refresh,
 					LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH, lv_poc_member_call_member_list_obj);
-				//lv_poc_member_call_refresh(lv_poc_member_call_member_list_obj);
 			}
 			break;
 		}
