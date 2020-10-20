@@ -2587,14 +2587,16 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *Oemp
 		return;
 	}
 
-	if(msg_type == 0 || num < 1)
-	{
-		prv_member_list_cb(0);
-		prv_member_list_cb = NULL;
-		prv_member_list = NULL;
-		prv_member_list_cb = NULL;
-		return;
-	}
+	if(num < 1)
+    {
+        if(msg_type == 0)
+            prv_member_list_cb(0);
+        else if(msg_type == 1)
+            prv_member_list_cb(2);
+        prv_member_list_cb = NULL;
+        prv_member_list = NULL;
+        return;
+    }
 
 	/*构建链表*/
 	oem_list_element_t * p_element = NULL;

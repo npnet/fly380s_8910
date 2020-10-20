@@ -146,19 +146,15 @@ void lv_poc_group_list_title_refr(lv_task_t * task)
 
 static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 {
-	extern lv_poc_activity_t * poc_member_list_activity;
-	if(poc_member_list_activity != NULL)
-    {
-    	return;
-    }
-
     if(lv_poc_member_list == NULL)
     {
+		OSI_LOGI(0, "[grouprefr](%d):member list NULL", __LINE__);
 	    return;
     }
 
     if(msg_type == 1)
     {
+		OSI_LOGI(0, "[grouprefr](%d):success get member list, to refr", __LINE__);
 		lv_poc_refr_task_once(lv_poc_group_list_title_refr,
 			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
     }

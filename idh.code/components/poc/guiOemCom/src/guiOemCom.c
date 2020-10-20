@@ -119,9 +119,10 @@ typedef struct _PocGuiOemComAttr_t
 	poc_set_member_call_status_cb pocMemberCallCb;
 	lv_poc_set_monitor_cb_t pocSetMonitorCb;
 
+	//oem ack
+	int         oem_response_time;
 	bool 		isReady;
 	int 		pocnetstatus;
-
 	char 		pocIpAccoutaPassword[128];
 	size_t      pocIpAccoutaPasswordLen;
 
@@ -291,7 +292,6 @@ void lvPocGuiOemCom_Request_Logout(void)
 	sprintf(cOutstr, "[oemlogin]%s(%d):start login out", __func__, __LINE__);
 	OSI_LOGI(0, cOutstr);
 	#endif
-
 	OEMPOC_AT_Recv(LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGOUT, strlen(LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGOUT));
 }
 
@@ -440,10 +440,19 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 			{
 				case LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS:
 				{
-					//login exit--8200应答
-					if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK))
+					//login out--8203应答
+					if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_CANCELLATION_ACK))
 					{
-						pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_LOGIN_EXIT;
+						pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_GROUP_EXIT;
+						break;
+					}
+					//login exit--8200应答
+					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK))
+					{
+						poc_play_voice_one_time(LVPOCAUDIO_Type_This_Account_Already_Logined, 50, false);
+						pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_LOGIN_FAILED;
+						lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_1500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+                		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
 						break;
 					}
 					//listen start--8B0001应答
@@ -951,6 +960,7 @@ void prvPocGuiOemTaskHandleGroupList(uint32_t id, uint32_t ctx)
 			lvPocGuiOemCom_Request_AllGroupInfo();
 			lvPocGuiIdtCom_set_obtainning_state(true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组列表...", NULL);
+			pocOemAttr.oem_response_time = 50;
 			break;
 		}
 	    case LVPOCGUIOEMCOM_SIGNAL_GROUP_LIST_QUERY_REP:
@@ -975,14 +985,18 @@ void prvPocGuiOemTaskHandleGroupList(uint32_t id, uint32_t ctx)
 
 			if(0 == strcmp(Grouplist.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_FAILED))
 			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+
 				pocOemAttr.pocGetGroupListCb(1, 0, NULL);
 				pocOemAttr.pocGetGroupListCb = NULL;
-				break;
+				lvPocGuiIdtCom_set_obtainning_state(false);
+				return;
 			}
 			//refr group
 			pocOemAttr.pocGetGroupListCb(2, pocOemAttr.GroupData_s.m_Group_Num, &pocOemAttr.GroupData_s);
 			lvPocGuiIdtCom_set_obtainning_state(false);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+			pocOemAttr.oem_response_time = 200;
 			break;
 		}
 
@@ -1034,6 +1048,8 @@ void prvPocGuiOemTaskHandleSetCurrentGroup(uint32_t id, uint32_t ctx)
 			OemCGroup *SetCGroup = (OemCGroup *)ctx;
 			//request join group
 			lvPocGuiOemCom_Request_Join_Groupx((char *)SetCGroup->m_ucGID);
+			lvPocGuiIdtCom_set_obtainning_state(true);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组成员...", NULL);
 
 			#if GUIIDTCOM_GROUPOPTACK_DEBUG_LOG
 			char cOutstr[256] = {0};
@@ -1042,6 +1058,8 @@ void prvPocGuiOemTaskHandleSetCurrentGroup(uint32_t id, uint32_t ctx)
 			OSI_LOGI(0, cOutstr);
 			#endif
 
+			lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.member_list.group_member_act, 50, LV_TASK_PRIO_HIGHEST, (void *)SetCGroup->m_ucGName);
+            lv_task_once(oncetask);
 			break;
 		}
 
@@ -1162,6 +1180,7 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 					lvPocGuiOemCom_Request_Groupx_MemeberInfo((char *)CurrentGUInfo->m_ucGID);
 					lvPocGuiIdtCom_set_obtainning_state(true);
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取成员列表...", NULL);
+					pocOemAttr.oem_response_time = 50;
 				}
 				break;
 			}
@@ -1172,8 +1191,7 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 				if(xgroup_info->m_ucGID != NULL)
 				{
 					lvPocGuiOemCom_Request_Groupx_MemeberInfo((char *)xgroup_info->m_ucGID);
-					lvPocGuiIdtCom_set_obtainning_state(true);
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组成员...", NULL);
+					pocOemAttr.oem_response_time = 50;
 				}
 			}
 
@@ -1196,6 +1214,7 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 			pocOemAttr.OemGroupMemberInfoBufnumber = 0;
 			if(0 == strcmp(Mmemberlist.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_FAILED))
 			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 				if(pocOemAttr.is_member_update == false)
 				{
 					pocOemAttr.pocGetMemberListCb(1, 0, NULL);
@@ -1204,7 +1223,8 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 				{
 					pocOemAttr.is_member_update = false;
 				}
-				break;
+				lvPocGuiIdtCom_set_obtainning_state(false);
+				return;
 			}
 
 			if(pocOemAttr.is_member_update == false)
@@ -1213,6 +1233,7 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 				pocOemAttr.pocGetMemberListCb(2, pocOemAttr.Msg_GroupMemberData_s.dwNum, &pocOemAttr.Msg_GroupMemberData_s);
 				lvPocGuiIdtCom_set_obtainning_state(false);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				pocOemAttr.oem_response_time = 200;
 			}else
 			{
 				//update online or offline member
@@ -1757,7 +1778,7 @@ void lvPocGuiOemCom_Init(void)
 		OemDestroyQueue(&OemQueue);
 	}
 	//power on status
-	pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_LOGIN_EXIT;
+	pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_LOGIN_FAILED;
 	pocOemAttr.groupstatus_t = LVPOCOEMCOM_SIGNAL_GROUP_EXIT;
 
 	PocGuiOemComStart();
@@ -1939,10 +1960,11 @@ void pocGuiOemApTaskEntry(void *argument)
 
 	PocGuiOemApSendAttr_t *apopt = NULL;
 	PocGuiOemApSendAttr_t oemopt = {0};
+	pocOemAttr.oem_response_time = 200;
 
     while(1)
     {
-    	if(!osiMessageQueueTryGet(pocOemAttr.xQueue, (void *)&apopt, 50))//此处delay关系AP ack speed
+    	if(!osiMessageQueueTryGet(pocOemAttr.xQueue, (void *)&apopt, pocOemAttr.oem_response_time))//此处delay关系AP ack speed
 		{
 			if(!OemDeQueue(&OemQueue, &oemopt))
 			{
