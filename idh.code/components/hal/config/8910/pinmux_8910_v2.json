@@ -19,7 +19,9 @@
         "keyout_2",
         "keyout_3",
         "keyout_4",
-        "keyout_5"
+        "keyout_5",
+		"gpio_14",
+        "gpio_15"
     ],
     "fun_prop": {
         "sim_1_clk": {
@@ -66,6 +68,12 @@
         },
         "keyout_5": {
             "pull": "pull_none"
+        },
+		"gpio_14": {
+            "pull": "pull_none"
+        },
+		"gpio_15": {
+            "pull": "pull_none"
         }
     },
     "fun_def_pad": {
@@ -109,8 +117,6 @@
         "gpio_11": "gpio_11",
         "gpio_12": "gpio_12",
         "gpio_13": "gpio_13",
-        "gpio_14": "gpio_14",
-        "gpio_15": "gpio_15",
         "gpio_16": "i2c_m1_scl",
         "gpio_17": "i2c_m1_sda",
         "gpio_18": "camera_rst_l",

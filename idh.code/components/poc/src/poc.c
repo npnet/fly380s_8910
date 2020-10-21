@@ -32,6 +32,7 @@
 #include "guiZzdCom_api.h"
 #include "hal_chip.h"
 #include "tts_player.h"
+#include "uart3_gps.h"
 
 static void lv_poc_network_config_task(lv_task_t * task);
 static void lv_poc_power_on_picture(lv_task_t * task);
@@ -159,6 +160,10 @@ void pocStart(void *ctx)
     drvLcdFill(lcd, 0, NULL, true);
     drvLcdSetBackLightEnable(lcd, false);
 
+	//打开GPS天线
+  	bool open = poc_set_gps_ant_status(true);
+	OSI_LOGI(0, "gps:ant open = %d", open);
+	gpsInit();
 	//获取开机方式
 	uint32_t boot_causes = osiGetBootCauses();
 	OSI_LOGI(0, "[song]poc boot mode is = %d", boot_causes);

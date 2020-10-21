@@ -26,6 +26,7 @@ enum {
 	poc_green_led   = 13,//IO greenled
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set  = 8,//IO headset
+	poc_gps_int   = 12,//IO ant
 };
 
 //字符串长度:
@@ -844,6 +845,14 @@ lv_poc_set_speak_tone_status(bool status);
 */
 bool
 lv_poc_get_speak_tone_status(void);
+
+/*
+      name : poc_set_keypad_led_status
+     param : open  true is open keypad led
+      date : 2020-04-30
+*/
+bool
+poc_set_gps_ant_status(bool open);
 
 #ifdef __cplusplus
 }
