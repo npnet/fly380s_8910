@@ -156,7 +156,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	strcpy(lv_poc_about_text_model, "FLY380S");
 
 	lv_poc_about_text_version[0] = 0;
-	strcpy(lv_poc_about_text_version, "V35.2-D10.17");
+	strcpy(lv_poc_about_text_version, "V35.2-D10.21");
 
 	lv_poc_about_text_update[0] = 0;
 	strcpy(lv_poc_about_text_update, "检查更新");

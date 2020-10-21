@@ -44,7 +44,8 @@ static drvGpio_t * poc_green_gpio = NULL;
 
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
-static bool is_poc_play_voice = false;//是否正在播放语音
+static bool is_poc_play_voice = false;
+static bool is_poc_network_status = false;
 static uint8_t poc_earkey_state = false;
 static void poc_ear_ppt_irq(void *ctx);
 
@@ -2379,4 +2380,27 @@ lv_poc_get_poweron_is_ready(void)
 {
 	return poc_power_on_status;
 }
+
+/*
+	  name : lv_poc_set_network_status
+	  param :
+	  date : 2020-10-21
+*/
+void
+lv_poc_set_network_status(bool status)
+{
+	is_poc_network_status = status;
+}
+
+/*
+	  name : lv_poc_get_network_status_is_ready
+	  param :
+	  date : 2020-10-21
+*/
+bool
+lv_poc_get_network_status_is_ready(void)
+{
+	return is_poc_network_status;
+}
+
 

@@ -440,19 +440,10 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 			{
 				case LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS:
 				{
-					//login out--8203应答
-					if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_CANCELLATION_ACK))
+					//login status--82应答
+					if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_STATUS_ACK))
 					{
-						pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_GROUP_EXIT;
-						break;
-					}
-					//login exit--8200应答
-					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK))
-					{
-						poc_play_voice_one_time(LVPOCAUDIO_Type_This_Account_Already_Logined, 50, false);
-						pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_LOGIN_FAILED;
-						lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_1500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
-                		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
+						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_REP, apopt);
 						break;
 					}
 					//listen start--8B0001应答
@@ -720,6 +711,39 @@ void prvPocGuiOemTaskHandleLogin(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIOEMCOM_SIGNAL_EXIT_REP:
 		{
+			PocGuiOemApSendAttr_t *apopt = (PocGuiOemApSendAttr_t *)ctx;
+			PocGuiOemAtBufferAttr_t OfflineInfo;
+			PocGuiOemAtTableAttr_t table[4] = {
+				{5,2},//应答号--82
+				{7,2},//登录状态
+				{9,4},//操作ID--忽略
+				{13,0},//离线原因
+			};
+
+			OfflineInfo = prv_lv_poc_oem_get_global_atcmd_info(apopt->oembuf, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
+
+			if(0 == strcmp(OfflineInfo.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK))
+			{//no login
+				if(NULL != strstr(OfflineInfo.buf[3].oembuf, OEM_OTHER_TERMINAL_LOGIN))
+				{
+					poc_play_voice_one_time(LVPOCAUDIO_Type_This_Account_Already_Logined, 50, false);
+				}
+				else if(NULL != strstr(OfflineInfo.buf[3].oembuf, OEM_NO_NETWORK))
+				{
+
+				}
+				pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_LOGIN_FAILED;
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_1500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
+			}
+			else if(0 == strcmp(OfflineInfo.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGINING_ACK))
+			{//loginning
+
+			}
+			else if(0 == strcmp(OfflineInfo.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_CANCELLATION_ACK))
+			{//login out success
+				pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_GROUP_EXIT;
+			}
 			break;
 		}
 
