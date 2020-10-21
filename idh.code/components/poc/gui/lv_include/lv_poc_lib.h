@@ -32,6 +32,7 @@ enum {
 	poc_top_key     = 19,//IO top key
 	poc_c_key       = 20,//IO c
     poc_ppt         = 21,//IO ppt
+	poc_gps_int   = 12,//IO ant
 };
 
 enum {
@@ -950,11 +951,19 @@ bool
 lv_poc_get_speak_tone_status(void);
 
 /*
-	  name : poc_config_Lcd_power_vol
-	return : none
-	  date : 2020-09-12
+      name : poc_config_Lcd_power_vol
+    return : none
+      date : 2020-09-12
 */
 void poc_config_Lcd_power_vol(void);
+
+/*
+      name : poc_set_keypad_led_status
+     param : open  true is open keypad led
+      date : 2020-04-30
+*/
+bool
+poc_set_gps_ant_status(bool open);
 
 #ifdef __cplusplus
 }
