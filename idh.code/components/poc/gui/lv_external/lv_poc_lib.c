@@ -83,6 +83,7 @@ static bool is_first_membercall = false;
 static bool is_poc_touch_status = false;
 #endif
 
+static bool is_poc_network_status = false;
 static bool poc_earkey_state = false;
 static bool poc_key_state = false;
 static int lv_poc_inside_group = false;
@@ -4019,5 +4020,27 @@ void lv_poc_set_apply_note(lv_poc_apply_note_type_t type)
 lv_poc_apply_note_type_t lv_poc_get_apply_note(void)
 {
    return lv_poc_note_type;
+}
+
+/*
+	  name : lv_poc_set_network_status
+	  param :
+	  date : 2020-10-21
+*/
+void
+lv_poc_set_network_status(bool status)
+{
+	is_poc_network_status = status;
+}
+
+/*
+	  name : lv_poc_get_network_status_is_ready
+	  param :
+	  date : 2020-10-21
+*/
+bool
+lv_poc_get_network_status_is_ready(void)
+{
+	return is_poc_network_status;
 }
 

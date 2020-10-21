@@ -160,10 +160,11 @@ typedef enum{
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_ACK      		  "POC:030000"   //登入成功应答
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGOUT_ACK     		  "POC:040000"   //登出成功应答
 
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK             "POC:8200" //未登录应答
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGINING_ACK            "POC:8201" //正在登录应答
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_SUCCESS_ACK       "POC:8202" //登录成功应答
-#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_CANCELLATION_ACK  "POC:8203" //登出成功应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_STATUS_ACK        "POC:82" //登录应答
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOLOGIN_ACK             "00" //未登录
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGINING_ACK            "01" //正在登录
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_CANCELLATION_ACK  "03" //登出成功
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_SUCCESS_ACK       "POC:8202" //离线时登录成功
 
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ADDLISTENGROUP_ACK      "POC:07" //请求监听组成功应答
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CANNELLISTENGROUP_ACK   "POC:08" //取消监听组成功应答
@@ -205,8 +206,11 @@ typedef enum{
 #define OEM_GROUP_MEMBER_ONLINE_OUT  "02"//在线--组外
 #define OEM_GROUP_MEMBER_ONLINE_IN   "03"//在线--组内
 
-#define OEM_GROUP_MONITOR  "01"//此组被监听组
+#define OEM_GROUP_MONITOR    "01"//此组被监听组
 #define OEM_GROUP_UNMONITOR  "00"//此组未监听组
+
+#define OEM_OTHER_TERMINAL_LOGIN "7651835bc87eef7a7b76555f21000000"//其他终端登录
+#define OEM_NO_NETWORK           "e06570656e63517fdc7ee14ff75321000000"//无网络信号
 
 /********************************************************************************************************/
 //SET POC FUNC

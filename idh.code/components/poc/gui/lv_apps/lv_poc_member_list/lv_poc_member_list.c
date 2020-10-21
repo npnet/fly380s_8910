@@ -316,10 +316,6 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 
 void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members, IN bool hide_offline)
 {
-    lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_LIST,
-    		lv_poc_member_list_activity_create,
-			lv_poc_member_list_activity_destory};
-
     if(lv_poc_member_list_obj != NULL)
     {
     	return;

@@ -60,6 +60,8 @@ lv_style_t theme_white_style_switch_knob_on = {0};
 lv_style_t theme_white_style_rb = {0};
 lv_style_t theme_white_style_cb = {0};
 lv_style_t theme_white_style_about_label = {0};
+lv_style_t theme_white_style_fota_label = {0};
+lv_style_t theme_white_style_cit_label = {0};
 lv_style_t theme_white_style_status_bar = {0};
 lv_style_t theme_white_style_status_bar_time = {0};
 lv_style_t theme_white_style_control = {0};
@@ -82,6 +84,8 @@ lv_style_t theme_black_style_switch_knob_on = {0};
 lv_style_t theme_black_style_rb = {0};
 lv_style_t theme_black_style_cb = {0};
 lv_style_t theme_black_style_about_label = {0};
+lv_style_t theme_white_style_fota_label = {0};
+lv_style_t theme_white_style_cit_label = {0};
 lv_style_t theme_black_style_status_bar = {0};
 lv_style_t theme_black_style_status_bar_time = {0};
 lv_style_t theme_black_style_control = {0};
@@ -461,6 +465,7 @@ static void lv_poc_stabar_signal_task(void);
 ********************/
 static void lv_exec_task(lv_task_t * task);
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:    lv_poc_init_stabar_gps_img
 *   AUTHOR:    wangls
@@ -468,6 +473,7 @@ static void lv_exec_task(lv_task_t * task);
 *     DATE:    2020-08-03
 ********************/
 static bool lv_poc_init_stabar_gps_img(void);
+#endif
 
 /*************************************************
 *
@@ -848,7 +854,9 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_init_stabar_sim2_img();
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	lv_poc_init_stabar_gps_img();/*GPS图标*/
+#endif
 
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
@@ -955,6 +963,7 @@ static bool lv_poc_init_stabar_battery_img(void)
     return ret_val;
 }
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:    lv_poc_init_stabar_gps_img
 *   AUTHOR:    wangls
@@ -1011,6 +1020,7 @@ bool lv_poc_stabar_show_gps_img(bool enable)
 	}
 	return true;
 }
+#endif
 
 /*******************
 *     NAME:    lv_poc_stabar_sim_clean
@@ -2038,7 +2048,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 		{
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 			charge_status = false;
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+			//lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		}
 
         if(battery_t.battery_value >= 100)
@@ -3185,6 +3195,129 @@ void lv_poc_anim_note(lv_obj_t *obj)
 	lv_anim_set_exec_cb(&lv_anim_obj, obj, (lv_anim_exec_xcb_t)lv_obj_set_opa_scale);
 
 	lv_anim_create(&lv_anim_obj);
+}
+
+/*******************
+*	  NAME:    lv_poc_get_current_activity
+* DESCRIPT:    获取当前窗口
+*	  DATE:    2020-10-09
+********************/
+lv_poc_activity_t *lv_poc_get_current_activity(void)
+{
+	return current_activity;
+}
+
+/*******************
+*	  NAME:    lv_poc_cbn_key_obj
+* DESCRIPT:    组合键
+*	  DATE:    2020-12-04
+********************/
+bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
+{
+	//0(nul)1(volum down)1(volum up)1(power)
+	#define CBN_KEY_STATE_PRESS     (1<<0)
+	#define CBN_KEY_GPS_DEBUG       (0b0011)
+	#define CBN_KEY_CIT_CHECK       (0b0101)
+	#define CBN_KEY_RECORDERBACK	(0b0110)
+
+	static int	multi_keyvalue = 0;//multi-key
+
+	switch(data->key)
+	{
+		case 0xf0:
+		{
+			int status = data->state == CBN_KEY_STATE_PRESS?true:false;
+
+			do
+			{
+				status == true ? (multi_keyvalue|=0b0001):(multi_keyvalue&=0b0000);
+			}while(0);
+
+			break;
+		}
+
+		case LV_GROUP_KEY_UP:
+		{
+			if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+			{
+				lv_poc_type_key_up_cb(true);
+				return false;
+			}
+
+			int status = data->state == CBN_KEY_STATE_PRESS?true:false;
+
+			do
+			{
+				status == true ? (multi_keyvalue|=0b0010):(multi_keyvalue&=0b0000);
+			}while(0);
+
+			break;
+		}
+
+		case LV_GROUP_KEY_DOWN:
+		{
+			if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+			{
+				lv_poc_type_key_down_cb(true);
+				return false;
+			}
+
+			int status = data->state == CBN_KEY_STATE_PRESS?true:false;
+
+			do
+			{
+				status == true ? (multi_keyvalue|=0b0100):(multi_keyvalue&=0b0000);
+			}while(0);
+
+			break;
+		}
+	}
+
+	switch(multi_keyvalue)
+	{
+		case CBN_KEY_GPS_DEBUG://debug gps
+		{
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
+			lv_poc_gps_monitor_open();
+#endif
+			return true;
+		}
+
+		case CBN_KEY_CIT_CHECK://cit test
+		{
+			lv_poc_cit_open();
+			return true;
+		}
+
+		case CBN_KEY_RECORDERBACK://record playback
+		{
+			lv_poc_record_playback_open();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*******************
+*	  NAME:    lv_poc_net_ping_task
+* DESCRIPT:
+*	  DATE:    2020-12-08
+********************/
+static
+void lv_poc_net_ping_task(lv_task_t *task)
+{
+	lv_poc_virt_at_resp_send(POC_TYPE_VAT_PING);
+}
+
+/*******************
+*	  NAME:    lv_poc_net_ping_task_create
+* DESCRIPT:
+*	  DATE:    2020-12-08
+********************/
+void lv_poc_net_ping_task_create(void)
+{
+	lv_task_create(lv_poc_net_ping_task, 1000, LV_TASK_PRIO_HIGH, NULL);
 }
 
 #ifdef __cplusplus
