@@ -41,7 +41,7 @@ static drvGpio_t * poc_ext_pa_gpio = NULL;
 static drvGpio_t * poc_port_Gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_green_gpio = NULL;
-
+static drvGpio_t * poc_gps_ant_Gpio = NULL;
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
 static bool is_poc_play_voice = false;
@@ -49,6 +49,8 @@ static bool is_poc_network_status = false;
 static uint8_t poc_earkey_state = false;
 static int lv_poc_inside_group = false;
 static int lv_poc_group_list_refr = false;
+static bool is_play_tone_status = false;
+
 static void poc_ear_ppt_irq(void *ctx);
 
 static uint16_t poc_cur_unopt_status;
@@ -2475,5 +2477,84 @@ void lv_poc_set_group_refr(bool status)
 bool lv_poc_is_group_list_refr(void)
 {
 	return lv_poc_group_list_refr;
+}
+
+/*
+	  name : lv_poc_set_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+void
+lv_poc_set_speak_tone_status(bool status)
+{
+	is_play_tone_status = status;
+}
+
+/*
+	  name : lv_poc_get_speak_tone_status
+	  param :
+	  date : 2020-10-10
+*/
+bool
+lv_poc_get_speak_tone_status(void)
+{
+	return is_play_tone_status;
+}
+
+/*
+      name : poc_gps_ant_init
+     param : none
+      date : 2020-04-30
+*/
+void
+poc_gps_ant_init(void)
+{
+	if(poc_gps_ant_Gpio != NULL)
+	{
+		OSI_LOGI(0, "[gps]poc_gps_ant_Gpio alread open");
+		return;
+	}
+	drvGpioConfig_t * config = NULL;
+
+	if(config == NULL)
+	{
+		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
+		if(config == NULL)
+		{
+			OSI_LOGE(0, "[gps] ant:calloc fail");
+			return;
+		}
+		memset(config, 0, sizeof(drvGpioConfig_t));
+		config->mode = DRV_GPIO_OUTPUT;
+		config->debounce = false;
+		config->out_level = true;
+	}
+	poc_gps_ant_Gpio = drvGpioOpen(poc_gps_int, config, NULL, NULL);
+	if(poc_gps_ant_Gpio == NULL)
+	{
+		OSI_LOGE(0, "[gps] ant:calloc fail");
+		free(config);
+		return;
+	}
+	free(config);
+}
+
+/*
+      name : poc_set_keypad_led_status
+     param : open  true is open keypad led
+      date : 2020-04-30
+*/
+bool
+poc_set_gps_ant_status(bool open)
+{
+	poc_gps_ant_init();
+
+    if(open)
+		drvGpioWrite(poc_gps_ant_Gpio, true);
+	else
+		drvGpioWrite(poc_gps_ant_Gpio, false);
+
+	return open;
+
 }
 

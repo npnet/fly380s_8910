@@ -300,6 +300,9 @@ add_library(${target} STATIC
 	gui/resource/audiofile/lv_poc_audio_server_timeout_to_try_again.c
 	gui/resource/audiofile/lv_poc_audio_this_account_already_logined.c
 	gui/resource/audiofile/lv_poc_audio_loginning_please_wait.c
+
+	gps/gps_nmea.c 
+	gps/uart3_gps.c
 	
 	guiOemCom/src/guiOemCom.c
 	
@@ -307,7 +310,7 @@ add_library(${target} STATIC
 
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_POC)
-target_include_directories(${target} PUBLIC include gui cJSON guiOemCom/include guiOemCom/src ../atr/include)
+target_include_directories(${target} PUBLIC include gui cJSON guiOemCom/include guiOemCom/src ../atr/include gps)
 target_link_libraries(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts net lwip ats atr)
 
 relative_glob(srcs */*.h */*.c)
