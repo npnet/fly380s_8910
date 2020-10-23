@@ -1025,6 +1025,7 @@ static bool lv_poc_init_stabar_battery_img(void)
 static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 {
     bool ret_val = true;
+	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
 
 	if(lv_poc_status_bar_fptr->gps_img == NULL)
    {
@@ -1036,9 +1037,26 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 		lv_poc_status_bar_fptr->gps_img->align_l_obj = lv_poc_status_bar_fptr->gps_img->align_r_obj;
 
 		lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+		lv_img_set_auto_size(lv_poc_status_bar_fptr->gps_img->gps_location_img, false);
+		lv_obj_set_size(lv_poc_status_bar_fptr->gps_img->gps_location_img, 18, 18);
+
+		if(gps_config->GPS_switch == 1){
+			#ifdef POCIDTGPSTHREADEVENT
+			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_OPTION, NULL);
+			#else
+			prvlvPocGpsIdtComOpenGps();
+			#endif
+		}
+		else{
+			#ifdef POCIDTGPSTHREADEVENT
+			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_OPTION, NULL);
+			#else
+			prvlvPocGpsIdtComCloseGps();
+			#endif
+		}
 	}
 
-	lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_gps_on);
+	lv_poc_show_gps_location_status_img(pubPocIdtGpsLocationStatus());
 	if(align_obj == NULL)
     {
 	   lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
@@ -1048,17 +1066,30 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 	   lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(align_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
     }
 
-	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
 	if(gps_config->GPS_switch == 1){
-
 		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, false);
-
 	}else{
-
 		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, true);
-
 	}
     return ret_val;
+}
+
+/*******************
+*     NAME:    lv_poc_show_gps_location_status_img
+*   AUTHOR:    wangls
+* DESCRIPT:    显示定位及未定位图标
+*     DATE:    2020-10-22
+********************/
+void lv_poc_show_gps_location_status_img(bool status)
+{
+	if(status == true)
+	{
+		lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_gps_on);
+	}
+	else
+	{
+		lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_qs_gps_on_sprd);
+	}
 }
 
 /*******************
@@ -2523,126 +2554,125 @@ void lv_poc_update_stabar_sim_img(void)
 
 #endif
 
-	                obj2 = lv_img_create(lv_poc_status_bar, NULL);
-	                switch((sim_state_code[k] & 0x1e) >> 1)    //判断信号强度是多少
-	                {
-	                case MMI_MODEM_SIGNAL_BAR_0:
-	                {
-	                    lv_img_set_src(obj2, sim_signal_img[0]);
-	                    break;
-	                }
+                obj2 = lv_img_create(lv_poc_status_bar, NULL);
+                switch((sim_state_code[k] & 0x1e) >> 1)    //判断信号强度是多少
+                {
+                case MMI_MODEM_SIGNAL_BAR_0:
+                {
+                    lv_img_set_src(obj2, sim_signal_img[0]);
+                    break;
+                }
 
-	                case MMI_MODEM_SIGNAL_BAR_1:
-	                {
-	                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 1]);
-	                    break;
-	                }
+                case MMI_MODEM_SIGNAL_BAR_1:
+                {
+                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 1]);
+                    break;
+                }
 
-	                case MMI_MODEM_SIGNAL_BAR_2:
-	                case MMI_MODEM_SIGNAL_BAR_3:
-	                {
-	                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 2]);
-	                    break;
-	                }
+                case MMI_MODEM_SIGNAL_BAR_2:
+                case MMI_MODEM_SIGNAL_BAR_3:
+                {
+                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 2]);
+                    break;
+                }
 
-	                case MMI_MODEM_SIGNAL_BAR_4:
-	                {
-	                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 3]);
-	                    break;
-	                }
+                case MMI_MODEM_SIGNAL_BAR_4:
+                {
+                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 3]);
+                    break;
+                }
 
-	                case MMI_MODEM_SIGNAL_BAR_5:
-	                {
-	                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 4]);
-	                    break;
-	                }
+                case MMI_MODEM_SIGNAL_BAR_5:
+                {
+                    lv_img_set_src(obj2, sim_signal_img[k * MAX_SIM_SIGNAL_STRENGTH + 4]);
+                    break;
+                }
 
-	                default:
-	                {
-	                    OSI_LOGI(0, "FUNC:%s  get a error net signal strength", __func__);
-	                    lv_poc_stabar_sim_clean(sim_cont[k]);
-	                    lv_img_set_src(obj2, &ic_no_sim);
-	                    lv_obj_align(obj2, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
-	                    sim_cont[k]->sim_img = obj2;
-	                    sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_img);
-	                    old_sim_state_code[k] = sim_state_code[k];
-	                    continue;
-	                    break;
-	                }
-               	    }
-	                lv_obj_align(obj2, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
-	                sim_cont[k]->sim_signal_strength_img = obj2;
-	                sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_signal_strength_img);
+                default:
+                {
+                    OSI_LOGI(0, "FUNC:%s  get a error net signal strength", __func__);
+                    lv_poc_stabar_sim_clean(sim_cont[k]);
+                    lv_img_set_src(obj2, &ic_no_sim);
+                    lv_obj_align(obj2, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
+                    sim_cont[k]->sim_img = obj2;
+                    sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_img);
+                    old_sim_state_code[k] = sim_state_code[k];
+                    continue;
+                    break;
+                }
+                }
+                lv_obj_align(obj2, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
+                sim_cont[k]->sim_signal_strength_img = obj2;
+                sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_signal_strength_img);
 
-	                obj3 = lv_img_create(lv_poc_status_bar, NULL);
-	                switch((sim_state_code[k] & 0xe0) >> 5)   //判断是什么类型的信号
-	                {
-	                case 1:
-	                case 2://2G网络
-	                {	//显示G
-	                    lv_img_set_src(obj3, &stat_sys_data_connected_2g_sprd);
-	                    break;
-	                }
+                obj3 = lv_img_create(lv_poc_status_bar, NULL);
+                switch((sim_state_code[k] & 0xe0) >> 5)   //判断是什么类型的信号
+                {
+                case 1:
+                case 2://2G网络
+                {	//显示G
+                    lv_img_set_src(obj3, &stat_sys_data_connected_2g_sprd);
+                    break;
+                }
 
-	                case 3://3G网络
-	                {
-	                    lv_img_set_src(obj3, &stat_sys_data_fully_connected_3g_sprd_reliance);
-						break;
-	                }
+                case 3://3G网络
+                {
+                    lv_img_set_src(obj3, &stat_sys_data_fully_connected_3g_sprd_reliance);
+                    break;
+                }
 
-	                case 4:
-	                case 5:
-	                {
-	                    lv_img_set_src(obj3, &stat_sys_data_connected_4g_sprd);
-						break;
-	                }
-					case 6://显示无服务
-					{
-						lv_img_set_src(obj3, &ic_signal_no_server);
-						break;
+                case 4:
+                case 5:
+                {
+                    lv_img_set_src(obj3, &stat_sys_data_connected_4g_sprd);
+                    break;
+                }
+				case 6://显示无服务
+				{
+					lv_img_set_src(obj3, &ic_signal_no_server);
+					break;
 
-					}
-	                default:
-	                {
-	                    OSI_LOGI(0, "FUNC:%s  get a error net type", __func__);
-						//lv_img_set_src(obj3, &stat_sys_no_sim_sprd_cucc);//未注册网络图标
-	                    //lv_poc_stabar_sim_clean(sim_cont[k]);
-	                    lv_obj_del(obj3);
-	                    old_sim_state_code[k] = sim_state_code[k];
+				}
+                default:
+                {
+                    OSI_LOGI(0, "FUNC:%s  get a error net type", __func__);
+					//lv_img_set_src(obj3, &stat_sys_no_sim_sprd_cucc);//未注册网络图标
+                    //lv_poc_stabar_sim_clean(sim_cont[k]);
+                    lv_obj_del(obj3);
+                    old_sim_state_code[k] = sim_state_code[k];
 
-						//refr gps icon
-						if(lv_poc_status_bar_fptr->gps_img != NULL)
-						{
-							lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
-							lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
-							lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
-							sim_cont[k]->align_l_obj = &lv_poc_status_bar_fptr->gps_img->gps_location_img;
-						}
-	                    continue;
-            		}
-	                }
-	                lv_obj_align(obj3, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
-					sim_cont[k]->sim_net_type_img = obj3;
-	                sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_net_type_img);
-	            }
-	            else
-	            {
-	                *(has_sim[k]) = false;
-	                obj4 = lv_img_create(lv_poc_status_bar, NULL);
-	                lv_img_set_src(obj4, &ic_no_sim);
-	                lv_obj_align(obj4, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
-	                sim_cont[k]->sim_img = obj4;
-	                sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_img);
-	            }
-	            old_sim_state_code[k] = sim_state_code[k];
+					//refr gps view
+                    if(lv_poc_status_bar_fptr->gps_img != NULL)
+                    {
+                       lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
+                       lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+                       lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+                    }
+                    continue;
+                }
+                }
+                lv_obj_align(obj3, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
+                sim_cont[k]->sim_net_type_img = obj3;
+                sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_net_type_img);
+            }
+            else
+            {
+                *(has_sim[k]) = false;
+                obj4 = lv_img_create(lv_poc_status_bar, NULL);
+                lv_img_set_src(obj4, &ic_no_sim);
+                lv_obj_align(obj4, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
+                sim_cont[k]->sim_img = obj4;
+                sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_img);
+            }
+            old_sim_state_code[k] = sim_state_code[k];
 
-				//refr gps view
-		        if(lv_poc_status_bar_fptr->gps_img != NULL)
-		        {
-		           lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
-		           lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
-		           lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
-		        }
+			//refr gps view
+	        if(lv_poc_status_bar_fptr->gps_img != NULL)
+	        {
+	           lv_obj_del(lv_poc_status_bar_fptr->gps_img->gps_location_img);
+	           lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+	           lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
+	        }
         }
     }
     is_continue = false;

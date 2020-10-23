@@ -874,12 +874,12 @@ bool lv_poc_stabar_show_gps_img(bool enable);
 lv_poc_activity_t *lv_poc_get_current_activity(void);
 
 /*******************
-*	  NAME:    lv_poc_stabar_show_lockscreen_img
+*	  NAME:    lv_poc_show_gps_location_status_img
 *	AUTHOR:    wangls
-* DESCRIPT:    打开或关闭锁屏图标
-*	  DATE:    2020-10-13
+* DESCRIPT:    显示定位及未定位图标
+*	  DATE:    2020-10-22
 ********************/
-bool lv_poc_stabar_show_lockscreen_img(bool enable);
+void lv_poc_show_gps_location_status_img(bool status);
 
 #ifdef __cplusplus
 }

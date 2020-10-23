@@ -965,6 +965,13 @@ void poc_config_Lcd_power_vol(void);
 bool
 poc_set_gps_ant_status(bool open);
 
+/*
+	  name : lv_poc_recorder_Thread
+	  param :
+	  date : 2020-10-22
+*/
+void *lv_poc_recorder_Thread(void);
+
 #ifdef __cplusplus
 }
 #endif

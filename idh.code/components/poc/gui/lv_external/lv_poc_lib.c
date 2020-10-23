@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include "lv_include/lv_poc_type.h"
 #include "tts_player.h"
+#include "poc_audio_recorder.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -369,7 +370,7 @@ poc_set_lcd_status(IN int8_t wakeup)
 
 /*
       name : poc_get_lcd_status
-    return : get lcd state
+    return : get lcd state 0-open 1-close
       date : 2020-03-30
 */
 OUT bool
@@ -1202,11 +1203,10 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 	{
 		if (ret != 0)
 		{
-			//OSI_LOGI(0, "[chen]ret = %d", ret);
+
 		}
 		else
 		{
-			//OSI_LOGI(0, "[song]Failure to register or refusal to register!");
 			strcpy((char *)operat, "UN");
 			_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//sim卡未注册上GSM网络
 			goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
@@ -2921,58 +2921,36 @@ lv_poc_get_speak_tone_status(void)
 }
 
 /*
-      name : poc_gps_ant_init
-     param : none
-      date : 2020-04-30
-*/
-void
-poc_gps_ant_init(void)
-{
-	if(poc_gps_ant_Gpio != NULL)
-	{
-		OSI_LOGI(0, "[gps]poc_gps_ant_Gpio alread open");
-		return;
-	}
-	drvGpioConfig_t * config = NULL;
-
-	if(config == NULL)
-	{
-		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
-		if(config == NULL)
-		{
-			OSI_LOGE(0, "[gps] ant:calloc fail");
-			return;
-		}
-		memset(config, 0, sizeof(drvGpioConfig_t));
-		config->mode = DRV_GPIO_OUTPUT;
-		config->debounce = false;
-		config->out_level = true;
-	}
-	poc_gps_ant_Gpio = drvGpioOpen(poc_gps_int, config, NULL, NULL);
-	if(poc_gps_ant_Gpio == NULL)
-	{
-		OSI_LOGE(0, "[gps] ant:calloc fail");
-		free(config);
-		return;
-	}
-	free(config);
-}
-
-/*
-      name : poc_set_keypad_led_status
-     param : open  true is open keypad led
-      date : 2020-04-30
+      name : poc_set_gps_ant_status
+     param : open  true is open gps
+      date : 2020-10-22
 */
 bool
 poc_set_gps_ant_status(bool open)
 {
-	poc_gps_ant_init();
+	/*配置green IO*/
+    drvGpioConfig_t cfg = {
+        .mode = DRV_GPIO_OUTPUT,
+		.debounce = true,
+        .out_level = false,
+    };
 
-    if(open)
-		drvGpioWrite(poc_gps_ant_Gpio, true);
-	else
-		drvGpioWrite(poc_gps_ant_Gpio, false);
+	if(poc_gps_ant_Gpio == NULL)
+	{
+		poc_gps_ant_Gpio = drvGpioOpen(poc_gps_int, &cfg, NULL, NULL);
+	}
+    drvGpioWrite(poc_gps_ant_Gpio, open);
 
-	return open;
-
+	return drvGpioRead(poc_gps_ant_Gpio);
 }
+
+/*
+	  name : lv_poc_recorder_Thread
+	  param :
+	  date : 2020-10-22
+*/
+void *lv_poc_recorder_Thread(void)
+{
+	return (void *)pocAudioRecorderThread();
+}
+

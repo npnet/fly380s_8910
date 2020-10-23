@@ -37,7 +37,7 @@ static void lv_poc_network_config_task(lv_task_t * task);
 static void lv_poc_power_on_picture(lv_task_t * task);
 bool lv_poc_watchdog_power_on_mode = false;
 
-static void pocIdtStartHandleTask(void * ctx)//+12ma
+static void pocIdtStartHandleTask(void * ctx)//
 {
 	if(lv_poc_watchdog_power_on_mode == false)
 	{
@@ -65,7 +65,7 @@ static void pocIdtStartHandleTask(void * ctx)//+12ma
 
 #ifdef CONFIG_POC_GUI_START_ANIMATION_SUPPORT
 static void pocStartAnimation(void *ctx)
-{//11ma
+{
 	lvGuiRequestSceenOn(3);
 	//首先启动配网任务，解决第一次下载程序代码登陆不上问题
 	lv_task_t * task = lv_task_create(lv_poc_network_config_task,
@@ -169,9 +169,7 @@ void pocStart(void *ctx)
     poc_set_keypad_led_status(false);
 #endif
 
-	//打开GPS天线
-  	bool open = poc_set_gps_ant_status(true);
-	OSI_LOGI(0, "gps:ant open = %d", open);
+	//gps
 	gpsInit();
 	//获取开机方式
 	uint32_t boot_causes = osiGetBootCauses();

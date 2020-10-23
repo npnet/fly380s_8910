@@ -9,7 +9,6 @@
         "sim_1_dio",
         "sim_2_clk",
         "sim_2_dio",
-        "ap_jtag_tdo",
         "ap_jtag_tck",
         "ap_jtag_trst",
         "ap_jtag_tms",
@@ -36,9 +35,6 @@
         },
         "sim_2_dio": {
             "pull": "pull_up_2"
-        },
-        "ap_jtag_tdo": {
-            "pull": "pull_none"
         },
         "ap_jtag_tck": {
             "pull": "pull_up_1"
@@ -86,7 +82,7 @@
         "adi_sync": "adi_sync",
         "gpio_8": "ap_jtag_tck",
         "ap_jtag_tdi": "ap_jtag_tdi",
-        "ap_jtag_tdo": "ap_jtag_tdo",
+        "gpio_12": "ap_jtag_tdo",
         "gpio_10": "ap_jtag_tms",
         "gpio_9": "ap_jtag_trst",
         "aud_ad_d0": "aud_ad_d0",
@@ -118,7 +114,6 @@
         "gpio_0": "gpio_0",
         "gpio_1": "gpio_1",
         "gpio_11": "gpio_11",
-        "gpio_12": "gpio_12",
         "gpio_13": "gpio_13",
         "gpio_14": "gpio_14",
         "gpio_15": "gpio_15",
@@ -147,7 +142,6 @@
         "gpo_1": "gpio_9",
         "gpo_2": "gpio_10",
         "gpo_3": "gpio_11",
-        "gpo_4": "gpio_12",
         "gpo_5": "sim_2_clk",
         "gpo_6": "sim_2_dio",
         "gpo_7": "sim_2_rst",
@@ -191,7 +185,6 @@
         "lte_gpo_9": "gpio_9",
         "lte_spi_cs": "gpio_10",
         "lte_spi_sclk": "gpio_11",
-        "lte_spi_sdio": "gpio_12",
         "lte_spi_sdo": "gpio_9",
         "nand_flash_sel": "nand_flash_sel",
         "pwl_out_0": "gpio_4",
@@ -210,7 +203,6 @@
         "rfdig_gpio_9": "gpio_9",
         "rfdig_jtag_tck": "ap_jtag_tck",
         "rfdig_jtag_tdi": "ap_jtag_tdi",
-        "rfdig_jtag_tdo": "ap_jtag_tdo",
         "rfdig_jtag_tms": "ap_jtag_tms",
         "rfdig_jtag_trst": "ap_jtag_trst",
         "rffe_sclk": "rfdig_gpio_0",
@@ -226,7 +218,6 @@
         "sdmmc2_data_0": "ap_jtag_trst",
         "sdmmc2_data_1": "ap_jtag_tms",
         "sdmmc2_data_2": "ap_jtag_tdi",
-        "sdmmc2_data_3": "ap_jtag_tdo",
         "secure_boot_mode": "secure_boot_mode",
         "sim_1_clk": "sim_1_clk",
         "sim_1_dio": "sim_1_dio",
@@ -237,7 +228,6 @@
         "spi_1_clk": "gpio_9",
         "spi_1_cs_0": "gpio_10",
         "spi_1_cs_1": "gpio_8",
-        "spi_1_di_1": "gpio_12",
         "spi_1_dio_0": "gpio_11",
         "spi_2_clk": "gpio_0",
         "spi_2_cs_0": "gpio_1",
@@ -292,7 +282,6 @@
         "wcn_uart_txd": "gpio_5",
         "zsp_jtag_tck": "ap_jtag_tck",
         "zsp_jtag_tdi": "ap_jtag_tdi",
-        "zsp_jtag_tdo": "ap_jtag_tdo",
         "zsp_jtag_tms": "ap_jtag_tms",
         "zsp_jtag_trst": "ap_jtag_trst",
         "zsp_uart_txd": "gpio_22"

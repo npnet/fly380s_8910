@@ -177,16 +177,24 @@ static void lv_poc_setting_GPS_btn_cb(lv_obj_t * obj)
 		lv_sw_off(ext_obj, LV_ANIM_OFF);
 		poc_setting_conf->GPS_switch = 0;
 		lv_poc_stabar_show_gps_img(false);
+		#ifdef POCIDTGPSTHREADEVENT
+		lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_OPTION, NULL);
+		#else
+		prvlvPocGpsIdtComCloseGps();
+		#endif
 	}
 	else
 	{
 		lv_sw_on(ext_obj, LV_ANIM_OFF);
 		poc_setting_conf->GPS_switch = 1;
 		lv_poc_stabar_show_gps_img(true);
+		#ifdef POCIDTGPSTHREADEVENT
+		lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_OPTION, NULL);
+		#else
+		prvlvPocGpsIdtComOpenGps();
+		#endif
 	}
 	lv_poc_setting_conf_write();
-	//sw_state = lv_sw_get_state(ext_obj) == true? false : true;
-	//lv_sw_toggle(ext_obj);
 }
 
 #ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
