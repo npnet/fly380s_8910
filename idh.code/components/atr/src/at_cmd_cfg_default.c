@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2016 RDA Technologies Limited and/or its affiliates("RDA").
 * All rights reserved.
 *
 * This software is supplied "AS IS" without any warranties.
@@ -89,7 +89,7 @@ const atSetting_t gAtDefaultSetting = {
     .ipr = CONFIG_ATR_DEFAULT_UART_BAUD,
 
     .cmer_ind = 0,
-    .csclk = 0, // disbable sleep
+    .csclk = 2, // disbable sleep
     .cscs = cs_gbk,
     .vtd = 1,
     .ctzu = 1,

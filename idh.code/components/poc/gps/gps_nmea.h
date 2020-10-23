@@ -1,4 +1,4 @@
-#ifndef __GPS_NMEA_H
+ï»¿#ifndef __GPS_NMEA_H
 #define __GPS_NMEA_H
 
 #include <string.h> /* memset */
@@ -6,59 +6,59 @@
 #include <stdio.h>
 #include "string.h"
 #include "math.h"
-//GPS NMEA-0183Ğ­ÒéÖØÒª²ÎÊı½á¹¹Ìå¶¨Òå
-//ÎÀĞÇĞÅÏ¢
+//GPS NMEA-0183åè®®é‡è¦å‚æ•°ç»“æ„ä½“å®šä¹‰
+//å«æ˜Ÿä¿¡æ¯
 typedef struct
 {
- 	uint8_t num;		//ÎÀĞÇ±àºÅ
-	uint8_t eledeg;	//ÎÀĞÇÑö½Ç
-	uint16_t azideg;	//ÎÀĞÇ·½Î»½Ç
-	uint8_t sn;		//ĞÅÔë±È
+ 	uint8_t num;		//å«æ˜Ÿç¼–å·
+	uint8_t eledeg;	//å«æ˜Ÿä»°è§’
+	uint16_t azideg;	//å«æ˜Ÿæ–¹ä½è§’
+	uint8_t sn;		//ä¿¡å™ªæ¯”
 }nmea_slmsg;
 
-//±±¶· NMEA-0183Ğ­ÒéÖØÒª²ÎÊı½á¹¹Ìå¶¨Òå
-//ÎÀĞÇĞÅÏ¢
+//åŒ—æ–— NMEA-0183åè®®é‡è¦å‚æ•°ç»“æ„ä½“å®šä¹‰
+//å«æ˜Ÿä¿¡æ¯
 typedef struct
 {
- 	uint8_t beidou_num;		//ÎÀĞÇ±àºÅ
-	uint8_t beidou_eledeg;	//ÎÀĞÇÑö½Ç
-	uint16_t beidou_azideg;	//ÎÀĞÇ·½Î»½Ç
-	uint8_t beidou_sn;		//ĞÅÔë±È
+ 	uint8_t beidou_num;		//å«æ˜Ÿç¼–å·
+	uint8_t beidou_eledeg;	//å«æ˜Ÿä»°è§’
+	uint16_t beidou_azideg;	//å«æ˜Ÿæ–¹ä½è§’
+	uint8_t beidou_sn;		//ä¿¡å™ªæ¯”
 }beidou_nmea_slmsg;
 
-//UTCÊ±¼äĞÅÏ¢
+//UTCæ—¶é—´ä¿¡æ¯
 typedef struct
 {
- 	uint16_t year;	//Äê·İ
-	uint8_t month;	//ÔÂ·İ
-	uint8_t date;	//ÈÕÆÚ
-	uint8_t hour; 	//Ğ¡Ê±
-	uint8_t min; 	//·ÖÖÓ
-	uint8_t sec; 	//ÃëÖÓ
+ 	uint16_t year;	//å¹´ä»½
+	uint8_t month;	//æœˆä»½
+	uint8_t date;	//æ—¥æœŸ
+	uint8_t hour; 	//å°æ—¶
+	uint8_t min; 	//åˆ†é’Ÿ
+	uint8_t sec; 	//ç§’é’Ÿ
 }nmea_utc_time;
 
-//NMEA 0183 Ğ­Òé½âÎöºóÊı¾İ´æ·Å½á¹¹Ìå
+//NMEA 0183 åè®®è§£æåæ•°æ®å­˜æ”¾ç»“æ„ä½“
 typedef struct
 {
- 	uint8_t svnum;					//¿É¼ûGPSÎÀĞÇÊı
-	uint8_t beidou_svnum;					//¿É¼ûGPSÎÀĞÇÊı
-	nmea_slmsg slmsg[12];		//×î¶à12¿ÅGPSÎÀĞÇ
-	beidou_nmea_slmsg beidou_slmsg[12];		//ÔİÇÒËã×î¶à12¿Å±±¶·ÎÀĞÇ
-	nmea_utc_time utc;			//UTCÊ±¼ä
-	uint32_t latitude;				//Î³¶È ·ÖÀ©´ó100000±¶,Êµ¼ÊÒª³ıÒÔ100000
-	uint8_t nshemi;					//±±Î³/ÄÏÎ³,N:±±Î³;S:ÄÏÎ³
-	uint32_t longitude;			    //¾­¶È ·ÖÀ©´ó100000±¶,Êµ¼ÊÒª³ıÒÔ100000
-	uint8_t ewhemi;					//¶«¾­/Î÷¾­,E:¶«¾­;W:Î÷¾­
-	uint8_t gpssta;					//GPS×´Ì¬:0,Î´¶¨Î»;1,·Ç²î·Ö¶¨Î»;2,²î·Ö¶¨Î»;6,ÕıÔÚ¹ÀËã.
- 	uint8_t posslnum;				//ÓÃÓÚ¶¨Î»µÄGPSÎÀĞÇÊı,0~12.
- 	uint8_t possl[12];				//ÓÃÓÚ¶¨Î»µÄÎÀĞÇ±àºÅ
-	uint8_t fixmode;					//¶¨Î»ÀàĞÍ:1,Ã»ÓĞ¶¨Î»;2,2D¶¨Î»;3,3D¶¨Î»
-	uint16_t pdop;					//Î»ÖÃ¾«¶ÈÒò×Ó 0~500,¶ÔÓ¦Êµ¼ÊÖµ0~50.0
-	uint16_t hdop;					//Ë®Æ½¾«¶ÈÒò×Ó 0~500,¶ÔÓ¦Êµ¼ÊÖµ0~50.0
-	uint16_t vdop;					//´¹Ö±¾«¶ÈÒò×Ó 0~500,¶ÔÓ¦Êµ¼ÊÖµ0~50.0
+ 	uint8_t svnum;					//å¯è§GPSå«æ˜Ÿæ•°
+	uint8_t beidou_svnum;					//å¯è§GPSå«æ˜Ÿæ•°
+	nmea_slmsg slmsg[12];		//æœ€å¤š12é¢—GPSå«æ˜Ÿ
+	beidou_nmea_slmsg beidou_slmsg[12];		//æš‚ä¸”ç®—æœ€å¤š12é¢—åŒ—æ–—å«æ˜Ÿ
+	nmea_utc_time utc;			//UTCæ—¶é—´
+	uint32_t latitude;				//çº¬åº¦ åˆ†æ‰©å¤§100000å€,å®é™…è¦é™¤ä»¥100000
+	uint8_t nshemi;					//åŒ—çº¬/å—çº¬,N:åŒ—çº¬;S:å—çº¬
+	uint32_t longitude;			    //ç»åº¦ åˆ†æ‰©å¤§100000å€,å®é™…è¦é™¤ä»¥100000
+	uint8_t ewhemi;					//ä¸œç»/è¥¿ç»,E:ä¸œç»;W:è¥¿ç»
+	uint8_t gpssta;					//GPSçŠ¶æ€:0-æœªå®šä½ 1-éå·®åˆ†å®šä½ 2-å·®åˆ†å®šä½ 6-æ­£åœ¨ä¼°ç®—
+ 	uint8_t posslnum;				//ç”¨äºå®šä½çš„GPSå«æ˜Ÿæ•°,0~12.
+ 	uint8_t possl[12];				//ç”¨äºå®šä½çš„å«æ˜Ÿç¼–å·
+	uint8_t fixmode;					//å®šä½ç±»å‹:0-æ²¡æœ‰å®šä½ 2-2Då®šä½ 3-3Då®šä½
+	uint16_t pdop;					//ä½ç½®ç²¾åº¦å› å­ 0~500,å¯¹åº”å®é™…å€¼0~50.0
+	uint16_t hdop;					//æ°´å¹³ç²¾åº¦å› å­ 0~500,å¯¹åº”å®é™…å€¼0~50.0
+	uint16_t vdop;					//å‚ç›´ç²¾åº¦å› å­ 0~500,å¯¹åº”å®é™…å€¼0~50.0
 
-	int altitude;			 	//º£°Î¸ß¶È,·Å´óÁË10±¶,Êµ¼Ê³ıÒÔ10.µ¥Î»:0.1m
-	uint16_t speed;					//µØÃæËÙÂÊ,·Å´óÁË1000±¶,Êµ¼Ê³ıÒÔ10.µ¥Î»:0.001¹«Àï/Ğ¡Ê±
+	int altitude;			 	//æµ·æ‹”é«˜åº¦,æ”¾å¤§äº†10å€,å®é™…é™¤ä»¥10.å•ä½:0.1m
+	uint16_t speed;					//åœ°é¢é€Ÿç‡,æ”¾å¤§äº†1000å€,å®é™…é™¤ä»¥10.å•ä½:0.001å…¬é‡Œ/å°æ—¶
 }nmea_msg;
 
 

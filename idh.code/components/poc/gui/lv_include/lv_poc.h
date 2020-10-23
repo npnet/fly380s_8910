@@ -35,6 +35,7 @@
 #include "lv_apps/lv_poc_shutdown_note/lv_poc_shutdown_note.h"
 #include "lv_apps/lv_poc_shutdown_charge/lv_poc_shutdown_charge.h"
 #include "lv_apps/lv_poc_refr/lv_poc_refr.h"
+#include "../../gps/uart3_gps.h"
 
 #endif //__LV_POC_H_
 

@@ -85,25 +85,11 @@ bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE recorder_id);
  */
 bool pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id);
 
-/*
-	name : lv_poc_start_recordwriter
-   param : none
-  author : wangls
-describe : 开始录音
-	date : 2020-09-01
-
-*/
 void lv_poc_start_recordwriter(void);
 
-/*
-	name : lv_poc_start_playfile
-   param : none
-  author : wangls
-describe : 播放录音文件
-	date : 2020-09-01
-
-*/
 void lv_poc_start_playfile(void);
+
+osiThread_t *pocAudioRecorderThread(void);
 
 OSI_EXTERN_C_END
 
