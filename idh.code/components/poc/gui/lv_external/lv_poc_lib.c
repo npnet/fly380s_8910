@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include "lv_include/lv_poc_type.h"
 #include "tts_player.h"
+#include "poc_audio_recorder.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -43,9 +44,9 @@ static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_green_gpio = NULL;
 static drvGpio_t * poc_gps_ant_Gpio = NULL;
 drvGpioConfig_t* configport = NULL;
-static bool poc_charging_status = false;//是否正在充电
+static bool poc_charging_status = false;
 static bool poc_power_on_status = false;
-static bool is_poc_play_voice = false;//是否正在播放语音
+static bool is_poc_play_voice = false;
 static bool is_play_tone_status = false;
 static uint8_t poc_earkey_state = false;
 static int lv_poc_inside_group = false;
@@ -352,7 +353,7 @@ poc_set_lcd_status(IN int8_t wakeup)
 
 /*
       name : poc_get_lcd_status
-    return : get lcd state
+    return : get lcd state 0-open 1-close
       date : 2020-03-30
 */
 OUT bool
@@ -1049,11 +1050,10 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 	{
 		if (ret != 0)
 		{
-			//OSI_LOGI(0, "[chen]ret = %d", ret);
+
 		}
 		else
 		{
-			//OSI_LOGI(0, "[song]Failure to register or refusal to register!");
 			strcpy((char *)operat, "UN");
 			_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//sim卡未注册上GSM网络
 			goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
@@ -1644,13 +1644,12 @@ poc_set_port_status(uint32_t port, drvGpioConfig_t *config,bool open)
 bool
 poc_set_red_status(bool ledstatus)
 {
-#if 1
     if(configport==NULL)
     {
 		configport=poc_port_init();
     }
 	poc_set_port_status(poc_red_led,configport,ledstatus);
-#endif
+
 	return ledstatus;
 }
 
@@ -1662,17 +1661,6 @@ poc_set_red_status(bool ledstatus)
 bool
 poc_set_green_status(bool ledstatus)
 {
-#if 0
-	//reg
-	hwp_gpio1->gpio_oen_val &= (0<<poc_green_led);//set gpio direction
-	hwp_gpio1->gpio_oen_set_out |= (1<<poc_green_led);//set gpio output
-    if(ledstatus)
-	hwp_gpio1->gpio_set_reg = (1<<poc_green_led);//open status
-	else
-	hwp_gpio1->gpio_clr_reg = (1<<poc_green_led);//close status
-#endif
-
-#if 1
 	/*配置green IO*/
     drvGpioConfig_t cfg = {
         .mode = DRV_GPIO_OUTPUT,
@@ -1680,9 +1668,11 @@ poc_set_green_status(bool ledstatus)
         .out_level = false,
     };
 
-	poc_green_gpio = drvGpioOpen(poc_green_led, &cfg, NULL, NULL);
+	if(poc_green_gpio == NULL)
+	{
+		poc_green_gpio = drvGpioOpen(poc_green_led, &cfg, NULL, NULL);
+	}
 	drvGpioWrite(poc_green_gpio, ledstatus);
-#endif
 
 	return ledstatus;
 }
@@ -2577,58 +2567,36 @@ lv_poc_get_speak_tone_status(void)
 }
 
 /*
-      name : poc_gps_ant_init
-     param : none
-      date : 2020-04-30
-*/
-void
-poc_gps_ant_init(void)
-{
-	if(poc_gps_ant_Gpio != NULL)
-	{
-		OSI_LOGI(0, "[gps]poc_gps_ant_Gpio alread open");
-		return;
-	}
-	drvGpioConfig_t * config = NULL;
-
-	if(config == NULL)
-	{
-		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
-		if(config == NULL)
-		{
-			OSI_LOGE(0, "[gps] ant:calloc fail");
-			return;
-		}
-		memset(config, 0, sizeof(drvGpioConfig_t));
-		config->mode = DRV_GPIO_OUTPUT;
-		config->debounce = false;
-		config->out_level = true;
-	}
-	poc_gps_ant_Gpio = drvGpioOpen(poc_gps_int, config, NULL, NULL);
-	if(poc_gps_ant_Gpio == NULL)
-	{
-		OSI_LOGE(0, "[gps] ant:calloc fail");
-		free(config);
-		return;
-	}
-	free(config);
-}
-
-/*
-      name : poc_set_keypad_led_status
-     param : open  true is open keypad led
-      date : 2020-04-30
+      name : poc_set_gps_ant_status
+     param : open  true is open gps
+      date : 2020-10-22
 */
 bool
 poc_set_gps_ant_status(bool open)
 {
-	poc_gps_ant_init();
+	/*配置green IO*/
+    drvGpioConfig_t cfg = {
+        .mode = DRV_GPIO_OUTPUT,
+		.debounce = true,
+        .out_level = false,
+    };
 
-    if(open)
-		drvGpioWrite(poc_gps_ant_Gpio, true);
-	else
-		drvGpioWrite(poc_gps_ant_Gpio, false);
+	if(poc_gps_ant_Gpio == NULL)
+	{
+		poc_gps_ant_Gpio = drvGpioOpen(poc_gps_int, &cfg, NULL, NULL);
+	}
+    drvGpioWrite(poc_gps_ant_Gpio, open);
 
-	return open;
-
+	return drvGpioRead(poc_gps_ant_Gpio);
 }
+
+/*
+	  name : lv_poc_recorder_Thread
+	  param :
+	  date : 2020-10-22
+*/
+void *lv_poc_recorder_Thread(void)
+{
+	return (void *)pocAudioRecorderThread();
+}
+

@@ -854,6 +854,13 @@ lv_poc_get_speak_tone_status(void);
 bool
 poc_set_gps_ant_status(bool open);
 
+/*
+	  name : lv_poc_recorder_Thread
+	  param :
+	  date : 2020-10-22
+*/
+void *lv_poc_recorder_Thread(void);
+
 #ifdef __cplusplus
 }
 #endif

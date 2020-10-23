@@ -19,6 +19,8 @@
 
 #define RECORDER_POC_MODE 0
 
+static osiThread_t *RecorderThreadID = NULL;
+
 static void prvPocAudioRecorderMemWriterDelete(auWriter_t *d)
 {
     auPocMemWriter_t *p = (auPocMemWriter_t *)d;
@@ -367,7 +369,7 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 	}
 	recorder->reader->user = (void *)recorder;
 
-	recorder->prvThreadID = osiThreadCreate("redr_cb_thd", prvPocAudioRecorderThreadCallback, (void *)recorder, OSI_PRIORITY_HIGH, 2480, 64);
+	RecorderThreadID = recorder->prvThreadID = osiThreadCreate("redr_cb_thd", prvPocAudioRecorderThreadCallback, (void *)recorder, OSI_PRIORITY_HIGH, 2480, 64);
 	if(recorder->prvThreadID == NULL)
 	{
 		auReaderDelete((auReader_t *)recorder->reader);
@@ -572,20 +574,17 @@ bool pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id)
 	return recorder->status;
 }
 
-#if 1
-/*自测录音*/
+osiThread_t *pocAudioRecorderThread(void)
+{
+	return RecorderThreadID;
+}
+
+//自测录音
 #define RECORDER_FILE_NAME "/example.pcm"
 static auWriter_t *pocwriter = NULL;
 static auRecorder_t *pocrecorder = NULL;
 extern ssize_t vfs_file_size(const char *path);
-/*
-	name : lv_poc_start_recordwriter
-   param : none
-  author : wangls
-describe : 开始录音
-	date : 2020-09-01
 
-*/
 void lv_poc_start_recordwriter(void)
 {
     pocwriter = (auWriter_t *)auFileWriterCreate(RECORDER_FILE_NAME);
@@ -593,14 +592,6 @@ void lv_poc_start_recordwriter(void)
     auRecorderStartWriter(pocrecorder, AUDEV_RECORD_TYPE_MIC, AUSTREAM_FORMAT_PCM, NULL, pocwriter);
 }
 
-/*
-	name : lv_poc_stop_recordwriter
-   param : none
-  author : wangls
-describe : 停止录音
-	date : 2020-09-01
-
-*/
 static
 void lv_poc_stop_recordwriter(void)
 {
@@ -615,14 +606,6 @@ void lv_poc_stop_recordwriter(void)
     vfs_file_size(RECORDER_FILE_NAME);
 }
 
-/*
-	name : lv_poc_start_playfile
-   param : none
-  author : wangls
-describe : 播放录音文件
-	date : 2020-09-01
-
-*/
 void lv_poc_start_playfile(void)
 {
 	lv_poc_stop_recordwriter();/*stop record*/
@@ -635,7 +618,6 @@ void lv_poc_start_playfile(void)
 	auPlayerWaitFinish(player, OSI_WAIT_FOREVER);
 	auPlayerDelete(player);
 }
-#endif
 
 #endif
 

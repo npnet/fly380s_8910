@@ -1027,6 +1027,7 @@ static bool lv_poc_init_stabar_battery_img(void)
 static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 {
     bool ret_val = true;
+	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
 
 	if(lv_poc_status_bar_fptr->gps_img == NULL)
    {
@@ -1038,9 +1039,26 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 		lv_poc_status_bar_fptr->gps_img->align_l_obj = lv_poc_status_bar_fptr->gps_img->align_r_obj;
 
 		lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
+		lv_img_set_auto_size(lv_poc_status_bar_fptr->gps_img->gps_location_img, false);
+		lv_obj_set_size(lv_poc_status_bar_fptr->gps_img->gps_location_img, 18, 18);
+
+		if(gps_config->GPS_switch == 1){
+			#ifdef POCIDTGPSTHREADEVENT
+			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_OPTION, NULL);
+			#else
+			prvlvPocGpsIdtComOpenGps();
+			#endif
+		}
+		else{
+			#ifdef POCIDTGPSTHREADEVENT
+			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_OPTION, NULL);
+			#else
+			prvlvPocGpsIdtComCloseGps();
+			#endif
+		}
 	}
 
-	lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_gps_on);
+	lv_poc_show_gps_location_status_img(pubPocIdtGpsLocationStatus());
 	if(align_obj == NULL)
     {
 	   lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
@@ -1050,17 +1068,30 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 	   lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(align_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
     }
 
-	nv_poc_setting_msg_t *gps_config = lv_poc_setting_conf_read();
 	if(gps_config->GPS_switch == 1){
-
 		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, false);
-
 	}else{
-
 		lv_obj_set_hidden(lv_poc_status_bar_fptr->gps_img->gps_location_img, true);
-
 	}
     return ret_val;
+}
+
+/*******************
+*     NAME:    lv_poc_show_gps_location_status_img
+*   AUTHOR:    wangls
+* DESCRIPT:    显示定位及未定位图标
+*     DATE:    2020-10-22
+********************/
+void lv_poc_show_gps_location_status_img(bool status)
+{
+	if(status == true)
+	{
+		lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_gps_on);
+	}
+	else
+	{
+		lv_img_set_src(lv_poc_status_bar_fptr->gps_img->gps_location_img, &ic_qs_gps_on_sprd);
+	}
 }
 
 /*******************
@@ -2653,9 +2684,6 @@ void lv_poc_update_stabar_sim_img(void)
                 }
                 }
                 lv_obj_align(obj3, *(sim_cont[k]->align_l_obj), LV_ALIGN_OUT_LEFT_MID, -2, 0);
-                //OSI_LOGI(0, "func:%s  initialization of poc and mpc task", __func__);
-                //bnd_create_poc_task();
-                //MPC_Create_Handle_Task();
                 sim_cont[k]->sim_net_type_img = obj3;
                 sim_cont[k]->align_l_obj = &(sim_cont[k]->sim_net_type_img);
             }

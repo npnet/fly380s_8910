@@ -860,6 +860,14 @@ uint8_t lv_poc_get_battery_cnt(OUT battery_values_t *values);
 ********************/
 bool lv_poc_stabar_show_gps_img(bool enable);
 
+/*******************
+*	  NAME:    lv_poc_show_gps_location_status_img
+*	AUTHOR:    wangls
+* DESCRIPT:    显示定位及未定位图标
+*	  DATE:    2020-10-22
+********************/
+void lv_poc_show_gps_location_status_img(bool status);
+
 #ifdef __cplusplus
 }
 #endif
