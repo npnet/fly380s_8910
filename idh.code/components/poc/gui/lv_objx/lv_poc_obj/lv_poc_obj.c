@@ -1041,18 +1041,10 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 		lv_obj_set_size(lv_poc_status_bar_fptr->gps_img->gps_location_img, 18, 18);
 
 		if(gps_config->GPS_switch == 1){
-			#ifdef POCIDTGPSTHREADEVENT
 			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_OPTION, NULL);
-			#else
-			prvlvPocGpsIdtComOpenGps();
-			#endif
 		}
 		else{
-			#ifdef POCIDTGPSTHREADEVENT
 			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_OPTION, NULL);
-			#else
-			prvlvPocGpsIdtComCloseGps();
-			#endif
 		}
 	}
 

@@ -16,11 +16,9 @@ static void callback_lv_poc_green_close_red_jump(osiEvent_t *event);
 static void callback_lv_poc_red_open_green_jump(osiEvent_t *event);
 static void callback_lv_poc_green_open_red_jump(osiEvent_t *event);
 static void callback_lv_poc_green_jump_red_jump(osiEvent_t *event);
-
-static void lv_poc_led_status_callback(void *param);
-
-static void lv_poc_led_status_callback_check(void *param);
-
+static void Lv_Poc_Led_Status_Callback(void *param);
+static void Lv_Poc_Led_Status_Callback_Check(void *param);
+static void Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2);
 
 typedef void (*lv_poc_led_jump_status)(osiEvent_t *event);
 //回调函数
@@ -56,7 +54,7 @@ void poc_Status_Led_Task(void)
 
 	pocLedIdtAttr.jumpperiod = 1000;//默认周期1s
 
-	lv_poc_led_status_callback(NULL);//注销回调
+	Lv_Poc_Led_Status_Callback(NULL);//注销回调
 	/*LED MSG TASK*/
 	pocLedIdtAttr.thread = osiThreadCreate("status led", poc_Led_Entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
 	/*JUMP TASK*/
@@ -93,19 +91,21 @@ static void poc_Led_Entry(void *param)
 		switch(event.param1)
 		{
 			case LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS:
-
+			{
 				pocLedIdtAttr.jumpperiod = 1000;/*恢复闪烁线程周期*/
 				lv_poc_led_status_all_close();
 				Led_CallBack.pf_poc_led_jump_status = NULL;
 
 				break;
+			}
 
 			case LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS:
-
+			{
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
 
 				break;
+			}
 
 			case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
@@ -139,71 +139,86 @@ static void poc_Led_Entry(void *param)
 						break;
 					}
 				}
-
 				break;
 			}
 
 			case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
-
+			{
 				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS;
 				pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
-
 				break;
+			}
+
+			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
+			{
+				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS;
+				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
+				break;
+			}
 
 			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
-
+			{
 				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS;
 				lv_poc_red_open_green_close();
-
 				break;
-			case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
+			}
 
+			case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
+			{
 				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS;
 				lv_poc_led_status_all_close();
-
 				break;
+			}
 
 			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
-
+			{
 				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS;
 				lv_poc_red_close_green_open();
-
 				break;
+			}
 
 			case LVPOCLEDIDTCOM_SIGNAL_CONNECT_NETWORK_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_SUCCESS_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_SUCCESS_STATUS:
-
+			{
 				lv_poc_red_close_green_open();
-
 				break;
+			}
 
 			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_FAIL_STATUS:
 			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_FAIL_STATUS:
-
+			{
 				lv_poc_red_open_green_close();
-
 				break;
+			}
 
 			case LVPOCLEDIDTCOM_SIGNAL_FAIL_STATUS:
-
+			{
 				lv_poc_led_status_all_open();
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_open_green_jump;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_open_red_jump;
 				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_jump_red_jump;
-
 				pocLedIdtAttr.isReady = false;
 				osiThreadExit();
 				return;
+			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND:
+			case LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND:
+			{
+				Lv_Poc_Led_Status_Task_Handle_Other(event.param1, event.param2, event.param3);
+				break;
+			}
 
 			default:
+			{
 				isValid = false;
 				break;
+			}
 		}
 
 		if (isValid)
@@ -237,7 +252,7 @@ static void poc_Led_Jump_Entry(void *param)
 			if(pocLedIdtAttr.jumpcount != 0 && pocLedIdtAttr.jumpperiod != 0)
 			{
 				if(pocLedIdtAttr.jumpcount <= 9) pocLedIdtAttr.jumpcount--;
-				lv_poc_led_status_callback_check(Led_CallBack.pf_poc_led_jump_status);
+				Lv_Poc_Led_Status_Callback_Check(Led_CallBack.pf_poc_led_jump_status);
 			}
 		}
 
@@ -386,13 +401,13 @@ callback_lv_poc_green_jump_red_jump(osiEvent_t *event)
 }
 
 /*
-	  name : lv_poc_led_status_callback
+	  name : Lv_Poc_Led_Status_Callback
   describe : 回调函数
 	 param : none
 	  date : 2020-06-02
 */
 static void
-lv_poc_led_status_callback(void *param)
+Lv_Poc_Led_Status_Callback(void *param)
 {
     memset(&Led_CallBack, 0, sizeof(Led_CallBack));
 
@@ -400,17 +415,43 @@ lv_poc_led_status_callback(void *param)
 }
 
 /*
-	  name : lv_poc_led_status_callback_check
+	  name : Lv_Poc_Led_Status_Callback_Check
   describe : 循环周期回调消息查询
 	 param : none
 	  date : 2020-06-02
 */
 static void
-lv_poc_led_status_callback_check(void *param)
+Lv_Poc_Led_Status_Callback_Check(void *param)
 {
 
 	if(param != NULL)
 	((lv_poc_led_jump_status)param)(NULL);//回调
+}
+
+/*
+	  name : Lv_Poc_Led_Status_Task_Handle_Other
+  describe : other
+	 param : none
+	  date : 2020-10-24
+*/
+static void
+Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2)
+{
+	switch(id)
+	{
+		case LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND:
+		{
+			publvPocGpsIdtComCloseGps();
+			break;
+		}
+
+		case LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND:
+		{
+			publvPocGpsIdtComOpenGps();
+			break;
+		}
+	}
+
 }
 
 #ifdef __cplusplus

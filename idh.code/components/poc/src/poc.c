@@ -170,7 +170,8 @@ void pocStart(void *ctx)
 #endif
 
 	//gps
-	gpsInit();
+	publvPocGpsIdtComInit();
+
 	//获取开机方式
 	uint32_t boot_causes = osiGetBootCauses();
 	OSI_LOGI(0, "[song]poc boot mode is = %d", boot_causes);

@@ -5,17 +5,15 @@
 extern "C" {
 #endif
 
-#define POCIDTGPSTHREADEVENT
-
-void gpsInit(void);
-
 bool lvPocGpsIdtCom_Msg(LVPOCIDTCOM_Gps_SignalType_t signal, void *ctx);
 
-void prvlvPocGpsIdtComOpenGps(void);
-
-void prvlvPocGpsIdtComCloseGps(void);
+void publvPocGpsIdtComInit(void);
 
 bool pubPocIdtGpsLocationStatus(void);
+
+void publvPocGpsIdtComOpenGps(void);
+
+void publvPocGpsIdtComCloseGps(void);
 
 #ifdef __cplusplus
 	}
