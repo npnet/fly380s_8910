@@ -14,10 +14,12 @@
 #include "lv_include/lv_poc_lib.h"
 #include "guiOemCom_api.h"
 #include "uart3_gps.h"
+#include "lv_apps/lv_poc_led/lv_poc_led.h"
 
 #define GPS_RX_BUF_SIZE (4*1024)
 #define GPS_TX_BUF_SIZE (4*1024)
-#define GPS_RUN_PERIOD   5000//5s
+#define GPS_NO_LOCATION_CHECK_SCAN_FREQ   5000 //5s
+#define GPS_LOCATION_CHECK_REPORT_FREQ    20000//20s
 /***********************************************************************************/
 //GPS基本数据
 typedef struct _IDT_GPS_DATA_s
@@ -45,6 +47,7 @@ typedef struct _PocGpsIdtComAttr_t
 } PocGpsIdtComAttr_t;
 
 static PocGpsIdtComAttr_t pocGpsIdtAttr = {0};
+static bool gps_location_status = false;
 
 //I2C
 static nmea_msg poc_idt_gps;//GPS
@@ -60,10 +63,7 @@ static uint8_t ggsa[12] = {0x23,0x3E,0x03,0x51,0x04,0x00,0x05,0x04,0x01,0x01,0x6
 static uint8_t ggsv[12] = {0x23,0x3E,0x03,0x51,0x04,0x00,0x06,0x04,0x01,0x01,0x64,0x8E};
 
 extern bool lv_poc_show_gps_location_status_img(bool status);
-#ifdef POCIDTGPSTHREADEVENT
-static bool gps_location_status = false;
 static void prvlvPocGpsIdtComHandleGpsTimercb(void *ctx);
-#endif
 
 #ifdef SUPPORT_GPS_REG
 static
@@ -108,7 +108,6 @@ bool prvGPSWriteRegList(uint8_t *data, uint16_t len)
 
 }
 
-#ifdef POCIDTGPSTHREADEVENT
 static
 void prvlvPocGpsIdtComGetInfo(void)
 {
@@ -122,6 +121,8 @@ void prvlvPocGpsIdtComGetInfo(void)
 	    if (!prvGPSWriteRegList(grmc, 12))
 	    {
 	        OSI_LOGE(0, "[GPS][EVENT]No GPS or no connection");
+			lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, 0, 0);
+			return;
 	    }
 	    prvGPSWriteRegList(ggga, 12);
 	    prvGPSWriteRegList(ggsa, 12);
@@ -185,14 +186,22 @@ void prvlvPocGpsIdtComGetInfo(void)
 		{
 			lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
 			memcpy((void *)&gps_buf_t, (void *)&gps_t, sizeof(IDT_GPS_DATA_s));
+			if(!pubPocIdtGpsLocationStatus())
+			{
+				lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_GPS_LOCATION_REPORT_FREQ, NULL);
+			}
 			gps_location_status = true;
 			OSI_LOGI(0,"[GPS][EVENT]:location, to send msg");
 		}
 	}
 	else
 	{
-		OSI_LOGI(0,"[GPS][EVENT]:no location");
+		if(pubPocIdtGpsLocationStatus())
+		{
+			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_GPS_NO_LOCATION_CHECK_FREQ, NULL);
+		}
 		gps_location_status = false;
+		OSI_LOGI(0,"[GPS][EVENT]:no location");
 	}
 
 	switch(gps_location_status)
@@ -210,34 +219,29 @@ void prvlvPocGpsIdtComGetInfo(void)
 		}
 	}
 }
-#endif
 
-void prvlvPocGpsIdtComOpenGps(void)
+static
+void prvlvPocGpsIdtComSuspend(void)
 {
-	prvGPSReadReg(0x82, gps_data, GPS_RX_BUF_SIZE);
-	lv_poc_show_gps_location_status_img(false);
-	#ifdef POCIDTGPSTHREADEVENT
-	OSI_LOGI(0, "[GPS][EVENT]GPS open");
-	osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_RUN_PERIOD);
-	#else
-	OSI_LOGI(0, "[GPS][THREAD]GPS open");
-	osiThreadResume(pocGpsIdtAttr.thread);
-	#endif
+	if(pocGpsIdtAttr.thread != NULL)
+	{
+		osiThreadSuspend(pocGpsIdtAttr.thread);
+		OSI_LOGI(0, "[GPS][EVENT]GPS Thread Suspend!");
+	}
 }
 
-void prvlvPocGpsIdtComCloseGps(void)
+static
+void prvlvPocGpsIdtComResume(void)
 {
-	#ifdef POCIDTGPSTHREADEVENT
-	OSI_LOGI(0, "[GPS][EVENT]GPS close!");
-	osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
-	#else
-	OSI_LOGI(0, "[GPS][THREAD]GPS close!");
-	osiThreadSuspend(pocGpsIdtAttr.thread);
-	#endif
+	if(pocGpsIdtAttr.thread != NULL)
+	{
+		osiThreadResume(pocGpsIdtAttr.thread);
+		OSI_LOGI(0, "[GPS][EVENT]GPS Thread Resume!");
+	}
 }
 
-#ifdef POCIDTGPSTHREADEVENT
-void GpsThreadEntry(void *ctx)
+static
+void prvGpsThreadEntry(void *ctx)
 {
 	osiEvent_t event = {0};
 
@@ -246,7 +250,7 @@ void GpsThreadEntry(void *ctx)
     hwp_iomux->pad_gpio_15_cfg_reg |= IOMUX_PAD_GPIO_15_SEL_V_FUN_I2C_M2_SDA_SEL;
     if (i2c_p == NULL)
     {
-        OSI_LOGE(0, "[GPS]drvI2cMasterAcquire open fail");
+        OSI_LOGI(0, "[GPS]drvI2cMasterAcquire open fail");
         if (i2c_p != NULL)
             drvI2cMasterRelease(i2c_p);
     }
@@ -257,7 +261,7 @@ void GpsThreadEntry(void *ctx)
 	}
 
 	pocGpsIdtAttr.isReady = true;
-	pocGpsIdtAttr.GpsInfoTimer = osiTimerCreate(NULL, prvlvPocGpsIdtComHandleGpsTimercb, NULL);
+	pocGpsIdtAttr.GpsInfoTimer = osiTimerCreate(pocGpsIdtAttr.thread, prvlvPocGpsIdtComHandleGpsTimercb, NULL);
 
 	OSI_LOGI(0, "[GPS][EVENT]GPS start!");
     while(1)
@@ -283,29 +287,37 @@ void GpsThreadEntry(void *ctx)
 
 			case LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_OPTION:
 			{
-				OSI_LOGI(0, "[GPS][EVENT]rec gps open");
-				prvlvPocGpsIdtComOpenGps();
+				lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, 0, 0);
 				break;
 			}
 
 			case LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_OPTION:
 			{
-				OSI_LOGI(0, "[GPS][EVENT]rec gps close");
-				prvlvPocGpsIdtComCloseGps();
+				lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, 0, 0);
 				break;
 			}
 
 			case LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_REPORT:
 			{
-				OSI_LOGI(0, "[GPS][EVENT]rec open report gps");
-				osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_RUN_PERIOD);
+				osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_NO_LOCATION_CHECK_SCAN_FREQ);
 				break;
 			}
 
 			case LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_REPORT:
 			{
-				OSI_LOGI(0, "[GPS][EVENT]rec close report gps");
 				osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
+				break;
+			}
+
+			case LVPOCGPSIDTCOM_SIGNAL_GPS_NO_LOCATION_CHECK_FREQ:
+			{
+				osiTimerSetPeriod(pocGpsIdtAttr.GpsInfoTimer, GPS_NO_LOCATION_CHECK_SCAN_FREQ, true);
+				break;
+			}
+
+			case LVPOCGPSIDTCOM_SIGNAL_GPS_LOCATION_REPORT_FREQ:
+			{
+				osiTimerSetPeriod(pocGpsIdtAttr.GpsInfoTimer, GPS_LOCATION_CHECK_REPORT_FREQ, true);
 				break;
 			}
 
@@ -316,106 +328,45 @@ void GpsThreadEntry(void *ctx)
 		}
     }
 }
-#else
-void GpsThreadEntry(void *ctx)
+
+static
+void prvlvPocGpsIdtComHandleGpsTimercb(void *ctx)
 {
-    float longitude = 0;
-    float latitude = 0;
-    uint16_t plen = 0;
-    unsigned char buf[2] = {0xff, 0xff};
-
-    i2c_p = drvI2cMasterAcquire(DRV_NAME_I2C2, DRV_I2C_BPS_100K);
-    hwp_iomux->pad_gpio_14_cfg_reg |= IOMUX_PAD_GPIO_14_SEL_V_FUN_I2C_M2_SCL_SEL;
-    hwp_iomux->pad_gpio_15_cfg_reg |= IOMUX_PAD_GPIO_15_SEL_V_FUN_I2C_M2_SDA_SEL;
-
-    if (i2c_p == NULL)
-    {
-        OSI_LOGE(0, "[GPS][THREAD]drvI2cMasterAcquire open fail");
-        if (i2c_p != NULL)
-            drvI2cMasterRelease(i2c_p);
-    }
-	else
-	{
-		prvGPSReadReg(0x82, gps_data, GPS_RX_BUF_SIZE);
-		memset(&gps_data, 0, sizeof(GPS_RX_BUF_SIZE));
-	}
-	OSI_LOGI(0, "[GPS][THREAD]GPS start!");
-    while(1)
-    {
-        osiThreadSleep(500);
-        if (!prvGPSWriteRegList(grmc, 12))
-        {
-            OSI_LOGE(0, "[GPS][THREAD]prvGPSWriteRegList fail");
-        }
-        prvGPSWriteRegList(ggga, 12);
-        prvGPSWriteRegList(ggsa, 12);
-        prvGPSWriteRegList(ggsv, 12);
-
-        for(int j = 0; j < 5; j++)
-        {
-            prvGPSReadReg(0x80, buf, 2);
-            plen = (buf[0]<<8) | (buf[1]);
-            if(plen != 0)
-            {
-                prvGPSReadReg(0x82, gps_data, plen);
-                GPS_Analysis(&poc_idt_gps,(uint8_t*)gps_data);
-            }
-            longitude = poc_idt_gps.longitude / 100000.0;
-            latitude  = poc_idt_gps.latitude  / 100000.0;
-            if('S' == poc_idt_gps.nshemi)
-            {
-                longitude = -longitude;
-            }
-            if('W' == poc_idt_gps.ewhemi)
-            {
-                latitude = -latitude;
-            }
-            osiThreadSleep(50);
-        }
-#ifndef SUPPORT_GPS_LOG
-        OSI_LOGI(0,"[GPS][THREAD]: gps.nshemi(%c)\r\n", poc_idt_gps.nshemi);//latitude
-        OSI_LOGI(0,"[GPS][THREAD]: gps.ewhemi(%c)\r\n", poc_idt_gps.ewhemi);//longitude
-        OSI_LOGI(0,"[GPS][THREAD]: gps.gpssta(%d)\r\n", poc_idt_gps.gpssta);//0--no locate
-        OSI_LOGI(0,"[GPS][THREAD]: gps.fixmode(%d)\r\n", poc_idt_gps.fixmode);//0--no locate
-        OSI_LOGI(0,"[GPS][THREAD]: UTC Date:%04d/%02d/%02d\r\n", poc_idt_gps.utc.year,poc_idt_gps.utc.month,poc_idt_gps.utc.date);
-        OSI_LOGI(0,"[GPS][THREAD]: UTC Time:%02d:%02d:%02d\r\n", poc_idt_gps.utc.hour,poc_idt_gps.utc.min,poc_idt_gps.utc.sec);
-        OSI_LOGI(0,"[GPS][THREAD]: speed:%d\r\n",poc_idt_gps.speed);
-		OSI_LOGXI(OSI_LOGPAR_IF, 0,"[GPS][THREAD]:(%c%f)", poc_idt_gps.nshemi, longitude);
-		OSI_LOGXI(OSI_LOGPAR_IF, 0,"[GPS][THREAD]:(%c%f)", poc_idt_gps.ewhemi, latitude);
-#endif
-        if(poc_idt_gps.fixmode && poc_idt_gps.gpssta)//locate
-        {
-            //copy data
-            gps_t.longitude = longitude;
-            gps_t.latitude = latitude;
-            gps_t.speed = poc_idt_gps.speed;
-            gps_t.direction = 0;
-            gps_t.year = poc_idt_gps.utc.year;
-            gps_t.month = poc_idt_gps.utc.month;
-            gps_t.day = poc_idt_gps.utc.date;
-            gps_t.hour = poc_idt_gps.utc.hour;
-            gps_t.minute = poc_idt_gps.utc.min;
-            gps_t.second = poc_idt_gps.utc.sec;
-
-			OSI_LOGI(0,"[GPS][THREAD]:copy data");
-            if(gps_t.speed == 0)
-            {
-                return;
-            }
-
-            if(gps_t.longitude != gps_buf_t.longitude
-                || gps_t.latitude != gps_buf_t.latitude
-                || gps_t.speed != gps_buf_t.speed
-                || gps_t.direction != gps_buf_t.direction)
-            {
-                lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
-                memcpy((void *)&gps_buf_t, (void *)&gps_t, sizeof(IDT_GPS_DATA_s));
-            }
-        }
-        osiThreadSleep(GPS_RUN_PERIOD);
-    }
+	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_GET_DATA_IND, NULL);
 }
-#endif
+
+void publvPocGpsIdtComInit(void)
+{
+    pocGpsIdtAttr.thread = osiThreadCreate("GpsThread", prvGpsThreadEntry, NULL, OSI_PRIORITY_NORMAL, 2048, 64);
+	prvlvPocGpsIdtComSuspend();
+}
+
+bool pubPocIdtGpsLocationStatus(void)
+{
+	return gps_location_status;
+}
+
+void publvPocGpsIdtComOpenGps(void)
+{
+	poc_set_gps_ant_status(true);
+    halPmuSwitchPower(HAL_POWER_CAMA, true, true);
+    halPmuSwitchPower(HAL_POWER_VIBR, true, true);
+	lv_poc_show_gps_location_status_img(false);
+	prvGPSReadReg(0x82, gps_data, GPS_RX_BUF_SIZE);
+	prvlvPocGpsIdtComResume();
+	OSI_LOGI(0, "[GPS][EVENT]GPS open");
+	osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_NO_LOCATION_CHECK_SCAN_FREQ);
+}
+
+void publvPocGpsIdtComCloseGps(void)
+{
+	OSI_LOGI(0, "[GPS][EVENT]GPS close!");
+	osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
+	prvlvPocGpsIdtComSuspend();
+	poc_set_gps_ant_status(false);
+    halPmuSwitchPower(HAL_POWER_CAMA, false, false);
+    halPmuSwitchPower(HAL_POWER_VIBR, false, false);
+}
 
 bool
 lvPocGpsIdtCom_Msg(LVPOCIDTCOM_Gps_SignalType_t signal, void *ctx)
@@ -433,33 +384,4 @@ lvPocGpsIdtCom_Msg(LVPOCIDTCOM_Gps_SignalType_t signal, void *ctx)
 	return osiEventSend(pocGpsIdtAttr.thread, &event);
 }
 
-#ifdef POCIDTGPSTHREADEVENT
-static
-void prvlvPocGpsIdtComHandleGpsTimercb(void *ctx)
-{
-	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_GET_DATA_IND, NULL);
-}
-#endif
 
-void gpsInit(void)
-{
-	//close
-	poc_set_gps_ant_status(false);
-    halPmuSwitchPower(HAL_POWER_CAMA, false, false);
-    halPmuSwitchPower(HAL_POWER_VIBR, false, false);
-	osiDelayUS(2000000);//2s
-	//open
-	poc_set_gps_ant_status(true);
-    halPmuSwitchPower(HAL_POWER_CAMA, true, true);
-    halPmuSwitchPower(HAL_POWER_VIBR, true, true);
-
-    pocGpsIdtAttr.thread = osiThreadCreate("GpsThread", GpsThreadEntry, NULL, OSI_PRIORITY_NORMAL, 2048, 64);
-#ifndef POCIDTGPSTHREADEVENT
-	osiThreadSuspend(pocGpsIdtAttr.thread);
-#endif
-}
-
-bool pubPocIdtGpsLocationStatus(void)
-{
-	return gps_location_status;
-}
