@@ -160,8 +160,10 @@ void pocStart(void *ctx)
     drvLcdOpenV2(lcd);
     drvLcdFill(lcd, 0, NULL, true);
     drvLcdSetBackLightEnable(lcd, false);
-	//gps
+
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	publvPocGpsIdtComInit();
+#endif
 
 	//获取开机方式
 	uint32_t boot_causes = osiGetBootCauses();

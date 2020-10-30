@@ -28,7 +28,9 @@ static const char * lv_poc_setting_btn_text_big_font = "大号字体";
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 static const char * lv_poc_setting_btn_text_key_light = "按键灯";
 #endif
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 static const char * lv_poc_setting_btn_text_GPS = "GPS";
+#endif
 static const char * lv_poc_setting_btn_text_tourch = "手电筒";
 static const char * lv_poc_setting_btn_text_brightness = "亮度";
 static const char * lv_poc_setting_btn_text_brightness_time = "亮屏时间";
@@ -162,6 +164,7 @@ static void lv_poc_setting_key_light_btn_cb(lv_obj_t * obj)
 }
 #endif
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 static void lv_poc_setting_GPS_btn_cb(lv_obj_t * obj)
 {
     lv_obj_t * ext_obj = NULL;
@@ -182,6 +185,7 @@ static void lv_poc_setting_GPS_btn_cb(lv_obj_t * obj)
 	}
 	lv_poc_setting_conf_write();
 }
+#endif
 
 static void lv_poc_setting_torch_btn_cb(lv_obj_t * obj)
 {
@@ -400,6 +404,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     }
 #endif
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_GPS);
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
@@ -426,6 +431,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     {
     	lv_sw_off(sw, LV_ANIM_OFF);
     }
+#endif
 
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_tourch);
     lv_obj_set_click(btn, true);
