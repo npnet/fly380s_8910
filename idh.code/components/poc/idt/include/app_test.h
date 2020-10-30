@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -29,6 +29,7 @@ extern "C" {
  */
 void appTestStart(void);
 
+void lvPocGuiIdtComTest_Init();
 
 #ifdef __cplusplus
 }

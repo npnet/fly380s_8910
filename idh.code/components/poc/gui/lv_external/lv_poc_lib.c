@@ -651,32 +651,12 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
 	do
 	{
-		#if 0
-		if(NULL == prv_play_btn_voice_one_time_player)
-		{
-			prv_play_btn_voice_one_time_player = auPlayerCreate();
-			if(NULL == prv_play_btn_voice_one_time_player)
-			{
-				break;
-			}
-		}
-		audevSetPlayVolume(60);
-		auPlayerStop(prv_play_btn_voice_one_time_player);
-		audevSetPlayVolume(40);
-	    auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
-	    auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
-		auPlayerStartMem(prv_play_btn_voice_one_time_player, AUSTREAM_FORMAT_PCM, params, lv_poc_audio_msg.data, lv_poc_audio_msg.data_size);
-		osiThreadSleep(140);
-		auPlayerStop(prv_play_btn_voice_one_time_player);
-		lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
-		#else
 		if(!ttsIsPlaying() && (!lvPocGuiIdtCom_get_listen_status()))
 		{
 			audevSetPlayVolume(40);
 			char playkey[4] = "9";
 			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
 		}
-		#endif
 	}while(0);
 	prv_play_btn_voice_one_time_thread = NULL;
 	osiThreadExit();
@@ -734,6 +714,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					{
 						lv_poc_set_speak_tone_status(false);
 						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP_RECORD_IND, NULL);
+					}
+
+					if(voice_queue_reader == voice_queue_writer)
+					{
+						prv_play_voice_one_time_thread = NULL;
+						osiThreadExit();
 					}
 				}
 				else
@@ -822,8 +808,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			isPlayVoice = true;
 		}
 	}
-
-	osiThreadExit();
 }
 
 /*
@@ -883,6 +867,7 @@ poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN b
 	event.param2 = (int)isBreak;
 	osiEventSend(prv_play_voice_one_time_thread, &event);
 }
+
 /*
       name : poc_battery_get_status
      param : point a battery buff
@@ -1158,7 +1143,6 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 	CFW_NW_STATUS_INFO nStatusInfo;
 	uint8_t nSim = POC_SIM_1;
 
-//	atCommand_t *cmd = NULL;
 	static POC_MMI_MODEM_PLMN_RAT _signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//网络类型
 	if(operat == NULL || rat == NULL) return;
 

@@ -298,11 +298,11 @@ static bool prv_lv_poc_volum_display(POC_MMI_VOICE_TYPE_E type, uint8_t volume)
 
 	info.title = title;
 	info.volum = volume;
-	info.count = 20;
+	info.count = 4;
 
 	if(volum_slider_task == NULL)
 	{
-		volum_slider_task = lv_task_create(prv_lv_poc_volum_display_slider_task, 100, LV_TASK_PRIO_LOWEST, &info);
+		volum_slider_task = lv_task_create(prv_lv_poc_volum_display_slider_task, 500, LV_TASK_PRIO_LOWEST, &info);
 		if(volum_slider_task == NULL)
 		{
 			return false;

@@ -1224,10 +1224,7 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	lv_obj_set_click(activity_idle->control->right_button, true);
 	lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
 
-	lv_task_t * prv_poc_idle_start_task = lv_task_create(lv_poc_idle_start_task_cb, 300, LV_TASK_PRIO_LOWEST, NULL);
-	if(prv_poc_idle_start_task != NULL)
-	{
-		lv_task_once(prv_poc_idle_start_task);
-	}
+	lv_poc_refr_task_once(lv_poc_idle_start_task_cb, 300, LV_TASK_PRIO_LOWEST);
+
 	return activity_idle;
 }

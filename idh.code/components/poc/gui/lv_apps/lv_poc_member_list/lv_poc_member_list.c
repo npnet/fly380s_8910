@@ -280,9 +280,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 		{
 			if(lv_poc_member_list_obj != NULL && current_activity == poc_member_list_activity)
 			{
-
-				lv_poc_refr_func_ui(lv_poc_member_list_refresh,
-					LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH,NULL);
+				lv_poc_refr_task_once(lv_poc_member_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
 			}
 			break;
 		}
@@ -315,8 +313,7 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	//add your information
 	if(msg_type==1)//显示
 	{
-		lv_poc_refr_func_ui(lv_poc_member_list_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
+		lv_poc_refr_task_once(lv_poc_member_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
 	}
 	else
 	{
@@ -384,8 +381,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     else
     {
 		OSI_LOGI(0, "[song]have member to refr\n");
-		lv_poc_refr_func_ui(lv_poc_member_list_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH,NULL);
+		lv_poc_refr_task_once(lv_poc_member_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
 	}
 }
 

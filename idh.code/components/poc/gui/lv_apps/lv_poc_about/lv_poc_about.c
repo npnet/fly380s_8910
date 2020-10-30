@@ -58,49 +58,50 @@ typedef struct
 } lv_poc_about_label_struct_t;
 
 
-static char lv_poc_about_text_stateinfo[64] = {0};
-static char lv_poc_about_text_model[64] = {0};
-static char lv_poc_about_text_processor[64] = {0};
+static char lv_poc_about_text_accout[64] = {0};
+static char lv_poc_about_text_imei[64] = {0};
+static char lv_poc_about_text_iccid[64] = {0};
 static char lv_poc_about_text_sysversion[64] = {0};
 static char lv_poc_about_text_version_number[64] = {0};
 static char lv_poc_about_text_update[64] = {0};
 
+
 lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
 	{
-		NULL,
-		"状态信息"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_stateinfo, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
-	},
+        NULL,
+        "账号"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_accout, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+    },
 
-	{
-		NULL,
-		"型号"                   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_model, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
-	},
+    {
+        NULL,
+        "IMEI"                   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_imei, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+    },
 
-	{
-		NULL,
-		"处理器信息"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_processor, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
-	},
+    {
+        NULL,
+        "ICCID"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_iccid, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+    },
 
-	{
-		NULL,
-		"系统版本"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_sysversion, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
-	},
+    {
+        NULL,
+        "型号"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_sysversion, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+    },
 
-	{
-		NULL,
-		"版本号"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_version_number, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
-	},
+    {
+        NULL,
+        "版本"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_version_number, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+    },
 
-	{
-		NULL,
-		"软件"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-		lv_poc_about_text_update, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
-	},
+    {
+        NULL,
+        "软件"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_update, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+    },
 };
 
 static void lv_poc_about_pressed_cb(lv_obj_t * obj, lv_event_t event)
@@ -127,11 +128,28 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	int label_array_size = sizeof(lv_poc_about_label_array)/sizeof(lv_poc_about_label_struct_t);
 	lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
-	strcpy(lv_poc_about_text_stateinfo, "电池状态/网络信号等");
-	strcpy(lv_poc_about_text_model, "NB95-P0");
-	strcpy(lv_poc_about_text_processor, "UIS8910DM_IE_AIOT_AIM");
-	strcpy(lv_poc_about_text_sysversion, "8910_MODULE_V1_3_W20.35.2");
-	strcpy(lv_poc_about_text_version_number, "V20.35.2-D10.16");
+	char *temp_str = NULL;
+
+	temp_str = poc_get_device_account_rep(poc_setting_conf->main_SIM);
+	if(temp_str != NULL)
+	{
+		strcpy(lv_poc_about_text_accout, temp_str);
+	}
+	else
+	{
+		lv_poc_about_text_accout[0] = 0;
+	}
+
+	lv_poc_about_text_imei[0] = 0;
+    poc_get_device_imei_rep((int8_t *)lv_poc_about_text_imei);
+
+	lv_poc_about_text_sysversion[0] = 0;
+	strcpy(lv_poc_about_text_sysversion, "FLY380S");
+
+	lv_poc_about_text_version_number[0] = 0;
+	strcpy(lv_poc_about_text_version_number, "V35.2-D10.30");
+
+	lv_poc_about_text_update[0] = 0;
 	strcpy(lv_poc_about_text_update, "检查更新");
 
     for(int i = 0; i < label_array_size; i++)

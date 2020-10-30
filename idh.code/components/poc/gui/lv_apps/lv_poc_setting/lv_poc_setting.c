@@ -177,14 +177,14 @@ static void lv_poc_setting_GPS_btn_cb(lv_obj_t * obj)
 		lv_sw_off(ext_obj, LV_ANIM_OFF);
 		poc_setting_conf->GPS_switch = 0;
 		lv_poc_stabar_show_gps_img(false);
-		lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_OPTION, NULL);
+		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, 0, 0);
 	}
 	else
 	{
 		lv_sw_on(ext_obj, LV_ANIM_OFF);
 		poc_setting_conf->GPS_switch = 1;
 		lv_poc_stabar_show_gps_img(true);
-		lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_OPTION, NULL);
+		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, 0, 0);
 	}
 	lv_poc_setting_conf_write();
 }

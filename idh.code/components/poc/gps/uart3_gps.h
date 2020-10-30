@@ -11,9 +11,9 @@ void publvPocGpsIdtComInit(void);
 
 bool pubPocIdtGpsLocationStatus(void);
 
-void publvPocGpsIdtComOpenGps(void);
+void publvPocGpsIdtComSleep(void);
 
-void publvPocGpsIdtComCloseGps(void);
+void publvPocGpsIdtComWake(void);
 
 #ifdef __cplusplus
 	}

@@ -590,16 +590,6 @@ bool lv_poc_setting_init(void);
 ********************/
 void lv_poc_stabar_task(lv_task_t * task);
 
-#if 0
-/*******************
-*     NAME:    lv_poc_get_time
-*   AUTHOR:    lugj
-* DESCRIPT:    获取本地时间，保存在local_time中
-*     DATE:    2019-10-25
-********************/
-bool lv_poc_get_time(void *local_time);
-#endif
-
 /*******************
 *     NAME:    lv_poc_get_battery_state
 *   AUTHOR:    lugj

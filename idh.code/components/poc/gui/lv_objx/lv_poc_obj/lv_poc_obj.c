@@ -7,12 +7,13 @@ extern "C" {
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include "uart3_gps.h"
 
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
 
-
+#define IDT_POC_MODE 0//录音及播放使用POC模式
 
 /*************************************************
 *
@@ -310,7 +311,6 @@ const lv_img_dsc_t *battery_img_dispaly[9] = { &stat_sys_battery_charge_anim0
 												,&stat_sys_battery_charge_anim85
 												,&stat_sys_battery_charge_anim100};
 
-#define IDT_POC_MODE 0//录音及播放使用POC模式
 
 static __attribute__((const)) lv_poc_activity_attribute_cb_set_obj * lv_poc_get_activity_attribute_cb_set_obj(void)
 {
@@ -563,7 +563,6 @@ bool lv_poc_setting_init(void)
 	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
-	lv_poc_set_volum(POC_MMI_VOICE_VOICE, poc_setting_conf->voicevolume, false, false);
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_keypad_led_init();
 #endif
@@ -919,10 +918,10 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
-    lv_task_create(lv_poc_stabar_task,1000,LV_TASK_PRIO_LOWEST,NULL);
+    lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
     lv_poc_status_bar_task_ext_add(lv_poc_stabar_signal_task);
-    return ret_val;
-
+	lv_task_create(lv_poc_stabar_task,1000,LV_TASK_PRIO_LOWEST,NULL);
+	return ret_val;
 }
 
 /*******************
@@ -943,7 +942,7 @@ static bool lv_poc_init_stabar_time_label(void)
     lv_poc_status_bar_fptr->time_label  = lv_label_create(lv_poc_status_bar, NULL);
     time_label = lv_poc_status_bar_fptr->time_label;
     lv_label_set_style(time_label, LV_LABEL_STYLE_MAIN,label_style);
-    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 2, 1);
+    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 0, 0);
 
     lv_poc_get_time(&time);
 
@@ -1041,10 +1040,10 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 		lv_obj_set_size(lv_poc_status_bar_fptr->gps_img->gps_location_img, 18, 18);
 
 		if(gps_config->GPS_switch == 1){
-			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_OPTION, NULL);
+			lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, 0, 0);
 		}
 		else{
-			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_OPTION, NULL);
+			lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, 0, 0);
 		}
 	}
 
@@ -2340,7 +2339,6 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
     {
 		if(charge_status == true)
 		{
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 			charge_status = false;
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		}
@@ -2446,7 +2444,6 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 static unsigned short lv_poc_get_sim_state_code(POC_SIM_ID sim_id)
 {
     unsigned short sim_state_code = 0;
-    //POC_MMI_MODEM_SIGNAL_BAR signal_strength;
     POC_MMI_MODEM_PLMN_RAT rat;
     char operator[34];
 
@@ -2509,7 +2506,7 @@ void lv_poc_update_stabar_sim_img(void)
 								    };
     static unsigned short old_sim_state_code[MAX_SIM_COUNT] = { 0 };
     static bool is_continue = true;
-	int k;
+    int k;
     static lv_obj_t * obj2 = NULL;
     static lv_obj_t * obj3 = NULL;
     static lv_obj_t * obj4 = NULL;
@@ -2628,8 +2625,6 @@ void lv_poc_update_stabar_sim_img(void)
                 default:
                 {
                     OSI_LOGI(0, "FUNC:%s  get a error net type", __func__);
-					//lv_img_set_src(obj3, &stat_sys_no_sim_sprd_cucc);//未注册网络图标
-                    //lv_poc_stabar_sim_clean(sim_cont[k]);
                     lv_obj_del(obj3);
                     old_sim_state_code[k] = sim_state_code[k];
 

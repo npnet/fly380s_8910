@@ -29,8 +29,8 @@
 #include "lv_gui_main.h"
 #include "poc_audio_recorder.h"
 
-#define POC_RECORD_OR_SPEAK_CALL 1       /*1-正常对讲，0-自录自播*/
-#define POC_SUPPORT_LONGPRESS_POWEROFF 1 /*支持长按关机*/
+#define POC_RECORD_OR_SPEAK_CALL 1//1-正常对讲，0-自录自播
+#define POC_RECORDER_PLAY_MODE 1//1-play 0-poc
 
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
