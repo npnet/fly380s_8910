@@ -29,7 +29,8 @@
 #include "lv_gui_main.h"
 #include "poc_audio_recorder.h"
 
-#define POC_RECORD_OR_SPEAK_CALL 1/*1-正常对讲，0-自录自播*/
+#define POC_RECORD_OR_SPEAK_CALL 1//1-正常对讲，0-自录自播
+#define POC_RECORDER_PLAY_MODE 1//1-play 0-poc
 
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
@@ -68,7 +69,11 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
 				#else
-				lv_poc_start_recordwriter();/*自录*/
+					#if POC_RECORDER_PLAY_MODE
+					lv_poc_start_recordwriter();//自录
+					#else
+					lv_poc_start_recordwriter_pocmode();
+					#endif
 				#endif
 			}
 			else
@@ -77,7 +82,11 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 				#else
-				lv_poc_start_playfile();/*自播*/
+					#if POC_RECORDER_PLAY_MODE
+					lv_poc_start_playfile();//自播
+					#else
+					lv_poc_start_playfile_pocmode();
+					#endif
 				#endif
 			}
 		}

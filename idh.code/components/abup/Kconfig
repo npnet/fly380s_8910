@@ -1,0 +1,33 @@
+# Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+# All rights reserved.
+#
+# This software is supplied "AS IS" without any warranties.
+# RDA assumes no responsibility or liability for the use of the software,
+# conveys no license or title under any patent, copyright, or mask work
+# right to the product. RDA reserves the right to make changes in the
+# software without notification.  RDA also make no representation or
+# warranty that such application will be suitable for the specified use
+# without further testing or modification.
+
+menu "ABUP"
+
+config ABUP_SUPPORT
+    bool "abup supported"
+    default y if SOC_8910
+    default n
+    help
+        When enabled, at least one ABUP engine should be supported.
+
+if ABUP_SUPPORT
+config ABUP_DUMMY_SUPPORT
+    bool "Enable dummy ABUP engine"
+    default y
+    help
+        Dummy ABUP engine is not a real ABUP engine. It will synthesis text
+        into some tones. It is just to demonstrate how to integrate ABUP
+        engine.
+
+        When real ABUP engine is used, it must be disabled.
+endif
+
+endmenu

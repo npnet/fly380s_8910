@@ -323,8 +323,7 @@ static void lv_poc_build_group_get_list_cb(int msg_type)
 
 	if(msg_type==1)//显示
 	{
-		lv_poc_refr_func_ui(lv_poc_build_group_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH, NULL);
+		lv_poc_refr_task_once(lv_poc_build_group_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
 	}
 	else
 	{

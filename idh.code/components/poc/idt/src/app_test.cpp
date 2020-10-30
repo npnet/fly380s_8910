@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -9,7 +9,7 @@
  * warranty that such application will be suitable for the specified use
  * without further testing or modification.
  */
-#if 0
+#if 1
 #include "osi_log.h"
 #include "osi_api.h"
 #include <stdlib.h>
@@ -17,7 +17,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "poc_config.h"
-#include "guiIdtCom_api.h"
 
 #define FREERTOS
 #define T_TINY_MODE
@@ -35,7 +34,7 @@ osiThread_t *gAppTest;
 char *GetCauseStr(USHORT usCause);
 char *GetOamOptStr(DWORD dwOpt);
 char *GetSrvTypeStr(SRV_TYPE_e SrvType);
-
+static void IDT_Entry(void*);
 
 //--------------------------------------------------------------------------------
 //      TRACE小函数
@@ -48,7 +47,7 @@ char *GetSrvTypeStr(SRV_TYPE_e SrvType);
 //  注意:
 //      打印内容不能超过256字节
 //--------------------------------------------------------------------------------
-int IDT_TRACE(const char* pcFormat, ...)
+static int IDT_TRACE(const char* pcFormat, ...)
 {
     if (NULL == pcFormat)
         return -1;
@@ -143,10 +142,10 @@ public:
     int m_iRxCount, m_iTxCount;//统计收发语音包数量
     CAllGroup m_Group;
 };
-CIdtUser m_IdtUser;
+static CIdtUser m_IdtUser;
 
 
-int Func_GQueryU(DWORD dwSn, UCHAR *pucGNum)
+int Test_Func_GQueryU(DWORD dwSn, UCHAR *pucGNum)
 {
     QUERY_EXT_s ext;
     memset(&ext, 0, sizeof(ext));
@@ -170,7 +169,7 @@ int Func_GQueryU(DWORD dwSn, UCHAR *pucGNum)
 //  注意:
 //      由IDT.dll调用,告诉用户状态发生变化
 //--------------------------------------------------------------------------------
-void callback_IDT_StatusInd(int status, unsigned short usCause)
+void Test_callback_IDT_StatusInd(int status, unsigned short usCause)
 {
     IDT_TRACE("callback_IDT_StatusInd: status=%d, usCause=%s(%d)", status, GetCauseStr(usCause), usCause);
 
@@ -178,6 +177,10 @@ void callback_IDT_StatusInd(int status, unsigned short usCause)
     {
         IDT_StatusSubs((char*)"###", GU_STATUSSUBS_BASIC);
     }
+	else
+	{
+		IDT_Entry(NULL);//自动登录
+	}
 }
 
 //--------------------------------------------------------------------------------
@@ -189,7 +192,7 @@ void callback_IDT_StatusInd(int status, unsigned short usCause)
 //  注意:
 //      由IDT.dll调用,告诉用户状态发生变化
 //--------------------------------------------------------------------------------
-void callback_IDT_GInfoInd(USERGINFO_s *pGInfo)
+void Test_callback_IDT_GInfoInd(USERGINFO_s *pGInfo)
 {
     if (NULL == pGInfo)
         return;
@@ -205,7 +208,7 @@ void callback_IDT_GInfoInd(USERGINFO_s *pGInfo)
     }
 
     // 启动查询所有组成员
-    Func_GQueryU(0, pGInfo->stGInfo[0].ucNum);
+    Test_Func_GQueryU(0, pGInfo->stGInfo[0].ucNum);
 }
 
 //--------------------------------------------------------------------------------
@@ -217,7 +220,7 @@ void callback_IDT_GInfoInd(USERGINFO_s *pGInfo)
 //  注意:
 //      由IDT.dll调用,告诉用户状态发生变化
 //--------------------------------------------------------------------------------
-void callback_IDT_GUStatusInd(GU_STATUSGINFO_s *pStatus)
+void Test_callback_IDT_GUStatusInd(GU_STATUSGINFO_s *pStatus)
 {
     if (NULL == pStatus)
         return;
@@ -244,7 +247,7 @@ void callback_IDT_GUStatusInd(GU_STATUSGINFO_s *pStatus)
 //  注意:
 //      由IDT.dll调用,告诉用户对方应答
 //--------------------------------------------------------------------------------
-int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName, SRV_TYPE_e SrvType, char *pcUserMark, char *pcUserCallRef)
+int Test_callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName, SRV_TYPE_e SrvType, char *pcUserMark, char *pcUserCallRef)
 {
     IDT_TRACE("callback_IDT_CallPeerAnswer: pUsrCtx=0x%x, pcPeerNum=%s, pcPeerName=%s, SrvType=%s(%d), pcUserMark=%s, pcUserCallRef=%s",
         pUsrCtx, pcPeerNum, pcPeerName, GetSrvTypeStr(SrvType), SrvType, pcUserMark, pcUserCallRef);
@@ -270,7 +273,7 @@ int callback_IDT_CallPeerAnswer(void *pUsrCtx, char *pcPeerNum, char *pcPeerName
 //  注意:
 //      由IDT.dll调用,告诉用户有呼叫进入
 //--------------------------------------------------------------------------------
-int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName, SRV_TYPE_e SrvType, MEDIAATTR_s *pAttr, void *pExtInfo, char *pcUserMark, char *pcUserCallRef)
+int Test_callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName, SRV_TYPE_e SrvType, MEDIAATTR_s *pAttr, void *pExtInfo, char *pcUserMark, char *pcUserCallRef)
 {
     IDT_TRACE("callback_IDT_CallIn: ID=%d, pcMyNum=%s, pcPeerNum=%s, pcPeerName=%s, SrvType=%s(%d), Attr=ARx(%d):ATx(%d), pcUserMark=%s, pcUserCallRef=%s",
         ID, pcMyNum, pcPeerNum, pcPeerName, GetSrvTypeStr(SrvType), SrvType, pAttr->ucAudioRecv, pAttr->ucAudioSend, pcUserMark, pcUserCallRef);
@@ -314,7 +317,7 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 //      0:              成功
 //      -1:             失败
 //--------------------------------------------------------------------------------
-int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
+int Test_callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 {
     IDT_TRACE("callback_IDT_CallRelInd: ID=%d, pUsrCtx=0x%x, uiCause=%d, m_iCallId=%d", ID, pUsrCtx, uiCause, m_IdtUser.m_iCallId);
     m_IdtUser.m_iCallId = -1;
@@ -331,7 +334,7 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
 //      0:              成功
 //      -1:             失败
 //--------------------------------------------------------------------------------
-int callback_IDT_CallMicInd(void *pUsrCtx, UINT uiInd)
+int Test_callback_IDT_CallMicInd(void *pUsrCtx, UINT uiInd)
 {
     IDT_TRACE("callback_IDT_CallMicInd: pUsrCtx=0x%x, uiInd=%d", pUsrCtx, uiInd);
     // 0本端不讲话
@@ -353,7 +356,7 @@ int callback_IDT_CallMicInd(void *pUsrCtx, UINT uiInd)
 //      0:              成功
 //      -1:             失败
 //--------------------------------------------------------------------------------
-int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCodec, UCHAR *pucBuf, int iLen, DWORD dwTsOfs, DWORD dwTsLen, DWORD dwTs)
+int Test_callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCodec, UCHAR *pucBuf, int iLen, DWORD dwTsOfs, DWORD dwTsLen, DWORD dwTs)
 {
     m_IdtUser.m_iRxCount++;
     IDT_TRACE("callback_IDT_CallRecvAudioData: pUsrCtx=0x%x, iLen=%d, m_iRxCount=%d", pUsrCtx, iLen, m_IdtUser.m_iRxCount);
@@ -371,7 +374,7 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 //      0:              成功
 //      -1:             失败
 //--------------------------------------------------------------------------------
-int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
+int Test_callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 {
     IDT_TRACE("callback_IDT_CallTalkingIDInd: pUsrCtx=0x%x, pcNum=%s, pcName=%s", pUsrCtx, pcNum, pcName);
     //显示讲话人号码/名字,UTF-8编码
@@ -390,7 +393,7 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 //  注意:
 //      由IDT.dll调用,告诉用户操作结果
 //--------------------------------------------------------------------------------
-void callback_IDT_UOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes, UData_s* pUser)
+void Test_callback_IDT_UOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes, UData_s* pUser)
 {
     if (NULL == pUser)
     {
@@ -416,7 +419,7 @@ void callback_IDT_UOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes, UData_s* pUser
 //  注意:
 //      由IDT.dll调用,告诉用户操作结果
 //--------------------------------------------------------------------------------
-void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGroup)
+void Test_callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGroup)
 {
     if (NULL == pGroup)
     {
@@ -445,7 +448,7 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
         if (0 == m_IdtUser.m_Group.m_Group[dwSn].m_ucGNum[0])
             return;
         // 持续查询剩下的组成员
-        Func_GQueryU(dwSn, m_IdtUser.m_Group.m_Group[dwSn].m_ucGNum);
+        Test_Func_GQueryU(dwSn, m_IdtUser.m_Group.m_Group[dwSn].m_ucGNum);
     }
 }
 
@@ -472,7 +475,7 @@ void callback_IDT_GOptRsp(DWORD dwOptCode, DWORD dwSn, WORD wRes,  GData_s *pGro
 //  注意:
 //      由IDT.dll调用,告诉用户组删除/添加用户等操作
 //--------------------------------------------------------------------------------
-void callback_IDT_OamNotify(DWORD dwOptCode, UCHAR *pucGNum, UCHAR *pucGName, UCHAR *pucUNum, UCHAR *pucUName, UCHAR ucUAttr)
+void Test_callback_IDT_OamNotify(DWORD dwOptCode, UCHAR *pucGNum, UCHAR *pucGName, UCHAR *pucUNum, UCHAR *pucUName, UCHAR ucUAttr)
 {
     if (NULL != pucGNum)
     {
@@ -502,8 +505,10 @@ void callback_IDT_OamNotify(DWORD dwOptCode, UCHAR *pucGNum, UCHAR *pucGName, UC
 //      FREERTOS调试比较麻烦,加入这个,便于远程调试
 //--------------------------------------------------------------------------------
 extern int _stricmp(const char *string1, const char *string2);
-int callback_IDT_Dbg(char *pcTxt)
+int Test_callback_IDT_Dbg(char *pcTxt)
 {
+	return 0;
+
     if (NULL == pcTxt)
         return -1;
     IDT_TRACE("callback_IDT_Dbg: %s", pcTxt);
@@ -586,7 +591,7 @@ int callback_IDT_Dbg(char *pcTxt)
     }
     else if (0 == _stricmp("gquery", pcTxt))
     {
-        Func_GQueryU(0, m_IdtUser.m_Group.m_Group[0].m_ucGNum);
+        Test_Func_GQueryU(0, m_IdtUser.m_Group.m_Group[0].m_ucGNum);
     }
 
 
@@ -595,7 +600,7 @@ int callback_IDT_Dbg(char *pcTxt)
 
 extern int g_iLog;
 
-void IDT_Entry(void*)
+static void IDT_Entry(void*)
 {
     m_IdtUser.Reset();
 
@@ -605,25 +610,25 @@ void IDT_Entry(void*)
 
     IDT_CALLBACK_s CallBack;
     memset(&CallBack, 0, sizeof(CallBack));
-    CallBack.pfStatusInd        = callback_IDT_StatusInd;
-    CallBack.pfGInfoInd         = callback_IDT_GInfoInd;
-    CallBack.pfGUStatusInd      = callback_IDT_GUStatusInd;
+    CallBack.pfStatusInd        = Test_callback_IDT_StatusInd;
+    CallBack.pfGInfoInd         = Test_callback_IDT_GInfoInd;
+    CallBack.pfGUStatusInd      = Test_callback_IDT_GUStatusInd;
 
-    CallBack.pfCallPeerAnswer   = callback_IDT_CallPeerAnswer;
-    CallBack.pfCallIn           = callback_IDT_CallIn;
-    CallBack.pfCallRelInd       = callback_IDT_CallRelInd;
-    CallBack.pfCallRecvAudioData= callback_IDT_CallRecvAudioData;
-    CallBack.pfCallMicInd       = callback_IDT_CallMicInd;
-    CallBack.pfCallTalkingIDInd = callback_IDT_CallTalkingIDInd;
-    CallBack.pfCallRecvAudioData= callback_IDT_CallRecvAudioData;
+    CallBack.pfCallPeerAnswer   = Test_callback_IDT_CallPeerAnswer;
+    CallBack.pfCallIn           = Test_callback_IDT_CallIn;
+    CallBack.pfCallRelInd       = Test_callback_IDT_CallRelInd;
+    CallBack.pfCallRecvAudioData= Test_callback_IDT_CallRecvAudioData;
+    CallBack.pfCallMicInd       = Test_callback_IDT_CallMicInd;
+    CallBack.pfCallTalkingIDInd = Test_callback_IDT_CallTalkingIDInd;
+    CallBack.pfCallRecvAudioData= Test_callback_IDT_CallRecvAudioData;
 
-    CallBack.pfUOptRsp          = callback_IDT_UOptRsp;
-    CallBack.pfGOptRsp          = callback_IDT_GOptRsp;
-    CallBack.pfOamNotify        = callback_IDT_OamNotify;
+    CallBack.pfUOptRsp          = Test_callback_IDT_UOptRsp;
+    CallBack.pfGOptRsp          = Test_callback_IDT_GOptRsp;
+    CallBack.pfOamNotify        = Test_callback_IDT_OamNotify;
 
-    CallBack.pfDbg              = callback_IDT_Dbg;
+    CallBack.pfDbg              = Test_callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"124.160.11.21", 10000, NULL, 0, (char*)"2014", (char*)"2014", 1, &CallBack, 0, 20000, 0);
+    IDT_Start(NULL, 1, (char*)"106.74.78.216", 10000, NULL, 0, (char*)"6022", (char*)"6022", 1, &CallBack, 0, 20000, 0);
 }
 
 static void appTestTaskEntry(void *argument)
@@ -638,11 +643,17 @@ static void appTestTaskEntry(void *argument)
             IDT_Entry(NULL);
         }
     	OSI_LOGE(0, "app main task running = %d", i);
-    	osiThreadSleep(1000);
+    	osiThreadSleepRelaxed(1000, OSI_WAIT_FOREVER);
         if (i >= 1000000)
         {
             i = iDelay + 1;
         }
+
+		if(i == 300)
+		{
+			OSI_LOGE(0, "[song]app to sleep");
+			osiPanic();
+		}
     }
 }
 
@@ -664,19 +675,9 @@ extern "C" void appTestStart(void)
 #endif
 }
 
-extern "C" void lvPocGuiIdtCom_Init(void)
+extern "C" void lvPocGuiIdtComTest_Init(void)
 {
 	appTestStart();
-}
-
-extern "C" bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
-{
-	return false;
-}
-
-extern "C" void lvPocGuiIdtCom_log(void)
-{
-	lvPocGuiIdtCom_Init();
 }
 
 #endif

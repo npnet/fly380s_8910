@@ -26,7 +26,7 @@
 #include "poc_keypad.h"
 #include "guiIdtCom_api.h"
 #include "lv_include/lv_poc.h"
-
+#include "uart3_gps.h"
 
 typedef struct
 {
@@ -470,6 +470,7 @@ void lvGuiScreenOff(void)
 
 	//close report gps
 	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_REPORT, NULL);
+	lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND, 0, 0);
 }
 
 /**
@@ -491,6 +492,7 @@ void lvGuiScreenOn(void)
 
 	//open report gps
 	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_REPORT, NULL);
+	lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND, 0, 0);
 }
 
 /**
