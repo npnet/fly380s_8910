@@ -87,6 +87,8 @@ typedef enum
 
 	LVPOCGUIOEMCOM_SIGNAL_GPS_UPLOADING_IND,
 
+	LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_REP_RECORD_IND,
+
 } LvPocGuiOemCom_SignalType_t;
 
 typedef enum{/*登陆状态*/

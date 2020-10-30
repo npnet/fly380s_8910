@@ -292,7 +292,6 @@ static void lv_poc_idle_time_task(void)
 	static bool isInit = false;
     static lv_style_t * idle_clock_style;
 	static lv_style_t * style;
-	//static lv_coord_t screen_w = 0;
 	static lv_coord_t screen_h = 0;
 	static bool isCreatedPocTask = false;
 	POC_MMI_MODEM_PLMN_RAT network_type = MMI_MODEM_PLMN_RAT_UNKNOW;
@@ -301,7 +300,6 @@ static void lv_poc_idle_time_task(void)
 	if(isInit == false)
 	{
         isInit = true;
-	    //screen_w = lv_poc_get_display_width(activity_idle->display);
 	    screen_h = lv_poc_get_display_height(activity_idle->display);
 	    idle_clock_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_idle_big_clock);
         idle_big_clock = lv_label_create(activity_idle->display, NULL);
@@ -332,16 +330,9 @@ static void lv_poc_idle_time_task(void)
 
     if( current_activity != activity_idle)
     {
-        //lv_obj_set_hidden(idle_big_clock, true);
-        //lv_obj_set_hidden(idle_date_label, true);
         is_running = false;
         return;
     }
-    //else if(current_activity->)
-    //{
-        //lv_obj_set_hidden(idle_big_clock, false);
-        //lv_obj_set_hidden(idle_date_label, false);
-    //}
 	lv_poc_get_time(&time);
 	sprintf(big_clock_str,"%02d:%02d",time.tm_hour,time.tm_min);
 	str = lv_poc_idle_get_date(&time);
@@ -1237,10 +1228,7 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	lv_obj_set_click(activity_idle->control->right_button, true);
 	lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
 
-	lv_task_t * prv_poc_idle_start_task = lv_task_create(lv_poc_idle_start_task_cb, 300, LV_TASK_PRIO_MID, NULL);
-	if(prv_poc_idle_start_task != NULL)
-	{
-		lv_task_once(prv_poc_idle_start_task);
-	}
+	lv_poc_refr_task_once(lv_poc_idle_start_task_cb, 300, LV_TASK_PRIO_LOWEST);
+
 	return activity_idle;
 }

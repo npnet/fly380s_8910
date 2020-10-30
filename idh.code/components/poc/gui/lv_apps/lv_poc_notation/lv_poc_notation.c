@@ -574,4 +574,12 @@ static uint32_t lv_poc_txt_utf8_get_length(const char * txt)
     return len;
 }
 
+void lv_poc_notation_del(void)
+{
+	if(lv_poc_notation_task != NULL)
+	{
+		lv_task_del(lv_poc_notation_task);
+		lv_poc_notation_task = NULL;
+	}
+}
 

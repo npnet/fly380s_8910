@@ -23,6 +23,7 @@ if(CONFIG_SOC_8910)
         net hal mal cfw http fupdate service apploader
         audio tts poc lvgl
     )
+	target_link_group(${target} PRIVATE abup_pub abup_lib ${libc_file_name} ${libgcc_file_name})
     target_include_targets_if(CONFIG_SPRD_BT_ENABLE THEN ${target} PRIVATE sprd_bt)
     target_include_targets_if(CONFIG_BLUEU_BT_ENABLE THEN ${target} PRIVATE blueu)
 

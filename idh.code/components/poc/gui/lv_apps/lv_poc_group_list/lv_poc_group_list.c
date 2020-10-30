@@ -417,8 +417,7 @@ static void lv_poc_get_group_list_cb(int result_type)
 
 	if(result_type == 1)
 	{
-		lv_poc_refr_func_ui(lv_poc_group_list_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH, NULL);
+		lv_poc_refr_task_once(lv_poc_group_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
 	}
 	else
 	{
@@ -599,8 +598,7 @@ void lv_poc_group_list_open(lv_poc_oem_group_list *group_list_obj)
 	}
     else
     {
-		lv_poc_refr_func_ui(lv_poc_group_list_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH, NULL);
+		lv_poc_refr_task_once(lv_poc_group_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
     }
 }
 

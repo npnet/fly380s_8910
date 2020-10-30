@@ -4,44 +4,38 @@ extern "C" {
 #endif
 #include "lv_include/lv_poc.h"
 #include <stdlib.h>
+#include "uart3_gps.h"
 
-static void poc_Led_Entry(void *param);
-static void poc_Led_Jump_Entry(void *param);
-static void lv_poc_led_status_all_close(void);
-static void lv_poc_led_status_all_open(void);
-static void lv_poc_red_open_green_close(void);
-static void lv_poc_red_close_green_open(void);
-static void callback_lv_poc_red_close_green_jump(osiEvent_t *event);
-static void callback_lv_poc_green_close_red_jump(osiEvent_t *event);
-static void callback_lv_poc_red_open_green_jump(osiEvent_t *event);
-static void callback_lv_poc_green_open_red_jump(osiEvent_t *event);
-static void callback_lv_poc_green_jump_red_jump(osiEvent_t *event);
-static void Lv_Poc_Led_Status_Callback(void *param);
-static void Lv_Poc_Led_Status_Callback_Check(void *param);
+static void lv_poc_led_entry(void *param);
+static void lv_poc_led_status_all_close(lv_task_t *task);
+static void lv_poc_led_status_all_open(lv_task_t *task);
+static void lv_poc_red_open_green_close(lv_task_t *task);
+static void lv_poc_red_close_green_open(lv_task_t *task);
+static void callback_lv_poc_red_close_green_jump(void);
+static void callback_lv_poc_green_close_red_jump(void);
+static void callback_lv_poc_red_open_green_jump(void);
+static void callback_lv_poc_green_open_red_jump(void);
+static void callback_lv_poc_green_jump_red_jump(void);
+static void Lv_Poc_Led_Status_Callback_Check(lv_task_t *task);
 static void Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2);
 
-typedef void (*lv_poc_led_jump_status)(osiEvent_t *event);
-//回调函数
-typedef struct _LED_CALLBACK_s
-{
-    lv_poc_led_jump_status		pf_poc_led_jump_status;//循环回调
-}LV_POC_LED_CALLBACK;
+typedef void (*lv_poc_led_jump_status)(void);
 
 typedef struct _PocLedIdtComAttr_t
 {
 	osiThread_t *thread;
-	osiThread_t *jumpThread;
+	lv_task_t   *task;
 	bool        isReady;
 	uint16_t    jumpperiod;
 	uint16_t	jumpcount;
 	bool        ledstatus;
-	uint8_t 	before_status;/*记录上次运行状态*/
-	uint16_t    before_jumpperiod;/*记录上次的运行周期*/
+	uint8_t 	before_status;
+	uint8_t 	last_status;
+	uint16_t    before_jumpperiod;
+	lv_poc_led_jump_status pledjump;
 } PocLedIdtComAttr_t;
 
 static PocLedIdtComAttr_t pocLedIdtAttr = {0};
-static LV_POC_LED_CALLBACK Led_CallBack = {0};
-
 
 /*
 	  name : poc_Status_Led_Task
@@ -51,212 +45,179 @@ static LV_POC_LED_CALLBACK Led_CallBack = {0};
 void poc_Status_Led_Task(void)
 {
 	memset(&pocLedIdtAttr, 0, sizeof(PocLedIdtComAttr_t));
+	pocLedIdtAttr.jumpperiod = 1000;
+	pocLedIdtAttr.pledjump = NULL;
 
-	pocLedIdtAttr.jumpperiod = 1000;//默认周期1s
-
-	Lv_Poc_Led_Status_Callback(NULL);//注销回调
-
-	/*LED MSG TASK*/
-	pocLedIdtAttr.thread = osiThreadCreate("status led", poc_Led_Entry, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
-	/*JUMP TASK*/
-	pocLedIdtAttr.jumpThread = osiThreadCreate("jump led task", poc_Led_Jump_Entry, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+	pocLedIdtAttr.thread = osiThreadCreate("status led", lv_poc_led_entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
 }
 
 /*
-	  name : poc_Led_Entry
+	  name : lv_poc_led_entry
 	  param : none
 	  date : 2020-06-02
 */
-static void poc_Led_Entry(void *param)
-{
-	osiEvent_t event;
-	bool isValid = true;
-	lv_poc_led_status_all_close();
-	pocLedIdtAttr.isReady = true;
-	while(1)
-	{
-		if(!osiEventTryWait(pocLedIdtAttr.thread , &event, 450))
-		{
-			continue;
-		}
-		if(event.id != 200)
-		{
-			continue;
-		}
-
-		if(event.param2)
-			pocLedIdtAttr.jumpperiod = (uint16_t)event.param2;//提取周期
-		if(event.param3)
-			pocLedIdtAttr.jumpcount = (uint16_t)event.param3;//提取次数
-
-		switch(event.param1)
-		{
-			case LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS:
-			{
-				pocLedIdtAttr.jumpperiod = 1000;/*恢复闪烁线程周期*/
-				lv_poc_led_status_all_close();
-				Led_CallBack.pf_poc_led_jump_status = NULL;
-
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS:
-			{
-				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
-
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
-			{
-				switch(pocLedIdtAttr.before_status)
-				{
-					case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
-					{
-						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
-						break;
-					}
-					case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
-					{
-						lv_poc_red_open_green_close();
-						break;
-					}
-					case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
-					{
-						lv_poc_red_close_green_open();
-						break;
-					}
-					case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
-					{
-						pocLedIdtAttr.jumpperiod = pocLedIdtAttr.before_jumpperiod;
-						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
-						break;
-					}
-					default:
-					{
-						Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_close_green_jump;
-						break;
-					}
-				}
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
-			{
-				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS;
-				pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
-				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
-			{
-				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS;
-				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
-			{
-				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS;
-				lv_poc_red_open_green_close();
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
-			{
-				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS;
-				lv_poc_led_status_all_close();
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
-			{
-				pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS;
-				lv_poc_red_close_green_open();
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_CONNECT_NETWORK_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_SUCCESS_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_SUCCESS_STATUS:
-			{
-				lv_poc_red_close_green_open();
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_FAIL_STATUS:
-			case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_FAIL_STATUS:
-			{
-				lv_poc_red_open_green_close();
-				break;
-			}
-
-			case LVPOCLEDIDTCOM_SIGNAL_FAIL_STATUS:
-			{
-				lv_poc_led_status_all_open();
-				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_red_open_green_jump;
-				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_close_red_jump;
-				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_open_red_jump;
-				Led_CallBack.pf_poc_led_jump_status = callback_lv_poc_green_jump_red_jump;
-				pocLedIdtAttr.isReady = false;
-				osiThreadExit();
-				return;
-			}
-
-			case LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND:
-			case LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND:
-			{
-				Lv_Poc_Led_Status_Task_Handle_Other(event.param1, event.param2, event.param3);
-				break;
-			}
-
-			default:
-			{
-				isValid = false;
-				break;
-			}
-		}
-
-		if (isValid)
-		{
-			osiEvent_t event_temp = {0};
-			event_temp.param1 = pocLedIdtAttr.jumpperiod;
-			osiEventTrySend(pocLedIdtAttr.jumpThread, &event_temp, 100);
-		}
-
-		isValid = true;
-	}
-}
-
-/*
-	  name : poc_Led_Entry
-	  param : none
-	  date : 2020-06-02
-*/
-static void poc_Led_Jump_Entry(void *param)
+static void lv_poc_led_entry(void *param)
 {
 	osiEvent_t event = {0};
+	pocLedIdtAttr.isReady = true;
 
 	while(1)
 	{
-		if(osiEventTryWait(pocLedIdtAttr.jumpThread , &event, pocLedIdtAttr.jumpperiod))
+		if(osiEventWait(pocLedIdtAttr.thread, &event))
 		{
-
-		}
-		else//查询回调
-		{
-			if(pocLedIdtAttr.jumpcount != 0 && pocLedIdtAttr.jumpperiod != 0)
+			if(event.id != 200)
 			{
-				if(pocLedIdtAttr.jumpcount <= 9) pocLedIdtAttr.jumpcount--;
-				Lv_Poc_Led_Status_Callback_Check(Led_CallBack.pf_poc_led_jump_status);
+				continue;
 			}
-		}
 
+			if(event.param1 <= LVPOCLEDIDTCOM_SIGNAL_STATUS_START
+				|| event.param1 >= LVPOCLEDIDTCOM_SIGNAL_STATUS_END)
+			{
+				continue;
+			}
+
+			if(event.param1 == pocLedIdtAttr.last_status)
+			{
+				continue;
+			}
+
+			if(event.param2)
+			{
+				pocLedIdtAttr.jumpperiod = (uint16_t)event.param2;//提取周期
+				if(pocLedIdtAttr.task != NULL)
+				{
+					lv_task_set_period(pocLedIdtAttr.task, pocLedIdtAttr.jumpperiod);
+				}
+			}
+
+			if(event.param3)
+				pocLedIdtAttr.jumpcount = (uint16_t)event.param3;//提取次数
+
+			switch(event.param1)
+			{
+				case LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS:
+				{
+					pocLedIdtAttr.jumpperiod = 1000;
+					if(pocLedIdtAttr.task == NULL)
+					{
+						pocLedIdtAttr.task = lv_task_create(Lv_Poc_Led_Status_Callback_Check, pocLedIdtAttr.jumpperiod, LV_TASK_PRIO_LOW, NULL);
+					}
+					lv_poc_refr_task_once(lv_poc_led_status_all_close, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS:
+				case LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS:
+				{
+					pocLedIdtAttr.pledjump = callback_lv_poc_red_close_green_jump;
+					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS;
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
+				case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
+				{
+					switch(pocLedIdtAttr.before_status)
+					{
+						case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
+						{
+							pocLedIdtAttr.pledjump = callback_lv_poc_red_close_green_jump;
+							break;
+						}
+						case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
+						{
+							lv_poc_refr_task_once(lv_poc_red_close_green_open, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+							break;
+						}
+						case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
+						{
+							pocLedIdtAttr.jumpperiod = pocLedIdtAttr.before_jumpperiod;
+							pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
+							break;
+						}
+						default:
+						{
+							pocLedIdtAttr.pledjump = callback_lv_poc_red_close_green_jump;
+							break;
+						}
+					}
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
+				case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
+				case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
+				{
+					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS;
+					pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
+					pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS:
+				{
+					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS;
+					pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
+				{
+					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS;
+					lv_poc_refr_task_once(lv_poc_red_open_green_close, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
+				{
+					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS;
+					lv_poc_refr_task_once(lv_poc_red_close_green_open, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_CONNECT_NETWORK_STATUS:
+				case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_SUCCESS_STATUS:
+				case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_SUCCESS_STATUS:
+				{
+					lv_poc_refr_task_once(lv_poc_red_close_green_open, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_FAIL_STATUS:
+				case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_FAIL_STATUS:
+				{
+					lv_poc_refr_task_once(lv_poc_red_open_green_close, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_FAIL_STATUS:
+				{
+					return;
+				}
+
+				case LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND:
+				case LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND:
+				case LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND:
+	            case LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND:
+				{
+					Lv_Poc_Led_Status_Task_Handle_Other(event.param1, event.param2, event.param3);
+					break;
+				}
+
+				default:
+				{
+					lv_poc_refr_task_once(lv_poc_led_status_all_open, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					pocLedIdtAttr.pledjump = callback_lv_poc_red_open_green_jump;
+					pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
+					pocLedIdtAttr.pledjump = callback_lv_poc_green_open_red_jump;
+					pocLedIdtAttr.pledjump = callback_lv_poc_green_jump_red_jump;
+					pocLedIdtAttr.isReady = false;
+					osiThreadExit();
+					break;
+				}
+			}
+			pocLedIdtAttr.last_status = event.param1;
+		}
 	}
 }
 
@@ -279,7 +240,7 @@ lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t
 	event.param1 = signal;
 	event.param2 = (LVPOCIDTCOM_Led_Period_t)ctx;
 	event.param3 = (LVPOCIDTCOM_Led_Jump_Count_t)count;
-	return osiEventSend(pocLedIdtAttr.thread, &event);
+	return osiEventTrySend(pocLedIdtAttr.thread, &event, 500);
 }
 
 /*
@@ -288,9 +249,9 @@ lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t
 	  date : 2020-06-02
 */
 static void
-lv_poc_led_status_all_close(void)
+lv_poc_led_status_all_close(lv_task_t *task)
 {
-	Led_CallBack.pf_poc_led_jump_status = NULL;
+	pocLedIdtAttr.pledjump = NULL;
 	poc_set_green_status(false);
 	poc_set_red_status(false);
 }
@@ -301,9 +262,9 @@ lv_poc_led_status_all_close(void)
 	  date : 2020-06-02
 */
 static void
-lv_poc_led_status_all_open(void)
+lv_poc_led_status_all_open(lv_task_t *task)
 {
-	Led_CallBack.pf_poc_led_jump_status = NULL;
+	pocLedIdtAttr.pledjump = NULL;
 	poc_set_green_status(true);
 	poc_set_red_status(true);
 }
@@ -314,9 +275,9 @@ lv_poc_led_status_all_open(void)
 	  date : 2020-06-02
 */
 static void
-lv_poc_red_open_green_close(void)
+lv_poc_red_open_green_close(lv_task_t *task)
 {
-	Led_CallBack.pf_poc_led_jump_status = NULL;
+	pocLedIdtAttr.pledjump = NULL;
 	poc_set_green_status(false);
 	poc_set_red_status(true);
 }
@@ -327,9 +288,9 @@ lv_poc_red_open_green_close(void)
 	  date : 2020-06-02
 */
 static void
-lv_poc_red_close_green_open(void)
+lv_poc_red_close_green_open(lv_task_t *task)
 {
-	Led_CallBack.pf_poc_led_jump_status = NULL;
+	pocLedIdtAttr.pledjump = NULL;
 	poc_set_green_status(true);
 	poc_set_red_status(false);
 }
@@ -340,7 +301,7 @@ lv_poc_red_close_green_open(void)
 	  date : 2020-06-02
 */
 static void
-callback_lv_poc_red_close_green_jump(osiEvent_t *event)
+callback_lv_poc_red_close_green_jump(void)
 {
 	poc_set_red_status(false);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
@@ -353,7 +314,7 @@ callback_lv_poc_red_close_green_jump(osiEvent_t *event)
 	  date : 2020-06-02
 */
 static void
-callback_lv_poc_red_open_green_jump(osiEvent_t *event)
+callback_lv_poc_red_open_green_jump(void)
 {
 	poc_set_red_status(true);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
@@ -366,7 +327,7 @@ callback_lv_poc_red_open_green_jump(osiEvent_t *event)
 	  date : 2020-06-02
 */
 static void
-callback_lv_poc_green_close_red_jump(osiEvent_t *event)
+callback_lv_poc_green_close_red_jump(void)
 {
 	poc_set_green_status(false);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
@@ -379,7 +340,7 @@ callback_lv_poc_green_close_red_jump(osiEvent_t *event)
 	  date : 2020-06-02
 */
 static void
-callback_lv_poc_green_open_red_jump(osiEvent_t *event)
+callback_lv_poc_green_open_red_jump(void)
 {
 	poc_set_green_status(true);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
@@ -393,26 +354,12 @@ callback_lv_poc_green_open_red_jump(osiEvent_t *event)
 	  date : 2020-06-02
 */
 static void
-callback_lv_poc_green_jump_red_jump(osiEvent_t *event)
+callback_lv_poc_green_jump_red_jump(void)
 {
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
 	poc_set_red_status(pocLedIdtAttr.ledstatus);
 	pocLedIdtAttr.ledstatus = ! pocLedIdtAttr.ledstatus;
 	poc_set_green_status(pocLedIdtAttr.ledstatus);
-}
-
-/*
-	  name : Lv_Poc_Led_Status_Callback
-  describe : 回调函数
-	 param : none
-	  date : 2020-06-02
-*/
-static void
-Lv_Poc_Led_Status_Callback(void *param)
-{
-    memset(&Led_CallBack, 0, sizeof(Led_CallBack));
-
-    Led_CallBack.pf_poc_led_jump_status  = param;
 }
 
 /*
@@ -422,11 +369,21 @@ Lv_Poc_Led_Status_Callback(void *param)
 	  date : 2020-06-02
 */
 static void
-Lv_Poc_Led_Status_Callback_Check(void *param)
+Lv_Poc_Led_Status_Callback_Check(lv_task_t *task)
 {
+	if(pocLedIdtAttr.jumpcount == 0 || pocLedIdtAttr.pledjump == NULL)
+	{
+		return;
+	}
+	else if(pocLedIdtAttr.jumpcount <= 9)
+	{
+		pocLedIdtAttr.jumpcount--;
+	}
 
-	if(param != NULL)
-	((lv_poc_led_jump_status)param)(NULL);//回调
+	if(pocLedIdtAttr.pledjump != NULL)
+	{
+		(pocLedIdtAttr.pledjump)();//回调
+	}
 }
 
 /*
@@ -442,13 +399,25 @@ Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 	{
 		case LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND:
 		{
-			publvPocGpsIdtComCloseGps();
+			publvPocGpsIdtComSleep();
 			break;
 		}
 
 		case LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND:
 		{
-			publvPocGpsIdtComOpenGps();
+			publvPocGpsIdtComWake();
+			break;
+		}
+
+		case LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND:
+		{
+			lv_poc_notation_del();
+			break;
+		}
+
+		case LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND:
+		{
+
 			break;
 		}
 	}

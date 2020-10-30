@@ -69,7 +69,7 @@ void lv_poc_shutdown_charge_Animation_Task(void *ctx)
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 	while(1)
 	{
-		osiThreadSleep(1000);
+		osiThreadSleepRelaxed(1000, OSI_WAIT_FOREVER);
 	}
 }
 

@@ -239,7 +239,7 @@ void prvPocAudioRecorderThreadCallback(void *ctx)
 
 	while(recorder->callback == NULL || recorder->prvSwapData == NULL || recorder->prvSwapDataLength < 1 || recorder->writer == NULL || recorder->reader == NULL)
 	{
-		osiThreadSleep(30);
+		osiThreadSleepRelaxed(30, OSI_WAIT_FOREVER);
 	}
 	memset(&event, 0, sizeof(osiEvent_t));
 	recorder->prvThreadID = osiThreadCurrent();
@@ -529,8 +529,8 @@ osiThread_t *pocAudioRecorderThread(void)
 	return RecorderThreadID;
 }
 
-//自测录音
-#define RECORDER_FILE_NAME "/example.pcm"
+//自测录音 play mode
+#define RECORDER_FILE_NAME "/example_playmode.pcm"
 static auWriter_t *pocwriter = NULL;
 static auRecorder_t *pocrecorder = NULL;
 extern ssize_t vfs_file_size(const char *path);
@@ -547,7 +547,7 @@ void lv_poc_stop_recordwriter(void)
 {
 	if(pocrecorder == NULL || pocwriter == NULL)
 	{
-		return ;
+		return;
 	}
 
     auRecorderStop(pocrecorder);
@@ -574,6 +574,88 @@ void lv_poc_start_playfile(void){
 
 	auPlayerWaitFinish(player, OSI_WAIT_FOREVER);
 	auPlayerDelete(player);
+}
+
+//自测录音 poc mode
+#define POCMODE_RECORDER_FILE_NAME "/example_pocmode.pcm"
+static auWriter_t *pocmodewriter = NULL;
+static auRecorder_t *pocmoderecorder = NULL;
+static auPlayer_t *pocmodeplayer = NULL;
+
+void lv_poc_start_recordwriter_pocmode(void)
+{
+	if(pocmodewriter == NULL && pocmoderecorder == NULL)
+	{
+	    pocmodewriter = (auWriter_t *)auFileWriterCreate(POCMODE_RECORDER_FILE_NAME);
+	    pocmoderecorder = auRecorderCreate();
+	}
+
+	if(pocmodewriter == NULL || pocmoderecorder == NULL)
+	{
+		return;
+	}
+    auRecorderStartWriter(pocmoderecorder, AUDEV_RECORD_TYPE_POC, AUSTREAM_FORMAT_PCM, NULL, pocmodewriter);
+
+	//poc mode
+	if(!audevStartPocMode(AUPOC_STATUS_HALF_DUPLEX))
+	{
+		OSI_LOGI(0, "[testpoc]recorder start poc mode failed");
+		auRecorderStop(pocmoderecorder);
+		return;
+	}
+
+	if(!audevPocModeSwitch(LV_POC_MODE_RECORDER))
+	{
+		if(!audevPocModeSwitch(LV_POC_MODE_RECORDER))
+		{
+			OSI_LOGI(0, "[testpoc]switch recorder failed");
+			return;
+		}
+		OSI_LOGI(0, "[testpoc]switch recorder success");
+	}
+	OSI_LOGI(0, "[testpoc]recorder poc mode start");
+}
+
+static
+void lv_poc_stop_recordwriter_pocmode(void)
+{
+	if(pocmoderecorder == NULL || pocmodewriter == NULL)
+	{
+		return;
+	}
+
+    auRecorderStop(pocmoderecorder);
+    auRecorderDelete(pocmoderecorder);
+    auWriterDelete(pocmodewriter);
+
+	pocmoderecorder = NULL;
+	pocmodewriter = NULL;
+    vfs_file_size(POCMODE_RECORDER_FILE_NAME);
+
+	if(!audevStopPocMode())
+	{
+		OSI_LOGI(0, "[testpoc]stop poc mode failed");
+		return;
+	}
+	OSI_LOGI(0, "[testpoc]recorder poc mode stop");
+}
+
+void lv_poc_start_playfile_pocmode(void)
+{
+	lv_poc_stop_recordwriter_pocmode();/*stop record*/
+
+	if(pocmodeplayer == NULL)
+	{
+		pocmodeplayer = auPlayerCreate();
+	}
+	auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
+	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
+	auPlayerStartFile(pocmodeplayer, AUSTREAM_FORMAT_PCM, params, POCMODE_RECORDER_FILE_NAME);
+	OSI_LOGI(0, "[testpoc]poc mode start playing");
+	auPlayerWaitFinish(pocmodeplayer, OSI_WAIT_FOREVER);
+	auPlayerDelete(pocmodeplayer);
+	pocmodeplayer = NULL;
+	OSI_LOGI(0, "[testpoc]poc mode stop playing");
 }
 
 #endif

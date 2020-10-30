@@ -1,4 +1,4 @@
-
+﻿
 #include "gps_nmea.h"
 
 
@@ -9,6 +9,7 @@
 uint8_t NMEA_Comma_Pos(uint8_t *buf,uint8_t cx)
 {
 	uint8_t *p=buf;
+	if(p == NULL) return 0;
 	while(cx)
 	{
 		if(*buf=='*'||*buf<' '||*buf>'z')return 0XFF;//遇到'*'或者非法字符,则不存在第cx个逗号
@@ -39,6 +40,7 @@ int NMEA_Str2num(uint8_t *buf,uint8_t *dx)
 	uint8_t ilen=0,flen=0,i;
 	uint8_t mask=0;
 	int res;
+	if(p == NULL)  return 0;
 	while(1) //得到整数和小数的长度
 	{
 		if(*p=='-'){mask|=0X02;p++;}//是负数
@@ -78,15 +80,23 @@ void NMEA_GPGSV_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	uint8_t *p,*p1,dx;
 	uint8_t len,i,j,slx=0;
 	uint8_t posx;
+	if(buf == NULL || gpsx == NULL) return;
 	p=buf;
+	if(p == NULL)
+		return;
 	p1=(uint8_t*)strstr((const char *)p,"$GPGSV");
-	if (p1 == NULL) return;
+	if (p1 == NULL)
+		return;
 	len=p1[7]-'0';								//得到GPGSV的条数
 	posx=NMEA_Comma_Pos(p1,3); 					//得到可见卫星总数
 	if(posx!=0XFF)gpsx->svnum=NMEA_Str2num(p1+posx,&dx);
 	for(i=0;i<len;i++)
 	{
+		if(p == NULL)
+			return;
 		p1=(uint8_t*)strstr((const char *)p,"$GPGSV");
+		if(p1 == NULL)
+			return;
 		for(j=0;j<4;j++)
 		{
 			posx=NMEA_Comma_Pos(p1,4+j*4);
@@ -115,7 +125,10 @@ void NMEA_BDGSV_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	uint8_t *p,*p1,dx;
 	uint8_t len,i,j,slx=0;
 	uint8_t posx;
+	if(buf == NULL || gpsx == NULL) return;
 	p=buf;
+	if(p == NULL)
+		return;
 	p1=(uint8_t*)strstr((const char *)p,"$BDGSV");
 	if (p1 == NULL) return;
 	len=p1[7]-'0';								//得到BDGSV的条数
@@ -124,6 +137,7 @@ void NMEA_BDGSV_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	for(i=0;i<len;i++)
 	{
 		p1=(uint8_t*)strstr((const char *)p,"$BDGSV");
+		if(p1 == NULL) return;
 		for(j=0;j<4;j++)
 		{
 			posx=NMEA_Comma_Pos(p1,4+j*4);
@@ -151,6 +165,7 @@ void NMEA_GNGGA_Analysis(nmea_msg *gpsx,uint8_t *buf)
 {
 	uint8_t *p1,dx;
 	uint8_t posx;
+	if(buf == NULL || gpsx == NULL) return;
 	p1=(uint8_t*)strstr((const char *)buf,"$GNGGA");
 	if (p1 == NULL) return;
 	posx=NMEA_Comma_Pos(p1,6);								//得到GPS状态
@@ -169,6 +184,7 @@ void NMEA_GNGSA_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	uint8_t *p1,dx;
 	uint8_t posx;
 	uint8_t i;
+	if(buf == NULL || gpsx == NULL) return;
 	p1=(uint8_t*)strstr((const char *)buf,"$GNGSA");
 	if (p1 == NULL) return;
 	posx=NMEA_Comma_Pos(p1,2);								//得到定位类型
@@ -196,6 +212,7 @@ void NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 	uint8_t posx;
 	uint32_t temp;
 	float rs;
+	if(buf == NULL || gpsx == NULL) return;
 	p1=(uint8_t*)strstr((const char *)buf,"$GNRMC");//"$GNRMC",经常有&和GNRMC分开的情况,故只判断GPRMC.
 	if (p1 == NULL) return;
 	posx=NMEA_Comma_Pos(p1,1);								//得到UTC时间
@@ -247,6 +264,8 @@ void NMEA_GNRMC_Analysis(nmea_msg *gpsx,uint8_t *buf)
 //buf:接收到的GPS数据缓冲区首地址
 void GPS_Analysis(nmea_msg *gpsx,uint8_t *buf)
 {
+	if(gpsx == NULL || buf == NULL)
+		return;
 	NMEA_GPGSV_Analysis(gpsx,buf);	//GPGSV解析
 	NMEA_BDGSV_Analysis(gpsx,buf);	//BDGSV解析
 	NMEA_GNGGA_Analysis(gpsx,buf);	//GNGGA解析
