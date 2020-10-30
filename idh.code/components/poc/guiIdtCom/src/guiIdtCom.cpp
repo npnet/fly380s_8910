@@ -1409,13 +1409,11 @@ static void LvGuiIdtCom_get_member_list_timer_cb(void *ctx)
 {
 	if(!pocIdtAttr.isPocMemberListBuf)
 	{
-		IDT_TRACE("member_list_timer cb query group \n");
 		if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_CUR_GROUP, NULL))
 		{
 			return;
 		}
 	}
-	IDT_TRACE("member_list_timer osiTimerStart cb query group \n");
 	osiTimerStartRelaxed(pocIdtAttr.get_member_list_timer, 1000, OSI_WAIT_FOREVER);
 }
 
@@ -1436,7 +1434,7 @@ static void LvGuiIdtCom_get_group_list_timer_cb(void *ctx)
 	sprintf(cOutstr, "[idtlockgroup][grouprefr]%s(%d):start get lock_group_status and query include_self group", __func__, __LINE__);
 	OSI_LOGI(0, cOutstr);
 	#endif
-	osiTimerStartRelaxed(pocIdtAttr.get_lock_group_status_timer, 100, OSI_WAIT_FOREVER);
+	osiTimerStartRelaxed(pocIdtAttr.get_lock_group_status_timer, 500, OSI_WAIT_FOREVER);
 
 	#if 0
 	osiTimerStart(pocIdtAttr.get_group_list_timer, 1000 * 60 * 5, OSI_WAIT_FOREVER);
@@ -1654,8 +1652,8 @@ void IDT_Entry(void*)
     m_IdtUser.Reset();
 
     // 0关闭日志,1打开日志
-    g_iLog = 0;
-    //g_iLog = 1;
+    //g_iLog = 0;
+    g_iLog = 1;
 
     static IDT_CALLBACK_s CallBack;
     memset(&CallBack, 0, sizeof(CallBack));
@@ -1688,6 +1686,7 @@ void IDT_Entry(void*)
 
 	#if 1
     IDT_Start(NULL, 1, (char*)poc_config->ip_address, poc_config->ip_port, NULL, 0, (char*)poc_config->account_name, (char*)poc_config->account_passwd, 1, &CallBack, 0, 20000, 0);
+    //IDT_Start(NULL, 1, (char*)"106.74.78.213:10000", 10000, NULL, 0, (char*)"81000102", (char*)"81000102", 1, &CallBack, 0, 20000, 0);
 	#else
 	IDT_Start(NULL, 1, (char*)"124.160.11.22:10200", 10000, NULL, 0, (char*)"89860620180041632069", (char*)"2014", 1, &CallBack, 0, 20000, 0);
 	#endif
@@ -2299,7 +2298,6 @@ static void prvPocGuiIdtTaskHandleGroupList(uint32_t id, uint32_t ctx)
 		        checked_current = true;
 		    }
 
-			IDT_TRACE("[song] prvPocGuiIdtTaskHandleGroupList\n");
 		    lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
 
 		    if(!pocIdtAttr.isPocMemberListBuf)
@@ -2706,7 +2704,7 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_REP:
 		{
-			if(ctx == 0)
+			if(ctx == 0 || !poc_get_lcd_status())
 			{
 				break;
 			}
@@ -4074,6 +4072,17 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 			break;
 		}
 
+		case LVPOCGUIIDTCOM_SIGNAL_SCREEN_ON_IND:
+		{
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_LOCK_GROUP_STATUS_IND, NULL);
+			break;
+		}
+
+		case LVPOCGUIIDTCOM_SIGNAL_SCREEN_OFF_IND:
+		{
+			break;
+		}
+
 		default:
 		{
 			break;
@@ -4274,7 +4283,6 @@ static void prvPocGuiIdtTaskHandleRecorderSuspendorResumeOpt(uint32_t id, uint32
 
 		default:
 		{
-			OSI_LOGI(0, "[songthread]param error");
 			break;
 		}
 	}
@@ -4457,6 +4465,8 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			case LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_CUR_GROUP:
 			case LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF:
 			case LVPOCGUIIDTCOM_SIGNAL_GET_LOCK_GROUP_STATUS_IND:
+			case LVPOCGUIIDTCOM_SIGNAL_SCREEN_ON_IND:
+			case LVPOCGUIIDTCOM_SIGNAL_SCREEN_OFF_IND:
 			{
 				prvPocGuiIdtTaskHandleOther(event.param1, event.param2);
 				break;

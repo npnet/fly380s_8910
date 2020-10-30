@@ -370,7 +370,7 @@ poc_set_lcd_status(IN int8_t wakeup)
 
 /*
       name : poc_get_lcd_status
-    return : get lcd state 0-open 1-close
+    return : get lcd state 1-open 0-close
       date : 2020-03-30
 */
 OUT bool
