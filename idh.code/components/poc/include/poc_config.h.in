@@ -82,6 +82,13 @@
  */
 #cmakedefine CONFIG_POC_AUDIO_SPEAKER_WOMEN
 
+
+/**
+ * Wheth the POC GPS is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_GPS_SUPPORT
+
 /**
  * Wheth the POC keypad light is enabled.
  *

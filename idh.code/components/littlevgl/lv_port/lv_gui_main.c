@@ -468,7 +468,7 @@ void lvGuiScreenOff(void)
     drvLcdSleep(d->lcd);
     d->screen_on = false;
 
-	//close report gps
+	//close
 	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_REPORT, NULL);
 	lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND, 0, 0);
 }
@@ -490,9 +490,10 @@ void lvGuiScreenOn(void)
 	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
     d->screen_on = true;
 
-	//open report gps
+	//open
 	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_REPORT, NULL);
 	lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND, 0, 0);
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SCREEN_ON_IND, NULL);
 }
 
 /**

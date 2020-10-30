@@ -90,6 +90,12 @@ config POC_GUI_KEYPAD_LIGHT_SUPPORT
     help
         poc gui should be supported.
 
+config POC_GUI_GPS_SUPPORT
+    bool "POC gui gps supported"
+    default n
+    help
+        poc gui should be supported.
+		
 config POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE
     int "receive idt data by buff"
     default 3

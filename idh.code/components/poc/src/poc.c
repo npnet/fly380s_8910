@@ -65,12 +65,7 @@ static void pocIdtStartHandleTask(void * ctx)
 //#ifdef CONFIG_ABUP_SUPPORT
 //	abup_check_update_result();
 //#endif
-
-	#ifndef SUPPORT_IDT
 	lvPocGuiIdtCom_log();
-	#else
-	lvPocGuiIdtComTest_Init();
-    #endif
 
 	osiThreadExit();
 }
@@ -165,8 +160,10 @@ void pocStart(void *ctx)
     drvLcdOpenV2(lcd);
     drvLcdFill(lcd, 0, NULL, true);
     drvLcdSetBackLightEnable(lcd, false);
-	//gps
+
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	publvPocGpsIdtComInit();
+#endif
 
 	//获取开机方式
 	uint32_t boot_causes = osiGetBootCauses();

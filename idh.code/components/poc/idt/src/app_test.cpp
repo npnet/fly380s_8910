@@ -628,7 +628,7 @@ static void IDT_Entry(void*)
 
     CallBack.pfDbg              = Test_callback_IDT_Dbg;
 
-    IDT_Start(NULL, 1, (char*)"106.74.78.216", 10000, NULL, 0, (char*)"6022", (char*)"6022", 1, &CallBack, 0, 20000, 0);
+    IDT_Start(NULL, 1, (char*)"106.74.78.213:10000", 10000, NULL, 0, (char*)"81000102", (char*)"81000102", 1, &CallBack, 0, 20000, 0);
 }
 
 static void appTestTaskEntry(void *argument)
@@ -648,12 +648,6 @@ static void appTestTaskEntry(void *argument)
         {
             i = iDelay + 1;
         }
-
-		if(i == 300)
-		{
-			OSI_LOGE(0, "[song]app to sleep");
-			osiPanic();
-		}
     }
 }
 
