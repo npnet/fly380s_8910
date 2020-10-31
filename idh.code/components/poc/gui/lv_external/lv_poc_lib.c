@@ -684,7 +684,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 
 	while(1)
 	{
-		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 450))
+		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 80))
 		{
 			if(event.id != 101)
 			{
@@ -717,12 +717,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					auPlayerStop(prv_play_voice_one_time_player);
 					isPlayVoice = false;
 					is_poc_play_voice = false;
-
-					if(lv_poc_get_speak_tone_status())
-					{
-						lv_poc_set_speak_tone_status(false);
-						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP_RECORD_IND, NULL);
-					}
 
 					if(voice_queue_reader == voice_queue_writer)
 					{
@@ -2892,28 +2886,6 @@ void lv_poc_set_group_refr(bool status)
 bool lv_poc_is_group_list_refr(void)
 {
 	return lv_poc_group_list_refr;
-}
-
-/*
-	  name : lv_poc_set_speak_tone_status
-	  param :
-	  date : 2020-10-10
-*/
-void
-lv_poc_set_speak_tone_status(bool status)
-{
-	is_play_tone_status = status;
-}
-
-/*
-	  name : lv_poc_get_speak_tone_status
-	  param :
-	  date : 2020-10-10
-*/
-bool
-lv_poc_get_speak_tone_status(void)
-{
-	return is_play_tone_status;
 }
 
 /*

@@ -444,6 +444,7 @@ public:
 	osiTimer_t * auto_login_timer;
 	osiTimer_t * monitor_pptkey_timer;
 	osiTimer_t * monitor_recorder_timer;
+	osiTimer_t * play_tone_timer;
 	bool onepoweron;
 	char build_self_name[16];
 #ifndef MUCHGROUP
@@ -945,12 +946,10 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 	{
 	    m_IdtUser.m_iRxCount = m_IdtUser.m_iRxCount + 1;
 
-		#if 1
 		if(m_IdtUser.m_iRxCount == 1)
 		{
 			audevSetPlayVolume(0);/*关闭音量*/
 		}
-		#endif
 
 		pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pucBuf, iLen);
 		pocIdtAttr.check_listen_count++;
@@ -1388,19 +1387,19 @@ static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx)
 	#endif
 }
 
-static void LvGuiIdtCom_start_speak_voice(void)
+static void LvGuiIdtCom_start_play_tone_timer_cb(void *ctx)
 {
-	pocIdtAttr.start_speak_voice_timer_running = false;
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+	pocIdtAttr.start_speak_voice_timer_running = false;
 }
 
 static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
 {
 	//goto play start speak tone
 	poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Speak, 30, true);
-	lv_poc_set_speak_tone_status(true);
+	osiTimerStart(pocIdtAttr.play_tone_timer, 200);//200ms
 
 	#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
 	char cOutstr[256] = {0};
@@ -2052,12 +2051,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				//monitor recorder thread
 				osiTimerStart(pocIdtAttr.monitor_recorder_timer, 10000);//10S
 			}
-			break;
-		}
-
-		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP_RECORD_IND:
-		{
-			LvGuiIdtCom_start_speak_voice();
 			break;
 		}
 
@@ -4336,7 +4329,6 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP:
 			case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND:
 			case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP:
-			case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP_RECORD_IND:
 			{
 				prvPocGuiIdtTaskHandleSpeak(event.param1, event.param2);
 				break;
@@ -4518,6 +4510,7 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.auto_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_auto_login_timer_cb, NULL);//注册自动登录定时器
 	pocIdtAttr.monitor_pptkey_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_ppt_release_timer_cb, NULL);//检查ppt键定时器
 	pocIdtAttr.monitor_recorder_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_recorder_timer_cb, NULL);//检查是否有人在录音定时器
+	pocIdtAttr.play_tone_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_start_play_tone_timer_cb, NULL);
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
