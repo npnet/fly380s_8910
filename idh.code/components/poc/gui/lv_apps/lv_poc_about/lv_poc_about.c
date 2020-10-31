@@ -62,7 +62,7 @@ static char lv_poc_about_text_accout[64] = {0};
 static char lv_poc_about_text_imei[64] = {0};
 static char lv_poc_about_text_iccid[64] = {0};
 static char lv_poc_about_text_sysversion[64] = {0};
-static char lv_poc_about_text_version_number[64] = {0};
+static char lv_poc_about_text_version[64] = {0};
 static char lv_poc_about_text_update[64] = {0};
 
 
@@ -94,7 +94,7 @@ lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
     {
         NULL,
         "版本"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-        lv_poc_about_text_version_number, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+        lv_poc_about_text_version, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
     },
 
     {
@@ -146,8 +146,8 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_poc_about_text_sysversion[0] = 0;
 	strcpy(lv_poc_about_text_sysversion, "FLY380S");
 
-	lv_poc_about_text_version_number[0] = 0;
-	strcpy(lv_poc_about_text_version_number, "V35.2-D10.30");
+	lv_poc_about_text_version[0] = 0;
+	strcpy(lv_poc_about_text_version, "V35.2-D10.31");
 
 	lv_poc_about_text_update[0] = 0;
 	strcpy(lv_poc_about_text_update, "检查更新");

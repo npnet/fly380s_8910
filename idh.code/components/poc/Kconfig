@@ -98,7 +98,7 @@ config POC_GUI_TOUCH_SUPPORT
 		
 config POC_GUI_GPS_SUPPORT
     bool "POC gui gps supported"
-    default n
+    default y
     help
         poc gui should be supported.
 		

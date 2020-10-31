@@ -11,6 +11,8 @@ void publvPocGpsIdtComInit(void);
 
 bool pubPocIdtGpsLocationStatus(void);
 
+bool pubPocIdtIsHaveExistGps(void);
+
 void publvPocGpsIdtComSleep(void);
 
 void publvPocGpsIdtComWake(void);

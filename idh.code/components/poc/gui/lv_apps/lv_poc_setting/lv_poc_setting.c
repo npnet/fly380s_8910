@@ -198,11 +198,10 @@ static void lv_poc_setting_torch_btn_cb(lv_obj_t * obj)
 {
     lv_obj_t * ext_obj = NULL;
 	ext_obj = (lv_obj_t *)obj->user_data;
-
-	if(poc_get_touch_blacklight())
-	{
-      poc_set_touch_blacklight(false);
-      lv_sw_off(ext_obj, LV_ANIM_OFF);
+	if(poc_get_torch_status())
+    {
+		poc_set_torch_status(false);
+    	lv_sw_off(ext_obj, LV_ANIM_OFF);
     }
     else
     {
