@@ -106,6 +106,8 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {
 
 static lvGuiContext_t gLvGuiCtx;
 static bool gLvScreenStatusFirstKey = true;
+extern bool pub_lv_poc_get_watchdog_status(void);
+extern void pub_lv_poc_set_watchdog_status(bool status);
 
 /**
  * flush display forcedly
@@ -262,10 +264,9 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 
 	    if((!pocKeypadHandle(data->key, data->state, NULL))&&(!lv_poc_charge_poweron_status()))
 	    {
-			extern bool lv_poc_watchdog_power_on_mode;
-			if(lv_poc_watchdog_power_on_mode == true)
+			if(pub_lv_poc_get_watchdog_status())
 			{
-				lv_poc_watchdog_power_on_mode = false;
+				pub_lv_poc_set_watchdog_status(false);
 				poc_setting_conf = lv_poc_setting_conf_read();
 				poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 			}
@@ -469,7 +470,6 @@ void lvGuiScreenOff(void)
     d->screen_on = false;
 
 	//close
-	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_REPORT, NULL);
 	lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND, 0, 0);
 }
 
@@ -491,9 +491,7 @@ void lvGuiScreenOn(void)
     d->screen_on = true;
 
 	//open
-	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_REPORT, NULL);
 	lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND, 0, 0);
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SCREEN_ON_IND, NULL);
 }
 
 /**

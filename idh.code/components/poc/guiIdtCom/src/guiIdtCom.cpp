@@ -33,6 +33,11 @@
 
 #include "cJSON.h"
 
+/*************************************************
+*
+*                  EXTERN
+*
+*************************************************/
 extern "C" lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
 
 #define GUIIDTCOM_DEBUG (0)
@@ -1734,7 +1739,6 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 
 		    if (UT_STATUS_ONLINE > login_info->status && pocIdtAttr.loginstatus_t != LVPOCLEDIDTCOM_SIGNAL_LOGIN_EXIT)
 		    {
-				//当前未登录
 				if(login_info->cause == 33)
 				{//账号在别处被登录
 					poc_play_voice_one_time(LVPOCAUDIO_Type_This_Account_Already_Logined, 50, true);
@@ -1742,7 +1746,8 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 				}
 				else
 				{//当前未登录
-					if(pocIdtAttr.onepoweron == false)/*开机后登陆成功之前只播一次*/
+					if(pocIdtAttr.onepoweron == false
+						&& !lv_poc_watchdog_status())
 					{
 						play_voice_delay++;
 
@@ -1754,7 +1759,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 					}
 					pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED;
 
-					/*开启自动登陆功能*/
+					//开启自动登陆功能
 					osiTimerStart(pocIdtAttr.auto_login_timer, 20000);
 				}
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_1500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
@@ -1763,10 +1768,9 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 				osiTimerStop(pocIdtAttr.get_group_list_timer);
 				osiTimerStop(pocIdtAttr.get_lock_group_status_timer);
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SUSPEND_IND, NULL);
-				/*默认不重复登陆*/
 				#if 0
 			    pocIdtAttr.isReady = false;
-				#else/*可重复登陆*/
+				#else//can auto login
 				pocIdtAttr.isReady = true;
 				#endif
 				break;
@@ -1779,11 +1783,12 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS;
 
-				if(pocIdtAttr.onepoweron == false)
+				if(pocIdtAttr.onepoweron == false
+					&& !lv_poc_watchdog_status())
 				{
 					poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Login, 50, true);
 				}
-				pocIdtAttr.onepoweron = true;//已经成功登录过一次了
+				pocIdtAttr.onepoweron = true;
 				osiTimerStop(pocIdtAttr.auto_login_timer);
 				osiTimerStart(pocIdtAttr.monitor_recorder_timer, 20000);//20S
 			}
@@ -1792,7 +1797,6 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 
 			LvGuiIdtCom_self_info_json_parse_status();
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
-			/*上电获取群组列表*/
 			osiTimerStartRelaxed(pocIdtAttr.get_group_list_timer, 500, OSI_WAIT_FOREVER);
 			break;
 		}

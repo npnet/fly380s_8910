@@ -35,20 +35,61 @@
 //#include "abup_fota.h"
 //#include "abup_config.h"
 
-static void lv_poc_network_config_task(lv_task_t * task);
-static void lv_poc_power_on_picture(lv_task_t * task);
-bool lv_poc_watchdog_power_on_mode = false;
+static bool lv_poc_watchdog_power_on_mode = false;
+static lv_obj_t *poc_power_on_backgroup_sprd_image = NULL;
+static lv_obj_t *poc_power_on_backgroup_image = NULL;
+
+static
+void prv_lv_poc_network_config_task(lv_task_t * task)
+{
+	poc_net_work_config(POC_SIM_1);
+}
+
+static
+void prv_lv_poc_power_on_picture(lv_task_t * task)
+{
+	lv_poc_create_idle();
+}
+
+static
+void prv_lv_poc_power_on_sprd_image(lv_task_t * task)
+{
+	poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
+	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
+	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
+	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+}
+
+static
+void prv_lv_poc_power_on_backgroup_image(lv_task_t * task)
+{
+	poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
+	lv_img_set_auto_size(poc_power_on_backgroup_image, false);
+	lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
+	extern lv_img_dsc_t img_poweron_poc_logo_unicom;
+	lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
+}
+
+bool pub_lv_poc_get_watchdog_status(void)
+{
+	return lv_poc_watchdog_power_on_mode;
+}
+
+void pub_lv_poc_set_watchdog_status(bool status)
+{
+	lv_poc_watchdog_power_on_mode = status;
+}
 
 static void pocIdtStartHandleTask(void * ctx)
 {
     lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-	if(lv_poc_watchdog_power_on_mode == false)
+	if(!pub_lv_poc_get_watchdog_status())
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, 50, true);
 		osiThreadSleepRelaxed(5000, OSI_WAIT_FOREVER);
 	}
-	lv_poc_set_power_on_status(true);//设备准备就绪
 
+	lv_poc_set_power_on_status(true);
 	while(!poc_get_network_register_status(POC_SIM_1))
 	{
 		OSI_LOGI(0, "[poc][idt] checking network\n");
@@ -56,7 +97,7 @@ static void pocIdtStartHandleTask(void * ctx)
 	}
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
 
-	if(lv_poc_watchdog_power_on_mode == false)
+	if(!pub_lv_poc_get_watchdog_status())
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, 50, true);
 	}
@@ -74,50 +115,44 @@ static void pocIdtStartHandleTask(void * ctx)
 static void pocStartAnimation(void *ctx)
 {
 	lvGuiRequestSceenOn(3);
-	lv_poc_refr_task_once(lv_poc_network_config_task, 50, LV_TASK_PRIO_HIGH);
-	if(lv_poc_watchdog_power_on_mode == false)
+	lv_poc_refr_task_once(prv_lv_poc_network_config_task, 50, LV_TASK_PRIO_HIGH);
+	if(!pub_lv_poc_get_watchdog_status())
 	{
-		//魔方图片
-		lv_obj_t *poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
-		lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
-		lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
-		lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+		lv_poc_refr_task_once(prv_lv_poc_power_on_sprd_image, 50, LV_TASK_PRIO_HIGH);
 		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
 
-		//打开屏幕，除去花屏问题
 		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
 		drvLcdSetBackLightEnable(lcd, true);
-
 		poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
 		osiThreadSleepRelaxed(3000, OSI_WAIT_FOREVER);
-		lv_obj_del(poc_power_on_backgroup_sprd_image);
-		//开机图片
-		lv_obj_t *poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
-		lv_img_set_auto_size(poc_power_on_backgroup_image, false);
-		lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
-		extern lv_img_dsc_t img_poweron_poc_logo_unicom;
-		lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
-		lv_poc_setting_init();//开机配置
+
+		if(poc_power_on_backgroup_sprd_image != NULL)
+		{
+			lv_obj_del(poc_power_on_backgroup_sprd_image);
+		}
+		lv_poc_refr_task_once(prv_lv_poc_power_on_backgroup_image, 50, LV_TASK_PRIO_HIGH);
+		lv_poc_setting_init();
 		osiThreadSleepRelaxed(4000, OSI_WAIT_FOREVER);
 		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 		osiThreadSleepRelaxed(2800, OSI_WAIT_FOREVER);
- 		lv_poc_refr_task_once(lv_poc_power_on_picture, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+ 		lv_poc_refr_task_once(prv_lv_poc_power_on_picture, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
 		osiThreadSleepRelaxed(200, OSI_WAIT_FOREVER);
-		lv_obj_del(poc_power_on_backgroup_image);
+
+		if(poc_power_on_backgroup_image != NULL)
+		{
+			lv_obj_del(poc_power_on_backgroup_image);
+		}
 	}
 	else//watchdog
 	{
-		lv_poc_setting_init();//开机配置
+		lv_poc_setting_init();
 		osiThreadSleepRelaxed(3000, OSI_WAIT_FOREVER);
 		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
-		lv_poc_refr_task_once(lv_poc_power_on_picture,
+		lv_poc_refr_task_once(prv_lv_poc_power_on_picture,
 			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
-		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
-		drvLcdSetBackLightEnable(lcd, true);
 	}
 	lvGuiUpdateLastActivityTime();
-	//网络校时
 	lv_poc_sntp_Update_Time();
 
 	lvGuiReleaseScreenOn(3);
@@ -178,43 +213,17 @@ void pocStart(void *ctx)
 	else if(boot_causes == OSI_BOOTCAUSE_WDG
 		||  boot_causes == (OSI_BOOTCAUSE_CHARGE|OSI_BOOTCAUSE_WDG))
 	{
-		lv_poc_watchdog_power_on_mode = true;
+		pub_lv_poc_set_watchdog_status(true);
 		OSI_LOGI(0, "[song]poc boot mode is wdg power on");
 		lvGuiInit(pocLvglStart);
 	}
 	else//设备重启或正常开机
 	{
-		lv_poc_watchdog_power_on_mode = false;
+		pub_lv_poc_set_watchdog_status(false);
 		lvGuiInit(pocLvglStart);
 	}
 
 	osiThreadExit();
-}
-
-/*
-	  name : lv_poc_network_config_task
-	 param : none
-	author : wangls
-  describe : 设备配网任务
-	  date : 2020-06-30
-*/
-static
-void lv_poc_network_config_task(lv_task_t * task)
-{
-	poc_net_work_config(POC_SIM_1);
-}
-
-/*
-	  name : lv_poc_power_on_picture
-	 param : none
-	author : wangls
-  describe : 开机桌面
-	  date : 2020-07-03
-*/
-static
-void lv_poc_power_on_picture(lv_task_t * task)
-{
-	lv_poc_create_idle();
 }
 
 #endif
