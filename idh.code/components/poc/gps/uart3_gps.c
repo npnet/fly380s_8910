@@ -1,5 +1,4 @@
-﻿
-/***********************************************************************************/
+﻿/***********************************************************************************/
 #include "stdlib.h"
 #include "string.h"
 #include "poc_config.h"
@@ -15,6 +14,8 @@
 #include "guiOemCom_api.h"
 #include "uart3_gps.h"
 #include "lv_apps/lv_poc_led/lv_poc_led.h"
+
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 
 #define GPS_RX_BUF_SIZE (4*1024)
 #define GPS_TX_BUF_SIZE (4*1024)
@@ -506,5 +507,5 @@ lvPocGpsIdtCom_Msg(LVPOCIDTCOM_Gps_SignalType_t signal, void *ctx)
 	event.param2 = (uint32_t)ctx;
 	return osiEventSend(pocGpsIdtAttr.thread, &event);
 }
-
+#endif
 

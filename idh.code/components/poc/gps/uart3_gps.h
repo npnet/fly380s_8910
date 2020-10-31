@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 bool lvPocGpsIdtCom_Msg(LVPOCIDTCOM_Gps_SignalType_t signal, void *ctx);
 
 void publvPocGpsIdtComInit(void);
@@ -16,6 +17,7 @@ bool pubPocIdtIsHaveExistGps(void);
 void publvPocGpsIdtComSleep(void);
 
 void publvPocGpsIdtComWake(void);
+#endif
 
 #ifdef __cplusplus
 	}
