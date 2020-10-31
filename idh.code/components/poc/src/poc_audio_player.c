@@ -316,7 +316,6 @@ POCAUDIOPLAYER_HANDLE pocAudioPlayerCreate(const uint32_t max_size)
 	return (POCAUDIOPLAYER_HANDLE)player;
 }
 
-
 /**
  * \brief start poc audio player
  *
@@ -429,7 +428,6 @@ bool pocAudioPlayerStop(POCAUDIOPLAYER_HANDLE player_id)
 		pocAudioPlayerReset(player_id);
 		return true;
 	}
-	pocAudioPlayerReset(player_id);
 
 	return false;
 }

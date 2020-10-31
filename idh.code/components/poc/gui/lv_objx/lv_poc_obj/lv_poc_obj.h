@@ -296,6 +296,7 @@ typedef struct _lv_poc_status_bar_sim_obj_t
 	lv_obj_t * sim_net_type_img;          //网络信号类型图标
 } lv_poc_status_bar_sim_obj_t;
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:   lv_poc_status_bar_sim_obj_t
 *   AUTHOR:   lugj
@@ -307,6 +308,7 @@ typedef struct lv_poc_status_bar_gps_obj_t
 	lv_obj_t ** align_l_obj, ** align_r_obj;	//对齐对象
 	lv_obj_t * gps_location_img;	//gps信息图标
 } lv_poc_status_bar_gps_obj_t;
+#endif
 
 /*******************
 *     NAME:   lv_poc_statuc_bar_t
@@ -331,7 +333,9 @@ typedef struct _lv_poc_status_bar_fptr_t{
 	lv_obj_t                    *time_label;
     lv_obj_t                    *signal_type_label;
     lv_obj_t                    *signal_intensity_img;
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	lv_poc_status_bar_gps_obj_t *gps_img;
+#endif
 } lv_poc_status_bar_fptr_t;
 
 
@@ -842,6 +846,7 @@ void lv_poc_anim_note(lv_obj_t *obj);
 ********************/
 uint8_t lv_poc_get_battery_cnt(OUT battery_values_t *values);
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *	  NAME:    lv_poc_stabar_show_gps_img
 *	AUTHOR:    wangls
@@ -857,6 +862,7 @@ bool lv_poc_stabar_show_gps_img(bool enable);
 *	  DATE:    2020-10-22
 ********************/
 void lv_poc_show_gps_location_status_img(bool status);
+#endif
 
 #ifdef __cplusplus
 }

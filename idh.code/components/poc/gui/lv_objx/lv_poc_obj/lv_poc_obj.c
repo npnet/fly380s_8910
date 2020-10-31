@@ -529,6 +529,7 @@ static void lv_poc_stabar_signal_task(void);
 ********************/
 static void lv_exec_task(lv_task_t * task);
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:    lv_poc_init_stabar_gps_img
 *   AUTHOR:    wangls
@@ -536,6 +537,7 @@ static void lv_exec_task(lv_task_t * task);
 *     DATE:    2020-08-03
 ********************/
 static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj);
+#endif
 
 /*************************************************
 *
@@ -919,8 +921,9 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_init_stabar_sim2_img();
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	lv_poc_init_stabar_gps_img(NULL);
-
+#endif
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
     lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
@@ -1020,6 +1023,7 @@ static bool lv_poc_init_stabar_battery_img(void)
     return ret_val;
 }
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:    lv_poc_init_stabar_gps_img
 *   AUTHOR:    wangls
@@ -1106,6 +1110,7 @@ bool lv_poc_stabar_show_gps_img(bool enable)
 	}
 	return true;
 }
+#endif
 
 /*******************
 *     NAME:    lv_poc_stabar_sim_clean
@@ -2660,6 +2665,7 @@ void lv_poc_update_stabar_sim_img(void)
                     lv_obj_del(obj3);
                     old_sim_state_code[k] = sim_state_code[k];
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 					//refr gps view
                     if(lv_poc_status_bar_fptr->gps_img != NULL)
                     {
@@ -2667,6 +2673,7 @@ void lv_poc_update_stabar_sim_img(void)
                        lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
                        lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
                     }
+#endif
                     continue;
                 }
                 }
@@ -2685,6 +2692,7 @@ void lv_poc_update_stabar_sim_img(void)
             }
             old_sim_state_code[k] = sim_state_code[k];
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 			//refr gps view
 	        if(lv_poc_status_bar_fptr->gps_img != NULL)
 	        {
@@ -2692,6 +2700,7 @@ void lv_poc_update_stabar_sim_img(void)
 	           lv_poc_status_bar_fptr->gps_img->gps_location_img = lv_img_create(lv_poc_status_bar, NULL);
 	           lv_poc_init_stabar_gps_img(sim_cont[k]->align_l_obj);
 	        }
+#endif
         }
     }
     is_continue = false;
