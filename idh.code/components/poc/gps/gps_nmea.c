@@ -1,7 +1,5 @@
-﻿
-#include "gps_nmea.h"
-
-
+﻿#include "gps_nmea.h"
+#include "osi_api.h"
 
 //从buf里面得到第cx个逗号所在的位置
 //返回值:0~0XFE,代表逗号所在位置的偏移.
@@ -268,8 +266,8 @@ void GPS_Analysis(nmea_msg *gpsx,uint8_t *buf)
 		return;
 	NMEA_GPGSV_Analysis(gpsx,buf);	//GPGSV解析
 	NMEA_BDGSV_Analysis(gpsx,buf);	//BDGSV解析
-	NMEA_GNGGA_Analysis(gpsx,buf);	//GNGGA解析
 	NMEA_GNGSA_Analysis(gpsx,buf);	//GPNSA解析
+	NMEA_GNGGA_Analysis(gpsx,buf);	//GNGGA解析
 	NMEA_GNRMC_Analysis(gpsx,buf);	//GPNMC解析
 }
 

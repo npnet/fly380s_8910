@@ -779,6 +779,13 @@ poc_set_gps_ant_status(bool open);
 */
 void *lv_poc_recorder_Thread(void);
 
+/*
+	  name : lv_poc_watchdog_status
+	  param :
+	  date : 2020-10-30
+*/
+bool lv_poc_watchdog_status(void);
+
 #ifdef __cplusplus
 }
 #endif

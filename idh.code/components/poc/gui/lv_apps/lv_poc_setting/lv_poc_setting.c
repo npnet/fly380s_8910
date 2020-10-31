@@ -191,8 +191,6 @@ static void lv_poc_setting_torch_btn_cb(lv_obj_t * obj)
 {
     lv_obj_t * ext_obj = NULL;
 	ext_obj = (lv_obj_t *)obj->user_data;
-	//poc_setting_conf->electric_torch_switch = poc_setting_conf->electric_torch_switch? 0:1;
-	//poc_set_torch_status(poc_setting_conf->electric_torch_switch);
 	if(poc_get_torch_status())
     {
 		poc_set_torch_status(false);
@@ -203,7 +201,6 @@ static void lv_poc_setting_torch_btn_cb(lv_obj_t * obj)
 		poc_set_torch_status(true);
     	lv_sw_on(ext_obj, LV_ANIM_OFF);
     }
-	//lv_poc_setting_conf_write();
 }
 
 static void lv_poc_setting_brightness_btn_cb(lv_obj_t * obj)
@@ -216,7 +213,6 @@ static void lv_poc_setting_brightness_btn_cb(lv_obj_t * obj)
 	poc_setting_conf->screen_brightness = cur_bright;
 	lv_poc_setting_conf_write();
 	lv_label_set_text(ext_obj, bright_str[cur_bright]);
-	//lcd_backlight(cur_bright);
 	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 }
 

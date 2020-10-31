@@ -26,6 +26,18 @@
 #include "hal_adi_bus.h"/*register include*/
 #include "hwreg_access.h"
 
+/*************************************************
+*
+*                  EXTERN
+*
+*************************************************/
+extern bool pub_lv_poc_get_watchdog_status(void);
+
+/*************************************************
+*
+*                  STATIC
+*
+*************************************************/
 static nv_poc_setting_msg_t poc_setting_conf_local = {0};
 static nv_poc_theme_msg_node_t theme_white = {0};
 #ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
@@ -1109,15 +1121,19 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		return false;
 	}
 
-	if (CFW_CfgGetNwStatus(&status, sim) != 0 ||
+	if ((CFW_CfgGetNwStatus(&status, sim) != 0 ||
 		CFW_NwGetStatus(&nStatusInfo, sim) != 0)
+		&& (!pub_lv_poc_get_watchdog_status()))
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
 		return false;
 	}
 
-	if(nStatusInfo.nStatus == 0 || nStatusInfo.nStatus == 2 || nStatusInfo.nStatus == 4)
+	if((nStatusInfo.nStatus == 0
+		|| nStatusInfo.nStatus == 2
+		|| nStatusInfo.nStatus == 4)
+		&& (!pub_lv_poc_get_watchdog_status()))
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
@@ -2525,5 +2541,15 @@ poc_set_gps_ant_status(bool open)
 void *lv_poc_recorder_Thread(void)
 {
 	return (void *)pocAudioRecorderThread();
+}
+
+/*
+	  name : lv_poc_watchdog_status
+	  param :
+	  date : 2020-10-30
+*/
+bool lv_poc_watchdog_status(void)
+{
+	return pub_lv_poc_get_watchdog_status();
 }
 
