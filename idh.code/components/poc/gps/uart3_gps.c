@@ -17,12 +17,13 @@
 
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 
-#define GPS_RX_BUF_SIZE (4*1024)
-#define GPS_TX_BUF_SIZE (4*1024)
-#define GPS_NO_LOCATION_CHECK_SCAN_FREQ   10000 //10s
-#define GPS_NO_LOCATION_POWER_OFF_FREQ    30000 //30s
-#define GPS_LOCATION_CHECK_REPORT_FREQ    20000*15//5min 20s*15=300s
+#define GPS_RX_BUF_SIZE (1024)
+#define GPS_TX_BUF_SIZE (1024)
+#define GPS_NO_LOCATION_CHECK_SCAN_FREQ   10*1000 //10s
+#define GPS_NO_LOCATION_POWER_OFF_FREQ    30*1000 //30s
+#define GPS_LOCATION_CHECK_REPORT_FREQ    5*60*1000//5min
 #define GPS_NO_LOCATION_OUTAGE_FREQ       12//断电频率(未定位上)--120s
+#define SUPPORT_GPS_LOG
 /***********************************************************************************/
 //GPS基本数据
 typedef struct _IDT_GPS_DATA_s
@@ -40,7 +41,6 @@ typedef struct _IDT_GPS_DATA_s
     unsigned char   second;             //秒
 }IDT_GPS_DATA_s;
 static IDT_GPS_DATA_s gps_t;
-static IDT_GPS_DATA_s gps_buf_t;
 
 typedef struct _PocGpsIdtComAttr_t
 {
@@ -158,6 +158,7 @@ void prvlvPocGpsIdtComGetInfo(void)
     static unsigned char buf[2] = {0xff, 0xff};
 	//i2c open
 	prvlvPocGpsI2cOpen(DRV_NAME_I2C2, DRV_I2C_BPS_100K);
+	memset(&gps_data, 0, sizeof(GPS_RX_BUF_SIZE));
 
 	for(int i = 0; i< 4; i++)
 	{
@@ -173,25 +174,31 @@ void prvlvPocGpsIdtComGetInfo(void)
 	    {
 	        prvGPSReadReg(0x82, gps_data, plen);
 	        GPS_Analysis(&poc_idt_gps,(uint8_t*)gps_data);
+
+			#ifdef SUPPORT_GPS_LOG
+	         OSI_LOGXI(OSI_LOGPAR_IS, 0,"[GPS][EVENT]len=(%d)(%s)", plen, gps_data);
+	         OSI_LOGI(0,"[GPS][EVENT]: ori_longitude(%d)", poc_idt_gps.longitude);
+	         OSI_LOGI(0,"[GPS][EVENT]: ori_latitude(%d)", poc_idt_gps.latitude);
+			#endif
 	    }
-	    longitude = poc_idt_gps.longitude / 100000.0;
-	    latitude  = poc_idt_gps.latitude  / 100000.0;
-	    if('S' == poc_idt_gps.nshemi)
-	    {
-	        longitude = -longitude;
-	    }
-	    if('W' == poc_idt_gps.ewhemi)
-	    {
-	        latitude = -latitude;
-	    }
+
+		if(poc_idt_gps.longitude != 0
+			&& poc_idt_gps.latitude != 0)
+		{
+	    	longitude = poc_idt_gps.longitude / 100000.0;
+	    	latitude  = poc_idt_gps.latitude  / 100000.0;
+			if('S' == poc_idt_gps.nshemi)
+		    {
+		        longitude = -longitude;
+		    }
+		    if('W' == poc_idt_gps.ewhemi)
+		    {
+		        latitude = -latitude;
+		    }
+		}
 		osiDelayUS(200000);
 	}
 #ifndef SUPPORT_GPS_LOG
-	for(int i = 0; i < plen; i++)
-	{
-		OSI_LOGI(0,"[GPS][EVENT]%s", gps_data[i]);
-	}
-
 	OSI_LOGI(0,"[GPS][EVENT]: gps.nshemi(%c)", poc_idt_gps.nshemi);//latitude
 	OSI_LOGI(0,"[GPS][EVENT]: gps.ewhemi(%c)", poc_idt_gps.ewhemi);//longitude
 	OSI_LOGI(0,"[GPS][EVENT]: gps.gpssta(%d)", poc_idt_gps.gpssta);//0--no locate
@@ -202,7 +209,7 @@ void prvlvPocGpsIdtComGetInfo(void)
 	OSI_LOGXI(OSI_LOGPAR_IF, 0,"[GPS][EVENT]:(%c%f)", poc_idt_gps.nshemi, longitude);
 	OSI_LOGXI(OSI_LOGPAR_IF, 0,"[GPS][EVENT]:(%c%f)", poc_idt_gps.ewhemi, latitude);
 #endif
-	if(poc_idt_gps.fixmode && poc_idt_gps.gpssta)//locate
+	if(poc_idt_gps.gpssta)//locate
 	{
 		//copy data
 		gps_t.longitude = longitude;
@@ -223,20 +230,13 @@ void prvlvPocGpsIdtComGetInfo(void)
 			return;
 		}
 
-		if(gps_t.longitude != gps_buf_t.longitude
-			|| gps_t.latitude != gps_buf_t.latitude
-			|| gps_t.speed != gps_buf_t.speed
-			|| gps_t.direction != gps_buf_t.direction)
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
+		if(!pubPocIdtGpsLocationStatus())
 		{
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
-			memcpy((void *)&gps_buf_t, (void *)&gps_t, sizeof(IDT_GPS_DATA_s));
-			if(!pubPocIdtGpsLocationStatus())
-			{
-				lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_GPS_LOCATION_REPORT_FREQ, NULL);
-			}
-			pocGpsIdtAttr.gps_location_status = true;
-			OSI_LOGI(0,"[GPS][EVENT]:location, to send msg");
+			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_GPS_LOCATION_REPORT_FREQ, NULL);
 		}
+		pocGpsIdtAttr.gps_location_status = true;
+		OSI_LOGI(0,"[GPS][EVENT]:location, to send msg");
 	}
 	else
 	{
