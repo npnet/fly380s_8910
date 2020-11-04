@@ -49,6 +49,7 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_shutdown_note/lv_poc_shutdown_note.c
 	gui/lv_apps/lv_poc_shutdown_charge/lv_poc_shutdown_charge.c
 	gui/lv_apps/lv_poc_refr/lv_poc_refr.c
+    gui/lv_apps/lv_poc_fota_update/lv_poc_fota_update.c
 
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c
@@ -275,12 +276,8 @@ add_library(${target} STATIC
 	gui/resource/audiofile/lv_poc_audio_fail_to_build_group.c
 	gui/resource/audiofile/lv_poc_audio_fail_to_build_group_due_to_less_than_two_people.c
 	gui/resource/audiofile/lv_poc_audio_fail_due_to_already_exist_selfgroup.c
-	gui/resource/audiofile/lv_poc_audio_account_cannot_be_empty.c
-	gui/resource/audiofile/lv_poc_audio_username_or_passward_incorrect.c
 	gui/resource/audiofile/lv_poc_audio_current_no_any_network.c
-	gui/resource/audiofile/lv_poc_audio_server_timeout_to_try_again.c
 	gui/resource/audiofile/lv_poc_audio_this_account_already_logined.c
-	gui/resource/audiofile/lv_poc_audio_loginning_please_wait.c
 
 	gps/gps_nmea.c 
 	gps/uart3_gps.c
@@ -295,6 +292,7 @@ add_library(${target} STATIC
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_POC)
 target_include_directories(${target} PUBLIC include gui idt/include idt/src guiIdtCom/include guiIdtCom/src cJSON ../audio/include gps)
+target_link_group(${target} PRIVATE abup_pub abup_lib ${libc_file_name} ${libgcc_file_name})
 target_link_libraries(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts net lwip ats atr)
 
 

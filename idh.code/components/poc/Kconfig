@@ -101,6 +101,18 @@ config POC_GUI_GPS_SUPPORT
     default y
     help
         poc gui should be supported.
+
+config POC_FOTA_SUPPORT
+    bool "POC fota supported"
+    default y
+    help
+        poc gui should be supported.
+
+config POC_POWER_ON_FOTA_SUPPORT
+    bool "POC power on fota supported"
+    default n
+    help
+        poc gui should not be supported.
 		
 config POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE
     int "receive idt data by buff"

@@ -32,8 +32,7 @@
 #include "hal_chip.h"
 #include "tts_player.h"
 #include "uart3_gps.h"
-//#include "abup_fota.h"
-//#include "abup_config.h"
+#include "abup_fota.h"
 
 static bool lv_poc_watchdog_power_on_mode = false;
 static lv_obj_t *poc_power_on_backgroup_sprd_image = NULL;
@@ -103,10 +102,13 @@ static void pocIdtStartHandleTask(void * ctx)
 	}
 	osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
 
-//#ifdef CONFIG_ABUP_SUPPORT
-//	abup_check_update_result();
-//#endif
+#ifdef CONFIG_POC_FOTA_POWER_ON_SUPPORT
+	abup_check_update_result();
+#endif
+
+#ifdef CONFIG_POC_SUPPORT
 	lvPocGuiIdtCom_log();
+#endif
 
 	osiThreadExit();
 }

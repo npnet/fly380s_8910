@@ -35,7 +35,7 @@ add_library(${target} STATIC
 )
 #set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_include_directories(${target} PUBLIC include)
-target_link_libraries(${target} PRIVATE kernel driver hal fs net lwip cfw)
+target_link_libraries(${target} PRIVATE kernel driver hal fs net lwip cfw lvgl poc)
 relative_glob(srcs */*.h */*.c)
 beautify_c_code(${target} ${srcs})
 

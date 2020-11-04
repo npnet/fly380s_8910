@@ -165,7 +165,7 @@ void abup_close_file(int file_handle)
 //获取文件夹大小，差分包不能大于此值，需贵司完成函数内容
 uint32_t abup_get_fota_size(void)
 {
-	return 8*64*1024;
+	return 8*64*1024;//8*64*1024
 }
 
 //检测之前是否有升级动作
@@ -176,7 +176,7 @@ uint8_t abup_check_upgrade(void)
     struct stat st;
 
 	ret=vfs_stat(abup_get_version_file_path(),&st);
-	OSI_LOGI(0,"abup check_upgrade-->ret:%d,file_size:%d",ret,st.st_size);
+	OSI_LOGI(0,"[fota]abup check_upgrade-->ret:%d,file_size:%d",ret,st.st_size);
 	osiThreadSleep (100);
 	if(ret==0&&st.st_size>0)
 		return 1;
