@@ -64,6 +64,9 @@ typedef struct
 	uint32_t about_label_current_font;              //
 	uint32_t about_label_big_font;                  //
 	uint32_t about_label_small_font;                //-------------------------------
+	uint32_t fota_label_current_font;
+	uint32_t fota_label_big_font;
+	uint32_t fota_label_small_font;
 	uint32_t win_title_font;
 	uint32_t activity_control_font;
 	uint32_t status_bar_time_font;
@@ -96,6 +99,7 @@ typedef struct
 	uint32_t style_rb;
 	uint32_t style_cb;
 	uint32_t style_about_label;
+	uint32_t style_fota_label;
 	uint32_t style_status_bar;
 	uint32_t style_status_bar_time;
 	uint32_t style_control;
@@ -441,12 +445,7 @@ typedef enum{
 	LVPOCAUDIO_Type_Fail_To_Build_Group, //建组失败
 	LVPOCAUDIO_Type_Fail_To_Build_Group_Due_To_Less_Than_Two_People, //建组失败，群组成员不能少于两人
 	LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup, //建组失败-已有自建群组
-	LVPOCAUDIO_Type_Account_Cannot_Be_Empty, //账号不能为空
-	LVPOCAUDIO_Type_Username_Or_Passward_Incorrect, //用户名或密码不正确
-	LVPOCAUDIO_Type_Current_No_Any_Network, //当前没有任何网络
-	LVPOCAUDIO_Type_Server_Timeout_To_Try_Again, //服务器超时，请检查后重试
 	LVPOCAUDIO_Type_This_Account_Already_Logined, //该账号已在别处登陆
-	LVPOCAUDIO_Type_Loginning_Please_Wait, // 正在登陆请稍后
 
 	LVPOCAUDIO_Type_Tone_Cannot_Speak,   //
 	LVPOCAUDIO_Type_Tone_Lost_Mic,   //

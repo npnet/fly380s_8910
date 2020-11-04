@@ -9,6 +9,7 @@
 #ifndef __ABUP_FOTA_H__
 #define __ABUP_FOTA_H__
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum
 {
@@ -19,6 +20,20 @@ typedef enum
 	ABUP_FOTA_RD,	//下载结果上报
 	ABUP_FOTA_RU	//升级结果上报
 }ABUP_FOTA_STATUS;
+
+typedef enum
+{
+	ABUP_FOTA_READY,//检查版本
+	ABUP_FOTA_START,//准备环境
+	ABUP_FOTA_RMI,	//注册设备信息
+	ABUP_FOTA_CVI,	//检测版本
+	ABUP_FOTA_DLI,	//下载差分包
+	ABUP_FOTA_NO_NETWORK, //无网络
+	ABUP_FOTA_NO_NEW_VERSION, //无新版本
+	ABUP_FOTA_NOT_ENOUGH_SPACE, //空间不足
+	ABUP_FOTA_NO_ACCESS_TIMES,  //当天访问次数上限
+	ABUP_FOTA_REBOOT_UPDATE,	//准备重启更新
+}ABUP_FOTA_PROCESS_STATUS;
 
 typedef enum
 {
@@ -53,6 +68,9 @@ char *abup_get_host_domain(void);
 char *abup_get_host_port(void);
 void abup_recv_buf_memory(void);
 uint32_t abup_recv_buff_len(void);
+void abup_check_update_result(void);
+void abup_check_version(void);
+uint8_t abup_update_status(void);
 
 #endif
 

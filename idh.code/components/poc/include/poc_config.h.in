@@ -96,6 +96,18 @@
 #cmakedefine CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 
 /**
+ * Wheth the POC FOTA is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_FOTA_SUPPORT
+
+/**
+ * Wheth the POC power on FOTA is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_FOTA_POWER_ON_SUPPORT
+
+/**
  * Wheth the POC audio data buff is enabled more than 3.
  *
  */

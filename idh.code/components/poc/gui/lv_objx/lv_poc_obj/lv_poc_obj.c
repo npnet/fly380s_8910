@@ -68,6 +68,7 @@ lv_style_t theme_white_style_switch_knob_on = {0};
 lv_style_t theme_white_style_rb = {0};
 lv_style_t theme_white_style_cb = {0};
 lv_style_t theme_white_style_about_label = {0};
+lv_style_t theme_white_style_fota_label = {0};
 lv_style_t theme_white_style_status_bar = {0};
 lv_style_t theme_white_style_status_bar_time = {0};
 lv_style_t theme_white_style_control = {0};
@@ -90,6 +91,7 @@ lv_style_t theme_black_style_switch_knob_on = {0};
 lv_style_t theme_black_style_rb = {0};
 lv_style_t theme_black_style_cb = {0};
 lv_style_t theme_black_style_about_label = {0};
+lv_style_t theme_black_style_fota_label = {0};
 lv_style_t theme_black_style_status_bar = {0};
 lv_style_t theme_black_style_status_bar_time = {0};
 lv_style_t theme_black_style_control = {0};
@@ -656,6 +658,10 @@ static bool lv_poc_theme_init(void)
     theme_white_style_about_label.text.color = LV_COLOR_MAKE(0x11, 0x11, 0x11);
     theme_white_style_about_label.text.font = (lv_font_t *)poc_setting_conf->font.about_label_current_font;
 
+    lv_style_copy(&theme_white_style_fota_label, &theme_white_style_list_scroll);
+    theme_white_style_fota_label.text.color = LV_COLOR_MAKE(0x11, 0x11, 0x11);
+    theme_white_style_fota_label.text.font = (lv_font_t *)poc_setting_conf->font.fota_label_current_font;
+
     lv_style_copy(&theme_white_style_status_bar,&lv_style_plain);
     theme_white_style_status_bar.body.main_color = LV_COLOR_MAKE(0x00,0x00,0x00);
     theme_white_style_status_bar.body.grad_color = LV_COLOR_MAKE(0x00,0x00,0x00);
@@ -803,6 +809,10 @@ static bool lv_poc_theme_init(void)
     lv_style_copy(&theme_black_style_about_label, &theme_black_style_list_scroll);
     theme_black_style_about_label.text.color = LV_COLOR_MAKE(0xee, 0xee, 0xee);
     theme_black_style_about_label.text.font = (lv_font_t *)poc_setting_conf->font.about_label_current_font;
+
+    lv_style_copy(&theme_black_style_fota_label, &theme_black_style_list_scroll);
+    theme_black_style_fota_label.text.color = LV_COLOR_MAKE(0xee, 0xee, 0xee);
+    theme_black_style_fota_label.text.font = (lv_font_t *)poc_setting_conf->font.fota_label_current_font;
 
     lv_style_copy(&theme_black_style_status_bar,&lv_style_plain);
     theme_black_style_status_bar.body.main_color = LV_COLOR_MAKE(0x00,0x00,0x00);

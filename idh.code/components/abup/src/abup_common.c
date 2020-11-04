@@ -11,7 +11,7 @@
 #include <string.h>
 #include "abup_common.h"
 #include "abup_define.h"
-
+#include "lv_include/lv_poc_lib.h"
 
 void abup_BytePrint(const char *content, uint32_t len)
 {
@@ -25,7 +25,11 @@ void abup_BytePrint(const char *content, uint32_t len)
 //项目imei，需贵司完成
 char *abup_get_device_mid(void)
 {
-    return (char *)ABUP_DEVICE_MID;
+    static char lv_poc_about_imei_str[16] = {0};
+    poc_get_device_imei_rep((int8_t *)lv_poc_about_imei_str);
+
+	//return (char *)ABUP_DEVICE_MID;
+	return (char *)lv_poc_about_imei_str;
 }
 
 //项目PRODUCT ID

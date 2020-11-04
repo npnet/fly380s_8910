@@ -13,6 +13,8 @@
 // #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
 #include "poc_audio_recorder.h"
+#include "audio_device.h"
+
 #ifdef CONFIG_POC_AUDIO_RECORDER_SUPPORT
 
 #define RECORDER_POC_MODE 0
