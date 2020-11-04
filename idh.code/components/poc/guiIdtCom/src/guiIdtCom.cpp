@@ -1064,12 +1064,12 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 		    pocIdtAttr.delay_close_listen_timer_running = false;
 	    }
 		osiTimerStop(pocIdtAttr.check_listen_timer);
-		pocIdtAttr.check_listen_count = 60;//容许3帧的网络延时
+		pocIdtAttr.check_listen_count = 5*20;//容许5帧的网络延时
 		osiTimerStartPeriodic(pocIdtAttr.check_listen_timer, 20);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Listen, 30, true);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_START_REP, NULL);
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_SPEAKER_REP, NULL);
-		pocIdtAttr.membercall_count++;/*记录单呼数据帧*/
+		pocIdtAttr.membercall_count++;//记录单呼数据帧
 
 		#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
 		char cOutstr[256] = {0};

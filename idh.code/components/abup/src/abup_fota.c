@@ -14,7 +14,7 @@
 #include "osi_log.h"
 #include "lwip/netdb.h"
 
-#define ABUP_STACK_SIZE (1024 * 8)
+#define ABUP_STACK_SIZE (1024 * 16)
 #define ABUP_EVENT_QUEUE_SIZE (64 * 1)
 
 #define ABUP_DOWNLOAD_UNIT_BYTES    1*1024 //每次下载差分包数据的最大长度
@@ -35,6 +35,7 @@ static uint32_t abup_ratio = 0xFF;
 osiThread_t *Abup_thread_id;
 static uint8_t abup_socket_retry = 0;
 uint8_t abup_process_state = 0;
+uint8_t abup_current_state = ABUP_FOTA_READY;
 
 //缓存下载数据长度
 uint32_t abup_recv_buff_len(void)
@@ -83,14 +84,20 @@ char *abup_get_host_port(void)
 //开始下载差分包
 void abup_start_download_packet(void)
 {
-    OSI_LOGI(0, "start download packet.");
+    OSI_LOGI(0, "Abup start download packet.");
 }
 
 /* 重启函数 */
 void abup_device_reboot(void)
 {
 	OSI_LOGI(0, "Abup reboot now......");
-	//osiThreadSleep(50);
+	extern bool fupdateSetReady(const char *curr_version);
+	if(fupdateSetReady(NULL))
+	{
+		OSI_LOGI(0, "Abup fota ready ok");
+	}
+
+	osiThreadSleep(800);
 	osiShutdown(OSI_SHUTDOWN_RESET);
 }
 
@@ -107,6 +114,7 @@ void abup_exit_restore_context(void)
 
     if (abup_get_http_dl_state() == 1)
     {
+		abup_current_state = ABUP_FOTA_REBOOT_UPDATE;
         abup_device_reboot();
         return;
     }
@@ -115,18 +123,22 @@ void abup_exit_restore_context(void)
         if (abup_get_socket_type() == 5)
         {
             OSI_LOGI(0, "abup:network error");
+			abup_current_state = ABUP_FOTA_NO_NETWORK;
         }
         else if (abup_get_socket_type() == 6)
         {
             OSI_LOGI(0, "abup:not found new update");
+			abup_current_state = ABUP_FOTA_NO_NEW_VERSION;
         }
         else if (abup_get_socket_type() == 8)
         {
             OSI_LOGI(0, "abup:Not enough space.");
+			abup_current_state = ABUP_FOTA_NOT_ENOUGH_SPACE;
         }
         else if (abup_get_socket_type() == 11)
         {
             OSI_LOGI(0, "abup:imei access count max is 100");
+			abup_current_state = ABUP_FOTA_NO_ACCESS_TIMES;
         }
 		abup_task_exit();
     }
@@ -175,6 +187,8 @@ int abup_socket_read_ex(char *buf, int len)
 void abup_task_exit(void)
 {
 	s_abup_task_data.is_quit = true;
+	Abup_thread_id = NULL;
+	osiThreadExit();
 }
 
 //初始化fota相关参数
@@ -190,10 +204,12 @@ static void abup_task_cv_init(void)
 	{
 		OSI_LOGI(0, "abup_get_pid_psec fail, device should register.");
 		abup_set_fota_status(ABUP_FOTA_RG);
+		abup_current_state = ABUP_FOTA_RMI;
 	}
 	else
 	{
 		abup_set_fota_status(ABUP_FOTA_CV);
+		abup_current_state = ABUP_FOTA_CVI;
 		abup_set_fota_ratio(0);
 	}
 	OSI_LOGXI(OSI_LOGPAR_S,0,"abup_task_init-->version:%s", abup_get_firmware_version());
@@ -213,6 +229,7 @@ static void abup_task_ru_init(void)
 		return;
 	}
 	abup_set_fota_status(ABUP_FOTA_RU);
+	abup_current_state = ABUP_FOTA_RU;
 }
 
 //task进程
@@ -227,6 +244,7 @@ static void abup_fota_task (void *argument)
 	uint32_t r=0;
 	int dns_retry=0;
 
+	abup_current_state = ABUP_FOTA_START;
     for (int i = 0 ; i < 5 ; i++) {
         osiThreadSleep (6000);
         OSI_LOGI (0, "abup: wait 6s\n");
@@ -250,7 +268,8 @@ static void abup_fota_task (void *argument)
 		if (abup_get_fota_status() == ABUP_FOTA_IDLE)
 		{
 			OSI_LOGI(0,"abup: Current fota in idle.");
-			osiThreadSleep (5000);
+			abup_fota_exit();
+			osiThreadSleep (1000);
 			break;
 		}
 
@@ -267,8 +286,8 @@ static void abup_fota_task (void *argument)
 				osiThreadSleep (1000);
 				dns_retry++;
 				if(dns_retry>10){
-					abup_fota_exit();
 					dns_retry=0;
+					abup_fota_exit();
 					break;
 				}
 				else
@@ -300,8 +319,8 @@ static void abup_fota_task (void *argument)
 				abup_socket_retry++;
 				if(abup_socket_retry>5)
 				{
-					abup_free_dns();
 					abup_socket_retry=0;
+					abup_fota_exit();
 					break;
 				}
 				else
@@ -315,9 +334,8 @@ static void abup_fota_task (void *argument)
 		}
 
 		abup_get_http_data(s_abup_socket_buf, abup_socket_buff_len());
-		//OSI_LOGXI(OSI_LOGPAR_S,0,"abup: write socket buf:%s",s_abup_socket_buf);
-		//OSI_LOGXI(OSI_LOGPAR_S,0,"abup: write socket buf len:%d",strlen(s_abup_socket_buf));
-		//osiThreadSleep (500);
+		OSI_LOGXI(OSI_LOGPAR_S,0,"abup: send buf:%s",s_abup_socket_buf);
+		osiThreadSleep (200);
 
 		abup_BytePrint(s_abup_socket_buf, strlen(s_abup_socket_buf));
 		if(send(s_abup_task_data.socket, s_abup_socket_buf, strlen(s_abup_socket_buf),0) <= 0)
@@ -347,6 +365,7 @@ static void abup_fota_task (void *argument)
 			r = recv(s_abup_task_data.socket, s_abup_socket_buf, abup_socket_buff_len(),0);
 
 			OSI_LOGI(0,"abup: read socket:%d", r);
+			OSI_LOGXI(OSI_LOGPAR_S,0,"abup: recv buf:%s",s_abup_socket_buf);
 			osiThreadSleep (100);
 
 			if (r == abup_socket_buff_len())
@@ -355,6 +374,8 @@ static void abup_fota_task (void *argument)
 				{
 					abup_BytePrint(s_abup_socket_buf, r);
 				}
+
+				OSI_LOGI(0,"abup: recv 333");
 				abup_parse_http_data(s_abup_socket_buf, r);
 				abup_set_continue_read();
 			}
@@ -368,7 +389,9 @@ static void abup_fota_task (void *argument)
 					}
 					abup_BytePrint(s_abup_socket_buf, r);
 				}
+				OSI_LOGI(0,"abup: recv 111");
 				abup_parse_http_data(s_abup_socket_buf, r);
+				OSI_LOGI(0,"abup: recv 222");
 				abup_reset_continue_read();
 				break;
 			}
@@ -385,6 +408,7 @@ static void abup_fota_task (void *argument)
 //task进程，只有启动fota才会调用
 void abup_create_fota_task(void)
 {
+	abup_current_state = ABUP_FOTA_READY;
 	OSI_LOGI (0,"abup_create_fota_task\n");
     Abup_thread_id = osiThreadCreate ("abup_fota_task", abup_fota_task, NULL, OSI_PRIORITY_NORMAL, ABUP_STACK_SIZE, ABUP_EVENT_QUEUE_SIZE);
 }
@@ -408,5 +432,20 @@ void abup_check_update_result(void)
 		abup_process_state=0;
 		abup_create_fota_task();
 	}
+	else
+	{
+		abup_check_version();
+	}
+}
+
+//返回检查版本是否在运行
+uint8_t abup_update_status(void)
+{
+	if(abup_get_fota_status() == ABUP_FOTA_DL)
+	{
+		return ABUP_FOTA_DLI;
+	}
+
+	return abup_current_state;
 }
 

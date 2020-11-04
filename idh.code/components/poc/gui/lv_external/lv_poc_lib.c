@@ -519,12 +519,7 @@ extern lv_poc_audio_dsc_t lv_poc_audio_exit_member_call;
 extern lv_poc_audio_dsc_t lv_poc_audio_fail_to_build_group;
 extern lv_poc_audio_dsc_t lv_poc_audio_fail_to_build_group_due_to_less_than_two_people;
 extern lv_poc_audio_dsc_t lv_poc_audio_fail_due_to_already_exist_selfgroup;
-extern lv_poc_audio_dsc_t lv_poc_audio_account_cannot_be_empty;
-extern lv_poc_audio_dsc_t lv_poc_audio_username_or_passward_incorrect;
-extern lv_poc_audio_dsc_t lv_poc_audio_current_no_any_network;
-extern lv_poc_audio_dsc_t lv_poc_audio_server_timeout_to_try_again;
 extern lv_poc_audio_dsc_t lv_poc_audio_this_account_already_logined;
-extern lv_poc_audio_dsc_t lv_poc_audio_loginning_please_wait;
 
 static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	NULL,
@@ -549,12 +544,7 @@ static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	&lv_poc_audio_fail_to_build_group,
 	&lv_poc_audio_fail_to_build_group_due_to_less_than_two_people,
 	&lv_poc_audio_fail_due_to_already_exist_selfgroup,
-	&lv_poc_audio_account_cannot_be_empty,
-	&lv_poc_audio_username_or_passward_incorrect,
-	&lv_poc_audio_current_no_any_network,
-	&lv_poc_audio_server_timeout_to_try_again,
 	&lv_poc_audio_this_account_already_logined,
-	&lv_poc_audio_loginning_please_wait,
 
 	&lv_poc_audio_tone_cannot_speak,
 	&lv_poc_audio_tone_lost_mic,
@@ -677,12 +667,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Fail_To_Build_Group:
 			case LVPOCAUDIO_Type_Fail_To_Build_Group_Due_To_Less_Than_Two_People:
 			case LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup:
-			case LVPOCAUDIO_Type_Account_Cannot_Be_Empty:
-			case LVPOCAUDIO_Type_Username_Or_Passward_Incorrect:
-			case LVPOCAUDIO_Type_Current_No_Any_Network:
-			case LVPOCAUDIO_Type_Server_Timeout_To_Try_Again:
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
-			case LVPOCAUDIO_Type_Loginning_Please_Wait:
 			{
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
@@ -1151,10 +1136,11 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.list_btn_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.about_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
 	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
+	poc_setting->font.fota_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
+	poc_setting->font.fota_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
 	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
-	//poc_setting->font.status_bar_signal_type_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 45);//主界面时间time
 	poc_setting->font.idle_date_label_font = (uint32_t)LV_POC_FONT_MSYH(2500, 18);//主界面日期label
 	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
@@ -1173,6 +1159,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->theme.white->style_idle_date_label = (uint32_t)&theme_white_style_idle_date_label;
 	poc_setting->theme.white->style_idle_msg_label = (uint32_t)&theme_white_style_idle_msg_label;
 	poc_setting->theme.white->style_about_label = (uint32_t)&theme_white_style_about_label;
+	poc_setting->theme.white->style_fota_label = (uint32_t)&theme_white_style_fota_label;
 	poc_setting->theme.white->style_cb = (uint32_t)&theme_white_style_rb;
 	poc_setting->theme.white->style_rb = (uint32_t)&theme_white_style_cb;
 	poc_setting->theme.white->style_switch_bg = (uint32_t)&theme_white_style_switch_bg;
@@ -1197,6 +1184,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->theme.black->style_idle_date_label = (uint32_t)&theme_black_style_idle_date_label;
 	poc_setting->theme.black->style_idle_msg_label = (uint32_t)&theme_black_style_idle_msg_label;
 	poc_setting->theme.black->style_about_label = (uint32_t)&theme_black_style_about_label;
+	poc_setting->theme.black->style_fota_label = (uint32_t)&theme_black_style_fota_label;
 	poc_setting->theme.black->style_cb = (uint32_t)&theme_black_style_rb;
 	poc_setting->theme.black->style_rb = (uint32_t)&theme_black_style_cb;
 	poc_setting->theme.black->style_switch_bg = (uint32_t)&theme_black_style_switch_bg;
@@ -1242,6 +1230,7 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.list_page_colum_count = 3;
 	poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
 	poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
+	poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_big_font;
 	poc_setting->volume = 5;
 	poc_setting->language = 0;
 	poc_setting->is_exist_selfgroup = 1;
@@ -1286,12 +1275,14 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 		poc_setting->font.list_page_colum_count = 4;
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
+		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
 	}
 	else if(poc_setting->font.big_font_switch == 1)
 	{
 		poc_setting->font.list_page_colum_count = 3;
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
+		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_big_font;
 	}
 #endif
 }
@@ -1327,7 +1318,6 @@ poc_get_device_imei_rep(OUT int8_t * imei)
     {
 	    memcpy(imei, (const void *)nImei, nImeiLen);
 	}
-	OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]imei %s", imei);
 }
 
 /*

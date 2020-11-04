@@ -1,4 +1,4 @@
-
+ï»¿
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,8 +24,8 @@ static void * empty_win(lv_obj_t * parent, lv_area_t display_area)
 /*******************
 *     NAME:   lv_poc_win_create
 *   AUTHOR:   lugj
-* DESCRIPT:   ´´½¨poc´°¿Ú
-              parentÖ»¿ÉÒÔÊÇactivityÖĞdisplay³ÉÔ±£¬ÆäËûµÄlv_obj_tÔÚÓĞ¿ØÖÆÀ¸Ê±»á³öÏÖ²¿·ÖÄÚÈİ±»¿ØÖÆÀ¸ÕÚµ²
+* DESCRIPT:   åˆ›å»ºpocçª—å£
+              parentåªå¯ä»¥æ˜¯activityä¸­displayæˆå‘˜ï¼Œå…¶ä»–çš„lv_obj_tåœ¨æœ‰æ§åˆ¶æ æ—¶ä¼šå‡ºç°éƒ¨åˆ†å†…å®¹è¢«æ§åˆ¶æ é®æŒ¡
 *     DATE:   2019-11-25
 ********************/
 lv_poc_win_t * lv_poc_win_create(lv_obj_t * parent, const char * title, lv_poc_win_create_func_t func)
