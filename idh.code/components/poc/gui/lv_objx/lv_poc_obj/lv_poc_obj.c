@@ -571,12 +571,9 @@ bool lv_poc_setting_init(void)
 {
     lv_poc_setting_conf_init();
     poc_setting_conf = lv_poc_setting_conf_read();
-	if(!pub_lv_poc_get_watchdog_status())
-	{
-		poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
-		poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
-		lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
-	}
+	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
+	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
+	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_keypad_led_init();
 #endif
@@ -2343,15 +2340,16 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 	static uint8_t battery_img_cur = 100;
 	static uint8_t low_battery_check_count = 0;
 
-	static bool charge_status = false;/*充电状态*/
+	static bool charge_status = false;
+	static bool charge_complete_status = false;
 
-	if(battery_img_cur == 100)/*获取一次当前电量图标基础值*/
+	if(battery_img_cur == 100)//获取一次当前电量图标基础值
 	{
 		battery_img_cur = lv_poc_get_battery_cnt(&battery_t);
 		if(POC_CHG_DISCONNECTED == battery_t.charging)
-			charge_status = true;/*上次为充电状态*/
+			charge_status = true;//上次为充电状态
 		else
-			charge_status = false;/*上次为不充电状态*/
+			charge_status = false;//上次为不充电状态
 	}
 
     if(!battery_t.battery_status)
@@ -2365,37 +2363,40 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 		if(charge_status == true)
 		{
 			charge_status = false;
+			charge_complete_status = false;
+			lv_poc_set_charge_status(charge_status);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		}
 
-        if(battery_t.battery_value >= 100)
+        if(battery_t.battery_value >= 100)//4.12v
         {
             battery_img = &stat_sys_battery_100;
         }
-        else if(battery_t.battery_value >= 85)
+        else if(battery_t.battery_value >= 85)//4.019v
         {
             battery_img = &stat_sys_battery_85;
         }
-        else if(battery_t.battery_value >= 65)
+        else if(battery_t.battery_value >= 70)//3.90v
         {
             battery_img = &stat_sys_battery_71;
         }
-        else if(battery_t.battery_value >= 42)
+        else if(battery_t.battery_value >= 42)//3.764v
         {
             battery_img = &stat_sys_battery_57;
         }
-        else if(battery_t.battery_value >= 20)
+        else if(battery_t.battery_value >= 20)//3.7v
         {
             battery_img = &stat_sys_battery_43;
         }
-        else if(battery_t.battery_value >= 8)
+        else if(battery_t.battery_value >= 8)//3.615v
         {
             battery_img = &stat_sys_battery_15;
         }
-        else if(battery_t.battery_value >= 0)
+        else if(battery_t.battery_value >= 0)//3.501
         {
             battery_img = &stat_sys_battery_0;
-            if(low_battery_check_count < 1)
+            if(low_battery_check_count < 1 && battery_t.battery_value <= 5)//3.6v
             {
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, 50, false);
@@ -2413,20 +2414,24 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 		}
 
-        if(battery_t.battery_value >= 100)
+        if(battery_t.battery_value >= 100)//4.25v
         {
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+			if(charge_complete_status == false)
+			{
+				charge_complete_status = true;
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+			}
 			battery_img_cur = 6;
             battery_img = battery_img_dispaly[battery_img_cur];
         }
-        else if(battery_t.battery_value >= 85)
+        else if(battery_t.battery_value >= 85)//4.149v
         {
 			battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
 			battery_img_cur=5;
         }
-        else if(battery_t.battery_value >= 65)
+        else if(battery_t.battery_value >= 70)//4.08v
         {
 			battery_img = battery_img_dispaly[battery_img_cur];
 
@@ -2434,14 +2439,14 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			if(battery_img_cur>6)
 			battery_img_cur=4;
         }
-        else if(battery_t.battery_value >= 42)
+        else if(battery_t.battery_value >= 42)//3.93v
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
 			battery_img_cur=3;
         }
-        else if(battery_t.battery_value >= 20)
+        else if(battery_t.battery_value >= 20)//3.86v
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
@@ -2455,7 +2460,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			if(battery_img_cur>6)
 			battery_img_cur=1;
         }
-        else if(battery_t.battery_value >= 0)
+        else if(battery_t.battery_value >= 0)//3.251v
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
@@ -2980,10 +2985,7 @@ bool lv_poc_del_activity(lv_poc_activity_t *activity)
     if(activity->has_control)
     {
         ctl = activity->control;
-        //lv_obj_del(ctl->left_button);
-        //lv_obj_del(ctl->middle_button);
-        //lv_obj_del(ctl->right_button);
-		if(ctl)/*返回新建群组空指针*/
+		if(ctl)//返回新建群组空指针
         lv_obj_del(ctl->background);
     }
 

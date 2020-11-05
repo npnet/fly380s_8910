@@ -173,6 +173,8 @@ void *lvPocGuiIdtCom_get_self_info(void);
 
 void *lvPocGuiIdtCom_get_current_group_info(void);
 
+bool lvPocGuiIdtCom_get_speak_status(void);
+
 bool lvPocGuiIdtCom_get_listen_status(void);
 
 void *lvPocGuiIdtCom_get_current_lock_group(void);

@@ -228,7 +228,6 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 	else if(result_type == 2)
 	{
 		lv_poc_set_group_status(true);
-		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", NULL);
 	}
 	else
 	{
@@ -372,8 +371,12 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_KEY_ESC:
 				{
-					lv_poc_group_list_set_hightlight_index();
-					lv_poc_del_activity(poc_group_list_activity);
+					if(lv_poc_is_grouplist_refr_complete()
+						|| lv_poc_get_refr_error_info())
+					{
+						lv_poc_group_list_set_hightlight_index();
+						lv_poc_del_activity(poc_group_list_activity);
+					}
 					break;
 				}
 			}
@@ -457,11 +460,12 @@ static void lv_poc_get_group_list_cb(int result_type)
 
 	if(result_type == 1)
 	{
+		OSI_LOGI(0, "[grouprefr](%d):goto refr list", __LINE__);
 		lv_poc_refr_task_once(lv_poc_group_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
 	}
 	else
 	{
-		if(lv_poc_get_power_off_status()) return;
+		lv_poc_set_refr_error_info(true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
@@ -624,7 +628,7 @@ static void lv_poc_group_delete_oprator_cb(int result_type)
 		return;
 	}
 
-	if(result_type == 0)/*refr delete group*/
+	if(result_type == 0)//refr delete group
 	{
 		#ifndef AP_ASSERT_ENABLE
 		if(lv_poc_group_delete_info == NULL)
@@ -750,6 +754,9 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 		return;
 	}
 
+	lv_poc_set_refr_error_info(false);
+	lv_poc_set_grouplist_refr_is_complete(false);
+
 	group_list->group_list = NULL;
 	group_list->group_number = 0;
 
@@ -796,6 +803,7 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     {
 		if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
 		{
+			lv_poc_set_refr_error_info(true);
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 		}
@@ -970,16 +978,15 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
 	if(group_list_obj == NULL)
 	{
+		OSI_LOGI(0, "[grouprefr](%d):get refr info", __LINE__);
 		group_list_obj = group_list;
 	}
 
-	if(group_list_obj == NULL)
+	if(current_activity != poc_group_list_activity
+		|| group_list_obj == NULL)
 	{
-		return;
-	}
-
-	if(current_activity != poc_group_list_activity)
-	{
+		OSI_LOGI(0, "[grouprefr](%d):error", __LINE__);
+		lv_poc_set_refr_error_info(true);
 		return;
 	}
 
@@ -1002,8 +1009,10 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
     if(group_list_obj->group_list == NULL)
     {
+		OSI_LOGI(0, "[grouprefr](%d):error no member", __LINE__);
 	    lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
-	    return;
+		lv_poc_set_refr_error_info(true);
+		return;
     }
 
     lv_poc_group_info_t current_group = lv_poc_get_current_group();
@@ -1013,12 +1022,14 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
     if(lock_group == NULL)
     {
+		OSI_LOGI(0, "[grouprefr](%d):no lock", __LINE__);
 	    is_set_lock_group = 0;
     }
     lv_poc_group_current_lock_info = NULL;
 
     if(lv_poc_group_list_info != NULL)
     {
+		OSI_LOGI(0, "[grouprefr](%d):free group list info", __LINE__);
 	    lv_mem_free(lv_poc_group_list_info);
 	    lv_poc_group_list_info = NULL;
     }
@@ -1026,11 +1037,14 @@ void lv_poc_group_list_refresh(lv_task_t * task)
     lv_poc_group_list_info = (lv_poc_group_list_item_info_t *)lv_mem_alloc(sizeof(lv_poc_group_list_item_info_t) * group_list_obj->group_number);
     if(lv_poc_group_list_info == NULL)
     {
+		OSI_LOGI(0, "[grouprefr](%d):group list info mem alloc failed", __LINE__);
+		lv_poc_set_refr_error_info(true);
 	    return;
     }
     memset(lv_poc_group_list_info, 0, sizeof(lv_poc_group_list_item_info_t) * group_list_obj->group_number);
     lv_poc_group_list_item_info_t * p_group_info = lv_poc_group_list_info;
 
+	OSI_LOGI(0, "[grouprefr](%d):refr list start", __LINE__);
     p_cur = group_list_obj->group_list;
     while(p_cur)
     {
@@ -1096,6 +1110,8 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	{
 		lv_list_set_btn_selected(activity_list, btn_index[current_index]);
 	}
+	lv_poc_set_grouplist_refr_is_complete(true);
+	OSI_LOGI(0, "[grouprefr](%d):refr list end", __LINE__);
 }
 
 void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
@@ -1105,14 +1121,23 @@ void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
 		return;
 	}
 
-	if(lv_poc_is_inside_group())//若当前设备在某个群组里,禁止群组的所有更新(包括添组、删组、组信息更新)
+	if(current_activity != poc_group_list_activity)
 	{
+		OSI_LOGI(0, "[grouprefr](%d):The current group has not been refreshed", __LINE__);
 		lv_poc_set_group_refr(true);//记录有信息待刷新
 		return;
 	}
 
-	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)/*防止一些界面刷新数据混乱导致死机问题*/
+	if(lv_poc_is_inside_group())//若当前设备在某个群组里,禁止群组的所有更新(包括添组、删组、组信息更新)
 	{
+		OSI_LOGI(0, "[grouprefr](%d):currently in the group", __LINE__);
+		lv_poc_set_group_refr(true);//记录有信息待刷新
+		return;
+	}
+
+	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)//防止一些界面刷新数据混乱导致死机问题
+	{
+		OSI_LOGI(0, "[grouprefr](%d):Prohibit to refresh", __LINE__);
 		lv_poc_set_group_refr(true);//记录有信息待刷新
 		return;
 	}
@@ -1133,6 +1158,7 @@ void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
 	lv_poc_group_list_clear(group_list_obj);
 
 	lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb);
+	OSI_LOGI(0, "[grouprefr](%d):refresh grouplist", __LINE__);
 }
 
 

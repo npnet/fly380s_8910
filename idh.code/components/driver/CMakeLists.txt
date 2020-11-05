@@ -30,7 +30,7 @@ target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_DRIVER)
 target_include_directories(${target} PUBLIC include)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} src)
 target_include_targets(${target} PRIVATE hal kernel fs fsmount nanopb diag)
-target_include_targets(${target} PRIVATE nvm net calclib apploader audio)
+target_include_targets(${target} PRIVATE nvm net calclib apploader audio lvgl poc)
 
 nanopbgen(src/rtc/drv_rtc.proto)
 

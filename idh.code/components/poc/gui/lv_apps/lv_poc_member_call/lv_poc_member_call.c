@@ -30,9 +30,6 @@ static void lv_poc_member_call_delay_exit_task_create(const int delay_time_ms);
 
 static void lv_poc_member_call_set_member_call_status_cb(int current_status, int dest_status);
 
-static void lv_poc_member_call_delay_notation(lv_task_t *task);
-
-
 static lv_obj_t * activity_list = NULL;
 
 static lv_poc_win_t * activity_win = NULL;
@@ -263,8 +260,8 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 		else if(current_status == 0)
 		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Member_Call, 50, true);
-			lv_task_t *task = lv_task_create(lv_poc_member_call_delay_notation, 300, LV_TASK_PRIO_LOWEST, (void *)NULL);
-			lv_task_once(task);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始单呼", NULL);
 		}
 		else
 		{
@@ -561,12 +558,6 @@ lv_poc_status_t lv_poc_member_call_get_state(lv_poc_member_list_t *member_list_o
 	}
 
 	return lv_poc_member_list_get_state(member_list_obj, name, information);
-}
-
-static
-void lv_poc_member_call_delay_notation(lv_task_t *task)
-{
-	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始单呼", NULL);
 }
 
 #ifdef __cplusplus

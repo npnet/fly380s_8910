@@ -71,6 +71,9 @@ extern "C" lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
 #define GUIIDTCOM_IDTERRORINFO_DEBUG_LOG    1  //[idterrorinfo]
 #define GUIIDTCOM_IDTLOCKGROUP_DEBUG_LOG    1  //[idtlockgroup]
 
+//windows note
+#define GUIIDTCOM_IDTWINDOWS_NOTE    		1
+
 enum{
 	USER_OPRATOR_START_SPEAK = 3,
 	USER_OPRATOR_SPEAKING  = 4,
@@ -436,6 +439,7 @@ public:
 	char self_info_cjson_str[GUIIDTCOM_SELF_INFO_SZIE];
 	cJSON * self_info_cjson;
 	bool   listen_status;
+	bool   speak_status;
 	bool   record_fist;
 	uint16_t   membercall_count;
 	int runcount;
@@ -445,6 +449,7 @@ public:
 	osiTimer_t * monitor_pptkey_timer;
 	osiTimer_t * monitor_recorder_timer;
 	osiTimer_t * play_tone_timer;
+	osiTimer_t * addgroup_user_timer;
 	bool onepoweron;
 	char build_self_name[16];
 #ifndef MUCHGROUP
@@ -778,7 +783,7 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 		            pocIdtAttr.member_call_dir = 1;
 					pocIdtAttr.is_member_call = true;
 		            lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
-					pocIdtAttr.membercall_count = 0;/*复位单呼数据计数*/
+					pocIdtAttr.membercall_count = 0;//复位单呼数据计数
 
 					#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG|GUIIDTCOM_IDTSPEAK_DEBUG_LOG
 					char cOutstr[256] = {0};
@@ -956,7 +961,7 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 
 		if(m_IdtUser.m_iRxCount == 10)
 		{
-			pocIdtAttr.membercall_count++;/*记录单呼数据帧*/
+			pocIdtAttr.membercall_count++;//记录单呼数据帧
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND, NULL);
 		}
@@ -1548,6 +1553,18 @@ static void LvGuiIdtCom_recorder_timer_cb(void *ctx)
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SUSPEND_IND, NULL);
 }
 
+static void LvGuiIdtCom_refresh_group_adduser_timer_cb(void *ctx)
+{
+#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG|GUIIDTCOM_IDTGROUPLISTDEL_DEBUG_LOG
+	char cOutstr6[128] = {0};
+	cOutstr6[0] = '\0';
+	sprintf(cOutstr6, "[grouprefr]%s(%d):opt OPT_G_ADDUSER or OPT_G_DELUSER", __func__, __LINE__);
+	OSI_LOGI(0, cOutstr6);
+#endif
+
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL);
+}
+
 //--------------------------------------------------------------------------------
 //      用户调试函数
 //  输入:
@@ -1829,12 +1846,12 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND:
 		{
 
-			if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED)/*加入尝试登录中功能*/
+			if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED)//加入尝试登录中功能
 			{
-				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING;/*登陆中*/
+				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING;//登陆中
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "尝试登陆中...");
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"发出申请", (const uint8_t *)"");
-				osiTimerStartRelaxed(pocIdtAttr.try_login_timer, 2000, OSI_WAIT_FOREVER);/*为了播放语音加的延时登陆功能*/
+				osiTimerStartRelaxed(pocIdtAttr.try_login_timer, 2000, OSI_WAIT_FOREVER);
 				break;
 			}
 			else if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING)
@@ -1854,7 +1871,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			osiTimerStop(pocIdtAttr.monitor_recorder_timer);
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_RESUME_IND, NULL);
 			m_IdtUser.m_status = USER_OPRATOR_START_SPEAK;
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"正在申请", (const uint8_t *)"");
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LAUNCH_NOTE_MSG, (const uint8_t *)"正在申请", (const uint8_t *)"");
 			if(m_IdtUser.m_iCallId == -1)
 			{
 				memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
@@ -2026,12 +2043,12 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP:
 		{
-			bool pttStatus = lv_poc_get_ppt_state();//|lv_poc_get_earppt_state();
+			//bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
 			if(ctx == USER_OPRATOR_SPEAKING
-				&& pocIdtAttr.is_makeout_call == true
-				&& pttStatus == false)
+				&& pocIdtAttr.is_makeout_call == true)
 			{
 				/*恢复run闪烁*/
+			    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 
 				poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Stop_Speak, 30, true);
@@ -2041,6 +2058,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 				pocIdtAttr.is_makeout_call = false;
 				osiTimerStop(pocIdtAttr.monitor_pptkey_timer);
+				pocIdtAttr.speak_status = false;
 
 				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
 				char cOutstr[256] = {0};
@@ -2132,6 +2150,7 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 					    }
 					    osiTimerStart(pocIdtAttr.start_speak_voice_timer, 160);
 					    pocIdtAttr.start_speak_voice_timer_running = true;
+						pocIdtAttr.speak_status = true;
 				    }
 
 				    pocIdtAttr.mic_ctl = mic_ctl;
@@ -2375,8 +2394,10 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 				gmember->ucFGCount = member->ucFGCount;
 			}
 
-			/*群组名字*/
-			strcpy((char *)g_data.ucName, (const char *)lv_poc_get_self_name_count());
+			//群组名字
+			lv_poc_member_info_t self_info = lv_poc_get_self_info();
+			char *self_name = lv_poc_get_member_name(self_info);
+			strcpy((char *)g_data.ucName, (const char *)self_name);
 			strcat((char *)g_data.ucName, (const char *)"(自建)");
 
 			#if 0
@@ -2412,7 +2433,10 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 			}
 			#endif
 
-			IDT_GAdd(0, &g_data);
+			if(IDT_GAdd(0, &g_data) != 0)
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"添加组操作失败", (const uint8_t *)"");
+			}
 			break;
 		}
 
@@ -2439,7 +2463,15 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 
 			for(unsigned long i = 0; i < g_data.dwNum; i++)
 			{
-				IDT_GAddU(LV_POC_IDT_DWSN_QUERY_GROUPADDUSER, grop->pGroup.ucNum, &g_data.member[i]);
+				if(0 != IDT_GAddU(LV_POC_IDT_DWSN_QUERY_GROUPADDUSER, grop->pGroup.ucNum, &g_data.member[i]))
+				{
+					#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG
+					char cOutstr1[128] = {0};
+		    		cOutstr1[0] = '\0';
+		    		sprintf(cOutstr1, "[grouprefr]%s(%d):build group add member failed", __func__, __LINE__);
+		    		OSI_LOGI(0, cOutstr1);
+					#endif
+				}
 			}
 			if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL))
 			{
@@ -2449,7 +2481,7 @@ static void prvPocGuiIdtTaskHandleBuildGroup(uint32_t id, uint32_t ctx)
 			#if GUIIDTCOM_BUILDGROUP_DEBUG_LOG
 			char cOutstr[256] = {0};
     		cOutstr[0] = '\0';
-    		sprintf(cOutstr, "[buildgroup]%s(%d):rep server build group msg, group_num[%s]", __func__, __LINE__, grop->pGroup.ucNum);
+    		sprintf(cOutstr, "[grouprefr][buildgroup]%s(%d):rep server build group msg, group_num[%s]", __func__, __LINE__, grop->pGroup.ucNum);
     		OSI_LOGI(0, cOutstr);
 			#endif
 			pocIdtAttr.pocBuildGroupCb(1);
@@ -3141,6 +3173,7 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			pocIdtAttr.listen_status = false;
 
 			/*恢复run闪烁*/
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, "停止聆听", "");
@@ -3177,16 +3210,20 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 
 			//member call
-			if(pocIdtAttr.membercall_count > 1 && pocIdtAttr.is_member_call)/*单呼进入第二次*/
+			if(pocIdtAttr.is_member_call)
 			{
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)"");
+				if(pocIdtAttr.membercall_count > 1)//单呼进入第二次
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)"");
+				}
 			}
-
-			if(!pocIdtAttr.is_member_call)
+			else
 			{
 				char speaker_group_name[100];
 				strcpy(speaker_group_name, (const char *)pocIdtAttr.speaker_group.m_ucGName);
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, speaker_name, speaker_group);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)speaker_group_name);
 			}
 
@@ -3376,7 +3413,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 			}
 			LvPocGuiIdtCom_Group_Operator_t *grop = (LvPocGuiIdtCom_Group_Operator_t *)ctx;
 
-			if (OPT_G_QUERYUSER == grop->dwOptCode)/*查询组成员*/
+			if (OPT_G_QUERYUSER == grop->dwOptCode)//查询组成员
 			{
 				if (CAUSE_ZERO != grop->wRes || grop->pGroup.ucNum == 0)/*error optcode:grop->pGroup.ucNum = 0*/
 				{
@@ -3393,7 +3430,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 					}
 					else
 					{
-						pPocMemberList = pocIdtAttr.pPocMemberList;/*上电填充成员列表*/
+						pPocMemberList = pocIdtAttr.pPocMemberList;//上电填充成员列表
 					}
 
 					pPocMemberList->dwNum = grop->pGroup.dwNum;
@@ -3440,11 +3477,11 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 			else if (OPT_G_ADD == grop->dwOptCode)
 			{
 				#if GUIIDTCOM_BUILDGROUP_DEBUG_LOG
-				OSI_LOGI(0, "[buildgroup]OPT_G_ADD opt");
+				OSI_LOGI(0, "[grouprefr][buildgroup]OPT_G_ADD opt");
 				#endif
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_REP, grop);
 			}
-			else if (OPT_G_MODIFY == grop->dwOptCode)/*获取组的更新信息*/
+			else if (OPT_G_MODIFY == grop->dwOptCode)//获取组的更新信息
 			{
 				bool checked_current = false;
 
@@ -3454,11 +3491,11 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 
 				for(unsigned long i = 0; i < m_IdtUser.m_Group.m_Group_Num; i++)
 				{
-					if(strcmp((char *)m_IdtUser.m_Group.m_Group[i].m_ucGNum, (char *)grop->pGroup.ucNum) == 0)/*寻找到修改的组号码*/
+					if(strcmp((char *)m_IdtUser.m_Group.m_Group[i].m_ucGNum, (char *)grop->pGroup.ucNum) == 0)//寻找到修改的组号码
 					{
-						/*替换所属组号码的组名称*/
+						//替换所属组号码的组名称
 						strcpy((char*)m_IdtUser.m_Group.m_Group[i].m_ucGName, (char*)grop->pGroup.ucName);
-						/*查找是否是当前群组*/
+						//查找是否是当前群组
 						if(!checked_current)
 						{
 							if(strlen((const char *)poc_config->old_account_current_group) > 0)
@@ -3471,21 +3508,20 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 								}
 							}
 						}
-						break;/*退出查找*/
+						break;//退出查找
 					}
 				}
 
-				lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
-
 				#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG
 				char cOutstr[128] = {0};
-	    		cOutstr[0] = '\0';
-	    		sprintf(cOutstr, "[grouprefr]%s(%d):opt G_MODIFY, refresh grouplist", __func__, __LINE__);
-	    		OSI_LOGI(0, cOutstr);
+				cOutstr[0] = '\0';
+				sprintf(cOutstr, "[grouprefr]%s(%d):opt G_MODIFY, refresh grouplist", __func__, __LINE__);
+				OSI_LOGI(0, cOutstr);
 				#endif
-			}
 
-			else if (OPT_U_QUERYGROUP == grop->dwOptCode)/*用户归属组*/
+				lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
+			}
+			else if (OPT_U_QUERYGROUP == grop->dwOptCode)//用户归属组
 			{
 				#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG
 				char cOutstr[128] = {0};
@@ -3495,8 +3531,8 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 				#endif
 
 			    m_IdtUser.m_Group.Reset();
-			    m_IdtUser.m_Group.m_Group_Num = grop->pGroup.dwNum;/*有几个组*/
-				pocIdtAttr.current_group_member_dwnum = grop->pGroup.dwNum;/*组用户个数*/
+			    m_IdtUser.m_Group.m_Group_Num = grop->pGroup.dwNum;//有几个组
+				pocIdtAttr.current_group_member_dwnum = grop->pGroup.dwNum;//组用户个数
 			    bool checked_current = false;
 				nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 
@@ -3594,7 +3630,7 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 					osiTimerStartRelaxed(pocIdtAttr.get_member_list_timer, 1000, OSI_WAIT_FOREVER);
 				}
 			}
-			else if (OPT_G_DEL == grop->dwOptCode)/*删除组*/
+			else if (OPT_G_DEL == grop->dwOptCode)//删除组
 			{
 				#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG|GUIIDTCOM_IDTGROUPLISTDEL_DEBUG_LOG
 				char cOutstr6[128] = {0};
@@ -3604,6 +3640,18 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 				#endif
 
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_REP, grop);
+			}
+			else if(OPT_G_ADDUSER == grop->dwOptCode
+					|| OPT_G_DELUSER == grop->dwOptCode)
+			{
+				if(pocIdtAttr.addgroup_user_timer != NULL)
+				{
+					if(true == osiTimerIsRunning(pocIdtAttr.addgroup_user_timer))
+					{
+						osiTimerStop(pocIdtAttr.addgroup_user_timer);
+					}
+					osiTimerStart(pocIdtAttr.addgroup_user_timer, 1000);
+				}
 			}
 			break;
 		}
@@ -3910,7 +3958,7 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 		    		OSI_LOGI(0, cOutstr);
 					#endif
 
-					pocIdtAttr.pocDeleteGroupcb(grop->wRes);/*0 success*/
+					pocIdtAttr.pocDeleteGroupcb(grop->wRes);//0 success
 					pocIdtAttr.pocDeleteGroupcb = NULL;
 					//self del lock isn't exist
 					if(0 == strcmp((char *)pocIdtAttr.pLockGroup->m_ucGNum, (char *)grop->pGroup.ucNum))//delete lock group
@@ -3918,7 +3966,7 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_UNLOCK_BE_DELETED_LOCK_GROUP_IND, NULL);
 					}
 				}
-				else/*other poc delete group updater it*/
+				else//other poc delete group updater it
 				{
 					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL);
 
@@ -4209,7 +4257,9 @@ void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_
 
 				default:
 				{
-					/*此处可以显示所有异常状态*/
+
+#if GUIIDTCOM_IDTWINDOWS_NOTE
+					//此处可以显示所有异常状态,release版本需要关闭
 					#if GUIIDTCOM_IDTERRORINFO_DEBUG_LOG
 					char cOutstr[256] = {0};
 					cOutstr[0] = '\0';
@@ -4217,6 +4267,7 @@ void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_
 					OSI_LOGI(0, cOutstr);
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)cause_str, (const uint8_t *)"");
 					#endif
+#endif
 					break;
 				}
 
@@ -4511,6 +4562,7 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.monitor_pptkey_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_ppt_release_timer_cb, NULL);//检查ppt键定时器
 	pocIdtAttr.monitor_recorder_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_recorder_timer_cb, NULL);//检查是否有人在录音定时器
 	pocIdtAttr.play_tone_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_start_play_tone_timer_cb, NULL);
+	pocIdtAttr.addgroup_user_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_refresh_group_adduser_timer_cb, NULL);
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
@@ -4589,6 +4641,10 @@ bool lvPocGuiIdtCom_get_listen_status(void)
 	return pocIdtAttr.listen_status;
 }
 
+bool lvPocGuiIdtCom_get_speak_status(void)
+{
+	return pocIdtAttr.speak_status;
+}
 
 extern "C" void *lvPocGuiIdtCom_get_self_info(void)
 {
