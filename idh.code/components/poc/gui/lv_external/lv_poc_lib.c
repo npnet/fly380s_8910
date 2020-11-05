@@ -61,7 +61,11 @@ static bool is_poc_play_voice = false;
 static bool is_poc_network_status = false;
 static uint8_t poc_earkey_state = false;
 static int lv_poc_inside_group = false;
-static int lv_poc_group_list_refr = false;
+static bool lv_poc_group_list_refr = false;
+static bool lv_poc_grouplist_refr_complete = false;
+static bool lv_poc_memberlist_refr_complete = false;
+static bool lv_poc_refr_error_info = false;
+static bool lv_poc_charge_state = false;
 
 static void poc_ear_ppt_irq(void *ctx);
 
@@ -566,7 +570,9 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
 	do
 	{
-		if(!ttsIsPlaying() && (!lvPocGuiIdtCom_get_listen_status()))
+		if(!ttsIsPlaying()
+			&& !lvPocGuiIdtCom_get_listen_status()
+			&& !lvPocGuiIdtCom_get_speak_status())
 		{
 			audevSetPlayVolume(40);
 			char playkey[4] = "9";
@@ -1943,6 +1949,7 @@ lv_poc_get_group_list(lv_poc_oem_group_list *group_list, get_group_list_cb func)
 	#ifndef AP_ASSERT_ENABLE
 	if(group_list == NULL || func == NULL)
 	{
+		OSI_LOGI(0, "[grouprefr](%d):data error", __LINE__);
 		return false;
 	}
 	#else
@@ -2470,6 +2477,94 @@ bool lv_poc_is_group_list_refr(void)
 }
 
 /*
+	  name : lv_poc_set_grouplist_refr_is_complete
+	  describe :记录群组列表UI是否刷新准备完成
+	  example  :禁止群组列表未刷新完成时退出UI、刷新群组信息导致的死机
+	  param :
+	  date : 2020-11-05
+*/
+void lv_poc_set_grouplist_refr_is_complete(bool status)
+{
+	lv_poc_grouplist_refr_complete = status;
+}
+
+/*
+	  name : lv_poc_set_grouplist_refr_is_complete
+	  describe :记录成员列表UI是否刷新准备完成
+	  example  :禁止成员列表未刷新完成时退出UI、刷新群组信息导致的死机
+	  param :
+	  date : 2020-11-05
+*/
+void lv_poc_set_memberlist_refr_is_complete(bool status)
+{
+	lv_poc_memberlist_refr_complete = status;
+}
+
+/*
+	  name : lv_poc_is_group_list_refr
+	  describe :返回群组已经刷新完成
+	  param :
+	  date : 2020-11-05
+*/
+bool lv_poc_is_grouplist_refr_complete(void)
+{
+	return lv_poc_grouplist_refr_complete;
+}
+
+/*
+	  name : lv_poc_is_memberlist_refr_complete
+	  describe :返回成员已经刷新完成
+	  param :
+	  date : 2020-11-05
+*/
+bool lv_poc_is_memberlist_refr_complete(void)
+{
+	return lv_poc_memberlist_refr_complete;
+}
+
+/*
+	  name : lv_poc_set_refr_error_info
+	  describe :记录成员或群组列表异常状态
+	  param :
+	  date : 2020-11-05
+*/
+void lv_poc_set_refr_error_info(bool status)
+{
+	lv_poc_refr_error_info = status;
+}
+
+/*
+	  name : lv_poc_get_refr_error_info
+	  describe :返回群组或成员刷新异常状态
+	  param :
+	  date : 2020-11-05
+*/
+bool lv_poc_get_refr_error_info(void)
+{
+	return lv_poc_refr_error_info;
+}
+
+/*
+	  name : lv_poc_set_charge_status
+	  param :
+	  date : 2020-11-04
+*/
+void lv_poc_set_charge_status(bool status)
+{
+	lv_poc_charge_state = status;
+}
+
+/*
+	  name : lv_poc_get_charge_status
+	  param :
+	  date : 2020-11-04
+*/
+bool lv_poc_get_charge_status(void)
+{
+	return lv_poc_charge_state;
+}
+
+/*
       name : poc_set_gps_ant_status
      param : open  true is open gps
       date : 2020-10-22
@@ -2511,5 +2606,15 @@ void *lv_poc_recorder_Thread(void)
 bool lv_poc_watchdog_status(void)
 {
 	return pub_lv_poc_get_watchdog_status();
+}
+
+/*
+	  name : lv_poc_play_voice_status
+	  param :
+	  date : 2020-11-04
+*/
+bool lv_poc_play_voice_status(void)
+{
+	return ttsIsPlaying();
 }
 

@@ -136,6 +136,7 @@ typedef struct _PocGuiOemComAttr_t
 	int  loginstatus_t;
 	int  groupstatus_t;
 	bool is_speak_status;
+	bool is_listen_status;
 	bool is_member_update;
 	bool is_update_data;
 }PocGuiOemComAttr_t;
@@ -834,7 +835,7 @@ void prvPocGuiOemTaskHandleListen(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIOEMCOM_SIGNAL_LISTEN_STOP_REP:
 		{
-			pocOemAttr.is_speak_status = false;
+			pocOemAttr.is_listen_status = false;
 			/*恢复run闪烁*/
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
@@ -859,7 +860,7 @@ void prvPocGuiOemTaskHandleListen(uint32_t id, uint32_t ctx)
 			memset(speaker_name, 0, sizeof(char) * 100);
 			strcpy(speaker_name, (const char *)pocOemAttr.OemSpeakerInfo.OemUserName);
 			strcat(speaker_name, (const char *)"正在讲话");
-			pocOemAttr.is_speak_status = true;
+			pocOemAttr.is_listen_status = true;
 
 			/*开始闪烁*/
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
@@ -2533,6 +2534,11 @@ bool lvPocGuiOemCom_modify_current_group_info(OemCGroup *CurrentGroup)
 }
 
 bool lvPocGuiIdtCom_get_listen_status(void)
+{
+	return pocOemAttr.is_listen_status;
+}
+
+bool lvPocGuiIdtCom_get_speak_status(void)
 {
 	return pocOemAttr.is_speak_status;
 }

@@ -20,7 +20,7 @@
 #define ABUP_FOTA_NETWORK_TYPE            "4G"
 
 #define ABUP_DEVICE_MID                    "860546049641849"
-#define ABUP_FIRMWARE_VERSION              "8910DM_V0.1"
+#define ABUP_FIRMWARE_VERSION              "8910DM_V0.3"
 
 #endif
 
