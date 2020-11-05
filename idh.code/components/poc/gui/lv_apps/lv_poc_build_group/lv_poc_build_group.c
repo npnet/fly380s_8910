@@ -48,9 +48,6 @@ static char * lv_poc_build_group_few_member_text2 = "能少于两人";
 
 static char * lv_poc_build_group_error_text = "错误";
 
-static char lv_poc_member_myself_name[32] = {0};
-
-
 static lv_obj_t * lv_poc_build_group_activity_create(lv_poc_display_t *display)
 {
 #if 1
@@ -116,6 +113,12 @@ static void lv_poc_build_group_list_config(lv_obj_t * list, lv_area_t list_area)
 {
 }
 
+static
+void lv_poc_build_group_exit(lv_task_t *task)
+{
+	lv_poc_del_activity(poc_build_group_activity);
+}
+
 static void lv_poc_build_group_new_group_cb_refresh(lv_task_t *task)
 {
 	int result_type = (int)task->user_data;
@@ -130,13 +133,13 @@ static void lv_poc_build_group_new_group_cb_refresh(lv_task_t *task)
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_To_Build_Group, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_failed_text, NULL);
 	}
-	lv_poc_del_activity(poc_build_group_activity);
+	//delay
+	lv_poc_refr_task_once(lv_poc_build_group_exit, LVPOCLISTIDTCOM_LIST_PERIOD_500, LV_TASK_PRIO_HIGH);
 }
 
 static void lv_poc_build_group_new_group_cb(int result_type)
 {
-	/*修改刷新机制*/
-	lv_poc_refr_func_ui(lv_poc_build_group_new_group_cb_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_LOW, (void *)result_type);
+	lv_poc_refr_func_ui(lv_poc_build_group_new_group_cb_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)result_type);
 }
 
 static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, int32_t info_num, int32_t selected_num)
@@ -273,18 +276,21 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_KEY_ESC:
 				{
-					if(lvPocGuiIdtCom_get_current_exist_selfgroup() == 2)
+					if(lv_poc_is_buildgroup_refr_complete()
+						|| lv_poc_get_refr_error_info())
 					{
-						lv_task_t *task = lv_task_create(lv_poc_build_group_is_exist, 200, LV_TASK_PRIO_HIGH, NULL);
-						lv_task_once(task);
+						if(lvPocGuiIdtCom_get_current_exist_selfgroup() == 2)
+						{
+							lv_task_t *task = lv_task_create(lv_poc_build_group_is_exist, 200, LV_TASK_PRIO_HIGH, NULL);
+							lv_task_once(task);
 
-						lv_poc_del_activity(poc_build_group_activity);
+							lv_poc_del_activity(poc_build_group_activity);
+						}
+						else
+						{
+							lv_poc_refr_task_once(lv_poc_build_group_success_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+						}
 					}
-					else
-					{
-						lv_poc_refr_task_once(lv_poc_build_group_success_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
-					}
-
 					break;
 				}
 			}
@@ -327,6 +333,7 @@ static void lv_poc_build_group_get_list_cb(int msg_type)
 	}
 	else
 	{
+		lv_poc_set_refr_error_info(true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
@@ -357,6 +364,7 @@ void lv_poc_build_group_open(void)
 		memset(lv_poc_build_group_member_list, 0, sizeof(lv_poc_member_list_t));
 	}
 
+	lv_poc_set_buildgroup_refr_is_complete(false);
     poc_build_group_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_member_list_cb_set_active(ACT_ID_POC_MAKE_GROUP, true);
     lv_poc_activity_set_signal_cb(poc_build_group_activity, lv_poc_build_group_signal_func);
@@ -364,11 +372,10 @@ void lv_poc_build_group_open(void)
 
 	if(!lv_poc_get_member_list(NULL, lv_poc_build_group_member_list, 1, lv_poc_build_group_get_list_cb))
 	{
+		lv_poc_set_refr_error_info(true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
-
-
 }
 
 lv_poc_status_t lv_poc_build_group_add(lv_poc_member_list_t *member_list_obj, const char * name, bool is_online, void * information)
@@ -442,13 +449,10 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 		member_list_obj = lv_poc_build_group_member_list;
 	}
 
-	if(member_list_obj == NULL)
+	if(current_activity != poc_build_group_activity
+		|| member_list_obj == NULL)
 	{
-		return;
-	}
-
-	if(current_activity != poc_build_group_activity)
-	{
+		lv_poc_set_refr_error_info(true);
 		return;
 	}
 
@@ -464,6 +468,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 
     if(!(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL))
     {
+		lv_poc_set_refr_error_info(true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
 	    return;
     }
@@ -478,6 +483,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 
 	if(lv_poc_build_group_info == NULL)
 	{
+		lv_poc_set_refr_error_info(true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"刷新失败", NULL);
 	    return;
 	}
@@ -504,17 +510,12 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 		lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(btn_checkbox) - ic_member_online.header.w - 5);
 		lv_obj_align(btn_checkbox, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
-		/*把自己选上*/
+		//把自己选上
 		if(NULL != strstr(lv_list_get_btn_text(btn),"我"))//如果是自己
 		{
 			p_info->is_self = true;
 			p_info->is_selected = true;
 			lv_btn_set_state(btn_checkbox, LV_BTN_STATE_TGL_PR);
-
-			/*获取自己的号码*/
-			char myself_name[32] = {0};
-			strcpy((char *)myself_name, (const char *)lv_list_get_btn_text(btn));
-			strncpy((char *)lv_poc_member_myself_name, (const char *)myself_name, 4);/*改此处是改账号的长度*/
 
 			lv_poc_build_group_selected_num++;
 		}
@@ -536,7 +537,6 @@ void lv_poc_build_group_refresh(lv_task_t * task)
         	member_list_is_first_item = 0;
         	lv_list_set_btn_selected(activity_list, btn);
         }
-
     }
 
     p_cur = member_list_obj->offline_list;
@@ -571,6 +571,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
         	lv_list_set_btn_selected(activity_list, btn);
         }
     }
+	lv_poc_set_buildgroup_refr_is_complete(true);
 }
 
 void lv_poc_build_group_refresh_with_data(lv_poc_member_list_t *member_list_obj)
@@ -781,11 +782,6 @@ void lv_poc_build_group_success_refresh(lv_task_t *task)
 	lv_poc_build_group_operator(lv_poc_build_group_info,
 							lv_poc_build_group_member_list->offline_number + lv_poc_build_group_member_list->online_number,
 							lv_poc_build_group_selected_num);
-}
-
-char *lv_poc_get_self_name_count(void)
-{
-	return lv_poc_member_myself_name;
 }
 
 static

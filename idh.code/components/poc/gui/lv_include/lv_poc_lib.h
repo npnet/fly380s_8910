@@ -723,15 +723,6 @@ void lv_poc_ear_ppt_key_init(void);
 bool lv_poc_get_earppt_state(void);
 
 /*
-	  name : lv_poc_get_self_name_count
-	 param : none
-	author : wangls
-  describe : 获取自己的号码
-	  date : 2020-07-22
-*/
-char *lv_poc_get_self_name_count(void);
-
-/*
 	  name : lv_poc_opt_refr_status
 	  param :
 	  date : 2020-08-24
@@ -823,6 +814,25 @@ bool lv_poc_is_inside_group(void);
 void lv_poc_set_group_refr(bool status);
 
 /*
+	  name : lv_poc_set_grouplist_refr_is_complete,lv_poc_set_memberlist_refr_is_complete
+	  describe :记录群组或成员列表UI是否刷新准备完成
+	  example  :禁止群组或成员列表未刷新完成时退出UI、刷新群组信息导致的死机
+	  param :
+	  date : 2020-11-05
+*/
+void lv_poc_set_grouplist_refr_is_complete(bool status);
+void lv_poc_set_memberlist_refr_is_complete(bool status);
+
+/*
+	  name : lv_poc_is_grouplist_refr_complete,lv_poc_is_memberlist_refr_complete
+	  describe :返回群组或成员列表已经刷新完成
+	  param :
+	  date : 2020-11-05
+*/
+bool lv_poc_is_grouplist_refr_complete(void);
+bool lv_poc_is_memberlist_refr_complete(void);
+
+/*
 	  name : lv_poc_is_group_list_refr
 	  describe :返回群组列表是否有刷新信息
 	  param :
@@ -851,6 +861,45 @@ void *lv_poc_recorder_Thread(void);
 	  date : 2020-10-30
 */
 bool lv_poc_watchdog_status(void);
+
+/*
+	  name : lv_poc_play_voice_status
+	  param :
+	  date : 2020-11-04
+*/
+bool lv_poc_play_voice_status(void);
+
+/*
+	  name : lv_poc_set_refr_error_info
+	  describe :记录成员或群组列表异常状态
+	  param :
+	  date : 2020-11-05
+*/
+void lv_poc_set_refr_error_info(bool status);
+
+/*
+	  name : lv_poc_get_refr_error_info
+	  describe :返回群组或成员刷新异常状态
+	  param :
+	  date : 2020-11-05
+*/
+bool lv_poc_get_refr_error_info(void);
+
+/*
+	  name : lv_poc_set_buildgroup_refr_is_complete
+	  describe :记录新建群组列表UI是否刷新准备完成
+	  param :
+	  date : 2020-11-05
+*/
+void lv_poc_set_buildgroup_refr_is_complete(bool status);
+
+/*
+	  name : lv_poc_is_buildgroup_refr_complete
+	  describe :返回新建群组已经刷新完成
+	  param :
+	  date : 2020-11-05
+*/
+bool lv_poc_is_buildgroup_refr_complete(void);
 
 #ifdef __cplusplus
 }

@@ -65,6 +65,7 @@ static void lv_poc_led_entry(void *param)
 	{
 		if(osiEventWait(pocLedIdtAttr.thread, &event))
 		{
+			OSI_LOGI(0, "[IDTLED][EVENT]rec msg(%d)", event.param1);
 			if(event.id != 200)
 			{
 				continue;
@@ -81,6 +82,7 @@ static void lv_poc_led_entry(void *param)
 				continue;
 			}
 
+			OSI_LOGI(0, "[IDTLED][EVENT]deal rec msg(%d)", event.param1);
 			if(event.param2)
 			{
 				pocLedIdtAttr.jumpperiod = (uint16_t)event.param2;//提取周期
@@ -100,9 +102,9 @@ static void lv_poc_led_entry(void *param)
 					pocLedIdtAttr.jumpperiod = 1000;
 					if(pocLedIdtAttr.task == NULL)
 					{
-						pocLedIdtAttr.task = lv_task_create(Lv_Poc_Led_Status_Callback_Check, pocLedIdtAttr.jumpperiod, LV_TASK_PRIO_LOW, NULL);
+						pocLedIdtAttr.task = lv_task_create(Lv_Poc_Led_Status_Callback_Check, pocLedIdtAttr.jumpperiod, LV_TASK_PRIO_MID, NULL);
 					}
-					lv_poc_refr_task_once(lv_poc_led_status_all_close, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					lv_poc_led_status_all_close(NULL);
 					break;
 				}
 
@@ -110,7 +112,6 @@ static void lv_poc_led_entry(void *param)
 				case LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS:
 				{
 					pocLedIdtAttr.pledjump = callback_lv_poc_red_close_green_jump;
-					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS;
 					break;
 				}
 
@@ -119,14 +120,19 @@ static void lv_poc_led_entry(void *param)
 				{
 					switch(pocLedIdtAttr.before_status)
 					{
+						case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
+	                    {
+	                        pocLedIdtAttr.pledjump  = callback_lv_poc_red_close_green_jump;
+	                        break;
+	                    }
 						case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
 						{
-							pocLedIdtAttr.pledjump = callback_lv_poc_red_close_green_jump;
+							lv_poc_red_open_green_close(NULL);
 							break;
 						}
 						case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
 						{
-							lv_poc_refr_task_once(lv_poc_red_close_green_open, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+							lv_poc_red_close_green_open(NULL);
 							break;
 						}
 						case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
@@ -164,14 +170,21 @@ static void lv_poc_led_entry(void *param)
 				case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
 				{
 					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS;
-					lv_poc_refr_task_once(lv_poc_red_open_green_close, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					lv_poc_red_open_green_close(NULL);
 					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
+				{
+                	pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS;
+                	lv_poc_led_status_all_close(NULL);
+                	break;
 				}
 
 				case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
 				{
 					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS;
-					lv_poc_refr_task_once(lv_poc_red_close_green_open, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					lv_poc_red_close_green_open(NULL);
 					break;
 				}
 
@@ -179,14 +192,14 @@ static void lv_poc_led_entry(void *param)
 				case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_SUCCESS_STATUS:
 				case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_SUCCESS_STATUS:
 				{
-					lv_poc_refr_task_once(lv_poc_red_close_green_open, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					lv_poc_red_close_green_open(NULL);
 					break;
 				}
 
 				case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_FAIL_STATUS:
 				case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_FAIL_STATUS:
 				{
-					lv_poc_refr_task_once(lv_poc_red_open_green_close, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					lv_poc_red_open_green_close(NULL);
 					break;
 				}
 
@@ -206,7 +219,7 @@ static void lv_poc_led_entry(void *param)
 
 				default:
 				{
-					lv_poc_refr_task_once(lv_poc_led_status_all_open, LVPOCLISTIDTCOM_LIST_PERIOD_100, LV_TASK_PRIO_LOW);
+					lv_poc_led_status_all_open(NULL);
 					pocLedIdtAttr.pledjump = callback_lv_poc_red_open_green_jump;
 					pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
 					pocLedIdtAttr.pledjump = callback_lv_poc_green_open_red_jump;

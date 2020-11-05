@@ -17,9 +17,7 @@ static void lv_poc_shutdown_charge_Animation_Task(void *ctx);
 static void lv_poc_charge_poweron_battery_refresh(lv_task_t *task);
 static void lv_poc_charge_power_outages_shutdown_task(lv_task_t * task);
 static void lv_poc_show_sprd_image(lv_task_t *task);
-#if 0
-static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
-#endif
+static void lv_poc_show_first_battery_image(lv_task_t *task);
 
 static lv_style_t lv_poc_shutdown_charge_style = {0};
 static lv_obj_t *lv_poc_shutdown_charge_obj = NULL;//背景框
@@ -114,11 +112,7 @@ void lv_poc_shutdown_charge_power_on_logo(void)
 	lv_obj_set_pos(lv_poc_shutdown_charge_obj, 0, 0);
 
 	//电池图片
-	poc_charge_battery_image = lv_img_create(lv_poc_shutdown_charge_obj, NULL);
-	lv_img_set_auto_size(poc_charge_battery_image, false);
-	lv_obj_set_size(poc_charge_battery_image, 97, 59);
-	lv_img_set_src(poc_charge_battery_image, &indeterminate0);
-	lv_obj_align(poc_charge_battery_image, lv_poc_shutdown_charge_obj, LV_ALIGN_CENTER, 0, 0);
+	lv_poc_refr_task_once(lv_poc_show_first_battery_image, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGHEST);
 
 	lvGuiReleaseScreenOn(3);//熄屏
 
@@ -275,6 +269,24 @@ void lv_poc_show_sprd_image(lv_task_t *task)
 	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
 	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
 	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+}
+
+/*
+	  name : lv_poc_show_first_battery_image
+	 param : none
+	author : wangls
+  describe : 播放第一张电池图片
+	  date : 2020-07-28
+*/
+static
+void lv_poc_show_first_battery_image(lv_task_t *task)
+{
+	//电池图片
+	poc_charge_battery_image = lv_img_create(lv_poc_shutdown_charge_obj, NULL);
+	lv_img_set_auto_size(poc_charge_battery_image, false);
+	lv_obj_set_size(poc_charge_battery_image, 97, 59);
+	lv_img_set_src(poc_charge_battery_image, &indeterminate0);
+	lv_obj_align(poc_charge_battery_image, lv_poc_shutdown_charge_obj, LV_ALIGN_CENTER, 0, 0);
 }
 
 #ifdef __cplusplus

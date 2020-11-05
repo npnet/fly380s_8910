@@ -60,7 +60,7 @@ lv_poc_win_t * lv_poc_win_create(lv_obj_t * parent, const char * title, lv_poc_w
     {
         lv_label_set_text(new_win->title, "");
     }
-    lv_label_set_long_mode(new_win->title, LV_LABEL_LONG_SROLL);
+    lv_label_set_long_mode(new_win->title, LV_LABEL_LONG_SROLL_CIRC);
     lv_label_set_align(new_win->title, LV_LABEL_ALIGN_CENTER);
     lv_obj_align(new_win->title, lv_obj_get_parent(new_win->title), LV_ALIGN_CENTER, 0, 0);
     new_win->display_area.x1 = lv_obj_get_x(new_win->header);
