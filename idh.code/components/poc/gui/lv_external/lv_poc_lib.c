@@ -1238,6 +1238,7 @@ poc_get_network_ps_attach_status(IN POC_SIM_ID sim)
 bool
 poc_get_network_register_status(IN POC_SIM_ID sim)
 {
+	static int number = 0;
 	CFW_NW_STATUS_INFO nStatusInfo;
 	uint8_t status;
 	static bool poc_network_voice_play = true;
@@ -1246,7 +1247,12 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	{
 		poc_network_voice_play = false;//only play once
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, 50, false);
+
+		if(number >= 10 || number == 0)//5min
+		{
+			number = 1;
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, 50, false);
+		}
 		return false;
 	}
 
@@ -1268,6 +1274,7 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
 		return false;
 	}
+	number++;
 	return true;
 }
 

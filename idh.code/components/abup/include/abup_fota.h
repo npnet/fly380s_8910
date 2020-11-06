@@ -23,8 +23,10 @@ typedef enum
 
 typedef enum
 {
-	ABUP_FOTA_READY,//检查版本
-	ABUP_FOTA_START,//准备环境
+	ABUP_FOTA_START,
+	ABUP_FOTA_IDLEI, //FOTA BUSY
+	ABUP_FOTA_CHECK,//检查版本
+	ABUP_FOTA_READY,//准备环境
 	ABUP_FOTA_RMI,	//注册设备信息
 	ABUP_FOTA_CVI,	//检测版本
 	ABUP_FOTA_DLI,	//下载差分包
@@ -33,6 +35,8 @@ typedef enum
 	ABUP_FOTA_NOT_ENOUGH_SPACE, //空间不足
 	ABUP_FOTA_NO_ACCESS_TIMES,  //当天访问次数上限
 	ABUP_FOTA_REBOOT_UPDATE,	//准备重启更新
+	ABUP_FOTA_ERROR,	//升级异常
+	ABUP_FOTA_END,
 }ABUP_FOTA_PROCESS_STATUS;
 
 typedef enum
@@ -71,6 +75,7 @@ uint32_t abup_recv_buff_len(void);
 void abup_check_update_result(void);
 void abup_check_version(void);
 uint8_t abup_update_status(void);
+void abup_set_status(uint8_t status);
 
 #endif
 
