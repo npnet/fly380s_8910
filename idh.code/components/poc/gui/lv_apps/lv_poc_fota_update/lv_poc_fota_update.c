@@ -59,6 +59,8 @@ typedef struct
 static char lv_poc_fota_text_cur_version[64] = {0};
 static char lv_poc_fota_text_cur_status[64] = {0};
 static lv_task_t * monitor_check_update = NULL;
+static osiTimer_t * monitor_check_update_timer = NULL;
+static bool lv_poc_fota_error_status = false;
 
 lv_poc_fota_label_struct_t lv_poc_fota_label_array[] = {
     {
@@ -74,25 +76,79 @@ lv_poc_fota_label_struct_t lv_poc_fota_label_array[] = {
     },
 };
 
+static void lv_poc_fota_update_status(lv_task_t * task)
+{
+	strcpy(lv_poc_fota_text_cur_status, "服务器响应超时");
+	lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+}
+
+static void lv_poc_fota_check_update_timer_cb(void *ctx)
+{
+	if(monitor_check_update != NULL)
+	{
+		lv_task_del(monitor_check_update);
+		monitor_check_update = NULL;
+	}
+	lv_poc_refr_func_ui(lv_poc_fota_update_status, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH, (void *)ctx);
+	lv_poc_fota_error_status = true;
+	abup_task_exit();
+	OSI_LOGI(0, "[abup](%d):time cb", __LINE__);
+}
+
 static void lv_poc_fota_check_update_cb(lv_task_t * task)
 {
-	int fota_status = abup_update_status();
+	static uint8_t fota_status = ABUP_FOTA_START;
+	static uint8_t last_fota_status = ABUP_FOTA_END;
 
-	if(task->user_data == NULL)
+	fota_status = abup_update_status();
+
+	if(last_fota_status == fota_status
+		|| task->user_data == NULL)
 	{
 		return;
 	}
 
+	last_fota_status = fota_status;
+	if(fota_status != ABUP_FOTA_CVI)
+	{
+		if(monitor_check_update_timer != NULL)
+		{
+			OSI_LOGI(0, "[abup](%d):time stop", __LINE__);
+			osiTimerStop(monitor_check_update_timer);
+			osiTimerDelete(monitor_check_update_timer);
+			monitor_check_update_timer = NULL;
+		}
+	}
+
 	switch(fota_status)
 	{
-		case ABUP_FOTA_READY://检查版本
+		case ABUP_FOTA_IDLEI://FOTA BUSY
 		{
-			strcpy(lv_poc_fota_text_cur_status, "检查版本");
+			strcpy(lv_poc_fota_text_cur_status, "FOTA BUSY");
 			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
 			break;
 		}
 
-		case ABUP_FOTA_START://准备环境
+		case ABUP_FOTA_ERROR://升级异常
+		{
+			strcpy(lv_poc_fota_text_cur_status, "升级异常");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
+			break;
+		}
+
+		case ABUP_FOTA_CHECK://检查版本
+		{
+			strcpy(lv_poc_fota_text_cur_status, "检查版本");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			OSI_LOGI(0, "[abup](%d):check version", __LINE__);
+			break;
+		}
+
+		case ABUP_FOTA_READY://准备环境
 		{
 			strcpy(lv_poc_fota_text_cur_status, "准备环境");
 			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
@@ -110,6 +166,13 @@ static void lv_poc_fota_check_update_cb(lv_task_t * task)
 		{
 			strcpy(lv_poc_fota_text_cur_status, "检测版本");
 			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+
+			if(monitor_check_update_timer == NULL)
+			{
+				monitor_check_update_timer = osiTimerCreate(NULL, lv_poc_fota_check_update_timer_cb, (void *)task->user_data);
+			}
+			osiTimerStart(monitor_check_update_timer, 20000);//check package timeout-20s
+			OSI_LOGI(0, "[abup](%d):time start", __LINE__);
 			break;
 		}
 
@@ -117,6 +180,7 @@ static void lv_poc_fota_check_update_cb(lv_task_t * task)
 		{
 			strcpy(lv_poc_fota_text_cur_status, "下载升级包");
 			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			OSI_LOGI(0, "[abup](%d):download package", __LINE__);
 			break;
 		}
 
@@ -126,6 +190,7 @@ static void lv_poc_fota_check_update_cb(lv_task_t * task)
 			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
 			lv_task_del(monitor_check_update);
 			monitor_check_update = NULL;
+			OSI_LOGI(0, "[abup](%d):no network", __LINE__);
 			break;
 		}
 
@@ -175,7 +240,10 @@ static void lv_poc_fota_pressed_cb(lv_obj_t * obj, lv_event_t event)
     if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
         //open software update
-        if(abup_update_status() == ABUP_FOTA_READY
+        if(lv_poc_fota_error_status == true
+			|| abup_update_status() == ABUP_FOTA_ERROR
+			|| abup_update_status() == ABUP_FOTA_IDLEI
+			|| abup_update_status() == ABUP_FOTA_CHECK
 			|| abup_update_status() == ABUP_FOTA_NO_NETWORK
 			|| abup_update_status() == ABUP_FOTA_NO_NEW_VERSION
 			|| abup_update_status() == ABUP_FOTA_NOT_ENOUGH_SPACE
@@ -192,6 +260,7 @@ static void lv_poc_fota_pressed_cb(lv_obj_t * obj, lv_event_t event)
 				{
 					monitor_check_update = lv_task_create(lv_poc_fota_check_update_cb, 500, LV_TASK_PRIO_MID, (void *)obj->user_data);
 				}
+				lv_poc_fota_error_status = false;
 			}
 		}
     }
@@ -299,13 +368,15 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 				case LV_KEY_ESC:
 				{
-					if(monitor_check_update == NULL)
+					if(monitor_check_update == NULL
+						|| lv_poc_fota_error_status == true)
 					{
 						lv_poc_del_activity(poc_fota_update_activity);
+						abup_set_status(ABUP_FOTA_START);
 					}
 					else
 					{
-						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在检查更新软件", (const uint8_t *)"");
+						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LAUNCH_NOTE_MSG, (const uint8_t *)"正在检查更新", (const uint8_t *)"请勿退出");
 					}
 					break;
 				}
