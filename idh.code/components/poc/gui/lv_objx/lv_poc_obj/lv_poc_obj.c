@@ -2152,7 +2152,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=6;
+			battery_img_cur=5;
         }
         else if(battery_t.battery_value >= 70)//4.08v
         {
@@ -2160,28 +2160,28 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=5;
+			battery_img_cur=4;
         }
         else if(battery_t.battery_value >= 42)//3.93v
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=4;
+			battery_img_cur=3;
         }
         else if(battery_t.battery_value >= 20)//3.86v
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=3;
+			battery_img_cur=2;
         }
         else if(battery_t.battery_value >= 8)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
-			battery_img_cur=2;
+			battery_img_cur=1;
         }
         else if(battery_t.battery_value >= 0)//3.251v
         {
