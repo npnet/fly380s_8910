@@ -117,7 +117,7 @@ uint8_t gChgTaskReady = 0;
 #define BAT_CAPACITY_STEP 12
 static uint16_t dischg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
     {
-        {4080, 100},
+        {4120, 100},
         {4060, 90},
         {3979, 80},
         {3900, 70},
@@ -133,7 +133,7 @@ static uint16_t dischg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
 
 static uint16_t chg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
     {
-        {4260, 100},
+        {4230, 100},
         {4180, 90},
         {4119, 80},
         {4080, 70},

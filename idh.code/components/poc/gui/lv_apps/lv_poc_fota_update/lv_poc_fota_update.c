@@ -212,7 +212,7 @@ static void fota_list_config(lv_obj_t * list, lv_area_t list_area)
     int label_array_size = sizeof(lv_poc_fota_label_array)/sizeof(lv_poc_fota_label_struct_t);
     lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
-	strcpy(lv_poc_fota_text_cur_version, "8910DM_V1.3_0.0.3");
+	strcpy(lv_poc_fota_text_cur_version, "8910DM_V1.3_0.0.1");
 	strcpy(lv_poc_fota_text_cur_status, "检查版本");
 
     for(int i = 0; i < label_array_size; i++)
@@ -302,6 +302,10 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 					if(monitor_check_update == NULL)
 					{
 						lv_poc_del_activity(poc_fota_update_activity);
+					}
+					else
+					{
+						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在检查更新软件", (const uint8_t *)"");
 					}
 					break;
 				}
