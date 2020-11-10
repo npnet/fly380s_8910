@@ -21,7 +21,7 @@
 #define GPS_TX_BUF_SIZE (1024)
 #define GPS_NO_LOCATION_CHECK_SCAN_FREQ   10*1000 //10s
 #define GPS_NO_LOCATION_POWER_OFF_FREQ    30*1000 //30s
-#define GPS_LOCATION_CHECK_REPORT_FREQ    5*60*1000//5min
+#define GPS_LOCATION_CHECK_REPORT_FREQ    2*60*1000//5min
 #define GPS_NO_LOCATION_OUTAGE_FREQ       12//断电频率(未定位上)--120s
 #define GPS_RUN_TIMER_CB_FREQ             500 //500ms
 
@@ -59,6 +59,7 @@ typedef struct _PocGpsIdtComAttr_t
 	bool        isReady;
 	bool        ishavegps;
 	bool        gps_location_status;
+	bool        locate_status;
 	bool        gps_i2c_error_status;
 	int         scannumber;
 } PocGpsIdtComAttr_t;
@@ -102,17 +103,15 @@ void prvGPSWriteOneReg(uint8_t addr, uint8_t data)
 #endif
 
 static
-void prvGPSReadReg(uint8_t addr, uint8_t *data, uint32_t len)
+bool prvGPSReadReg(uint8_t addr, uint8_t *data, uint32_t len)
 {
     drvI2cSlave_t idAddress = {salve_i2c_addr_w, addr, 0, false};
-    if (i2c_p != NULL)
+	if (i2c_p != NULL)
     {
-        drvI2cRead(i2c_p, &idAddress, data, len);
+        return drvI2cRead(i2c_p, &idAddress, data, len);
     }
-    else
-    {
-        OSI_LOGE(0, "i2c is not open");
-    }
+    OSI_LOGE(0, "i2c is not open");
+	return false;
 }
 
 
@@ -120,12 +119,14 @@ static
 bool prvGPSWriteRegList(uint8_t *data, uint16_t len)
 {
     drvI2cSlave_t wirte_data = {salve_i2c_addr_w, 0, 0, false};
-
     if (drvI2cWrite(i2c_p, &wirte_data, data, len))
+    {
         return true;
+    }
     else
+    {
         return false;
-
+    }
 }
 
 static
@@ -168,9 +169,8 @@ void prvlvPocGpsIdtComGetInfo(void)
     static uint16_t plen = 0;
     static unsigned char buf[2] = {0xff, 0xff};
 	//i2c open
+	poc_config_Lcd_power_vol();//power on
 	prvlvPocGpsI2cOpen(DRV_NAME_I2C2, DRV_I2C_BPS_100K);
-	osiDelayUS(5000);//5ms
-	prvGPSReadReg(0x82, gps_data, plen);
 	memset(&gps_data, 0, sizeof(GPS_RX_BUF_SIZE));
 	osiDelayUS(5000);//5ms
 
@@ -200,12 +200,21 @@ void prvlvPocGpsIdtComGetInfo(void)
 			goto gpserror;
 		}
 		osiDelayUS(GPS_RUN_WRITE_DATA_WAIT_PERIOD);
-	    prvGPSReadReg(0x80, buf, 2);
+
+	    if(!prvGPSReadReg(0x80, buf, 2))
+	    {
+			OSI_LOGE(0, "[GPS]0x80 read fail");
+			goto gpserror;
+		}
 	    plen = (buf[0]<<8) | (buf[1]);
 
 	    if(plen != 0)
 	    {
-	        prvGPSReadReg(0x82, gps_data, plen);
+	        if(!prvGPSReadReg(0x82, gps_data, plen))
+	        {
+				OSI_LOGE(0, "[GPS]0x82 read fail");
+				goto gpserror;
+			}
 	        GPS_Analysis(&poc_idt_gps,(uint8_t*)gps_data);
 
 			#ifdef SUPPORT_ORI_GPS_LOG
@@ -232,8 +241,8 @@ void prvlvPocGpsIdtComGetInfo(void)
 		osiDelayUS(GPS_RUN_READ_DATA_WAIT_PERIOD);
 
 		if((i >= GPS_RUN_GET_DATA_ERROR_UP_FREQ)
-			  && (poc_idt_gps.utc.year == 0
-				  || longitude < 0
+			  && (//poc_idt_gps.utc.year == 0 ||//error year
+				  longitude < 0
 			      || longitude > 180
 			      || latitude < 0
 			      || latitude > 90))
@@ -242,7 +251,8 @@ void prvlvPocGpsIdtComGetInfo(void)
 			goto gpserror;
 		}
 
-		if(poc_idt_gps.speed != 0)
+		if(poc_idt_gps.speed != 0
+			&& plen != 40)//modify due to valid data
 		{
 			break;
 		}
@@ -355,16 +365,12 @@ static
 void prvlvPocGpsIdtComOpenGpsPm(void)
 {
 	poc_set_gps_ant_status(true);
-    halPmuSwitchPower(HAL_POWER_CAMA, true, true);
-    halPmuSwitchPower(HAL_POWER_VIBR, true, true);
 }
 
 static
 void prvlvPocGpsIdtComCloseGpsPm(void)
 {
 	poc_set_gps_ant_status(false);
-	halPmuSwitchPower(HAL_POWER_CAMA, false, false);
-	halPmuSwitchPower(HAL_POWER_VIBR, false, false);
 }
 
 static
@@ -402,11 +408,11 @@ void prvGpsThreadEntry(void *ctx)
 			{
 				if(!pubPocIdtGpsLocationStatus())
 				{
-					osiTimerStartPeriodicRelaxed(pocGpsIdtAttr.GpsInfoTimer, GPS_NO_LOCATION_CHECK_SCAN_FREQ, OSI_WAIT_FOREVER);
+					osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_NO_LOCATION_CHECK_SCAN_FREQ);
 				}
 				else
 				{
-					osiTimerStartPeriodicRelaxed(pocGpsIdtAttr.GpsInfoTimer, GPS_LOCATION_CHECK_REPORT_FREQ, OSI_WAIT_FOREVER);
+					osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_LOCATION_CHECK_REPORT_FREQ);
 				}
 				break;
 			}
@@ -421,7 +427,7 @@ void prvGpsThreadEntry(void *ctx)
 			{
 				OSI_LOGI(0, "[GPS][EVENT]modify check_scan period");
 				osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
-				osiTimerStartPeriodicRelaxed(pocGpsIdtAttr.GpsInfoTimer, GPS_NO_LOCATION_CHECK_SCAN_FREQ, OSI_WAIT_FOREVER);
+				osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_NO_LOCATION_CHECK_SCAN_FREQ);
 				break;
 			}
 
@@ -429,7 +435,7 @@ void prvGpsThreadEntry(void *ctx)
 			{
 				OSI_LOGI(0, "[GPS][EVENT]modify report period");
 				osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
-				osiTimerStartPeriodicRelaxed(pocGpsIdtAttr.GpsInfoTimer, GPS_LOCATION_CHECK_REPORT_FREQ, OSI_WAIT_FOREVER);
+				osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_LOCATION_CHECK_REPORT_FREQ);
 				break;
 			}
 
@@ -466,14 +472,14 @@ void prvlvPocGpsIdtComHandleSuspendTimercb(void *ctx)
 {
 	publvPocGpsIdtComSleep();
 	osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
-	osiTimerStartRelaxed(pocGpsIdtAttr.RestartGpsTimer, GPS_NO_LOCATION_POWER_OFF_FREQ, OSI_WAIT_FOREVER);
+	osiTimerStart(pocGpsIdtAttr.RestartGpsTimer, GPS_NO_LOCATION_POWER_OFF_FREQ);
 	OSI_LOGI(0, "[GPS][EVENT]start GPS power off");
 }
 
 static
 void prvlvPocGpsIdtComHandleRestartTimercb(void *ctx)
 {
-	osiTimerStartPeriodicRelaxed(pocGpsIdtAttr.GpsInfoTimer, GPS_RUN_TIMER_CB_FREQ, OSI_WAIT_FOREVER);
+	osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_RUN_TIMER_CB_FREQ);
 	OSI_LOGI(0, "[GPS][EVENT]GPS power on, goto to location");
 }
 
@@ -501,7 +507,13 @@ void publvPocGpsIdtComInit(void)
 
 gps_success:
 	pocGpsIdtAttr.ishavegps = true;
-	prvGPSReadReg(0x82, gps_data, GPS_RX_BUF_SIZE);
+	if(!prvGPSReadReg(0x82, gps_data, GPS_RX_BUF_SIZE))
+	{
+		if(!prvGPSReadReg(0x82, gps_data, GPS_RX_BUF_SIZE))
+		{
+			goto gps_fail;
+		}
+	}
 	memset(&gps_data, 0, sizeof(GPS_RX_BUF_SIZE));
     pocGpsIdtAttr.thread = osiThreadCreate("GpsThread", prvGpsThreadEntry, NULL, OSI_PRIORITY_NORMAL, 2048, 64);
 	OSI_LOGI(0, "[GPS][EVENT][POWERON]have GPS module");
@@ -533,10 +545,9 @@ void publvPocGpsIdtComSleep(void)
 		OSI_LOGI(0, "[GPS][EVENT]sleep and no GPS module");
 		return;
 	}
-	if(pubPocIdtGpsLocationStatus())
-	{
-		osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
-	}
+	osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
+	osiTimerStop(pocGpsIdtAttr.GpsSuspendTimer);
+	osiTimerStop(pocGpsIdtAttr.RestartGpsTimer);
 	pocGpsIdtAttr.isReady = false;
 	prvlvPocGpsIdtComSuspend();
 	prvlvPocGpsIdtComCloseGpsPm();
@@ -553,7 +564,7 @@ void publvPocGpsIdtComWake(void)
 	prvlvPocGpsIdtComOpenGpsPm();
 	lv_poc_show_gps_location_status_img(false);
 	prvlvPocGpsIdtComResume();
-	osiTimerStartPeriodicRelaxed(pocGpsIdtAttr.GpsInfoTimer, GPS_NO_LOCATION_CHECK_SCAN_FREQ, OSI_WAIT_FOREVER);
+	osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_NO_LOCATION_CHECK_SCAN_FREQ);
 	OSI_LOGI(0, "[GPS][EVENT]GPS open");
 }
 
