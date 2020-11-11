@@ -571,8 +571,8 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 	do
 	{
 		if(!ttsIsPlaying()
-			&& !lvPocGuiIdtCom_get_listen_status()
-			&& !lvPocGuiIdtCom_get_speak_status())
+			&& !lvPocGuiOemCom_get_listen_status()
+			&& !lvPocGuiOemCom_get_speak_status())
 		{
 			audevSetPlayVolume(40);
 			char playkey[4] = "9";

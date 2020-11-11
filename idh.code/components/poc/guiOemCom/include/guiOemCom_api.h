@@ -293,13 +293,13 @@ bool lvPocGuiOemCom_modify_current_group_info(OemCGroup *CurrentGroup);
 
 bool lvPocGuiOemCom_Request_Member_Call(char *UserID);
 
-bool lvPocGuiIdtCom_get_speak_status(void);
+bool lvPocGuiOemCom_get_speak_status(void);
 
-bool lvPocGuiIdtCom_get_listen_status(void);
+bool lvPocGuiOemCom_get_listen_status(void);
 
-bool lvPocGuiIdtCom_get_obtainning_state(void);
+bool lvPocGuiOemCom_get_obtainning_state(void);
 
-void lvPocGuiIdtCom_set_obtainning_state(bool status);
+void lvPocGuiOemCom_set_obtainning_state(bool status);
 
 OSI_EXTERN_C_END
 
