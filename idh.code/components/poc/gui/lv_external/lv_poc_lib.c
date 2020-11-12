@@ -1156,38 +1156,32 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 	ret = CFW_GetGprsAttState(&uState, nSim);
 	if (ret != 0)
 	{
-	    //OSI_LOGI(0, "[song]SIM ACTIVED ERROR!");//检索网络失败
+	    OSI_LOGI(0, "[POCNET]SIM ACTIVED ERROR!");//检索网络失败
 	}
 	if(uState == 0)
 	{
-		//OSI_LOGI(0, "[song]SIM card Detach!");//sim卡未注册上GPRS数据网络
+		OSI_LOGI(0, "[POCNET]SIM card Detach!");//sim卡未注册上GPRS数据网络
 		strcpy((char *)operat, "NOS");
 		_signal_type = MMI_MODEM_PLMN_RAT_NO_SERVICE;
 		goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
 
 	}
 
-	/*0--Not registered and not searching.
-	  1--Registered and in the home area.
-	  2--Not registered and searching for a new operator.
-	  3--Registration denied.
-	  4--Unknown registration.
-	*/
-	ret = cereg_Respond(true);
+	//ret = cereg_Respond(true);//死机，待排查
 	if(nStatusInfo.nStatus == 0
 		|| nStatusInfo.nStatus == 3
 		|| nStatusInfo.nStatus == 4)
 	{
-		if (ret != 0)
-		{
-
-		}
-		else
-		{
+//		if (ret != 0)
+//		{
+//			OSI_LOGI(0, "[POCNET]SIM OK!");//sim卡注册上GSM网络
+//		}
+//		else
+//		{
 			strcpy((char *)operat, "UN");
 			_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//sim卡未注册上GSM网络
 			goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
-		}
+//		}
 	}
 
 	if(* rat == 0 || * rat == 1 || * rat == 3)//2G
