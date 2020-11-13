@@ -66,6 +66,7 @@ static bool lv_poc_grouplist_refr_complete = false;
 static bool lv_poc_memberlist_refr_complete = false;
 static bool lv_poc_refr_error_info = false;
 static bool lv_poc_charge_state = false;
+static bool is_poc_note_tone = false;
 
 static void poc_ear_ppt_irq(void *ctx);
 
@@ -572,7 +573,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 	{
 		if(!ttsIsPlaying()
 			&& !lvPocGuiOemCom_get_listen_status()
-			&& !lvPocGuiOemCom_get_speak_status())
+			&& !lv_poc_get_play_voice_status())
 		{
 			audevSetPlayVolume(40);
 			char playkey[4] = "9";
@@ -597,7 +598,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 
 	while(1)
 	{
-		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 80))
+		if(osiEventTryWait(prv_play_voice_one_time_thread, &event, 80))//循环播放
 		{
 			if(event.id != 101)
 			{
@@ -633,7 +634,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					if(voice_queue_reader == voice_queue_writer)
 					{
 						prv_play_voice_one_time_thread = NULL;
-						osiThreadExit();
+						osiThreadExit();//退出-->降低功耗
 					}
 				}
 				else
@@ -1259,10 +1260,9 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	strcpy(poc_setting->ip_address, "124.160.11.21");
 	poc_setting->ip_port = 10000;
 #endif
-	poc_setting->nv_monitor_group_number = 0;
-	for(int i = 0; i < sizeof(poc_setting->nv_monitor_group)/sizeof(nv_poc_monitor_info); i++)
+	for(int i = 0; i < 5; i++)
 	{
-		memset(&poc_setting->nv_monitor_group[i], 0, sizeof(nv_poc_monitor_info));
+		strcpy((char *)poc_setting->nv_monitor_group[i].m_ucGID, "nomonitor");
 	}
 }
 
@@ -2616,11 +2616,31 @@ bool lv_poc_watchdog_status(void)
 }
 
 /*
-	  name : lv_poc_play_voice_status
+	  name : lv_poc_get_play_voice_status
 	  param :
-	  date : 2020-11-04
+	  date : 2020-11-12
 */
-bool lv_poc_play_voice_status(void)
+bool lv_poc_get_play_voice_status(void)
+{
+	return is_poc_note_tone;
+}
+
+/*
+	  name : lv_poc_set_play_voice_status
+	  param :
+	  date : 2020-11-12
+*/
+void lv_poc_set_play_voice_status(bool status)
+{
+	is_poc_note_tone = status;
+}
+
+/*
+	  name : lv_poc_get_tts_status
+	  param :
+	  date : 2020-11-12
+*/
+bool lv_poc_get_tts_status(void)
 {
 	return ttsIsPlaying();
 }

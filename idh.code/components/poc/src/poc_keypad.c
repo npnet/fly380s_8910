@@ -63,8 +63,10 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 	{
 		if(prvPttKeyState != state)// && !lvPocGuiIdtCom_listen_status())/*当正在接听是ppt键无效*/
 		{
-			if(state == LV_INDEV_STATE_PR)
+			if(state == LV_INDEV_STATE_PR
+				&& !lv_poc_get_play_voice_status())
 			{
+				lv_poc_set_play_voice_status(true);
 				#if POC_RECORD_OR_SPEAK_CALL
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
 				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_IND, NULL);
@@ -88,6 +90,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 					lv_poc_start_playfile_pocmode();
 					#endif
 				#endif
+				lv_poc_set_play_voice_status(false);
 			}
 		}
 		prvPttKeyState = state;

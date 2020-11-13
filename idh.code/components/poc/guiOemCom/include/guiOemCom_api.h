@@ -85,6 +85,8 @@ typedef enum
     LVPOCGUIOEMCOM_SIGNAL_UNMONITOR_GROUP_IND,
     LVPOCGUIOEMCOM_SIGNAL_UNMONITOR_GROUP_REP,
 
+    LVPOCGUIOEMCOM_SIGNAL_POWERON_CHECK_MONITOR_GROUP_REP,
+
 	LVPOCGUIOEMCOM_SIGNAL_GPS_UPLOADING_IND,
 
 	LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_REP_RECORD_IND,
@@ -126,6 +128,20 @@ typedef enum{
 	LVPOCOEMCOM_CALL_TYPE_END	,
 }LVPOCOEMCOM_CALL_TYPE_T;
 
+typedef enum{
+
+	LVPOCOEMCOM_TYPE_REPPONSE_SPEED_START = 0,
+
+	LVPOCOEMCOM_TYPE_REPPONSE_SPEED_MEMBERLIST    = 50 ,
+	LVPOCOEMCOM_TYPE_REPPONSE_SPEED_GROUPLIST     = 50 ,
+	LVPOCOEMCOM_TYPE_REPPONSE_SPEED_MONITORGROUP  = 50 ,
+	LVPOCOEMCOM_TYPE_REPPONSE_SPEED_NORMAL        = 100 ,
+	LVPOCOEMCOM_TYPE_REPPONSE_SPEED_SLEEP         = 5000 ,
+
+	LVPOCOEMCOM_TYPE_REPPONSE_SPEED_END	,
+}LVPOCOEMCOM_REPPONSE_SPEED_TYPE_T;
+
+
 /*******************************************OPT REQUEST CODE***********************************************************/
 //OPT SEND CODE
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC 			  "005200"//请求打开POC
@@ -153,6 +169,7 @@ typedef enum{
 
 
 #define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETVOLUM   		  "250000"  //请求设置音量
+#define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOTETONE   		  "7C0000"  //请求开关提示音
 #define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPEN_LOG 			  "7E000001"//开关LOG
 
 #define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ACCOUT 			  "66747468"//ftth---账号
@@ -187,6 +204,7 @@ typedef enum{
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_UPDATEDATAI_ACK  	      "POC:85"   //更新用户群组信息
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_JNIO_ACK  		  "POC:86"   //加入群组
 #define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SPEAKERINFO_ACK  	      "POC:83"   //讲话用户信息
+#define	LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOTETONE_ACK  	      "POC:7C"   //关闭提示音
 
 //MEMBER ACK
 #define LVPOCPOCOEMCOM_SIGNAL_OPTCODE_MEMBERCALL_ACK          "POC:0a"//单呼用户成功应答
@@ -293,13 +311,17 @@ bool lvPocGuiOemCom_modify_current_group_info(OemCGroup *CurrentGroup);
 
 bool lvPocGuiOemCom_Request_Member_Call(char *UserID);
 
-bool lvPocGuiOemCom_get_speak_status(void);
-
 bool lvPocGuiOemCom_get_listen_status(void);
+
+int lvPocGuiOemCom_get_login_status(void);
 
 bool lvPocGuiOemCom_get_obtainning_state(void);
 
+bool lvPocGuiOemCom_get_system_status(void);
+
 void lvPocGuiOemCom_set_obtainning_state(bool status);
+
+void lvPocGuiOemCom_set_response_speed(LVPOCOEMCOM_REPPONSE_SPEED_TYPE_T response_speed);
 
 OSI_EXTERN_C_END
 

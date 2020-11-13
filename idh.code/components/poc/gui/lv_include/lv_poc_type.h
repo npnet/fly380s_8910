@@ -155,7 +155,6 @@ typedef struct
 	char old_account_name[32];
 	char old_account_current_group[32];
 #endif
-	uint8_t nv_monitor_group_number;
 	nv_poc_monitor_info nv_monitor_group[5];
 } nv_poc_setting_msg_t;
 

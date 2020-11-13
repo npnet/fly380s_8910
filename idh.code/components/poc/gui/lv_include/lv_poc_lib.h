@@ -817,6 +817,27 @@ void lv_poc_set_charge_status(bool status);
 */
 bool lv_poc_get_charge_status(void);
 
+/*
+	  name : lv_poc_get_play_voice_status
+	  param :
+	  date : 2020-11-12
+*/
+bool lv_poc_get_play_voice_status(void);
+
+/*
+	  name : lv_poc_set_play_voice_status
+	  param :
+	  date : 2020-11-12
+*/
+void lv_poc_set_play_voice_status(bool status);
+
+/*
+	  name : lv_poc_get_tts_status
+	  param :
+	  date : 2020-11-12
+*/
+bool lv_poc_get_tts_status(void);
+
 #ifdef __cplusplus
 }
 #endif

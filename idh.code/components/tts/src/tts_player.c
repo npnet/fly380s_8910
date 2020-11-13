@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -53,15 +53,19 @@ static void prvPlay(void *param)
     if (!ttsEngineIntfSynthText(impl, d->playtext, -1))
     {
         OSI_LOGE(0, "tts synth failed, stop pipe");
-        osiPipeStop(d->pipe);
+		osiMutexLock(d->lock);
+		osiPipeStop(d->pipe);
+		osiMutexUnlock(d->lock);
         goto failed;
     }
 
+	osiMutexLock(d->lock);
     osiPipeSetEof(d->pipe);
     auPlayerWaitFinish(d->player, OSI_WAIT_FOREVER);
     osiPipeStop(d->pipe);
     ttsEngineIntfDelete(impl);
     prvttsPlayerDelete(d);
+	osiMutexUnlock(d->lock);
     return;
 
 failed_nomem:

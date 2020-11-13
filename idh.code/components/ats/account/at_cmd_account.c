@@ -110,7 +110,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 		            }
 
 					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)pocparam);
-					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]pocParam is %s", pocparam);
+					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[oemack][set][ind]pocParam is %s", pocparam);
 			    }while(0);
 			    break;
 		    }
