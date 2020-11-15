@@ -413,12 +413,14 @@ Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 		case LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND:
 		{
+			lv_poc_set_auto_deepsleep(true);
 			publvPocGpsIdtComSleep();
 			break;
 		}
 
 		case LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND:
 		{
+			lv_poc_set_auto_deepsleep(false);
 			publvPocGpsIdtComWake();
 			break;
 		}

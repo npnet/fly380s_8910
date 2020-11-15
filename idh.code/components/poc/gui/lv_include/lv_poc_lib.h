@@ -1028,6 +1028,14 @@ void lv_poc_set_buildgroup_refr_is_complete(bool status);
 */
 bool lv_poc_is_buildgroup_refr_complete(void);
 
+/*
+	 name : lv_poc_set_auto_deepsleep
+	 param :
+	 date : 2020-09-29
+*/
+void
+lv_poc_set_auto_deepsleep(bool status);
+
 #ifdef __cplusplus
 }
 #endif

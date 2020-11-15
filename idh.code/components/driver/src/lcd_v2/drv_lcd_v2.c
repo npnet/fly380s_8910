@@ -63,7 +63,7 @@ static drvLcdGoudaContext_t gGoudaCtx;
 
 static void prvSetPowerEnable(bool enabled)
 {//最后一个参数表示睡眠是是否保持电源不关---目前直连GPS-power:0代表要断电 1代表不断电
-    halPmuSwitchPower(HAL_POWER_LCD, enabled, false);
+    halPmuSwitchPower(HAL_POWER_LCD, enabled, true);
     if (enabled)
         osiDelayUS(200);
 }
@@ -284,7 +284,7 @@ void drvLcdCloseV2(drvLcd_t *d)
     if (d->state == LCD_STATE_OPENED || d->state == LCD_STATE_SLEEP)
     {
         prvGoudaDeinit();
-        //prvSetPowerEnable(false);//GPS目前电源---禁止关闭
+        //prvSetPowerEnable(false);//目前该电压直连GPS,需关闭-->根据需求修改
         memset(d, 0, sizeof(drvLcd_t));
     }
 
@@ -304,7 +304,7 @@ bool drvLcdSleep(drvLcd_t *d)
 
     prvWaitGouda();
     prvGoudaDeinit();
-    //prvSetPowerEnable(false);//GPS目前电源---禁止关闭
+    //prvSetPowerEnable(false);//目前该电压直连GPS,需关闭-->根据需求修改
     d->state = LCD_STATE_SLEEP;
 
     osiMutexUnlock(gGoudaCtx.lock);
