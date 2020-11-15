@@ -45,9 +45,9 @@ typedef struct
 	nmea_slmsg slmsg[12];		//最多12颗GPS卫星
 	beidou_nmea_slmsg beidou_slmsg[12];		//暂且算最多12颗北斗卫星
 	nmea_utc_time utc;			//UTC时间
-	uint32_t latitude;				//纬度 分扩大100000倍,实际要除以100000
+	int latitude;				//纬度 分扩大100000倍,实际要除以100000
 	uint8_t nshemi;					//北纬/南纬,N:北纬;S:南纬
-	uint32_t longitude;			    //经度 分扩大100000倍,实际要除以100000
+	int longitude;			    //经度 分扩大100000倍,实际要除以100000
 	uint8_t ewhemi;					//东经/西经,E:东经;W:西经
 	uint8_t gpssta;					//GPS状态:0-未定位 1-非差分定位 2-差分定位 6-正在估算
  	uint8_t posslnum;				//用于定位的GPS卫星数,0~12.

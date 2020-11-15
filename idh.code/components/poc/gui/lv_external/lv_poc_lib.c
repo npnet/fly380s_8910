@@ -25,6 +25,8 @@
 #include <stddef.h>
 #include "hal_adi_bus.h"/*register include*/
 #include "hwreg_access.h"
+#include "drv_keypad.h"
+#include "at_engine.h"
 
 /*************************************************
 *
@@ -2684,5 +2686,16 @@ bool lv_poc_watchdog_status(void)
 bool lv_poc_play_voice_status(void)
 {
 	return ttsIsPlaying();
+}
+
+/*
+     name : lv_poc_set_auto_deepsleep
+     param :
+     date : 2020-09-29
+*/
+void
+lv_poc_set_auto_deepsleep(bool status)
+{
+   atEngineSetDeviceAutoSleep(status);
 }
 
