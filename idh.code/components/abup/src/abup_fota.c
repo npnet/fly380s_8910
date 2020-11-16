@@ -100,13 +100,15 @@ void abup_device_reboot(void)
 	{
 		if(!fupdateSetReady(NULL))
 		{
-			abup_task_exit();
 			abup_current_state = ABUP_FOTA_ERROR;
 			OSI_LOGI(0, "Abup fota ready error");
+			abup_task_exit();
 			return;
 		}
+		OSI_LOGI(0, "Abup fota ready ok");
 	}
 
+	abup_current_state = ABUP_FOTA_REBOOT_UPDATE;
 	osiThreadSleep(800);
 	osiShutdown(OSI_SHUTDOWN_RESET);
 }
@@ -124,7 +126,6 @@ void abup_exit_restore_context(void)
 
     if (abup_get_http_dl_state() == 1)
     {
-		abup_current_state = ABUP_FOTA_REBOOT_UPDATE;
         abup_device_reboot();
         return;
     }

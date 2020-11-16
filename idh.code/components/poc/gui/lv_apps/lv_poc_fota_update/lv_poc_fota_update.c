@@ -241,6 +241,7 @@ static void lv_poc_fota_pressed_cb(lv_obj_t * obj, lv_event_t event)
     {
         //open software update
         if(lv_poc_fota_error_status == true
+			|| abup_update_status() == ABUP_FOTA_START
 			|| abup_update_status() == ABUP_FOTA_ERROR
 			|| abup_update_status() == ABUP_FOTA_IDLEI
 			|| abup_update_status() == ABUP_FOTA_CHECK
