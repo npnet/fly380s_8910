@@ -1806,10 +1806,10 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 				}
 				pocIdtAttr.onepoweron = true;
 				osiTimerStop(pocIdtAttr.auto_login_timer);
-				osiTimerStart(pocIdtAttr.monitor_recorder_timer, 20000);//20S
 			}
 	        m_IdtUser.m_status = UT_STATUS_ONLINE;
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "成功登录");
+			osiTimerStart(pocIdtAttr.monitor_recorder_timer, 20000);//20S
 
 			LvGuiIdtCom_self_info_json_parse_status();
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);

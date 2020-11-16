@@ -327,17 +327,20 @@ void prvlvPocGpsIdtComGetInfo(void)
 
 gpserror:
 	pocGpsIdtAttr.scannumber++;
+	if(pubPocIdtGpsLocationStatus())
+	{
+		lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_GPS_NO_LOCATION_CHECK_FREQ, NULL);
+	}
 	pocGpsIdtAttr.gps_location_status = false;
 	prvlvPocGpsI2cClose(DRV_NAME_I2C2, DRV_I2C_BPS_100K);
 	lv_poc_show_gps_location_status_img(false);
 
 	if(pocGpsIdtAttr.scannumber >= GPS_NO_LOCATION_OUTAGE_FREQ)
 	{
+		pocGpsIdtAttr.scannumber = 0;
 		osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
 		osiTimerStart(pocGpsIdtAttr.GpsSuspendTimer, GPS_RUN_TIMER_CB_FREQ);
-		pocGpsIdtAttr.scannumber = 0;
 	}
-	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_GPS_NO_LOCATION_CHECK_FREQ, NULL);
 }
 
 static
