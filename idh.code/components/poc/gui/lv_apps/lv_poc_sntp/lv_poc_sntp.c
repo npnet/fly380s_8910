@@ -96,7 +96,6 @@ uint8_t cereg_Respond(bool reportN)
     _Cereg_UtoBinString(periodicTau, sStatus.periodicTau);
     bool nwInfoChange = false;
     char *rsp = (char *)malloc(64);
-    atMemFreeLater(rsp);
     char *respond = rsp;
     if (reportN == true)
     {
@@ -305,8 +304,12 @@ uint8_t cereg_Respond(bool reportN)
         ret = 2;
         break;
     }
-//    atCmdRespInfoText(cmd->engine, rsp);
     _Cereg_MemCopy8(&lastNbPsInfo, &sStatus, sizeof(CFW_NW_STATUS_INFO));
+	if(NULL != rsp)
+	{
+		free(rsp);
+		rsp = NULL;
+	}
     return ret;
 }
 
