@@ -24,7 +24,7 @@
 #include "audio_device.h"
 #include <string.h>
 #include "lv_include/lv_poc_lib.h"
-#include "guiOemCom_api.h"
+#include "guiBndCom_api.h"
 
 #define DRV_HEADSET_WQ_PRIO OSI_PRIORITY_HIGH
 #define SCI_GetTickCount() (uint32_t) osiUpTime()

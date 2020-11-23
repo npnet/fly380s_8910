@@ -13,7 +13,7 @@
 #include "netmain.h"
 //poc
 #include "lv_include/lv_poc_type.h"
-#include "guiOemCom_api.h"
+#include "guiBndCom_api.h"
 
 //following global variables just used in AT+PING command
 #define ERR_SUCCESS 0

@@ -28,6 +28,5 @@ orsource "alic/Kconfig"
 orsource "bt/Kconfig"
 orsource "wifi/Kconfig"
 orsource "account/Kconfig"
-orsource "apzzd/Kconfig"
 
 endmenu

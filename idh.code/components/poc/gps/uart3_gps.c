@@ -11,7 +11,7 @@
 #include "drv_uart.h"
 #include "drv_i2c.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiOemCom_api.h"
+#include "guiBndCom_api.h"
 #include "uart3_gps.h"
 #include "lv_apps/lv_poc_led/lv_poc_led.h"
 #include "lv_apps/lv_poc_refr/lv_poc_refr.h"

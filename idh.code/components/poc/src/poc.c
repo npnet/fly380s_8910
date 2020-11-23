@@ -27,7 +27,7 @@
 #include "drv_lcd_v2.h"
 #include "drv_names.h"
 #include "lv_include/lv_poc.h"
-#include "guiOemCom_api.h"
+#include "guiBndCom_api.h"
 #include "hal_chip.h"
 #include "tts_player.h"
 #include "uart3_gps.h"

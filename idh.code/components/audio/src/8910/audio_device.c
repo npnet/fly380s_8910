@@ -30,7 +30,7 @@
 #endif
 //poc
 #include "lv_include/lv_poc_type.h"
-#include "guiOemCom_api.h"
+#include "guiBndCom_api.h"
 
 #define INT8 int8_t
 #define UINT8 uint8_t

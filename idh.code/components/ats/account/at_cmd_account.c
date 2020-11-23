@@ -29,7 +29,7 @@
 #include "at_cfg.h"
 #include "ppp_interface.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiOemCom_api.h"
+#include "guiBndCom_api.h"
 
 
 void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
