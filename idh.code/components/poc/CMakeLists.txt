@@ -302,16 +302,15 @@ add_library(${target} STATIC
 	gps/gps_nmea.c 
 	gps/uart3_gps.c
 
-	idt/src/app_test.cpp
-	idt/core/idt-freertos.o
+	bnd/lib/broad.a
 
-	guiIdtCom/src/guiIdtCom.cpp
+	guiBndCom/src/guiBndCom.cpp
 
 	)
 
 set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_dir})
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_POC)
-target_include_directories(${target} PUBLIC include gui idt/include idt/src guiIdtCom/include guiIdtCom/src cJSON gps)
+target_include_directories(${target} PUBLIC include gui bnd/include bnd/src guiBndCom/include guiBndCom/src cJSON gps)
 target_link_group(${target} PRIVATE abup_pub abup_lib ${libc_file_name} ${libgcc_file_name})
 target_link_libraries(${target} PRIVATE kernel driver hal fs audio ml lvgl cfw nvm tts net lwip ats atr)
 

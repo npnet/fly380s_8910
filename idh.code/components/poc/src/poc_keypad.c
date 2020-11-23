@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiIdtCom_api.h"
+#include "guiBndCom_api.h"
 #include "lv_include/lv_poc.h"
 #include "lv_gui_main.h"
 #include "poc_audio_recorder.h"
