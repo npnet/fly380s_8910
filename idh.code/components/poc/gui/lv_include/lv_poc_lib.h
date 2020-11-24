@@ -33,6 +33,8 @@ enum {
 	poc_c_key       = 20,//IO c
     poc_ppt         = 21,//IO ppt
 	poc_gps_int   = 12,//IO ant
+	poc_iic_scl   = 14,//IO scl
+	poc_iic_sda   = 15,//IO sda
 };
 
 enum {
@@ -1035,6 +1037,14 @@ bool lv_poc_is_buildgroup_refr_complete(void);
 */
 void
 lv_poc_set_auto_deepsleep(bool status);
+
+/*
+	  name : poc_set_iic_status
+	  param :
+	  date : 2020-11-23
+*/
+bool
+poc_set_iic_status(bool iicstatus);
 
 #ifdef __cplusplus
 }

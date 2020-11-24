@@ -38,6 +38,7 @@
 #include "lv_apps/lv_poc_shutdown_charge/lv_poc_shutdown_charge.h"
 #include "lv_apps/lv_poc_refr/lv_poc_refr.h"
 #include "lv_apps/lv_poc_fota_update/lv_poc_fota_update.h"
+#include "lv_apps/lv_poc_gps_monitor/lv_poc_gps_monitor.h"
 
 #endif //__LV_POC_H_
 
