@@ -546,9 +546,10 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
 
 static void lv_poc_setting_pressed_cb(lv_obj_t * obj, lv_event_t event)
 {
+	int index = 0;
     if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
-	    int index = lv_list_get_btn_index((lv_obj_t *)poc_setting_win->display_obj, obj);
+	    index = lv_list_get_btn_index((lv_obj_t *)poc_setting_win->display_obj, obj);
 	    char * text = (char *)lv_list_get_btn_text((const lv_obj_t *)obj);
 #ifdef CONFIG_POC_TTS_SUPPORT
 	    poc_broadcast_play_rep((uint8_t *)text, strlen(text), poc_setting_conf->voice_broadcast_switch, false);
@@ -559,6 +560,17 @@ static void lv_poc_setting_pressed_cb(lv_obj_t * obj, lv_event_t event)
 	    lv_poc_setting_item_func_t func = lv_poc_setting_items_funcs[index];
 	    func(obj);
     }
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
+	else if(LV_EVENT_LONG_PRESSED == event)
+	{
+		poc_setting_conf = lv_poc_setting_conf_read();
+		if(poc_setting_conf->GPS_switch == 1)//monitor gps info
+		{
+			lv_poc_gps_monitor_open();
+		}
+	}
+#endif
+
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
@@ -624,8 +636,6 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 		{
 			if(lv_poc_get_refresh_ui())
 			{
-				//lv_task_t * task = lv_task_create(poc_setting_update_UI_task, 10, LV_TASK_PRIO_LOWEST, NULL);
-				//lv_task_once(task);
 				poc_setting_update_UI_task(NULL);
 				lv_poc_refresh_ui_next();
 			}
@@ -634,6 +644,26 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 		case LV_SIGNAL_DEFOCUS:
 		{
+			break;
+		}
+
+		case LV_SIGNAL_LONG_PRESS_REP:
+		{
+			if(param == NULL) return LV_RES_OK;
+			unsigned int c = *(unsigned int *)param;
+			switch(c)
+			{
+				case LV_GROUP_KEY_GP:
+				{
+					lv_signal_send(activity_list, LV_SIGNAL_LONG_PRESS, NULL);
+					break;
+				}
+
+				default:
+				{
+					break;
+				}
+			}
 			break;
 		}
 

@@ -49,7 +49,8 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_shutdown_charge/lv_poc_shutdown_charge.c
 	gui/lv_apps/lv_poc_refr/lv_poc_refr.c
     gui/lv_apps/lv_poc_fota_update/lv_poc_fota_update.c
-
+	gui/lv_apps/lv_poc_gps_monitor/lv_poc_gps_monitor.c
+	 
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c
 	gui/resource/image/battery/stat_sys_battery_15.c

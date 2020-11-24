@@ -27,6 +27,8 @@ enum {
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set  = 8,//IO headset
 	poc_gps_int   = 12,//IO ant
+	poc_iic_scl   = 14,//IO scl
+	poc_iic_sda   = 15,//IO sda
 };
 
 //字符串长度:
@@ -908,6 +910,14 @@ bool lv_poc_is_buildgroup_refr_complete(void);
 */
 void
 lv_poc_set_auto_deepsleep(bool status);
+
+/*
+	  name : poc_set_iic_status
+	  param :
+	  date : 2020-11-23
+*/
+bool
+poc_set_iic_status(bool iicstatus);
 
 #ifdef __cplusplus
 }

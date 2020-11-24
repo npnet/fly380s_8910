@@ -57,6 +57,8 @@ static drvGpio_t * poc_port_Gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
 static drvGpio_t * poc_green_gpio = NULL;
 static drvGpio_t * poc_gps_ant_Gpio = NULL;
+static drvGpio_t * poc_iic_scl_gpio = NULL;
+static drvGpio_t * poc_iic_sda_gpio = NULL;
 drvGpioConfig_t* configport = NULL;
 static bool poc_charging_status = false;
 static bool poc_power_on_status = false;
@@ -2697,5 +2699,32 @@ void
 lv_poc_set_auto_deepsleep(bool status)
 {
    atEngineSetDeviceAutoSleep(status);
+}
+
+/*
+      name : poc_set_iic_status
+      param :
+      date : 2020-11-23
+*/
+bool
+poc_set_iic_status(bool iicstatus)
+{
+	/*配置green IO*/
+    drvGpioConfig_t cfg = {
+        .mode = DRV_GPIO_OUTPUT,
+		.debounce = true,
+        .out_level = false,
+    };
+
+	if(poc_iic_scl_gpio == NULL
+		|| poc_iic_sda_gpio == NULL)
+	{
+		poc_iic_scl_gpio = drvGpioOpen(poc_iic_scl, &cfg, NULL, NULL);
+		poc_iic_sda_gpio = drvGpioOpen(poc_iic_sda, &cfg, NULL, NULL);
+	}
+	drvGpioWrite(poc_iic_scl_gpio, iicstatus);
+	drvGpioWrite(poc_iic_sda_gpio, iicstatus);
+
+	return iicstatus;
 }
 

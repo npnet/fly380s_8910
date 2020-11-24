@@ -12,11 +12,22 @@ void publvPocGpsIdtComInit(void);
 
 bool pubPocIdtGpsLocationStatus(void);
 
+bool pubPocIdtGpsTimeoutNoLocationStatus(void);
+
 bool pubPocIdtIsHaveExistGps(void);
 
 void publvPocGpsIdtComSleep(void);
 
 void publvPocGpsIdtComWake(void);
+
+void *publvPocGpsIdtComDataInfo(void);
+
+int publvPocGpsIdtComGetLocationCountDown(void);
+
+int publvPocGpsIdtComGetThisLocationTime(void);
+
+int publvPocGpsIdtComGetPoweronLocationNumber(void);
+
 #endif
 
 #ifdef __cplusplus

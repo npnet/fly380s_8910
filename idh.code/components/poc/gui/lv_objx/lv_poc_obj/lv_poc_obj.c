@@ -1063,7 +1063,22 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 		}
 	}
 
-	lv_poc_show_gps_location_status_img(pubPocIdtGpsLocationStatus());
+	if(pubPocIdtGpsLocationStatus())
+	{
+		lv_poc_show_gps_location_status_img(true);
+	}
+	else
+	{
+		if(pubPocIdtGpsTimeoutNoLocationStatus())
+		{
+			lv_poc_show_gps_location_status_img(false);//time out nolocation
+		}
+		else
+		{
+			lv_poc_show_gps_location_status_img(true);
+		}
+	}
+
 	if(align_obj == NULL)
     {
 	   lv_obj_align(lv_poc_status_bar_fptr->gps_img->gps_location_img, *(lv_poc_status_bar_fptr->sim1->align_l_obj), LV_ALIGN_OUT_LEFT_MID, 0, 0);
