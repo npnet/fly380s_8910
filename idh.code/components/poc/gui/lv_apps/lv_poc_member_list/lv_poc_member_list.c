@@ -819,14 +819,17 @@ void lv_poc_member_list_set_hightlight_index(void)
 
 void lv_poc_memberlist_activity_open(lv_task_t * task)
 {
-   lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_LIST,
-	  lv_poc_member_list_activity_create,
-	  lv_poc_member_list_activity_destory};
-   strcpy((char *)lv_poc_member_list_title, (const char *)task->user_data);
-   poc_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
-   lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);
-   lv_poc_activity_set_design_cb(poc_member_list_activity, lv_poc_member_list_design_func);
-   lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, true);
+	lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_LIST,
+		lv_poc_member_list_activity_create,
+		lv_poc_member_list_activity_destory};
+
+	strcpy((char *)lv_poc_member_list_title, (const char *)task->user_data);
+
+	lv_poc_set_memberlist_refr_is_complete(false);
+	poc_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
+	lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);
+	lv_poc_activity_set_design_cb(poc_member_list_activity, lv_poc_member_list_design_func);
+	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, true);
 }
 
 #ifdef __cplusplus
