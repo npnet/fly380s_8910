@@ -79,17 +79,17 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {
 };
 #else
 static const lvGuiKeypadMap_t gLvKeyMap[] = {/*song is here*/
-    {KEY_MAP_POWER,  0xf0},
+    {KEY_MAP_POWER,  0xf0},//mainmecu esc
     {KEY_MAP_SIM1,   0xf1},
     {KEY_MAP_SIM2,   0xf2},
     {KEY_MAP_0,      LV_GROUP_KEY_END},
-    {KEY_MAP_1,      LV_GROUP_KEY_UP},//up
-    {KEY_MAP_2,      LV_GROUP_KEY_ENTER},//ok
-    {KEY_MAP_3,      LV_GROUP_KEY_DOWN},//down
-    {KEY_MAP_4,      LV_GROUP_KEY_MB},
+    {KEY_MAP_1,      LV_GROUP_KEY_DOWN},//down
+    {KEY_MAP_2,      LV_GROUP_KEY_ENTER},
+    {KEY_MAP_3,      0x19},
+    {KEY_MAP_4,      LV_GROUP_KEY_POC},//ppt enter
     {KEY_MAP_5,      LV_GROUP_KEY_UP},
     {KEY_MAP_6,      LV_GROUP_KEY_GP},
-    {KEY_MAP_7,      LV_GROUP_KEY_ESC},
+    {KEY_MAP_7,      LV_GROUP_KEY_UP},//up
     {KEY_MAP_8,      LV_GROUP_KEY_PREV},
     {KEY_MAP_9,      0x20},
     {KEY_MAP_STAR,   0x21},
@@ -255,7 +255,7 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 		            gLvScreenStatusFirstKey = true;
 	            }
                 data->key = gLvKeyMap[n].lv_key;
-				OSI_LOGI(0, "[song]keyvalue is %d", data->key);
+				OSI_LOGI(0, "[poc][key]keyvalue is %d", data->key);
                 break;
             }
         }
@@ -269,7 +269,7 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 				poc_setting_conf = lv_poc_setting_conf_read();
 				poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 			}
-			poc_set_lcd_brignht_status(true);
+			lvGuiScreenOn();
 	    }
     }
     // no more to be read
@@ -358,7 +358,7 @@ static void prvLvThreadEntry(void *param)
         if (d->screen_on && prvIsInactiveTimeout())
         {
             OSI_LOGI(0, "inactive timeout, screen off");
-            poc_set_lcd_brignht_status(false);
+            lvGuiScreenOff();
         }
     }
 

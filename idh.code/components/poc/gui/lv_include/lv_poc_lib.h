@@ -955,38 +955,6 @@ lv_poc_get_speak_tone_status(void);
 */
 void poc_config_Lcd_power_vol(void);
 
-/*
-	  name : lv_poc_set_lock_screen_status
-	  param :
-	  date : 2020-10-13
-*/
-void
-lv_poc_set_lock_screen_status(bool status);
-
-/*
-	  name : lv_poc_get_speak_tone_status
-	  param :
-	  date : 2020-10-10
-*/
-bool
-lv_poc_get_lock_screen_status(void);
-
-/*
-	  name : poc_set_lcd_brignht_status
-	 param : open  true is open lcd
-	  date : 2020-10-14
-*/
-bool
-poc_set_lcd_brignht_status(bool open);
-
-/*
-	  name : poc_get_lcd_bright_status
-	 param : none
-	  date : 2020-10-14
-*/
-bool
-poc_get_lcd_bright_status(void);
-
 #ifdef __cplusplus
 }
 #endif

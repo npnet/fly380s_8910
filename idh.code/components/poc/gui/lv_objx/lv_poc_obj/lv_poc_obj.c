@@ -103,6 +103,8 @@ static lv_event_cb_t  ancient_event_func  = NULL;
 static status_bar_task_t status_bar_task_ext[LV_POC_STABAR_TASK_EXT_LENGTH];
 static lv_poc_activity_t * _idle_activity;
 static char lv_poc_refresh_ui_state = 0;
+static POC_LONGPRESS_MSG_TYPE_T long_press_msg = 0;
+
 #define LV_POC_STACK_SIZE   100
 static struct _lv_poc_stack_t
 {
@@ -1436,9 +1438,6 @@ static bool lv_poc_is_keypad_msg(lv_signal_t sign, void * param)
 static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 {
     lv_res_t ret = LV_RES_OK;
-    OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] obj <- 0x%p \n", obj);
-    OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] sign <- %d \n", sign);
-    OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] param <- 0x%p \n", param);
 
     bool is_keypad_msg = lv_poc_is_keypad_msg(sign, param);
     bool lcd_is_wakeup = poc_get_lcd_status();
@@ -1486,7 +1485,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 
     if(activity != current_activity)
     {
-        OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] current activity is empty or is not current_activity\n");
+
     }
 
 	if(cur_key != LV_GROUP_KEY_POC)//按键音
@@ -1498,38 +1497,15 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
            !(poc_setting_conf->btn_voice_switch));
     }
 
-	static int long_press_lockscreen_number = 0;
-
-	if(sign == LV_SIGNAL_LONG_PRESS_REP && long_press_lockscreen_number == 0)
+	if(sign == LV_SIGNAL_LONG_PRESS_REP && long_press_msg == POC_LONGPRESS_MSG_TYPE_START)
 	{
 		switch(cur_key)
 		{
-			case LV_GROUP_KEY_DOWN:
+			case 0xf0:
 			{
-				if(lv_poc_get_lock_screen_status())
-				{
-					lv_poc_set_lock_screen_status(false);
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"解锁屏幕", (const uint8_t *)"");
-					long_press_lockscreen_number = 1;
-					lv_poc_stabar_show_lockscreen_img(false);
-					return LV_RES_INV;
-				}
-				else
-				{
-					lv_poc_set_lock_screen_status(true);
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"锁定屏幕", (const uint8_t *)"");
-					long_press_lockscreen_number = 2;
-					lv_poc_stabar_show_lockscreen_img(true);
-					return LV_RES_INV;
-				}
+				OSI_LOGI(0, "[poc][cbkey](%d)long_press_msg launch", __LINE__);
+				long_press_msg = POC_LONGPRESS_MSG_TYPE_POWEROFF;
 				break;
-			}
-
-			case LV_GROUP_KEY_ENTER:
-			{
-				sign = LV_SIGNAL_CONTROL;
-				long_press_lockscreen_number = 3;
-				*(unsigned int *)param = LV_GROUP_KEY_ESC;
 			}
 
 			default:
@@ -1539,48 +1515,43 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 		}
 	}
 
-	if(sign ==  LV_SIGNAL_RELEASED)//after
+	if(sign ==  LV_SIGNAL_RELEASED)
 	{
 		switch(cur_key)
 		{
-			case LV_GROUP_KEY_UP:
+			case 0xf0:
 			{
-				sign = LV_SIGNAL_CONTROL;
-				break;
-			}
-
-			case LV_GROUP_KEY_DOWN:
-			{
-				long_press_lockscreen_number = 0;
-				sign = LV_SIGNAL_CONTROL;
-				break;
-			}
-
-			case LV_GROUP_KEY_ENTER:
-			{
-				if(long_press_lockscreen_number == 3)
+				if(activity_idle == current_activity && poc_get_lcd_status())//main menu
 				{
-					long_press_lockscreen_number = 0;
-					return LV_RES_INV;
+					lv_poc_main_menu_open();
+					return LV_RES_OK;
 				}
-				sign = LV_SIGNAL_CONTROL;
-				long_press_lockscreen_number = 0;
-				break;
+				else//esc key
+				{
+					sign = LV_SIGNAL_CONTROL;
+					*(unsigned int *)param = LV_GROUP_KEY_ESC;
+				}
+				long_press_msg = POC_LONGPRESS_MSG_TYPE_START;
 			}
 		}
 
 	}
 
-	if(lv_poc_get_lock_screen_status()
-		|| long_press_lockscreen_number == 1
-		|| long_press_lockscreen_number == 2)//lock scrren status,because rel msg be delayed
+	switch(cur_key)
 	{
-		return LV_RES_INV;
+		case LV_GROUP_KEY_POC:
+		{
+			if(activity_idle != current_activity)//enter key
+			{
+				sign = LV_SIGNAL_CONTROL;
+				*(unsigned int *)param = LV_GROUP_KEY_ENTER;
+			}
+			break;
+		}
 	}
 
     if(NULL != activity->signal_func)
     {
-        OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] call current signal_cb of activity\n");
         ret = activity->signal_func(obj, sign, param);
     }
     return ret;
@@ -3603,53 +3574,6 @@ void lv_poc_anim_note(lv_obj_t *obj)
 lv_poc_activity_t *lv_poc_get_current_activity(void)
 {
 	return current_activity;
-}
-
-/*
-	  name : lv_poc_set_volum_opt
-	 param : none
-	author : wangls
-  describe : adc to 设置音量
-	  date : 2020-08-18
-*/
-void lv_poc_set_volum_opt(lv_task_t *task)
-{
-	static uint8_t vol_cur = 0;
-	static uint8_t vol_last = 0;
-
-	vol_cur = lv_poc_get_adc_to_volum();
-
-	if(vol_cur > 11)
-	{
-		vol_cur = 11;
-	}
-
-	if(vol_cur == vol_last || (vol_cur == 0 && vol_last == 0))
-	{
-		return;
-	}
-	if(vol_last > 1 && vol_cur == 0)
-	{
-		lv_poc_set_volum(POC_MMI_VOICE_PLAY , 1, poc_setting_conf->btn_voice_switch, true);
-		lv_poc_set_volum(POC_MMI_VOICE_PLAY , 0, poc_setting_conf->btn_voice_switch, true);
-	}
-	else
-	{
-		vol_last = vol_cur;
-		lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
-	}
-}
-
-/*
-	  name : lv_poc_check_volum_task
-	 param : none
-	author : wangls
-  describe : 创建检索音量旋钮任务
-	  date : 2020-08-18
-*/
-void lv_poc_check_volum_task(LVPOCIDTCOM_Led_Period_t period)
-{
-	lv_task_create(lv_poc_set_volum_opt, period, LV_TASK_PRIO_LOW, NULL);
 }
 
 #ifdef __cplusplus

@@ -30,7 +30,7 @@
 #include "poc_audio_recorder.h"
 
 #define POC_RECORD_OR_SPEAK_CALL 1       /*1-正常对讲，0-自录自播*/
-#define POC_SUPPORT_LONGPRESS_POWEROFF 0 /*支持长按关机*/
+#define POC_SUPPORT_LONGPRESS_POWEROFF 1 /*支持长按关机*/
 
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
@@ -47,8 +47,9 @@ static void prvPowerKeyCb(void *ctx)
 	isReadyPowerOff = true;
 	if(!lv_poc_charge_poweron_status())//正常开机
 	{
-		lv_poc_refr_task_once(lv_poc_shutdown_note_activity_open,
-			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
+		lv_poc_set_power_on_status(false);
+		lv_poc_refr_func_ui(lv_poc_shutdown_animation,
+			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)2);
 	}
 	else//充电开机
 	{
@@ -67,21 +68,31 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{
-				#if POC_RECORD_OR_SPEAK_CALL
+				if(lv_poc_get_current_activity() == activity_idle)
+				{
+#if POC_RECORD_OR_SPEAK_CALL
                 OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
                 lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
-                #else
+#else
                 lv_poc_start_recordwriter();/*自录*/
-                #endif
+#endif
+				}
+				else
+				{
+
+				}
             }
             else
             {
-                #if POC_RECORD_OR_SPEAK_CALL
+				if(lv_poc_get_current_activity() == activity_idle)
+				{
+#if POC_RECORD_OR_SPEAK_CALL
                 OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
                 lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
-                #else
+#else
                 lv_poc_start_playfile();/*自播*/
-                #endif
+#endif
+				}
             }
 		}
 		prvPttKeyState = state;
@@ -89,7 +100,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 	}
 	else if(id == 0xf0)/*电源按键*/
 	{
-		#if POC_SUPPORT_LONGPRESS_POWEROFF
+#if POC_SUPPORT_LONGPRESS_POWEROFF
 		if(prvPowerTimer == NULL)
         {
             prvPowerTimer = osiTimerCreate(NULL, prvPowerKeyCb, NULL);
@@ -110,61 +121,44 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
             {
                 if(prvPowerTimer != NULL)
                 {
-                    osiTimerStart(prvPowerTimer, LONGPRESS_SHUTDOWN_TIME);
+					osiTimerStart(prvPowerTimer, LONGPRESS_SHUTDOWN_TIME);
                     isReadyPowerOff = false;
                 }
             }
             else
             {
                 if(prvPowerTimer != NULL)
-                {
-                    if (isReadyPowerOff)
-                    {
-                        //osiDelayUS(1000 * 100);
-                        //osiShutdown(OSI_SHUTDOWN_POWER_OFF);
-                    }
-                    else
-                    {
-                        osiTimerStop(prvPowerTimer);
-                        if(lv_poc_charge_poweron_status())//充电开机
-                        {
-                            poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
-                        }
-                        else
-                        {
-							#ifdef SUPPORT_BRIGHT_SCREEN_OUT
-                            poc_set_lcd_status(!poc_get_lcd_status());
-							#else
-
-							#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
-							if(poc_get_touch_blacklight())
+				{
+		            if (!isReadyPowerOff)
+		            {
+						osiTimerStop(prvPowerTimer);
+						if(lv_poc_charge_poweron_status())
+						{
+							poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
+						}
+						else
+						{
+							if(!poc_get_lcd_status())
 							{
-						      poc_set_touch_blacklight(false);
-						    }
-						    else
-						    {
-						      poc_set_touch_blacklight(true);
-						    }
-							#endif
-
-							#endif
-                        }
-                    }
-                }
+								poc_set_lcd_status(true);
+							}
+						}
+		            }
+				}
             }
         }
         prvPowerKeyState = state;
         ret = true;
-		#else
+#else
 		if(prvPttKeyState != state)
         {
            if(state == LV_INDEV_STATE_PR)
            {
-              OSI_LOGI(0, "[song]power key press");
+              OSI_LOGI(0, "[poc][powerkey]power key press");
            }
            else
            {
-              OSI_LOGI(0, "[song]power key release");
+              OSI_LOGI(0, "[poc][powerkey]power key release");
 
 			  if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
 			  {
@@ -177,56 +171,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
         }
         prvPttKeyState = state;
         ret = false;
-		#endif
-	}
-	else if(id == LV_GROUP_KEY_GP)
-	{
-		if(prvPttKeyState != state)
-		{
-			if(state == LV_INDEV_STATE_PR)
-			{
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"键值140", (const uint8_t *)"未定义");
-				OSI_LOGI(0, "[song]F2 key press");
-			}
-			else
-			{
-
-			}
-		}
-		prvPttKeyState = state;
-		ret = false;
-	}
-	else if(id == LV_GROUP_KEY_MB)
-	{
-		if(prvPttKeyState != state)
-		{
-			if(state == LV_INDEV_STATE_PR)
-			{
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"测试指令模式", (const uint8_t *)"未设置");
-				OSI_LOGI(0, "[song]F2 key press");
-			}
-		}
-		prvPttKeyState = state;
-		ret = false;
-	}
-	else if(id == LV_GROUP_KEY_PREV)
-	{
-		if(prvPowerKeyState != state)
-		{
-			if(state == LV_INDEV_STATE_PR)
-			{
-				if(lv_poc_charge_poweron_status())//充电开机
-				{
-					poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
-				}
-				else
-				{
-					poc_set_lcd_status(!poc_get_lcd_status());
-				}
-			}
-		}
-		prvPowerKeyState = state;
-		ret = true;
+#endif
 	}
 	preKey = id;
 	preKeyState = state;
@@ -251,11 +196,11 @@ void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus)
 
 	if(lcdstatus != 0)
 	{
-		poc_set_lcd_brignht_status(true);
+		lvGuiChargeScreenOn();
 	}
 	else
 	{
-		poc_set_lcd_brignht_status(false);
+		lvGuiScreenOff();
 	}
 
 }

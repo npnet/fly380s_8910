@@ -51,8 +51,6 @@ static drvGpio_t * poc_ppt_gpio = NULL;
 static drvGpio_t * poc_set_gpio = NULL;
 static drvGpio_t * poc_top_gpio = NULL;
 
-static drvGpio_t * poc_lcd_bright_gpio = NULL;
-
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
 static bool poc_charging_status = false;
@@ -63,33 +61,7 @@ static bool is_poc_idle_esc = false;
 static bool is_poc_touch_status = false;
 #endif
 
-/*********************volum***********************/
-
-typedef struct PocVolumAttribute_t{
-    uint32_t adc_level;
-    uint8_t volum_level;
-}PocVolumAttribute_t;
-
-static PocVolumAttribute_t lv_poc_volum_set[]= {
-    {130, 0},//230
-    {300, 1},//380
-    {410, 2},//530
-    {520, 3},//820
-    {660, 4},//1040
-    {800, 5},//1380
-    {1300, 6},//1520
-    {1900, 7},//1860
-    {2200, 8},//2120
-    {2600, 9},//2540
-    {2840, 10},//2720
-    {3300, 11}//3300
-};
-
-#define POC_VOLUM_LEVEL_SIZE (sizeof(lv_poc_volum_set)/sizeof(lv_poc_volum_set[0]))
-
-/*************************************************/
 static bool is_play_tone_status = false;
-static bool is_lock_screen_status = false;
 static uint8_t poc_earkey_state = false;
 static int lv_poc_inside_group = false;
 static int lv_poc_group_list_refr = false;
@@ -402,7 +374,7 @@ poc_set_lcd_status(IN int8_t wakeup)
 OUT bool
 poc_get_lcd_status(void)
 {
-	return poc_get_lcd_bright_status();
+	return lvGuiGetScreenStatus();
 }
 
 /*
@@ -1808,58 +1780,6 @@ poc_ext_pa_init(void)
 }
 
 /*
-      name : poc_lcd_bright_init
-     param : none
-      date : 2020-10-14
-*/
-void
-poc_lcd_bright_init(void)
-{
-	if(poc_lcd_bright_gpio != NULL) return;
-	drvGpioConfig_t * config = NULL;
-	if(config == NULL)
-	{
-		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
-		if(config == NULL)
-		{
-			return;
-		}
-		memset(config, 0, sizeof(drvGpioConfig_t));
-		config->mode = DRV_GPIO_OUTPUT;
-		config->debounce = true;
-		config->out_level = false;
-	}
-	poc_lcd_bright_gpio = drvGpioOpen(poc_lcd_bright, config, NULL, NULL);
-	free(config);
-}
-
-/*
-      name : poc_set_lcd_brignht_status
-     param : open  true is open lcd
-      date : 2020-10-14
-*/
-bool
-poc_set_lcd_brignht_status(bool open)
-{
-	poc_lcd_bright_init();
-	drvGpioWrite(poc_lcd_bright_gpio, !open);
-	return open;
-}
-
-/*
-      name : poc_get_lcd_bright_status
-     param : none
-      date : 2020-10-14
-*/
-bool
-poc_get_lcd_bright_status(void)
-{
-	poc_lcd_bright_init();
-	return drvGpioRead(poc_lcd_bright_gpio);
-}
-
-
-/*
       name : drvledxSetBackLight
      param : none
     author : wangls
@@ -2851,54 +2771,6 @@ bool lv_poc_set_adc_current_sense(bool status)
 }
 
 /*
-      name : lv_poc_get_adc_to_volum
-     param : none
-    author : wangls
-  describe : 获取滑动阻值adc
-      date : 2020-08-18
-*/
-uint8_t lv_poc_get_adc_to_volum(void)
-{
-    int32_t adc_cur_value = 0;
-    int i;
-    static int32_t adc_cur_value_old = 0;
-
-    adc_cur_value = drvAdcGetRawValue(ADC_CHANNEL_1, ADC_SCALE_1V250);
-
-    //Volume fluctuation
-    for(i = 0; i < POC_VOLUM_LEVEL_SIZE; i++)
-    {
-        if(adc_cur_value_old <= lv_poc_volum_set[i].adc_level)
-        {
-            break;
-        }
-    }
-    if((adc_cur_value - adc_cur_value_old  <= 10  && adc_cur_value - adc_cur_value_old  > 0) ||
-        (adc_cur_value_old - adc_cur_value <= 10 && adc_cur_value_old - adc_cur_value > 0))
-    {
-        return lv_poc_volum_set[i].volum_level;
-    }
-
-    adc_cur_value_old = adc_cur_value;
-
-    //OSI_LOGI(0, "[song]adc vlaue is =%d", adc_cur_value);
-    for(i = 0; i < POC_VOLUM_LEVEL_SIZE; i++)
-    {
-        if(adc_cur_value <= lv_poc_volum_set[i].adc_level)
-        {
-            break;
-        }
-    }
-    //OSI_LOGI(0, "[song]vol_cur is =%d", lv_poc_volum_set[i].volum_level);
-    if(i > POC_VOLUM_LEVEL_SIZE)
-    {
-        return false;
-    }
-
-    return lv_poc_volum_set[i].volum_level;
-}
-
-/*
 	  name : lv_poc_opt_refr_status
 	  param :
 	  date : 2020-08-24
@@ -3048,27 +2920,5 @@ bool
 lv_poc_get_speak_tone_status(void)
 {
 	return is_play_tone_status;
-}
-
-/*
-	  name : lv_poc_set_lock_screen_status
-	  param :
-	  date : 2020-10-13
-*/
-void
-lv_poc_set_lock_screen_status(bool status)
-{
-	is_lock_screen_status = status;
-}
-
-/*
-	  name : lv_poc_get_speak_tone_status
-	  param :
-	  date : 2020-10-10
-*/
-bool
-lv_poc_get_lock_screen_status(void)
-{
-	return is_lock_screen_status;
 }
 

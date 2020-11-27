@@ -478,11 +478,11 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
 				indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, &data->key);
 				if(indev_reset_check(&i->proc)) return;
 			}
-			else if(data->key == LV_KEY_ENTER)/*确定*/
-			{
-				indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, &data->key);
-				if(indev_reset_check(&i->proc)) return;
-			}
+//			else if(data->key == LV_KEY_ENTER)/*确定*/
+//			{
+//				indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, &data->key);
+//				if(indev_reset_check(&i->proc)) return;
+//			}
             /*Just send other keys again to the object (e.g. 'A' or `LV_GORUP_KEY_RIGHT)*/
 			#else/*部分按键需要连续触发功能，如果需要全部按键都需要连续触发则打开该部分*/
 			else {
@@ -515,12 +515,13 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
             if(indev_reset_check(&i->proc)) return;
         }
 		#endif
-		if(data->key == LV_KEY_ENTER)
+		if(data->key == 0xf0)
         {
 			lv_group_send_data(g, data->key);
 			indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, &data->key);
             if(indev_reset_check(&i->proc)) return;
 		}
+#if 0
 		else if(data->key == LV_KEY_UP)
         {
 			lv_group_send_data(g, data->key);
@@ -533,6 +534,7 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
 			indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, &data->key);
             if(indev_reset_check(&i->proc)) return;
 		}
+#endif
         i->proc.pr_timestamp = 0;
         i->proc.long_pr_sent = 0;
     }

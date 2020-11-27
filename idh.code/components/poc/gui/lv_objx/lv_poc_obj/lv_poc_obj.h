@@ -880,15 +880,6 @@ lv_poc_activity_t *lv_poc_get_current_activity(void);
 ********************/
 bool lv_poc_stabar_show_lockscreen_img(bool enable);
 
-/*
-	  name : lv_poc_check_volum_task
-	 param : none
-	author : wangls
-  describe : 创建检索音量旋钮任务
-	  date : 2020-08-18
-*/
-void lv_poc_check_volum_task(LVPOCIDTCOM_Led_Period_t period);
-
 #ifdef __cplusplus
 }
 #endif

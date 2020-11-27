@@ -141,8 +141,6 @@ static void lv_poc_idle_prepare_destory(lv_obj_t *obj)
 
 static lv_res_t lv_poc_idle_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
 {
-	OSI_LOGI(0, "[poc][signal][idle] sign <- %d\n", sign);
-	OSI_LOGI(0, "[poc][signal][idle] param <- 0x%p\n", param);
 	switch(sign)
 	{
 		case LV_SIGNAL_CONTROL:

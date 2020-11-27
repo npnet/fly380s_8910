@@ -493,6 +493,14 @@ typedef enum _lv_poc_record_mic_adcGain
     POC_MIC_ADC_GAIN_LEVEL_15 = 15,
 } lv_poc_record_mic_adcGain;
 
+typedef enum
+{
+    POC_LONGPRESS_MSG_TYPE_START = 0,
+    POC_LONGPRESS_MSG_TYPE_MAIN_MENU,
+    POC_LONGPRESS_MSG_TYPE_POWEROFF,
+    POC_LONGPRESS_MSG_TYPE_ESC,
+} POC_LONGPRESS_MSG_TYPE_T;
+
 typedef struct _list_element_t{
     char name[LIST_ELEMENT_NAME_MAX_LENGTH];
     lv_obj_t * list_item;
