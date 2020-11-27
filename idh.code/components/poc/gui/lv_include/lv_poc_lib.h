@@ -376,6 +376,15 @@ OUT POC_MMI_MODEM_SIGNAL_BAR
 poc_get_signal_bar_strenth(POC_SIM_ID sim);
 
 /*
+      name : poc_get_signal_dBm
+     param : nSignal
+    return : POC_SIGNAL_DBM
+      date : 2020-10-12
+*/
+OUT uint8_t
+poc_get_signal_dBm(uint8_t *nSignal);
+
+/*
       name : get Operator(short name)
      param :
      			[sim] POC_SIM_ID
@@ -443,6 +452,14 @@ poc_sys_delay(IN uint32_t ms);
 */
 void
 poc_get_device_imei_rep(OUT int8_t * imei);
+
+/*
+      name : poc_get_device_imsi_rep
+     param : get device imsi
+      date : 2020-11-18
+*/
+void
+poc_get_device_imsi_rep(int8_t * imsi);
 
 /*
       name : poc_get_device_iccid_rep

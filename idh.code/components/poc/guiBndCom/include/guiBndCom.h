@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -13,6 +13,7 @@
 #ifndef _INCLUDE_GUIIDTCOM_H_
 #define _INCLUDE_GUIIDTCOM_H_
 
+#if 0
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -21,8 +22,6 @@
 
 #define FREERTOS
 #define T_TINY_MODE
-
-#include "IDT.h"
 
 //组信息
 class CGroup
@@ -113,5 +112,6 @@ public:
 
 	bool ReciveMsg(uint32_t signal, void * ctx);
 };
+#endif
 
 #endif

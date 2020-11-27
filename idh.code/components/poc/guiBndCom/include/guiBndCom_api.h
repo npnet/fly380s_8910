@@ -20,18 +20,15 @@
 OSI_EXTERN_C_BEGIN
 ;
 
-#define UT_STATUS_OFFLINE 0
-#define UT_STATUS_ONLINE  1
-
 typedef enum
 {
 	LVPOCGUIIDTCOM_SIGNAL_START = (1 << 8) - 1,
 
-    LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND,
-    LVPOCGUIIDTCOM_SIGNAL_LOGIN_REP,
+    LVPOCGUIBNDCOM_SIGNAL_LOGIN_IND,
+    LVPOCGUIBNDCOM_SIGNAL_LOGIN_REP,
 
-    LVPOCGUIIDTCOM_SIGNAL_EXIT_IND,
-    LVPOCGUIIDTCOM_SIGNAL_EXIT_REP,
+    LVPOCGUIBNDCOM_SIGNAL_EXIT_IND,
+    LVPOCGUIBNDCOM_SIGNAL_EXIT_REP,
 
     LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND,
     LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP,
@@ -125,16 +122,16 @@ typedef enum
     LVPOCGUIIDTCOM_SIGNAL_END,
 } LvPocGuiIdtCom_SignalType_t;
 
-typedef enum{/*登陆状态*/
+typedef enum{//登陆状态
 
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_START = 0,
+	LVPOCBNDCOM_SIGNAL_LOGIN_START = 0,
 
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED = 1 ,
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING = 2 ,
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS = 3 ,
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_EXIT = 4 ,
+	LVPOCBNDCOM_SIGNAL_LOGIN_FAILED = 1 ,
+	LVPOCBNDCOM_SIGNAL_LOGIN_ING = 2 ,
+	LVPOCBNDCOM_SIGNAL_LOGIN_SUCCESS = 3 ,
+	LVPOCBNDCOM_SIGNAL_LOGIN_EXIT = 4 ,
 
-	LVPOCLEDIDTCOM_SIGNAL_LOGIN_END	,
+	LVPOCBNDCOM_SIGNAL_LOGIN_END	,
 }LVPOCIDTCOM_LOGIN_STATUS_T;
 
 typedef enum{/*组状态*/
@@ -149,12 +146,6 @@ typedef enum{/*组状态*/
 
 typedef struct
 {
-	int status;
-	unsigned short cause;
-} LvPocGuiIdtCom_login_t;
-
-typedef struct
-{
 	int opt;
 	void *group_info;
 	void (*cb)(lv_poc_group_oprator_type opt);
@@ -166,27 +157,27 @@ typedef struct
 	void (*cb)(int result_type);
 } LvPocGuiIdtCom_delete_group_t;
 
-void lvPocGuiIdtCom_Init(void);
+void lvPocGuiBndCom_Init(void);
 
-bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
+bool lvPocGuiBndCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
 
-void lvPocGuiIdtCom_log(void);
+void lvPocGuiBndCom_log(void);
 
-bool lvPocGuiIdtCom_get_status(void);
+bool lvPocGuiBndCom_get_status(void);
 
-void *lvPocGuiIdtCom_get_self_info(void);
+void *lvPocGuiBndCom_get_self_info(void);
 
-void *lvPocGuiIdtCom_get_current_group_info(void);
+void *lvPocGuiBndCom_get_current_group_info(void);
 
-bool lvPocGuiIdtCom_get_speak_status(void);
+bool lvPocGuiBndCom_get_speak_status(void);
 
-bool lvPocGuiIdtCom_get_listen_status(void);
+bool lvPocGuiBndCom_get_listen_status(void);
 
-void *lvPocGuiIdtCom_get_current_lock_group(void);
+void *lvPocGuiBndCom_get_current_lock_group(void);
 
 bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str);
 
-int lvPocGuiIdtCom_get_current_exist_selfgroup(void);
+int lvPocGuiBndCom_get_current_exist_selfgroup(void);
 
 OSI_EXTERN_C_END
 

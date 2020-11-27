@@ -567,8 +567,8 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 	do
 	{
 		if(!ttsIsPlaying()
-			&& !lvPocGuiIdtCom_get_listen_status()
-			&& !lvPocGuiIdtCom_get_speak_status())
+			&& !lvPocGuiBndCom_get_listen_status()
+			&& !lvPocGuiBndCom_get_speak_status())
 		{
 			audevSetPlayVolume(40);
 			char playkey[4] = "9";
@@ -933,6 +933,61 @@ poc_get_signal_bar_strenth(POC_SIM_ID sim)
 
 LV_POC_GET_SIGNAL_BAR_ENDLE:
 	return _signal_bar;
+}
+
+/*
+      name : poc_get_signal_dBm
+     param : nSignal
+    return : POC_SIGNAL_DBM
+      date : 2020-10-12
+*/
+OUT uint8_t
+poc_get_signal_dBm(uint8_t *nSignal)
+{
+	uint8_t nSignalDBM = 99;
+	uint8_t nBitError = 99;
+	uint32_t ret = 0;
+	uint8_t rat = 0;
+	uint8_t nSim = POC_SIM_1;
+
+	CFW_COMM_MODE nFM = CFW_DISABLE_COMM;
+	ret = CFW_GetComm(&nFM, nSim);
+	if (nFM != CFW_DISABLE_COMM)
+	{
+		rat = CFW_NWGetStackRat(nSim);
+		if (rat == 4)
+		{
+			CFW_NW_QUAL_INFO iQualReport;
+
+			ret = CFW_NwGetLteSignalQuality(&nSignalDBM, &nBitError, nSim);
+			if (ret != 0)
+			{
+				goto LV_POC_GET_SIGNAL_BAR_ENDLE;
+			}
+			ret = CFW_NwGetQualReport(&iQualReport, nSim);
+			if (ret != 0)
+			{
+				goto LV_POC_GET_SIGNAL_BAR_ENDLE;
+			}
+			if(iQualReport.nRssidBm < 0)
+			{
+				iQualReport.nRssidBm = 0 - iQualReport.nRssidBm;
+
+			}
+			OSI_LOGI(0, "[tianli]signal.dbm = %d",iQualReport.nRssidBm);
+			nSignalDBM =(uint8_t)(iQualReport.nRssidBm);
+		}
+		else
+		{
+			ret = CFW_NwGetSignalQuality(&nSignalDBM, &nBitError, nSim);
+		}
+		if (ret != 0)
+			goto LV_POC_GET_SIGNAL_BAR_ENDLE;
+	}
+
+LV_POC_GET_SIGNAL_BAR_ENDLE:
+	*nSignal = nSignalDBM;
+	return nSignalDBM;
 }
 
 /*
@@ -1336,6 +1391,26 @@ poc_get_device_imei_rep(OUT int8_t * imei)
 }
 
 /*
+      name : poc_get_device_imsi_rep
+     param : get device imsi
+      date : 2020-11-18
+*/
+void
+poc_get_device_imsi_rep(int8_t * imsi)
+{
+   uint8_t nSim = POC_SIM_1;
+    uint8_t IMSI[16] = {0};
+   uint8_t imsisize = 16;
+   extern bool getSimImsi(uint8_t simId, uint8_t *imsi, uint8_t *len);
+    bool status = getSimImsi(nSim, IMSI, &imsisize);
+    if (status)
+    {
+      OSI_LOGXI(OSI_LOGPAR_S, 0, "[imsi]imsi %s", IMSI);
+      strcpy((char *)imsi, (const char *)IMSI);
+    }
+}
+
+/*
       name : poc_get_device_iccid_rep
      param : get device iccid
       date : 2020-03-30
@@ -1694,7 +1769,6 @@ static PocEarKeyComAttr_t ear_key_attr = {0};
 
 static void Lv_ear_ppt_timer_cb(void *ctx)
 {
-	OSI_LOGI(0, "[song]ear time cb\n");
 	if(drvGpioRead(poc_ear_ppt_gpio) == false)/*press*/
 	{
 		static int checkcbpress = 0;
@@ -1709,8 +1783,8 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		checkcbpress = 0;
 		ear_key_attr.ear_key_press = true;
 		poc_earkey_state = true;
-		OSI_LOGI(0, "[song]key is press,start speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+		OSI_LOGI(0, "[headset]key is press,start speak\n");
+		lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
 	}
 	else
 	{
@@ -1750,8 +1824,7 @@ void lv_poc_ear_ppt_key_init(void)
 
 	if(poc_ear_ppt_gpio == NULL)
 	{
-		Ap_OSI_ASSERT((poc_ear_ppt_gpio != NULL), "[song]ear config io NULL"); /*assert verified*/
-		OSI_LOGI(0, "[song]ear gpio open failed\n");
+		OSI_LOGI(0, "[headset]ear gpio open failed\n");
 	}
 
 	/*ear time*/
@@ -1781,13 +1854,13 @@ void poc_ear_ppt_irq(void *ctx)
 	{
 		ear_key_attr.ear_key_press = false;
 		poc_earkey_state = false;
-		OSI_LOGI(0, "[song]key is release,stop speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		OSI_LOGI(0, "[headset]key is release,stop speak\n");
+		lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 	}
 	else/*press*/
 	{
 		osiTimerStart(ear_key_attr.ear_press_timer, 80);
-		OSI_LOGI(0, "[song]ear time start\n");
+		OSI_LOGI(0, "[headset]ear time start\n");
 	}
 }
 
@@ -1884,7 +1957,7 @@ static get_group_list_cb   prv_group_list_cb = NULL;
 static void
 prv_lv_poc_get_group_list_cb(int msg_type, uint32_t num, CGroup *group)
 {
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL);
+	lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL);
 	if(msg_type == 0
 		|| num == 0
 		|| group == NULL
@@ -1963,16 +2036,16 @@ lv_poc_get_group_list(lv_poc_group_list_t * group_list, get_group_list_cb func)
 	prv_group_list = group_list;
 	prv_group_list_cb = func;
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_GROUP_LIST_CB_IND, prv_lv_poc_get_group_list_cb))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_GROUP_LIST_CB_IND, prv_lv_poc_get_group_list_cb))
 	{
 		prv_group_list_cb = NULL;
 		prv_group_list = NULL;
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GROUP_LIST_QUERY_IND, NULL))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GROUP_LIST_QUERY_IND, NULL))
 	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL))
+		if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL))
 		{
 			OSI_LOGE(0, "cancel register callback[get group list cb] failed!");
 		}
@@ -2151,7 +2224,7 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 	prv_member_list = member_list;
 	prv_member_list_type = type;
 	prv_member_list_cb = func;
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND, prv_lv_poc_get_member_list_cb))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND, prv_lv_poc_get_member_list_cb))
 	{
 		prv_member_list = NULL;
 		prv_member_list_type = 0;
@@ -2159,9 +2232,9 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 
 		return false;
 	}
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND, group_info))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND, group_info))
 	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_MEMBER_LIST_CB_IND, NULL))
+		if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_MEMBER_LIST_CB_IND, NULL))
 		{
 		}
 		prv_member_list = NULL;
@@ -2211,7 +2284,7 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_BIUILD_GROUP_CB_IND, func))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_BIUILD_GROUP_CB_IND, func))
 	{
 		return false;
 	}
@@ -2220,9 +2293,9 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 	group_member.members = members;
 	group_member.num = num;
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND, &group_member))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND, &group_member))
 	{
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_BIUILD_GROUP_CB_IND, func);
+		lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_BIUILD_GROUP_CB_IND, func);
 		return false;
 	}
 	return true;
@@ -2236,7 +2309,7 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 lv_poc_member_info_t
 lv_poc_get_self_info(void)
 {
-	return (lv_poc_member_info_t)lvPocGuiIdtCom_get_self_info();
+	return (lv_poc_member_info_t)lvPocGuiBndCom_get_self_info();
 }
 
 /*
@@ -2247,7 +2320,7 @@ lv_poc_get_self_info(void)
 lv_poc_group_info_t
 lv_poc_get_current_group(void)
 {
-	return (lv_poc_group_info_t)lvPocGuiIdtCom_get_current_group_info();
+	return (lv_poc_group_info_t)lvPocGuiBndCom_get_current_group_info();
 }
 
 /*
@@ -2263,12 +2336,12 @@ lv_poc_set_current_group(lv_poc_group_info_t group, poc_set_current_group_cb fun
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND, func))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND, func))
 	{
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SET_CURRENT_GROUP_IND, group))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SET_CURRENT_GROUP_IND, group))
 	{
 		return false;
 	}
@@ -2322,12 +2395,12 @@ lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb 
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP, func))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP, func))
 	{
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND, members))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND, members))
 	{
 		return false;
 	}
@@ -2353,7 +2426,7 @@ lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_
 	member_call_config.members = member,
 	member_call_config.enable = enable;
 	member_call_config.func = func;
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_IND, &member_call_config))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_IND, &member_call_config))
 	{
 		return false;
 	}
@@ -2368,7 +2441,7 @@ lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_
 lv_poc_group_info_t
 lv_poc_get_lock_group(void)
 {
-	return (lv_poc_group_info_t)lvPocGuiIdtCom_get_current_lock_group();
+	return (lv_poc_group_info_t)lvPocGuiBndCom_get_current_lock_group();
 }
 
 /*
@@ -2391,14 +2464,14 @@ lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, 
 
 	if(opt == LV_POC_GROUP_OPRATOR_TYPE_LOCK)
 	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_IND, &group_info))
+		if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_IND, &group_info))
 		{
 			return false;
 		}
 	}
 	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
 	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_IND, &group_info))
+		if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_IND, &group_info))
 		{
 			return false;
 		}
@@ -2427,7 +2500,7 @@ lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
 	del_group.cb = func;
 	del_group.group_info = (void *)group;
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND, (void *)&del_group))
+	if(!lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND, (void *)&del_group))
 	{
 		memset(&del_group, 0, sizeof(LvPocGuiIdtCom_delete_group_t));
 		func(2);

@@ -435,7 +435,7 @@ void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t even
 	//回调事件
 	if(event == LV_EVENT_APPLY){//确认关机
 
-		if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
+		if(lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_EXIT_IND, NULL))
 		{
 		}
 		lv_poc_set_power_on_status(false);//设备挂起

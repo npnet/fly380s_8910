@@ -67,7 +67,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 			{
 				#if POC_RECORD_OR_SPEAK_CALL
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
-				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+				lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
 				#else
 					#if POC_RECORDER_PLAY_MODE
 					lv_poc_start_recordwriter();//自录
@@ -80,7 +80,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 			{
 				#if POC_RECORD_OR_SPEAK_CALL
 				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
-				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+				lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 				#else
 					#if POC_RECORDER_PLAY_MODE
 					lv_poc_start_playfile();//自播

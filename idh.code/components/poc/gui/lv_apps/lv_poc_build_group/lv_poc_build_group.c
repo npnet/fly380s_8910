@@ -279,7 +279,7 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 					if(lv_poc_is_buildgroup_refr_complete()
 						|| lv_poc_get_refr_error_info())
 					{
-						if(lvPocGuiIdtCom_get_current_exist_selfgroup() == 2)
+						if(lvPocGuiBndCom_get_current_exist_selfgroup() == 2)
 						{
 							lv_task_t *task = lv_task_create(lv_poc_build_group_is_exist, 200, LV_TASK_PRIO_HIGH, NULL);
 							lv_task_once(task);

@@ -106,7 +106,7 @@ static void pocIdtStartHandleTask(void * ctx)
 #endif
 
 #ifdef CONFIG_POC_SUPPORT
-	lvPocGuiIdtCom_log();
+	lvPocGuiBndCom_log();
 #endif
 
 	osiThreadExit();

@@ -277,7 +277,7 @@ void prvlvPocGpsIdtComGetInfo(void)
 			goto gpserror;
 		}
 
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
+		lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
 		if(!pubPocIdtGpsLocationStatus())
 		{
 			lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_GPS_LOCATION_REPORT_FREQ, NULL);
