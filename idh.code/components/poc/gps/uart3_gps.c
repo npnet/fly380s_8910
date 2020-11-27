@@ -338,7 +338,7 @@ void prvlvPocGpsIdtComAnalyzeData(lv_task_t *task)
 			goto gpsdataerror;
 		}
 
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
+		lvPocGuiBndCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
 		if(!pubPocIdtGpsLocationStatus()
 			|| pocGpsIdtAttr.gps_error_data_status)
 		{
