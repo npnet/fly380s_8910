@@ -2236,6 +2236,7 @@ static void prvPocGuiIdtTaskHandleGroupList(uint32_t id, uint32_t ctx)
 		{
 			if (strlen((const char *)pocIdtAttr.self_info.ucNum) < 1)
 			{
+				pocIdtAttr.pocGetGroupListCb(0, 0, NULL);
 				break;
 			}
 
