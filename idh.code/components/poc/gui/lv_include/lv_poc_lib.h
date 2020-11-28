@@ -28,13 +28,11 @@ enum {
 	poc_torch_led   = 2,//IO touch
 	poc_horn_sound  = 9,//IO horn
 	poc_head_set    = 8,//IO headset
-	poc_lcd_bright  = 18,//IO lcdk
-	poc_top_key     = 19,//IO top key
-	poc_c_key       = 20,//IO c
-    poc_ppt         = 21,//IO ppt
 	poc_gps_int   = 12,//IO ant
 	poc_iic_scl   = 14,//IO scl
 	poc_iic_sda   = 15,//IO sda
+	poc_volum_up       = 7,//IO volum_up
+	poc_volum_down     = 10,//IO volum_down
 };
 
 enum {
@@ -710,7 +708,6 @@ lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, 
 /*
 	  name : poc_get_operator_network_type_req
 	 param : none
-	author : wangls
   describe : 获取网络类型
 	  date : 2020-07-07
 */
@@ -728,7 +725,6 @@ lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type));
 /*
 	  name : lv_poc_ear_ppt_key_init
 	 param : none
-	author : wangls
   describe : 耳机ppt配置
 	  date : 2020-07-30
 */
@@ -737,7 +733,6 @@ void lv_poc_ear_ppt_key_init(void);
 /*
 	  name : lv_poc_get_earppt_state
 	 param : none
-	author : wangls
   describe : 获取耳机ppt
 	  date : 2020-08-03
 */
@@ -746,25 +741,14 @@ bool lv_poc_get_earppt_state(void);
 /*
 	  name : lv_poc_get_ppt_state
 	 param : none
-	author : wangls
   describe : 获取对讲ppt
 	  date : 2020-08-14
 */
 bool lv_poc_get_ppt_state(void);
 
 /*
-	  name : lv_poc_key_init
-	 param : none
-	author : wangls
-  describe : poc key 配置
-	  date : 2020-08-14
-*/
-void lv_poc_key_init(void);
-
-/*
 	  name : lv_poc_ppt_key_init
 	 param : none
-	author : wangls
   describe : ppt配置
 	  date : 2020-08-14
 */
@@ -773,7 +757,6 @@ void lv_poc_ppt_key_init(void);
 /*
 	  name : lv_poc_set_adc_current_sense
 	 param : none
-	author : wangls
   describe : 设置adc电流源
 	  date : 2020-08-18
 	return : true-打开/false-关闭
@@ -783,7 +766,6 @@ bool lv_poc_set_adc_current_sense(bool status);
 /*
 	  name : lv_poc_get_adc_to_volum
 	 param : none
-	author : wangls
   describe : 获取滑动阻值adc
 	  date : 2020-08-18
 */
@@ -800,7 +782,6 @@ lv_poc_opt_refr_status(LVPOCIDTCOM_UNREFOPT_SignalType_t status);
 /*
 	  name : lv_poc_set_audev_in_out
 	 param : none
-	author : wangls
   describe : set audev type
 	  date : 2020-08-31
 */
@@ -810,7 +791,6 @@ lv_poc_set_audev_in_out(audevInput_t in_type, audevOutput_t out_type);
 /*
 	name : lv_poc_get_record_mic_gain
 	param : none
-  author : wangls
 describe : 获取record mic增益
 	date : 2020-09-01
 */
@@ -819,7 +799,6 @@ bool lv_poc_get_record_mic_gain(void);
 /*
 	name : lv_poc_set_record_mic_gain
 	param : none
-  author : wangls
 describe : 设置record mic增益
 	date : 2020-09-01
 */
@@ -856,6 +835,22 @@ lv_poc_set_power_on_status(bool status);
 */
 bool
 lv_poc_get_poweron_is_ready(void);
+
+/*
+	  name : lv_poc_set_charge_status
+	  param :
+	  date : 2020-09-10
+*/
+void
+lv_poc_set_charge_status(bool status);
+
+/*
+	  name : lv_poc_get_charge_status
+	  param :
+	  date : 2020-09-10
+*/
+bool
+lv_poc_get_charge_status(void);
 
 /*
 	  name : lv_poc_set_idle_esc_status
@@ -929,7 +924,6 @@ bool lv_poc_is_group_list_refr(void);
 /*
 	  name : poc_set_red_blacklight
 	 param : none
-	author : wangls
   describe : 开关RED
 	  date : 2020-08-08
 */
@@ -939,7 +933,6 @@ poc_set_red_blacklight(bool status);
 /*
 	  name : poc_set_green_blacklight
 	 param : none
-	author : wangls
   describe : 开关GREEN
 	  date : 2020-08-08
 */
@@ -1045,6 +1038,70 @@ lv_poc_set_auto_deepsleep(bool status);
 */
 bool
 poc_set_iic_status(bool iicstatus);
+
+/*
+     name : lv_poc_set_headset_status
+     param :
+     date : 2020-09-29
+*/
+void
+lv_poc_set_headset_status(bool status);
+
+/*
+     name : lv_poc_get_headset_is_ready
+     param :
+     date : 2020-09-29
+*/
+bool
+lv_poc_get_headset_is_ready(void);
+
+/*
+	  name : lv_poc_volum_key_init
+	 param : none
+  describe :
+	  date : 2020-11-27
+*/
+void lv_poc_volum_key_init(void);
+
+/*
+	  name : lv_poc_volum_key_close
+	 param : none
+  describe :
+	  date : 2020-11-27
+*/
+void lv_poc_volum_key_close(void);
+
+/*
+	  name : lv_poc_volum_key_init
+	 param : none
+  describe :
+	  date : 2020-11-27
+*/
+bool lv_poc_get_volum_up_state(void);
+
+/*
+	  name : lv_poc_volum_key_init
+	 param : none
+  describe :
+	  date : 2020-11-27
+*/
+bool lv_poc_get_volum_down_state(void);
+
+/*
+	  name : lv_poc_set_screenon_status
+	  describe :
+	  param :
+	  date : 2020-11-28
+*/
+void lv_poc_set_screenon_status(bool status);
+
+/*
+	  name : lv_poc_get_screenon_status
+	  describe :
+	  param :
+	  date : 2020-11-28
+*/
+bool lv_poc_get_screenon_status(void);
 
 #ifdef __cplusplus
 }

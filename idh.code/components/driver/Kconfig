@@ -109,7 +109,7 @@ config SUPPORT_LCD_ST7735S
 endif
 config HEADSET_DETECT_SUPPORT
     bool "support headset detect"
-    default n
+    default y
     help
         enable headset detect.
 if HEADSET_DETECT_SUPPORT

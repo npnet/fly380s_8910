@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -23,6 +23,8 @@
 #include "osi_log.h"
 #include "audio_device.h"
 #include <string.h>
+#include "lv_include/lv_poc_lib.h"
+#include "guiIdtCom_api.h"
 
 #define DRV_HEADSET_WQ_PRIO OSI_PRIORITY_HIGH
 #define SCI_GetTickCount() (uint32_t) osiUpTime()
@@ -201,6 +203,11 @@ void drvDummyHeadsetCustCB(void *ctx, drvHeadsetNotifyMsg_t id, uint32_t param)
         else
             audevSetInput(0);
         audevSetOutput(1);
+		//send msg
+		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_HEADSET_INSERT, NULL))
+		{
+		    lv_poc_set_headset_status(true);
+	  	}
     }
 
     break;
@@ -210,7 +217,12 @@ void drvDummyHeadsetCustCB(void *ctx, drvHeadsetNotifyMsg_t id, uint32_t param)
         //atCmdRespDefUrcText(rsp);
         OSI_LOGXI(OSI_LOGPAR_S, 0, "%s\n", rsp);
         audevSetInput(0);
-        audevSetOutput(2);
+		audevSetOutput(0);//default 2
+	    //send msg
+		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_HEADSET_PULL_OUT, NULL))
+		{
+			lv_poc_set_headset_status(false);
+	    }
     }
     break;
 

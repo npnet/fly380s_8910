@@ -145,7 +145,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	poc_get_device_iccid_rep((int8_t *)lv_poc_about_text_iccid);
 
     strcpy(lv_poc_about_text_sysversion, "8910_MODULE_V1_3_W20.35.2");
-    strcpy(lv_poc_about_text_version_number, "V20.35.2-D11.15");
+    strcpy(lv_poc_about_text_version_number, "V20.35.2-D11.28");
     strcpy(lv_poc_about_text_update, "检查更新");
 
     for(int i = 0; i < label_array_size; i++)
@@ -175,11 +175,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_list_set_btn_selected(list, btn_array[0]);
 
 #ifdef CONFIG_POC_FOTA_SUPPORT
-    lv_obj_set_click(btn_array[5], true);
-    lv_obj_set_event_cb(btn_array[5], lv_poc_about_pressed_cb);
+    lv_obj_set_click(btn_array[label_array_size - 1], true);
+    lv_obj_set_event_cb(btn_array[label_array_size -1], lv_poc_about_pressed_cb);
 #endif
-	lv_obj_set_click(btn_array[0], true);
-	lv_obj_set_event_cb(btn_array[0], lv_poc_about_pressed_cb);
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

@@ -182,7 +182,8 @@ static bool prvSt7735sProbe(drvLcd_t *d)
     const drvLcdPanelDesc_t *desc = drvLcdGetDesc(d);
 
     OSI_LOGI(0, "[song]ST7735S probe");
-    return prvSt7735sReadId(d) == desc->dev_id;
+    //return prvSt7735sReadId(d) == desc->dev_id;
+    return 0x7c89f0;
 }
 
 const drvLcdPanelDesc_t gLcdSt7735sDesc = {

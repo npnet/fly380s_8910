@@ -396,20 +396,17 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
         i->proc.pr_timestamp = lv_tick_get();
 
         /*Simulate a press on the object if ENTER was pressed*/
-		#if 0
-        if(data->key == LV_KEY_ENTER) {/*确定按键改为释放触发*/
+		if(data->key == LV_KEY_ENTER) {
             /*Send the ENTER as a normal KEY*/
-            //lv_group_send_data(g, LV_KEY_ENTER);
+            lv_group_send_data(g, LV_KEY_ENTER);
 
             indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_PRESSED, NULL);
             if(indev_reset_check(&i->proc)) return;
             lv_event_send(indev_obj_act, LV_EVENT_PRESSED, NULL);
             if(indev_reset_check(&i->proc)) return;
-        } else
-		#endif
-		if(data->key == LV_KEY_ESC) {
+        } else if(data->key == LV_KEY_ESC) {
             /*Send the ESC as a normal KEY*/
-            //lv_group_send_data(g, LV_KEY_ESC);
+            lv_group_send_data(g, LV_KEY_ESC);
 
             lv_event_send(indev_obj_act, LV_EVENT_CANCEL, NULL);
             if(indev_reset_check(&i->proc)) return;
@@ -450,16 +447,14 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
             i->proc.longpr_rep_timestamp = lv_tick_get();
 
             /*Send LONG_PRESS_REP on ENTER*/
-			#if 0
             if(data->key == LV_KEY_ENTER) {
                 indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, NULL);
                 if(indev_reset_check(&i->proc)) return;
                 lv_event_send(indev_obj_act, LV_EVENT_LONG_PRESSED_REPEAT, NULL);
                 if(indev_reset_check(&i->proc)) return;
             }
-			#endif
             /*Move the focus on NEXT again*/
-            if(data->key == LV_KEY_NEXT) {
+            else if(data->key == LV_KEY_NEXT) {
                 lv_group_set_editing(g, false); /*Editing is not used by KEYPAD is be sure it is disabled*/
                 lv_group_focus_next(g);
                 if(indev_reset_check(&i->proc)) return;

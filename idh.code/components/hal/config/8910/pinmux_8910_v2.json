@@ -20,8 +20,8 @@
         "keyout_4",
         "keyout_5",
         "gpio_19",
-        "gpio_20",
-        "gpio_21"
+        "gpio_10",
+		"gpio_7"
     ],
     "fun_prop": {
         "sim_1_clk": {
@@ -69,10 +69,10 @@
         "gpio_19": {
             "pull": "pull_up_1"
         },
-        "gpio_20": {
+        "gpio_10": {
             "pull": "pull_up_1"
         },
-        "gpio_21": {
+		"gpio_7": {
             "pull": "pull_up_1"
         }
     },
@@ -140,7 +140,6 @@
         "gpio_7": "gpio_7",
         "gpo_0": "gpio_8",
         "gpo_1": "gpio_9",
-        "gpo_2": "gpio_10",
         "gpo_3": "gpio_11",
         "gpo_5": "sim_2_clk",
         "gpo_6": "sim_2_dio",
@@ -183,7 +182,6 @@
         "lte_gpo_7": "rfdig_gpio_6",
         "lte_gpo_8": "rfdig_gpio_7",
         "lte_gpo_9": "gpio_9",
-        "lte_spi_cs": "gpio_10",
         "lte_spi_sclk": "gpio_11",
         "lte_spi_sdo": "gpio_9",
         "nand_flash_sel": "nand_flash_sel",
@@ -226,7 +224,6 @@
         "sim_2_dio": "sim_2_dio",
         "sim_2_rst": "sim_2_rst",
         "spi_1_clk": "gpio_9",
-        "spi_1_cs_0": "gpio_10",
         "spi_1_cs_1": "gpio_8",
         "spi_1_dio_0": "gpio_11",
         "spi_2_clk": "gpio_0",

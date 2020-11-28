@@ -455,6 +455,8 @@ static void lv_poc_get_group_list_cb(int result_type)
 {
 	if(poc_group_list_activity == NULL)
 	{
+		OSI_LOGI(0, "[grouprefr](%d):error", __LINE__);
+		lv_poc_set_refr_error_info(true);
 		return;
 	}
 
@@ -801,8 +803,10 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 
     if(group_list_obj == NULL)
     {
+		OSI_LOGI(0, "[poc][group](%d)get", __LINE__);
 		if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
 		{
+			OSI_LOGI(0, "[poc][group](%d)error", __LINE__);
 			lv_poc_set_refr_error_info(true);
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
@@ -810,6 +814,7 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     }
     else
     {
+		OSI_LOGI(0, "[poc][group](%d)refresh", __LINE__);
 		lv_poc_refr_task_once(lv_poc_group_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
     }
 }
@@ -1099,7 +1104,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 		}
 
 		lv_img_set_auto_size(img, false);
-		lv_obj_set_width(btn_label, btn_width - (lv_coord_t)unlock.header.w - (lv_coord_t)ic_group.header.w - 17);//-17是减去间隙(两个图标)
+		lv_obj_set_width(btn_label, btn_width - (lv_coord_t)unlock.header.w - (lv_coord_t)ic_group.header.w - 19);//-17是减去间隙(两个图标)
 		lv_obj_align(img, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
         p_cur = p_cur->next;

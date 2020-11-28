@@ -646,11 +646,11 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 		case LV_SIGNAL_FOCUS:
 		{
-			if(lv_poc_get_refresh_ui())
-			{
-				poc_setting_update_UI_task(NULL);
-				lv_poc_refresh_ui_next();
-			}
+//			if(lv_poc_get_refresh_ui())
+//			{
+//				poc_setting_update_UI_task(NULL);
+//				lv_poc_refresh_ui_next();
+//			}
 			break;
 		}
 
@@ -706,6 +706,15 @@ void lv_poc_setting_open(void)
     poc_setting_activity = lv_poc_create_activity(&activity_main_menu_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_setting_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_setting_activity, design_func);
+}
+
+void lv_poc_setting_refresh(void)
+{
+	if(lv_poc_get_refresh_ui())
+	{
+		poc_setting_update_UI_task(NULL);
+		lv_poc_refresh_ui_next();
+	}
 }
 
 #ifdef __cplusplus

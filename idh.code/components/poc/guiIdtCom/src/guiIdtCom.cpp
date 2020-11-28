@@ -1532,7 +1532,7 @@ static void LvGuiIdtCom_auto_login_timer_cb(void *ctx)
 static void LvGuiIdtCom_ppt_release_timer_cb(void *ctx)
 {
 	static int makecallcnt = 0;
-	bool pttStatus = lv_poc_get_ppt_state();//|lv_poc_get_earppt_state();
+	bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
 	if(true == pttStatus && pocIdtAttr.is_makeout_call == true)
 	{
 		osiTimerStart(pocIdtAttr.monitor_pptkey_timer, 50);
@@ -2043,7 +2043,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP:
 		{
-			//bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
 			if(ctx == USER_OPRATOR_SPEAKING
 				&& pocIdtAttr.is_makeout_call == true)
 			{
@@ -2132,7 +2131,7 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				break;
 			}
 			unsigned int mic_ctl = (unsigned int)ctx;
-			bool pttStatus = lv_poc_get_ppt_state();//|lv_poc_get_earppt_state();
+			bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
 
 			if(mic_ctl > 1 && pocIdtAttr.mic_ctl <= 1 && m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)  //获得话权
 			{
@@ -2235,6 +2234,8 @@ static void prvPocGuiIdtTaskHandleGroupList(uint32_t id, uint32_t ctx)
 		{
 			if (strlen((const char *)pocIdtAttr.self_info.ucNum) < 1)
 			{
+				OSI_LOGI(0, "[group](%d):error", __LINE__);
+				pocIdtAttr.pocGetGroupListCb(0, 0, NULL);
 				break;
 			}
 
@@ -2245,9 +2246,9 @@ static void prvPocGuiIdtTaskHandleGroupList(uint32_t id, uint32_t ctx)
 					break;
 				}
 
-
 				if(m_IdtUser.m_Group.m_Group_Num < 1)
 				{
+					OSI_LOGI(0, "[group](%d):error", __LINE__);
 					pocIdtAttr.pocGetGroupListCb(0, 0, NULL);
 					break;
 				}
@@ -4336,6 +4337,27 @@ static void prvPocGuiIdtTaskHandleRecorderSuspendorResumeOpt(uint32_t id, uint32
 	}
 }
 
+static void prvPocGuiIdtTaskHandleHeadsetInsert(uint32_t id, uint32_t ctx)
+{
+   switch(id)
+   {
+      case LVPOCGUIIDTCOM_SIGNAL_HEADSET_INSERT:
+      {
+         lv_poc_set_headset_status(true);
+         lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机插入", (const uint8_t *)"");
+         break;
+      }
+      case LVPOCGUIIDTCOM_SIGNAL_HEADSET_PULL_OUT:
+      {
+         lv_poc_set_headset_status(false);
+         lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机拔出", (const uint8_t *)"");
+         break;
+      }
+      default:
+         break;
+   }
+}
+
 static void pocGuiIdtComTaskEntry(void *argument)
 {
 
@@ -4525,6 +4547,18 @@ static void pocGuiIdtComTaskEntry(void *argument)
 				break;
 			}
 
+			case LVPOCGUIIDTCOM_SIGNAL_SET_SHUTDOWN_POC:
+			{
+				bool status;
+
+				status = lv_poc_get_charge_status();
+				if(status == false)
+				{
+					prvPocGuiIdtTaskHandleChargerOpt(event.param1, event.param2);
+				}
+				break;
+			}
+
 			case LVPOCGUIIDTCOM_SIGNAL_GPS_UPLOADING_IND:
             {
             	prvPocGuiIdtTaskHandleUploadGpsInfo(event.param1, event.param2);
@@ -4537,6 +4571,13 @@ static void pocGuiIdtComTaskEntry(void *argument)
 				prvPocGuiIdtTaskHandleRecorderSuspendorResumeOpt(event.param1, event.param2);
 				break;
 			}
+
+			case LVPOCGUIIDTCOM_SIGNAL_HEADSET_INSERT:
+            case LVPOCGUIIDTCOM_SIGNAL_HEADSET_PULL_OUT:
+            {
+                prvPocGuiIdtTaskHandleHeadsetInsert(event.param1, event.param2);
+                break;
+         	}
 
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");

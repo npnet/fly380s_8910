@@ -114,7 +114,7 @@ static status_bar_task_t status_bar_task_ext[LV_POC_STABAR_TASK_EXT_LENGTH];
 static lv_poc_activity_t * _idle_activity;
 static char lv_poc_refresh_ui_state = 0;
 static POC_LONGPRESS_MSG_TYPE_T long_press_msg = 0;
-
+static lv_task_t *lv_poc_volum_task_t = NULL;
 #define LV_POC_STACK_SIZE   100
 static struct _lv_poc_stack_t
 {
@@ -536,7 +536,6 @@ static void lv_exec_task(lv_task_t * task);
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:    lv_poc_init_stabar_gps_img
-*   AUTHOR:    wangls
 * DESCRIPT:    初始化状态栏GPS图标
 *     DATE:    2020-08-03
 ********************/
@@ -579,8 +578,6 @@ bool lv_poc_setting_init(void)
 #endif
 	lv_poc_ear_ppt_key_init();
 	poc_ext_pa_init();
-	lv_poc_ear_ppt_key_init();
-	lv_poc_ppt_key_init();
 	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 
     return true;
@@ -895,7 +892,6 @@ static bool lv_poc_theme_init(void)
 
 /*******************
 *     NAME:    lv_poc_power_on_delay_refresh_battery_img_task
-*   AUTHOR:    wangls
 * DESCRIPT:    延时开始刷电量
 *     DATE:    2020-07-20
 ********************/
@@ -962,7 +958,7 @@ static bool lv_poc_init_stabar_time_label(void)
     lv_poc_status_bar_fptr->time_label  = lv_label_create(lv_poc_status_bar, NULL);
     time_label = lv_poc_status_bar_fptr->time_label;
     lv_label_set_style(time_label, LV_LABEL_STYLE_MAIN,label_style);
-    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 0, 0);
+    lv_obj_align(time_label, lv_poc_status_bar, LV_ALIGN_IN_LEFT_MID, 2, 2);
 
     lv_poc_get_time(&time);
 
@@ -1031,14 +1027,13 @@ static bool lv_poc_init_stabar_battery_img(void)
 
     lv_img_set_src(obj, lv_poc_get_battery_img());
     lv_obj_set_opa_scale_enable(obj, false);
-    lv_obj_align(obj, lv_poc_status_bar, LV_ALIGN_IN_RIGHT_MID, -2, 0);
+    lv_obj_align(obj, lv_poc_status_bar, LV_ALIGN_IN_RIGHT_MID, -4, 1);
     return ret_val;
 }
 
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:    lv_poc_init_stabar_gps_img
-*   AUTHOR:    wangls
 * DESCRIPT:    初始化状态栏GPS图标
 *     DATE:    2020-08-03
 ********************/
@@ -1103,7 +1098,6 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 
 /*******************
 *     NAME:    lv_poc_show_gps_location_status_img
-*   AUTHOR:    wangls
 * DESCRIPT:    显示定位及未定位图标
 *     DATE:    2020-10-22
 ********************/
@@ -1121,7 +1115,6 @@ void lv_poc_show_gps_location_status_img(bool status)
 
 /*******************
 *     NAME:    lv_poc_stabar_show_gps_img
-*   AUTHOR:    wangls
 * DESCRIPT:    打开或关闭GPS图标
 *     DATE:    2020-08-03
 ********************/
@@ -1272,7 +1265,7 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
     control->right_button = lv_label_create(control->background,NULL);
     lv_label_set_text(control->right_button, right_text);
     lv_label_set_align(control->right_button, LV_LABEL_ALIGN_CENTER);
-    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, -1, -1);
+    lv_obj_align(control->right_button, lv_obj_get_parent(control->right_button), LV_ALIGN_IN_RIGHT_MID, -4, -1);
 
 }
 
@@ -1447,20 +1440,27 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     {
 	    return ret;
     }
-
+	OSI_LOGI(0, "[sigal][start]key(%d), sign(%d)", cur_key, sign);
     if(activity != current_activity)
     {
 
     }
 
 	if(cur_key != LV_GROUP_KEY_POC)//按键音
-    {
-        poc_play_btn_voice_one_time(0,
+	{
+		if(lv_poc_get_screenon_status())
+		{
+			OSI_LOGI(0, "[poc][signal](%d)screen on first, cannel key tone", __LINE__);
+		}
+		else
+		{
+			poc_play_btn_voice_one_time(0,
 #ifdef CONFIG_POC_TTS_SUPPORT
-           poc_setting_conf->voice_broadcast_switch ||
+			   poc_setting_conf->voice_broadcast_switch ||
 #endif
-           !(poc_setting_conf->btn_voice_switch));
-    }
+			   !(poc_setting_conf->btn_voice_switch));
+		}
+	}
 
 	if(sign == LV_SIGNAL_LONG_PRESS_REP && long_press_msg == POC_LONGPRESS_MSG_TYPE_START)
 	{
@@ -1468,7 +1468,6 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 		{
 			case 0xf0:
 			{
-				OSI_LOGI(0, "[poc][cbkey](%d)long_press_msg launch", __LINE__);
 				long_press_msg = POC_LONGPRESS_MSG_TYPE_POWEROFF;
 				break;
 			}
@@ -1486,7 +1485,14 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 		{
 			case 0xf0:
 			{
-				if(activity_idle == current_activity && poc_get_lcd_status())//main menu
+				if(lv_poc_get_screenon_status())
+				{
+					lv_poc_set_screenon_status(false);
+					OSI_LOGI(0, "[poc][signal](%d)screen on first, release return", __LINE__);
+					return LV_RES_OK;
+				}
+				OSI_LOGI(0, "[poc][signal](%d)pwer key esc or enter", __LINE__);
+				if(activity_idle == current_activity)//main menu
 				{
 					lv_poc_main_menu_open();
 					return LV_RES_OK;
@@ -1513,7 +1519,19 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 			}
 			break;
 		}
+
+		case LV_GROUP_KEY_UP:
+		{
+			if(activity_idle == current_activity)
+			{
+				lv_poc_group_list_open(NULL);
+				return LV_RES_OK;
+			}
+			break;
+		}
 	}
+
+	OSI_LOGI(0, "[sigal][finish]key(%d), sign(%d)", cur_key, sign);
 
     if(NULL != activity->signal_func)
     {
@@ -2302,7 +2320,6 @@ bool lv_poc_get_sim2_state(void)
 
 /*******************
 *     NAME:    lv_poc_get_battery_cnt
-*   AUTHOR:    wangls
 * DESCRIPT:    获取当前电量基值
 *     DATE:    2020-07-20
 ********************/
@@ -3519,7 +3536,6 @@ void lv_poc_group_list_cb_set_active(lv_poc_Activity_Id_t activity_id, bool enab
 
 /*******************
 *	  NAME:    lv_poc_anim_note
-*	AUTHOR:    wangls
 * DESCRIPT:    虚拟动画
 *	  DATE:    2020-08-03
 ********************/
@@ -3538,13 +3554,121 @@ void lv_poc_anim_note(lv_obj_t *obj)
 
 /*******************
 *	  NAME:    lv_poc_get_current_activity
-*	AUTHOR:    wangls
 * DESCRIPT:    获取当前窗口
 *	  DATE:    2020-10-09
 ********************/
 lv_poc_activity_t *lv_poc_get_current_activity(void)
 {
 	return current_activity;
+}
+
+/*******************
+*	  NAME:    lv_poc_scan_volum_task
+* DESCRIPT:    volum task
+*	  DATE:    2020-11-27
+********************/
+void lv_poc_scan_volum_task(lv_task_t *task)
+{
+	static bool VolPeri = false;
+	bool GpioVolUp = false;
+	bool GpioVolDown = false;
+	int GpioVolState = 0;
+
+	GpioVolUp = lv_poc_get_volum_up_state();
+	GpioVolDown = lv_poc_get_volum_down_state();
+
+	GpioVolState = GpioVolUp<<1 | GpioVolDown;//0000 0020 0001 0021-->0 2 1 3
+	//OSI_LOGI(0, "[poc][volum]GpioVolState(%d)", GpioVolState);
+	switch(GpioVolState)
+	{
+		case 0x0:
+		{
+			break;
+		}
+
+		case 0x2://volum down
+		{
+			if(lv_poc_volum_task_t != NULL
+				&& VolPeri == false)
+			{
+				VolPeri = true;
+				lv_task_set_period(lv_poc_volum_task_t, 1000);
+			}
+			extern void lvGuiUpdateLastActivityTime(void);
+			lvGuiUpdateLastActivityTime();
+			uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+			if(vol_cur > 0)
+			{
+				vol_cur = vol_cur - 1;
+				lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+			}
+			break;
+		}
+
+		case 0x1://volum up
+		{
+			if(lv_poc_volum_task_t != NULL
+				&& VolPeri == false)
+			{
+				VolPeri = true;
+				lv_task_set_period(lv_poc_volum_task_t, 1000);
+			}
+			extern void lvGuiUpdateLastActivityTime(void);
+			lvGuiUpdateLastActivityTime();
+			uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+			if(vol_cur < 11)
+			{
+				vol_cur = vol_cur + 1;
+				lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+			}
+			break;
+		}
+
+		case 0x3://release
+		{
+			if(lv_poc_volum_task_t != NULL
+				&& VolPeri == true)
+			{
+				VolPeri = false;
+				lv_task_set_period(lv_poc_volum_task_t, 50);
+			}
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+}
+
+/*******************
+*	  NAME:    lv_poc_scan_volum_task_create
+* DESCRIPT:    volum task
+*	  DATE:    2020-11-27
+********************/
+void lv_poc_scan_volum_task_create(void)
+{
+	if(lv_poc_volum_task_t == NULL)
+	{
+		lv_poc_volum_key_init();
+		lv_poc_volum_task_t = lv_task_create(lv_poc_scan_volum_task, 50, LV_TASK_PRIO_HIGH, (void *)NULL);//volum task
+	}
+}
+
+/*******************
+*	  NAME:    lv_poc_scan_volum_task_del
+* DESCRIPT:    volum task
+*	  DATE:    2020-11-27
+********************/
+void lv_poc_scan_volum_task_del(void)
+{
+	if(lv_poc_volum_task_t != NULL)
+	{
+		lv_task_del(lv_poc_volum_task_t);
+		lv_poc_volum_task_t = NULL;
+		lv_poc_volum_key_close();
+	}
 }
 
 #ifdef __cplusplus

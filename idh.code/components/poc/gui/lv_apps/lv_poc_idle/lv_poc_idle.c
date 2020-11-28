@@ -352,13 +352,13 @@ static void lv_poc_idle_time_task(void)
     }
     if(activity_idle->has_control == true)
     {
-        lv_obj_align(idle_big_clock, activity_idle->display, LV_ALIGN_CENTER, 0, -screen_h * 4 / 26);
+        lv_obj_align(idle_big_clock, activity_idle->display, LV_ALIGN_CENTER, -1, -screen_h * 4 / 26);
     }
     else
     {
-        lv_obj_align(idle_big_clock, activity_idle->display, LV_ALIGN_CENTER, 0, -screen_h/12);
+        lv_obj_align(idle_big_clock, activity_idle->display, LV_ALIGN_CENTER, -1, -screen_h/12);
     }
-    lv_obj_align(idle_date_label, idle_big_clock, LV_ALIGN_OUT_BOTTOM_MID, 0, -8);
+    lv_obj_align(idle_date_label, idle_big_clock, LV_ALIGN_OUT_BOTTOM_MID, -1, -8);
     strcpy(old_big_clock_str, big_clock_str);
     strcpy(old_str,str);
 	is_running = false;

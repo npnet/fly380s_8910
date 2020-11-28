@@ -58,31 +58,30 @@ static drvGpio_t * poc_keypad_led_gpio = NULL;
 #endif
 static drvGpio_t * poc_ext_pa_horn_gpio = NULL;
 static drvGpio_t * poc_ear_ppt_gpio = NULL;
-static drvGpio_t * poc_ppt_gpio = NULL;
-static drvGpio_t * poc_set_gpio = NULL;
-static drvGpio_t * poc_top_gpio = NULL;
-
 static drvGpio_t * poc_gps_ant_Gpio = NULL;
 static drvGpio_t * poc_iic_scl_gpio = NULL;
 static drvGpio_t * poc_iic_sda_gpio = NULL;
+static drvGpio_t * poc_volumup_gpio = NULL;
+static drvGpio_t * poc_volumdown_gpio = NULL;
 drvGpioConfig_t* configport = NULL;
 static bool poc_power_on_status = false;
 static bool poc_charging_status = false;
 static bool is_poc_play_voice = false;
-static bool is_poc_idle_esc = false;
+static bool lv_poc_is_insert_headset = false;
 
 #ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 static bool is_poc_touch_status = false;
 #endif
 
-static bool is_play_tone_status = false;
-static uint8_t poc_earkey_state = false;
+static bool poc_earkey_state = false;
+static bool poc_key_state = false;
 static int lv_poc_inside_group = false;
 static bool lv_poc_group_list_refr = false;
 static bool lv_poc_grouplist_refr_complete = false;
 static bool lv_poc_memberlist_refr_complete = false;
 static bool lv_poc_buildgroup_refr_complete = false;
 static bool lv_poc_refr_error_info = false;
+static bool lv_poc_screenon_first = false;
 static void poc_ear_ppt_irq(void *ctx);
 
 static uint16_t poc_cur_unopt_status;
@@ -1128,7 +1127,6 @@ LV_POC_GET_SIGNAL_TYPR_ENDLE:
 /*
 	  name : poc_get_operator_network_type_req
 	 param : none
-	author : wangls
   describe : 获取网络类型
 	  date : 2020-07-07
 */
@@ -1239,11 +1237,11 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	static int number = 0;
 	CFW_NW_STATUS_INFO nStatusInfo;
 	uint8_t status;
-	static bool poc_network_voice_play = true;
+	//static bool poc_network_voice_play = true;
 
 	if(!poc_check_sim_prsent(sim))
 	{
-		poc_network_voice_play = false;//only play once
+		//poc_network_voice_play = false;//only play once
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 
 		if(number >= 10 || number == 0)//5min
@@ -1300,7 +1298,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.fota_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
 	poc_setting->font.fota_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
-	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
+	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 13);
 	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 45);//主界面时间time
@@ -1390,10 +1388,9 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 #endif
 	poc_setting->font.big_font_switch = 1;
 	poc_setting->font.list_page_colum_count = 3;
-	/*close font---南极星统一使用小号字体*/
 	poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 	poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
-	poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_big_font;
+	poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
 	poc_setting->volume = 5;
 	poc_setting->language = 0;
 	poc_setting->is_exist_selfgroup = 1;
@@ -1436,7 +1433,6 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 	if(poc_setting->font.big_font_switch == 0)
 	{
 		poc_setting->font.list_page_colum_count = 4;
-		/*close font---南极星统一使用小号字体*/
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
 		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
@@ -1444,10 +1440,9 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 	else if(poc_setting->font.big_font_switch == 1)
 	{
 		poc_setting->font.list_page_colum_count = 3;
-		/*close font---南极星统一使用小号字体*/
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
-		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_big_font;
+		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
 	}
 #endif
 }
@@ -1774,7 +1769,6 @@ poc_ext_pa_init(void)
 /*
       name : drvledxSetBackLight
      param : none
-    author : wangls
   describe : 配置LEDx亮度
       date : 2020-08-28
 */
@@ -1817,7 +1811,6 @@ void drvledxSetBackLight(uint8_t ledx, bool status)
 /*
       name : poc_set_red_blacklight
      param : none
-    author : wangls
   describe : 开关RED
       date : 2020-08-08
 */
@@ -1830,7 +1823,6 @@ poc_set_red_blacklight(bool status)
 /*
       name : poc_set_green_blacklight
      param : none
-    author : wangls
   describe : 开关GREEN
       date : 2020-08-08
 */
@@ -1843,7 +1835,6 @@ poc_set_green_blacklight(bool status)
 /*
 	  name : Lv_ear_ppt_timer_cb
 	 param : none
-	author : wangls
   describe : ear ppt cb回调
 	  date : 2020-08-10
 */
@@ -1873,7 +1864,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		checkcbpress = 0;
 		ear_key_attr.ear_key_press = true;
 		poc_earkey_state = true;
-		OSI_LOGI(0, "[song]key is press,start speak\n");
+		OSI_LOGI(0, "[headset]key is press,start speak\n");
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
 	}
 	else
@@ -1890,10 +1881,10 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 	    }
 	}
 }
+
 /*
 	  name : lv_poc_ear_ppt_key_init
 	 param : none
-	author : wangls
   describe : 耳机ppt配置
 	  date : 2020-07-30
 */
@@ -1909,12 +1900,11 @@ void lv_poc_ear_ppt_key_init(void)
         .debounce = true,
     };
 
-	poc_ear_ppt_gpio = drvGpioOpen(8, &cfg, poc_ear_ppt_irq, NULL);
+	poc_ear_ppt_gpio = drvGpioOpen(poc_head_set, &cfg, poc_ear_ppt_irq, NULL);
 
 	if(poc_ear_ppt_gpio == NULL)
 	{
-		Ap_OSI_ASSERT((poc_ear_ppt_gpio != NULL), "[song]ear config io NULL"); /*assert verified*/
-		OSI_LOGI(0, "[song]ear gpio open failed\n");
+		Ap_OSI_ASSERT((poc_ear_ppt_gpio != NULL), "[headset]ear config io NULL"); /*assert verified*/
 	}
 
 	/*ear time*/
@@ -1925,7 +1915,6 @@ void lv_poc_ear_ppt_key_init(void)
 /*
 	  name : lv_poc_ear_ppt_key_init
 	 param : none
-	author : wangls
   describe : 耳机ppt中断
 	  date : 2020-07-30
 */
@@ -1944,20 +1933,19 @@ void poc_ear_ppt_irq(void *ctx)
 	{
 		ear_key_attr.ear_key_press = false;
 		poc_earkey_state = false;
-		OSI_LOGI(0, "[song]key is release,stop speak\n");
+		OSI_LOGI(0, "[headset]key is release,stop speak\n");
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 	}
 	else/*press*/
 	{
 		osiTimerStart(ear_key_attr.ear_press_timer, 80);
-		OSI_LOGI(0, "[song]ear time start\n");
+		OSI_LOGI(0, "[headset]ear time start\n");
 	}
 }
 
 /*
 	  name : lv_poc_get_earppt_state
 	 param : none
-	author : wangls
   describe : 获取耳机ppt
 	  date : 2020-08-03
 */
@@ -1967,27 +1955,46 @@ bool lv_poc_get_earppt_state(void)
 }
 
 /*
-	  name : lv_poc_ppt_key_init
+	  name : lv_poc_get_ppt_state
 	 param : none
-	author : wangls
-  describe : ppt配置
-	  date : 2020-08-14
+  describe : 获取ppt
+	  date : 2020-08-03
 */
-typedef struct _PocPptKeyComAttr_t
+bool lv_poc_get_ppt_state(void)
 {
-	osiTimer_t *ppt_press_timer;/*误触碰定时器*/
-	osiThread_t *poc_ppt_thread;
-	bool poc_key_press;
-}PocPptKeyComAttr_t;
+	return poc_key_state == 1 ? true : false;
+}
 
-static PocPptKeyComAttr_t poc_ppt_key_attr = {0};
-static uint8_t poc_pptkey_state = false;
-static void Lv_poc_ppt_timer_cb(void *ctx);
-static void prv_poc_ppt_irq(void *ctx);
-
-void lv_poc_ppt_key_init(void)
+#ifdef SUPPORT_VOLUM_IRQ
+void lv_poc_volum_irq(void *ctx)
 {
-	/*配置ppt IO*/
+	int state = (int)ctx;
+	switch(state)
+	{
+		case 1:
+		{
+			OSI_LOGI(0, "[volum]up");
+			break;
+		}
+
+		case 2:
+		{
+			OSI_LOGI(0, "[volum]down");
+			break;
+		}
+	}
+}
+#endif
+
+/*
+	  name : lv_poc_volum_key_init
+	 param : none
+  describe :
+	  date : 2020-11-27
+*/
+void lv_poc_volum_key_init(void)
+{
+#ifdef SUPPORT_VOLUM_IRQ
     drvGpioConfig_t cfg = {
         .mode = DRV_GPIO_INPUT,
         .intr_enabled = true,
@@ -1997,115 +2004,88 @@ void lv_poc_ppt_key_init(void)
         .debounce = true,
     };
 
-	poc_ppt_gpio = drvGpioOpen(poc_ppt, &cfg, prv_poc_ppt_irq, (LV_POC_KEY_TYPE_T *)POC_KEY_TYPE_PPT);
-	poc_set_gpio = drvGpioOpen(poc_c_key, &cfg, prv_poc_ppt_irq, (LV_POC_KEY_TYPE_T *)POC_KEY_TYPE_SET);
-	poc_top_gpio = drvGpioOpen(poc_top_key, &cfg, prv_poc_ppt_irq, (LV_POC_KEY_TYPE_T *)POC_KEY_TYPE_TOP);
+	poc_volumup_gpio = drvGpioOpen(poc_volum_up, &cfg, lv_poc_volum_irq, (void *)1);
+	poc_volumdown_gpio = drvGpioOpen(poc_volum_down, &cfg, lv_poc_volum_irq, (void *)2);
+#else
+    drvGpioConfig_t cfg = {
+        .mode = DRV_GPIO_INPUT,
+        .intr_enabled = false,
+        .intr_level = false,
+        .rising = true,
+        .falling = true,
+        .debounce = false,
+    };
 
-	if(poc_ppt_gpio == NULL
-		|| poc_set_gpio == NULL
-		|| poc_top_gpio == NULL)
+	if(poc_volumup_gpio == NULL)
 	{
-		return;
+		poc_volumup_gpio = drvGpioOpen(poc_volum_up, &cfg, NULL, NULL);
+	}
+
+	if(poc_volumdown_gpio == NULL)
+	{
+		poc_volumdown_gpio = drvGpioOpen(poc_volum_down, &cfg, NULL, NULL);
+	}
+#endif
+
+	if(poc_volumup_gpio == NULL
+		|| poc_volumdown_gpio == NULL)
+	{
+		Ap_OSI_ASSERT((poc_volumup_gpio != NULL), "[poc][volum]ear config io NULL");
 	}
 	else
 	{
-		OSI_LOGI(0, "[song]ppt gpio open success\n");
-		/*ppt time*/
-		memset(&poc_ppt_key_attr, 0, sizeof(PocPptKeyComAttr_t));
-		poc_ppt_key_attr.ppt_press_timer = osiTimerCreate(poc_ppt_key_attr.poc_ppt_thread, Lv_poc_ppt_timer_cb, NULL);/*误触碰定时器*/
+		OSI_LOGI(0, "[volum]GPIO config finish");
 	}
 }
 
 /*
-	  name : poc_ppt_irq
+	  name : lv_poc_volum_key_close
 	 param : none
-	author : wangls
-  describe : ppt中断
-	  date : 2020-08-14
+  describe :
+	  date : 2020-11-27
 */
-static
-void prv_poc_ppt_irq(void *ctx)
+void lv_poc_volum_key_close(void)
 {
-	LV_POC_KEY_TYPE_T type = (LV_POC_KEY_TYPE_T)ctx;
-
-	switch(type)
+	if(poc_volumup_gpio != NULL)
 	{
-		case POC_KEY_TYPE_PPT:
-		{
-			if(drvGpioRead(poc_ppt_gpio))/*release*/
-			{
-				if(poc_ppt_key_attr.poc_key_press == true)
-				{
-					poc_ppt_key_attr.poc_key_press = false;
-					poc_pptkey_state = false;
-					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
-				}
-				else
-				{
-					osiTimerStop(poc_ppt_key_attr.ppt_press_timer);
-				}
-			}
-			else/*press*/
-			{
-				osiTimerStart(poc_ppt_key_attr.ppt_press_timer, 200);
-			}
-			break;
-		}
-
-		case POC_KEY_TYPE_SET:
-		{
-			if(drvGpioRead(poc_set_gpio))//release
-			{
-				lv_poc_member_list_open(NULL, NULL, false);
-			}
-			else//press
-			{
-
-			}
-			break;
-		}
-
-		case POC_KEY_TYPE_TOP:
-		{
-			break;
-		}
+		drvGpioClose(poc_volumup_gpio);
+		poc_volumup_gpio = NULL;
+		OSI_LOGI(0, "[volum]volup close");
 	}
-}
 
-/*
-	  name : Lv_poc_ppt_timer_cb
-	 param : none
-	author : wangls
-  describe : ppt cb
-	  date : 2020-08-14
-*/
-static void Lv_poc_ppt_timer_cb(void *ctx)
-{
-	if(drvGpioRead(poc_ppt_gpio) == false)/*press*/
+	if(poc_volumdown_gpio != NULL)
 	{
-		poc_ppt_key_attr.poc_key_press = true;
-		poc_pptkey_state = true;
-		OSI_LOGI(0, "[song]key is press,start speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+		drvGpioClose(poc_volumdown_gpio);
+		poc_volumdown_gpio = NULL;
+		OSI_LOGI(0, "[volum]voldown close");
 	}
 }
 
 /*
-	  name : lv_poc_get_ppt_state
+	  name : lv_poc_volum_key_init
 	 param : none
-	author : wangls
-  describe : 获取对讲ppt
-	  date : 2020-08-14
+  describe :
+	  date : 2020-11-27
 */
-bool lv_poc_get_ppt_state(void)
+bool lv_poc_get_volum_up_state(void)//GPIO_7
 {
-	return poc_pptkey_state == 1 ? true : false;
+	return drvGpioRead(poc_volumup_gpio);
+}
+
+/*
+	  name : lv_poc_volum_key_init
+	 param : none
+  describe :
+	  date : 2020-11-27
+*/
+bool lv_poc_get_volum_down_state(void)//GPIO_10
+{
+	return drvGpioRead(poc_volumdown_gpio);
 }
 
 /*
 	  name : lv_poc_set_audev_in_out
 	 param : none
-	author : wangls
   describe : set audev type
 	  date : 2020-08-31
 */
@@ -2119,7 +2099,6 @@ lv_poc_set_audev_in_out(audevInput_t in_type, audevOutput_t out_type)
 /*
     name : lv_poc_get_mic_gain
    param : none
-  author : wangls
 describe : 获取mic增益
     date : 2020-09-01
 */
@@ -2140,7 +2119,6 @@ bool lv_poc_get_mic_gain(void)
 /*
     name : lv_poc_set_record_mic_gain
    param : none
-  author : wangls
 describe : 设置record mic增益
     date : 2020-09-01
 */
@@ -2155,7 +2133,6 @@ bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_p
 /*
 	name : lv_poc_set_record_mic_gain
 	param : none
-  author : wangls
 describe : 设置record mic增益
 	date : 2020-09-01
 */
@@ -2245,16 +2222,11 @@ prv_lv_poc_get_group_list_cb(int msg_type, uint32_t num, CGroup *group)
 bool
 lv_poc_get_group_list(lv_poc_group_list_t * group_list, get_group_list_cb func)
 {
-	#ifndef AP_ASSERT_ENABLE
 	if(group_list == NULL || func == NULL)
 	{
 		OSI_LOGI(0, "[grouprefr](%d):data error", __LINE__);
 		return false;
 	}
-	#else
-	Ap_OSI_ASSERT((group_list != NULL), "[song]delete prv_group_list NULL");
-	Ap_OSI_ASSERT((func != NULL), "[song]delete prv_group_list_cb NULL");
-	#endif
 
 	prv_group_list = group_list;
 	prv_group_list_cb = func;
@@ -2742,7 +2714,6 @@ lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
 /*
 	  name : lv_poc_set_adc_current_sense
 	 param : none
-	author : wangls
   describe : 设置adc电流源
 	  date : 2020-08-18
 	return : true-打开/false-关闭
@@ -2821,28 +2792,6 @@ bool
 lv_poc_get_charge_status(void)
 {
 	return poc_charging_status;
-}
-
-/*
-	  name : lv_poc_set_idle_esc_status
-	  param :
-	  date : 2020-10-09
-*/
-void
-lv_poc_set_idle_esc_status(bool status)
-{
-	is_poc_idle_esc = status;
-}
-
-/*
-	  name : lv_poc_get_idle_esc_status
-	  param :
-	  date : 2020-10-09
-*/
-bool
-lv_poc_get_idle_esc_status(void)
-{
-	return is_poc_idle_esc;
 }
 
 /*
@@ -3036,6 +2985,28 @@ bool lv_poc_play_voice_status(void)
 }
 
 /*
+     name : lv_poc_set_headset_status
+     param :
+     date : 2020-09-29
+*/
+void
+lv_poc_set_headset_status(bool status)
+{
+   lv_poc_is_insert_headset = status;
+}
+
+/*
+     name : lv_poc_get_headset_is_ready
+     param :
+     date : 2020-09-29
+*/
+bool
+lv_poc_get_headset_is_ready(void)
+{
+   return lv_poc_is_insert_headset;
+}
+
+/*
      name : lv_poc_set_auto_deepsleep
      param :
      date : 2020-09-29
@@ -3071,5 +3042,27 @@ poc_set_iic_status(bool iicstatus)
 	drvGpioWrite(poc_iic_sda_gpio, iicstatus);
 
 	return iicstatus;
+}
+
+/*
+	  name : lv_poc_set_screenon_status
+	  describe :
+	  param :
+	  date : 2020-11-28
+*/
+void lv_poc_set_screenon_status(bool status)
+{
+	lv_poc_screenon_first = status;
+}
+
+/*
+	  name : lv_poc_get_screenon_status
+	  describe :
+	  param :
+	  date : 2020-11-28
+*/
+bool lv_poc_get_screenon_status(void)
+{
+	return lv_poc_screenon_first;
 }
 

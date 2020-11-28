@@ -1,4 +1,4 @@
-#ifndef __LV_POC_SETTING_H_
+﻿#ifndef __LV_POC_SETTING_H_
 #define __LV_POC_SETTING_H_
 
 #ifdef __cplusplus
@@ -9,6 +9,8 @@ extern lv_poc_activity_t * poc_setting_activity;
 
 
 void lv_poc_setting_open(void);
+
+void lv_poc_setting_refresh(void);
 
 #ifdef __cplusplus
 }

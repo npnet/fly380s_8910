@@ -29,18 +29,23 @@
 #include "lv_gui_main.h"
 #include "poc_audio_recorder.h"
 
-#define POC_RECORD_OR_SPEAK_CALL 1//1-正常对讲，0-自录自播
+#define POC_RECORD_OR_SPEAK_CALL 1//1-正常对讲 0-自录自播
 #define POC_RECORDER_PLAY_MODE 1//1-play 0-poc
+#define POC_SUPPORT_LONGPRESS_POWEROFF 1//1-支持长按关机 0-不支持
 
+//static
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
 static lv_indev_state_t prvPttKeyState = 0xff;
-static lv_indev_state_t prvPowerKeyState = 0xff;
-static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
+
+//extern
+extern lv_poc_activity_t * poc_member_call_activity;
 
 #if POC_SUPPORT_LONGPRESS_POWEROFF
+static lv_indev_state_t prvPowerKeyState = 0xff;
 static bool isReadyPowerOff = false;
 static osiTimer_t * prvPowerTimer = NULL;
+static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
 
 static void prvPowerKeyCb(void *ctx)
 {
@@ -68,7 +73,8 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{
-				if(lv_poc_get_current_activity() == activity_idle)
+				if(lv_poc_get_current_activity() == activity_idle
+					|| lv_poc_get_current_activity() == poc_member_call_activity)
 				{
 #if POC_RECORD_OR_SPEAK_CALL
                 OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
@@ -84,7 +90,8 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
             }
             else
             {
-				if(lv_poc_get_current_activity() == activity_idle)
+				if(lv_poc_get_current_activity() == activity_idle
+					|| lv_poc_get_current_activity() == poc_member_call_activity)
 				{
 #if POC_RECORD_OR_SPEAK_CALL
                 OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
@@ -108,15 +115,6 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 
         if(prvPowerKeyState != state)
         {
-			if(lv_poc_get_current_activity() != activity_idle)
-			{
-				lv_poc_set_idle_esc_status(true);
-			}
-			else
-			{
-				lv_poc_set_idle_esc_status(false);
-			}
-
             if(state == LV_INDEV_STATE_PR)
             {
                 if(prvPowerTimer != NULL)
@@ -141,6 +139,8 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 							if(!poc_get_lcd_status())
 							{
 								poc_set_lcd_status(true);
+								lv_poc_set_screenon_status(true);
+								OSI_LOGI(0, "[poc][keyhandle](%d)release, screen on first", __LINE__);
 							}
 						}
 		            }
@@ -183,13 +183,7 @@ bool pocGetPttKeyState(void)
 	return prvPttKeyState == KEY_STATE_PRESS ? true : false;
 }
 
-/*
-	  name : poc_power_on_charge_set_lcd_status
-	 param : none
-	author : wangls
-  describe : 充电时开关屏幕
-	  date : 2020-07-10
-*/
+#if POC_SUPPORT_LONGPRESS_POWEROFF
 static
 void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus)
 {
@@ -204,5 +198,6 @@ void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus)
 	}
 
 }
+#endif
 
 #endif

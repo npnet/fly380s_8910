@@ -48,6 +48,7 @@ static
 void prv_lv_poc_power_on_picture(lv_task_t * task)
 {
 	lv_poc_create_idle();
+	lv_poc_scan_volum_task_create();
 }
 
 static
@@ -55,7 +56,7 @@ void prv_lv_poc_power_on_sprd_image(lv_task_t * task)
 {
 	poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
 	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
-	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 160, 128);
+	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 132, 132);
 	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
 }
 
@@ -64,7 +65,7 @@ void prv_lv_poc_power_on_backgroup_image(lv_task_t * task)
 {
 	poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
 	lv_img_set_auto_size(poc_power_on_backgroup_image, false);
-	lv_obj_set_size(poc_power_on_backgroup_image, 160, 128);
+	lv_obj_set_size(poc_power_on_backgroup_image, 132, 132);
 	extern lv_img_dsc_t img_poweron_poc_logo_unicom;
 	lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
 }

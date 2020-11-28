@@ -299,7 +299,6 @@ typedef struct _lv_poc_status_bar_sim_obj_t
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:   lv_poc_status_bar_gps_obj_t
-*   AUTHOR:   wangls
 * DESCRIPT:   gps
 *     DATE:   2020-08-03
 ********************/
@@ -312,7 +311,6 @@ typedef struct lv_poc_status_bar_gps_obj_t
 
 /*******************
 *     NAME:   lv_poc_status_bar_lock_obj_t
-*   AUTHOR:   wangls
 * DESCRIPT:   lock screen
 *     DATE:   2020-10-14
 ********************/
@@ -845,7 +843,6 @@ extern nv_poc_setting_msg_t * poc_setting_conf;
 /*
 	  name : lv_poc_anim_note
 	 param : none
-	author : wangls
   describe : 动画虚拟背景
 	  date : 2020-07-06
 */
@@ -853,7 +850,6 @@ void lv_poc_anim_note(lv_obj_t *obj);
 
 /*******************
 *     NAME:    lv_poc_get_battery_cnt
-*   AUTHOR:    wangls
 * DESCRIPT:    获取当前电量基值
 *     DATE:    2020-07-20
 ********************/
@@ -862,7 +858,6 @@ uint8_t lv_poc_get_battery_cnt(OUT battery_values_t *values);
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *	  NAME:    lv_poc_stabar_show_gps_img
-*	AUTHOR:    wangls
 * DESCRIPT:    打开或关闭GPS图标
 *	  DATE:    2020-08-03
 ********************/
@@ -870,7 +865,6 @@ bool lv_poc_stabar_show_gps_img(bool enable);
 
 /*******************
 *	  NAME:    lv_poc_get_current_activity
-*	AUTHOR:    wangls
 * DESCRIPT:    获取当前窗口
 *	  DATE:    2020-10-09
 ********************/
@@ -878,12 +872,25 @@ lv_poc_activity_t *lv_poc_get_current_activity(void);
 
 /*******************
 *	  NAME:    lv_poc_show_gps_location_status_img
-*	AUTHOR:    wangls
 * DESCRIPT:    显示定位及未定位图标
 *	  DATE:    2020-10-22
 ********************/
 void lv_poc_show_gps_location_status_img(bool status);
 #endif
+
+/*******************
+*	  NAME:    lv_poc_scan_volum_task_create
+* DESCRIPT:    volum task
+*	  DATE:    2020-11-27
+********************/
+void lv_poc_scan_volum_task_create(void);
+
+/*******************
+*	  NAME:    lv_poc_scan_volum_task_del
+* DESCRIPT:    volum task
+*	  DATE:    2020-11-27
+********************/
+void lv_poc_scan_volum_task_del(void);
 
 #ifdef __cplusplus
 }
