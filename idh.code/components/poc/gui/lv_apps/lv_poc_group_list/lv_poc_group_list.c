@@ -337,8 +337,12 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_KEY_ESC:
 				{
-					if(!lvPocGuiIdtCom_get_obtainning_state())
+					if(lv_poc_is_grouplist_refr_complete()
+						|| lv_poc_get_refr_error_info())
+					{
+						lv_poc_group_list_set_hightlight_index();
 						lv_poc_del_activity(poc_group_list_activity);
+					}
 					break;
 				}
 			}

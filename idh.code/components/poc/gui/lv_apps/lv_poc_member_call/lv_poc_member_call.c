@@ -156,7 +156,7 @@ static lv_res_t lv_poc_member_call_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_ESC:
 				{
-					if(lvPocGuiIdtCom_get_listen_status())//正在接听讲话时不准退出
+					if(lvPocGuiOemCom_get_listen_status())//正在接听讲话时不准退出
 						break;
 					lv_poc_member_call_exit_by_self = 1;
 					lv_poc_member_call_delay_exit_task_create(5);
@@ -269,7 +269,7 @@ void lv_poc_member_call_open(void * information)
     	return;
     }
 
-	if(lvPocGuiIdtCom_get_listen_status())/*listen status cannot member call*/
+	if(lvPocGuiOemCom_get_listen_status())//listen status cannot member call
 	{
 		return;
 	}
