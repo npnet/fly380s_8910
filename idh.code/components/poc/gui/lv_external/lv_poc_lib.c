@@ -769,7 +769,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			{
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
-				audevSetPlayVolume(70);
+				audevSetPlayVolume(63);
 			    is_poc_play_voice = true;
 				break;
 			}
