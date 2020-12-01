@@ -94,7 +94,8 @@ typedef enum
     LVPOCGUIOEMCOM_SIGNAL_SCREEN_ON_IND,
     LVPOCGUIOEMCOM_SIGNAL_SCREEN_OFF_IND,
 
-    LVPOCGUIOEMCOM_SIGNAL_STOP_PLAYER_VOICE,
+	LVPOCGUIOEMCOM_SIGNAL_STOP_PLAYER_VOICE,
+
     LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE,
     LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE,
 } LvPocGuiOemCom_SignalType_t;
@@ -280,7 +281,7 @@ void lvPocGuiOemCom_Init(void);
 
 bool lvPocGuiOemCom_Msg(LvPocGuiOemCom_SignalType_t signal, void * ctx);
 
-bool lvPocGuiOemCom_CriRe_Msg(LvPocGuiOemCom_SignalType_t signal, void * ctx);
+bool lvPocGuiOemCom_Msg_Listen_Speak(LvPocGuiOemCom_SignalType_t signal, void * ctx);
 
 bool lvPocGuiOemCom_MessageQueue(osiMessageQueue_t *mq, const void *msg);
 

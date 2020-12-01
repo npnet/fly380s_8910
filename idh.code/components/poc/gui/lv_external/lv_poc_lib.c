@@ -4050,3 +4050,14 @@ lv_poc_get_network_status_is_ready(void)
 	return is_poc_network_status;
 }
 
+/*
+     name : lv_poc_stop_poc_voice
+     param :
+     date : 2020-12-1
+*/
+void
+lv_poc_stop_player_voice(void)
+{
+	auPlayerStop(prv_play_voice_one_time_player);
+}
+

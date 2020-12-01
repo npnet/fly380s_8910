@@ -1319,6 +1319,14 @@ void lv_poc_set_apply_note(lv_poc_apply_note_type_t type);
 */
 lv_poc_apply_note_type_t lv_poc_get_apply_note(void);
 
+/*
+     name : lv_poc_stop_poc_voice
+     param :
+     date : 2020-12-1
+*/
+void
+lv_poc_stop_player_voice(void);
+
 #ifdef __cplusplus
 }
 #endif
