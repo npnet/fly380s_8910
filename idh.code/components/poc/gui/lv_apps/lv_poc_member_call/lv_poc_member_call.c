@@ -242,9 +242,9 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 		}
 		else if(current_status == 0)
 		{
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Member_Call, 50, false);
-//			lv_task_t *task = lv_task_create(lv_poc_member_call_delay_notation, 300, LV_TASK_PRIO_MID, (void *)NULL);
-//			lv_task_once(task);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Member_Call, 50, true);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始单呼", NULL);
 		}
 		else
 		{
@@ -276,14 +276,14 @@ void lv_poc_member_call_open(void * information)
 
 	if(information == NULL)
 	{
-		OSI_LOGI(0, "[songmembercall] infomation of call obj is empty\n");
+		OSI_LOGI(0, "[membercall] infomation of call obj is empty\n");
 		return;
 	}
 
     lv_poc_member_call_member_list_obj = (lv_poc_oem_member_list *)lv_mem_alloc(sizeof(lv_poc_oem_member_list));
 	if(lv_poc_member_call_member_list_obj == NULL)
 	{
-		OSI_LOGI(0, "[songmembercall] apply memory of member list failed!\n");
+		OSI_LOGI(0, "[membercall] apply memory of member list failed!\n");
 		return;
 	}
 	lv_poc_member_call_member_list_obj->offline_list = NULL;

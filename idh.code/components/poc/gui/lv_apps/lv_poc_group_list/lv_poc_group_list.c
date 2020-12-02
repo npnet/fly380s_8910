@@ -165,7 +165,7 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 	}
     else
     {
-  	  lv_poc_set_refr_error_info(true);
+	  	lv_poc_set_refr_error_info(true);
 	    poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
     }
@@ -419,6 +419,8 @@ static void lv_poc_get_group_list_cb(int result_type)
 {
 	if(poc_group_list_activity == NULL)
 	{
+		OSI_LOGI(0, "[grouprefr](%d):error", __LINE__);
+		lv_poc_set_refr_error_info(true);
 		return;
 	}
 
@@ -429,6 +431,7 @@ static void lv_poc_get_group_list_cb(int result_type)
 	}
 	else
 	{
+		lv_poc_set_refr_error_info(true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
@@ -578,6 +581,7 @@ void lv_poc_group_list_open(lv_poc_oem_group_list *group_list_obj)
 
     if(poc_group_list_activity != NULL || lv_poc_group_list != NULL || activity_list != NULL)
     {
+		lv_poc_set_refr_error_info(true);
     	return;
     }
 
@@ -585,8 +589,12 @@ void lv_poc_group_list_open(lv_poc_oem_group_list *group_list_obj)
 
 	if(lv_poc_group_list == NULL)
 	{
+		lv_poc_set_refr_error_info(true);
 		return;
 	}
+
+	lv_poc_set_refr_error_info(false);
+	lv_poc_set_grouplist_refr_is_complete(false);
 
 	lv_poc_group_list->group_list = NULL;
 	lv_poc_group_list->group_number = 0;
@@ -600,6 +608,8 @@ void lv_poc_group_list_open(lv_poc_oem_group_list *group_list_obj)
 	{
 		if(!lv_poc_get_group_list(lv_poc_group_list, lv_poc_get_group_list_cb))
 	    {
+			OSI_LOGI(0, "[poc][group](%d)error", __LINE__);
+			lv_poc_set_refr_error_info(true);
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	    }
@@ -682,13 +692,11 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 		group_list_obj = lv_poc_group_list;
 	}
 
-	if(group_list_obj == NULL)
+	if(current_activity != poc_group_list_activity
+		|| group_list_obj == NULL)
 	{
-		return;
-	}
-
-	if(current_activity != poc_group_list_activity)
-	{
+		OSI_LOGI(0, "[grouprefr](%d):error", __LINE__);
+		lv_poc_set_refr_error_info(true);
 		return;
 	}
 
@@ -793,6 +801,9 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	{
 		lv_list_set_btn_selected(activity_list, btn_index[current_index]);
 	}
+	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+	lv_poc_set_grouplist_refr_is_complete(true);
+	OSI_LOGI(0, "[grouprefr](%d):refresh finish", __LINE__);
 }
 
 void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj)

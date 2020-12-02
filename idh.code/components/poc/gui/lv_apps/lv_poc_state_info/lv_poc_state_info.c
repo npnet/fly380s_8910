@@ -154,7 +154,7 @@ static int lv_poc_state_info_network_server(void)
 	int nStatus = 0;
 
 	CFW_GetGprsAttState(&uState, nSim);
-	if( 2== 1)//lvPocGuiIdtCom_get_status()
+	if((lvPocGuiOemCom_get_login_status() == 2))
 	{
 		if(uState == 0)
 		{

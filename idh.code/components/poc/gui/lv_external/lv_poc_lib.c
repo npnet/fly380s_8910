@@ -708,6 +708,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			{
 				continue;
 			}
+			lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);
 
 			voice_type = event.param1;
 
@@ -739,6 +740,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 50))
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
+					lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE, NULL);
 					isPlayVoice = false;
 					is_poc_play_voice = false;
 
@@ -799,8 +801,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
 			{
 				voice_formate = AUSTREAM_FORMAT_MP3;
-				/*audio volum*/
-				audevSetPlayVolume(70);//70
+				audevSetPlayVolume(50);
 			    is_poc_play_voice = true;
 				break;
 			}
