@@ -677,7 +677,6 @@ $MYSYSMODE,     atCmdHandleMYSYSMODE, 0
 #endif
 
 +LOGACCOUNT,    atCmdHandleLOGACCOUNT, 0      //write/read current account
-+POC,    		atCmdHandleLOGAPZZD, 0        //write/read apzzd param data
 
 %%
 

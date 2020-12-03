@@ -105,7 +105,7 @@ static void pocIdtStartHandleTask(void * ctx)
 	abup_check_update_result();
 
 #ifdef CONFIG_POC_SUPPORT
-	lvPocGuiOemCom_Init();
+	lvPocGuiBndCom_Init();
 #endif
 
 	osiThreadExit();

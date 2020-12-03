@@ -196,7 +196,7 @@ bool lv_poc_build_tempgrp_operator(lv_poc_build_tempgrp_item_info_t * info, int3
 		return false;
 	}
 
-	if(lvPocGuiOemCom_get_listen_status())//listen status cannot launch tmpgrp func
+	if(lvPocGuiBndCom_get_listen_status())//listen status cannot launch tmpgrp func
 	{
 		OSI_LOGI(0, "[build][tmpgrp] listen isn't signal");
 		return false;
@@ -304,7 +304,7 @@ lv_res_t lv_poc_build_tempgrp_signal_func(struct _lv_obj_t * obj, lv_signal_t si
 					{
 						if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) == POC_TMPGRP_FINISH)
 						{
-							if(lvPocGuiOemCom_get_listen_status())//正在接听讲话时不准退出
+							if(lvPocGuiBndCom_get_listen_status())//正在接听讲话时不准退出
 							{
 								break;
 							}
@@ -376,7 +376,7 @@ void lv_poc_build_tempgrp_open(void)
     	return;
     }
 
-	if(lvPocGuiOemCom_get_listen_status())//listen status cannot build tmpgrp
+	if(lvPocGuiBndCom_get_listen_status())//listen status cannot build tmpgrp
 	{
 		OSI_LOGI(0, "[membercall] listen isn't signal");
 		return;
@@ -621,7 +621,7 @@ void lv_poc_build_tempgrp_refresh(lv_task_t * task)
         	lv_list_set_btn_selected(activity_list, btn);
         }
     }
-	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_buildgroup_refr_is_complete(true);
 }
 
@@ -947,7 +947,7 @@ void lv_poc_build_tempgrp_member_list_refresh(lv_task_t * task)
 	}
 
 	lv_poc_set_buildgroup_refr_is_complete(true);
-	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 
 	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) >= POC_TMPGRP_VIEW
 		&& lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) <= POC_TMPGRP_OPENMEMLIST)
@@ -961,7 +961,7 @@ void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t * task)
 	lv_poc_exitgrp_t type = (lv_poc_exitgrp_t)task->user_data;
 
 	if(type == POC_EXITGRP_PASSIVE
-		&& lvPocGuiOemCom_get_listen_status())
+		&& lvPocGuiBndCom_get_listen_status())
 	{
 		return;
 	}
@@ -975,7 +975,7 @@ void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t * task)
 		OSI_LOGI(0, "[tmpgrp][multi-call]exit multi call");
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Temp_Group, 50, false);
 		type == POC_EXITGRP_INITIATIVE ? \
-		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP, NULL) : 0;
+		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP, NULL) : 0;
 		lv_poc_build_tempgrp_progress(POC_TMPGRP_START);
 	}
 }

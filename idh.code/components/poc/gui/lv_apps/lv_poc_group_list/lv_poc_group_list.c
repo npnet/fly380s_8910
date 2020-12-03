@@ -167,7 +167,7 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     }
 	else if(msg_type == 2)
 	{
-		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 		lv_poc_set_refr_error_info(true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"组内无成员", (const uint8_t *)"");
 	}
@@ -206,7 +206,6 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
           	strcat(lv_poc_group_list_current_group_title, (const char *)lv_poc_get_group_name((lv_poc_group_info_t)group_item->information));
 			lv_label_set_text(btn_label, lv_poc_group_list_current_group_title);
 
-			lvPocGuiOemCom_modify_current_group_info((OemCGroup *)group_item->information);
 			lv_poc_group_current_info = group_info;
 
 			OSI_PRINTFI("[grouproptack](%s)(%d):set current group", __func__, __LINE__);
@@ -230,8 +229,8 @@ static void lv_poc_group_list_set_current_group_cb(int result_type)
 
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 {
-	if(lvPocGuiOemCom_get_listen_status()
-		|| lvPocGuiOemCom_get_speak_status())
+	if(lvPocGuiBndCom_get_listen_status()
+		|| lvPocGuiBndCom_get_speak_status())
 	{
 		OSI_PRINTFI("[voice][listen][speak](%s)(%d)not allow", __func__, __LINE__);
 		return;
@@ -350,7 +349,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 					if(lv_poc_is_grouplist_refr_complete()
 						|| lv_poc_get_refr_error_info())
 					{
-						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_GROUP_REFR_REP, NULL);
+						lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_GROUP_REFR_REP, NULL);
 						lv_poc_group_list_set_hightlight_index();
 						lv_poc_del_activity(poc_group_list_activity);
 					}
@@ -465,9 +464,9 @@ void lv_poc_group_monitor_oprator_refresh_task(lv_task_t * task)
 		lv_img_set_src(group_info->monitor_img, &locked);
 		group_info->is_monitor = true;
 		//modify monitored
-		oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
-		OemCGroup *pGroupInfo = (OemCGroup *)pGroup->information;
-		strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR);
+		//oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
+		//OemCGroup *pGroupInfo = (OemCGroup *)pGroup->information;
+		//strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR);
 
 		OSI_LOGI(0, "[oemmonitorgroup](%d):refr monitor-group icon", __LINE__);
 	}
@@ -484,7 +483,7 @@ void lv_poc_group_monitor_oprator_refresh_task(lv_task_t * task)
 		//modify cannel monitor
 		oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
 		OemCGroup *pGroupInfo = (OemCGroup *)pGroup->information;
-		strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_UNMONITOR);
+		//strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_UNMONITOR);
 
 		OSI_LOGI(0, "[oemmonitorgroup](%d):refr cannel-monitor-group icon", __LINE__);
 	}
@@ -796,16 +795,16 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 		img = lv_img_create(btn, NULL);
 		p_group_info->monitor_img = img;
 		pGroupInfo = (OemCGroup *)p_cur->information;
-        if(NULL != strstr((char *)pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR))
-        {
-			lv_img_set_src(img, &locked);
-			p_group_info->is_monitor = true;
-		}
-		else
-		{
+//      if(NULL != strstr((char *)pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR))
+//      {
+//			lv_img_set_src(img, &locked);
+//			p_group_info->is_monitor = true;
+//		}
+//		else
+//		{
 			lv_img_set_src(img, &unlock);
 			p_group_info->is_monitor = false;
-		}
+//		}
 
 		lv_img_set_auto_size(img, false);
 		lv_obj_set_width(btn_label, btn_width - (lv_coord_t)unlock.header.w - (lv_coord_t)ic_group.header.w - 15);//-15是减去间隙(两个图标)
@@ -820,7 +819,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	{
 		lv_list_set_btn_selected(activity_list, btn_index[current_index]);
 	}
-	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_grouplist_refr_is_complete(true);
 	OSI_PRINTFI("[grouprefr](%s)(%d):refresh finish", __func__, __LINE__);
 }

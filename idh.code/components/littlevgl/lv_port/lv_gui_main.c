@@ -269,7 +269,7 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
         }
 
         {//break scrbri
-			lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_CALL_BRIGHT_SCREEN_BREAK, NULL);
+			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_BREAK, NULL);
         }
 
         {//cbn key

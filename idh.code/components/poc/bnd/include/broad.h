@@ -106,7 +106,7 @@ typedef void(*reminder_cb)(char* reminder, int day);
 
 int broad_set_thread_priority(int priority);
 void broad_set_notify_mode(int flags);
-void broad_init(void); 
+void broad_init(void);
 void broad_free(void);
 void broad_log(boolean enable);
 int broad_login(login_state_cb cb);
@@ -155,10 +155,10 @@ const int broad_get_memberlist(bnd_gid_t gid, bnd_member_t* dst, int dst_size, i
 
 AUDIO_STATE broad_get_audiostate(void);
 
-//boolean interrupt : true--interrupt current tts playing 
+//boolean interrupt : true--interrupt current tts playing
 int broad_play_tts(const char* tts, boolean interrupt);
 
-int broad_send_ping(void);
+int broad_send_ping(void);//设置心跳
 
 //lat：纬度， lon： 经度， time： 定位时间
 int broad_send_gpsinfo(double lon,double lat,bnd_time_t time);
@@ -198,8 +198,8 @@ void broad_register_reminder_cb(reminder_cb cb);
 int broad_read_custom(BND_CUSTOM_TYPE type, const char* value);
 int broad_write_custom(BND_CUSTOM_TYPE type, const char* value);
 
-void broad_set_auto_end_temp_call_time(unsigned int t);
-void broad_set_is_destroy_temp_call(boolean flag);
+void broad_set_auto_end_temp_call_time(unsigned int t);//设置单呼超时解散时间
+void broad_set_is_destroy_temp_call(boolean flag);//设置被呼方退出是否解散临时群组
 int broad_set_poc_uart_device(int open); //默认uart设备是打开的，如需关闭请设置为0
 //AT 透传接口
 int broad_send_at(char* at); //发送

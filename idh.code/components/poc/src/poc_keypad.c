@@ -99,14 +99,14 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 					case POC_APPLY_NOTE_TYPE_NOLOGIN:
 					case POC_APPLY_NOTE_TYPE_LOGINSUCCESS:
 					{
-						lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY ? lv_poc_type_key_poc_cb(true) : (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_RECORDER_IND, false) : lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_IND, NULL));
+						lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY ? lv_poc_type_key_poc_cb(true) : (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_RECORDER_IND, false) : lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SPEAK_START_IND, NULL));
 						break;
 					}
 				}
             }
             else
             {
-				lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+				lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SPEAK_STOP_IND, NULL);
             }
 		}
 		prvPttKeyState = state;

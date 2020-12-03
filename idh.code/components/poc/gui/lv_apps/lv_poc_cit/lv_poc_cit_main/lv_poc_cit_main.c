@@ -252,8 +252,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 				case LV_KEY_ESC:
 				{
-					lvPocGuiOemCom_cit_status(POC_CIT_EXIT);
-					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE, NULL);
+					lvPocGuiBndCom_cit_status(POC_CIT_EXIT);
 					lv_poc_del_activity(poc_cit_activity);
 					break;
 				}
@@ -295,8 +294,7 @@ void lv_poc_cit_open(void)
 	{
 		return;
 	}
-	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);
-	lvPocGuiOemCom_cit_status(POC_CIT_ENTER);
+	lvPocGuiBndCom_cit_status(POC_CIT_ENTER);
     poc_cit_activity = lv_poc_create_activity(&activity_ext, true, true, &control);
     lv_poc_activity_set_signal_cb(poc_cit_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_cit_activity, design_func);

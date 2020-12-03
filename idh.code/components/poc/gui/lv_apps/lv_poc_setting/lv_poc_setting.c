@@ -264,12 +264,12 @@ static void lv_poc_setting_tone_btn_cb(lv_obj_t * obj)
 	poc_setting_conf->current_tone_switch = !poc_setting_conf->current_tone_switch;
 	if(poc_setting_conf->current_tone_switch != 0)
     {
-		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_TONE_OPEN_IND, NULL);
+		//lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_TONE_OPEN_IND, NULL);
     	lv_sw_on(ext_obj, LV_ANIM_OFF);
     }
     else
     {
-		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_TONE_CLOSE_IND, NULL);
+		//lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_TONE_CLOSE_IND, NULL);
         lv_sw_off(ext_obj, LV_ANIM_OFF);
     }
 	lv_poc_setting_conf_write();

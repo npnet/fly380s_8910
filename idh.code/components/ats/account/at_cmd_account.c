@@ -64,12 +64,12 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
         strcat(rspStr, poc_config->account_name);
         do
         {
-            if(lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_IND, NULL))
+            if(lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_EXIT_IND, NULL))
             {
                 strcat(rspStr, "\nexit log:");
             }
 
-            if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOGIN_IND, NULL))
+            if(!lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_LOGIN_IND, NULL))
             {
                 break;
             }
@@ -209,7 +209,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 								strncpy(accoutparam, pocparam, (strlen(pocparam) - strlen(psk) - 3));
 								accoutparam[strlen(pocparam) - strlen(psk) - 3] = '\0';
 								OSI_PRINTFI("[poc][account](%s)(%d):null, param(%s)", __func__, __LINE__, accoutparam);
-								lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
+								lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
 							}
 							else
 							{
@@ -221,7 +221,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 									accoutparam[strlen(pocparam) - strlen(psk) - 3] = '\0';
 									OSI_PRINTFI("[poc][account](%s)(%d):sk correct, param(%s)", __func__, __LINE__, accoutparam);
 									atCmdRespInfoText(cmd->engine, "sk correct");
-									lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
+									lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
 								}
 								else
 								{

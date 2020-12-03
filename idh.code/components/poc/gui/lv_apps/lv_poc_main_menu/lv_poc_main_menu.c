@@ -179,7 +179,6 @@ static void poc_main_menu_update_UI_task(lv_task_t * task)
 
 static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
 {
-	OSI_LOGI(0, "[poc][signal][main_menu][trace] line <- %d\n", __LINE__);
 	switch(sign)
 	{
 		case LV_SIGNAL_CONTROL:

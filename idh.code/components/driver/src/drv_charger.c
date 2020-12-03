@@ -954,7 +954,7 @@ static void _drvChargerSendMsgToClient(CHR_SVR_MSG_SERVICE_E msg, uint32_t param
         p->notice_cb();
     }
 	//send chg msg
-	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_SHUTDOWN_POC, (void *)msg);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SET_SHUTDOWN_POC, (void *)msg);
 }
 
 /*****************************************************************************/

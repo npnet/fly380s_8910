@@ -112,13 +112,13 @@ static void lv_poc_sound_quality_press_btn_action(lv_obj_t * obj, lv_event_t eve
 			{
 				case 0:
 				{
-					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_4K_IND, NULL);
+					//lvPocGuiBndCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_4K_IND, NULL);
 					break;
 				}
 
 				case 1:
 				{
-					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_8K_IND, NULL);
+					//lvPocGuiBndCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_8K_IND, NULL);
 					break;
 				}
 			}

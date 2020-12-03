@@ -314,7 +314,7 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	}
 	else if(msg_type == 2)
 	{
-		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 		lv_poc_set_refr_error_info(true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"组内无成员", NULL);
 	}
@@ -641,7 +641,7 @@ void lv_poc_member_list_refresh(lv_task_t * task)
 		lv_list_set_btn_selected(activity_list, btn_index[0]);
 	}
 	lv_poc_set_memberlist_refr_is_complete(true);
-	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 
 	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) >= POC_TMPGRP_VIEW
 		&& lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) <= POC_TMPGRP_OPENMEMLIST)

@@ -280,8 +280,8 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 				case LV_GROUP_KEY_ESC:
 				{
 
-					if(!lvPocGuiOemCom_get_listen_status()
-						&& !lvPocGuiOemCom_get_speak_status())
+					if(!lvPocGuiBndCom_get_listen_status()
+						&& !lvPocGuiBndCom_get_speak_status())
 					{
 						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)bright_time_notation[poc_setting_conf->screen_bright_time], NULL);
 					}

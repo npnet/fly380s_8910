@@ -102,7 +102,6 @@ static void lv_poc_member_call_list_config(lv_obj_t * list, lv_area_t list_area)
 
 static lv_res_t lv_poc_member_call_signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
 {
-	OSI_LOGI(0, "[poc][signal][member call] sign <- %d  param <- 0x%p\n", sign, param);
 	switch(sign)
 	{
 		case LV_SIGNAL_CONTROL:
@@ -156,7 +155,7 @@ static lv_res_t lv_poc_member_call_signal_func(struct _lv_obj_t * obj, lv_signal
 
 				case LV_GROUP_KEY_ESC:
 				{
-					if(lvPocGuiOemCom_get_listen_status())//正在接听讲话时不准退出
+					if(lvPocGuiBndCom_get_listen_status())
 						break;
 					lv_poc_member_call_exit_by_self = 1;
 					lv_poc_member_call_delay_exit_task_create(5);
@@ -276,7 +275,7 @@ void lv_poc_member_call_open(void * information)
 		return;
 	}
 
-	if(lvPocGuiOemCom_get_listen_status())//listen status cannot member call
+	if(lvPocGuiBndCom_get_listen_status())//listen status cannot member call
 	{
 		OSI_LOGI(0, "[membercall] listen isn't signal");
 		return;
@@ -420,7 +419,7 @@ void lv_poc_member_call_refresh(lv_task_t *task_t)
         p_cur = p_cur->next;
     }
 	//rec ack, stop ack timeout
-	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 }
 
 lv_poc_status_t lv_poc_member_call_set_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information, bool is_online)

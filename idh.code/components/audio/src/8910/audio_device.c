@@ -2766,7 +2766,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     }
 
 	//monitor audev
-	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_VOICE_PLAY_START_IND, NULL);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_VOICE_PLAY_START_IND, NULL);
 
     OSI_LOGI(0, "[poc][audio]audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
              frame->sample_format, frame->channel_count,
@@ -3053,7 +3053,7 @@ bool audevStopPlayV2(void)
 	}
 
 	//monitor audev
-	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_VOICE_PLAY_STOP_IND, NULL);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_VOICE_PLAY_STOP_IND, NULL);
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
     {
