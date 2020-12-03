@@ -1719,13 +1719,24 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		static int checkcbnum = 0;
 
 	    checkcbnum++;
-	    if(osiTimerStop(ear_key_attr.ear_press_timer))
+	    if(checkcbnum < 2)
 	    {
-		   if(checkcbnum < 2)
-			  osiTimerStart(ear_key_attr.ear_press_timer, 50);
-		   else
-			  checkcbnum = 0;
+		   osiTimerStart(ear_key_attr.ear_press_timer, 50);
 	    }
+	    else
+	    {
+	   	   if(ear_key_attr.ear_key_press == true)//have started to speak
+ 		   {
+ 			   ear_key_attr.ear_key_press = false;
+			   poc_earkey_state = false;
+			   lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		   }
+		   else
+		   {
+			   osiTimerStop(ear_key_attr.ear_press_timer); 
+		   }
+		   checkcbnum = 0;
+	   }
 	}
 }
 
