@@ -919,6 +919,20 @@ lv_poc_set_auto_deepsleep(bool status);
 bool
 poc_set_iic_status(bool iicstatus);
 
+/*
+	  name : lv_poc_set_first_membercall
+	  param :
+	  date : 2020-11-25
+*/
+void lv_poc_set_first_membercall(bool status);
+
+/*
+	  name : lv_poc_get_first_membercall
+	  param :
+	  date : 2020-11-25
+*/
+bool lv_poc_get_first_membercall(void);
+
 #ifdef __cplusplus
 }
 #endif

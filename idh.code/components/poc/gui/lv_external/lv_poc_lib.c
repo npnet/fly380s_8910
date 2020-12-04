@@ -70,6 +70,7 @@ static bool lv_poc_grouplist_refr_complete = false;
 static bool lv_poc_memberlist_refr_complete = false;
 static bool lv_poc_buildgroup_refr_complete = false;
 static bool lv_poc_refr_error_info = false;
+static bool is_first_membercall = false;
 static void poc_ear_ppt_irq(void *ctx);
 
 static uint16_t poc_cur_unopt_status;
@@ -1733,7 +1734,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		   }
 		   else
 		   {
-			   osiTimerStop(ear_key_attr.ear_press_timer); 
+			   osiTimerStop(ear_key_attr.ear_press_timer);
 		   }
 		   checkcbnum = 0;
 	   }
@@ -2737,5 +2738,25 @@ poc_set_iic_status(bool iicstatus)
 	drvGpioWrite(poc_iic_sda_gpio, iicstatus);
 
 	return iicstatus;
+}
+
+/*
+	  name : lv_poc_set_first_membercall
+	  param :
+	  date : 2020-11-25
+*/
+void lv_poc_set_first_membercall(bool status)
+{
+	is_first_membercall = status;
+}
+
+/*
+	  name : lv_poc_get_first_membercall
+	  param :
+	  date : 2020-11-25
+*/
+bool lv_poc_get_first_membercall(void)
+{
+	return is_first_membercall;
 }
 
