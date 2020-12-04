@@ -744,6 +744,7 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 					pocIdtAttr.is_member_call = true;
 		            lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
 					pocIdtAttr.membercall_count = 0;//复位单呼数据计数
+					lv_poc_set_first_membercall(true);
 
 					#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG|GUIIDTCOM_IDTSPEAK_DEBUG_LOG
 					char cOutstr[256] = {0};
@@ -858,6 +859,7 @@ int callback_IDT_CallRelInd(int ID, void *pUsrCtx, UINT uiCause)
     if(pocIdtAttr.is_member_call)
     {
 		pocIdtAttr.membercall_count = 0;
+		lv_poc_set_first_membercall(true);
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP, (void *)uiCause);
     }
     return 0;
@@ -982,6 +984,22 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
 		    }
 	    }
+
+		if(!lv_poc_get_first_membercall())
+		{
+			pocIdtAttr.membercall_count++;//记录单呼数据帧
+			lv_poc_set_first_membercall(true);
+		}
+		else
+		{
+			lv_poc_set_first_membercall(false);
+		}
+		#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
+		char cOutstr[256] = {0};
+		cOutstr[0] = '\0';
+		sprintf(cOutstr, "[idtlisten]%s(%d):pcNum & pcName NULL", __func__, __LINE__);
+		OSI_LOGI(0, cOutstr);
+		#endif
 	    return 0;
     }
 	OSI_LOGI(0, "[poc][callback_IDT_CallTalkingIDInd](%d):Normal", __LINE__);
@@ -4545,6 +4563,7 @@ extern "C" void lvPocGuiIdtCom_Init(void)
 {
 	memset(&pocIdtAttr, 0, sizeof(PocGuiIIdtComAttr_t));
 	pocIdtAttr.membercall_count = 0;
+	lv_poc_set_first_membercall(true);
 	pocIdtAttr.is_release_call = true;
 	pocIdtAttr.pPocMemberList = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
 	pocIdtAttr.pPocMemberListBuf = (Msg_GData_s *)malloc(sizeof(Msg_GData_s));
