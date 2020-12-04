@@ -427,7 +427,6 @@ Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 #endif
 		case LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND:
 		{
-			lv_poc_notation_del();
 			break;
 		}
 

@@ -582,7 +582,7 @@ bool lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *tex
 {
 	if(lv_poc_notation_task == NULL)
 	{
-		lv_poc_notation_task = lv_task_create(lv_poc_notation_task_cb, 200, LV_TASK_PRIO_LOWEST, NULL);
+		lv_poc_notation_task = lv_task_create(lv_poc_notation_task_cb, 200, LV_TASK_PRIO_HIGH, NULL);
 		if(lv_poc_notation_task == NULL)
 		{
 			return false;
@@ -590,7 +590,10 @@ bool lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *tex
 
 		memset(lv_poc_notation_task_queue, 0, sizeof(lv_poc_notation_task_msg_t) * LV_POC_NOTATION_TASK_QUEUE_SIZE);
 	}
-
+//	else
+//	{
+//		lv_task_ready(lv_poc_notation_task);
+//	}
 	lv_poc_notation_task_msg_t * dest = &lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer];
 	lv_poc_notation_task_queue_writer = (lv_poc_notation_task_queue_writer + 1) % LV_POC_NOTATION_TASK_QUEUE_SIZE;
 	dest->msg_type = msg_type;
@@ -620,14 +623,5 @@ static uint32_t lv_poc_txt_utf8_get_length(const char * txt)
     }
 
     return len;
-}
-
-void lv_poc_notation_del(void)
-{
-	if(lv_poc_notation_task != NULL)
-	{
-		lv_task_del(lv_poc_notation_task);
-		lv_poc_notation_task = NULL;
-	}
 }
 
