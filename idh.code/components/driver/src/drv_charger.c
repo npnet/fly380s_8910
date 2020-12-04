@@ -53,6 +53,7 @@ static drvChargerContext_t gDrvChargeCtx;
 static void _drvChargePluginHandler(void);
 static void _drvSetChargerBoardParam(void);
 static uint32_t _drvChargerVoltagePercentum(uint32_t voltage, chgState_e is_charging, bool update);
+static uint32_t _drvChargingVoltagePercentum(uint32_t voltage, chgState_e is_charging, bool update);
 
 //when the phone is staying in busy state(for example, talking, play games or play music, etc.),we will stop
 //the state timer until it is not busy.
@@ -962,6 +963,7 @@ static void _drvChargerSendMsgToClient(CHR_SVR_MSG_SERVICE_E msg, uint32_t param
 /*****************************************************************************/
 static void _drvChargerStartCharge()
 {
+	drvChargerContext_t *p = &gDrvChargeCtx;
     //to detect charge unplug.
     OSI_LOGI(0, "chg: ChargeStartHandler!");
 
@@ -996,9 +998,18 @@ static void _drvChargerStartCharge()
 
     if (module_state.bat_remain_cap == 0xff)
     {
-        module_state.bat_remain_cap = _drvChargerVoltagePercentum(
-            module_state.bat_statistic_vol,
-            module_state.chgmng_state, false);
+        if((p->chg_msg == 1 && module_state.chgmng_state == 0))
+		{
+			module_state.bat_remain_cap = _drvChargerVoltagePercentum(
+				module_state.bat_statistic_vol,
+				module_state.chgmng_state, false);
+		}
+		else
+		{
+			module_state.bat_remain_cap = _drvChargingVoltagePercentum(
+				module_state.bat_statistic_vol,
+				module_state.chgmng_state, false);
+		}
     }
 
     _drvChargerSendMsgToClient(CHR_CHARGE_START_IND, 0);
@@ -1139,10 +1150,11 @@ static uint32_t _drvChargerCheckChargerIsOverVolBySoft(uint32_t chgVol)
 /*****************************************************************************/
 static uint32_t _drvChargerGetVbatVol(void)
 {
+	OSI_LOGI(0, "[chg]into _drvChargerGetVbatVol");
     uint32_t vol;
 
     vol = (uint32_t)drvAdcGetChannelVolt(ADC_CHANNEL_VBATSENSE, ADC_SCALE_5V000);
-    OSI_LOGD(0, "_drvChargerGetVbatVol vol:%d", vol);
+    OSI_LOGI(0, "chg: _drvChargerGetVbatVol vol:%d", vol);
     return vol;
 }
 static uint32_t _drvChargerCheckIsBatOverVolBySoft(uint32_t batChargingVol)
@@ -1284,8 +1296,79 @@ static uint32_t _drvChargerVoltagePercentum(uint32_t voltage, chgState_e is_char
         }
     }
 
-    OSI_LOGD(0, "chg: bat percent : %d,dischg_bat_capacity_table[2][0]:%d,dischg_bat_capacity_table[11][0]:%d",
+    OSI_LOGI(0, "chg: bat percent : %d,dischg_bat_capacity_table[2][0]:%d,dischg_bat_capacity_table[11][0]:%d",
              temp, dischg_bat_capacity_table[2][0], dischg_bat_capacity_table[11][0]);
+
+    return percentum;
+}
+
+/*****************************************************************************/
+//  Description:    While Charging Convert ADCVoltage to percentrum.
+/*****************************************************************************/
+static uint32_t _drvChargingVoltagePercentum(uint32_t voltage, chgState_e is_charging, bool update)
+{
+    uint16_t percentum;
+    int32_t temp = 0;
+    int pos = 0;
+    static uint16_t pre_percentum = 0xffff;
+
+    if (update)
+    {
+        pre_percentum = 0xffff;
+        return 0;
+    }
+    for (pos = 0; pos < BAT_CAPACITY_STEP - 1; pos++)
+    {
+        if (voltage > chg_bat_capacity_table[pos][0])
+            break;
+    }
+    if (pos == 0)
+    {
+        percentum = 100;
+    }
+    else
+    {
+        temp = chg_bat_capacity_table[pos][1] - chg_bat_capacity_table[pos - 1][1];
+        temp = temp * (int32_t)(voltage - chg_bat_capacity_table[pos][0]);
+        temp = temp / (chg_bat_capacity_table[pos][0] - chg_bat_capacity_table[pos - 1][0]);
+        temp = temp + chg_bat_capacity_table[pos][1];
+        if (temp < 0)
+        {
+            temp = 0;
+        }
+        percentum = temp;
+    }
+
+    // Remove the case which doesn't make sense
+    if (pre_percentum == 0xffff)
+    {
+        pre_percentum = percentum;
+    }
+    else if (pre_percentum > percentum)
+    {
+        if (is_charging == CHG_CHARGING)
+        {
+            percentum = pre_percentum;
+        }
+        else
+        {
+            pre_percentum = percentum;
+        }
+    }
+    else
+    {
+        if (is_charging != CHG_CHARGING)
+        {
+            percentum = pre_percentum;
+        }
+        else
+        {
+            pre_percentum = percentum;
+        }
+    }
+
+    OSI_LOGI(0, "chg: bat percent : %d,chg_bat_capacity_table[2][0]:%d,chg_bat_capacity_table[11][0]:%d",
+             temp, chg_bat_capacity_table[2][0], chg_bat_capacity_table[11][0]);
 
     return percentum;
 }
@@ -1296,6 +1379,7 @@ static uint32_t _drvChargerVoltagePercentum(uint32_t voltage, chgState_e is_char
 
 static void _drvChargerVbatMonitorRoutine()
 {
+	drvChargerContext_t *p = &gDrvChargeCtx;
     /*If we had inform the upper layer to shutdown, we will not send any other messages
     because too many messages can block the message queue.*/
     if (isshutting_down)
@@ -1378,9 +1462,20 @@ static void _drvChargerVbatMonitorRoutine()
         }
     }
 
-    module_state.bat_remain_cap = _drvChargerVoltagePercentum(
-        module_state.bat_statistic_vol,
-        module_state.chgmng_state, false);
+	module_state.bat_cur_vol = _drvChargerGetVbatVol();
+	_drvChargerVbatQueueUpdate(module_state.bat_cur_vol);
+    if((p->chg_msg == 1 && module_state.chgmng_state == 0))
+	{
+		module_state.bat_remain_cap = _drvChargerVoltagePercentum(
+			module_state.bat_statistic_vol,
+			module_state.chgmng_state, false);
+	}
+	else
+	{
+		module_state.bat_remain_cap = _drvChargingVoltagePercentum(
+			module_state.bat_statistic_vol,
+			module_state.chgmng_state, false);
+	}
 
     _drvChargerSendMsgToClient(
         CHR_CAP_IND, module_state.bat_remain_cap);
@@ -1773,6 +1868,7 @@ static void _drvSetChargerBoardParam(void)
 
 void drvChargerGetInfo(uint8_t *nBcs, uint8_t *nBcl)
 {
+	drvChargerContext_t *p = &gDrvChargeCtx;
     if (_drvChargerIsPresent() == false)
     {
         *nBcs = 0;
@@ -1788,11 +1884,23 @@ void drvChargerGetInfo(uint8_t *nBcs, uint8_t *nBcl)
             *nBcs = 3;
         }
     }
+
+	module_state.bat_cur_vol = _drvChargerGetVbatVol();
+	_drvChargerVbatQueueUpdate(module_state.bat_cur_vol);
     if (module_state.bat_remain_cap == 0xff)
     {
-        module_state.bat_remain_cap = _drvChargerVoltagePercentum(
-            module_state.bat_statistic_vol,
-            module_state.chgmng_state, false);
+        if((p->chg_msg == 1 && module_state.chgmng_state == 0))
+		{
+			module_state.bat_remain_cap = _drvChargerVoltagePercentum(
+				module_state.bat_statistic_vol,
+				module_state.chgmng_state, false);
+		}
+		else
+		{
+			module_state.bat_remain_cap = _drvChargingVoltagePercentum(
+				module_state.bat_statistic_vol,
+				module_state.chgmng_state, false);
+		}
     }
 
     *nBcl = module_state.bat_remain_cap & 0xff;
