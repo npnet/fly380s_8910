@@ -1211,7 +1211,7 @@ void __sprd_codec_headset_type_related_oper(SC2720_HEADSET_TYPE_T headset_type)
 uint32_t __sprd_codec_headset_type_detect(void)
 {
     uint32_t heaset_type = 0;
-    heaset_type = __sprd_codec_ap_headmic_type_detect();
+    heaset_type = HEADSET_4POLE_NORMAL;//__sprd_codec_ap_headmic_type_detect();
     return heaset_type;
 }
 
