@@ -841,6 +841,13 @@ extern nv_poc_setting_msg_t * poc_setting_conf;
 void lv_poc_anim_note(lv_obj_t *obj);
 
 /*******************
+*	  NAME:    lv_poc_get_current_activity
+* DESCRIPT:    获取当前窗口
+*	  DATE:    2020-10-09
+********************/
+lv_poc_activity_t *lv_poc_get_current_activity(void);
+
+/*******************
 *     NAME:    lv_poc_get_battery_cnt
 *   AUTHOR:    wangls
 * DESCRIPT:    获取当前电量基值
@@ -865,6 +872,20 @@ bool lv_poc_stabar_show_gps_img(bool enable);
 ********************/
 void lv_poc_show_gps_location_status_img(bool status);
 #endif
+
+/*******************
+*	  NAME:    lv_poc_cbn_key_obj
+* DESCRIPT:    组合键
+*	  DATE:    2020-12-04
+********************/
+bool lv_poc_cbn_key_obj(lv_indev_data_t *data);
+
+/*******************
+*	  NAME:    lv_poc_net_ping_task_create
+* DESCRIPT:
+*	  DATE:    2020-12-08
+********************/
+void lv_poc_net_ping_task_create(void);
 
 #ifdef __cplusplus
 }

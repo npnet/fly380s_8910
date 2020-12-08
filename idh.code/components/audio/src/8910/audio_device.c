@@ -28,6 +28,9 @@
 #include "drv_names.h"
 #include "drv_i2c.h"
 #endif
+//poc
+#include "lv_include/lv_poc_type.h"
+#include "guiIdtCom_api.h"
 
 #define INT8 int8_t
 #define UINT8 uint8_t
@@ -2930,7 +2933,12 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         memcpy(&(d->play.stream), &stream, sizeof(HAL_AIF_STREAM_T));
         memcpy(&(d->play.level), &level, sizeof(AUD_LEVEL_T));
 
-        osiWorkEnqueue(d->ipc_work, d->wq);
+		/*open pa*/
+		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+		{
+			extern bool poc_set_ext_pa_status(bool open);
+			poc_set_ext_pa_status(true);
+		}        osiWorkEnqueue(d->ipc_work, d->wq);
         osiMutexUnlock(d->lock);
 
         return true;
@@ -3041,7 +3049,6 @@ bool audevStopPlayV2(void)
 
     osiMutexLock(d->lock);
 
-	//close pa
     if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
     {
 	    extern bool poc_set_ext_pa_status(bool open);

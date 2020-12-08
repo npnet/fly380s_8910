@@ -31,6 +31,7 @@ typedef struct _PocLedIdtComAttr_t
 	bool        ledstatus;
 	uint8_t 	before_status;
 	uint8_t 	last_status;
+	uint16_t 	last_jumpcount;
 	uint16_t    before_jumpperiod;
 	lv_poc_led_jump_status pledjump;
 } PocLedIdtComAttr_t;
@@ -65,7 +66,7 @@ static void lv_poc_led_entry(void *param)
 	{
 		if(osiEventWait(pocLedIdtAttr.thread, &event))
 		{
-			OSI_LOGI(0, "[IDTLED][EVENT]rec msg(%d)", event.param1);
+			OSI_LOGI(0, "[IDTLED][EVENT]rec msg, start");
 			if(event.id != 200)
 			{
 				continue;
@@ -77,12 +78,12 @@ static void lv_poc_led_entry(void *param)
 				continue;
 			}
 
-			if(event.param1 == pocLedIdtAttr.last_status)
+			if(event.param1 == pocLedIdtAttr.last_status
+				&& pocLedIdtAttr.last_jumpcount > 0)
 			{
 				continue;
 			}
 
-			OSI_LOGI(0, "[IDTLED][EVENT]deal rec msg(%d)", event.param1);
 			if(event.param2)
 			{
 				pocLedIdtAttr.jumpperiod = (uint16_t)event.param2;//提取周期
@@ -95,6 +96,7 @@ static void lv_poc_led_entry(void *param)
 			if(event.param3)
 				pocLedIdtAttr.jumpcount = (uint16_t)event.param3;//提取次数
 
+			OSI_LOGI(0, "[IDTLED][EVENT]period(%d), count(%d)", event.param1, event.param3);
 			switch(event.param1)
 			{
 				case LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS:
@@ -105,6 +107,24 @@ static void lv_poc_led_entry(void *param)
 						pocLedIdtAttr.task = lv_task_create(Lv_Poc_Led_Status_Callback_Check, pocLedIdtAttr.jumpperiod, LV_TASK_PRIO_MID, NULL);
 					}
 					lv_poc_led_status_all_close(NULL);
+					break;
+				}
+#ifndef CONFIG_POC_PING_NETWORK_SUPPORT
+				case LVPOCLEDIDTCOM_SIGNAL_POWERON_STATUS:
+				{
+					lv_poc_red_close_green_open(NULL);
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS:
+				{
+					if(pocLedIdtAttr.task != NULL)
+					{
+						lv_task_del(pocLedIdtAttr.task);
+						pocLedIdtAttr.task = NULL;
+					}
+					pocLedIdtAttr.isReady = false;
+					lv_poc_red_open_green_close(NULL);
 					break;
 				}
 
@@ -151,8 +171,14 @@ static void lv_poc_led_entry(void *param)
 				}
 
 				case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
-				case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
 				case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
+				{
+					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS;
+					pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
+					pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
 				{
 					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS;
 					pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
@@ -207,11 +233,24 @@ static void lv_poc_led_entry(void *param)
 				{
 					return;
 				}
+#else
+				case LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_IND:
+				{
+					lv_poc_led_status_all_close(NULL);
+					break;
+				}
+
+				case LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_IND:
+				{
+					pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
+					break;
+				}
+#endif
 
 				case LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND:
 				case LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND:
 				case LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND:
-	            case LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND:
+				case LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND:
 				{
 					Lv_Poc_Led_Status_Task_Handle_Other(event.param1, event.param2, event.param3);
 					break;
@@ -219,6 +258,8 @@ static void lv_poc_led_entry(void *param)
 
 				default:
 				{
+					OSI_LOGI(0, "[IDTLED][EVENT]default error");
+#ifndef CONFIG_POC_PING_NETWORK_SUPPORT
 					lv_poc_led_status_all_open(NULL);
 					pocLedIdtAttr.pledjump = callback_lv_poc_red_open_green_jump;
 					pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
@@ -226,6 +267,7 @@ static void lv_poc_led_entry(void *param)
 					pocLedIdtAttr.pledjump = callback_lv_poc_green_jump_red_jump;
 					pocLedIdtAttr.isReady = false;
 					osiThreadExit();
+#endif
 					break;
 				}
 			}
@@ -395,6 +437,7 @@ Lv_Poc_Led_Status_Callback_Check(lv_task_t *task)
 
 	if(pocLedIdtAttr.pledjump != NULL)
 	{
+		OSI_LOGI(0, "[IDTLED][EVENT]led cb(%d)", pocLedIdtAttr.jumpcount);
 		(pocLedIdtAttr.pledjump)();//回调
 	}
 }

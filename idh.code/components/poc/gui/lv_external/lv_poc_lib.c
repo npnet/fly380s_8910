@@ -27,6 +27,7 @@
 #include "hwreg_access.h"
 #include "drv_keypad.h"
 #include "at_engine.h"
+#include "osi_pipe.h"
 
 /*************************************************
 *
@@ -60,10 +61,19 @@ static drvGpio_t * poc_gps_ant_Gpio = NULL;
 static drvGpio_t * poc_iic_scl_gpio = NULL;
 static drvGpio_t * poc_iic_sda_gpio = NULL;
 drvGpioConfig_t* configport = NULL;
+
 static bool poc_charging_status = false;
+static bool lv_poc_screenon_first = false;
 static bool poc_power_on_status = false;
 static bool is_poc_play_voice = false;
-static uint8_t poc_earkey_state = false;
+static bool lv_poc_is_insert_headset = false;
+
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
+static bool is_poc_touch_status = false;
+#endif
+
+static bool poc_earkey_state = false;
+static bool poc_key_state = false;
 static int lv_poc_inside_group = false;
 static bool lv_poc_group_list_refr = false;
 static bool lv_poc_grouplist_refr_complete = false;
@@ -573,7 +583,8 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 			&& !lvPocGuiIdtCom_get_listen_status()
 			&& !lvPocGuiIdtCom_get_speak_status())
 		{
-			audevSetPlayVolume(40);
+			poc_set_ext_pa_status(true);
+			audevSetPlayVolume(60);
 			char playkey[4] = "9";
 			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
 		}
@@ -696,8 +707,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Start_Speak:
 			{
 				voice_formate = AUSTREAM_FORMAT_MP3;
-				/*audio volum*/
-				audevSetPlayVolume(25);
+				audevSetPlayVolume(60);
 			    is_poc_play_voice = true;
 				break;
 			}
@@ -713,6 +723,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			{
 				osiDelayUS(5000);
 			}
+			poc_set_ext_pa_status(true);
 			auPlayerStartMem(prv_play_voice_one_time_player, voice_formate, params, prv_lv_poc_audio_array[voice_type]->data, prv_lv_poc_audio_array[voice_type]->data_size);
 			isPlayVoice = true;
 		}
@@ -1018,32 +1029,32 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 	ret = CFW_GetGprsAttState(&uState, nSim);
 	if (ret != 0)
 	{
-	    OSI_LOGI(0, "[POCNET]SIM ACTIVED ERROR!");//检索网络失败
+	    //OSI_LOGI(0, "[POCNET]SIM ACTIVED ERROR!");//检索网络失败
 	}
 	if(uState == 0)
 	{
-		OSI_LOGI(0, "[POCNET]SIM card Detach!");//sim卡未注册上GPRS数据网络
+		//OSI_LOGI(0, "[POCNET]SIM card Detach!");//sim卡未注册上GPRS数据网络
 		strcpy((char *)operat, "NOS");
 		_signal_type = MMI_MODEM_PLMN_RAT_NO_SERVICE;
 		goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
 
 	}
 
-	//ret = cereg_Respond(true);//死机，待排查
+	ret = cereg_Respond(true);//死机，待排查
 	if(nStatusInfo.nStatus == 0
 		|| nStatusInfo.nStatus == 3
 		|| nStatusInfo.nStatus == 4)
 	{
-//		if (ret != 0)
-//		{
-//			OSI_LOGI(0, "[POCNET]SIM OK!");//sim卡注册上GSM网络
-//		}
-//		else
-//		{
+		if (ret != 0)
+		{
+			//OSI_LOGI(0, "[POCNET]SIM OK!");//sim卡注册上GSM网络
+		}
+		else
+		{
 			strcpy((char *)operat, "UN");
 			_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;//sim卡未注册上GSM网络
 			goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
-//		}
+		}
 	}
 
 	if(* rat == 0 || * rat == 1 || * rat == 3)//2G
@@ -1156,7 +1167,9 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.fota_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
 	poc_setting->font.fota_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
-	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
+	poc_setting->font.cit_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
+	poc_setting->font.cit_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
+	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 45);//主界面时间time
@@ -1249,6 +1262,7 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
 	poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
 	poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_big_font;
+	poc_setting->font.cit_label_current_font = poc_setting->font.cit_label_small_font;
 	poc_setting->volume = 5;
 	poc_setting->language = 0;
 	poc_setting->is_exist_selfgroup = 1;
@@ -1294,6 +1308,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
 		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
+		poc_setting->font.cit_label_current_font = poc_setting->font.cit_label_small_font;
 	}
 	else if(poc_setting->font.big_font_switch == 1)
 	{
@@ -1301,6 +1316,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
 		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_big_font;
+		poc_setting->font.cit_label_current_font = poc_setting->font.cit_label_small_font;
 	}
 #endif
 }
@@ -1688,17 +1704,14 @@ poc_set_green_status(bool ledstatus)
 */
 typedef struct _PocEarKeyComAttr_t
 {
-	osiTimer_t *ear_press_timer;/*误触碰定时器*/
-	osiThread_t *ear_ppt_thread;
+	osiTimer_t *ear_press_timer;//误触碰定时器
 	bool ear_key_press;
 }PocEarKeyComAttr_t;
-
 static PocEarKeyComAttr_t ear_key_attr = {0};
 
 static void Lv_ear_ppt_timer_cb(void *ctx)
 {
-	OSI_LOGI(0, "[song]ear time cb\n");
-	if(drvGpioRead(poc_ear_ppt_gpio) == false)/*press*/
+	if(drvGpioRead(poc_ear_ppt_gpio) == false)//press
 	{
 		static int checkcbpress = 0;
 
@@ -1750,7 +1763,6 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 */
 void lv_poc_ear_ppt_key_init(void)
 {
-	/*配置earppt IO*/
     drvGpioConfig_t cfg = {
         .mode = DRV_GPIO_INPUT,
         .intr_enabled = true,
@@ -1770,13 +1782,12 @@ void lv_poc_ear_ppt_key_init(void)
 
 	/*ear time*/
 	memset(&ear_key_attr, 0, sizeof(PocEarKeyComAttr_t));
-	ear_key_attr.ear_press_timer = osiTimerCreate(ear_key_attr.ear_ppt_thread, Lv_ear_ppt_timer_cb, NULL);/*误触碰定时器*/
+	ear_key_attr.ear_press_timer = osiTimerCreate(NULL, Lv_ear_ppt_timer_cb, NULL);/*误触碰定时器*/
 }
 
 /*
 	  name : lv_poc_ear_ppt_key_init
 	 param : none
-	author : wangls
   describe : 耳机ppt中断
 	  date : 2020-07-30
 */
@@ -1791,14 +1802,14 @@ void poc_ear_ppt_irq(void *ctx)
 		}
 	}
 
-	if(drvGpioRead(poc_ear_ppt_gpio) && ear_key_attr.ear_key_press == true)/*release*/
+	if(drvGpioRead(poc_ear_ppt_gpio) && ear_key_attr.ear_key_press == true)//release
 	{
 		ear_key_attr.ear_key_press = false;
 		poc_earkey_state = false;
 		OSI_LOGI(0, "[song]key is release,stop speak\n");
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 	}
-	else/*press*/
+	else//press
 	{
 		osiTimerStart(ear_key_attr.ear_press_timer, 80);
 		OSI_LOGI(0, "[song]ear time start\n");
@@ -1808,13 +1819,23 @@ void poc_ear_ppt_irq(void *ctx)
 /*
 	  name : lv_poc_get_earppt_state
 	 param : none
-	author : wangls
   describe : 获取耳机ppt
 	  date : 2020-08-03
 */
 bool lv_poc_get_earppt_state(void)
 {
 	return poc_earkey_state == 1 ? true : false;
+}
+
+/*
+	  name : lv_poc_get_ppt_state
+	 param : none
+  describe : 获取ppt
+	  date : 2020-08-03
+*/
+bool lv_poc_get_ppt_state(void)
+{
+	return poc_key_state == 1 ? true : false;
 }
 
 /*
@@ -1833,9 +1854,22 @@ lv_poc_read_ear_ppt_key(void)
 }
 
 /*
-	name : lv_poc_get_mic_gain
+	  name : lv_poc_set_audev_in_out
+	 param : none
+  describe : set audev type
+	  date : 2020-08-31
+*/
+bool
+lv_poc_set_audev_in_out(audevInput_t in_type, audevOutput_t out_type)
+{
+	audevSetOutput((audevOutput_t)out_type);
+	audevSetInput((audevInput_t)in_type);
+	return true;
+}
+
+/*
+    name : lv_poc_get_mic_gain
    param : none
-  author : wangls
 describe : 获取mic增益
 	date : 2020-09-01
 
@@ -2703,6 +2737,28 @@ bool lv_poc_play_voice_status(void)
 }
 
 /*
+     name : lv_poc_set_headset_status
+     param :
+     date : 2020-09-29
+*/
+void
+lv_poc_set_headset_status(bool status)
+{
+   lv_poc_is_insert_headset = status;
+}
+
+/*
+     name : lv_poc_get_headset_is_ready
+     param :
+     date : 2020-09-29
+*/
+bool
+lv_poc_get_headset_is_ready(void)
+{
+   return lv_poc_is_insert_headset;
+}
+
+/*
      name : lv_poc_set_auto_deepsleep
      param :
      date : 2020-09-29
@@ -2721,7 +2777,6 @@ lv_poc_set_auto_deepsleep(bool status)
 bool
 poc_set_iic_status(bool iicstatus)
 {
-	/*配置green IO*/
     drvGpioConfig_t cfg = {
         .mode = DRV_GPIO_OUTPUT,
 		.debounce = true,
@@ -2738,6 +2793,28 @@ poc_set_iic_status(bool iicstatus)
 	drvGpioWrite(poc_iic_sda_gpio, iicstatus);
 
 	return iicstatus;
+}
+
+/*
+      name : lv_poc_set_screenon_status
+      describe :
+      param :
+      date : 2020-11-28
+*/
+void lv_poc_set_screenon_status(bool status)
+{
+    lv_poc_screenon_first = status;
+}
+
+/*
+      name : lv_poc_get_screenon_status
+      describe :
+      param :
+      date : 2020-11-28
+*/
+bool lv_poc_get_screenon_status(void)
+{
+    return lv_poc_screenon_first;
 }
 
 /*
@@ -2758,5 +2835,62 @@ void lv_poc_set_first_membercall(bool status)
 bool lv_poc_get_first_membercall(void)
 {
 	return is_first_membercall;
+}
+
+static osiPipe_t *poc_at_rx_pipe;
+static osiPipe_t *poc_at_tx_pipe;
+
+/*
+     name : lv_poc_virt_at_resp_cb
+     param :
+     date : 2020-12-08
+*/
+static
+void lv_poc_virt_at_resp_cb(void *param, unsigned event)
+{
+    osiPipe_t *pipe = (osiPipe_t *)param;
+    char buf[256];
+
+    int bytes = osiPipeRead(pipe, buf, 255);
+    if (bytes <= 0)
+        return;
+
+    buf[bytes] = '\0';
+    OSI_LOGXI(OSI_LOGPAR_IS, 0, "[virt][at][rec]vat <--(%d): %s", bytes, buf);
+}
+
+/*
+     name : lv_poc_virt_at_init
+     param :
+     date : 2020-12-08
+*/
+void lv_poc_virt_at_init(void)
+{
+	poc_at_rx_pipe = osiPipeCreate(1024);
+	poc_at_tx_pipe = osiPipeCreate(1024);
+
+	osiPipeSetReaderCallback(poc_at_tx_pipe, OSI_PIPE_EVENT_RX_ARRIVED,
+							 lv_poc_virt_at_resp_cb, poc_at_tx_pipe);
+
+	atDeviceVirtConfig_t cfg = {
+		.name = OSI_MAKE_TAG('P', 'V', 'A', 'T'),
+		.rx_pipe = poc_at_rx_pipe,
+		.tx_pipe = poc_at_tx_pipe,
+	};
+	atDevice_t *device = atDeviceVirtCreate(&cfg);
+	atDispatch_t *dispatch = atDispatchCreate(device);
+	atDeviceSetDispatch(device, dispatch);
+	atDeviceOpen(device);
+}
+
+/*
+     name : lv_poc_virt_at_resp_send
+     param :
+     date : 2020-12-08
+*/
+void lv_poc_virt_at_resp_send(char *cmd)
+{
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "vat -->: %s", cmd);
+    osiPipeWriteAll(poc_at_rx_pipe, cmd, strlen(cmd), OSI_WAIT_FOREVER);
 }
 

@@ -108,6 +108,12 @@
 #cmakedefine CONFIG_POC_FOTA_POWER_ON_SUPPORT
 
 /**
+ * Wheth the POC ping network is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_PING_NETWORK_SUPPORT
+
+/**
  * Wheth the POC audio data buff is enabled more than 3.
  *
  */

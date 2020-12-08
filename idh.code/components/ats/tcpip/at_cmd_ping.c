@@ -1,4 +1,4 @@
-#include "cfw.h"
+﻿#include "cfw.h"
 #ifdef CFW_GPRS_SUPPORT
 #include "stdio.h"
 #include "osi_api.h"
@@ -11,6 +11,9 @@
 #include "at_cmd_tcpip.h"
 #include "sockets.h"
 #include "netmain.h"
+//poc
+#include "lv_include/lv_poc_type.h"
+#include "guiIdtCom_api.h"
 
 //following global variables just used in AT+PING command
 #define ERR_SUCCESS 0
@@ -464,7 +467,10 @@ void AT_TCPIP_CmdFunc_PING(atCommand_t *pParam)
         else
         {
             OSI_LOGI(0x1000401b, "AT_TCPIP_CmdFunc_PING: CFW_Gethostbyname ERROR(%x)", nReturnValue);
-            RETURN_CME_ERR(engine, ERR_AT_CME_PARAM_INVALID);
+#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
+#endif
+			RETURN_CME_ERR(engine, ERR_AT_CME_PARAM_INVALID);
         }
         if (gPingtimer != NULL)
         {
@@ -504,9 +510,15 @@ void AT_TCPIP_CmdFunc_PING(atCommand_t *pParam)
                 gPingContinuetimer = NULL;
             }
             OSI_LOGI(0x10003fee, "AT_TCPIP_CmdFunc_PING: Cannot find IP address of this modem!", nDNS);
-            RETURN_CME_ERR(engine, ERR_AT_CME_EXE_FAIL);
+#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
+#endif
+			RETURN_CME_ERR(engine, ERR_AT_CME_EXE_FAIL);
         }
 
+#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_REP, NULL);//ping ok
+#endif
         OSI_LOGI(0x10004020, "AT_TCPIP_CmdFunc_PING: OK");
         gPingstatus = true;
         RETURN_OK(engine);
@@ -742,7 +754,10 @@ void ping_continue(atCmdEngine_t *engine, char *response)
         int8_t nRetValue = AT_SendIP_ICMP_Ping(engine, (uint32_t)engine);
         if (nRetValue != ERR_SUCCESS)
         {
-            OSI_LOGI(0, "ping_continue: AT_SendIP_ICMP_Ping return:%d", nRetValue);
+#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
+#endif
+			OSI_LOGI(0, "ping_continue: AT_SendIP_ICMP_Ping return:%d", nRetValue);
             if (false == osiTimerStart(gPingtimer, AT_PING_TIMEOUT * 1000))
             {
                 OSI_LOGI(0, "AT_TCPIP_CmdFunc_PING: start timer failed!");
@@ -765,6 +780,9 @@ void ping_timeout(void *param)
     sprintf(response, "Request timed out.\r\n");
     atCmdRespInfoText(engine, response);
     ping_continue(engine, response);
+#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
+#endif
 }
 
 void ping_continue_timeout(void *param)
@@ -824,7 +842,7 @@ void AT_PsmData_TimerExpiry()
     memset(hint_text, 0x00, sizeof(hint_text));
 
     if(pNetif)
-    {   
+    {
         if(psm_data->type == 0)  //for ping
         {
 #define AT_PING_MAX_HOSTLEN 63
@@ -832,7 +850,7 @@ void AT_PsmData_TimerExpiry()
             uint8_t nDNS[AT_PING_MAX_HOSTLEN] = {0};
 
             if (AT_StrLen(psm_data->host) > AT_PING_MAX_HOSTLEN)
-                return;        
+                return;
             AT_StrCpy(nDNS, psm_data->host);
             OSI_LOGXI(OSI_LOGPAR_S, 0x100052ae, "AT_PsmData_TimerExpiry: nDNS = %s", nDNS);
             AT_PING_TIMEOUT = 20;
@@ -883,7 +901,7 @@ void AT_PsmData_TimerExpiry()
                 return;
             }
             AT_PING_SOCKET = socketfd;
-            
+
             CFW_TcpipSocketSetParam(socketfd, AT_PING_AsyncEventProcess, psm_data->dlci);
             int32_t len = 1;
             if (ERR_SUCCESS != CFW_TcpipSocketGetsockopt(socketfd, CFW_TCPIP_IPPROTO_IP, IP_TTL, &AT_PING_TTL, &len))
@@ -898,7 +916,7 @@ void AT_PsmData_TimerExpiry()
                 return;
             }
             sprintf(hint_text, "PING %s", psm_data->host);
-            
+
         }
         else    //for udp
         {
@@ -948,7 +966,7 @@ void AT_PsmData_TimerExpiry()
         return;
     }
 
-    
+
 }
 
 bool isAlarmForPsmData(uint8_t index)
@@ -979,7 +997,7 @@ void AT_TCPIP_CmdFunc_PSMDATA(AT_CMD_PARA *pParam)
         retx_count = at_ParamUint(pParam->params[index], &paramok);
         if(!paramok)
             RETURN_CME_ERR(pParam->engine, ERR_AT_CME_PARAM_INVALID);
-        
+
         memcpy(cmcc_psm_data.host, host, AT_StrLen(host));
         cmcc_psm_data.type = type;
         cmcc_psm_data.port = port;
@@ -994,7 +1012,7 @@ void AT_TCPIP_CmdFunc_PSMDATA(AT_CMD_PARA *pParam)
     else if (AT_CMD_READ == pParam->type)
     {
         uint8_t psmdataRead[50];
-        sprintf(psmdataRead, "^PSMDATA: %d,\"%s\",%d,%d,%d,%d", 
+        sprintf(psmdataRead, "^PSMDATA: %d,\"%s\",%d,%d,%d,%d",
             cmcc_psm_data.type, cmcc_psm_data.host, cmcc_psm_data.port, cmcc_psm_data.length, cmcc_psm_data.sleep_time/1000, cmcc_psm_data.retx_count);
         at_CmdRespInfoText(pParam->engine, psmdataRead);
         RETURN_OK(pParam->engine);

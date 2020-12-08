@@ -35,10 +35,15 @@
 static lv_indev_state_t preKeyState = 0xff;
 static uint32_t   preKey      = 0xff;
 static lv_indev_state_t prvPttKeyState = 0xff;
-static lv_indev_state_t prvPowerKeyState = 0xff;
-static osiTimer_t * prvPowerTimer = NULL;
-static bool isReadyPowerOff = false;
 
+//extern
+extern lv_poc_activity_t * poc_member_call_activity;
+extern int lv_poc_cit_get_run_status(void);
+
+static lv_indev_state_t prvPowerKeyState = 0xff;
+static bool isReadyPowerOff = false;
+static bool *isReadyCtnKeyState = NULL;
+static osiTimer_t * prvPowerTimer = NULL;
 static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
 
 static void prvPowerKeyCb(void *ctx)
@@ -46,6 +51,13 @@ static void prvPowerKeyCb(void *ctx)
 	isReadyPowerOff = true;
 	if(!lv_poc_charge_poweron_status())//正常开机
 	{
+		OSI_LOGI(0, "[poc][ctnkey](%d):state(%d)", __LINE__, *isReadyCtnKeyState);
+		if(*isReadyCtnKeyState == true)
+		{
+			return;
+		}
+
+//		lv_poc_set_power_on_status(false);
 		lv_poc_refr_task_once(lv_poc_shutdown_note_activity_open,
 			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
 	}
@@ -59,41 +71,48 @@ static void prvPowerKeyCb(void *ctx)
 bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 {
 	bool ret = false;
+	isReadyCtnKeyState = (bool *)p;
+	*isReadyCtnKeyState ? (osiTimerIsRunning(prvPowerTimer) ? osiTimerStop(prvPowerTimer) : 0) : 0;
+
 	if(id == LV_GROUP_KEY_POC) //poc
 	{
-		if(prvPttKeyState != state)// && !lvPocGuiIdtCom_listen_status())/*当正在接听是ppt键无效*/
+		if((prvPttKeyState != state) && (!lvPocGuiIdtCom_get_listen_status()))
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{
-				#if POC_RECORD_OR_SPEAK_CALL
-				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
-				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
-				#else
-					#if POC_RECORDER_PLAY_MODE
-					lv_poc_start_recordwriter();//自录
-					#else
-					lv_poc_start_recordwriter_pocmode();
-					#endif
-				#endif
-			}
-			else
-			{
-				#if POC_RECORD_OR_SPEAK_CALL
-				OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
-				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
-				#else
-					#if POC_RECORDER_PLAY_MODE
-					lv_poc_start_playfile();//自播
-					#else
-					lv_poc_start_playfile_pocmode();
-					#endif
-				#endif
-			}
+				if(lv_poc_get_current_activity() == activity_idle
+					|| lv_poc_get_current_activity() == poc_member_call_activity)
+				{
+#if POC_RECORD_OR_SPEAK_CALL
+                OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
+                lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+#else
+                lv_poc_start_recordwriter();//self record
+#endif
+				}
+				else
+				{
+
+				}
+            }
+            else
+            {
+				if(lv_poc_get_current_activity() == activity_idle
+					|| lv_poc_get_current_activity() == poc_member_call_activity)
+				{
+#if POC_RECORD_OR_SPEAK_CALL
+                OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
+                lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+#else
+                lv_poc_start_playfile();//self play
+#endif
+				}
+            }
 		}
 		prvPttKeyState = state;
 		ret = false;
 	}
-	else if(id == 0xf0)
+	else if(id == 0xf0)//power key
 	{
 		if(prvPowerTimer == NULL)
 		{
@@ -147,13 +166,6 @@ bool pocGetPttKeyState(void)
 	return prvPttKeyState == KEY_STATE_PRESS ? true : false;
 }
 
-/*
-	  name : poc_power_on_charge_set_lcd_status
-	 param : none
-	author : wangls
-  describe : 充电时开关屏幕
-	  date : 2020-07-10
-*/
 static
 void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus)
 {

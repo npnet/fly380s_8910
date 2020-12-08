@@ -246,6 +246,14 @@ OUT lv_indev_t *
 lv_poc_get_keypad_dev(void);
 
 /*
+      name : lv_poc_get_volum_key_dev
+    return : get volum keypad indev
+      date : 2020-12-03
+*/
+OUT lv_indev_t *
+lv_poc_get_volum_key_dev(void);
+
+/*
       name : lv_poc_setting_conf_init
     return : bool
       date : 2020-03-30
@@ -920,7 +928,21 @@ bool
 poc_set_iic_status(bool iicstatus);
 
 /*
-	  name : lv_poc_set_first_membercall
+     name : lv_poc_set_headset_status
+     param :
+     date : 2020-09-29
+*/
+void
+lv_poc_set_headset_status(bool status);
+
+/*
+     name : lv_poc_get_headset_is_ready
+     param :
+     date : 2020-09-29
+*/
+bool
+lv_poc_get_headset_is_ready(void);
+/*	  name : lv_poc_set_first_membercall
 	  param :
 	  date : 2020-11-25
 */
@@ -932,6 +954,36 @@ void lv_poc_set_first_membercall(bool status);
 	  date : 2020-11-25
 */
 bool lv_poc_get_first_membercall(void);
+
+/*
+	  name : lv_poc_set_screenon_status
+	  describe :
+	  param :
+	  date : 2020-11-28
+*/
+void lv_poc_set_screenon_status(bool status);
+
+/*
+	  name : lv_poc_get_screenon_status
+	  describe :
+	  param :
+	  date : 2020-11-28
+*/
+bool lv_poc_get_screenon_status(void);
+
+/*
+     name : lv_poc_virt_at_init
+     param :
+     date : 2020-12-08
+*/
+void lv_poc_virt_at_init(void);
+
+/*
+	 name : lv_poc_virt_at_resp_send
+	 param :
+	 date : 2020-12-08
+*/
+void lv_poc_virt_at_resp_send(char *cmd);
 
 #ifdef __cplusplus
 }

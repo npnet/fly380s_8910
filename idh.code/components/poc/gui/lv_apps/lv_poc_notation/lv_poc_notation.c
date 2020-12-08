@@ -582,7 +582,7 @@ bool lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *tex
 {
 	if(lv_poc_notation_task == NULL)
 	{
-		lv_poc_notation_task = lv_task_create(lv_poc_notation_task_cb, 200, LV_TASK_PRIO_HIGH, NULL);
+		lv_poc_notation_task = lv_task_create(lv_poc_notation_task_cb, 200, LV_TASK_PRIO_MID, NULL);
 		if(lv_poc_notation_task == NULL)
 		{
 			return false;

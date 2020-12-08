@@ -152,6 +152,10 @@ enum
     HAL_POWER_ANALOG = OSI_MAKE_TAG('A', 'N', 'A', 'L'),
     HAL_POWER_CAMFLASH = OSI_MAKE_TAG('C', 'A', 'M', 'F'),
     HAL_POWER_VBAT_RF = OSI_MAKE_TAG('V', 'B', 'R', 'F'),
+
+	HAL_POWER_TOUCHLED,
+	HAL_POWER_REDLED,
+	HAL_POWER_GREENLED,
 };
 
 typedef enum

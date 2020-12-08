@@ -48,6 +48,9 @@ static
 void prv_lv_poc_power_on_picture(lv_task_t * task)
 {
 	lv_poc_create_idle();
+#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
+	lv_poc_net_ping_task_create();
+#endif
 }
 
 static
@@ -186,7 +189,7 @@ static void pocLvglStart(void)
 
 void pocStart(void *ctx)
 {
-    OSI_LOGI(0, "[song]lvgl poc start");
+    OSI_LOGI(0, "[launch]lvgl poc start");
 
     poc_Status_Led_Task();
 	poc_set_red_status(false);
@@ -198,25 +201,40 @@ void pocStart(void *ctx)
     drvLcdFill(lcd, 0, NULL, true);
     drvLcdSetBackLightEnable(lcd, false);
 
+	//LED Init
+    halPmuSwitchPower(HAL_POWER_REDLED, true, false);
+    halPmuSwitchPower(HAL_POWER_GREENLED, true, false);
+    poc_set_red_status(false);
+
+#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
+    poc_set_green_status(false);
+#else
+    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWERON_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+#endif
+
+#ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
+    poc_set_keypad_led_status(false);
+#endif
+
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	publvPocGpsIdtComInit();
 #endif
 
 	//获取开机方式
 	uint32_t boot_causes = osiGetBootCauses();
-	OSI_LOGI(0, "[song]poc boot mode is = %d", boot_causes);
+	OSI_LOGI(0, "[launch]poc boot mode is = %d", boot_causes);
 	if(boot_causes == OSI_BOOTCAUSE_CHARGE
 		|| boot_causes == (OSI_BOOTCAUSE_CHARGE|OSI_BOOTCAUSE_PSM_WAKEUP))
 		//设备为充电启动||设备充电启动并且从PSM唤醒启动
 	{
-		OSI_LOGI(0, "[song]poc boot mode is charge power on");
+		OSI_LOGI(0, "[launch]poc boot mode is charge power on");
 		lvGuiInit(pocLvgl_ShutdownCharge_Start);
 	}//看门狗重启
 	else if(boot_causes == OSI_BOOTCAUSE_WDG
 		||  boot_causes == (OSI_BOOTCAUSE_CHARGE|OSI_BOOTCAUSE_WDG))
 	{
 		pub_lv_poc_set_watchdog_status(true);
-		OSI_LOGI(0, "[song]poc boot mode is wdg power on");
+		OSI_LOGI(0, "[launch]poc boot mode is wdg power on");
 		lvGuiInit(pocLvglStart);
 	}
 	else//设备重启或正常开机
