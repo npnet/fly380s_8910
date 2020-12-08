@@ -35,6 +35,8 @@ typedef unsigned short int   uint16_t;
 
 #define POC_MAX_BRIGHT 9
 
+#define POC_TYPE_VAT_PING "AT+PING=\"www.baidu.com\",50,128,1\r\n"
+
 /*******************
 *     NAME:   lv_poc_time_t
 *   AUTHOR:   lugj
@@ -65,8 +67,11 @@ typedef struct
 	uint32_t about_label_big_font;                  //
 	uint32_t about_label_small_font;                //-------------------------------
 	uint32_t fota_label_current_font;
+	uint32_t cit_label_current_font;
 	uint32_t fota_label_big_font;
 	uint32_t fota_label_small_font;
+	uint32_t cit_label_big_font;
+	uint32_t cit_label_small_font;
 	uint32_t win_title_font;
 	uint32_t activity_control_font;
 	uint32_t status_bar_time_font;
@@ -100,6 +105,7 @@ typedef struct
 	uint32_t style_cb;
 	uint32_t style_about_label;
 	uint32_t style_fota_label;
+	uint32_t style_cit_label;
 	uint32_t style_status_bar;
 	uint32_t style_status_bar_time;
 	uint32_t style_control;
@@ -285,6 +291,8 @@ typedef enum{
 
 	LVPOCLEDIDTCOM_SIGNAL_STATUS_START = 0,
 	//led
+	LVPOCLEDIDTCOM_SIGNAL_POWERON_STATUS ,
+	LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS ,
 	LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS ,//正常状态
 	LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS ,//运行状态
 	LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS ,//未充电
@@ -307,7 +315,10 @@ typedef enum{
 	LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND,
 	LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND,
 	LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND,
-	LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND,
+	LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND,//24
+
+	LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_IND,
+	LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_IND,//26
 
 	LVPOCLEDIDTCOM_SIGNAL_STATUS_END,
 }LVPOCIDTCOM_Led_SignalType_t;
@@ -317,9 +328,11 @@ typedef enum{
 	LVPOCGPSIDTCOM_SIGNAL_STATUS_START = 0,
 
 	LVPOCGPSIDTCOM_SIGNAL_GET_DATA_IND ,
+	LVPOCGPSIDTCOM_SIGNAL_CHECK_DATA_IND ,
 	LVPOCGPSIDTCOM_SIGNAL_OPEN_GPS_REPORT ,
 	LVPOCGPSIDTCOM_SIGNAL_CLOSE_GPS_REPORT ,
-
+	LVPOCGPSIDTCOM_SIGNAL_START_GPS_LOCATION ,
+	LVPOCGPSIDTCOM_SIGNAL_STOP_GPS_LOCATION  ,
 	LVPOCGPSIDTCOM_SIGNAL_GPS_NO_LOCATION_CHECK_FREQ ,
 	LVPOCGPSIDTCOM_SIGNAL_GPS_LOCATION_REPORT_FREQ ,
 

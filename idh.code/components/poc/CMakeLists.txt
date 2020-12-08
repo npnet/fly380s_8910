@@ -51,7 +51,12 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_refr/lv_poc_refr.c
     gui/lv_apps/lv_poc_fota_update/lv_poc_fota_update.c
 	gui/lv_apps/lv_poc_gps_monitor/lv_poc_gps_monitor.c
-	 
+	gui/lv_apps/lv_poc_cit/lv_poc_cit_main/lv_poc_cit_main.c
+	gui/lv_apps/lv_poc_cit/lv_poc_terminal_info/lv_poc_terminal_info.c
+	gui/lv_apps/lv_poc_cit/lv_poc_auto_check/lv_poc_auto_check.c
+	gui/lv_apps/lv_poc_cit/lv_poc_part_check/lv_poc_part_check.c
+	gui/lv_apps/lv_poc_cit/lv_poc_log_switch/lv_poc_log_switch.c
+	
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c
 	gui/resource/image/battery/stat_sys_battery_15.c

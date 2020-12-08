@@ -29,6 +29,7 @@ enum
     ACT_ID_POC_SHUTDOWN,                /*20: shutdown*/
     ACT_ID_POC_GPS_MONITOR,             /*21: gps monitor*/
     ACT_ID_POC_STATE_INFO,				/*22: state info*/
+    ACT_ID_POC_CIT_MAIN,				/*23: cit main mecu*/
     ACT_ID_ANYOBJ,                      /* : any object for example*/
 
     ACT_ID_MAX,

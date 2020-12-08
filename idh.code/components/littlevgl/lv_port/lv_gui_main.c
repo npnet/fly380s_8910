@@ -40,6 +40,7 @@ typedef struct
     lv_disp_buf_t disp_buf;    // display buffer
     lv_disp_t *disp;           // display device
     lv_indev_t *keypad;        // keypad device
+    lv_indev_t *otherkeypad;   // Other keypad device
     keyMap_t last_key;         // last key from ISR
     keyState_t last_key_state; // last key state from ISR
     uint32_t screen_on_users;  // screen on user bitmap
@@ -85,9 +86,9 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {/*song is here*/
     {KEY_MAP_0,      LV_GROUP_KEY_END},
     {KEY_MAP_1,      LV_GROUP_KEY_DOWN},//down
     {KEY_MAP_2,      LV_GROUP_KEY_ENTER},
-    {KEY_MAP_3,      0x19},
+    {KEY_MAP_3,      0x18},
     {KEY_MAP_4,      LV_GROUP_KEY_POC},//ppt enter
-    {KEY_MAP_5,      LV_GROUP_KEY_UP},
+    {KEY_MAP_5,      0x19},
     {KEY_MAP_6,      LV_GROUP_KEY_GP},
     {KEY_MAP_7,      LV_GROUP_KEY_UP},//up
     {KEY_MAP_8,      LV_GROUP_KEY_PREV},
@@ -231,6 +232,10 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 {
     lvGuiContext_t *d = &gLvGuiCtx;
 
+	static bool is_busy_indrv_1 = false;//keypad1
+	static bool is_busy_indrv_2 = false;//keypad2
+	static bool cnt_key_state = false;
+
     uint32_t critical = osiEnterCritical();
     keyMap_t last_key = d->last_key;
     keyState_t last_key_state = d->last_key_state;
@@ -244,7 +249,8 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 		return false;
 	}
 
-    if (keypad_pending)
+    if (keypad_pending
+		&& is_busy_indrv_2 == false)
     {
         data->state = (last_key_state & KEY_STATE_RELEASE) ? LV_INDEV_STATE_REL : LV_INDEV_STATE_PR;
         data->key = 0xff;
@@ -262,7 +268,9 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
             }
         }
 
-	    if(!pocKeypadHandle(data->key, data->state, NULL))
+		lv_poc_cbn_key_obj(data) == true ? (cnt_key_state = true) : (cnt_key_state = false);
+
+	    if(!pocKeypadHandle(data->key, data->state, &cnt_key_state))
 	    {
 			if(pub_lv_poc_get_watchdog_status())
 			{
@@ -271,8 +279,38 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 				poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 			}
 			lvGuiScreenOn();
+			OSI_LOGI(0, "[poc][key][screen](%d)wake up", __LINE__);
 	    }
+
+		if(data->state == KEY_STATE_PRESS)
+		{
+			is_busy_indrv_1 = true;
+		}
+		else
+		{
+			is_busy_indrv_1 = false;//complete
+		}
     }
+	else if(is_busy_indrv_1 == false)
+	{
+		//other keypad
+		lv_indev_data_t otherkeypaddata = {0};
+		if(LvOtherKeypadMsgRead(&otherkeypaddata))
+		{
+			data->state = otherkeypaddata.state;
+			data->key = otherkeypaddata.key;
+
+			if(data->key == KEY_STATE_PRESS)
+			{
+				is_busy_indrv_2 = true;
+			}
+			else
+			{
+				is_busy_indrv_2 = false;//complete
+			}
+		}
+	}
+
     // no more to be read
     return false;
 }
@@ -559,3 +597,4 @@ void lvGuiUpdateLastActivityTime(void)
 	lvGuiContext_t *d = &gLvGuiCtx;
 	d->keypad->driver.disp->last_activity_time = lv_tick_get();
 }
+

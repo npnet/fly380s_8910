@@ -44,6 +44,7 @@ extern lv_poc_activity_t * poc_member_call_activity;
 #if POC_SUPPORT_LONGPRESS_POWEROFF
 static lv_indev_state_t prvPowerKeyState = 0xff;
 static bool isReadyPowerOff = false;
+static bool *isReadyCtnKeyState = NULL;
 static osiTimer_t * prvPowerTimer = NULL;
 static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
 
@@ -52,7 +53,13 @@ static void prvPowerKeyCb(void *ctx)
 	isReadyPowerOff = true;
 	if(!lv_poc_charge_poweron_status())//正常开机
 	{
+		OSI_LOGI(0, "[poc][ctnkey](%d):state(%d)", __LINE__, *isReadyCtnKeyState);
+		if(*isReadyCtnKeyState == true)
+		{
+			return;
+		}
 		lv_poc_set_power_on_status(false);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 		lv_poc_refr_func_ui(lv_poc_shutdown_animation,
 			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)2);
 	}
@@ -67,6 +74,9 @@ static void prvPowerKeyCb(void *ctx)
 bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 {
 	bool ret = false;
+	isReadyCtnKeyState = (bool *)p;
+	*isReadyCtnKeyState ? (osiTimerIsRunning(prvPowerTimer) ? osiTimerStop(prvPowerTimer) : 0) : 0;
+
 	if(id == LV_GROUP_KEY_POC) //poc
 	{
 		if(prvPttKeyState != state)
@@ -80,7 +90,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
                 OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
                 lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
 #else
-                lv_poc_start_recordwriter();/*自录*/
+                lv_poc_start_recordwriter();//self record
 #endif
 				}
 				else
@@ -97,7 +107,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
                 OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
                 lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 #else
-                lv_poc_start_playfile();/*自播*/
+                lv_poc_start_playfile();//self play
 #endif
 				}
             }
@@ -105,7 +115,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		prvPttKeyState = state;
 		ret = false;
 	}
-	else if(id == 0xf0)/*电源按键*/
+	else if(id == 0xf0)//power key
 	{
 #if POC_SUPPORT_LONGPRESS_POWEROFF
 		if(prvPowerTimer == NULL)

@@ -879,18 +879,18 @@ void lv_poc_show_gps_location_status_img(bool status);
 #endif
 
 /*******************
-*	  NAME:    lv_poc_scan_volum_task_create
-* DESCRIPT:    volum task
-*	  DATE:    2020-11-27
+*	  NAME:    lv_poc_cbn_key_obj
+* DESCRIPT:    组合键
+*	  DATE:    2020-12-04
 ********************/
-void lv_poc_scan_volum_task_create(void);
+bool lv_poc_cbn_key_obj(lv_indev_data_t *data);
 
 /*******************
-*	  NAME:    lv_poc_scan_volum_task_del
-* DESCRIPT:    volum task
-*	  DATE:    2020-11-27
+*	  NAME:    lv_poc_net_ping_task_create
+* DESCRIPT:
+*	  DATE:    2020-12-08
 ********************/
-void lv_poc_scan_volum_task_del(void);
+void lv_poc_net_ping_task_create(void);
 
 #ifdef __cplusplus
 }

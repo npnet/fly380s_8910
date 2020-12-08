@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#define LONGPRESS_SHUTDOWN_TIME 2000 /*2s*/
+#define LONGPRESS_SHUTDOWN_TIME 3000 //3s
 
 extern lv_poc_activity_t * poc_shutdown_list_activity;
 

@@ -119,6 +119,12 @@ config POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE
     default 3
     help
         open status more than 3 , close status less than 4
+		
+config POC_PING_NETWORK_SUPPORT
+    bool "POC ping supported"
+    default y
+    help
+        poc gui should not be supported.
 endif
 
 endmenu

@@ -28,6 +28,7 @@
 #include "poc_audio_recorder.h"
 #include "guiIdtCom_api.h"
 #include "audio_device.h"
+#include "uart3_gps.h"
 #include "drv_charger_monitor.h"
 #include <sys/time.h>
 
@@ -450,6 +451,9 @@ public:
 	osiTimer_t * monitor_recorder_timer;
 	osiTimer_t * play_tone_timer;
 	osiTimer_t * addgroup_user_timer;
+	osiTimer_t * openpa_timer;
+	osiTimer_t * callidle_timer;
+
 	bool onepoweron;
 	char build_self_name[16];
 #ifndef MUCHGROUP
@@ -480,31 +484,6 @@ typedef struct
 
 CIdtUser m_IdtUser;
 static PocGuiIIdtComAttr_t pocIdtAttr = {0};
-
-#if 0
-static uint8_t  audio_voice_buff[]=
-{
-//						  //0x24, 0x08, 0x00, 0x00 块大小2084     旧=960036
-//	0x52, 0x49, 0x46, 0x46, 0x24, 0xa6, 0x0e, 0x00, 0x57, 0x41, 0x56,
-//								//0x10, 0x00, 0x00, 0x00 子块1大小 = 16
-//												        //0x01, 0x00 音频格式 = 1（PCM）
-//	0x45, 0x66, 0x6d, 0x74, 0x20, 0x10, 0x00, 0x00, 0x00, 0x01, 0x00,
-//  //0x01, 0x00 通道 = 1
-//  			  //0x40, 0x1f, 0x00, 0x00 采样率(samplerate) = 8000
-//  			  						  //0x88, 0x58, 0x01, 0x00 字节速率(byterate)  	= 88200 	now=16000
-//	0x01, 0x00, 0x40, 0x1f, 0x00, 0x00, 0x88, 0x3e, 0x01, 0x00,
-//  //0x04, 0x00 BlockAlign 	旧版=0x02
-//			  //0x10, 0x00 BitPerSample = 16
-//			  			  //0x64, 0x61, 0x74, 0x61 data subchunk
-//			  			  						  //0x00, 0x08, 0x00, 0x00 子块2大小 = 2048     旧的=960000
-//	0x02, 0x00, 0x10, 0x00, 0x64, 0x61, 0x74, 0x61, 0x00, 0xa6, 0x0e, 0x00,
-
-//	0x52, 0x49, 0x46, 0x46, 0x24, 0xa6, 0x0e, 0x00, 0x57, 0x41, 0x56,
-//	0x45, 0x66, 0x6d, 0x74, 0x20, 0x10, 0x00, 0x00, 0x00, 0x01, 0x00,
-//	0x01, 0x00, 0x40, 0x1f, 0x00, 0x00, 0x80, 0x3e, 0x00, 0x00,
-//  0x02, 0x00, 0x10, 0x00, 0x64, 0x61, 0x74, 0x61, 0x00, 0xa6, 0x0e, 0x00,
-};
-#endif
 
 int Func_GQueryU(DWORD dwSn, UCHAR *pucGNum)
 {
@@ -1075,6 +1054,9 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_START_REP, NULL);
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_SPEAKER_REP, NULL);
 		pocIdtAttr.membercall_count++;//记录单呼数据帧
+		//gps monitor
+		osiTimerStop(pocIdtAttr.callidle_timer);
+		lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_STOP_GPS_LOCATION, NULL);
 
 		#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
 		char cOutstr[256] = {0};
@@ -1555,14 +1537,19 @@ static void LvGuiIdtCom_recorder_timer_cb(void *ctx)
 
 static void LvGuiIdtCom_refresh_group_adduser_timer_cb(void *ctx)
 {
-#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG|GUIIDTCOM_IDTGROUPLISTDEL_DEBUG_LOG
-	char cOutstr6[128] = {0};
-	cOutstr6[0] = '\0';
-	sprintf(cOutstr6, "[grouprefr]%s(%d):opt OPT_G_ADDUSER or OPT_G_DELUSER", __func__, __LINE__);
-	OSI_LOGI(0, cOutstr6);
-#endif
-
+	OSI_LOGI(0, "[grouprefr][timecb](%d):opt user of add or del", __LINE__);
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL);
+}
+
+static void LvGuiIdtCom_open_pa_timer_cb(void *ctx)
+{
+	OSI_LOGI(0, "[pa][timecb](%d):open pa", __LINE__);
+	poc_set_ext_pa_status(true);
+}
+
+static void LvGuiIdtCom_call_idle_timer_cb(void *ctx)
+{
+	lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_START_GPS_LOCATION, NULL);
 }
 
 //--------------------------------------------------------------------------------
@@ -2067,6 +2054,8 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				#endif
 				//monitor recorder thread
 				osiTimerStart(pocIdtAttr.monitor_recorder_timer, 10000);//10S
+				//monitor idle, goto location
+				osiTimerStart(pocIdtAttr.callidle_timer, 10000);//10S
 			}
 			break;
 		}
@@ -2147,6 +2136,10 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 						    osiTimerStop(pocIdtAttr.start_speak_voice_timer);
 						    pocIdtAttr.start_speak_voice_timer_running = false;
 					    }
+						//gps monitor
+						osiTimerStop(pocIdtAttr.callidle_timer);
+						lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_STOP_GPS_LOCATION, NULL);
+
 					    osiTimerStart(pocIdtAttr.start_speak_voice_timer, 160);
 					    pocIdtAttr.start_speak_voice_timer_running = true;
 						pocIdtAttr.speak_status = true;
@@ -3187,7 +3180,8 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, NULL, NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
-
+			//monitor idle, goto location
+			osiTimerStart(pocIdtAttr.callidle_timer, 10000);//10S
 			#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
 			char cOutstr[256] = {0};
 			cOutstr[0] = '\0';
@@ -4344,18 +4338,75 @@ static void prvPocGuiIdtTaskHandleHeadsetInsert(uint32_t id, uint32_t ctx)
       case LVPOCGUIIDTCOM_SIGNAL_HEADSET_INSERT:
       {
          lv_poc_set_headset_status(true);
-         lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机插入", (const uint8_t *)"");
-         break;
+
+		 if(!lvPocGuiIdtCom_get_listen_status()
+		 	&& !lvPocGuiIdtCom_get_speak_status())
+		 {
+         	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+         	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机插入", (const uint8_t *)"");
+		 }
+		 break;
       }
       case LVPOCGUIIDTCOM_SIGNAL_HEADSET_PULL_OUT:
       {
          lv_poc_set_headset_status(false);
-         lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机拔出", (const uint8_t *)"");
-         break;
+
+		 if(!lvPocGuiIdtCom_get_listen_status()
+		 	&& !lvPocGuiIdtCom_get_speak_status())
+		 {
+         	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+         	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机拔出", (const uint8_t *)"");
+		 }
+		 break;
       }
       default:
          break;
    }
+}
+
+static void prvPocGuiIdtTaskHandleDelayOpenPA(uint32_t id, uint32_t ctx)
+{
+   switch(id)
+   {
+      case LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND:
+      {
+	  	 if(ctx == 0
+		 	|| !lvPocGuiIdtCom_get_listen_status())
+	  	 {
+	     	break;
+		 }
+		 osiTimerStart(pocIdtAttr.openpa_timer, ctx);
+		 break;
+      }
+
+      default:
+      {
+         break;
+      }
+   }
+}
+
+static void prvPocGuiIdtTaskHandlePingNet(uint32_t id, uint32_t ctx)
+{
+	switch(id)
+	{
+	   case LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_REP:
+	   {
+		  lv_poc_activity_func_cb_set.status_led(LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_IND, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_200 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+		  break;
+	   }
+
+	   case LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP:
+	   {
+		  lv_poc_activity_func_cb_set.status_led(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_IND, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_200 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_4);
+		  break;
+	   }
+
+	   default:
+	   {
+		  break;
+	   }
+	}
 }
 
 static void pocGuiIdtComTaskEntry(void *argument)
@@ -4579,6 +4630,19 @@ static void pocGuiIdtComTaskEntry(void *argument)
                 break;
          	}
 
+            case LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND:
+            {
+                prvPocGuiIdtTaskHandleDelayOpenPA(event.param1, event.param2);
+                break;
+         	}
+
+			case LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_REP:
+			case LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP:
+			{
+				prvPocGuiIdtTaskHandlePingNet(event.param1, event.param2);
+				break;
+			}
+
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");
 				break;
@@ -4604,6 +4668,8 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.monitor_recorder_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_recorder_timer_cb, NULL);//检查是否有人在录音定时器
 	pocIdtAttr.play_tone_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_start_play_tone_timer_cb, NULL);
 	pocIdtAttr.addgroup_user_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_refresh_group_adduser_timer_cb, NULL);
+	pocIdtAttr.openpa_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_open_pa_timer_cb, NULL);
+	pocIdtAttr.callidle_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_call_idle_timer_cb, NULL);
 }
 
 static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)

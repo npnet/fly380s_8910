@@ -39,6 +39,7 @@
 #include "lv_apps/lv_poc_refr/lv_poc_refr.h"
 #include "lv_apps/lv_poc_fota_update/lv_poc_fota_update.h"
 #include "lv_apps/lv_poc_gps_monitor/lv_poc_gps_monitor.h"
+#include "lv_apps/lv_poc_cit/lv_poc_cit_main/lv_poc_cit_main.h"
 
 #endif //__LV_POC_H_
 

@@ -267,6 +267,14 @@ OUT lv_indev_t *
 lv_poc_get_keypad_dev(void);
 
 /*
+      name : lv_poc_get_volum_key_dev
+    return : get volum keypad indev
+      date : 2020-12-03
+*/
+OUT lv_indev_t *
+lv_poc_get_volum_key_dev(void);
+
+/*
       name : lv_poc_setting_conf_init
     return : bool
       date : 2020-03-30
@@ -1061,18 +1069,18 @@ lv_poc_get_headset_is_ready(void);
   describe :
 	  date : 2020-11-27
 */
-void lv_poc_volum_key_init(void);
+bool lv_poc_volum_key_init(void);
 
 /*
 	  name : lv_poc_volum_key_close
 	 param : none
   describe :
-	  date : 2020-11-27
+	  date : 2020-12-05
 */
 void lv_poc_volum_key_close(void);
 
 /*
-	  name : lv_poc_volum_key_init
+	  name : lv_poc_get_volum_up_state
 	 param : none
   describe :
 	  date : 2020-11-27
@@ -1080,7 +1088,7 @@ void lv_poc_volum_key_close(void);
 bool lv_poc_get_volum_up_state(void);
 
 /*
-	  name : lv_poc_volum_key_init
+	  name : lv_poc_get_volum_down_state
 	 param : none
   describe :
 	  date : 2020-11-27
@@ -1102,6 +1110,51 @@ void lv_poc_set_screenon_status(bool status);
 	  date : 2020-11-28
 */
 bool lv_poc_get_screenon_status(void);
+
+/*
+	 name : LvOtherKeypadMsgRead
+	param : none
+  describe : other keypad
+	 date : 2020-12-03
+*/
+bool LvOtherKeypadMsgRead(lv_indev_data_t *data);
+
+/*
+	 name : lv_poc_change_status_cb
+	 param :
+	 date : 2020-12-04
+*/
+typedef bool (*lv_poc_change_status_cb)(void);
+
+/*
+	 name : lv_poc_volum_set_reconfig_status
+	 param :
+	 date : 2020-12-04
+*/
+void
+lv_poc_volum_set_reconfig_status(lv_poc_change_status_cb func);
+
+/*
+	 name : lv_poc_volum_get_reconfig_status
+	 param :
+	 date : 2020-12-04
+*/
+bool
+lv_poc_volum_get_reconfig_status(void);
+
+/*
+     name : lv_poc_virt_at_init
+     param :
+     date : 2020-12-08
+*/
+void lv_poc_virt_at_init(void);
+
+/*
+	 name : lv_poc_virt_at_resp_send
+	 param :
+	 date : 2020-12-08
+*/
+void lv_poc_virt_at_resp_send(char *cmd);
 
 #ifdef __cplusplus
 }
