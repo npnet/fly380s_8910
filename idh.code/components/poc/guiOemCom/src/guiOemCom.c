@@ -132,6 +132,7 @@ typedef struct _PocGuiOemComAttr_t
 	int 		pocnetstatus;
 	char 		pocIpAccoutaPassword[128];
 	size_t      pocIpAccoutaPasswordLen;
+	char 		oem_account[24];
 
 	//status
 	bool is_member_call;
@@ -684,8 +685,10 @@ void prvPocGuiOemTaskHandleSetPOC(uint32_t id, uint32_t ctx)
 		case LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND:
 		{
 			char ufs[128] = {0};
-
 			memset(&pocOemAttr.pocIpAccoutaPassword, 0, sizeof(pocOemAttr.pocIpAccoutaPassword));
+			//read account
+			memset(&pocOemAttr.oem_account, 0, sizeof(pocOemAttr.oem_account));
+			lv_poc_extract_account((char *)pocOemAttr.pocIpAccoutaPassword,(char *)pocOemAttr.oem_account);
 			//转义StrHex
 			lv_poc_oemdata_strtostrhex(ufs, (char *)ctx, strlen((char *)ctx));
 
@@ -697,11 +700,11 @@ void prvPocGuiOemTaskHandleSetPOC(uint32_t id, uint32_t ctx)
 			//SET POC
 			OEMPOC_AT_Recv(pocOemAttr.pocIpAccoutaPassword, pocOemAttr.pocIpAccoutaPasswordLen);
 		 	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[oemack][set][ind]oem set param %s", (char *)pocOemAttr.pocIpAccoutaPassword);
-			
+
 			//save account
 			nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
-			lv_poc_extract_account((char *)pocOemAttr.pocIpAccoutaPassword,poc_config->oem_account);
 			strcpy(poc_config->oemipaccoutapassword, pocOemAttr.pocIpAccoutaPassword);
+			strcpy(poc_config->oem_account,pocOemAttr.oem_account);
 			poc_config->oemipaccoutapasswordlen = pocOemAttr.pocIpAccoutaPasswordLen;
 			lv_poc_setting_conf_write();
 			break;
@@ -2780,23 +2783,20 @@ uint64_t lv_poc_oemdata_hexstrtodec(char *s, uint32_t len)
 }
 static void lv_poc_extract_account(char *pocIpAccoutaPassword,char *account)
 {
-	if(pocIpAccoutaPassword == NULL && account == NULL)
-	{
+	if(pocIpAccoutaPassword == NULL || account == NULL)
 		return;
-	}
 	char *temp1 = NULL;
 	char *temp2 = NULL;
 	char *id = NULL;
-	int len;
+	int len = 0;
 	temp1 = strchr(pocIpAccoutaPassword, ';');
-	temp1++;
-	temp2 = strchr(temp1, ';');
-	temp2++;
+	temp1 ? temp1++ : 0;
+	temp1 ? temp2 = strchr(temp1, ';') : 0;
 	id = strchr(pocIpAccoutaPassword, 'd');
-	id++;
-	id++;
-	len = strlen(id) - strlen(temp2);
-	strncpy(account, id, len);
+	id ? id++ : 0;
+	id ? id++ : 0;
+	(id && temp2) ? (len = strlen(id) - strlen(temp2)) : 0;
+	account&&id&&len ? (strncpy(account, id, len)) : 0;
 }
 
 /*
