@@ -160,7 +160,10 @@ typedef struct
 	char old_account_current_group[32];
 #endif
 	uint8_t nv_monitor_group_number;
+	char oemipaccoutapassword[128];
+	size_t oemipaccoutapasswordlen;
 	nv_poc_monitor_info nv_monitor_group[5];
+	char  oem_account[64];
 } nv_poc_setting_msg_t;
 
 typedef enum

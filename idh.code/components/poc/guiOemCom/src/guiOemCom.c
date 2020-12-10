@@ -179,6 +179,9 @@ static PocGuiOemAtBufferAttr_t prv_lv_poc_oem_get_global_atcmd_info(void *info, 
 static void prv_lv_poc_oem_get_group_list_info(void *information);
 static void prv_lv_poc_oem_get_group_member_info(void *information);
 static void prv_lv_poc_oem_update_member_status(void *information);
+static void lv_poc_extract_account(char *pocIpAccoutaPassword,char *account);
+
+
 
 // 1:TTS正在播放  0:TTS播放完毕
 extern void OEM_TTS_Status_CB(int type);
@@ -626,8 +629,9 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 					//get poc
 					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GETPARAM_ACK))
 					{
+						nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 						//查询账号是否正确
-						if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ACCOUT))
+						if(NULL != strstr(apopt->oembuf,poc_config->oem_account))
 						{
 							lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_AP_POC_START, NULL);
 							OSI_LOGI(0, "[oemack][login]accout correct, start to login");
@@ -692,7 +696,14 @@ void prvPocGuiOemTaskHandleSetPOC(uint32_t id, uint32_t ctx)
 			pocOemAttr.pocIpAccoutaPasswordLen = strlen(pocOemAttr.pocIpAccoutaPassword);
 			//SET POC
 			OEMPOC_AT_Recv(pocOemAttr.pocIpAccoutaPassword, pocOemAttr.pocIpAccoutaPasswordLen);
-			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[oemack][set][ind]oem set param %s", (char *)pocOemAttr.pocIpAccoutaPassword);
+		 	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[oemack][set][ind]oem set param %s", (char *)pocOemAttr.pocIpAccoutaPassword);
+			
+			//save account
+			nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+			lv_poc_extract_account((char *)pocOemAttr.pocIpAccoutaPassword,poc_config->oem_account);
+			strcpy(poc_config->oemipaccoutapassword, pocOemAttr.pocIpAccoutaPassword);
+			poc_config->oemipaccoutapasswordlen = pocOemAttr.pocIpAccoutaPasswordLen;
+			lv_poc_setting_conf_write();
 			break;
 		}
 
@@ -1962,6 +1973,8 @@ static void prvPocGuiOemTaskHandleOther(uint32_t id, uint32_t ctx)
 static
 void LvGuiOemCom_AutoLogin_timer_cb(void *ctx)
 {
+	nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+	OEMPOC_AT_Recv(poc_config->oemipaccoutapassword, poc_config->oemipaccoutapasswordlen);
 	lvPocGuiOemCom_Request_PocParam();
 }
 
@@ -2764,6 +2777,26 @@ uint64_t lv_poc_oemdata_hexstrtodec(char *s, uint32_t len)
 	temp  = strtol(s, NULL, 16);
 
 	return temp;
+}
+static void lv_poc_extract_account(char *pocIpAccoutaPassword,char *account)
+{
+	if(pocIpAccoutaPassword == NULL && account == NULL)
+	{
+		return;
+	}
+	char *temp1 = NULL;
+	char *temp2 = NULL;
+	char *id = NULL;
+	int len;
+	temp1 = strchr(pocIpAccoutaPassword, ';');
+	temp1++;
+	temp2 = strchr(temp1, ';');
+	temp2++;
+	id = strchr(pocIpAccoutaPassword, 'd');
+	id++;
+	id++;
+	len = strlen(id) - strlen(temp2);
+	strncpy(account, id, len);
 }
 
 /*
