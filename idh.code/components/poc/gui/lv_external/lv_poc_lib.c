@@ -29,12 +29,16 @@
 #include "at_engine.h"
 #include "osi_pipe.h"
 
+#define SUPPORT_CIT_KEY_TEST
 /*************************************************
 *
 *                  EXTERN
 *
 *************************************************/
 extern bool pub_lv_poc_get_watchdog_status(void);
+extern int lv_poc_cit_get_run_status(void);
+extern bool lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count);
+extern bool pubPocIdtGpsTaskStatus(void);
 
 /*************************************************
 *
@@ -81,6 +85,7 @@ static bool lv_poc_memberlist_refr_complete = false;
 static bool lv_poc_buildgroup_refr_complete = false;
 static bool lv_poc_refr_error_info = false;
 static bool is_first_membercall = false;
+static bool lv_poc_cit_test_self_record = false;
 static void poc_ear_ppt_irq(void *ctx);
 
 static uint16_t poc_cur_unopt_status;
@@ -539,6 +544,7 @@ extern lv_poc_audio_dsc_t lv_poc_audio_fail_to_build_group;
 extern lv_poc_audio_dsc_t lv_poc_audio_fail_to_build_group_due_to_less_than_two_people;
 extern lv_poc_audio_dsc_t lv_poc_audio_fail_due_to_already_exist_selfgroup;
 extern lv_poc_audio_dsc_t lv_poc_audio_this_account_already_logined;
+extern lv_poc_audio_dsc_t lv_poc_audio_test_volum;
 
 static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	NULL,
@@ -564,6 +570,7 @@ static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	&lv_poc_audio_fail_to_build_group_due_to_less_than_two_people,
 	&lv_poc_audio_fail_due_to_already_exist_selfgroup,
 	&lv_poc_audio_this_account_already_logined,
+	&lv_poc_audio_test_volum,
 
 	&lv_poc_audio_tone_cannot_speak,
 	&lv_poc_audio_tone_lost_mic,
@@ -584,7 +591,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 			&& !lvPocGuiIdtCom_get_speak_status())
 		{
 			poc_set_ext_pa_status(true);
-			audevSetPlayVolume(60);
+			audevSetPlayVolume(40);
 			char playkey[4] = "9";
 			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
 		}
@@ -694,6 +701,13 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
 				audevSetPlayVolume(70);
+			    is_poc_play_voice = true;
+				break;
+			}
+
+			case LVPOCAUDIO_Type_Test_Volum:
+			{
+				voice_formate = AUSTREAM_FORMAT_MP3;
 			    is_poc_play_voice = true;
 				break;
 			}
@@ -850,6 +864,61 @@ poc_check_sim_prsent(IN POC_SIM_ID sim)
             return true;
     }
     return false;
+}
+
+/*
+      name : poc_get_signal_dBm
+     param : nSignal
+    return : POC_SIGNAL_DBM
+      date : 2020-10-12
+*/
+OUT uint8_t
+poc_get_signal_dBm(uint8_t *nSignal)
+{
+	uint8_t nSignalDBM = 99;
+	uint8_t nBitError = 99;
+	uint32_t ret = 0;
+	uint8_t rat = 0;
+	uint8_t nSim = POC_SIM_1;
+
+	CFW_COMM_MODE nFM = CFW_DISABLE_COMM;
+	ret = CFW_GetComm(&nFM, nSim);
+	if (nFM != CFW_DISABLE_COMM)
+	{
+		rat = CFW_NWGetStackRat(nSim);
+		if (rat == 4)
+		{
+			CFW_NW_QUAL_INFO iQualReport;
+
+			ret = CFW_NwGetLteSignalQuality(&nSignalDBM, &nBitError, nSim);
+			if (ret != 0)
+			{
+				goto LV_POC_GET_SIGNAL_BAR_ENDLE;
+			}
+			ret = CFW_NwGetQualReport(&iQualReport, nSim);
+			if (ret != 0)
+			{
+				goto LV_POC_GET_SIGNAL_BAR_ENDLE;
+			}
+			if(iQualReport.nRssidBm < 0)
+			{
+				iQualReport.nRssidBm = 0 - iQualReport.nRssidBm;
+
+			}
+			OSI_LOGI(0, "[signal]signal.dbm = %d",iQualReport.nRssidBm);
+			nSignalDBM =(uint8_t)(iQualReport.nRssidBm);
+		}
+		else
+		{
+			ret = CFW_NwGetSignalQuality(&nSignalDBM, &nBitError, nSim);
+		}
+		if (ret != 0)
+			goto LV_POC_GET_SIGNAL_BAR_ENDLE;
+	}
+
+LV_POC_GET_SIGNAL_BAR_ENDLE:
+	*nSignal = nSignalDBM;
+	return nSignalDBM;
 }
 
 /*
@@ -1178,6 +1247,8 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.idle_popwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
 	poc_setting->font.idle_lockgroupwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
 	poc_setting->font.idle_shutdownwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 16);
+	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
+	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 13);
 
 	poc_setting->theme.white = &theme_white;
 	poc_setting->theme.white->style_base = (uint32_t)&theme_white_style_base;
@@ -1191,6 +1262,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->theme.white->style_idle_msg_label = (uint32_t)&theme_white_style_idle_msg_label;
 	poc_setting->theme.white->style_about_label = (uint32_t)&theme_white_style_about_label;
 	poc_setting->theme.white->style_fota_label = (uint32_t)&theme_white_style_fota_label;
+	poc_setting->theme.white->style_cit_label = (uint32_t)&theme_white_style_cit_label;
 	poc_setting->theme.white->style_cb = (uint32_t)&theme_white_style_rb;
 	poc_setting->theme.white->style_rb = (uint32_t)&theme_white_style_cb;
 	poc_setting->theme.white->style_switch_bg = (uint32_t)&theme_white_style_switch_bg;
@@ -1216,6 +1288,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->theme.black->style_idle_msg_label = (uint32_t)&theme_black_style_idle_msg_label;
 	poc_setting->theme.black->style_about_label = (uint32_t)&theme_black_style_about_label;
 	poc_setting->theme.black->style_fota_label = (uint32_t)&theme_black_style_fota_label;
+	poc_setting->theme.black->style_cit_label = (uint32_t)&theme_black_style_cit_label;
 	poc_setting->theme.black->style_cb = (uint32_t)&theme_black_style_rb;
 	poc_setting->theme.black->style_rb = (uint32_t)&theme_black_style_cb;
 	poc_setting->theme.black->style_switch_bg = (uint32_t)&theme_black_style_switch_bg;
@@ -1374,8 +1447,28 @@ poc_get_device_iccid_rep(int8_t * iccid)
     {
 		memset(ICCID, 0, 21);
     }
-    OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]iccid %s", ICCID);
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "[iccid]iccid %s", ICCID);
     strcpy((char *)iccid, (const char *)ICCID);
+}
+
+/*
+      name : poc_get_device_imsi_rep
+     param : get device imsi
+      date : 2020-11-18
+*/
+void
+poc_get_device_imsi_rep(int8_t * imsi)
+{
+	uint8_t nSim = POC_SIM_1;
+    uint8_t IMSI[16] = {0};
+	uint8_t imsisize = 16;
+	extern bool getSimImsi(uint8_t simId, uint8_t *imsi, uint8_t *len);
+    bool status = getSimImsi(nSim, IMSI, &imsisize);
+    if (status)
+    {
+		OSI_LOGXI(OSI_LOGPAR_S, 0, "[imsi]imsi %s", IMSI);
+		strcpy((char *)imsi, (const char *)IMSI);
+    }
 }
 
 /*
@@ -1726,7 +1819,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		ear_key_attr.ear_key_press = true;
 		poc_earkey_state = true;
 		OSI_LOGI(0, "[song]key is press,start speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
 	}
 	else
 	{
@@ -1743,7 +1836,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
  		   {
  			   ear_key_attr.ear_key_press = false;
 			   poc_earkey_state = false;
-			   lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+			   lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		   }
 		   else
 		   {
@@ -1807,7 +1900,7 @@ void poc_ear_ppt_irq(void *ctx)
 		ear_key_attr.ear_key_press = false;
 		poc_earkey_state = false;
 		OSI_LOGI(0, "[song]key is release,stop speak\n");
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 	}
 	else//press
 	{
@@ -2837,6 +2930,85 @@ bool lv_poc_get_first_membercall(void)
 	return is_first_membercall;
 }
 
+/*
+     name : lv_poc_get_audio_voice_status
+     param :
+     date : 2020-12-04
+*/
+bool
+lv_poc_get_audio_voice_status(void)
+{
+	if(!prv_play_voice_one_time_player)
+	{
+		return false;
+	}
+	return auPlayerGetStatus(prv_play_voice_one_time_player);
+}
+
+/*
+	  name : lv_poc_set_loopback_recordplay
+	  describe :
+	  param :
+	  date : 2020-12-09
+*/
+void lv_poc_set_loopback_recordplay(bool status)
+{
+	lv_poc_cit_test_self_record = status;
+}
+
+/*
+	  name : lv_poc_get_loopback_recordplay_status
+	  describe :
+	  param :
+	  date : 2020-12-09
+*/
+bool lv_poc_get_loopback_recordplay_status(void)
+{
+	return lv_poc_cit_test_self_record;
+}
+
+/*
+     name : lv_poc_get_mobile_card_operator
+     describe :获取SIM卡运营商
+     param :
+     date : 2020-10—14
+*/
+void
+lv_poc_get_mobile_card_operator(char *operator_name, bool abbr)
+{
+   static char poc_iccid[20] = {0};
+   int operator;
+   char poc_iccid_operator[20] = {0};
+   if(poc_iccid != NULL)
+      poc_get_device_iccid_rep((int8_t *)poc_iccid);
+
+   if(poc_iccid == NULL)
+   {
+      abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
+   }
+
+   strncpy(poc_iccid_operator, poc_iccid, 6);
+   operator = atoi(poc_iccid_operator);
+   if(operator == 898600 || operator == 898602 ||operator == 898604 || operator == 898607)//China Mobile
+   {
+      abbr ? strcpy(operator_name, "CMCC") : strcpy(operator_name, "中国移动");
+   }
+   else if(operator == 898601 || operator == 898609 ||operator == 898606)//China Telecom
+   {
+      abbr ? strcpy(operator_name, "CTCC") : strcpy(operator_name, "中国电信");
+
+   }
+   else if(operator == 898603 || operator == 898611 )//China Unicom
+   {
+
+      abbr ? strcpy(operator_name, "CUCC") : strcpy(operator_name, "中国联通");
+   }
+   else
+   {
+      abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
+   }
+}
+
 static osiPipe_t *poc_at_rx_pipe;
 static osiPipe_t *poc_at_tx_pipe;
 
@@ -2893,4 +3065,356 @@ void lv_poc_virt_at_resp_send(char *cmd)
     OSI_LOGXI(OSI_LOGPAR_S, 0, "vat -->: %s", cmd);
     osiPipeWriteAll(poc_at_rx_pipe, cmd, strlen(cmd), OSI_WAIT_FOREVER);
 }
+
+/*
+	 name : lv_poc_get_calib_status
+	 param :
+	 date : 2020-12-09
+*/
+static
+uint8_t prvGetBitCalibInfo(uint32_t param32, int nBit)
+{
+    if (nBit < 0 || nBit > 31)
+        return -1;
+    else
+    {
+        if (param32 & (1 << nBit))
+            return 1;
+        else
+            return 0;
+    }
+}
+
+/*
+参数说明：
+GSM_afc:GSM模式晶体校准标志
+GSM850_agc:GSM850频段接收校准标志
+GSM850_apc:GSM850频段发射校准标志
+GSM900_agc:GSM900频段接收校准标志
+GSM900_apc:GSM900频段发射校准标志
+DCS1800_agc:GSM1800频段接收校准标志
+DCS1800_apc:GSM1800频段发射校准标志
+PCS1900_agc:GSM1900频段接收校准标志
+PCS1900_apc:GSM1900频段发射校准标志
+GSM_FT:GSM摸式综测标准标志
+GSM_ANT:GSM摸式天线耦合测试标志位
+
+LTE_afc:LTE模式晶体校准,
+LTE_TDD_agc:LTE TDD频段AGC校准标志
+LTE_TDD_apc:LTE TDD频段APC校准标志
+LTE_FDD_agc:LTE FDD频段AGC校准标志
+LTE_FDD_apc:LTE FDD频段APC校准标志
+FINAL_LTE:LTE摸式综测标志位
+ANT_LTE:LTE摸式天线耦合测试标志位
+
+以上所有标志位如果做过对应的测试且pass则为1，如果没有做过或fail，则标志位为0.
+*/
+/*
+	 name : lv_poc_get_calib_status
+	 param :
+	 date : 2020-12-09
+*/
+int lv_poc_get_calib_status(void)
+{
+	//get calibinfo
+	int nocalnum = 0;
+	uint32_t gsmCal, lteCal;
+	uint8_t gsmBit[16], lteBit[16];
+	gsmCal = CFW_EmodGetGsmCalibInfo();
+	lteCal = CFW_EmodGetLteCalibInfo();
+	for (int nBit = 0; nBit < 16; nBit++)
+	{
+		gsmBit[nBit] = prvGetBitCalibInfo(gsmCal, nBit);
+		lteBit[nBit] = prvGetBitCalibInfo(lteCal, nBit);
+
+		if(gsmBit[nBit] == 0
+			&& nBit <= (10 - 2))//根据需求修改，目前最后两项不需要校准
+		{
+			nocalnum++;
+		}
+
+		if(lteBit[nBit] == 0
+			&& nBit <= (9 - 2)//根据需求修改，目前最后两项不需要校准
+			&& nBit != 3
+			&& nBit != 6
+			&& nBit != 7)
+		{
+			nocalnum++;
+		}
+	}
+	return nocalnum;
+}
+
+/********************************************CIT*****************************************************/
+#ifdef CONFIG_POC_CIT_KEY_SUPPORT
+
+struct lv_poc_cit_key_param_t
+{
+	int keyuptotal;
+	int keydowntotal;
+	int keyvolumuptotal;
+	int keyvolumdowntotal;
+	int keypoctotal;
+	int keypowertotal;
+};
+
+struct lv_poc_cit_key_param_t poc_key_param = {0};
+
+/*
+	 name : lv_poc_key_param_init_cb
+	 param :
+	 date : 2020-12-10
+*/
+void lv_poc_key_param_init_cb(void)
+{
+	memset(&poc_key_param, 0, sizeof(struct lv_poc_cit_key_param_t));
+}
+
+/*
+	 name : lv_poc_type_key_up_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_up_cb(bool status)
+{
+	extern bool lv_poc_cit_get_key_valid(void);
+
+	if(!lv_poc_cit_get_key_valid())
+	{
+		return false;
+	}
+
+	status ? (poc_key_param.keyuptotal += 1) : 0;
+
+	return poc_key_param.keyuptotal;
+}
+
+/*
+	 name : lv_poc_type_key_down_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_down_cb(bool status)
+{
+	extern bool lv_poc_cit_get_key_valid(void);
+
+	if(!lv_poc_cit_get_key_valid())
+	{
+		return false;
+	}
+
+	status ? (poc_key_param.keydowntotal += 1) : 0;
+
+	return poc_key_param.keydowntotal;
+}
+
+/*
+	 name : lv_poc_type_key_volum_up_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_volum_up_cb(bool status)
+{
+	extern bool lv_poc_cit_get_key_valid(void);
+
+	if(!lv_poc_cit_get_key_valid())
+	{
+		return false;
+	}
+
+	status ? (poc_key_param.keyvolumuptotal += 1) : 0;
+
+	return poc_key_param.keyvolumuptotal;
+}
+
+/*
+	 name : lv_poc_type_key_volum_down_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_volum_down_cb(bool status)
+{
+	extern bool lv_poc_cit_get_key_valid(void);
+
+	if(!lv_poc_cit_get_key_valid())
+	{
+		return false;
+	}
+
+	status ? (poc_key_param.keyvolumdowntotal += 1) : 0;
+
+	return poc_key_param.keyvolumdowntotal;
+}
+/*
+	 name : lv_poc_type_key_poc_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_poc_cb(bool status)
+{
+	extern bool lv_poc_cit_get_key_valid(void);
+
+	if(!lv_poc_cit_get_key_valid())
+	{
+		return false;
+	}
+
+	status ? (poc_key_param.keypoctotal += 1) : 0;
+
+	return poc_key_param.keypoctotal;
+}
+
+/*
+	 name : lv_poc_type_key_power_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_power_cb(bool status)
+{
+	extern bool lv_poc_cit_get_key_valid(void);
+
+	if(!lv_poc_cit_get_key_valid())
+	{
+		return false;
+	}
+
+	status ? (poc_key_param.keypowertotal += 1) : 0;
+
+	return poc_key_param.keypowertotal;
+}
+#endif
+
+/*
+	 name : lv_poc_type_gps_cb
+	 param :
+	 date : 2020-12-10
+*/
+void lv_poc_type_gps_cb(int status)
+{
+   	nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+	if(status == 0)
+	{
+		poc_config->GPS_switch = false;
+		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, 0, 0);
+		lv_poc_stabar_show_gps_img(false);
+	}
+	else
+	{
+		if(!pubPocIdtGpsTaskStatus())
+		{
+			poc_config->GPS_switch = true;
+			lv_poc_stabar_show_gps_img(true);
+		    lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, 0, 0);
+		}
+	}
+	lv_poc_setting_conf_write();
+}
+
+/*
+	 name : lv_poc_type_volum_cb
+	 param :
+	 date : 2020-12-10
+*/
+bool lv_poc_type_volum_cb(int status)
+{
+	if(status == 0)
+	{
+		lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, 1, true);
+	}
+	else if(status == 1)
+	{
+		return lv_poc_get_audio_voice_status();
+	}
+	else
+	{
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND, NULL);
+	}
+	return false;
+}
+
+/*
+	 name : lv_poc_type_rgb_cb
+	 param :
+	 date : 2020-12-10
+*/
+void lv_poc_type_rgb_cb(int status)
+{
+	if(status == 0)
+	{
+		poc_set_red_status(true);
+		poc_set_green_status(true);
+	}
+	else if(status == 1)
+	{
+		poc_set_red_status(false);
+		poc_set_green_status(true);
+	}
+	else if(status == 2)
+	{
+		poc_set_red_status(true);
+		poc_set_green_status(false);
+	}
+	else if(status == 3)
+	{
+		poc_set_red_status(false);
+		poc_set_green_status(false);
+	}
+}
+
+/*
+	 name : lv_poc_type_flash_cb
+	 param :
+	 date : 2020-12-10
+*/
+float lv_poc_type_flash_cb(bool status)
+{
+	long totalmemory = 0;
+	float availmemory = 0.0;
+	float unavailmemory = 0.0;
+
+	int part_count = vfs_mount_count();
+	char **mps = alloca(part_count * sizeof(char *));
+	vfs_mount_points(mps, part_count);
+
+	for (int n = 0; n < part_count; n++)
+	{
+		struct statvfs st;
+		if (vfs_statvfs(mps[n], &st) != 0)
+			continue;
+		totalmemory +=st.f_bavail * st.f_bsize;
+	}
+	availmemory = totalmemory / 1024.0 / 1024.0;
+	unavailmemory = 8.0 - availmemory;
+
+	if(status == false)//可用内存
+	{
+		return availmemory;//MB
+	}
+	else//已用内存
+	{
+		return unavailmemory;//MB
+	}
+}
+
+/*
+	 name : lv_poc_type_plog_switch_cb
+	 param :
+	 date : 2020-12-12
+*/
+void lv_poc_type_plog_switch_cb(bool status)
+{
+	lvPocGuiComLogSwitch(status);
+}
+
+/*
+	 name : lv_poc_type_modemlog_switch_cb
+	 param :
+	 date : 2020-12-12
+*/
+void lv_poc_type_modemlog_switch_cb(bool status)
+{
+	status ? 0 : 0;
+}
+
+/********************************************CIT*****************************************************/
 

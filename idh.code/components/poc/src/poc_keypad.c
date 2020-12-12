@@ -76,37 +76,18 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 
 	if(id == LV_GROUP_KEY_POC) //poc
 	{
-		if((prvPttKeyState != state) && (!lvPocGuiIdtCom_get_listen_status()))
+		if(prvPttKeyState != state
+			&&(lv_poc_get_current_activity() == activity_idle
+				|| lv_poc_get_current_activity() == poc_member_call_activity
+				|| lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY))
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{
-				if(lv_poc_get_current_activity() == activity_idle
-					|| lv_poc_get_current_activity() == poc_member_call_activity)
-				{
-#if POC_RECORD_OR_SPEAK_CALL
-                OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
-                lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
-#else
-                lv_poc_start_recordwriter();//self record
-#endif
-				}
-				else
-				{
-
-				}
+				lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY ? lv_poc_type_key_poc_cb(true) : (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL));
             }
             else
             {
-				if(lv_poc_get_current_activity() == activity_idle
-					|| lv_poc_get_current_activity() == poc_member_call_activity)
-				{
-#if POC_RECORD_OR_SPEAK_CALL
-                OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
-                lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
-#else
-                lv_poc_start_playfile();//self play
-#endif
-				}
+				lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
             }
 		}
 		prvPttKeyState = state;
@@ -119,38 +100,40 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 			prvPowerTimer = osiTimerCreate(NULL, prvPowerKeyCb, NULL);
 		}
 
-		if(prvPowerKeyState != state)
-		{
-			if(state == LV_INDEV_STATE_PR)
-			{
-				if(prvPowerTimer != NULL)
+        if(prvPowerKeyState != state)
+        {
+            if(state == LV_INDEV_STATE_PR)
+            {
+				if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
 				{
+					lv_poc_type_key_power_cb(true);
+					return false;
+				}
+
+                if(prvPowerTimer != NULL)
+                {
 					osiTimerStart(prvPowerTimer, LONGPRESS_SHUTDOWN_TIME);
-					isReadyPowerOff = false;
-				}
-			}
-			else
-			{
-				if(prvPowerTimer != NULL)
+                    isReadyPowerOff = false;
+                }
+            }
+            else
+            {
+                if(prvPowerTimer == NULL)
 				{
-		            if (isReadyPowerOff)
-		            {
-		                //osiDelayUS(1000 * 100);
-		                //osiShutdown(OSI_SHUTDOWN_POWER_OFF);
-		            }
-		            else
-		            {
-						osiTimerStop(prvPowerTimer);
-						 if(lv_poc_charge_poweron_status())//充电开机
-						{
-							poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
-						}
-						 else
-						{
-							poc_set_lcd_status(!poc_get_lcd_status());
-						}
-		            }
-				}
+					return false;
+                }
+	            if (!isReadyPowerOff)
+	            {
+					osiTimerStop(prvPowerTimer);
+					if(lv_poc_charge_poweron_status())
+					{
+						poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
+					}
+					else
+					{
+						poc_set_lcd_status(!poc_get_lcd_status());
+					}
+	            }
 			}
 		}
 		prvPowerKeyState = state;

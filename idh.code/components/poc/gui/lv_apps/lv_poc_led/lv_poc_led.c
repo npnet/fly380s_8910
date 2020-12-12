@@ -6,6 +6,18 @@ extern "C" {
 #include <stdlib.h>
 #include "uart3_gps.h"
 
+/*************************************************
+*
+*                  EXTERN
+*
+*************************************************/
+extern int lv_poc_cit_get_run_status(void);
+
+/*************************************************
+*
+*                  STATIC
+*
+*************************************************/
 static void lv_poc_led_entry(void *param);
 static void lv_poc_led_status_all_close(lv_task_t *task);
 static void lv_poc_led_status_all_open(lv_task_t *task);
@@ -289,6 +301,12 @@ lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t
 		return false;
 	}
 
+	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_RGB)
+	{
+		OSI_LOGI(0, "[IDTLED][EVENT][CIT]test rgb");
+		return false;
+	}
+
 	osiEvent_t event = {0};
 	memset(&event, 0, sizeof(osiEvent_t));
 	event.id = 200;
@@ -426,6 +444,11 @@ callback_lv_poc_green_jump_red_jump(void)
 static void
 Lv_Poc_Led_Status_Callback_Check(lv_task_t *task)
 {
+	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_RGB)
+	{
+		return;
+	}
+
 	if(pocLedIdtAttr.jumpcount == 0 || pocLedIdtAttr.pledjump == NULL)
 	{
 		return;

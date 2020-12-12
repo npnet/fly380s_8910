@@ -30,6 +30,12 @@ enum
     ACT_ID_POC_GPS_MONITOR,             /*21: gps monitor*/
     ACT_ID_POC_STATE_INFO,				/*22: state info*/
     ACT_ID_POC_CIT_MAIN,				/*23: cit main mecu*/
+    ACT_ID_POC_CIT_TERM_INFO,			/*24: cit teaminal info*/
+    ACT_ID_POC_CIT_AUTO_TEST,			/*25: cit auto test*/
+    ACT_ID_POC_CIT_PART_TEST,			/*26: cit part test*/
+    ACT_ID_POC_CIT_LOG_SWITCH,			/*27: cit log switch*/
+    ACT_ID_POC_CIT_TEST_UI,			    /*28: cit test ui*/
+    ACT_ID_POC_CIT_RESULT_UI,			/*29: cit result ui*/
     ACT_ID_ANYOBJ,                      /* : any object for example*/
 
     ACT_ID_MAX,

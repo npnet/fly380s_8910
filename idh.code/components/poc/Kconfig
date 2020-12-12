@@ -116,9 +116,15 @@ config POC_AUDIO_DATA_IDT_BUFF_MAX_SIZE
 		
 config POC_PING_NETWORK_SUPPORT
     bool "POC ping supported"
-    default y
+    default n
     help
         poc gui should not be supported.
+		
+config POC_CIT_KEY_SUPPORT
+    bool "POC cit key supported"
+    default y
+    help
+        poc gui should be supported.
 endif
 
 endmenu

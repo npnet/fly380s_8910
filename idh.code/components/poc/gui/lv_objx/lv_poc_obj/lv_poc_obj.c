@@ -21,6 +21,7 @@ extern "C" {
 *
 *************************************************/
 extern bool pub_lv_poc_get_watchdog_status(void);
+extern int lv_poc_cit_get_run_status(void);
 
 /*************************************************
 *
@@ -579,6 +580,7 @@ bool lv_poc_setting_init(void)
 	lv_poc_ear_ppt_key_init();
 	poc_ext_pa_init();
 	lv_poc_virt_at_init();
+	lv_poc_set_loopback_recordplay(false);
 	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 
     return true;
@@ -1445,6 +1447,11 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
       || sign == LV_SIGNAL_CONTROL))
 	{
 		return ret;
+	}
+
+	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+	{
+		return LV_RES_INV;
 	}
 
     lv_poc_activity_t * activity = lv_poc_activity_list_lookup(obj);
@@ -3600,6 +3607,12 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 
 		case LV_GROUP_KEY_UP:
 		{
+			if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+			{
+				lv_poc_type_key_up_cb(true);
+				return false;
+			}
+
 			int status = data->state == CBN_KEY_STATE_PRESS?true:false;
 
 			do
@@ -3612,6 +3625,12 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 
 		case LV_GROUP_KEY_DOWN:
 		{
+			if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+			{
+				lv_poc_type_key_down_cb(true);
+				return false;
+			}
+
 			int status = data->state == CBN_KEY_STATE_PRESS?true:false;
 
 			do

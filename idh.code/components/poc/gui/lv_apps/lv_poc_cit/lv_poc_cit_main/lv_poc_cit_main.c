@@ -23,11 +23,27 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
+static void lv_poc_teaminal_info_cb(lv_obj_t * obj);
+
+static void lv_poc_auto_check_cb(lv_obj_t * obj);
+
+static void lv_poc_part_check_cb(lv_obj_t * obj);
+
+static void lv_poc_log_switch_cb(lv_obj_t * obj);
+
 static lv_poc_win_t * cit_win;
 
 static lv_obj_t * activity_list;
 
 lv_poc_activity_t * poc_cit_activity;
+
+struct lv_poc_cit_main_t
+{
+	bool ready;
+	bool autotest;
+};
+
+struct lv_poc_cit_main_t poc_cit_main_attr = {0};
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
@@ -60,6 +76,7 @@ typedef struct
     lv_align_t content_align;
     lv_coord_t content_align_x;
     lv_coord_t content_align_y;
+	void(* lv_poc_item_press_cb)(lv_obj_t *obj);
 } lv_poc_cit_label_struct_t;
 
 lv_poc_cit_label_struct_t lv_poc_cit_label_array[] = {
@@ -67,49 +84,49 @@ lv_poc_cit_label_struct_t lv_poc_cit_label_array[] = {
         NULL,
         "检1"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
         "终端信息"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+        lv_poc_teaminal_info_cb,
     },
 
     {
         NULL,
         "检2"                   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
         "自动检测"					 , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+        lv_poc_auto_check_cb,
     },
 
 	{
 		NULL,
 		"检3"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"部件测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_part_check_cb,
 	},
 
 	{
 		NULL,
 		"检4"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"log开关"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+		lv_poc_log_switch_cb,
 	},
 };
 
 static void lv_poc_teaminal_info_cb(lv_obj_t * obj)
 {
-
-	OSI_LOGI(0, "[cit]team info open", __LINE__);
+	lv_poc_terminfo_open();
 }
 
 static void lv_poc_auto_check_cb(lv_obj_t * obj)
 {
-
-	OSI_LOGI(0, "[cit]auto test open", __LINE__);
+	lvPocCitAutoTestActiOpen();
 }
 
 static void lv_poc_part_check_cb(lv_obj_t * obj)
 {
-
-	OSI_LOGI(0, "[cit]part test open", __LINE__);
+	lv_poc_cit_part_test_open();
 }
 
 static void lv_poc_log_switch_cb(lv_obj_t * obj)
 {
-
-	OSI_LOGI(0, "[cit]log switch open", __LINE__);
+	lv_poc_logswitch_open();
 }
 
 #ifdef SUPPORT_PREES_CB_CIT
@@ -134,7 +151,7 @@ static void cit_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
     lv_style_t * style_label;
     poc_setting_conf = lv_poc_setting_conf_read();
-    style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;
+    style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
     style_label->text.font = (lv_font_t *)poc_setting_conf->font.cit_label_current_font;
 
     int label_array_size = sizeof(lv_poc_cit_label_array)/sizeof(lv_poc_cit_label_struct_t);
@@ -167,32 +184,7 @@ static void cit_list_config(lv_obj_t * list, lv_area_t list_area)
 		lv_obj_set_click(btn, true);
 		lv_obj_set_event_cb(btn, lv_poc_cit_pressed_cb);
 #endif
-		switch(i)
-		{
-			case 0:
-			{
-				lv_poc_cit_btn_func_items[0] = lv_poc_teaminal_info_cb;
-				break;
-			}
-
-			case 1:
-			{
-				lv_poc_cit_btn_func_items[1] = lv_poc_auto_check_cb;
-				break;
-			}
-
-			case 2:
-			{
-				lv_poc_cit_btn_func_items[2] = lv_poc_part_check_cb;
-				break;
-			}
-
-			case 3:
-			{
-				lv_poc_cit_btn_func_items[3]= lv_poc_log_switch_cb;
-				break;
-			}
-		}
+		lv_poc_cit_btn_func_items[i] = lv_poc_cit_label_array[i].lv_poc_item_press_cb;
 	}
     lv_list_set_btn_selected(list, btn_array[0]);
 }
@@ -209,14 +201,14 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			{
 				case LV_GROUP_KEY_ENTER:
 				{
-					lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
+					pubPocCitAutoTestMode() ? 0 : lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
 				}
 
 				case LV_GROUP_KEY_DOWN:
 
 				case LV_GROUP_KEY_UP:
 				{
-					lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
+					pubPocCitAutoTestMode() ? 0 : lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
 					break;
 				}
 

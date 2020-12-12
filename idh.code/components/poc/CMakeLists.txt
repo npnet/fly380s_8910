@@ -55,6 +55,7 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_cit/lv_poc_auto_check/lv_poc_auto_check.c
 	gui/lv_apps/lv_poc_cit/lv_poc_part_check/lv_poc_part_check.c
 	gui/lv_apps/lv_poc_cit/lv_poc_log_switch/lv_poc_log_switch.c
+	gui/lv_apps/lv_poc_cit/lv_poc_test_ui/lv_poc_test_ui.c
 	
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c
@@ -304,7 +305,8 @@ add_library(${target} STATIC
 	gui/resource/audiofile/lv_poc_audio_fail_due_to_already_exist_selfgroup.c
 	gui/resource/audiofile/lv_poc_audio_current_no_any_network.c
 	gui/resource/audiofile/lv_poc_audio_this_account_already_logined.c
-
+	gui/resource/audiofile/lv_poc_audio_test_volum.c
+	
 	gps/gps_nmea.c 
 	gps/uart3_gps.c
 

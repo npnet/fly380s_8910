@@ -66,6 +66,7 @@ typedef struct _PocGpsIdtComAttr_t
 	bool        timeout_nolocation_status;
 	bool        gps_location_status;
 	bool        gps_error_data_status;
+	bool        task_status;
 	int         scannumber;
 	int         getgpsdatanumber;
 	int         countdownlocation;
@@ -689,7 +690,7 @@ void prvlvPocGpsIdtComHandleGpsTimercb(void *ctx)
 	}
 	else
 	{
-		pocGpsIdtAttr.thislocationtime == 5 ? (pocGpsIdtAttr.errornumber++) : 0;
+		pocGpsIdtAttr.errornumber++;
 		pocGpsIdtAttr.errornumber >= 2 ? (pocGpsIdtAttr.gps_error_data_status = true) : 0;
 		pocGpsIdtAttr.errornumber >= 5 ? (pocGpsIdtAttr.gps_location_status = false) : 0;
 
@@ -774,6 +775,11 @@ bool pubPocIdtIsHaveExistGps(void)
 	return pocGpsIdtAttr.ishavegps;
 }
 
+bool pubPocIdtGpsTaskStatus(void)
+{
+	return pocGpsIdtAttr.task_status;
+}
+
 void publvPocGpsIdtComSleep(void)
 {
 	if(pocGpsIdtAttr.ishavegps == false)
@@ -782,6 +788,7 @@ void publvPocGpsIdtComSleep(void)
 		return;
 	}
 	pocGpsIdtAttr.isReady = false;
+	pocGpsIdtAttr.task_status = false;
 	prvlvPocGpsI2cClose(DRV_NAME_I2C2, DRV_I2C_BPS_100K);
 	prvlvPocGpsI2cLowOut();//low out
 	prvlvPocGpsIdtComSuspend();
@@ -804,7 +811,10 @@ void publvPocGpsIdtComWake(void)
 	pocGpsIdtAttr.gps_location_status = false;
 	pocGpsIdtAttr.timeout_nolocation_status = true;
 	pocGpsIdtAttr.isReady = true;
+	pocGpsIdtAttr.task_status = true;
 	lv_poc_show_gps_location_status_img(false);
+	memset(&poc_idt_gps, 0, sizeof(nmea_msg));
+	memset(&poc_gps_monitor, 0, sizeof(nmea_msg));
 	//config gps
 	prvlvPocGpsI2cOpen(DRV_NAME_I2C2, DRV_I2C_BPS_100K);
 	prvlvPocGpsIdtComReconfig();
