@@ -493,6 +493,14 @@ void
 poc_get_device_iccid_rep(int8_t * iccid);
 
 /*
+      name : poc_get_device_imsi_rep
+     param : get device imsi
+      date : 2020-11-18
+*/
+void
+poc_get_device_imsi_rep(int8_t * imsi);
+
+/*
       name : poc_get_device_account_rep
      param : get device account
       date : 2020-04-29
@@ -1135,12 +1143,45 @@ void
 lv_poc_volum_set_reconfig_status(lv_poc_change_status_cb func);
 
 /*
+     name : lv_poc_get_audio_voice_status
+     param :
+     date : 2020-12-04
+*/
+bool
+lv_poc_get_audio_voice_status(void);
+
+/*
+	  name : lv_poc_set_loopback_recordplay
+	  describe :
+	  param :
+	  date : 2020-12-09
+*/
+void lv_poc_set_loopback_recordplay(bool status);
+
+/*
+	  name : lv_poc_get_loopback_recordplay_status
+	  describe :
+	  param :
+	  date : 2020-12-09
+*/
+bool lv_poc_get_loopback_recordplay_status(void);
+
+/*
 	 name : lv_poc_volum_get_reconfig_status
 	 param :
 	 date : 2020-12-04
 */
 bool
 lv_poc_volum_get_reconfig_status(void);
+
+/*
+     name : lv_poc_get_mobile_card_operator
+     describe :获取SIM卡运营商
+     param :
+     date : 2020-10—14
+*/
+void
+lv_poc_get_mobile_card_operator(char *operator_name, bool abbr);
 
 /*
      name : lv_poc_virt_at_init
@@ -1155,6 +1196,106 @@ void lv_poc_virt_at_init(void);
 	 date : 2020-12-08
 */
 void lv_poc_virt_at_resp_send(char *cmd);
+
+/*
+	 name : lv_poc_get_calib_status
+	 param :
+	 date : 2020-12-08
+*/
+int lv_poc_get_calib_status(void);
+
+#ifdef CONFIG_POC_CIT_KEY_SUPPORT
+/*
+	 name : lv_poc_key_param_init_cb
+	 param :
+	 date : 2020-12-10
+*/
+void lv_poc_key_param_init_cb(void);
+
+/*
+	 name : lv_poc_type_key_up_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_up_cb(bool status);
+
+/*
+	 name : lv_poc_type_key_down_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_down_cb(bool status);
+
+/*
+	 name : lv_poc_type_key_volum_up_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_volum_up_cb(bool status);
+
+/*
+	 name : lv_poc_type_key_volum_down_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_volum_down_cb(bool status);
+
+/*
+	 name : lv_poc_type_key_poc_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_poc_cb(bool status);
+
+/*
+	 name : lv_poc_type_key_power_cb
+	 param :
+	 date : 2020-12-10
+*/
+int lv_poc_type_key_power_cb(bool status);
+#endif
+
+/*
+	 name : lv_poc_type_gps_cb
+	 param :
+	 date : 2020-12-10
+*/
+void lv_poc_type_gps_cb(int status);
+
+/*
+	 name : lv_poc_type_volum_cb
+	 param :
+	 date : 2020-12-10
+*/
+bool lv_poc_type_volum_cb(int status);
+
+/*
+	 name : lv_poc_type_rgb_cb
+	 param :
+	 date : 2020-12-10
+*/
+void lv_poc_type_rgb_cb(int status);
+
+/*
+	 name : lv_poc_type_flash_cb
+	 param :
+	 date : 2020-12-10
+*/
+float lv_poc_type_flash_cb(bool status);
+
+/*
+	 name : lv_poc_type_plog_switch_cb
+	 param :
+	 date : 2020-12-12
+*/
+void lv_poc_type_plog_switch_cb(bool status);
+
+/*
+	 name : lv_poc_type_modemlog_switch_cb
+	 param :
+	 date : 2020-12-12
+*/
+void lv_poc_type_modemlog_switch_cb(bool status);
 
 #ifdef __cplusplus
 }

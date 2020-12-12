@@ -1660,7 +1660,6 @@ void IDT_Entry(void*)
     m_IdtUser.Reset();
 
     // 0关闭日志,1打开日志
-    //g_iLog = 0;
     g_iLog = 1;
 
     static IDT_CALLBACK_s CallBack;
@@ -4123,6 +4122,24 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 			break;
 		}
 
+		case LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND:
+		{
+			lv_poc_start_recordwriter();
+			break;
+		}
+
+		case LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND:
+		{
+			lv_poc_start_playfile();
+			break;
+		}
+
+		case LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND:
+		{
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Test_Volum, 50, false);
+			break;
+		}
+
 		default:
 		{
 			break;
@@ -4587,6 +4604,9 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			case LVPOCGUIIDTCOM_SIGNAL_GET_LOCK_GROUP_STATUS_IND:
 			case LVPOCGUIIDTCOM_SIGNAL_SCREEN_ON_IND:
 			case LVPOCGUIIDTCOM_SIGNAL_SCREEN_OFF_IND:
+			case LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND:
+			case LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND:
+			case LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND:
 			{
 				prvPocGuiIdtTaskHandleOther(event.param1, event.param2);
 				break;
@@ -4833,6 +4853,18 @@ void lv_poc_GuiIdtTask_Tread_delay(lv_task_t *task)
 		pocIdtAttr.pocDeleteGroupcb = NULL;
 	}
 
+}
+
+extern "C" void lvPocGuiComLogSwitch(bool status)
+{
+	if(status)
+	{
+		g_iLog = 1;
+	}
+	else
+	{
+		g_iLog = 0;
+	}
 }
 
 #endif

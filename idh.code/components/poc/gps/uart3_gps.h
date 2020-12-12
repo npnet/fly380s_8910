@@ -16,6 +16,8 @@ bool pubPocIdtGpsTimeoutNoLocationStatus(void);
 
 bool pubPocIdtIsHaveExistGps(void);
 
+bool pubPocIdtGpsTaskStatus(void);
+
 void publvPocGpsIdtComSleep(void);
 
 void publvPocGpsIdtComWake(void);

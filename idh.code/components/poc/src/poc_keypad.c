@@ -29,7 +29,6 @@
 #include "lv_gui_main.h"
 #include "poc_audio_recorder.h"
 
-#define POC_RECORD_OR_SPEAK_CALL 1//1-正常对讲 0-自录自播
 #define POC_RECORDER_PLAY_MODE 1//1-play 0-poc
 #define POC_SUPPORT_LONGPRESS_POWEROFF 1//1-支持长按关机 0-不支持
 
@@ -40,6 +39,7 @@ static lv_indev_state_t prvPttKeyState = 0xff;
 
 //extern
 extern lv_poc_activity_t * poc_member_call_activity;
+extern int lv_poc_cit_get_run_status(void);
 
 #if POC_SUPPORT_LONGPRESS_POWEROFF
 static lv_indev_state_t prvPowerKeyState = 0xff;
@@ -79,37 +79,18 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 
 	if(id == LV_GROUP_KEY_POC) //poc
 	{
-		if(prvPttKeyState != state)
+		if(prvPttKeyState != state
+			&&(lv_poc_get_current_activity() == activity_idle
+				|| lv_poc_get_current_activity() == poc_member_call_activity
+				|| lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY))
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{
-				if(lv_poc_get_current_activity() == activity_idle
-					|| lv_poc_get_current_activity() == poc_member_call_activity)
-				{
-#if POC_RECORD_OR_SPEAK_CALL
-                OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND\n");
-                lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
-#else
-                lv_poc_start_recordwriter();//self record
-#endif
-				}
-				else
-				{
-
-				}
+				lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY ? lv_poc_type_key_poc_cb(true) : (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL));
             }
             else
             {
-				if(lv_poc_get_current_activity() == activity_idle
-					|| lv_poc_get_current_activity() == poc_member_call_activity)
-				{
-#if POC_RECORD_OR_SPEAK_CALL
-                OSI_LOGI(0, "[gic][gicmic] send LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND\n");
-                lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
-#else
-                lv_poc_start_playfile();//self play
-#endif
-				}
+				lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
             }
 		}
 		prvPttKeyState = state;
@@ -127,6 +108,12 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
         {
             if(state == LV_INDEV_STATE_PR)
             {
+				if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+				{
+					lv_poc_type_key_power_cb(true);
+					return false;
+				}
+
                 if(prvPowerTimer != NULL)
                 {
 					osiTimerStart(prvPowerTimer, LONGPRESS_SHUTDOWN_TIME);
@@ -135,26 +122,24 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
             }
             else
             {
-                if(prvPowerTimer != NULL)
+                if(prvPowerTimer == NULL)
 				{
-		            if (!isReadyPowerOff)
-		            {
-						osiTimerStop(prvPowerTimer);
-						if(lv_poc_charge_poweron_status())
-						{
-							poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
-						}
-						else
-						{
-							if(!poc_get_lcd_status())
-							{
-								poc_set_lcd_status(true);
-								lv_poc_set_screenon_status(true);
-								OSI_LOGI(0, "[poc][keyhandle](%d)release, screen on first", __LINE__);
-							}
-						}
-		            }
-				}
+					return false;
+                }
+	            if (!isReadyPowerOff)
+	            {
+					osiTimerStop(prvPowerTimer);
+					if(lv_poc_charge_poweron_status())
+					{
+						poc_power_on_charge_set_lcd_status(!poc_get_lcd_status());
+					}
+					else if(!poc_get_lcd_status())
+					{
+						poc_set_lcd_status(true);
+						lv_poc_set_screenon_status(true);
+						OSI_LOGI(0, "[poc][keyhandle](%d)release, screen on first", __LINE__);
+					}
+	            }
             }
         }
         prvPowerKeyState = state;

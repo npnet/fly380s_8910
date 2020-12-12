@@ -40,6 +40,11 @@
 #include "lv_apps/lv_poc_fota_update/lv_poc_fota_update.h"
 #include "lv_apps/lv_poc_gps_monitor/lv_poc_gps_monitor.h"
 #include "lv_apps/lv_poc_cit/lv_poc_cit_main/lv_poc_cit_main.h"
+#include "lv_apps/lv_poc_cit/lv_poc_terminal_info/lv_poc_terminal_info.h"
+#include "lv_apps/lv_poc_cit/lv_poc_part_check/lv_poc_part_check.h"
+#include "lv_apps/lv_poc_cit/lv_poc_test_ui/lv_poc_test_ui.h"
+#include "lv_apps/lv_poc_cit/lv_poc_auto_check/lv_poc_auto_check.h"
+#include "lv_apps/lv_poc_cit/lv_poc_log_switch/lv_poc_log_switch.h"
 
 #endif //__LV_POC_H_
 

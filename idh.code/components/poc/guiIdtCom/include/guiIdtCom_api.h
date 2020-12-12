@@ -127,6 +127,10 @@ typedef enum
 	LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_REP,
 	LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP,
 
+    LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND,
+    LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND,
+    LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND,
+
     LVPOCGUIIDTCOM_SIGNAL_END,
 } LvPocGuiIdtCom_SignalType_t;
 
@@ -192,6 +196,8 @@ void *lvPocGuiIdtCom_get_current_lock_group(void);
 bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str);
 
 int lvPocGuiIdtCom_get_current_exist_selfgroup(void);
+
+void lvPocGuiComLogSwitch(bool status);
 
 OSI_EXTERN_C_END
 

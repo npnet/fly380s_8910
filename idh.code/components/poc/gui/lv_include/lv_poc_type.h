@@ -75,7 +75,6 @@ typedef struct
 	uint32_t win_title_font;
 	uint32_t activity_control_font;
 	uint32_t status_bar_time_font;
-	//uint32_t status_bar_signal_type_font;
 	uint32_t idle_big_clock_font;
 	uint32_t idle_date_label_font;
 	uint32_t idle_page2_msg_font;
@@ -226,7 +225,8 @@ typedef enum
 	LV_GROUP_KEY_VOL_DOWN       = 45,
 	LV_GROUP_KEY_VOL_UP         = 46,
 	LV_GROUP_KEY_POC            = 47,
-	LV_GROUP_KEY_SET            = 48
+	LV_GROUP_KEY_SET            = 48,
+	LV_GROUP_KEY_POWER          = 0xf0,
 } LV_GROUP_KEY_E;
 
 typedef enum {
@@ -460,6 +460,7 @@ typedef enum{
 	LVPOCAUDIO_Type_Fail_To_Build_Group_Due_To_Less_Than_Two_People, //建组失败，群组成员不能少于两人
 	LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup, //建组失败-已有自建群组
 	LVPOCAUDIO_Type_This_Account_Already_Logined, //该账号已在别处登陆
+	LVPOCAUDIO_Type_Test_Volum, //CIT测试音量
 
 	LVPOCAUDIO_Type_Tone_Cannot_Speak,   //
 	LVPOCAUDIO_Type_Tone_Lost_Mic,   //
@@ -526,6 +527,152 @@ typedef enum _lv_poc_record_mic_adcGain
     POC_MIC_ADC_GAIN_LEVEL_14 = 14,
     POC_MIC_ADC_GAIN_LEVEL_15 = 15,
 } lv_poc_record_mic_adcGain;
+
+typedef enum _lv_poc_cit_auto_test_type
+{
+	LV_POC_CIT_AUTO_TEST_TYPE_START    = 0,
+	LV_POC_CIT_AUTO_TEST_TYPE_SUCCESS  = 1,
+	LV_POC_CIT_AUTO_TEST_TYPE_FAILED   = 2,
+} lv_poc_cit_auto_test_type;
+
+typedef enum _lv_poc_cit_test_ui_id
+{
+	LV_POC_CIT_OPRATOR_TYPE_START = 0,
+	LV_POC_CIT_OPRATOR_TYPE_CALIBATE,
+	LV_POC_CIT_OPRATOR_TYPE_RTC ,
+	LV_POC_CIT_OPRATOR_TYPE_BACKLIGHT,
+	LV_POC_CIT_OPRATOR_TYPE_LCD ,
+	LV_POC_CIT_OPRATOR_TYPE_VOLUM,
+	LV_POC_CIT_OPRATOR_TYPE_MIC ,
+	LV_POC_CIT_OPRATOR_TYPE_SIGNAL,
+	LV_POC_CIT_OPRATOR_TYPE_KEY ,
+	LV_POC_CIT_OPRATOR_TYPE_CHARGE ,
+	LV_POC_CIT_OPRATOR_TYPE_GPS ,
+	LV_POC_CIT_OPRATOR_TYPE_SIM ,//11
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
+	LV_POC_CIT_OPRATOR_TYPE_TOUCH ,
+#endif
+	LV_POC_CIT_OPRATOR_TYPE_RGB ,//12
+	LV_POC_CIT_OPRATOR_TYPE_HEADSET ,//13
+	LV_POC_CIT_OPRATOR_TYPE_FLASH ,//14
+
+	LV_POC_CIT_OPRATOR_TYPE_END ,//15
+} lv_poc_cit_test_ui_id;
+
+#define LV_LCD_WIDTH  (132)
+#define LV_LCD_HEIGHT (132)
+#define LV_KEY_AVERAGE_WIDTH     (LV_LCD_WIDTH/4)
+#define LV_LCD_COLUMN (3)
+
+struct poc_key_attr_t
+{
+	char keyindex;
+	char keywidth;
+	char keyheight;
+	bool checkstatus;
+	LV_GROUP_KEY_E lv_key;
+	int(*lv_poc_cit_key_cb)(bool status);
+};
+
+struct _lv_poc_cit_key_config
+{
+	bool valid;
+	int keynumber;
+	int validnumber;
+	void(*cb)(void);
+	struct poc_key_attr_t key_attr[24];
+}lv_poc_cit_key_config_t;
+
+struct _poc_gps_attr_t
+{
+	bool valid;
+	void(*cb)(int status);
+};
+
+struct _poc_calib_attr_t
+{
+	bool valid;
+	int(*cb)(void);
+};
+
+struct _poc_rtc_attr_t
+{
+	bool valid;
+	void(*cb)(OUT lv_poc_time_t * time);
+};
+
+struct _poc_backlight_attr_t
+{
+	bool valid;
+	void(*cb)(IN int8_t wakeup);
+};
+
+struct _poc_volum_attr_t
+{
+	bool valid;
+	bool(*cb)(int status);
+};
+
+struct _poc_mic_attr_t
+{
+	bool valid;
+	void(*cb)(bool status);
+};
+
+struct _poc_signal_attr_t
+{
+	bool valid;
+	OUT uint8_t(*cb)(uint8_t *nSignal);
+};
+
+struct _poc_charge_attr_t
+{
+	bool valid;
+	void(*cb)(OUT battery_values_t *values);
+};
+
+struct _poc_touch_attr_t
+{
+	bool valid;
+	bool(*cb)(bool status);
+};
+
+struct _poc_rgb_attr_t
+{
+	bool valid;
+	void(*cb)(int status);
+};
+
+struct _poc_headset_attr_t
+{
+	bool valid;
+	void(*cb)(bool status);
+};
+
+struct _poc_flash_attr_t
+{
+	bool valid;
+	float(*cb)(bool status);
+};
+
+typedef struct _lv_poc_cit_test_type
+{
+    lv_poc_cit_test_ui_id id;
+	char name[32];
+	struct _lv_poc_cit_key_config cit_key_attr;
+	struct _poc_gps_attr_t cit_gps_attr;
+	struct _poc_calib_attr_t cit_calib_attr;
+	struct _poc_rtc_attr_t cit_rtc_attr;
+	struct _poc_backlight_attr_t cit_backlight_attr;
+	struct _poc_volum_attr_t cit_volum_attr;
+	struct _poc_mic_attr_t cit_mic_attr;
+	struct _poc_signal_attr_t cit_signal_attr;
+	struct _poc_charge_attr_t cit_charge_attr;
+	struct _poc_touch_attr_t cit_touch_attr;
+	struct _poc_rgb_attr_t cit_rgb_attr;
+	struct _poc_headset_attr_t cit_headset_attr;
+	struct _poc_flash_attr_t cit_flash_attr;
+} lv_poc_cit_test_type_t;
 
 typedef enum
 {

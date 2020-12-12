@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file lv_color.h
  *
  */
@@ -42,7 +42,7 @@ extern "C" {
 #define LV_COLOR_SILVER LV_COLOR_MAKE(0xC0, 0xC0, 0xC0)
 #define LV_COLOR_GRAY LV_COLOR_MAKE(0x80, 0x80, 0x80)
 #define LV_COLOR_BLACK LV_COLOR_MAKE(0x00, 0x00, 0x00)
-#define LV_COLOR_RED LV_COLOR_MAKE(0xFF, 0x00, 0x00)
+#define LV_COLOR_RED LV_COLOR_MAKE(0x00, 0x00, 0xFF)
 #define LV_COLOR_MAROON LV_COLOR_MAKE(0x00, 0x00, 0x80)
 #define LV_COLOR_YELLOW LV_COLOR_MAKE(0x00, 0xFF, 0xFF)
 #define LV_COLOR_OLIVE LV_COLOR_MAKE(0x00, 0x80, 0x80)

@@ -9125,7 +9125,7 @@
     ITEM_NAME    = imsi[3]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x40
+    ITEM_CONTENT = 0x10
     ITEM_INDEX   = 908
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9135,7 +9135,7 @@
     ITEM_NAME    = imsi[4]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x98
+    ITEM_CONTENT = 0x32
     ITEM_INDEX   = 909
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9145,7 +9145,7 @@
     ITEM_NAME    = imsi[5]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x7
+    ITEM_CONTENT = 0x26
     ITEM_INDEX   = 910
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9155,7 +9155,7 @@
     ITEM_NAME    = imsi[6]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x5
+    ITEM_CONTENT = 0x25
     ITEM_INDEX   = 911
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9165,7 +9165,7 @@
     ITEM_NAME    = imsi[7]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x36
     ITEM_INDEX   = 912
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9175,7 +9175,7 @@
     ITEM_NAME    = imsi[8]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x79
+    ITEM_CONTENT = 0x45
     ITEM_INDEX   = 913
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -11857,7 +11857,7 @@
     ITEM_NAME    = sim_param[12]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x8
+    ITEM_CONTENT = 0x10
     ITEM_INDEX   = 1178
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11877,7 +11877,7 @@
     ITEM_NAME    = sim_param[14]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x3
     ITEM_INDEX   = 1180
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11887,7 +11887,7 @@
     ITEM_NAME    = sim_param[15]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x65
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 1181
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -11897,7 +11897,7 @@
     ITEM_NAME    = sim_param[16]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xF9
+    ITEM_CONTENT = 0xF0
     ITEM_INDEX   = 1182
     ITEM_PARENT  = 1165
     ITEM_DESC    =  
@@ -21258,7 +21258,7 @@
     ITEM_NAME    = sequence
     ITEM_ID      = 631
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x732
+    ITEM_CONTENT = 0x75F
     ITEM_INDEX   = 2115
     ITEM_PARENT  = 0
     ITEM_DESC    =  
