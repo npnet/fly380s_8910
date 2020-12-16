@@ -243,12 +243,10 @@ static void lv_poc_group_list_set_current_group_cb(int result_type)
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 {
 	lv_poc_group_list_item_info_t * p_info = (lv_poc_group_list_item_info_t *)obj->user_data;
-	Ap_OSI_ASSERT((p_info != NULL), "[song]group_list_item NULL");
 
 	lv_area_t lock_window_area = {0};
 
 	list_element_t * p_element = (list_element_t *)p_info->item_information;
-	Ap_OSI_ASSERT((p_element != NULL), "[song]group_list list_element_t NULL");
 
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
@@ -262,7 +260,6 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 
 		if(member_list != NULL)
 		{
-			OSI_LOGI(0, "[song]lv_poc_group_list_press_btn_cb is run");
 			memset((void *)member_list, 0, sizeof(lv_poc_member_list_t));
 			strcpy(lv_poc_group_member_list_title, (const char *)p_element->name);
 			member_list->hide_offline = false;
@@ -278,8 +275,6 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 		if(prv_group_list_cur_opt == 1)
 		{
 			lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_LOCKORUNLOCK_GROUP_STATUS);
-
-			Ap_OSI_ASSERT(lv_poc_group_list_info != NULL, "[song]lock group_list info NULL");
 
 			if(lv_poc_get_lock_group() != NULL)  //解锁组
 			{
@@ -420,14 +415,13 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_GROUP_KEY_GP:
 				{
-					#if 0
 					if(prv_group_list_cur_opt > 0)
 					{
 						break;
 					}
 					prv_group_list_cur_opt = 2;
 					lv_signal_send(activity_list, LV_SIGNAL_LONG_PRESS, NULL);
-					#endif
+					OSI_LOGI(0, "[longpress][delgroup]rec press");
 					break;
 				}
 

@@ -49,7 +49,7 @@ static lv_poc_cit_test_type_t cit_info = {
 	.cit_signal_attr.cb = poc_get_signal_dBm,
 
 	.cit_key_attr.valid = false,
-	.cit_key_attr.keynumber = 6,
+	.cit_key_attr.keynumber = LV_KEY_NUMBER,
 	.cit_key_attr.validnumber = 0,
 	.cit_key_attr.key_attr[0] = {.keyindex = 0, .keywidth = LV_KEY_AVERAGE_WIDTH, .keyheight = LV_KEY_AVERAGE_WIDTH, .checkstatus = false, .lv_key = LV_GROUP_KEY_UP, .lv_poc_cit_key_cb = lv_poc_type_key_up_cb},
 	.cit_key_attr.key_attr[1] = {.keyindex = 1, .keywidth = LV_KEY_AVERAGE_WIDTH, .keyheight = LV_KEY_AVERAGE_WIDTH, .checkstatus = false, .lv_key = LV_GROUP_KEY_DOWN, .lv_poc_cit_key_cb = lv_poc_type_key_down_cb},
@@ -329,7 +329,7 @@ static void lv_poc_key_test_cb(lv_obj_t * obj)
 	lv_poc_cit_config_init();
 	cit_info.id = LV_POC_CIT_OPRATOR_TYPE_KEY;
 	cit_info.cit_key_attr.valid = true;
-	cit_info.cit_key_attr.keynumber = 6;
+	cit_info.cit_key_attr.keynumber = LV_KEY_NUMBER;
 	cit_info.cit_key_attr.validnumber = 0;
 	for(int i = 0; i < cit_info.cit_key_attr.keynumber; i++)
 	{

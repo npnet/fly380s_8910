@@ -9135,7 +9135,7 @@
     ITEM_NAME    = imsi[4]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x32
+    ITEM_CONTENT = 0x87
     ITEM_INDEX   = 909
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9145,7 +9145,7 @@
     ITEM_NAME    = imsi[5]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x26
+    ITEM_CONTENT = 0x22
     ITEM_INDEX   = 910
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9155,7 +9155,7 @@
     ITEM_NAME    = imsi[6]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x25
+    ITEM_CONTENT = 0x11
     ITEM_INDEX   = 911
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9165,7 +9165,7 @@
     ITEM_NAME    = imsi[7]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x36
+    ITEM_CONTENT = 0x53
     ITEM_INDEX   = 912
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -9175,7 +9175,7 @@
     ITEM_NAME    = imsi[8]
     ITEM_ID      = 631
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x45
+    ITEM_CONTENT = 0x64
     ITEM_INDEX   = 913
     ITEM_PARENT  = 904
     ITEM_DESC    =  
@@ -21258,7 +21258,7 @@
     ITEM_NAME    = sequence
     ITEM_ID      = 631
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x75F
+    ITEM_CONTENT = 0x78C
     ITEM_INDEX   = 2115
     ITEM_PARENT  = 0
     ITEM_DESC    =  

@@ -423,8 +423,13 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
             lv_group_focus_prev(g);
             if(indev_reset_check(&i->proc)) return;
         }
+		else if(data->key == LV_KEY_UP
+				|| data->key == LV_KEY_DOWN)
+		{
+			//no deal
+		}
         /*Just send other keys to the object (e.g. 'A' or `LV_GROUP_KEY_RIGHT`)*/
-        else {
+        else{
             lv_group_send_data(g, data->key);
         }
     }
@@ -465,24 +470,18 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
                 lv_group_focus_prev(g);
                 if(indev_reset_check(&i->proc)) return;
             }
-			#if 1/*自定义需要连续触发的功能按键*/
+			#if 1//自定义需要连续触发的功能按键
 			/*up or down or vol_up or vol_down key can long press*/
 			else if(data->key == LV_KEY_UP
-				|| data->key == LV_KEY_DOWN)
+				    || data->key == LV_KEY_DOWN)
 			{
 				indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, &data->key);
 				if(indev_reset_check(&i->proc)) return;
 			}
-//			else if(data->key == LV_KEY_ENTER)/*确定*/
-//			{
-//				indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_LONG_PRESS_REP, &data->key);
-//				if(indev_reset_check(&i->proc)) return;
-//			}
             /*Just send other keys again to the object (e.g. 'A' or `LV_GORUP_KEY_RIGHT)*/
-			#else/*部分按键需要连续触发功能，如果需要全部按键都需要连续触发则打开该部分*/
+			#else//部分按键需要连续触发功能，如果需要全部按键都需要连续触发则打开该部分
 			else {
                 lv_group_send_data(g, data->key);
-				OSI_LOGI(0, "[asong]long press keyvlaue is =%d",data->key);
                 if(indev_reset_check(&i->proc)) return;
             }
 			#endif
@@ -516,7 +515,6 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
 			indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, &data->key);
             if(indev_reset_check(&i->proc)) return;
 		}
-#if 0
 		else if(data->key == LV_KEY_UP)
         {
 			lv_group_send_data(g, data->key);
@@ -529,7 +527,6 @@ static void indev_keypad_proc(lv_indev_t * i, lv_indev_data_t * data)
 			indev_obj_act->signal_cb(indev_obj_act, LV_SIGNAL_RELEASED, &data->key);
             if(indev_reset_check(&i->proc)) return;
 		}
-#endif
         i->proc.pr_timestamp = 0;
         i->proc.long_pr_sent = 0;
     }

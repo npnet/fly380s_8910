@@ -149,6 +149,9 @@ add_library(${target} STATIC
 	gui/resource/image/shutdown_battery/indeterminate6.c
 	gui/resource/image/gps/ic_gps_on.c
 	gui/resource/image/gps/ic_qs_gps_on_sprd.c
+	gui/resource/image/operator/optcmcc.c
+	gui/resource/image/operator/optcucc.c
+	gui/resource/image/operator/optctcc.c
 	gui/resource/font/lv_poc_font_msyh_1bit_2500_10.c
 	gui/resource/font/lv_poc_font_msyh_1bit_2500_11.c
 	gui/resource/font/lv_poc_font_msyh_1bit_2500_12.c

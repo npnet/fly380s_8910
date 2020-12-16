@@ -13,13 +13,14 @@ extern "C" {
 #define __attribute__(x)
 #endif
 
-#define IDT_POC_MODE 0//录音及播放使用POC模式
+#define IDT_POC_MODE 1//录音及播放使用POC模式
 
 /*************************************************
 *
 *                  EXTERN
 *
 *************************************************/
+extern lv_poc_activity_t * poc_group_list_activity;
 extern bool pub_lv_poc_get_watchdog_status(void);
 extern int lv_poc_cit_get_run_status(void);
 
@@ -364,6 +365,13 @@ static bool lv_poc_init_stabar_time_label(void);
 *     DATE:    2019-10-25
 ********************/
 static bool lv_poc_init_stabar_battery_img(void);
+
+/*******************
+*     NAME:    lv_poc_init_stabar_operator_img
+* DESCRIPT:    初始化状态栏运营商图标
+*     DATE:    2020-12-14
+********************/
+static bool lv_poc_init_stabar_operator_img(void);
 
 /*******************
 *     NAME:    lv_poc_stabar_sim_clean
@@ -940,6 +948,7 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_init_stabar_sim2_img();
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
+	lv_poc_init_stabar_operator_img();
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	lv_poc_init_stabar_gps_img(NULL);
 #endif
@@ -1042,6 +1051,49 @@ static bool lv_poc_init_stabar_battery_img(void)
     return ret_val;
 }
 
+/*******************
+*     NAME:    lv_poc_init_stabar_operator_img
+* DESCRIPT:    初始化状态栏运营商图标
+*     DATE:    2020-12-14
+********************/
+static bool lv_poc_init_stabar_operator_img(void)
+{
+    bool ret_val = true;
+	char countrystr[16] = {0};
+
+	if(lv_poc_status_bar_fptr->operator_img == NULL)
+   {
+	   	lv_poc_status_bar_fptr->operator_img = (lv_poc_status_bar_operator_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_operator_obj_t));
+	    memset(lv_poc_status_bar_fptr->operator_img, 0, sizeof(lv_poc_status_bar_operator_obj_t));
+
+		lv_poc_status_bar_fptr->operator_img->align_l_obj = &(lv_poc_status_bar_fptr->time_label);
+		lv_poc_status_bar_fptr->operator_img->align_r_obj = lv_poc_status_bar_fptr->operator_img->align_l_obj;
+
+		lv_poc_status_bar_fptr->operator_img->img = lv_img_create(lv_poc_status_bar, NULL);
+		lv_img_set_auto_size(lv_poc_status_bar_fptr->operator_img->img, false);
+		lv_obj_set_size(lv_poc_status_bar_fptr->operator_img->img, 18, 18);
+	}
+	if(lv_poc_status_bar_fptr->operator_img->img == NULL)
+	{
+		return false;
+	}
+	lv_poc_get_mobile_card_operator(countrystr, true);
+	if(NULL != strstr(countrystr, "CMCC"))
+	{
+		lv_img_set_src(lv_poc_status_bar_fptr->operator_img->img, &optcmcc);
+	}
+	else if(NULL != strstr(countrystr, "CUCC"))
+	{
+		lv_img_set_src(lv_poc_status_bar_fptr->operator_img->img, &optcucc);
+	}
+	else if(NULL != strstr(countrystr, "CTCC"))
+	{
+		lv_img_set_src(lv_poc_status_bar_fptr->operator_img->img, &optctcc);
+	}
+	lv_obj_align(lv_poc_status_bar_fptr->operator_img->img, lv_poc_status_bar_fptr->time_label, LV_ALIGN_OUT_RIGHT_MID, 2, -1);
+    return ret_val;
+}
+
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:    lv_poc_init_stabar_gps_img
@@ -1058,7 +1110,6 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 	   	lv_poc_status_bar_fptr->gps_img    = (lv_poc_status_bar_gps_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_gps_obj_t));
 	    memset(lv_poc_status_bar_fptr->gps_img, 0, sizeof(lv_poc_status_bar_gps_obj_t));
 
-		/*在SIM1左边*/
 		lv_poc_status_bar_fptr->gps_img->align_r_obj = lv_poc_status_bar_fptr->sim1->align_l_obj;
 		lv_poc_status_bar_fptr->gps_img->align_l_obj = lv_poc_status_bar_fptr->gps_img->align_r_obj;
 
@@ -1465,8 +1516,93 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     {
 
     }
+	uint8_t vol_cur = 0;
 
-	uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+#if IDT_POC_MODE
+
+	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_VOLUM)
+	{
+		vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+		if(is_keypad_msg)
+		{
+			cur_key = *((uint32_t *)param);
+
+			if(cur_key == LV_GROUP_KEY_VOL_DOWN)
+			{
+				if(vol_cur > 0)
+				{
+					vol_cur = vol_cur - 1;
+					lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+				}
+			}
+			else if(cur_key == LV_GROUP_KEY_VOL_UP)
+			{
+				if(vol_cur < 11)
+				{
+					vol_cur = vol_cur + 1;
+					lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+				}
+			}
+			else if(cur_key != LV_GROUP_KEY_POC)//按键音
+			{
+				if(lv_poc_get_screenon_status())
+				{
+					OSI_LOGI(0, "[poc][signal](%d)screen on first, cannel key tone", __LINE__);
+				}
+				else
+				{
+					poc_play_btn_voice_one_time(0,
+#ifdef CONFIG_POC_TTS_SUPPORT
+					   poc_setting_conf->voice_broadcast_switch ||
+#endif
+					   !(poc_setting_conf->btn_voice_switch));
+				}
+			}
+		}
+	}
+	else
+	{
+		vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_VOICE);
+		if(is_keypad_msg)
+		{
+			cur_key = *((uint32_t *)param);
+
+			if(cur_key == LV_GROUP_KEY_VOL_DOWN)
+			{
+				if(vol_cur > 0)
+				{
+					vol_cur = vol_cur - 1;
+					lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
+				}
+			}
+			else if(cur_key == LV_GROUP_KEY_VOL_UP)
+			{
+				if(vol_cur < 11)
+				{
+					vol_cur = vol_cur + 1;
+					lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
+				}
+			}
+			else if(cur_key != LV_GROUP_KEY_POC)//按键音
+			{
+				if(lv_poc_get_screenon_status())
+				{
+					OSI_LOGI(0, "[poc][signal](%d)screen on first, cannel key tone", __LINE__);
+				}
+				else
+				{
+					poc_play_btn_voice_one_time(0,
+#ifdef CONFIG_POC_TTS_SUPPORT
+					   poc_setting_conf->voice_broadcast_switch ||
+#endif
+					   !(poc_setting_conf->btn_voice_switch));
+				}
+			}
+		}
+	}
+
+#else
+	vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
 	if(is_keypad_msg)
 	{
 		cur_key = *((uint32_t *)param);
@@ -1502,67 +1638,76 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 				   !(poc_setting_conf->btn_voice_switch));
 			}
 		}
+	}
+#endif
+	//longpress key
+	static bool longpress_keyup_memberlist = false;
 
-		if(sign == LV_SIGNAL_LONG_PRESS_REP && long_press_msg == POC_LONGPRESS_MSG_TYPE_START)
-		{
-			switch(cur_key)
-			{
-				case 0xf0:
-				{
-					long_press_msg = POC_LONGPRESS_MSG_TYPE_POWEROFF;
-					break;
-				}
-
-				default:
-				{
-					break;
-				}
-			}
-		}
-
-		if(sign ==	LV_SIGNAL_RELEASED)
-		{
-			switch(cur_key)
-			{
-				case 0xf0:
-				{
-					if(lv_poc_get_screenon_status())
-					{
-						lv_poc_set_screenon_status(false);
-						OSI_LOGI(0, "[poc][signal](%d)screen on first, release return", __LINE__);
-						return LV_RES_OK;
-					}
-					OSI_LOGI(0, "[poc][signal](%d)pwer key esc or enter", __LINE__);
-					if(activity_idle == current_activity)//main menu
-					{
-						lv_poc_main_menu_open();
-						return LV_RES_OK;
-					}
-					else//esc key
-					{
-						sign = LV_SIGNAL_CONTROL;
-						*(unsigned int *)param = LV_GROUP_KEY_ESC;
-					}
-					long_press_msg = POC_LONGPRESS_MSG_TYPE_START;
-				}
-			}
-
-		}
-
+	if(sign == LV_SIGNAL_LONG_PRESS_REP)
+	{
 		switch(cur_key)
 		{
-			case LV_GROUP_KEY_POC:
+			case LV_GROUP_KEY_UP:
 			{
-				if(activity_idle != current_activity)//enter key
+				if(activity_idle == current_activity)
 				{
-					sign = LV_SIGNAL_CONTROL;
-					*(unsigned int *)param = LV_GROUP_KEY_ENTER;
+					OSI_LOGI(0, "[poc][longpress](%d):member list open", __LINE__);
+					longpress_keyup_memberlist = true;
+					lv_poc_member_list_open(NULL, NULL, false);
+					return LV_RES_OK;
 				}
 				break;
 			}
 
+			case LV_GROUP_KEY_DOWN:
+			{
+				if(poc_group_list_activity == current_activity)
+				{
+					OSI_LOGI(0, "[poc][longpress](%d):delete group", __LINE__);
+					sign = LV_SIGNAL_LONG_PRESS_REP;
+					*(unsigned int *)param = LV_GROUP_KEY_GP;
+					cur_key = *(unsigned int *)param;
+				}
+				break;
+			}
+		}
+	}
+
+	if(sign ==	LV_SIGNAL_RELEASED)
+	{
+		switch(cur_key)
+		{
+			case 0xf0:
+			{
+				if(lv_poc_get_screenon_status())
+				{
+					lv_poc_set_screenon_status(false);
+					OSI_LOGI(0, "[poc][signal](%d)screen on first, release return", __LINE__);
+					return LV_RES_OK;
+				}
+				OSI_LOGI(0, "[poc][signal](%d)pwer key esc or enter", __LINE__);
+				if(activity_idle == current_activity)//main menu
+				{
+					lv_poc_main_menu_open();
+					return LV_RES_OK;
+				}
+				else//esc key
+				{
+					sign = LV_SIGNAL_CONTROL;
+					*(unsigned int *)param = LV_GROUP_KEY_ESC;
+				}
+				long_press_msg = POC_LONGPRESS_MSG_TYPE_START;
+			}
+
 			case LV_GROUP_KEY_UP:
 			{
+				if(longpress_keyup_memberlist)
+				{
+					OSI_LOGI(0, "[poc][longpress](%d):reset key up", __LINE__);
+					longpress_keyup_memberlist = false;
+					return LV_RES_INV;
+				}
+
 				if(activity_idle == current_activity)
 				{
 					lv_poc_group_list_open(NULL);
@@ -1581,8 +1726,22 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 			}
 		}
 
-		OSI_LOGI(0, "[sigal][finish]key(%d), sign(%d)", cur_key, sign);
 	}
+
+	switch(cur_key)
+	{
+		case LV_GROUP_KEY_POC:
+		{
+			if(activity_idle != current_activity)//enter key
+			{
+				sign = LV_SIGNAL_CONTROL;
+				*(unsigned int *)param = LV_GROUP_KEY_ENTER;
+			}
+			break;
+		}
+	}
+
+	OSI_LOGI(0, "[sigal][finish]key(%d), sign(%d)", cur_key, sign);
 
     if(NULL != activity->signal_func)
     {

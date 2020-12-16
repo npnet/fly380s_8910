@@ -285,11 +285,9 @@ static bool prv_lv_poc_volum_display(POC_MMI_VOICE_TYPE_E type, uint8_t volume)
 {
 	static char * volum_title[] = {"消息", "提示音", "按键音", "媒体", "通话"};
 	static char * title = NULL;
-	static uint8_t old_volum = 0;
 	static POC_MMI_VOICE_TYPE_E old_type = POC_MMI_VOICE_MSG;
 	static lv_poc_volum_display_slider_t info = {0, 0, NULL, NULL};
 	static lv_task_t * volum_slider_task = NULL;
-	if(old_volum == volume) return false;
 	if(old_type != type)
 	{
 		old_type = type;
@@ -313,14 +311,10 @@ static bool prv_lv_poc_volum_display(POC_MMI_VOICE_TYPE_E type, uint8_t volume)
 
 bool lv_poc_set_volum(POC_MMI_VOICE_TYPE_E type, uint8_t volume, bool play, bool display)
 {
-	static uint8_t old_volum = 0;
-	if(old_volum == volume) return false;
-
-	old_volum = volume;
-	lv_poc_setting_set_current_volume(type, old_volum, play);
+	lv_poc_setting_set_current_volume(type, volume, play);
 	if(display)
 	{
-		return prv_lv_poc_volum_display(type , old_volum);
+		return prv_lv_poc_volum_display(type , volume);
 	}
 	return true;
 }

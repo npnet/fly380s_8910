@@ -124,25 +124,32 @@ static void pocStartAnimation(void *ctx)
 	if(!pub_lv_poc_get_watchdog_status())
 	{
 		lv_poc_refr_task_once(prv_lv_poc_power_on_sprd_image, 50, LV_TASK_PRIO_HIGH);
-		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
-
+#ifdef SUPPORT_PROJECT_K19H
+		osiThreadSleepRelaxed(500, OSI_WAIT_FOREVER);
+#endif
 		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
 		drvLcdSetBackLightEnable(lcd, true);
 		poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
-		osiThreadSleepRelaxed(3000, OSI_WAIT_FOREVER);
-
+#ifdef SUPPORT_PROJECT_K19H
+		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
+#endif
 		if(poc_power_on_backgroup_sprd_image != NULL)
 		{
 			lv_obj_del(poc_power_on_backgroup_sprd_image);
 		}
 		lv_poc_refr_task_once(prv_lv_poc_power_on_backgroup_image, 50, LV_TASK_PRIO_HIGH);
 		lv_poc_setting_init();
-		osiThreadSleepRelaxed(4000, OSI_WAIT_FOREVER);
+#ifdef SUPPORT_PROJECT_K19H
+		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
+#endif
 		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
-		osiThreadSleepRelaxed(2800, OSI_WAIT_FOREVER);
+#ifdef SUPPORT_PROJECT_K19H
+		osiThreadSleepRelaxed(800, OSI_WAIT_FOREVER);
+#endif
  		lv_poc_refr_task_once(prv_lv_poc_power_on_picture, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+#ifdef SUPPORT_PROJECT_K19H
 		osiThreadSleepRelaxed(200, OSI_WAIT_FOREVER);
-
+#endif
 		if(poc_power_on_backgroup_image != NULL)
 		{
 			lv_obj_del(poc_power_on_backgroup_image);

@@ -273,7 +273,7 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 			pKey->keyattr.style.body.main_color = LV_COLOR_GREEN;
 			pKey->keyattr.style.body.grad_color = LV_COLOR_GREEN;
 
-			if(pocCitAttr.delayexitcheckkeyTasknum > 10)//check pass
+			if(pocCitAttr.delayexitcheckkeyTasknum > 10)//check pass, delay 2s exit
 			{
 				cit_test_info->cit_key_attr.cb();
 				lv_task_del(pocCitAttr.refresh_task);

@@ -113,7 +113,7 @@
     ITEM_NAME    = imsiCon[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x32
+    ITEM_CONTENT = 0x87
     ITEM_INDEX   = 10
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -123,7 +123,7 @@
     ITEM_NAME    = imsiCon[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x26
+    ITEM_CONTENT = 0x22
     ITEM_INDEX   = 11
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -133,7 +133,7 @@
     ITEM_NAME    = imsiCon[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x25
+    ITEM_CONTENT = 0x11
     ITEM_INDEX   = 12
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -143,7 +143,7 @@
     ITEM_NAME    = imsiCon[6]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x36
+    ITEM_CONTENT = 0x53
     ITEM_INDEX   = 13
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -153,7 +153,7 @@
     ITEM_NAME    = imsiCon[7]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x45
+    ITEM_CONTENT = 0x64
     ITEM_INDEX   = 14
     ITEM_PARENT  = 6
     ITEM_DESC    =  
@@ -876,7 +876,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x1
+    ITEM_CONTENT = 0x6
     ITEM_INDEX   = 86
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -896,7 +896,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x23F
     ITEM_INDEX   = 88
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -906,7 +906,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1C2
     ITEM_INDEX   = 89
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -916,7 +916,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[4]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5DC
     ITEM_INDEX   = 90
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -926,7 +926,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[5]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x721
     ITEM_INDEX   = 91
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -936,7 +936,7 @@
     ITEM_NAME    = mmcprevUsedLteFreq[6]
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xE9F
     ITEM_INDEX   = 92
     ITEM_PARENT  = 85
     ITEM_DESC    =  
@@ -987,7 +987,7 @@
     ITEM_NAME    = ltePrevUsedBand[0]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x1
+    ITEM_CONTENT = 0x3
     ITEM_INDEX   = 97
     ITEM_PARENT  = 96
     ITEM_DESC    =  
@@ -1007,7 +1007,7 @@
     ITEM_NAME    = ltePrevUsedBand[2]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 99
     ITEM_PARENT  = 96
     ITEM_DESC    =  
@@ -1017,7 +1017,7 @@
     ITEM_NAME    = ltePrevUsedBand[3]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x8
     ITEM_INDEX   = 100
     ITEM_PARENT  = 96
     ITEM_DESC    =  
@@ -1158,7 +1158,7 @@
     ITEM_NAME    = guti[7]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x46
+    ITEM_CONTENT = 0x44
     ITEM_INDEX   = 114
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1168,7 +1168,7 @@
     ITEM_NAME    = guti[8]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0xC7
+    ITEM_CONTENT = 0xE2
     ITEM_INDEX   = 115
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1178,7 +1178,7 @@
     ITEM_NAME    = guti[9]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 116
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1188,7 +1188,7 @@
     ITEM_NAME    = guti[10]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x3E
+    ITEM_CONTENT = 0xAC
     ITEM_INDEX   = 117
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -1198,7 +1198,7 @@
     ITEM_NAME    = guti[11]
     ITEM_ID      = 603
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x48
+    ITEM_CONTENT = 0x1B
     ITEM_INDEX   = 118
     ITEM_PARENT  = 106
     ITEM_DESC    =  
@@ -13115,7 +13115,7 @@
     ITEM_NAME    = randSand
     ITEM_ID      = 603
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x7AAB1CCB
+    ITEM_CONTENT = 0x33C38558
     ITEM_INDEX   = 1305
     ITEM_PARENT  = 3
     ITEM_DESC    =  

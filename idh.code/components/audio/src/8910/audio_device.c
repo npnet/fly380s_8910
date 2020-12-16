@@ -2561,16 +2561,25 @@ bool audevStartPocMode(bool duplexmode)
     if ((d->play.ops_ctx == NULL) || (d->record.ops_ctx == NULL))
         return false;
 
-    OSI_LOGI(0, "[idtpoc]audio audevStartPocMode, mode/%d ", duplexmode);
+    OSI_LOGI(0, "[poc][StartPoc]audio audevStartPocMode, mode/%d ", duplexmode);
 
     osiMutexLock(d->lock);
     {
         if (d->clk_users != 0) // disable when any other users is working
+        {
+			OSI_LOGI(0, "[poc][StartPoc]working, failed");
             goto failed;
+        }
         if ((d->play.sample_rate != 8000) && (d->play.sample_rate != 16000)) //only support 8k 16k
+        {
+			OSI_LOGI(0, "[poc][StartPoc]sample_rate isn't 8000 or 16000");
             goto failed;
+        }
         if (d->play.sample_rate != d->cfg.sample_rate) //only support play and record in same sample rate
+        {
+			OSI_LOGI(0, "[poc][StartPoc]sample_rate error");
             goto failed;
+        }
 
         d->play.total_bytes = 0;
         d->play.eos_error = false;
@@ -2669,14 +2678,14 @@ failed_disable_clk:
     prvDisableAudioClk(AUDEV_CLK_USER_POC);
 failed:
     osiMutexUnlock(d->lock);
-    OSI_LOGE(0, "audio start play failed");
+    OSI_LOGE(0, "[poc][StartPoc]audio start play failed");
     return false;
 }
 
 bool audevStopPocMode(void)
 {
     audevContext_t *d = &gAudevCtx;
-    OSI_LOGI(0, "[idtpoc]audio record stop, user/0x%x", d->clk_users);
+    OSI_LOGI(0, "[poc][StopPoc]audio record stop, user/0x%x", d->clk_users);
 
     osiMutexLock(d->lock);
 
@@ -2703,7 +2712,7 @@ success:
 
 failed:
     osiMutexUnlock(d->lock);
-    OSI_LOGE(0, "audio stop record failed");
+    OSI_LOGE(0, "[poc][StopPoc]audio stop record failed");
     return false;
 }
 bool audevPocModeSwitch(uint8_t mode)
@@ -2714,9 +2723,12 @@ bool audevPocModeSwitch(uint8_t mode)
         return false;
 
     if (d->play.ops_ctx == NULL || d->record.ops_ctx == NULL)
+    {
+		OSI_LOGI(0, "[poc][PocModeSwitch]play or record ops_ctx NULL");
         return false;
+    }
 
-    OSI_LOGI(0, "[idtpoc]audio audevPocModeSwitch, mode/%d ", mode);
+    OSI_LOGI(0, "[poc][PocModeSwitch]audio audevPocModeSwitch, mode/%d ", mode);
 
     osiMutexLock(d->lock);
     if (mode == 1)
@@ -2745,7 +2757,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         return false;
 	}
 
-    OSI_LOGI(0, "[idtpoc]audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
+    OSI_LOGI(0, "[poc][startplay]audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
              frame->sample_format, frame->channel_count,
              frame->sample_rate, d->clk_users);
 
@@ -2966,6 +2978,31 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         }
         return true;
     }
+	else if (type == AUDEV_PLAY_TYPE_POC) //poc
+    {
+		//open pa
+		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+		{
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)200);//delay 200ms
+		}
+
+	    if (d->clk_users != 0) // disable when any other users is working
+		    goto failed;
+	    if ((frame->sample_rate != 8000) && (frame->sample_rate != 16000)) //only support 8k 16k
+		    goto failed;
+	    if (frame->sample_rate != d->cfg.sample_rate) //only support play and record in same sample rate
+		    goto failed;
+
+	    d->play.channel_count = frame->channel_count;
+	    d->play.sample_rate = frame->sample_rate;
+	    d->play.total_bytes = 0;
+	    d->play.eos_error = false;
+	    d->play.ops = *play_ops;
+	    d->play.ops_ctx = play_ctx;
+
+	    osiMutexUnlock(d->lock);
+	    return true;
+    }
 
 failed_disable_clk:
 #ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
@@ -2994,7 +3031,7 @@ bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
 bool audevStopPlayV2(void)
 {
     audevContext_t *d = &gAudevCtx;
-    OSI_LOGI(0, "audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
+    OSI_LOGI(0, "[poc][stopplay]audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
 
     osiMutexLock(d->lock);
 
@@ -3089,7 +3126,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
     if (rec_ops == NULL || rec_ops->put_frame == NULL)
         return false;
 
-    OSI_LOGI(0, "[idtpoc]audio record start, type/%d user/0x%x", type, d->clk_users);
+    OSI_LOGI(0, "[poc][startrecord]audio record start, type/%d user/0x%x", type, d->clk_users);
 
     osiMutexLock(d->lock);
 
@@ -3183,7 +3220,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
             };
 
             prvAudExtCodecI2cOpen(DRV_NAME_I2C2, DRV_I2C_BPS_100K);
-            OSI_LOGE(0, "audio start record itf = %d", prvOutputToSndItf(d->cfg.outdev));
+            OSI_LOGE(0, "[poc][startrecord]audio start record itf = %d", prvOutputToSndItf(d->cfg.outdev));
             if ((d->clk_users & AUDEV_CLK_USER_PLAYTEST) != 0)
             {
                 itf = prvOutputToSndItf(d->bbat.outdev);
@@ -3198,7 +3235,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
 
             if (hal_AifOpen(&g_audCodecAifCfg) != HAL_ERR_NO) //BCLK LRCK
             {
-                OSI_LOGE(0, "hal_AifOpen fail\n");
+                OSI_LOGE(0, "[poc][startrecord]hal_AifOpen fail\n");
                 goto failed_disable_clk;
             }
 
@@ -3215,7 +3252,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
             // Send the stream through the IFC
             if (hal_AifRecordStream(&stream) != HAL_ERR_NO)
             {
-                OSI_LOGE(0, "hal_AiRecordStream Resource Busy");
+                OSI_LOGE(0, "[poc][startrecord]hal_AiRecordStream Resource Busy");
                 goto failed_disable_clk;
             }
         }
@@ -3229,7 +3266,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
             if (!prvWaitStatus(ZSP_START_DONE))
                 goto failed_disable_clk;
 
-            OSI_LOGE(0, "audio start record itf = %d", prvOutputToSndItf(d->cfg.outdev));
+            OSI_LOGE(0, "[poc][startrecord]audio start record itf = %d", prvOutputToSndItf(d->cfg.outdev));
             if ((d->clk_users & AUDEV_CLK_USER_PLAYTEST) != 0)
             {
                 itf = prvOutputToSndItf(d->bbat.outdev);
@@ -3299,7 +3336,7 @@ bool audevStartRecord(audevRecordType_t type, const audevRecordOps_t *rec_ops, v
         d->record.frame.channel_count = 1;
         d->record.frame.sample_rate = d->cfg.sample_rate;
 
-		OSI_LOGI(0, "[idtpoc]poc audio record start");
+		OSI_LOGI(0, "[poc][startrecord]poc audio record start");
     }
     else
     {
@@ -3317,7 +3354,7 @@ failed_disable_clk:
     prvDisableAudioClk(AUDEV_CLK_USER_RECORD);
 failed:
     osiMutexUnlock(d->lock);
-    OSI_LOGE(0, "audio start record failed");
+    OSI_LOGE(0, "[poc][startrecord]audio start record failed");
     return false;
 }
 
@@ -3327,7 +3364,7 @@ failed:
 bool audevStopRecord(void)
 {
     audevContext_t *d = &gAudevCtx;
-    OSI_LOGI(0, "[idtpoc]audio record stop, user/0x%x", d->clk_users);
+    OSI_LOGI(0, "[poc][stoprecord]audio record stop, user/0x%x", d->clk_users);
 
     osiMutexLock(d->lock);
 
@@ -3345,7 +3382,7 @@ bool audevStopRecord(void)
 
             if (hal_AifStopRecord() != HAL_ERR_NO)
             {
-                OSI_LOGE(0, "hal_AifStopRecord Resource Busy");
+                OSI_LOGE(0, "[poc][stoprecord]hal_AifStopRecord Resource Busy");
                 goto failed;
             }
 
@@ -3375,7 +3412,7 @@ bool audevStopRecord(void)
     }
     else if (d->record.type == AUDEV_RECORD_TYPE_POC)
     {
-		OSI_LOGI(0, "[idtpoc]poc audio record stop");
+		OSI_LOGI(0, "[poc][stoprecord]poc audio record stop");
     }
     else
     {
@@ -3391,7 +3428,7 @@ success:
 
 failed:
     osiMutexUnlock(d->lock);
-    OSI_LOGE(0, "audio stop record failed");
+    OSI_LOGE(0, "[poc][stoprecord]audio stop record failed");
     return false;
 }
 

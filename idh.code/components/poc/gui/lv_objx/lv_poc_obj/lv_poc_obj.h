@@ -296,6 +296,17 @@ typedef struct _lv_poc_status_bar_sim_obj_t
 	lv_obj_t * sim_net_type_img;          //网络信号类型图标
 } lv_poc_status_bar_sim_obj_t;
 
+/*******************
+*     NAME:   lv_poc_status_bar_operator_obj_t
+* DESCRIPT:   operator
+*     DATE:   2020-12-14
+********************/
+typedef struct _lv_poc_status_bar_operator_obj_t
+{
+	lv_obj_t ** align_l_obj, ** align_r_obj;//对齐对象
+	lv_obj_t * img;
+} lv_poc_status_bar_operator_obj_t;
+
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
 *     NAME:   lv_poc_status_bar_gps_obj_t
@@ -342,6 +353,7 @@ typedef struct _lv_poc_status_bar_fptr_t{
 	lv_obj_t                    *time_label;
     lv_obj_t                    *signal_type_label;
     lv_obj_t                    *signal_intensity_img;
+	lv_poc_status_bar_operator_obj_t *operator_img;
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	lv_poc_status_bar_gps_obj_t *gps_img;
 #endif

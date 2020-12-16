@@ -365,6 +365,9 @@ void lv_poc_shutdown_animation(lv_task_t * task)
 
 	if(user_data_type == LVPOCSHUTDOWN_TYPE_POWER_OFF)
 	{
+#ifdef SUPPORT_PROJECT_K19H
+		poc_set_lcd_status(true);//power off and screen on
+#endif
 		lv_task_create(lv_poc_shutdown_task, POC_SHUTDOWN_PREPARE_TIME,
 			LV_TASK_PRIO_HIGH, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
 	}

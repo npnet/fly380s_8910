@@ -590,9 +590,11 @@ void poc_SetPowerLevel(uint32_t id, uint32_t mv)
 }
 
 static osiThread_t * prv_play_btn_voice_one_time_thread = NULL;
+static osiThread_t * prv_play_tone_ptt_thread = NULL;
 static auPlayer_t * prv_play_btn_voice_one_time_player = NULL;
 static osiThread_t * prv_play_voice_one_time_thread = NULL;
 static auPlayer_t * prv_play_voice_one_time_player = NULL;
+static auPlayer_t * prv_play_ptt_tone_player = NULL;
 extern lv_poc_audio_dsc_t lv_poc_audio_msg;
 extern lv_poc_audio_dsc_t lv_poc_audio_start_machine;
 extern lv_poc_audio_dsc_t lv_poc_audio_no_connected;
@@ -671,7 +673,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 			&& !lvPocGuiIdtCom_get_speak_status())
 		{
 			poc_set_ext_pa_status(true);
-			audevSetPlayVolume(40);
+			audevSetPlayVolume(35);
 			char playkey[4] = "9";
 			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
 		}
@@ -779,7 +781,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
 			{
 				voice_formate = AUSTREAM_FORMAT_MP3;
-				audevSetPlayVolume(65);
+				audevSetPlayVolume(50);
 			    is_poc_play_voice = true;
 				break;
 			}
@@ -800,7 +802,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Start_Speak:
 			{
 				voice_formate = AUSTREAM_FORMAT_MP3;
-				audevSetPlayVolume(60);
+				audevSetPlayVolume(40);
 			    is_poc_play_voice = true;
 				break;
 			}
@@ -879,6 +881,65 @@ poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN b
 	event.param1 = voice_type;
 	event.param2 = (int)isBreak;
 	osiEventSend(prv_play_voice_one_time_thread, &event);
+}
+
+static
+void prv_play_tone_ptt_thread_callback(void * ctx)
+{
+	static auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
+	static auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
+	static auStreamFormat_t tone_formate = AUSTREAM_FORMAT_UNKNOWN;
+	int tone_type = *(int *)ctx;
+
+	switch(tone_type)
+	{
+		case LVPOCAUDIO_Type_Tone_Start_Listen:
+		case LVPOCAUDIO_Type_Tone_Start_Speak:
+		{
+			tone_formate = AUSTREAM_FORMAT_MP3;
+			audevSetPlayVolume(40);
+			break;
+		}
+	}
+
+	if(prv_lv_poc_audio_array[tone_type] != NULL)
+	{
+		poc_set_ext_pa_status(true);
+		auPlayerStartMem(prv_play_ptt_tone_player, tone_formate, params, prv_lv_poc_audio_array[tone_type]->data, prv_lv_poc_audio_array[tone_type]->data_size);
+	}
+	prv_play_tone_ptt_thread = NULL;
+	osiThreadExit();
+}
+
+/*
+      name : poc_play_ptt_tone
+     param :
+      date : 2020-12-14
+*/
+void
+poc_play_ptt_tone(IN LVPOCAUDIO_Type_e voice_type)
+{
+	static int tone_type = 0;
+	tone_type = voice_type;
+	if(NULL != prv_play_ptt_tone_player)
+	{
+		auPlayerStop(prv_play_ptt_tone_player);
+	}
+
+	if(NULL == prv_play_ptt_tone_player)
+	{
+		prv_play_ptt_tone_player = auPlayerCreate();
+		if(NULL == prv_play_ptt_tone_player)
+		{
+			return;
+		}
+	}
+
+	if(prv_play_tone_ptt_thread != NULL)
+	{
+		return;
+	}
+	prv_play_tone_ptt_thread = osiThreadCreate("play_ptt_tone", prv_play_tone_ptt_thread_callback, (void *)&tone_type, OSI_PRIORITY_HIGH, 1024*3, 64);
 }
 
 /*
@@ -1186,7 +1247,7 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 
 	}
 
-	ret = cereg_Respond(true);//死机，待排查
+	ret = cereg_Respond(true);
 	if(nStatusInfo.nStatus == 0
 		|| nStatusInfo.nStatus == 3
 		|| nStatusInfo.nStatus == 4)
@@ -1258,14 +1319,13 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 
 	if(!poc_check_sim_prsent(sim))
 	{
-		//poc_network_voice_play = false;//only play once
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
-
 		if(number >= 10 || number == 0)//5min
 		{
 			number = 1;
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, 50, false);
 		}
+		number++;
 		return false;
 	}
 
@@ -1287,7 +1347,6 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
 		return false;
 	}
-	number++;
 	return true;
 }
 
@@ -3349,13 +3408,11 @@ lv_poc_get_mobile_card_operator(char *operator_name, bool abbr)
    }
    else if(operator == 898601 || operator == 898609 ||operator == 898606)//China Telecom
    {
-      abbr ? strcpy(operator_name, "CTCC") : strcpy(operator_name, "中国电信");
-
+      abbr ? strcpy(operator_name, "CUCC") : strcpy(operator_name, "中国联通");
    }
    else if(operator == 898603 || operator == 898611 )//China Unicom
    {
-
-      abbr ? strcpy(operator_name, "CUCC") : strcpy(operator_name, "中国联通");
+      abbr ? strcpy(operator_name, "CTCC") : strcpy(operator_name, "中国电信");
    }
    else
    {
@@ -3767,7 +3824,7 @@ void lv_poc_type_plog_switch_cb(bool status)
 */
 void lv_poc_type_modemlog_switch_cb(bool status)
 {
-	status ? 0 : 0;
+	//status ? 0 : 0;
 }
 
 /********************************************CIT*****************************************************/

@@ -97,27 +97,6 @@ static void lv_poc_GuiIdtTask_Tread_delay(lv_task_t *task);
 char *LvPocGetCauseStr(USHORT usCause)
 {
     static char cBuf[32];
-//    if (CAUSE_TIMER_EXPIRY == (usCause & 0xff))
-//    {
-//        WORD ucSrc = (usCause & 0xc000);
-//        UCHAR ucH = (usCause & 0x3f00) >> 8;
-//        switch (ucSrc)
-//        {
-//        case CAUSE_EXPIRE_IDT://IDT定时器超时
-//            snprintf(cBuf, sizeof(cBuf), "定时器超时:IDT-%s", GetIdtTmStr(ucH));
-//            break;
-//        case CAUSE_EXPIRE_MC://MC定时器超时
-//            snprintf(cBuf, sizeof(cBuf), "定时器超时:MC-%s", GetMcTmStr(ucH));
-//            break;
-//        case CAUSE_EXPIRE_MG://MG定时器超时
-//            snprintf(cBuf, sizeof(cBuf), "定时器超时:MG-%s", GetMgTmStr(ucH));
-//            break;
-//        default:
-//            snprintf(cBuf, sizeof(cBuf), "定时器超时:%d-%d", ucSrc, ucH);
-//            break;
-//        }
-//        return cBuf;
-//    }
 
     switch (usCause)
     {
@@ -395,6 +374,7 @@ typedef struct _PocGuiIIdtComAttr_t
 public:
 	MEDIAATTR_s attr;
 	osiThread_t *thread;
+	osiMutex_t  *mutex;
 	bool        isReady;
 	POCAUDIOPLAYER_HANDLE   player;
 	POCAUDIORECORDER_HANDLE recorder;
@@ -449,7 +429,6 @@ public:
 	osiTimer_t * auto_login_timer;
 	osiTimer_t * monitor_pptkey_timer;
 	osiTimer_t * monitor_recorder_timer;
-	osiTimer_t * play_tone_timer;
 	osiTimer_t * addgroup_user_timer;
 	osiTimer_t * openpa_timer;
 	osiTimer_t * callidle_timer;
@@ -930,15 +909,10 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 	{
 	    m_IdtUser.m_iRxCount = m_IdtUser.m_iRxCount + 1;
 
-		if(m_IdtUser.m_iRxCount == 1)
-		{
-			audevSetPlayVolume(0);/*关闭音量*/
-		}
-
 		pocAudioPlayerWriteData(pocIdtAttr.player, (const uint8_t *)pucBuf, iLen);
 		pocIdtAttr.check_listen_count++;
 
-		if(m_IdtUser.m_iRxCount == 10)
+		if(m_IdtUser.m_iRxCount == 15)
 		{
 			pocIdtAttr.membercall_count++;//记录单呼数据帧
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
@@ -972,6 +946,7 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 	    || pcName == NULL
 	    || m_IdtUser.m_status < UT_STATUS_ONLINE)
     {
+		OSI_LOGI(0, "[poc][callback_IDT_CallTalkingIDInd](%d):pcNum || pcName NULL", __LINE__);
 	    if(m_IdtUser.m_status >= USER_OPRATOR_START_LISTEN && m_IdtUser.m_status <= USER_OPRATOR_LISTENNING)
 	    {
 		    if(pocIdtAttr.delay_close_listen_timer != NULL)
@@ -985,16 +960,11 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 			    osiTimerStop(pocIdtAttr.check_listen_timer);
 			    osiTimerStart(pocIdtAttr.delay_close_listen_timer, 560);
 			    pocIdtAttr.delay_close_listen_timer_running = true;
-
-				#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
-				char cOutstr[256] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtlisten]%s(%d):delayclose listen timer start", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
+				OSI_LOGI(0, "[poc][callback_IDT_CallTalkingIDInd](%d):delay_close_listen_timer 560ms", __LINE__);
 		    }
 		    else
 		    {
+				OSI_LOGI(0, "[poc][callback_IDT_CallTalkingIDInd](%d):delay_close_listen_timer NULL", __LINE__);
 			    osiTimerStop(pocIdtAttr.check_listen_timer);
 			    if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
 			    {
@@ -1004,38 +974,18 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 			    m_IdtUser.m_iTxCount = 0;
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_STOP_REP, NULL);
-
-				#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
-				char cOutstr[256] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtlisten]%s(%d):delay_close_listen_timer is NULL, stop listen", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
 		    }
 	    }
-
-		#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
-		char cOutstr[256] = {0};
-		cOutstr[0] = '\0';
-		sprintf(cOutstr, "[idtlisten]%s(%d):pcNum & pcName NULL", __func__, __LINE__);
-		OSI_LOGI(0, cOutstr);
-		#endif
 	    return 0;
     }
+	OSI_LOGI(0, "[poc][callback_IDT_CallTalkingIDInd](%d):Normal", __LINE__);
     strcpy((char *)pocIdtAttr.speaker.ucNum, (const char *)pcNum);
     strcpy((char *)pocIdtAttr.speaker.ucName, (const char *)pcName);
-
-	#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
-	char cOutstr[256] = {0};
-	cOutstr[0] = '\0';
-	sprintf(cOutstr, "[idtlisten]%s(%d):pcNum & pcName isn't NULL, status %d", __func__, __LINE__, m_IdtUser.m_status);
-	OSI_LOGI(0, cOutstr);
-	#endif
 
     pocIdtAttr.speaker.ucStatus = UT_STATUS_ONLINE;
     if(m_IdtUser.m_status < USER_OPRATOR_START_LISTEN || m_IdtUser.m_status > USER_OPRATOR_LISTENNING)
     {
-
+		OSI_LOGI(0, "[poc][callback_IDT_CallTalkingIDInd](%d):start listen", __LINE__);
 	    if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
 	    {
 		    m_IdtUser.m_status = USER_OPRATOR_START_LISTEN;
@@ -1044,11 +994,12 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 		m_IdtUser.m_iTxCount = 0;
 	    if(pocIdtAttr.delay_close_listen_timer_running)
 	    {
+			OSI_LOGI(0, "[poc][callback_IDT_CallTalkingIDInd](%d):close timer", __LINE__);
 		    osiTimerStop(pocIdtAttr.delay_close_listen_timer);
 		    pocIdtAttr.delay_close_listen_timer_running = false;
 	    }
 		osiTimerStop(pocIdtAttr.check_listen_timer);
-		pocIdtAttr.check_listen_count = 5*20;//容许5帧的网络延时
+		pocIdtAttr.check_listen_count = 5*20;
 		osiTimerStartPeriodic(pocIdtAttr.check_listen_timer, 20);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Listen, 30, true);
 	    lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_START_REP, NULL);
@@ -1057,13 +1008,7 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 		//gps monitor
 		osiTimerStop(pocIdtAttr.callidle_timer);
 		lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_STOP_GPS_LOCATION, NULL);
-
-		#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
-		char cOutstr[256] = {0};
-		cOutstr[0] = '\0';
-		sprintf(cOutstr, "[idtlisten]%s(%d):start listen", __func__, __LINE__);
-		OSI_LOGI(0, cOutstr);
-		#endif
+		OSI_LOGI(0, "[poc][callback_IDT_CallTalkingIDInd](%d):start listen to send msg", __LINE__);
 	}
     return 0;
 }
@@ -1374,26 +1319,12 @@ static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx)
 	#endif
 }
 
-static void LvGuiIdtCom_start_play_tone_timer_cb(void *ctx)
+static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
 {
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
 	pocIdtAttr.start_speak_voice_timer_running = false;
-}
-
-static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx)
-{
-	//goto play start speak tone
-	poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Speak, 30, true);
-	osiTimerStart(pocIdtAttr.play_tone_timer, 200);//200ms
-
-	#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-	char cOutstr[256] = {0};
-	cOutstr[0] = '\0';
-	sprintf(cOutstr, "[idtspeak]%s(%d):start speak, timer cb", __func__, __LINE__);
-	OSI_LOGI(0, cOutstr);
-	#endif
 }
 
 static void LvGuiIdtCom_get_member_list_timer_cb(void *ctx)
@@ -1857,7 +1788,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			osiTimerStop(pocIdtAttr.monitor_recorder_timer);
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_RESUME_IND, NULL);
 			m_IdtUser.m_status = USER_OPRATOR_START_SPEAK;
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LAUNCH_NOTE_MSG, (const uint8_t *)"正在申请", (const uint8_t *)"");
 			if(m_IdtUser.m_iCallId == -1)
 			{
 				memset(&pocIdtAttr.attr, 0, sizeof(MEDIAATTR_s));
@@ -1891,23 +1821,9 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					0,
 					1,
 					user_mark);
-
-				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-				char cOutstr[256] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtspeak]%s(%d):IDT_CallMakeOut start request call out", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
 			}//group call, speak group number and current group number is different
 			else if(!pocIdtAttr.is_member_call && strcmp((const char *)pocIdtAttr.speaker_group.m_ucGNum, (const char *)m_IdtUser.m_Group.m_Group[pocIdtAttr.current_group].m_ucGNum) != 0)
 			{
-				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-				char cOutstr[256] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtspeak]%s(%d):group call,but speak group_number and current_group_number is different", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
-
 				//note call failed case
 				if(pocIdtAttr.is_release_call == false && pocIdtAttr.is_justnow_listen == true)
 				{
@@ -1920,13 +1836,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				if(0 == IDT_CallRel(m_IdtUser.m_iCallId, NULL, CAUSE_ZERO))//若要改为立马释放呼叫的话加入该原因值：CAUSE_CALL_REJ_BY_USER
 				{
 					m_IdtUser.m_iCallId = -1;
-
-					#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-					char cOutstr1[64] = {0};
-					cOutstr1[0] = '\0';
-					sprintf(cOutstr1, "[idtspeak]%s(%d):call release", __func__, __LINE__);
-					OSI_LOGI(0, cOutstr1);
-					#endif
 				}
 
 				char *dest_num = NULL;
@@ -1949,24 +1858,10 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 					0,//会议结束后不删除组
 					1,//自动话权
 					user_mark);//用户标识字符串
-
-				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-				char cOutstr2[64] = {0};
-				cOutstr2[0] = '\0';
-				sprintf(cOutstr2, "[idtspeak]%s(%d):restart group call", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr2);
-				#endif
 			}
 			else
 			{
 		        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MIC_IND, GUIIDTCOM_REQUEST_MIC);
-
-				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-				char cOutstr2[256] = {0};
-				cOutstr2[0] = '\0';
-				sprintf(cOutstr2, "[idtspeak]%s(%d):request mic ind", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr2);
-				#endif
 			}
 			break;
 		}
@@ -1976,7 +1871,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "开始对讲", NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
-			/*开始闪烁*/
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 			if(m_IdtUser.m_status == USER_OPRATOR_SPEAKING)
 			{
@@ -1997,13 +1891,6 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				}
 				pocIdtAttr.is_makeout_call = true;
 				osiTimerStart(pocIdtAttr.monitor_pptkey_timer, 50);
-
-				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-				char cOutstr[256] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtspeak]%s(%d):start speak rep to dispaly idleview", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
 			}
 			break;
 		}
@@ -2109,13 +1996,6 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 		{
 			if(ctx == 0 || m_IdtUser.m_iCallId == -1)
 			{
-				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-				char cOutstr[256] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtspeak]%s(%d):mic rep --> m_iCallId = -1", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
-
 				break;
 			}
 			unsigned int mic_ctl = (unsigned int)ctx;
@@ -2137,34 +2017,22 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 					    }
 						//gps monitor
 						osiTimerStop(pocIdtAttr.callidle_timer);
+						osiMutexLock(pocIdtAttr.mutex);
 						lvPocGpsIdtCom_Msg(LVPOCGPSIDTCOM_SIGNAL_STOP_GPS_LOCATION, NULL);
-
-					    osiTimerStart(pocIdtAttr.start_speak_voice_timer, 160);
+						poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Speak, 30, true);
+						osiMutexUnlock(pocIdtAttr.mutex);
+						osiTimerStart(pocIdtAttr.start_speak_voice_timer, 200);//
 					    pocIdtAttr.start_speak_voice_timer_running = true;
 						pocIdtAttr.speak_status = true;
 				    }
 
 				    pocIdtAttr.mic_ctl = mic_ctl;
-
-					#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-					char cOutstr[256] = {0};
-					cOutstr[0] = '\0';
-					sprintf(cOutstr, "[idtspeak]%s(%d):start_speak_voice_timer is starting", __func__, __LINE__);
-					OSI_LOGI(0, cOutstr);
-					#endif
 			    }
 			    else
 			    {
 				    poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Cannot_Speak, 30, false);
 				    IDT_CallMicCtrl(m_IdtUser.m_iCallId, false);
 				    pocIdtAttr.mic_ctl = 0;
-
-					#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-					char cOutstr[256] = {0};
-					cOutstr[0] = '\0';
-					sprintf(cOutstr, "[idtspeak]%s(%d):start speak, but ppt release", __func__, __LINE__);
-					OSI_LOGI(0, cOutstr);
-					#endif
 			    }
 			}
 			else if(mic_ctl <= 1 && pocIdtAttr.mic_ctl > 1) // 释放话权
@@ -2178,24 +2046,11 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				m_IdtUser.m_iRxCount = 0;
 				m_IdtUser.m_iTxCount = 0;
 
-				#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-				char cOutstr[256] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtspeak]%s(%d):stop_record_ind send msg", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
 				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_RECORD_IND, NULL);
 
 				if(status >= USER_OPRATOR_START_SPEAK && status <= USER_OPRATOR_SPEAKING)
 				{
 			        lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP, (void *)status);
-
-					#if GUIIDTCOM_IDTSPEAK_DEBUG_LOG
-					char cOutstr[256] = {0};
-					cOutstr[0] = '\0';
-					sprintf(cOutstr, "[idtspeak]%s(%d):stop_speak_rep send msg", __func__, __LINE__);
-					OSI_LOGI(0, cOutstr);
-					#endif
 				}
 				pocIdtAttr.mic_ctl = mic_ctl;
 			}
@@ -3181,12 +3036,6 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			//monitor idle, goto location
 			osiTimerStart(pocIdtAttr.callidle_timer, 10000);//10S
-			#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
-			char cOutstr[256] = {0};
-			cOutstr[0] = '\0';
-			sprintf(cOutstr, "[idtlisten]%s(%d):stop listen rep and destory idle,windows", __func__, __LINE__);
-			OSI_LOGI(0, cOutstr);
-			#endif
 
 			break;
 		}
@@ -3220,13 +3069,6 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)speaker_group_name);
 			}
-
-			#if GUIIDTCOM_IDTLISTEN_DEBUG_LOG
-			char cOutstr[256] = {0};
-			cOutstr[0] = '\0';
-			sprintf(cOutstr, "[idtlisten]%s(%d):start listen_speaker rep and display idle,windows", __func__, __LINE__);
-			OSI_LOGI(0, cOutstr);
-			#endif
 
 			break;
 		}
@@ -4676,6 +4518,7 @@ extern "C" void pocGuiIdtComStart(void)
 		"pocGuiIdtCom", pocGuiIdtComTaskEntry, NULL,
 		APPTEST_THREAD_PRIORITY, APPTEST_STACK_SIZE,
 		APPTEST_EVENT_QUEUE_SIZE);
+	pocIdtAttr.mutex = osiMutexCreate();
 	pocIdtAttr.delay_close_listen_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_delay_close_listen_timer_cb, NULL);
 	pocIdtAttr.start_speak_voice_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_start_speak_voice_timer_cb, NULL);
 	pocIdtAttr.get_member_list_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_get_member_list_timer_cb, NULL);
@@ -4686,7 +4529,6 @@ extern "C" void pocGuiIdtComStart(void)
 	pocIdtAttr.auto_login_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_auto_login_timer_cb, NULL);//注册自动登录定时器
 	pocIdtAttr.monitor_pptkey_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_ppt_release_timer_cb, NULL);//检查ppt键定时器
 	pocIdtAttr.monitor_recorder_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_recorder_timer_cb, NULL);//检查是否有人在录音定时器
-	pocIdtAttr.play_tone_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_start_play_tone_timer_cb, NULL);
 	pocIdtAttr.addgroup_user_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_refresh_group_adduser_timer_cb, NULL);
 	pocIdtAttr.openpa_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_open_pa_timer_cb, NULL);
 	pocIdtAttr.callidle_timer = osiTimerCreate(pocIdtAttr.thread, LvGuiIdtCom_call_idle_timer_cb, NULL);
@@ -4709,6 +4551,7 @@ static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 						    length,
 						    0);
     m_IdtUser.m_iTxCount = m_IdtUser.m_iTxCount + 1;
+	OSI_LOGI(0, "[record][senddata](%d):data(%d), len(%d)", __LINE__, data, length);
 }
 
 extern "C" void lvPocGuiIdtCom_Init(void)

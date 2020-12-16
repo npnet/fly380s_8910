@@ -37,6 +37,8 @@ typedef unsigned short int   uint16_t;
 
 #define POC_TYPE_VAT_PING "AT+PING=\"www.baidu.com\",50,128,1\r\n"
 
+#define SUPPORT_PROJECT_K19H//project
+
 /*******************
 *     NAME:   lv_poc_time_t
 *   AUTHOR:   lugj
@@ -563,6 +565,7 @@ typedef enum _lv_poc_cit_test_ui_id
 #define LV_LCD_HEIGHT (132)
 #define LV_KEY_AVERAGE_WIDTH     (LV_LCD_WIDTH/4)
 #define LV_LCD_COLUMN (3)
+#define LV_KEY_NUMBER (6)
 
 struct poc_key_attr_t
 {
