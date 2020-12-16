@@ -246,7 +246,7 @@ void lv_poc_notation_refresh(void)
 	}
 	else if(notationwindows_size == 2)//2行消息
 	{
-		if(label_1_length == 4 && label_2_length == 2)
+		if((label_1_length == 4 && label_2_length == 2) || (label_1_length == 4 && label_2_length == 4))
 		{//切换群主选项
 			//重新设置消息框原点
 			lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80 + LV_POC_NOTATIONWINDOW_X, LV_VER_RES / 3);

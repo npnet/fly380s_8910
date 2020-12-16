@@ -465,7 +465,7 @@ void lv_poc_group_monitor_oprator_refresh_task(lv_task_t * task)
 		group_info->is_monitor = true;
 		//modify monitored
 		//oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
-		//OemCGroup *pGroupInfo = (OemCGroup *)pGroup->information;
+		//CGroup *pGroupInfo = (CGroup *)pGroup->information;
 		//strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR);
 
 		OSI_LOGI(0, "[oemmonitorgroup](%d):refr monitor-group icon", __LINE__);
@@ -481,8 +481,8 @@ void lv_poc_group_monitor_oprator_refresh_task(lv_task_t * task)
 		lv_img_set_src(group_info->monitor_img, &unlock);
 		group_info->is_monitor = false;
 		//modify cannel monitor
-		oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
-		OemCGroup *pGroupInfo = (OemCGroup *)pGroup->information;
+		//oem_list_element_t * pGroup = (oem_list_element_t *)group_info->item_information;
+		//CGroup *pGroupInfo = (CGroup *)pGroup->information;
 		//strcpy((char *)&pGroupInfo->m_ucGMonitor, OEM_GROUP_UNMONITOR);
 
 		OSI_LOGI(0, "[oemmonitorgroup](%d):refr cannel-monitor-group icon", __LINE__);
@@ -716,7 +716,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	int list_btn_count = 0;
 
     oem_list_element_t * p_cur = NULL;
-	OemCGroup *pGroupInfo = NULL;
+//	CGroup *pGroupInfo = NULL;
     lv_obj_t * btn;
 	lv_obj_t * btn_index[32];//assume group number is 32
     lv_obj_t * img;
@@ -794,7 +794,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
 		img = lv_img_create(btn, NULL);
 		p_group_info->monitor_img = img;
-		pGroupInfo = (OemCGroup *)p_cur->information;
+//		pGroupInfo = (CGroup *)p_cur->information;
 //      if(NULL != strstr((char *)pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR))
 //      {
 //			lv_img_set_src(img, &locked);

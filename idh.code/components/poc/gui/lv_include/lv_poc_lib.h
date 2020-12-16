@@ -1447,6 +1447,22 @@ lv_poc_get_is_in_grouplist(void);
 bool
 lv_poc_get_keytone_status(void);
 
+/*
+	  name : lv_poc_set_screenon_status
+	  describe :
+	  param :
+	  date : 2020-11-28
+*/
+void lv_poc_set_screenon_status(bool status);
+
+/*
+	  name : lv_poc_get_screenon_status
+	  describe :
+	  param :
+	  date : 2020-11-28
+*/
+bool lv_poc_get_screenon_status(void);
+
 #ifdef __cplusplus
 }
 #endif

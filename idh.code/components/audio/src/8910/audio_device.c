@@ -2566,20 +2566,11 @@ bool audevStartPocMode(bool duplexmode)
     osiMutexLock(d->lock);
     {
         if (d->clk_users != 0) // disable when any other users is working
-        {
-			OSI_LOGI(0, "[poc][StartPoc]working, failed");
             goto failed;
-        }
         if ((d->play.sample_rate != 8000) && (d->play.sample_rate != 16000)) //only support 8k 16k
-        {
-			OSI_LOGI(0, "[poc][StartPoc]sample_rate isn't 8000 or 16000");
             goto failed;
-        }
         if (d->play.sample_rate != d->cfg.sample_rate) //only support play and record in same sample rate
-        {
-			OSI_LOGI(0, "[poc][StartPoc]sample_rate error");
             goto failed;
-        }
 
         d->play.total_bytes = 0;
         d->play.eos_error = false;
@@ -2685,6 +2676,7 @@ failed:
 bool audevStopPocMode(void)
 {
     audevContext_t *d = &gAudevCtx;
+
     OSI_LOGI(0, "[poc][StopPoc]audio audevStopPocMode, user/0x%x", d->clk_users);
 
 	//close pa---------poc mode must closed in here
@@ -2731,10 +2723,7 @@ bool audevPocModeSwitch(uint8_t mode)
         return false;
 
     if (d->play.ops_ctx == NULL || d->record.ops_ctx == NULL)
-    {
-		OSI_LOGI(0, "[poc][PocModeSwitch]play or record ops_ctx NULL");
         return false;
-    }
 
     OSI_LOGI(0, "[poc][PocModeSwitch]audio audevPocModeSwitch, mode/%d ", mode);
 
@@ -2994,24 +2983,23 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     }
 	else if (type == AUDEV_PLAY_TYPE_POC) //poc
     {
-	    if (d->clk_users != 0) // disable when any other users is working
-		    goto failed;
-	    if ((frame->sample_rate != 8000) && (frame->sample_rate != 16000)) //only support 8k 16k
-		    goto failed;
-	    if (frame->sample_rate != d->cfg.sample_rate) //only support play and record in same sample rate
-		    goto failed;
+		if (d->clk_users != 0) // disable when any other users is working
+		  	goto failed;
+		if ((frame->sample_rate != 8000) && (frame->sample_rate != 16000)) //only support 8k 16k
+		  	goto failed;
+		if (frame->sample_rate != d->cfg.sample_rate) //only support play and record in same sample rate
+		  	goto failed;
 
-	    d->play.channel_count = frame->channel_count;
-	    d->play.sample_rate = frame->sample_rate;
-	    d->play.total_bytes = 0;
-	    d->play.eos_error = false;
-	    d->play.ops = *play_ops;
-	    d->play.ops_ctx = play_ctx;
+		d->play.channel_count = frame->channel_count;
+		d->play.sample_rate = frame->sample_rate;
+		d->play.total_bytes = 0;
+		d->play.eos_error = false;
+		d->play.ops = *play_ops;
+		d->play.ops_ctx = play_ctx;
 
-	    osiMutexUnlock(d->lock);
-	    return true;
+		osiMutexUnlock(d->lock);
+		return true;
     }
-
 failed_disable_clk:
 #ifdef CONFIG_AUDIO_EXT_I2S_ENABLE
     if (d->cfg.ext_i2s_en)

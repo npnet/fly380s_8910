@@ -700,7 +700,7 @@ int lib_oem_start_play(void)
 
 int lib_oem_stop_play(void)
 {
-	OSI_LOGI(0, "[bnd][play](%d):rec bnd stop play", __LINE__);
+	OSI_LOGI(0, "[cbbnd][play](%d):rec bnd stop play", __LINE__);
 	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_PLAY_IND, NULL);
 	return 0;
 }
@@ -1483,7 +1483,7 @@ static void LvGuiBndCom_ppt_release_timer_cb(void *ctx)
 		if(makecallcnt < 10)//press time < 500ms
 		{
 			m_BndUser.m_status = USER_OPRATOR_PPT_RELEASE;
-			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+//			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		}
 		makecallcnt = 0;
 	}
@@ -2222,7 +2222,7 @@ static void prvPocGuiBndTaskHandlePlay(uint32_t id, uint32_t ctx)
 				break;
 			}
 
-			osiMutexTryLock(pocBndAttr.lock, 50);
+			osiMutexTryLock(pocBndAttr.lock, 5);
 			pocAudioPlayerStop(pocBndAttr.player);
 			audevStopPlay();
 			osiMutexUnlock(pocBndAttr.lock);
@@ -2475,7 +2475,7 @@ static void prvPocGuiBndTaskHandleListen(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)"停止聆听", (const uint8_t *)"");
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, NULL, NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
-			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[listen](%s)(%d):rec stop listen and destory windows", __FUNCTION__, __LINE__);
+			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[listen][cbbnd](%s)(%d):rec stop listen and destory windows", __FUNCTION__, __LINE__);
 			break;
 		}
 
@@ -2504,7 +2504,7 @@ static void prvPocGuiBndTaskHandleListen(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)pocBndAttr.BndCurrentGroupInfo.name);
 			}
-			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[listen](%s)(%d):rec start listen and display windows", __FUNCTION__, __LINE__);
+			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[listen][cbbnd](%s)(%d):rec start listen and display windows", __FUNCTION__, __LINE__);
 			break;
 		}
 

@@ -2522,11 +2522,11 @@ prv_lv_poc_get_group_list_cb(int msg_type, uint32_t num, CGroup *group)
 	}
 
 	prv_group_list->group_number = num;
-	list_element_t * p_element = NULL;
-	list_element_t * p_cur = NULL;
+	oem_list_element_t * p_element = NULL;
+	oem_list_element_t * p_cur = NULL;
 	for(int i = 0; i < num; i++)
 	{
-		p_element = (list_element_t *)lv_mem_alloc(sizeof(list_element_t));
+		p_element = (oem_list_element_t *)lv_mem_alloc(sizeof(oem_list_element_t));
 		if(p_element == NULL)
 		{
 			p_element = prv_group_list->group_list;
@@ -2606,8 +2606,8 @@ lv_poc_get_group_list(lv_poc_oem_group_list *group_list, get_group_list_cb func)
 bool
 lv_poc_check_group_equation(void * A, void *B, void *C, void *D, void *E)
 {
-	OemCGroup *info1 = (OemCGroup *)C;
-	OemCGroup *info2 = (OemCGroup *)D;
+	CGroup *info1 = (CGroup *)C;
+	CGroup *info2 = (CGroup *)D;
 	bool ret1 = false, ret2 = false;
 
 	if(info1 != NULL && info2 != NULL)
@@ -2616,28 +2616,11 @@ lv_poc_check_group_equation(void * A, void *B, void *C, void *D, void *E)
 		{
 			return true;
 		}
-
-		if(E)
-		{
-			ret1 = (0 == strcmp((const char *)E, (const char *)"monitor"));
-			ret2 = (0 == strcmp((const char *)info1->m_ucGMonitor, (const char *)"01"));
-
-			return (ret1&ret2);
-		}
-		else
-		{
-			ret2 = (0 == strcmp((const char *)info1->m_ucGID, (const char *)info2->m_ucGID));
-		}
+		ret1 = (0 == strcmp((const char *)info1->m_ucGName, (const char *)info2->m_ucGName));
+		ret2 = (0 == strcmp((const char *)info1->m_ucGNum, (const char *)info2->m_ucGNum));
 	}
 
-	#if 0
-	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]info1 name %s", info1->m_ucGName);
-	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]info2 name %s", info2->m_ucGName);
-	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]info1 id %s", info1->m_ucGID);
-	OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]info2 id %s", info2->m_ucGID);
-	#endif
-
-	return ret2;
+	return (ret1 && ret2);
 }
 
 static lv_poc_oem_member_list * prv_member_list = NULL;
@@ -2676,13 +2659,13 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 		return;
 	}
 
-	list_element_t * p_element = NULL;
-	list_element_t * p_online_cur = NULL;
-	list_element_t * p_offline_cur = NULL;
+	oem_list_element_t * p_element = NULL;
+	oem_list_element_t * p_online_cur = NULL;
+	oem_list_element_t * p_offline_cur = NULL;
 
 	for(int i = 0; i < num; i++)
 	{
-		p_element = (list_element_t *)lv_mem_alloc(sizeof(list_element_t));
+		p_element = (oem_list_element_t *)lv_mem_alloc(sizeof(oem_list_element_t));
 
 		if(p_element == NULL)
 		{
@@ -2807,9 +2790,9 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_oem_member_list * 
 bool
 lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 {
-	OemCGroup *info1 = (OemCGroup *)C;
-	OemCGroup *info2 = (OemCGroup *)D;
-	bool ret1 = false;
+	Msg_GROUP_MEMBER_s *info1 = (Msg_GROUP_MEMBER_s *)C;
+	Msg_GROUP_MEMBER_s *info2 = (Msg_GROUP_MEMBER_s *)D;
+	bool ret1 = true, ret2 = false;
 
 	if(info1 != NULL && info2 != NULL)
 	{
@@ -2817,10 +2800,11 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 		{
 			return true;
 		}
-		ret1 = (0 == strcmp((const char *)info1->m_ucGID, (const char *)info2->m_ucGID));
+		//ret1 = (0 == strcmp((const char *)info1->ucName, (const char *)info2->ucName));
+		ret2 = (0 == strcmp((const char *)info1->ucNum, (const char *)info2->ucNum));
 	}
 
-	return ret1;
+	return (ret1 && ret2);
 }
 
 /*
@@ -2913,7 +2897,7 @@ lv_poc_get_group_name(lv_poc_group_info_t group)
 		return NULL;
 	}
 
-	OemCGroup * group_info = (OemCGroup *)group;
+	CGroup * group_info = (CGroup *)group;
 	return (char *)group_info->m_ucGName;
 }
 
@@ -2930,8 +2914,8 @@ lv_poc_get_member_name(lv_poc_member_info_t members)
 		return NULL;
 	}
 
-	OemCGroupMember * member_info = (OemCGroupMember *)members;
-	return (char *)member_info->m_ucUName;
+	Msg_GROUP_MEMBER_s * member_info = (Msg_GROUP_MEMBER_s *)members;
+	return (char *)member_info->ucName;
 }
 
 /*
