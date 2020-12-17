@@ -90,7 +90,9 @@ static void lv_poc_micspk_test_cb(lv_obj_t * obj);
 static void lv_poc_signal_test_cb(lv_obj_t * obj);
 static void lv_poc_key_test_cb(lv_obj_t * obj);
 static void lv_poc_charge_test_cb(lv_obj_t * obj);
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 static void lv_poc_gps_test_cb(lv_obj_t * obj);
+#endif
 static void lv_poc_sim_test_cb(lv_obj_t * obj);
 #ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 static void lv_poc_touch_test_cb(lv_obj_t * obj);
@@ -203,14 +205,14 @@ lv_poc_cit_part_test_label_struct_t lv_poc_cit_part_test_label_array[] = {
 		"充电测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_charge_test_cb,
 	},
-
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	{
 		NULL,
 		"项11"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"GPS测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_gps_test_cb,
 	},
-
+#endif
 	{
 		NULL,
 		"项12"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
@@ -348,6 +350,7 @@ static void lv_poc_charge_test_cb(lv_obj_t * obj)
 	lv_poc_test_ui_open((void *)&cit_info);
 }
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 static void lv_poc_gps_test_cb(lv_obj_t * obj)
 {
 	lv_poc_cit_config_init();
@@ -356,6 +359,7 @@ static void lv_poc_gps_test_cb(lv_obj_t * obj)
 	strcpy(cit_info.name, "GPS测试");
 	lv_poc_test_ui_open((void *)&cit_info);
 }
+#endif
 
 static void lv_poc_sim_test_cb(lv_obj_t * obj)
 {

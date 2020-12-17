@@ -68,6 +68,7 @@ static drvGpio_t * poc_iic_scl_gpio = NULL;
 static drvGpio_t * poc_iic_sda_gpio = NULL;
 static drvGpio_t * poc_volumup_gpio = NULL;
 static drvGpio_t * poc_volumdown_gpio = NULL;
+static drvGpio_t * poc_lcden_gpio = NULL;
 static osiTimer_t * delay_config_timer = NULL;
 
 static bool poc_power_on_status = false;
@@ -1315,7 +1316,8 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	static int number = 0;
 	CFW_NW_STATUS_INFO nStatusInfo;
 	uint8_t status;
-	//static bool poc_network_voice_play = true;
+
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 
 	if(!poc_check_sim_prsent(sim))
 	{
@@ -1363,8 +1365,6 @@ poc_net_work_config(IN POC_SIM_ID sim)
 	CFW_NwSetAutoAttachFlag(1, nsim);
 }
 
-
-
 static void
 prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 {
@@ -1379,7 +1379,7 @@ prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 13);
-	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 45);//主界面时间time
+	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 36);//主界面时间time
 	poc_setting->font.idle_date_label_font = (uint32_t)LV_POC_FONT_MSYH(2500, 18);//主界面日期label
 	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
 	poc_setting->font.idle_popwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
@@ -1585,7 +1585,6 @@ poc_get_device_iccid_rep(int8_t * iccid)
     {
 		memset(ICCID, 0, 21);
     }
-    OSI_LOGXI(OSI_LOGPAR_S, 0, "[iccid]iccid %s", ICCID);
     strcpy((char *)iccid, (const char *)ICCID);
 }
 
@@ -2361,8 +2360,6 @@ bool lv_poc_get_mic_gain(void)
     uint16_t adcGain = 0;
 
     audevGetMicGain(mode, path, &anaGain, &adcGain);
-    OSI_LOGI(0, "[song]normal mode is = %d, path is =%d , anaGain is = %d, adcGain is = %d",
-        mode, path, anaGain, adcGain);
 
     return true;
 }
@@ -2376,9 +2373,7 @@ describe : 设置record mic增益
 bool lv_poc_set_record_mic_gain(lv_poc_record_mic_mode mode, lv_poc_record_mic_path path, lv_poc_record_mic_anaGain anaGain, lv_poc_record_mic_adcGain adcGain)
 {
 	bool setstatus = audevSetRecordMicGain(mode, path, anaGain, adcGain);
-    OSI_LOGI(0, "[song] set record mode is = %d, path is =%d , anaGain is = %d, adcGain is = %d, setstatus is = %d",
-        mode, path, anaGain, adcGain, setstatus);
-    return true;
+    return setstatus;
 }
 
 /*
@@ -2395,8 +2390,6 @@ bool lv_poc_get_record_mic_gain(void)
 	uint16_t adcGain = 0;
 
 	audevGetRecordMicGain(mode, path, &anaGain, &adcGain);
-	OSI_LOGI(0, "[song]record mode is = %d, path is =%d , anaGain is = %d, adcGain is = %d",
-		mode, path, anaGain, adcGain);
 
 	return true;
 }
@@ -2575,7 +2568,6 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 
 		if(p_element == NULL)
 		{
-			//OSI_LOGI(0, "[song]element null");
 			p_element = prv_member_list->online_list;
 			while(p_element)
 			{
@@ -2614,18 +2606,14 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 			prv_member_list->online_number++;//计算在线人数
 			if(prv_member_list->online_list != NULL)
 			{
-				//OSI_LOGI(0, "[song]online nonull");
 				p_online_cur->next = p_element;
 				p_online_cur = p_online_cur->next;
 			}
 			else
 			{
-				//OSI_LOGI(0, "[song]online null");
 				prv_member_list->online_list = p_element;
 				p_online_cur = p_element;
 			}
-			//OSI_LOGI(0, "[song]online status is = %d",pGroup->member[i].ucStatus);
-		    //OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]online member ucNum %s",prv_member_list->online_list->name);
 		}
 
 		if(pGroup->member[i].ucStatus == 0
@@ -2643,14 +2631,8 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *pGro
 				prv_member_list->offline_list = p_element;
 				p_offline_cur = p_element;
 			}
-			//OSI_LOGI(0, "[song]offline status is = %d",pGroup->member[i].ucStatus);
-		    //OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]offline member ucNum %s",prv_member_list->offline_list->name);
 		}
 		p_element = NULL;
-		#if 0
-		OSI_LOGI(0, "[song]ucnum status is = %d",pGroup->member[i].ucStatus);
-		OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]member ok ucNum %s",pGroup->member[i].ucNum);
-		#endif
 	}
 	prv_member_list_cb(1);
 	prv_member_list_cb = NULL;
@@ -3420,6 +3402,44 @@ lv_poc_get_mobile_card_operator(char *operator_name, bool abbr)
    }
 }
 
+/*
+      name : poc_lcden_init
+     param : none
+      date : 2020-12-17
+*/
+void
+poc_lcden_init(void)
+{
+	if(poc_lcden_gpio != NULL) return;
+	drvGpioConfig_t * config = NULL;
+	if(config == NULL)
+	{
+		config = (drvGpioConfig_t *)calloc(1, sizeof(drvGpioConfig_t));
+		if(config == NULL)
+		{
+			return;
+		}
+		memset(config, 0, sizeof(drvGpioConfig_t));
+		config->mode = DRV_GPIO_OUTPUT;
+		config->debounce = true;
+		config->out_level = false;
+	}
+	poc_lcden_gpio = drvGpioOpen(poc_lcd_en, config, NULL, NULL);
+	free(config);
+}
+
+/*
+     name : poc_set_lcden_status
+    param : none
+     date : 2020-12-17
+*/
+void
+poc_set_lcden_status(bool status)
+{
+   poc_lcden_init();
+   drvGpioWrite(poc_lcden_gpio, status);
+}
+
 static osiPipe_t *poc_at_rx_pipe;
 static osiPipe_t *poc_at_tx_pipe;
 
@@ -3702,6 +3722,7 @@ int lv_poc_type_key_power_cb(bool status)
 */
 void lv_poc_type_gps_cb(int status)
 {
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
    	nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 	if(status == 0)
 	{
@@ -3719,6 +3740,7 @@ void lv_poc_type_gps_cb(int status)
 		}
 	}
 	lv_poc_setting_conf_write();
+#endif
 }
 
 /*

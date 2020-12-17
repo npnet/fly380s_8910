@@ -33,6 +33,7 @@ enum {
 	poc_iic_sda   = 15,//IO sda
 	poc_volum_up       = 7,//IO volum_up
 	poc_volum_down     = 10,//IO volum_down
+	poc_lcd_en    = 19,//IO lcden
 };
 
 enum {
@@ -1173,6 +1174,14 @@ bool lv_poc_get_loopback_recordplay_status(void);
 */
 bool
 lv_poc_volum_get_reconfig_status(void);
+
+/*
+     name : poc_set_lcden_status
+    param : none
+     date : 2020-12-17
+*/
+void
+poc_set_lcden_status(bool status);
 
 /*
      name : lv_poc_get_mobile_card_operator

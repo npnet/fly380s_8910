@@ -168,6 +168,7 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     {
 
 		OSI_LOGI(0, "[grouprefr](%d):get failed memberlist", __LINE__);
+		lv_poc_set_refr_error_info(true);
 	    poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
     }
@@ -637,12 +638,7 @@ static void lv_poc_group_delete_oprator_cb(int result_type)
 
 		if(group_list != NULL)
 		{
-			Ap_OSI_ASSERT((activity_list != NULL), "[song]delete group activity_list NULL");
-
 			lv_list_clean(activity_list);
-
-			Ap_OSI_ASSERT((group_list != NULL), "[song]delete group list NULL");
-
 			lv_poc_group_list_clear(group_list);
 
 			if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
@@ -713,12 +709,13 @@ static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
 	if(event == LV_EVENT_APPLY)
 	{
 		lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
-
-		Ap_OSI_ASSERT((lv_poc_group_delete_info != NULL), "[song]delete group NULL"); /*assert verified*/
-
 		list_element_t * item_info = (list_element_t *)lv_poc_group_delete_info->item_information;
+		if(item_info == NULL)
+		{
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空群组信息", (const uint8_t *)"");
+			return;
+		}
 		lv_poc_group_info_t * group_info = (lv_poc_group_info_t)item_info->information;
-		/*delete group*/
 		lv_poc_delete_group((lv_poc_group_info_t)group_info, lv_poc_group_delete_oprator_cb);
 	}
 }
@@ -1016,6 +1013,14 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
     lv_poc_group_info_t current_group = lv_poc_get_current_group();
     char * current_group_name = lv_poc_get_group_name(current_group);
+	if(current_group_name == NULL)
+	{
+		OSI_LOGI(0, "[grouprefr](%d):group name NULL", __LINE__);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空组名字", NULL);
+		lv_poc_set_refr_error_info(true);
+		return;
+	}
+
     lv_poc_group_info_t lock_group = lv_poc_get_lock_group();
     char * lock_group_name = lv_poc_get_group_name(lock_group);
 
@@ -1059,8 +1064,8 @@ void lv_poc_group_list_refresh(lv_task_t * task)
         list_btn_count++;
 
 		#if 0
-		OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]refresh index name %s", p_cur->name);
-		OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]refresh cp name %s", prv_group_list_last_index_groupname);
+		OSI_LOGXI(OSI_LOGPAR_S, 0, "[group]refresh index name %s", p_cur->name);
+		OSI_LOGXI(OSI_LOGPAR_S, 0, "[group]refresh cp name %s", prv_group_list_last_index_groupname);
 		#endif
 		if(NULL != prv_group_list_last_index_groupname
 			&& NULL != strstr(p_cur->name, prv_group_list_last_index_groupname)

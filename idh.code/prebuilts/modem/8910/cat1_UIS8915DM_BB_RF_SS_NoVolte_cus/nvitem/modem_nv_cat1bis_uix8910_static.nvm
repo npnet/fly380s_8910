@@ -8330,7 +8330,7 @@
     ITEM_NAME    = tracePort
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 829
     ITEM_PARENT  = 822
     ITEM_DESC    =  

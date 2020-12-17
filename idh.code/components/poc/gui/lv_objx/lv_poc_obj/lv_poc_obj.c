@@ -366,12 +366,12 @@ static bool lv_poc_init_stabar_time_label(void);
 ********************/
 static bool lv_poc_init_stabar_battery_img(void);
 
-/*******************
-*     NAME:    lv_poc_init_stabar_operator_img
-* DESCRIPT:    初始化状态栏运营商图标
-*     DATE:    2020-12-14
-********************/
-static bool lv_poc_init_stabar_operator_img(void);
+///*******************
+//*     NAME:    lv_poc_init_stabar_operator_img
+//* DESCRIPT:    初始化状态栏运营商图标
+//*     DATE:    2020-12-14
+//********************/
+//static bool lv_poc_init_stabar_operator_img(void);
 
 /*******************
 *     NAME:    lv_poc_stabar_sim_clean
@@ -579,7 +579,10 @@ bool lv_poc_setting_init(void)
 {
     lv_poc_setting_conf_init();
     poc_setting_conf = lv_poc_setting_conf_read();
-	poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
+	if(pub_lv_poc_get_watchdog_status())//watchdog
+	{
+		poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
+	}
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
@@ -948,7 +951,7 @@ static bool lv_poc_status_bar_init(void)
     lv_poc_init_stabar_sim2_img();
     lv_poc_update_stabar_sim_img();
     lv_poc_init_stabar_signal_img();
-	lv_poc_init_stabar_operator_img();
+	//lv_poc_init_stabar_operator_img();
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	lv_poc_init_stabar_gps_img(NULL);
 #endif
@@ -1051,48 +1054,48 @@ static bool lv_poc_init_stabar_battery_img(void)
     return ret_val;
 }
 
-/*******************
-*     NAME:    lv_poc_init_stabar_operator_img
-* DESCRIPT:    初始化状态栏运营商图标
-*     DATE:    2020-12-14
-********************/
-static bool lv_poc_init_stabar_operator_img(void)
-{
-    bool ret_val = true;
-	char countrystr[16] = {0};
-
-	if(lv_poc_status_bar_fptr->operator_img == NULL)
-   {
-	   	lv_poc_status_bar_fptr->operator_img = (lv_poc_status_bar_operator_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_operator_obj_t));
-	    memset(lv_poc_status_bar_fptr->operator_img, 0, sizeof(lv_poc_status_bar_operator_obj_t));
-
-		lv_poc_status_bar_fptr->operator_img->align_l_obj = &(lv_poc_status_bar_fptr->time_label);
-		lv_poc_status_bar_fptr->operator_img->align_r_obj = lv_poc_status_bar_fptr->operator_img->align_l_obj;
-
-		lv_poc_status_bar_fptr->operator_img->img = lv_img_create(lv_poc_status_bar, NULL);
-		lv_img_set_auto_size(lv_poc_status_bar_fptr->operator_img->img, false);
-		lv_obj_set_size(lv_poc_status_bar_fptr->operator_img->img, 18, 18);
-	}
-	if(lv_poc_status_bar_fptr->operator_img->img == NULL)
-	{
-		return false;
-	}
-	lv_poc_get_mobile_card_operator(countrystr, true);
-	if(NULL != strstr(countrystr, "CMCC"))
-	{
-		lv_img_set_src(lv_poc_status_bar_fptr->operator_img->img, &optcmcc);
-	}
-	else if(NULL != strstr(countrystr, "CUCC"))
-	{
-		lv_img_set_src(lv_poc_status_bar_fptr->operator_img->img, &optcucc);
-	}
-	else if(NULL != strstr(countrystr, "CTCC"))
-	{
-		lv_img_set_src(lv_poc_status_bar_fptr->operator_img->img, &optctcc);
-	}
-	lv_obj_align(lv_poc_status_bar_fptr->operator_img->img, lv_poc_status_bar_fptr->time_label, LV_ALIGN_OUT_RIGHT_MID, 2, -1);
-    return ret_val;
-}
+///*******************
+//*     NAME:    lv_poc_init_stabar_operator_img
+//* DESCRIPT:    初始化状态栏运营商图标
+//*     DATE:    2020-12-14
+//********************/
+//static bool lv_poc_init_stabar_operator_img(void)
+//{
+//    bool ret_val = true;
+//	char countrystr[16] = {0};
+//
+//	if(lv_poc_status_bar_fptr->operator_img == NULL)
+//   {
+//	   	lv_poc_status_bar_fptr->operator_img = (lv_poc_status_bar_operator_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_operator_obj_t));
+//	    memset(lv_poc_status_bar_fptr->operator_img, 0, sizeof(lv_poc_status_bar_operator_obj_t));
+//
+//		lv_poc_status_bar_fptr->operator_img->align_l_obj = &(lv_poc_status_bar_fptr->time_label);
+//		lv_poc_status_bar_fptr->operator_img->align_r_obj = lv_poc_status_bar_fptr->operator_img->align_l_obj;
+//
+//		lv_poc_status_bar_fptr->operator_img->img = lv_img_create(lv_poc_status_bar, NULL);
+//		lv_img_set_auto_size(lv_poc_status_bar_fptr->operator_img->img, false);
+//		lv_obj_set_size(lv_poc_status_bar_fptr->operator_img->img, 18, 18);
+//	}
+//	if(lv_poc_status_bar_fptr->operator_img->img == NULL)
+//	{
+//		return false;
+//	}
+//	lv_poc_get_mobile_card_operator(countrystr, true);
+//	if(NULL != strstr(countrystr, "CMCC"))
+//	{
+//		lv_img_set_src(lv_poc_status_bar_fptr->operator_img->img, &optcmcc);
+//	}
+//	else if(NULL != strstr(countrystr, "CUCC"))
+//	{
+//		lv_img_set_src(lv_poc_status_bar_fptr->operator_img->img, &optcucc);
+//	}
+//	else if(NULL != strstr(countrystr, "CTCC"))
+//	{
+//		lv_img_set_src(lv_poc_status_bar_fptr->operator_img->img, &optctcc);
+//	}
+//	lv_obj_align(lv_poc_status_bar_fptr->operator_img->img, lv_poc_status_bar_fptr->time_label, LV_ALIGN_OUT_RIGHT_MID, 2, -1);
+//    return ret_val;
+//}
 
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 /*******************
@@ -1520,7 +1523,9 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 
 #if IDT_POC_MODE
 
-	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_VOLUM)
+	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_VOLUM
+		|| lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_MIC
+		|| lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET)
 	{
 		vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
 		if(is_keypad_msg)
@@ -2608,7 +2613,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			charge_complete_status = false;
 			lv_poc_set_charge_status(charge_status);
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		}
 
         if(battery_t.battery_value >= 100)//4.12v
@@ -3841,7 +3846,9 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 	{
 		case CBN_KEY_GPS_DEBUG://debug gps
 		{
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 			lv_poc_gps_monitor_open();
+#endif
 			return true;
 		}
 

@@ -28,6 +28,7 @@ static void callback_lv_poc_green_close_red_jump(void);
 static void callback_lv_poc_red_open_green_jump(void);
 static void callback_lv_poc_green_open_red_jump(void);
 static void callback_lv_poc_green_jump_red_jump(void);
+static void callback_red_close_3000ms_green_open_500ms(void);
 static void Lv_Poc_Led_Status_Callback_Check(lv_task_t *task);
 static void Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2);
 
@@ -113,7 +114,6 @@ static void lv_poc_led_entry(void *param)
 			{
 				case LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS:
 				{
-					pocLedIdtAttr.jumpperiod = 1000;
 					if(pocLedIdtAttr.task == NULL)
 					{
 						pocLedIdtAttr.task = lv_task_create(Lv_Poc_Led_Status_Callback_Check, pocLedIdtAttr.jumpperiod, LV_TASK_PRIO_MID, NULL);
@@ -124,6 +124,7 @@ static void lv_poc_led_entry(void *param)
 #ifndef CONFIG_POC_PING_NETWORK_SUPPORT
 				case LVPOCLEDIDTCOM_SIGNAL_POWERON_STATUS:
 				{
+					pocLedIdtAttr.pledjump = NULL;
 					lv_poc_red_close_green_open(NULL);
 					break;
 				}
@@ -136,34 +137,63 @@ static void lv_poc_led_entry(void *param)
 						pocLedIdtAttr.task = NULL;
 					}
 					pocLedIdtAttr.isReady = false;
+					pocLedIdtAttr.pledjump = NULL;
 					lv_poc_red_open_green_close(NULL);
 					break;
 				}
 
 				case LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS:
+				{
+					pocLedIdtAttr.pledjump = NULL;
+					lv_poc_red_open_green_close(NULL);
+					break;
+				}
+
 				case LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS:
 				{
-					pocLedIdtAttr.pledjump = callback_lv_poc_red_close_green_jump;
+					pocLedIdtAttr.pledjump = NULL;
+					lv_poc_red_close_green_open(NULL);
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS:
+				{
+					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS;
+					pocLedIdtAttr.pledjump	= callback_lv_poc_red_close_green_jump;
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS:
+				{
+					pocLedIdtAttr.pledjump = NULL;
+					lv_poc_red_close_green_open(NULL);
 					break;
 				}
 
 				case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
-				case LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS:
+				{
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS:
 				{
 					switch(pocLedIdtAttr.before_status)
 					{
+						case LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS:
 						case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
 	                    {
-	                        pocLedIdtAttr.pledjump  = callback_lv_poc_red_close_green_jump;
+	                        pocLedIdtAttr.pledjump  = callback_red_close_3000ms_green_open_500ms;
 	                        break;
 	                    }
 						case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
 						{
+							pocLedIdtAttr.pledjump = NULL;
 							lv_poc_red_open_green_close(NULL);
 							break;
 						}
 						case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
 						{
+							pocLedIdtAttr.pledjump = NULL;
 							lv_poc_red_close_green_open(NULL);
 							break;
 						}
@@ -173,21 +203,40 @@ static void lv_poc_led_entry(void *param)
 							pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
 							break;
 						}
+						case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
+						{
+
+							break;
+						}
+						case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
+						{
+							pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
+							pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
+							break;
+						}
 						default:
 						{
-							pocLedIdtAttr.pledjump = callback_lv_poc_red_close_green_jump;
+							pocLedIdtAttr.pledjump = callback_red_close_3000ms_green_open_500ms;
 							break;
 						}
 					}
 					break;
 				}
 
-				case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
 				case LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS:
 				{
 					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS;
 					pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
 					pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
+					break;
+				}
+
+				case LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS:
+				{
+					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS;
+					pocLedIdtAttr.before_jumpperiod = pocLedIdtAttr.jumpperiod;
+					pocLedIdtAttr.pledjump = callback_lv_poc_green_close_red_jump;
+					break;
 				}
 
 				case LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS:
@@ -208,6 +257,7 @@ static void lv_poc_led_entry(void *param)
 				case LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS:
 				{
 					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS;
+					pocLedIdtAttr.pledjump = NULL;
 					lv_poc_red_open_green_close(NULL);
 					break;
 				}
@@ -215,6 +265,7 @@ static void lv_poc_led_entry(void *param)
 				case LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS:
 				{
                 	pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS;
+					pocLedIdtAttr.pledjump = NULL;
                 	lv_poc_led_status_all_close(NULL);
                 	break;
 				}
@@ -222,6 +273,7 @@ static void lv_poc_led_entry(void *param)
 				case LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS:
 				{
 					pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS;
+					pocLedIdtAttr.pledjump = NULL;
 					lv_poc_red_close_green_open(NULL);
 					break;
 				}
@@ -230,24 +282,14 @@ static void lv_poc_led_entry(void *param)
 				case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_SUCCESS_STATUS:
 				case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_SUCCESS_STATUS:
 				{
+					pocLedIdtAttr.pledjump = NULL;
 					lv_poc_red_close_green_open(NULL);
 					break;
-				}
-
-				case LVPOCLEDIDTCOM_SIGNAL_MERMEBER_LIST_FAIL_STATUS:
-				case LVPOCLEDIDTCOM_SIGNAL_GROUP_LIST_FAIL_STATUS:
-				{
-					lv_poc_red_open_green_close(NULL);
-					break;
-				}
-
-				case LVPOCLEDIDTCOM_SIGNAL_FAIL_STATUS:
-				{
-					return;
 				}
 #else
 				case LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_IND:
 				{
+					pocLedIdtAttr.pledjump = NULL;
 					lv_poc_led_status_all_close(NULL);
 					break;
 				}
@@ -325,6 +367,7 @@ static void
 lv_poc_led_status_all_close(lv_task_t *task)
 {
 	pocLedIdtAttr.pledjump = NULL;
+	pocLedIdtAttr.jumpperiod = 1000;
 	poc_set_green_blacklight(false);
     poc_set_red_blacklight(false);
 }
@@ -436,6 +479,31 @@ callback_lv_poc_green_jump_red_jump(void)
 }
 
 /*
+	  name : callback_red_close_3000ms_green_open_500ms
+  describe :
+	 param : none
+	  date : 2020-06-02
+*/
+static void
+callback_red_close_3000ms_green_open_500ms(void)
+{
+	static int number = 0;
+	number++;
+
+	if(number == 1)
+	{
+		poc_set_red_blacklight(false);
+		poc_set_green_blacklight(false);
+	}
+	else if(number == 6)
+	{
+		poc_set_red_blacklight(false);
+		poc_set_green_blacklight(true);
+		number = 0;
+	}
+}
+
+/*
 	  name : Lv_Poc_Led_Status_Callback_Check
   describe : 循环周期回调消息查询
 	 param : none
@@ -457,12 +525,7 @@ Lv_Poc_Led_Status_Callback_Check(lv_task_t *task)
 	{
 		pocLedIdtAttr.jumpcount--;
 	}
-
-	if(pocLedIdtAttr.pledjump != NULL)
-	{
-		OSI_LOGI(0, "[IDTLED][EVENT]led cb(%d)", pocLedIdtAttr.jumpcount);
-		(pocLedIdtAttr.pledjump)();//回调
-	}
+	pocLedIdtAttr.pledjump != NULL ? pocLedIdtAttr.pledjump() : 0;
 }
 
 /*

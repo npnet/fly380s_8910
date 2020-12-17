@@ -88,10 +88,12 @@ lv_poc_cit_result_label_struct_t lv_poc_cit_result_label_array[] = {
 		""				   , LV_LABEL_LONG_SROLL, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	{
 		"11.GPS测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		""				   , LV_LABEL_LONG_SROLL, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
+#endif
 
 	{
 		"12.SIM卡测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,

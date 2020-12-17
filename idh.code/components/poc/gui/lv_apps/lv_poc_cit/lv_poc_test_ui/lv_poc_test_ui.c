@@ -377,6 +377,7 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 			break;
 		}
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_GPS:
 		{
 			if(task->user_data == NULL || cit_test_info->cit_gps_attr.cb == NULL)
@@ -473,9 +474,9 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 				lv_poc_del_activity(poc_cit_test_ui_activity);
 				lvPocCitAutoTestCom_Msg(LV_POC_CIT_AUTO_TEST_TYPE_SUCCESS);
 			}
-
 			break;
 		}
+#endif
 
 		case LV_POC_CIT_OPRATOR_TYPE_SIM:
 		{
@@ -975,6 +976,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			break;
 		}
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_GPS:
 		{
 			if(cit_test_info->cit_gps_attr.cb == NULL)
@@ -1032,6 +1034,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			}
 			break;
 		}
+#endif
 
 		case LV_POC_CIT_OPRATOR_TYPE_SIM:
 		{

@@ -94,20 +94,18 @@ static void pocIdtStartHandleTask(void * ctx)
 	lv_poc_set_power_on_status(true);
 	while(!poc_get_network_register_status(POC_SIM_1))
 	{
-		OSI_LOGI(0, "[poc][idt] checking network\n");
+		OSI_LOGI(0, "[poc][idt] checking network");
 		osiThreadSleepRelaxed(5000*6, OSI_WAIT_FOREVER);//30s
 	}
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
-
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 	if(!pub_lv_poc_get_watchdog_status())
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, 50, true);
 	}
 	osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
-
-#ifdef CONFIG_POC_FOTA_POWER_ON_SUPPORT
+	//upload result
 	abup_check_update_result();
-#endif
 
 #ifdef CONFIG_POC_SUPPORT
 	lvPocGuiIdtCom_log();
@@ -157,6 +155,8 @@ static void pocStartAnimation(void *ctx)
 	}
 	else//watchdog
 	{
+		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+		drvLcdSetBackLightEnable(lcd, true);
 		lv_poc_setting_init();
 		osiThreadSleepRelaxed(3000, OSI_WAIT_FOREVER);
 		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
@@ -200,6 +200,7 @@ void pocStart(void *ctx)
 
     poc_Status_Led_Task();
 	poc_config_Lcd_power_vol();
+	poc_set_lcden_status(true);//lcd en
 	drvLcdInitV2();
 
 	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);

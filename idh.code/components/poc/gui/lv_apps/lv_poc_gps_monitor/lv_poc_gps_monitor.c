@@ -134,6 +134,7 @@ lv_poc_gps_label_struct_t lv_poc_gps_label_array[] = {
 
 static void lv_poc_gps_check_monitor_cb(lv_task_t * task)
 {
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	lv_obj_t ** btn_array = (lv_obj_t **)task->user_data;
 	//gps info
 	nmea_msg *gps_info = (nmea_msg *)publvPocGpsIdtComDataInfo();
@@ -292,6 +293,7 @@ static void lv_poc_gps_check_monitor_cb(lv_task_t * task)
 	strcat(lv_poc_gps_text_cur_poweron_location_number, location_numberstr);
 	strcat(lv_poc_gps_text_cur_poweron_location_number, "次定位");
 	lv_label_set_text(poweron_location_number, lv_poc_gps_text_cur_poweron_location_number);
+#endif
 }
 
 #ifdef SUPPORT_PREES_CB

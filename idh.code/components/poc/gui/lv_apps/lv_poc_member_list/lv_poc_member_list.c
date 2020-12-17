@@ -383,7 +383,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     lv_poc_member_list_obj->hide_offline = hide_offline;
     if(members == NULL)
     {
-		OSI_LOGI(0, "[song]member null to get\n");
+		OSI_LOGI(0, "[member]member null to get\n");
 		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
 		{
 			lv_poc_set_refr_error_info(true);
@@ -393,7 +393,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     }
     else
     {
-		OSI_LOGI(0, "[song]have member to refr\n");
+		OSI_LOGI(0, "[member]have member to refr\n");
 		lv_poc_refr_task_once(lv_poc_member_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
 	}
 }
@@ -740,7 +740,6 @@ void lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj)
 
 	lv_poc_member_list_set_hightlight_index();
 	extern lv_poc_group_info_t *lv_poc_group_list_get_member_list_info;
-	OSI_LOGI(0, "[song]lv_poc_member_list_get_member_type = %d", lv_poc_member_list_get_member_type);
 	if(lv_poc_member_list_get_member_type == 1)/*成员列表为空*/
 	{
 		lv_poc_member_list_clear(member_list_obj);
@@ -1150,7 +1149,6 @@ lv_poc_status_t lv_poc_member_list_set_state(lv_poc_member_list_t *member_list_o
                 return POC_OPERATE_SECCESS;
             }
             p_cur = p_cur->next;
-			//OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]p_cur ucnum = %s",p_cur->name);
         }
     }
     else

@@ -1432,7 +1432,7 @@
     ITEM_NAME    = freq
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x64
+    ITEM_CONTENT = 0x96
     ITEM_INDEX   = 142
     ITEM_PARENT  = 141
     ITEM_DESC    =  
@@ -1442,7 +1442,7 @@
     ITEM_NAME    = qual
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x7
+    ITEM_CONTENT = 0x2
     ITEM_INDEX   = 143
     ITEM_PARENT  = 141
     ITEM_DESC    =  
@@ -1462,7 +1462,7 @@
     ITEM_NAME    = gain
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFE
     ITEM_INDEX   = 145
     ITEM_PARENT  = 141
     ITEM_DESC    =  
@@ -1482,7 +1482,7 @@
     ITEM_NAME    = freq
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x398
+    ITEM_CONTENT = 0x1F4
     ITEM_INDEX   = 147
     ITEM_PARENT  = 146
     ITEM_DESC    =  
@@ -1492,7 +1492,7 @@
     ITEM_NAME    = qual
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xA
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 148
     ITEM_PARENT  = 146
     ITEM_DESC    =  
@@ -1512,7 +1512,7 @@
     ITEM_NAME    = gain
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xFFFD
+    ITEM_CONTENT = 0xFFFE
     ITEM_INDEX   = 150
     ITEM_PARENT  = 146
     ITEM_DESC    =  
@@ -1532,7 +1532,7 @@
     ITEM_NAME    = freq
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x6A4
+    ITEM_CONTENT = 0x3E8
     ITEM_INDEX   = 152
     ITEM_PARENT  = 151
     ITEM_DESC    =  
@@ -1542,7 +1542,7 @@
     ITEM_NAME    = qual
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xA
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 153
     ITEM_PARENT  = 151
     ITEM_DESC    =  
@@ -1562,7 +1562,7 @@
     ITEM_NAME    = gain
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xFFFA
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 155
     ITEM_PARENT  = 151
     ITEM_DESC    =  
@@ -1682,7 +1682,7 @@
     ITEM_NAME    = freq
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x7D0
+    ITEM_CONTENT = 0xBB8
     ITEM_INDEX   = 167
     ITEM_PARENT  = 166
     ITEM_DESC    =  
@@ -1692,7 +1692,7 @@
     ITEM_NAME    = qual
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x7
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 168
     ITEM_PARENT  = 166
     ITEM_DESC    =  
@@ -1702,7 +1702,7 @@
     ITEM_NAME    = type
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0x3
     ITEM_INDEX   = 169
     ITEM_PARENT  = 166
     ITEM_DESC    =  
@@ -1712,7 +1712,7 @@
     ITEM_NAME    = gain
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFE
     ITEM_INDEX   = 170
     ITEM_PARENT  = 166
     ITEM_DESC    =  
@@ -1732,7 +1732,7 @@
     ITEM_NAME    = freq
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x4E20
+    ITEM_CONTENT = 0x1388
     ITEM_INDEX   = 172
     ITEM_PARENT  = 171
     ITEM_DESC    =  
@@ -1742,7 +1742,7 @@
     ITEM_NAME    = qual
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x7
+    ITEM_CONTENT = 0x5
     ITEM_INDEX   = 173
     ITEM_PARENT  = 171
     ITEM_DESC    =  
@@ -1762,7 +1762,7 @@
     ITEM_NAME    = gain
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x0
+    ITEM_CONTENT = 0xFFFD
     ITEM_INDEX   = 175
     ITEM_PARENT  = 171
     ITEM_DESC    =  
@@ -36802,7 +36802,7 @@
     ITEM_NAME    = adc
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xC
+    ITEM_CONTENT = 0xE
     ITEM_INDEX   = 3679
     ITEM_PARENT  = 3677
     ITEM_DESC    =  

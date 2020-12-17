@@ -42,34 +42,34 @@ void lv_poc_sntp_Update_Time(void)
 		sntpConfigInit();
 		if (sntpClient == NULL)
 		{
-			OSI_LOGI(0, "[song]AT_CmdFunc_SNTP:  malloc failed,ERR_AT_CME_NO_MEMORY\n");
+			OSI_LOGI(0, "[sntp]AT_CmdFunc_SNTP:  malloc failed,ERR_AT_CME_NO_MEMORY\n");
 		}
 	}
 	else
 	{
-		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP:  sync time processing,ERR_AT_CME_SNTP_SYNCING\n");
+		OSI_LOGI(0, "[sntp]AT_CmdFunc_SNTP:  sync time processing,ERR_AT_CME_SNTP_SYNCING\n");
 	}
 
 	strncpy(sntpClient->cServer, serverip, AT_SNTP_SERVER_MAX_LENTH);
 	sntpClient->cServer[AT_SNTP_SERVER_MAX_LENTH] = '\0';
 
-	OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]AT_CmdFunc_SNTP: ntpServer = %s", sntpClient->cServer);
+	OSI_LOGXI(OSI_LOGPAR_S, 0, "[sntp]AT_CmdFunc_SNTP: ntpServer = %s", sntpClient->cServer);
 
 	result = sntpUpdateStart(sntpClient);
 
 	if (result == CFW_SNTP_READY)
 	{
-		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP: CFW_SNTP_READY\n");
+		OSI_LOGI(0, "[sntp]AT_CmdFunc_SNTP: CFW_SNTP_READY\n");
 	}
 	else if (result == CFW_SNTP_PARAM_INVALID)
 	{
-		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP: CFW_SNTP_PARAM_INVALID\n");
+		OSI_LOGI(0, "[sntp]AT_CmdFunc_SNTP: CFW_SNTP_PARAM_INVALID\n");
 		free(sntpClient);//ERR_AT_CME_PARAM_INVALID
 		sntpClient = NULL;
 	}
 	else
 	{
-		OSI_LOGI(0, "[song]AT_CmdFunc_SNTP:  sync time is processing,ERR_AT_CME_SNTP_SYNCING\n");
+		OSI_LOGI(0, "[sntp]AT_CmdFunc_SNTP:  sync time is processing,ERR_AT_CME_SNTP_SYNCING\n");
 	}
 
 }
@@ -95,7 +95,7 @@ uint8_t cereg_Respond(bool reportN)
     {
         return -1;
     }
-	
+
     _Cereg_UtoBinString(activeTime, sStatus.activeTime);
     _Cereg_UtoBinString(periodicTau, sStatus.periodicTau);
     bool nwInfoChange = false;

@@ -76,6 +76,7 @@ void abup_check_update_result(void);
 void abup_check_version(void);
 uint8_t abup_update_status(void);
 void abup_set_status(uint8_t status);
+bool abup_system_run_status(void);
 
 #endif
 

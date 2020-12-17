@@ -210,10 +210,6 @@ void lv_poc_notation_refresh(void)
 			label_2_length = lv_poc_txt_utf8_get_length((char *)lv_poc_notationwindow_label_2_text);
     	}
     }
-#if 0
-	OSI_LOGI(0,"[song]label_1_length = %d,label_2_length = %d",
-	label_1_length,label_2_length);
-#endif
 	if(label_1_length > 4 || label_2_length > 4)//文本长度 大于4个汉字
 	{
 		//重新设置消息框原点                                                 13/80

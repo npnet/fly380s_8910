@@ -9,7 +9,14 @@
 extern "C" {
 #endif
 
+struct PocLedOnOff_t
+{
+	int turnontime;
+	int turnofftime;
+};
+
 void poc_Status_Led_Task(void);
+
 bool lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count);
 
 #ifdef __cplusplus

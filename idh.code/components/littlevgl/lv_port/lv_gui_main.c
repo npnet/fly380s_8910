@@ -327,7 +327,7 @@ static bool prvLvInitKeypad(void)
     kp_drv.type = LV_INDEV_TYPE_KEYPAD;
     kp_drv.read_cb = prvLvKeypadRead;
 	kp_drv.long_press_time = 1000;
-	kp_drv.long_press_rep_time = 400;
+	kp_drv.long_press_rep_time = 1000;
 
     d->keypad = lv_indev_drv_register(&kp_drv); // pointer copy
 

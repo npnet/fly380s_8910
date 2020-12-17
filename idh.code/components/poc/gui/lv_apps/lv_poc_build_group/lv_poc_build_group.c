@@ -178,6 +178,11 @@ static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, i
 	int32_t real_num = 0;
 	for(int i = 0; i < info_num; i++)
 	{
+		if(p_info->item_information == NULL)
+		{
+			return false;
+		}
+
 		if(p_info->is_selected == true)
 		{
 			*p_sel = p_info->item_information;

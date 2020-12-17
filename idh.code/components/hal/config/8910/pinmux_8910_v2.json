@@ -19,7 +19,6 @@
         "keyout_3",
         "keyout_4",
         "keyout_5",
-        "gpio_19",
         "gpio_10",
 		"gpio_7"
     ],
@@ -65,9 +64,6 @@
         },
         "keyout_5": {
             "pull": "pull_none"
-        },
-        "gpio_19": {
-            "pull": "pull_up_1"
         },
         "gpio_10": {
             "pull": "pull_up_1"
@@ -120,6 +116,7 @@
         "gpio_16": "i2c_m1_scl",
         "gpio_17": "i2c_m1_sda",
         "camera_rst_l": "camera_rst_l",
+		"gpio_18": "gpio_18",
         "gpio_19": "gpio_19",
         "gpio_2": "gpio_2",
         "gpio_21": "gpio_21",
@@ -257,8 +254,6 @@
         "spi_lvds_cs": "spi_camera_si_1",
         "spi_lvds_di": "camera_ref_clk",
         "spi_lvds_do": "spi_camera_si_0",
-        "uart_1_cts": "gpio_18",
-        "uart_1_rts": "gpio_19",
         "uart_1_rxd": "uart_1_rxd",
         "uart_1_txd": "uart_1_txd",
         "gpio_20": "gpio_20",

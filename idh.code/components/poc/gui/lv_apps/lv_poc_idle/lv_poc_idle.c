@@ -91,6 +91,7 @@ lv_poc_activity_t *activity_idle = NULL;
 static lv_task_t * idle_page_task = NULL;
 static lv_poc_idle_page2_msg_t *idle_page_task_msg = NULL;
 static lv_poc_idle_page2_display_t page2_display_state = lv_poc_idle_page2_normal_info;
+static lv_obj_t * idle_operator;
 static lv_obj_t * idle_date_label;
 static lv_obj_t * idle_big_clock;
 static char idle_current_page = IDLE_PAGE_CURRENT;
@@ -283,7 +284,9 @@ static void lv_poc_idle_time_task(void)
 	static char big_clock_str[10] = {0};
 	static const char * str = NULL;
     static char old_big_clock_str[10] = {0};
+    static char old_operator_str[10] = {0};
     static char old_str[IDLE_DATE_LABEL_STR_LEN] = {0};
+	char countrystr[16] = {0};
     static bool isFirst = true;
 	static bool isInit = false;
     static lv_style_t * idle_clock_style;
@@ -304,6 +307,9 @@ static void lv_poc_idle_time_task(void)
     	style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_idle_date_label);
     	lv_label_set_align(idle_date_label, LV_LABEL_ALIGN_CENTER);
     	lv_label_set_style(idle_date_label, LV_LABEL_STYLE_MAIN, style);
+		idle_operator = lv_label_create(activity_idle->display,NULL);
+    	lv_label_set_align(idle_operator, LV_LABEL_ALIGN_CENTER);
+    	lv_label_set_style(idle_operator, LV_LABEL_STYLE_MAIN, style);
 	}
 
     if(current_activity->has_stabar == false)
@@ -332,12 +338,14 @@ static void lv_poc_idle_time_task(void)
 	lv_poc_get_time(&time);
 	sprintf(big_clock_str,"%02d:%02d",time.tm_hour,time.tm_min);
 	str = lv_poc_idle_get_date(&time);
+	lv_poc_get_mobile_card_operator(countrystr, false);
 
     if(isFirst == true)
     {
         isFirst = false;
     	lv_label_set_text(idle_big_clock,big_clock_str);
     	lv_label_set_text(idle_date_label,str);
+		lv_label_set_text(idle_operator, countrystr);
     }
     else
     {
@@ -349,6 +357,10 @@ static void lv_poc_idle_time_task(void)
         {
             lv_label_set_text(idle_date_label,str);
         }
+		if(0 != strcmp(old_operator_str, countrystr))
+        {
+			lv_label_set_text(idle_operator, countrystr);
+        }
     }
     if(activity_idle->has_control == true)
     {
@@ -358,8 +370,10 @@ static void lv_poc_idle_time_task(void)
     {
         lv_obj_align(idle_big_clock, activity_idle->display, LV_ALIGN_CENTER, -1, -screen_h/12);
     }
-    lv_obj_align(idle_date_label, idle_big_clock, LV_ALIGN_OUT_BOTTOM_MID, -1, -8);
-    strcpy(old_big_clock_str, big_clock_str);
+    lv_obj_align(idle_operator, idle_big_clock, LV_ALIGN_OUT_TOP_MID, 0, -1);
+    lv_obj_align(idle_date_label, idle_big_clock, LV_ALIGN_OUT_BOTTOM_MID, -1, 6);
+	strcpy(old_operator_str, countrystr);
+	strcpy(old_big_clock_str, big_clock_str);
     strcpy(old_str,str);
 	is_running = false;
 }

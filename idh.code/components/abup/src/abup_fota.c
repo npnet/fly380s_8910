@@ -151,6 +151,11 @@ void abup_exit_restore_context(void)
             OSI_LOGI(0, "abup:imei access count max is 100");
 			abup_current_state = ABUP_FOTA_NO_ACCESS_TIMES;
         }
+		else
+		{
+            OSI_LOGI(0, "abup:error");
+			abup_current_state = ABUP_FOTA_ERROR;
+		}
 		abup_task_exit();
     }
 }
@@ -260,11 +265,10 @@ static void abup_fota_task (void *argument)
 
 	abup_current_state = ABUP_FOTA_READY;
     for (int i = 0 ; i < 2 ; i++) {
-        osiThreadSleep (6000);
-        OSI_LOGI (0, "abup: wait 6s\n");
+        osiThreadSleep (1000);
+        OSI_LOGI (0, "abup: wait 1s\n");
     }
-    OSI_LOGI (0,"abup: wait 12s end\n");
-    //osiThreadSleep (1000);
+    OSI_LOGI (0,"abup: wait 2s end\n");
 
 	abup_init_file();
 	osiThreadSleep (100);
@@ -284,7 +288,7 @@ static void abup_fota_task (void *argument)
 			OSI_LOGI(0,"abup: Current fota in idle.");
 			abup_fota_exit();
 			osiThreadSleep (1000);
-			abup_current_state = ABUP_FOTA_IDLEI;
+			abup_set_status(ABUP_FOTA_ERROR);
 			break;
 		}
 
@@ -304,6 +308,7 @@ static void abup_fota_task (void *argument)
 				if(dns_retry>10){
 					dns_retry=0;
 					abup_fota_exit();
+					abup_set_status(ABUP_FOTA_ERROR);
 					break;
 				}
 				else
@@ -336,6 +341,7 @@ static void abup_fota_task (void *argument)
 				if(abup_socket_retry>5)
 				{
 					abup_socket_retry=0;
+					abup_set_status(ABUP_FOTA_ERROR);
 					abup_fota_exit();
 					break;
 				}
@@ -446,16 +452,19 @@ void abup_check_version(void)
 //如需开机不启动，app_start.c 去掉调用此函数的地方，自行调用
 void abup_check_update_result(void)
 {
-	OSI_LOGI (0,"abup_check_update_result");
 	if (abup_check_upgrade() != 0)
 	{
-		abup_process_state=0;
+		OSI_LOGI (0,"[abup]have exist update, start upload");
+		abup_process_state = 0;
 		abup_create_fota_task();
 	}
-	else
+#ifdef CONFIG_POC_FOTA_POWER_ON_SUPPORT
+	else//关闭开机自动检测升级
 	{
+		OSI_LOGI (0,"[abup]no exist update, start check");
 		abup_check_version();
 	}
+#endif
 }
 
 //返回检查版本是否在运行
@@ -474,4 +483,11 @@ void abup_set_status(uint8_t status)
 {
 	abup_current_state = status;
 }
+
+//返回系统运行状态
+bool abup_system_run_status(void)
+{
+	return s_abup_task_data.is_quit;
+}
+
 
