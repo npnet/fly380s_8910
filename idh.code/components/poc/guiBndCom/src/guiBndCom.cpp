@@ -224,6 +224,8 @@ public:
 	osiTimer_t * Bnd_GroupUpdate_timer;
 	osiTimer_t * Bnd_MemberUpdate_timer;
 	osiTimer_t * play_tone_timer;
+	osiTimer_t * delay_stop_play_timer;
+	osiTimer_t * delay_stop_tone_timer;
 
 	//cb
 	lv_poc_get_group_list_cb_t pocGetGroupListCb;
@@ -297,6 +299,7 @@ AIR_OSI_Mutex_t* AIR_OSI_MutexCreate(void)//创建锁
 
 bool AIR_OSI_MutexDelete(AIR_OSI_Mutex_t* mutex)//删除锁
 {
+	if(mutex == NULL) return false;
 #if GUIBNDCOM_BND_LOG
 	OSI_LOGI(0, "[bnd][mutex](%d):MutexDelete", __LINE__);
 #endif
@@ -306,6 +309,7 @@ bool AIR_OSI_MutexDelete(AIR_OSI_Mutex_t* mutex)//删除锁
 
 bool AIR_OSI_MutexTryLock(AIR_OSI_Mutex_t* mutex, unsigned int ms_timeout)//上锁
 {
+	if(mutex == NULL) return false;
 #if GUIBNDCOM_BND_LOG
 	OSI_LOGI(0, "[bnd][mutex](%d):MutexTryLock", __LINE__);
 #endif
@@ -314,6 +318,7 @@ bool AIR_OSI_MutexTryLock(AIR_OSI_Mutex_t* mutex, unsigned int ms_timeout)//上�
 
 bool AIR_OSI_MutexUnlock(AIR_OSI_Mutex_t* mutex)//释放锁
 {
+	if(mutex == NULL) return false;
 #if GUIBNDCOM_BND_LOG
 	OSI_LOGI(0, "[bnd][mutex](%d):MutexUnlock", __LINE__);
 #endif
@@ -331,6 +336,7 @@ AIR_OSI_Semaphore_t* AIR_OSI_SemaphoreCreate(int a, int b)//创建信号量
 
 bool AIR_SemaphoreDelete(AIR_OSI_Semaphore_t* cond)//删除信号量
 {
+	if(cond == NULL) return false;
 #if GUIBNDCOM_BND_LOG
 	OSI_LOGI(0, "[bnd][semaphore](%d):SemaphoreDelete", __LINE__);
 #endif
@@ -340,6 +346,7 @@ bool AIR_SemaphoreDelete(AIR_OSI_Semaphore_t* cond)//删除信号量
 
 bool AIR_OSI_SemaphoreRelease(AIR_OSI_Semaphore_t* cond)//释放信号量
 {
+	if(cond == NULL) return false;
 #if GUIBNDCOM_BND_LOG
 	OSI_LOGI(0, "[bnd][semaphore](%d):SemaphoreRelease", __LINE__);
 #endif
@@ -349,6 +356,7 @@ bool AIR_OSI_SemaphoreRelease(AIR_OSI_Semaphore_t* cond)//释放信号量
 
 bool AIR_OSI_SemaphoreAcquire(AIR_OSI_Semaphore_t* cond)//等待信号量
 {
+	if(cond == NULL) return false;
 #if GUIBNDCOM_BND_LOG
 	OSI_LOGI(0, "[bnd][semaphore](%d):SemaphoreAcquire", __LINE__);
 #endif
@@ -358,6 +366,7 @@ bool AIR_OSI_SemaphoreAcquire(AIR_OSI_Semaphore_t* cond)//等待信号量
 
 bool AIR_OSI_SemaphoreTryAcquire(AIR_OSI_Semaphore_t* cond, unsigned int ms_timeout)//等待信号量到超时
 {
+	if(cond == NULL) return false;
 #if GUIBNDCOM_BND_LOG
 	OSI_LOGI(0, "[bnd][semaphore](%d):SemaphoreTryAcquire", __LINE__);
 #endif
@@ -700,8 +709,7 @@ int lib_oem_start_play(void)
 
 int lib_oem_stop_play(void)
 {
-	OSI_LOGI(0, "[cbbnd][play](%d):rec bnd stop play", __LINE__);
-	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_PLAY_IND, NULL);
+	osiTimerStart(pocBndAttr.delay_stop_play_timer, 200);
 	return 0;
 }
 
@@ -788,8 +796,7 @@ int lib_oem_play_tone(int type)
 
 		case 4://stop play
 		{
-			OSI_LOGI(0, "[bnd][play](%d):bnd stop listen tone", __LINE__);
-			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_PLAY_TONE_STOP_LISTEN, NULL);
+			osiTimerStart(pocBndAttr.delay_stop_tone_timer, 200);
 			break;
 		}
 	}
@@ -1579,6 +1586,24 @@ static void LvGuiBndCom_check_ack_timeout_timer_cb(void *ctx)
 	}
 }
 
+static void LvGuiBndCom_delay_stop_play_timer_cb(void *ctx)
+{
+	OSI_LOGI(0, "[cbbnd][play](%d):rec bnd stop play", __LINE__);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_PLAY_IND, NULL);
+}
+
+static void LvGuiBndCom_delay_stop_tone_timer_cb(void *ctx)
+{
+	OSI_LOGI(0, "[bnd][play](%d):bnd stop listen tone", __LINE__);
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_PLAY_TONE_STOP_LISTEN, NULL);
+}
+
+static void LvGuiBndCom_Open_PA_timer_cb(void *ctx)
+{
+	OSI_LOGI(0, "[pa][timecb](%d):open pa", __LINE__);
+	poc_set_ext_pa_status(true);
+}
+
 static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 {
 	switch(id)
@@ -2222,7 +2247,7 @@ static void prvPocGuiBndTaskHandlePlay(uint32_t id, uint32_t ctx)
 				break;
 			}
 
-			osiMutexTryLock(pocBndAttr.lock, 5);
+			osiMutexTryLock(pocBndAttr.lock, 50);
 			pocAudioPlayerStop(pocBndAttr.player);
 			audevStopPlay();
 			osiMutexUnlock(pocBndAttr.lock);
@@ -3002,7 +3027,8 @@ extern "C" void pocGuiBndComStart(void)
 	pocBndAttr.Bnd_MemberUpdate_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_Member_update_timer_cb, NULL);//成员刷新定时器
 	pocBndAttr.check_ack_timeout_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_check_ack_timeout_timer_cb, NULL);
 	pocBndAttr.play_tone_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_start_play_tone_timer_cb, NULL);
-
+	pocBndAttr.delay_stop_play_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_delay_stop_play_timer_cb, NULL);
+	pocBndAttr.delay_stop_tone_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_delay_stop_tone_timer_cb, NULL);
 	pocBndAttr.lock = osiMutexCreate();
 }
 
