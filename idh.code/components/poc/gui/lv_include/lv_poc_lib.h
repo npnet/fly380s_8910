@@ -316,6 +316,15 @@ void
 lv_poc_get_time(OUT lv_poc_time_t * time);
 
 /*
+      name : poc_set_ping_time
+     param : config ping time
+             [0]15秒 [1]30秒 [2]45秒 [3]60秒     [default 0]
+      date : 2020-12-18
+*/
+void
+poc_set_ping_time(IN uint8_t timeout);
+
+/*
       name : poc_set_lcd_bright_time
      param : config lcd bright time
              [0]5秒 [1]15秒 [2]30秒 [3]1分钟 [4]2分钟 [5]5分钟 [6]10分钟 [7]30分钟     [default 2]

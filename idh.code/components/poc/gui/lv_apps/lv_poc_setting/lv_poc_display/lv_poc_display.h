@@ -10,7 +10,7 @@ extern lv_poc_activity_t * bright_time_activity;
 
 void lv_poc_bright_time_open(void);
 
-void lv_poc_sound_quality_open(void);
+void lv_poc_ping_time_open(void);
 
 #ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 void lv_poc_theme_switch_open(void);

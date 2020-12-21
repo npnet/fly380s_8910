@@ -132,18 +132,6 @@
 #cmakedefine CONFIG_POC_CIT_KEY_SUPPORT
 
 /**
- * Wheth the POC low power mode is enabled.
- *
- */
-#cmakedefine CONFIG_POC_LOW_POWER_SUPPORT
-
-/**
- * Wheth the POC sound quality is enabled.
- *
- */
-#cmakedefine CONFIG_POC_SOUND_QUALITY_SUPPORT
-
-/**
  * Wheth the POC tone switch is enabled.
  *
  */

@@ -142,15 +142,13 @@ typedef struct
 	uint8_t electric_torch_switch;    //[0]close   [1]open   [default 0]
 	uint8_t screen_brightness;        //[0 - 9]    [default 4]
 	uint8_t screen_bright_time;       //[0]5秒 [1]15秒 [2]30秒 [3]1分钟 [4]2分钟 [5]5分钟 [6]10分钟 [7]30分钟     [default 2]
-#ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
-	uint8_t current_sound_quality;	  //[0]4k	[1]8k	  [default 0]
-#endif
 #ifdef CONFIG_POC_TONE_SWITCH_SUPPORT
 	uint8_t current_tone_switch;	  //[0]close   [1]open	  [default 0]
 #endif
 #ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 	uint8_t current_theme;          //[0] white theme   [1]black theme    [default 0]
 #endif
+	uint8_t ping;                             //[0]15秒 [1]30秒 [2]45秒 [3]60秒 [default 0]
 	uint8_t main_SIM;                 //[0]SIM 1   [1]SIM 2     [default 0]
 #ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
 	uint8_t net_type;                 //[0]4G/3G/2G  [1]only 3G/2G    [default 0]

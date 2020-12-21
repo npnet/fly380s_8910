@@ -10,9 +10,7 @@ static lv_poc_win_t * poc_setting_win;
 
 static const char * bright_str[POC_MAX_BRIGHT] = {"0","1","2","3","4","5","6"};
 static const char * bright_time_str[] = {"5秒","15秒","30秒","1分钟","2分钟","5分钟","10分钟","30分钟"};
-#ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
-static const char * sound_quality_str[] = {"4k","8k"};
-#endif
+static const char * ping_str[] = {"15秒","30秒","45秒","60秒"};
 #ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 static const char * theme_str[] = {"白色","黑色"};
 #endif
@@ -26,9 +24,6 @@ static const char * lv_poc_setting_title_text = "设置";
 static const char * lv_poc_setting_btn_text_btn_voice = "按键音";
 #ifdef CONFIG_POC_TTS_SUPPORT
 static const char * lv_poc_setting_btn_text_broadcast = "语音播报";
-#endif
-#ifdef CONFIG_POC_LOW_POWER_SUPPORT
-static const char * lv_poc_setting_btn_text_lowpower = "省电模式";
 #endif
 #ifdef CONFIG_POC_BIGFONT_SUPPORT
 static const char * lv_poc_setting_btn_text_big_font = "大号字体";
@@ -44,9 +39,6 @@ static const char * lv_poc_setting_btn_text_tourch = "手电筒";
 #endif
 static const char * lv_poc_setting_btn_text_brightness = "亮度";
 static const char * lv_poc_setting_btn_text_brightness_time = "亮屏时间";
-#ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
-static const char * lv_poc_setting_btn_text_sound_quality = "音质";
-#endif
 #ifdef CONFIG_POC_TONE_SWITCH_SUPPORT
 static const char * lv_poc_setting_btn_text_tone_switch = "通话提示音";
 #endif
@@ -59,6 +51,7 @@ static const char * lv_poc_setting_btn_text_sim_switch = "主卡选择";
 #ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
 static const char * lv_poc_setting_btn_text_net_switch = "网络切换";
 #endif
+static const char * lv_poc_setting_btn_text_ping_time = "心跳时间";
 static char is_poc_setting_update_UI_task_running = 0;
 char is_refresh_UI_for_poc = 0;
 static lv_poc_setting_item_func_t lv_poc_setting_items_funcs[LV_POC_SETTING_ITEMS_NUM] = {0};
@@ -249,13 +242,6 @@ static void lv_poc_setting_brightness_time_btn_cb(lv_obj_t * obj)
 	lv_poc_bright_time_open();
 }
 
-#ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
-static void lv_poc_setting_sound_quality_btn_cb(lv_obj_t * obj)
-{
-	lv_poc_sound_quality_open();
-}
-#endif
-
 #ifdef CONFIG_POC_TONE_SWITCH_SUPPORT
 static void lv_poc_setting_tone_btn_cb(lv_obj_t * obj)
 {
@@ -297,24 +283,10 @@ static void lv_poc_setting_net_switch_btn_cb(lv_obj_t * obj)
 }
 #endif
 
-#ifdef CONFIG_POC_LOW_POWER_SUPPORT
-static void lv_poc_setting_low_power_btn_cb(lv_obj_t * obj)
+static void lv_poc_setting_ping_time_btn_cb(lv_obj_t * obj)
 {
-    lv_obj_t * ext_obj = NULL;
-	ext_obj = (lv_obj_t *)obj->user_data;
-	poc_setting_conf->lowpower_switch = !poc_setting_conf->lowpower_switch;
-	poc_set_power_save_mode_state(poc_setting_conf->lowpower_switch);
-	if(poc_setting_conf->lowpower_switch != 0)
-	{
-		lv_sw_on(ext_obj, LV_ANIM_OFF);
-	}
-	else
-	{
-		lv_sw_off(ext_obj, LV_ANIM_OFF);
-	}
-	lv_poc_setting_conf_write();
+	lv_poc_ping_time_open();
 }
-#endif
 
 static lv_obj_t * poc_setting_create(lv_poc_display_t *display)
 {
@@ -399,35 +371,6 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     }
 
     lv_list_set_btn_selected(list, btn);
-
-#ifdef CONFIG_POC_LOW_POWER_SUPPORT//save electricity mode
-	btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_lowpower);
-	lv_obj_set_click(btn, true);
-	lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
-	lv_poc_setting_items_funcs[storage_index] = lv_poc_setting_low_power_btn_cb;
-	btns[storage_index++] = btn;
-	lv_btn_set_fit(btn, LV_FIT_NONE);
-	lv_obj_set_height(btn, btn_height);
-	btn_label = lv_list_get_btn_label(btn);
-	sw = lv_sw_create(btn, NULL);
-	lv_sw_set_style(sw, LV_SW_STYLE_BG, bg_style);
-	lv_sw_set_style(sw, LV_SW_STYLE_INDIC, indic_style);
-	lv_sw_set_style(sw, LV_SW_STYLE_KNOB_ON, knob_on_style);
-	lv_sw_set_style(sw, LV_SW_STYLE_KNOB_OFF, knob_off_style);
-	lv_obj_set_size(sw, lv_obj_get_width(sw)*9/17, btn_sw_height*9/17);
-	btn->user_data = (void *)sw;
-	lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 5);
-	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-	lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
-	if(poc_setting_conf->lowpower_switch == 1)
-	{
-		lv_sw_on(sw, LV_ANIM_OFF);
-	}
-	else
-	{
-		lv_sw_off(sw, LV_ANIM_OFF);
-	}
-#endif
 
 #ifdef CONFIG_POC_TTS_SUPPORT
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_broadcast);
@@ -606,24 +549,6 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
-#ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
-    btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_sound_quality);
-    lv_obj_set_click(btn, true);
-    lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
-    lv_poc_setting_items_funcs[storage_index] = lv_poc_setting_sound_quality_btn_cb;
-    btns[storage_index++] = btn;
-    lv_btn_set_fit(btn, LV_FIT_NONE);
-    lv_obj_set_height(btn, btn_height);
-    btn_label = lv_list_get_btn_label(btn);
-    label = lv_label_create(btn, NULL);
-    btn->user_data = (void *)label;
-	poc_setting_conf->current_sound_quality > 1 ? (poc_setting_conf->current_sound_quality = 1) : 0;
-    lv_label_set_text(label, sound_quality_str[poc_setting_conf->current_sound_quality]);
-    lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
-    lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
-    lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-#endif
-
 #ifdef CONFIG_POC_TONE_SWITCH_SUPPORT
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_tone_switch);
     lv_obj_set_click(btn, true);
@@ -704,6 +629,21 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
     lv_label_set_long_mode(btn_label, LV_LABEL_LONG_DOT);
 #endif
+
+	btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_ping_time);
+	lv_obj_set_click(btn, true);
+	lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
+	lv_poc_setting_items_funcs[storage_index] = lv_poc_setting_ping_time_btn_cb;
+	btns[storage_index++] = btn;
+	lv_btn_set_fit(btn, LV_FIT_NONE);
+	lv_obj_set_height(btn, btn_height);
+	btn_label = lv_list_get_btn_label(btn);
+	label = lv_label_create(btn, NULL);
+	btn->user_data = (void *)label;
+	lv_label_set_text(label, ping_str[poc_setting_conf->ping]);
+	lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
+	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
+	lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
 	lv_list_set_btn_selected(list, btns[setting_selected_item]);
 

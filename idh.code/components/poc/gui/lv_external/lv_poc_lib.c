@@ -391,6 +391,33 @@ lv_poc_get_time(OUT lv_poc_time_t * time)
 }
 
 /*
+      name : poc_set_ping_time
+     param : config ping time
+             [0]15秒 [1]30秒 [2]45秒 [3]60秒     [default 0]
+      date : 2020-12-18
+*/
+void
+poc_set_ping_time(IN uint8_t timeout)
+{
+	unsigned ping_time[4] = {14000, 28000, 42000, 56000};
+	uint8_t index = 0;
+	if(timeout > 3)
+	{
+		index = 3;
+	}
+	else if(timeout < 1)
+	{
+		index = 0;
+	}
+	else
+	{
+		index = timeout;
+	}
+
+	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_PING_TIME_IND, (void *)ping_time[index]);
+}
+
+/*
       name : poc_set_lcd_bright_time
      param : config lcd bright time
              [0]5秒 [1]15秒 [2]30秒 [3]1分钟 [4]2分钟 [5]5分钟 [6]10分钟 [7]30分钟     [default 2]
@@ -1567,6 +1594,7 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->electric_torch_switch = 0;
 	poc_setting->screen_brightness = 4;
 	poc_setting->screen_bright_time = 2;
+	poc_setting->ping = 0;
 	//poc_setting->current_theme = 0;
 	poc_setting->main_SIM = 0;
 #ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
@@ -1591,9 +1619,6 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->ip_port = 10000;
 #endif
 	poc_setting->nv_monitor_group_number = 0;
-#ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
-	poc_setting->current_sound_quality = 0;
-#endif
 #ifdef CONFIG_POC_TONE_SWITCH_SUPPORT
 	poc_setting->current_tone_switch = 0;
 #endif

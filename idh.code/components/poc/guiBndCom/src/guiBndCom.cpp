@@ -212,10 +212,12 @@ public:
 	bool   speak_status;
 	bool   record_fist;
 	int runcount;
+	int ping_time;
 	osiTimer_t * try_login_timer;
 	osiTimer_t * auto_login_timer;
 	bool   is_makeout_call;
 	bool   is_release_call;
+	bool   set_ping_first;
 
 	//timer
 	osiTimer_t * check_ack_timeout_timer;
@@ -226,6 +228,7 @@ public:
 	osiTimer_t * play_tone_timer;
 	osiTimer_t * delay_stop_play_timer;
 	osiTimer_t * delay_stop_tone_timer;
+	osiTimer_t * ping_timer;
 
 	//cb
 	lv_poc_get_group_list_cb_t pocGetGroupListCb;
@@ -1604,6 +1607,22 @@ static void LvGuiBndCom_Open_PA_timer_cb(void *ctx)
 	poc_set_ext_pa_status(true);
 }
 
+static void LvGuiBndCom_ping_timer_cb(void *ctx)
+{
+	static int pingnumber = 0;
+
+	if((pingnumber == pocBndAttr.ping_time) || (pocBndAttr.set_ping_first))
+	{
+		OSI_LOGI(0, "[ping]set ping");
+		broad_send_ping();
+		pingnumber = 0;
+		pocBndAttr.set_ping_first = false;
+	}
+
+	pingnumber++;
+	osiTimerStart(pocBndAttr.ping_timer, 1000);
+}
+
 static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 {
 	switch(id)
@@ -1685,6 +1704,10 @@ static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 				osiTimerStart(pocBndAttr.monitor_recorder_timer, 20000);//20S
 				osiTimerStartRelaxed(pocBndAttr.get_group_list_timer, 500, OSI_WAIT_FOREVER);
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
+
+				nv_poc_setting_msg_t * poc_setting_conf = lv_poc_setting_conf_read();
+				if(poc_setting_conf->ping > 0)
+					poc_set_ping_time(poc_setting_conf->ping);
 			}
 
 			break;
@@ -2809,6 +2832,32 @@ static void prvPocGuiBndTaskHandleOther(uint32_t id, uint32_t ctx)
 	}
 }
 
+static void prvPocGuiBndTaskHandleSetPingTime(uint32_t id, uint32_t ctx)
+{
+	switch(id)
+	{
+		case LVPOCGUIBNDCOM_SIGNAL_PING_TIME_IND:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+
+			pocBndAttr.ping_time = (ctx/1000);
+			pocBndAttr.set_ping_first = true;
+
+			osiTimerStart(pocBndAttr.ping_timer, ctx);
+
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+}
+
 static void pocGuiBndComTaskEntry(void *argument)
 {
 	osiEvent_t event = {0};
@@ -3001,6 +3050,12 @@ static void pocGuiBndComTaskEntry(void *argument)
 				break;
 			}
 
+			case LVPOCGUIBNDCOM_SIGNAL_PING_TIME_IND:
+			{
+				prvPocGuiBndTaskHandleSetPingTime(event.param1, event.param2);
+				break;
+			}
+
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");
 				break;
@@ -3029,6 +3084,8 @@ extern "C" void pocGuiBndComStart(void)
 	pocBndAttr.play_tone_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_start_play_tone_timer_cb, NULL);
 	pocBndAttr.delay_stop_play_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_delay_stop_play_timer_cb, NULL);
 	pocBndAttr.delay_stop_tone_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_delay_stop_tone_timer_cb, NULL);
+	pocBndAttr.ping_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_ping_timer_cb, NULL);
+
 	pocBndAttr.lock = osiMutexCreate();
 }
 
