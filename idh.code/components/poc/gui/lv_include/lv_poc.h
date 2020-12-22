@@ -45,6 +45,7 @@
 #include "lv_apps/lv_poc_cit/lv_poc_test_ui/lv_poc_test_ui.h"
 #include "lv_apps/lv_poc_cit/lv_poc_auto_check/lv_poc_auto_check.h"
 #include "lv_apps/lv_poc_cit/lv_poc_log_switch/lv_poc_log_switch.h"
+#include "lv_apps/lv_poc_record_playback/lv_poc_record_playback.h"
 
 #endif //__LV_POC_H_
 

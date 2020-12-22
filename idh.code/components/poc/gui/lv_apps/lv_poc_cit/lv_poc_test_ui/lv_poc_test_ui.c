@@ -830,6 +830,8 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			lv_obj_align(label2, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 			lv_label_set_text(label2, "2.松开PPT键,播放\n录音内容.");
 			cit_test_info->cit_mic_attr.cb(true);;//loopback
+			//open pa
+			poc_set_ext_pa_status(true);
 			break;
 		}
 
@@ -1274,6 +1276,8 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			lv_label_set_text(label3, "3.松开耳机上的PPT\n键，播放录音内容.");
 			pocCitAttr.keyattr.label[2] = label3;
 			cit_test_info->cit_headset_attr.cb ? cit_test_info->cit_headset_attr.cb(true) : 0;//loopback
+			//open pa
+			poc_set_ext_pa_status(true);
 			break;
 		}
 

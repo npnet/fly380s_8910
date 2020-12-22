@@ -274,6 +274,8 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 	    {
 			if(pub_lv_poc_get_watchdog_status())
 			{
+				drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
+				drvLcdSetBackLightEnable(lcd, true);
 				pub_lv_poc_set_watchdog_status(false);
 				poc_setting_conf = lv_poc_setting_conf_read();
 				poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);

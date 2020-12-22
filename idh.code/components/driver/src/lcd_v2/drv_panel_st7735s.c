@@ -138,12 +138,12 @@ static void prvSt7735sInit(drvLcd_t *d)
 	osiThreadSleep(20); //Delay 20ms
 	drvLcdWriteCmd(d, 0x2c);
 
-	OSI_LOGI(0, "[song]ST7735S init");
+	OSI_LOGI(0, "[poc][st7735]ST7735S init");
 }
 
 static void prvSt7735sBlitPrepare(drvLcd_t *d, drvLcdDirection_t dir, const drvLcdArea_t *roi)
 {
-    OSI_LOGD(0, "[song]ST7735S dir/%d roi/%d/%d/%d/%d", dir, roi->x, roi->y, roi->w, roi->h);
+    OSI_LOGD(0, "[poc][st7735]ST7735S dir/%d roi/%d/%d/%d/%d", dir, roi->x, roi->y, roi->w, roi->h);
 
     prvSt7735sSetDir(d, dir);
 
@@ -173,15 +173,16 @@ static uint32_t prvSt7735sReadId(drvLcd_t *d)
     drvLcdReadData(d, LCD_CMD_READ_ID, id, 4);
 
     uint32_t dev_id = (id[3] << 16) | (id[2] << 8) | id[1];
-    OSI_LOGI(0, "[song]ST7735S read id: 0x%08x", dev_id);
+    OSI_LOGI(0, "[poc][st7735]ST7735S read id: 0x%08x", dev_id);
     return dev_id;
+	//return 0x7c89f0;//无屏幕时
 }
 
 static bool prvSt7735sProbe(drvLcd_t *d)
 {
     const drvLcdPanelDesc_t *desc = drvLcdGetDesc(d);
 
-    OSI_LOGI(0, "[song]ST7735S probe");
+    OSI_LOGI(0, "[poc][st7735]ST7735S probe");
     return prvSt7735sReadId(d) == desc->dev_id;
 }
 

@@ -906,6 +906,13 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data);
 ********************/
 void lv_poc_net_ping_task_create(void);
 
+/*******************
+*	  NAME:    lv_poc_get_current_activity
+* DESCRIPT:    获取当前窗口
+*	  DATE:    2020-10-09
+********************/
+lv_poc_activity_t *lv_poc_get_current_activity(void);
+
 #ifdef __cplusplus
 }
 #endif

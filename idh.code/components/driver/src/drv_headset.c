@@ -294,6 +294,11 @@ void drvHandsetInit(void)
         if (d->notify_cb != NULL)
             d->notify_cb(d->notify_cb_ctx, MSG_HEADSET_PLUGIN, d->type);
     }
+	else
+    {
+        if (d->notify_cb != NULL)
+            d->notify_cb(d->notify_cb_ctx, MSG_HEADSET_PLUGOUT, 0);
+    }
 }
 
 void drvGetHeadsetStatus(drvHeadSetStatus_t *status)

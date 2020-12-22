@@ -1314,6 +1314,55 @@ void lv_poc_type_plog_switch_cb(bool status);
 */
 void lv_poc_type_modemlog_switch_cb(bool status);
 
+/*
+	 name : lv_poc_set_first_membercall
+	 param :
+	 date : 2020-11-25
+*/
+void lv_poc_set_first_membercall(bool status);
+
+/*
+	 name : lv_poc_get_first_membercall
+	 param :
+	 date : 2020-11-25
+*/
+bool lv_poc_get_first_membercall(void);
+
+/*
+     name : lv_poc_pcm_to_file
+    param : none
+     date : 2020-12-18
+*/
+bool lv_poc_pcm_open_file(void);
+
+/*
+	 name : lv_poc_pcm_write_to_file
+	param : none
+	 date : 2020-12-18
+*/
+bool lv_poc_pcm_write_to_file(const uint8_t *buff , int size);
+
+/*
+     name : lv_poc_pcm_close_file
+    param : none
+     date : 2020-12-18
+*/
+bool lv_poc_pcm_close_file(void);
+
+/*
+	 name : lv_poc_index_next_file
+	param : none
+	 date : 2020-12-18
+*/
+void lv_poc_index_next_file(void);
+
+/*
+	 name : lv_poc_pcm_file_attr
+	param : none
+	 date : 2020-12-18
+*/
+struct PocPcmToFileAttr_s lv_poc_pcm_file_attr(void);
+
 #ifdef __cplusplus
 }
 #endif

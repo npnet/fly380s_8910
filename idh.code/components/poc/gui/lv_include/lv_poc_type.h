@@ -719,5 +719,19 @@ typedef struct _lv_poc_audio_dsc_t
     uint8_t * data;
 } lv_poc_audio_dsc_t;
 
+struct PocPcmToFileInfo_s
+{
+	char time[64];
+};
+
+struct PocPcmToFileAttr_s
+{
+	uint8_t index;
+	uint8_t number;
+	int status;
+	int fd;
+	struct PocPcmToFileInfo_s InfoAttr_s[5];
+};
+
 #endif // __LV_POC_TYPR_H_
 

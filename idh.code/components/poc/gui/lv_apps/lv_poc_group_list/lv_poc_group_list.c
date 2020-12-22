@@ -170,7 +170,7 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 		OSI_LOGI(0, "[grouprefr](%d):get failed memberlist", __LINE__);
 		lv_poc_set_refr_error_info(true);
 	    poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", (const uint8_t *)"");
     }
 }
 
@@ -265,6 +265,7 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 			strcpy(lv_poc_group_member_list_title, (const char *)p_element->name);
 			member_list->hide_offline = false;
 			lv_poc_group_list_get_member_list_info = (lv_poc_group_info_t *)p_element->information;
+			lv_poc_set_refr_error_info(false);
 			lv_poc_get_member_list(lv_poc_group_list_get_member_list_info,
 				member_list,
 				1,

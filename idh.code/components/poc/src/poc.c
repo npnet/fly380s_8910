@@ -155,8 +155,6 @@ static void pocStartAnimation(void *ctx)
 	}
 	else//watchdog
 	{
-		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
-		drvLcdSetBackLightEnable(lcd, true);
 		lv_poc_setting_init();
 		osiThreadSleepRelaxed(3000, OSI_WAIT_FOREVER);
 		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);

@@ -32,8 +32,8 @@ static void prvPocAudioPlayerMemWriterDelete(auWriter_t *d)
     {
         return;
 	}
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):writer deleted", __func__, __LINE__);
 
-    OSI_LOGI(0, "audio memory writer deleted");
     free(p->buf);
     free(p);
 }
@@ -52,24 +52,27 @@ static int prvPocAudioPlayerMemWriterWrite(auWriter_t *d, const void *buf, unsig
     {
         return -1;
 	}
-
-	if(p->pos + size <= p->max_size)
-	{
+	// 0 + 320 < 81920
+	if(p->pos + size <= p->max_size)//81920
+	{	//地址 + pos偏移
 		memcpy((char *)p->buf + p->pos, (char *)buf, size);
-		p->pos = p->pos + size;
+		p->pos = p->pos + size;//偏移指针
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):p->pos + size <= p->max_size(%d)", __func__, __LINE__, p->pos);
 	}
 	else
 	{
 		if(p->max_size > p->pos)
 		{
+			OSI_PRINTFI("[pocaudioplayer](%s)(%d):p->max_size > p->pos", __func__, __LINE__);
 			memcpy((char *)p->buf + p->pos, buf, p->max_size - p->pos);
 		}
 		memcpy((char *)p->buf, buf + ( p->max_size - p->pos ), size - ( p->max_size - p->pos ));
 		p->pos = size - ( p->max_size - p->pos );
 		player->restart = true;
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):player->restart=true, p->pos(%d)", __func__, __LINE__, p->pos);
 	}
-	p->size = p->pos;
-
+	p->size = p->pos;//no used
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):p->size(%d)", __func__, __LINE__, p->size);
     return size;
 }
 
@@ -91,8 +94,8 @@ static int prvPocAudioPlayerMemWriterSeek(auWriter_t *d, int offset, int whence)
     default:
         return -1;
     }
-
-    return p->pos;
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):seek pos(%d), offset(%d), whence(%d)", __func__, __LINE__, p->pos, offset, whence);
+	return p->pos;
 }
 
 static void prvPocAudioPlayerMemReaderDelete(auReader_t *d)
@@ -103,13 +106,14 @@ static void prvPocAudioPlayerMemReaderDelete(auReader_t *d)
         return;
 	}
 
-    OSI_LOGI(0, " poc audio meory reader delete");
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):reader delete", __func__, __LINE__);
     free(p);
 }
 
 static int prvPocAudioPlayerMemReaderRead(auReader_t *d, void *buf, unsigned size)
 {
-    auPocMemReader_t *p = (auPocMemReader_t *)d;
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):start: buf(%d), size(%d)", __func__, __LINE__, buf, size);
+	auPocMemReader_t *p = (auPocMemReader_t *)d;
     pocAudioPlayer_t *player = (pocAudioPlayer_t *)p->user;
 
     if (size == 0)
@@ -126,6 +130,7 @@ static int prvPocAudioPlayerMemReaderRead(auReader_t *d, void *buf, unsigned siz
 	if(player->restart == true)
 	{
 		count = p->size + (count<=0 ? count:-count);
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):player->restart=true, count(%d)", __func__, __LINE__, count);
 	}
 
 	if(player->raise == true)
@@ -133,15 +138,18 @@ static int prvPocAudioPlayerMemReaderRead(auReader_t *d, void *buf, unsigned siz
 		if(count < POCAUDIOPLAYERDATAPREBUFFSIZE/2)
 		{
 			memset(buf, 0, size);
+			OSI_PRINTFI("[pocaudioplayer](%s)(%d):count<15*320(%d)", __func__, __LINE__, count);
 			return size;
 		}
 		player->raise = false;
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):count<=0, raise = false", __func__, __LINE__);
 	}
 
 	if(count <= 0)
 	{
 		player->raise = true;
 		memset(buf, 0, size);
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):count<=0, raise = true", __func__, __LINE__);
 		return size;
 	}
 
@@ -150,6 +158,7 @@ static int prvPocAudioPlayerMemReaderRead(auReader_t *d, void *buf, unsigned siz
 		memcpy(buf, (const char *)p->buf + p->pos, size);
 		memset((void *)p->buf + p->pos, 0, size);
 		p->pos = p->pos + size;
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):p->pos(%d), size(%d), p->size(%d)", __func__, __LINE__, p->pos, size, p->size);
 	}
 	else if(player->restart == true)
 	{
@@ -162,12 +171,13 @@ static int prvPocAudioPlayerMemReaderRead(auReader_t *d, void *buf, unsigned siz
 		memset((void *)p->buf, 0, size - (p->size - p->pos));
 		p->pos = size - ( p->size - p->pos );
 		player->restart = false;
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):restart = false, p->pos(%d), size(%d), p->size(%d)", __func__, __LINE__, p->pos, size, p->size);
 	}
 	else
 	{
 		memset(buf, 0, size);
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):reset buf", __func__, __LINE__);
 	}
-
     return size;
 }
 
@@ -189,8 +199,9 @@ static int prvPocAudioPlayerMemReaderSeek(auReader_t *d, int offset, int whence)
     default:
         return -1;
     }
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):audio memory reader:pos(%d), offset(%d), whence(%d)", __func__, __LINE__, p->pos, offset, whence);
 
-    return p->pos;
+	return p->pos;
 }
 
 static bool prvPocAudioPlayerMemReaderEof(auReader_t *d)
@@ -200,8 +211,7 @@ static bool prvPocAudioPlayerMemReaderEof(auReader_t *d)
 
 static auPocMemReader_t *prvPocAudioPlayerMemReaderCreate(const void *buf, unsigned size)
 {
-    OSI_LOGI(0, "audio memory reader create, buf/0x%x size/%d", buf, size);
-
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):reader create:max size(%d)", __func__, __LINE__, size);
     if (size > 0 && buf == NULL)
     {
         return NULL;
@@ -225,8 +235,7 @@ static auPocMemReader_t *prvPocAudioPlayerMemReaderCreate(const void *buf, unsig
 
 static auPocMemWriter_t * prvPocAudioPlayerMemWriterCreate(uint32_t max_size)
 {
-    OSI_LOGI(0, "poc audio player memory writer create, max size/%d", max_size);
-
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):writer create:max size(%d)", __func__, __LINE__, max_size);
     if (max_size == 0)
     {
         return NULL;
@@ -273,6 +282,7 @@ void pocAudioPlayerInit(void)
  */
 POCAUDIOPLAYER_HANDLE pocAudioPlayerCreate(const uint32_t max_size)
 {
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):max size(%d)", __func__, __LINE__, max_size);
 	if(max_size == 0)
 	{
 		return 0;
@@ -332,6 +342,7 @@ POCAUDIOPLAYER_HANDLE pocAudioPlayerCreate(const uint32_t max_size)
  */
 bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 {
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):play start", __func__, __LINE__);
 	if(player_id == 0)
 	{
 		return false;
@@ -341,17 +352,18 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 
 	if(!pocAudioPlayerStartPocModeReady())
 	{
-		OSI_LOGI(0, "[poc][readywork][player]ready error");
+		OSI_LOGI(0, "[pocaudioplayer][readywork][player]ready error");
 		return false;
 	}
 
 	if(!audevPocModeSwitch(LV_POC_MODE_PLAYER))
 	{
-		OSI_LOGI(0, "[poc][readywork][player]switch player failed");
+		OSI_LOGI(0, "[pocaudioplayer][readywork][player]switch player failed");
 		return false;
 	}
 
-	OSI_LOGI(0, "[poc][readywork][player](%d):audio poc'reader launching", __LINE__);
+	lv_poc_pcm_open_file();
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):audio poc'reader launching", __func__, __LINE__);
 
 	return true;
 #else
@@ -362,7 +374,7 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 
 	lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
 	player->status = auPlayerStartReader(player->player, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
-
+	lv_poc_pcm_open_file();
 	return player->status;
 
 #endif
@@ -377,6 +389,7 @@ bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
  */
 int pocAudioPlayerReset(POCAUDIOPLAYER_HANDLE player_id)
 {
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):play reset", __func__, __LINE__);
 	if(player_id == 0)
 	{
 		return -1;
@@ -409,17 +422,18 @@ int pocAudioPlayerReset(POCAUDIOPLAYER_HANDLE player_id)
  */
 bool pocAudioPlayerStop(POCAUDIOPLAYER_HANDLE player_id)
 {
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):play stop", __func__, __LINE__);
 	if(player_id == 0)
 	{
 		return false;
 	}
 
+	lv_poc_pcm_close_file();
 #if PLAYER_POC_MODE
 
 	if(!audevStopPocMode())
 	{
-		OSI_LOGI(0, "[idtpoc][player]stop poc mode failed");
-		return false;
+		OSI_LOGI(0, "[pocaudioplayer][player]stop poc mode failed");
 	}
 	pocAudioRecorderStopPocMode();
 
@@ -445,6 +459,7 @@ bool pocAudioPlayerStop(POCAUDIOPLAYER_HANDLE player_id)
  */
 bool pocAudioPlayerDelete(POCAUDIOPLAYER_HANDLE       player_id)
 {
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):play delete", __func__, __LINE__);
 	if(player_id == 0)
 	{
 		return false;
@@ -480,31 +495,41 @@ int pocAudioPlayerWriteData(POCAUDIOPLAYER_HANDLE player_id, const uint8_t *data
 		return -1;
 	}
 
+	lv_poc_pcm_write_to_file(data, length);//pcm to file
 	int ret = 0;
 	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
 	int count = player->writer->pos - player->reader->pos;
+
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):writer pos(%d), reader pos(%d), restart(%d), reduce(%d), count(%d)", __func__, __LINE__, player->writer->pos, player->reader->pos, player->restart, player->reduce, count);
 	if(player->restart == true)
 	{
 		count = player->writer->max_size + (count<=0 ? count:-count);
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):count(%d)", __func__, __LINE__, count);
 	}
 
 	if(player->reduce)
 	{
-		player->reduce_index = !player->reduce_index;
+		player->reduce_index = !(player->reduce_index);
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):reduce_index(%d)", __func__, __LINE__, player->reduce_index);
 		if(player->reduce_index)
 		{
+			OSI_PRINTFI("[pocaudioplayer](%s)(%d):reduce_index is true, goto write data", __func__, __LINE__, player->reduce_index);
 			ret = auWriterWrite((auWriter_t *)player->writer, data, length);
 		}
 		if(count <= POCAUDIOPLAYERDATAPREBUFFSIZE/2)
 		{
+			OSI_PRINTFI("[pocaudioplayer](%s)(%d):reduce=false", __func__, __LINE__);
 			player->reduce = false;
 		}
 		return ret;
 	}
-	if(count >= POCAUDIOPLAYERDATAPREBUFFSIZE)
+
+	if(count >= POCAUDIOPLAYERDATAPREBUFFSIZE)//地址相减 -2048 > 20*320U
 	{
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):reduce=true", __func__, __LINE__);
 		player->reduce = true;
 	}
+
 	return auWriterWrite((auWriter_t *)player->writer, data, length);
 }
 
@@ -575,27 +600,27 @@ bool pocAudioPlayerStartPocModeReady(void)
 
 	if (!audevSetRecordSampleRate(8000))
 	{
-		OSI_LOGI(0, "[poc][readywork](%d):audio poc set samplerate fail", __LINE__);
+		OSI_LOGI(0, "[pocaudioplayer][readywork](%d):audio poc set samplerate fail", __LINE__);
 		return false;
 	}
 
 	player->status = auPlayerStartReaderV2(player->player, AUDEV_PLAY_TYPE_POC, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
 	if(!player->status)
 	{
-		OSI_LOGI(0, "[poc][readywork](%d):recorder's reconfig error", __LINE__);
+		OSI_LOGI(0, "[pocaudioplayer][readywork](%d):recorder's reconfig error", __LINE__);
 		return false;
 	}
 
 	recorder->status = auRecorderStartWriter(recorder->recorder, AUDEV_RECORD_TYPE_POC, AUSTREAM_FORMAT_PCM, NULL, (auWriter_t *)recorder->writer);
 	if(!recorder->status)
 	{
-		OSI_LOGI(0, "[poc][readywork](%d):recorder's audio poc recorder startwriter failed", __LINE__);
+		OSI_LOGI(0, "[pocaudioplayer][readywork](%d):recorder's audio poc recorder startwriter failed", __LINE__);
 		return false;
 	}
 
 	if(!audevStartPocMode(AUPOC_STATUS_HALF_DUPLEX))
 	{
-		OSI_LOGI(0, "[poc][readywork](%d):poc mode start failed", __LINE__);
+		OSI_LOGI(0, "[pocaudioplayer][readywork](%d):poc mode start failed", __LINE__);
 		auRecorderStop(recorder->recorder);
 		auPlayerStop(player->player);
 		return false;

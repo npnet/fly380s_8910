@@ -1,4 +1,4 @@
-//font resource declaration
+﻿//font resource declaration
 
 #ifndef __INCLUDE_LV_POC_FONT_RESOURCE__
 #define  __INCLUDE_LV_POC_FONT_RESOURCE__

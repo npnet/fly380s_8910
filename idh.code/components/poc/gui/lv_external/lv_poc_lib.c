@@ -74,8 +74,10 @@ static osiTimer_t * delay_config_timer = NULL;
 static bool poc_power_on_status = false;
 static bool poc_charging_status = false;
 static bool is_poc_play_voice = false;
+static bool is_poc_listen_tone_complete = false;
 static bool lv_poc_is_insert_headset = false;
 static bool lv_poc_is_reconfig_complete = false;
+static bool is_first_membercall = false;
 
 #ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 static bool is_poc_touch_status = false;
@@ -731,6 +733,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					isPlayVoice = false;
 					is_poc_play_voice = false;
 
+					if(is_poc_listen_tone_complete == true)
+					{
+						is_poc_listen_tone_complete = false;
+						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND, NULL);
+					}
+
 					if(voice_queue_reader == voice_queue_writer)
 					{
 						prv_play_voice_one_time_thread = NULL;
@@ -794,10 +802,18 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				break;
 			}
 
+			case LVPOCAUDIO_Type_Tone_Start_Listen:
+			{
+				voice_formate = AUSTREAM_FORMAT_MP3;
+				audevSetPlayVolume(40);
+			    is_poc_play_voice = true;
+				is_poc_listen_tone_complete = true;
+				break;
+			}
+
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
 			case LVPOCAUDIO_Type_Tone_Lost_Mic:
 			case LVPOCAUDIO_Type_Tone_Note:
-			case LVPOCAUDIO_Type_Tone_Start_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 			case LVPOCAUDIO_Type_Tone_Start_Speak:
@@ -1369,23 +1385,23 @@ static void
 prv_poc_mmi_poc_setting_config_const(OUT nv_poc_setting_msg_t * poc_setting)
 {
 	poc_setting->font.list_btn_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
-	poc_setting->font.list_btn_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
+	poc_setting->font.list_btn_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
 	poc_setting->font.about_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
-	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
+	poc_setting->font.about_label_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
 	poc_setting->font.fota_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
-	poc_setting->font.fota_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
+	poc_setting->font.fota_label_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
 	poc_setting->font.cit_label_big_font = (uint32_t)LV_POC_FONT_MSYH(3500, 18);
-	poc_setting->font.cit_label_small_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
-	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
-	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
+	poc_setting->font.cit_label_small_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
+	poc_setting->font.win_title_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
+	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
 	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 13);
 	poc_setting->font.idle_big_clock_font = (uint32_t)LV_POC_FONT_MSYH(2500, 36);//主界面时间time
 	poc_setting->font.idle_date_label_font = (uint32_t)LV_POC_FONT_MSYH(2500, 18);//主界面日期label
-	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
-	poc_setting->font.idle_popwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
-	poc_setting->font.idle_lockgroupwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 14);
+	poc_setting->font.idle_page2_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
+	poc_setting->font.idle_popwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
+	poc_setting->font.idle_lockgroupwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(6500, 14);
 	poc_setting->font.idle_shutdownwindows_msg_font = (uint32_t)LV_POC_FONT_MSYH(3500, 16);
-	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(3500, 15);
+	poc_setting->font.activity_control_font = (uint32_t)LV_POC_FONT_MSYH(6500, 15);
 	poc_setting->font.status_bar_time_font = (uint32_t)LV_POC_FONT_MSYH(3500, 13);
 
 	poc_setting->theme.white = &theme_white;
@@ -1515,7 +1531,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 
 	if(poc_setting->font.big_font_switch == 0)
 	{
-		poc_setting->font.list_page_colum_count = 4;
+		poc_setting->font.list_page_colum_count = 3;//显示几行
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
 		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
@@ -1523,7 +1539,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 	}
 	else if(poc_setting->font.big_font_switch == 1)
 	{
-		poc_setting->font.list_page_colum_count = 3;
+		poc_setting->font.list_page_colum_count = 3;//显示几行
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
 		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
@@ -3379,7 +3395,14 @@ lv_poc_get_mobile_card_operator(char *operator_name, bool abbr)
 
    if(poc_iccid == NULL)
    {
-      abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
+ 	  if(!poc_check_sim_prsent(POC_SIM_1))
+ 	  {
+ 		  abbr ? strcpy(operator_name, "NOSIM") : strcpy(operator_name,"无SIM卡");
+ 	  }
+ 	  else
+ 	  {
+ 		  abbr ? strcpy(operator_name, "SEARCH") : strcpy(operator_name, "正在搜索");
+ 	  }
    }
 
    strncpy(poc_iccid_operator, poc_iccid, 6);
@@ -3398,7 +3421,14 @@ lv_poc_get_mobile_card_operator(char *operator_name, bool abbr)
    }
    else
    {
-      abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
+	  if(!poc_check_sim_prsent(POC_SIM_1))
+ 	  {
+ 		  abbr ? strcpy(operator_name, "NOSIM") : strcpy(operator_name,"无SIM卡");
+ 	  }
+ 	  else
+ 	  {
+ 		  abbr ? strcpy(operator_name, "SEARCH") : strcpy(operator_name, "正在搜索");
+ 	  }
    }
 }
 
@@ -3438,6 +3468,156 @@ poc_set_lcden_status(bool status)
 {
    poc_lcden_init();
    drvGpioWrite(poc_lcden_gpio, status);
+}
+
+/*
+	pcm to flie'name
+*/
+#define PCM_FILE_MAX 5
+static const char *pcmtofile[PCM_FILE_MAX] = {
+	"/pcmfile1.pcm",
+	"/pcmfile2.pcm",
+	"/pcmfile3.pcm",
+	"/pcmfile4.pcm",
+	"/pcmfile5.pcm",
+};
+
+static struct PocPcmToFileAttr_s pcmtofileattr= {0};
+
+/*
+     name : lv_poc_pcm_to_file
+    param : none
+     date : 2020-12-18
+*/
+bool lv_poc_pcm_open_file(void)
+{
+	lv_poc_time_t time = {0};
+	char hourstr[12] = {0};
+	char minstr[12] = {0};
+	char secstr[12] = {0};
+	char indexstr[12] = {0};
+	char timestr[64] = {0};
+
+    if (pcmtofileattr.status != 0)
+    {
+		pcmtofileattr.fd < 0 ? 0 : vfs_close(pcmtofileattr.fd);
+		pcmtofileattr.status = 0;
+        return false;
+    }
+
+	vfs_unlink(pcmtofile[pcmtofileattr.index]);
+    pcmtofileattr.fd = vfs_open(pcmtofile[pcmtofileattr.index], O_RDWR | O_CREAT | O_TRUNC);
+
+	if (pcmtofileattr.fd < 0)
+    {
+		OSI_LOGI(0, "[poc][file](%d):open file failed(%d)", __LINE__, pcmtofileattr.index);
+		return false;
+    }
+	pcmtofileattr.number < 5 ? (pcmtofileattr.number++) : 0;
+	pcmtofileattr.status = 1;
+
+	lv_poc_get_time(&time);
+	__itoa((pcmtofileattr.index + 1), (char *)indexstr, 10);
+	strcpy(timestr, indexstr);
+	strcat(timestr, "-");
+	__itoa(time.tm_hour, (char *)hourstr, 10);
+	strcat(timestr, hourstr);
+	strcat(timestr, ":");
+	__itoa(time.tm_min, (char *)minstr, 10);
+	strcat(timestr, minstr);
+	strcat(timestr, ":");
+	__itoa(time.tm_sec, (char *)secstr, 10);
+	strcat(timestr, secstr);
+	//copy
+	strcpy(pcmtofileattr.InfoAttr_s[pcmtofileattr.index].time, timestr);
+	OSI_LOGI(0, "[poc][file]open success");
+
+    return true;
+}
+
+/*
+     name : lv_poc_pcm_file_attr
+    param : none
+     date : 2020-12-18
+*/
+struct PocPcmToFileAttr_s lv_poc_pcm_file_attr(void)
+{
+	return pcmtofileattr;
+}
+
+/*
+     name : lv_poc_pcm_write_to_file
+    param : none
+     date : 2020-12-18
+*/
+bool lv_poc_pcm_write_to_file(const uint8_t *buff , int size)
+{
+    if (pcmtofileattr.status != 1
+		|| size <= 0)
+    {
+        return false;
+	}
+    if(vfs_write(pcmtofileattr.fd, buff, size) <= 0)
+    {
+		OSI_LOGI(0, "[poc][file]write file failed");
+	}
+    return true;
+}
+
+/*
+     name : lv_poc_pcm_close_file
+    param : none
+     date : 2020-12-18
+*/
+bool lv_poc_pcm_read_file(void)
+{
+	char buffer[256];
+
+	if (pcmtofileattr.fd < 0)
+	{
+		return false;
+	}
+    vfs_read(pcmtofileattr.fd, buffer, sizeof(buffer));
+	OSI_LOGXI(OSI_LOGPAR_IS, 0,"[poc][file]:(%d):file attr(%s)", __LINE__, buffer);
+    return true;
+}
+
+/*
+     name : lv_poc_pcm_close_file
+    param : none
+     date : 2020-12-18
+*/
+bool lv_poc_pcm_close_file(void)
+{
+    if (pcmtofileattr.status != 1)
+    {
+        return false;
+    }
+	lv_poc_pcm_read_file();
+    vfs_close(pcmtofileattr.fd);
+	pcmtofileattr.status = 0;
+	OSI_LOGI(0, "[poc][file]close success");
+	lv_poc_index_next_file();
+    return true;
+}
+
+
+/*
+     name : lv_poc_index_next_file
+    param : none
+     date : 2020-12-18
+*/
+void lv_poc_index_next_file(void)
+{
+	if(pcmtofileattr.index >= (PCM_FILE_MAX - 1))
+	{
+		pcmtofileattr.index = 0;
+	}
+	else
+	{
+		pcmtofileattr.index++;
+	}
+	OSI_LOGI(0, "[poc][file]next file:(%d)", pcmtofileattr.index);
 }
 
 static osiPipe_t *poc_at_rx_pipe;
@@ -3850,4 +4030,24 @@ void lv_poc_type_modemlog_switch_cb(bool status)
 }
 
 /********************************************CIT*****************************************************/
+
+/*
+ name : lv_poc_set_first_membercall
+ param :
+ date : 2020-11-25
+*/
+void lv_poc_set_first_membercall(bool status)
+{
+   is_first_membercall = status;
+}
+
+/*
+     name : lv_poc_get_first_membercall
+     param :
+     date : 2020-11-25
+*/
+bool lv_poc_get_first_membercall(void)
+{
+   return is_first_membercall;
+}
 

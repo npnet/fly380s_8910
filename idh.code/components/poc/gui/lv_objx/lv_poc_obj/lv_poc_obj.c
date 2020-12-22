@@ -23,6 +23,7 @@ extern "C" {
 extern lv_poc_activity_t * poc_group_list_activity;
 extern bool pub_lv_poc_get_watchdog_status(void);
 extern int lv_poc_cit_get_run_status(void);
+extern void lv_poc_record_playback_open(void);
 
 /*************************************************
 *
@@ -579,7 +580,7 @@ bool lv_poc_setting_init(void)
 {
     lv_poc_setting_conf_init();
     poc_setting_conf = lv_poc_setting_conf_read();
-	if(pub_lv_poc_get_watchdog_status())//watchdog
+	if(!pub_lv_poc_get_watchdog_status())//no watchdog
 	{
 		poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 	}
@@ -3785,9 +3786,10 @@ lv_poc_activity_t *lv_poc_get_current_activity(void)
 bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 {
 	//0(nul)1(volum down)1(volum up)1(power)
-	#define CBN_KEY_STATE_PRESS (1<<0)
-	#define CBN_KEY_GPS_DEBUG   (0b0011)
-	#define CBN_KEY_CIT_CHECK   (0b0101)
+	#define CBN_KEY_STATE_PRESS     (1<<0)
+	#define CBN_KEY_GPS_DEBUG       (0b0011)
+	#define CBN_KEY_CIT_CHECK       (0b0101)
+	#define CBN_KEY_RECORDERBACK	(0b0110)
 
 	static int  multi_keyvalue = 0;//multi-key
 
@@ -3855,6 +3857,12 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 		case CBN_KEY_CIT_CHECK://cit test
 		{
 			lv_poc_cit_open();
+			return true;
+		}
+
+		case CBN_KEY_RECORDERBACK://record playback
+		{
+			lv_poc_record_playback_open();
 			return true;
 		}
 	}

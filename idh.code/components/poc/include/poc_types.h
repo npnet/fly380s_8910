@@ -97,6 +97,21 @@ typedef struct
 	bool              status;           //status of recorder
 } pocAudioRecorder_t;
 
+/**
+ * poc audio pipe struct
+ */
+typedef struct PocPipeAttr_T
+{
+	bool plystatus;
+	bool recstatus;
+	osiPipe_t *plypipe;
+	osiPipe_t *recpipe;
+	auPlayer_t *player;
+    auRecorder_t *recorder;
+    osiThread_t *recv_thread_id;
+    osiThread_t *send_thread_id;
+}PocPipeAttr;
+
 enum
 {
 	LV_POC_MODE_RECORDER = 1,
