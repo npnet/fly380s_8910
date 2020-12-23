@@ -93,9 +93,10 @@ static bool lv_poc_buildgroup_refr_complete = false;
 static bool lv_poc_refr_error_info = false;
 static bool lv_poc_screenon_first = false;
 static bool lv_poc_cit_test_self_record = false;
-static void poc_ear_ppt_irq(void *ctx);
-
+static bool lv_poc_is_play_tone_complete = false;
 static uint16_t poc_cur_unopt_status;
+
+static void poc_ear_ppt_irq(void *ctx);
 static void poc_Lcd_Set_BackLightNess(uint32_t level);
 static void poc_SetPowerLevel(uint32_t id, uint32_t mv);
 static void drvledxSetBackLight(uint8_t ledx, bool status);
@@ -736,7 +737,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					if(is_poc_listen_tone_complete == true)
 					{
 						is_poc_listen_tone_complete = false;
-						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND, NULL);
+						lv_poc_set_play_tone_status(true);
 					}
 
 					if(voice_queue_reader == voice_queue_writer)
@@ -3312,6 +3313,28 @@ void lv_poc_set_screenon_status(bool status)
 bool lv_poc_get_screenon_status(void)
 {
 	return lv_poc_screenon_first;
+}
+
+/*
+	  name : lv_poc_set_play_tone_status
+	  describe :
+	  param :
+	  date : 2020-12-23
+*/
+void lv_poc_set_play_tone_status(bool status)
+{
+	lv_poc_is_play_tone_complete = status;
+}
+
+/*
+	  name : lv_poc_get_play_tone_status
+	  describe :
+	  param :
+	  date : 2020-12-23
+*/
+bool lv_poc_get_play_tone_status(void)
+{
+	return lv_poc_is_play_tone_complete;
 }
 
 /*

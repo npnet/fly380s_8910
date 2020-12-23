@@ -1214,12 +1214,21 @@ void lv_poc_virt_at_resp_send(char *cmd);
 int lv_poc_get_calib_status(void);
 
 /*
-      name : poc_play_ptt_tone
-     param :
-      date : 2020-12-14
+	  name : lv_poc_set_play_tone_status
+	  describe :
+	  param :
+	  date : 2020-12-23
 */
-void
-poc_play_ptt_tone(IN LVPOCAUDIO_Type_e voice_type);
+void lv_poc_set_play_tone_status(bool status);
+
+/*
+	  name : lv_poc_get_play_tone_status
+	  describe :
+	  param :
+	  date : 2020-12-23
+*/
+bool lv_poc_get_play_tone_status(void);
+
 
 #ifdef CONFIG_POC_CIT_KEY_SUPPORT
 /*

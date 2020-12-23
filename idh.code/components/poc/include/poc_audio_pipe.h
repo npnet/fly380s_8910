@@ -17,7 +17,6 @@
 #include "poc_config.h"
 #include "poc_types.h"
 #include "audio_player.h"
-#include "osi_pipe.h"
 
 OSI_EXTERN_C_BEGIN
 

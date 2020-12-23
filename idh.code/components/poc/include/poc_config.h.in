@@ -35,6 +35,12 @@
 #cmakedefine CONFIG_POC_AUDIO_PLAYER_SUPPORT
 
 /**
+ * Wheth the POC audio player pipe is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_AUDIO_PLAYER_PIPE_SUPPORT
+
+/**
  * Wheth the POC keypad is enabled.
  *
  */
