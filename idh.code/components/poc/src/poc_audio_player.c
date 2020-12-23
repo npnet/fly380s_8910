@@ -71,7 +71,7 @@ static int prvPocAudioPlayerMemWriterWrite(auWriter_t *d, const void *buf, unsig
 		player->restart = true;
 		OSI_PRINTFI("[pocaudioplayer](%s)(%d):player->restart=true, p->pos(%d)", __func__, __LINE__, p->pos);
 	}
-	p->size = p->pos;//no used
+	p->size = p->pos;//记录大小
 	OSI_PRINTFI("[pocaudioplayer](%s)(%d):p->size(%d)", __func__, __LINE__, p->size);
     return size;
 }
@@ -126,7 +126,8 @@ static int prvPocAudioPlayerMemReaderRead(auReader_t *d, void *buf, unsigned siz
         return -1;
 	}
 
-	int count = player->writer->pos - (p->pos + size);
+	int count = player->writer->pos - (p->pos + size);//回调写入的数据writer->pos(写入播放器) - (2048(记录读入播放器指针) + 1024)
+	OSI_PRINTFI("[pocaudioplayer](%s)(%d):writer->pos(%d), p->pos(%d), size(%d)", __func__, __LINE__, player->writer->pos, p->pos, size);
 	if(player->restart == true)
 	{
 		count = p->size + (count<=0 ? count:-count);
@@ -142,7 +143,7 @@ static int prvPocAudioPlayerMemReaderRead(auReader_t *d, void *buf, unsigned siz
 			return size;
 		}
 		player->raise = false;
-		OSI_PRINTFI("[pocaudioplayer](%s)(%d):count<=0, raise = false", __func__, __LINE__);
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):count(%d), raise = false", __func__, __LINE__, count);
 	}
 
 	if(count <= 0)
@@ -152,12 +153,12 @@ static int prvPocAudioPlayerMemReaderRead(auReader_t *d, void *buf, unsigned siz
 		OSI_PRINTFI("[pocaudioplayer](%s)(%d):count<=0, raise = true", __func__, __LINE__);
 		return size;
 	}
-
-	if(p->pos + size <= p->size)
+	//2048(初始化起始读指针索引) + (读入播放器大小)1024 <= 81920
+	if(p->pos + size <= p->size)//未溢出播放器
 	{
 		memcpy(buf, (const char *)p->buf + p->pos, size);
 		memset((void *)p->buf + p->pos, 0, size);
-		p->pos = p->pos + size;
+		p->pos = p->pos + size;//? = 2048 + 1024
 		OSI_PRINTFI("[pocaudioplayer](%s)(%d):p->pos(%d), size(%d), p->size(%d)", __func__, __LINE__, p->pos, size, p->size);
 	}
 	else if(player->restart == true)
@@ -173,10 +174,10 @@ static int prvPocAudioPlayerMemReaderRead(auReader_t *d, void *buf, unsigned siz
 		player->restart = false;
 		OSI_PRINTFI("[pocaudioplayer](%s)(%d):restart = false, p->pos(%d), size(%d), p->size(%d)", __func__, __LINE__, p->pos, size, p->size);
 	}
-	else
+	else//溢出播放器
 	{
 		memset(buf, 0, size);
-		OSI_PRINTFI("[pocaudioplayer](%s)(%d):reset buf", __func__, __LINE__);
+		OSI_PRINTFI("[pocaudioplayer](%s)(%d):reset buf, size(%d)", __func__, __LINE__, size);
 	}
     return size;
 }

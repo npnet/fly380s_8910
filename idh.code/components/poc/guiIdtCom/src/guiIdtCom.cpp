@@ -76,7 +76,7 @@ extern "C" lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb_set;
 //windows note
 #define GUIIDTCOM_IDTWINDOWS_NOTE    		1
 #define GUIIDTCOM_LOCK_FUNC                 0
-#define POC_AUDIO_MODE_PIPE                 1
+#define POC_AUDIO_MODE_PIPE                 0
 
 enum{
 	USER_OPRATOR_START_SPEAK = 3,
@@ -706,6 +706,7 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 		            lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
 					pocIdtAttr.membercall_count = 0;//复位单呼数据计数
 					lv_poc_set_first_membercall(true);
+					lv_poc_set_play_tone_status(false);
 					m_IdtUser.m_status = USER_OPRATOR_START_LISTEN;
 					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[poc][call in]%s(%d):rec single call", __func__, __LINE__);
 	            }
@@ -734,6 +735,7 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 					pocIdtAttr.is_justnow_listen = true;
 					pocIdtAttr.is_release_call = false;//obtain call
 					m_IdtUser.m_status = USER_OPRATOR_START_LISTEN;
+			   		lv_poc_set_play_tone_status(false);
 	           }
 	        }
 	        break;
@@ -849,10 +851,13 @@ int callback_IDT_CallRecvAudioData(void *pUsrCtx, DWORD dwStreamId, UCHAR ucCode
 #endif
 		pocIdtAttr.check_listen_count++;
 
-		if(m_IdtUser.m_iRxCount == 10)
+		if(m_IdtUser.m_iRxCount >= 20
+			&& lv_poc_get_play_tone_status())
 		{
+			lv_poc_set_play_tone_status(false);
 			pocIdtAttr.membercall_count++;//记录单呼数据帧
 			m_IdtUser.m_status = USER_OPRATOR_LISTENNING;
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND, NULL);
 		}
 	}
     return 0;
@@ -1550,6 +1555,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 
 #if POC_AUDIO_MODE_PIPE
 			pocIdtAttr.pipe = pocAudioPipeCreate(81920);
+			pocIdtAttr.player = pocAudioPlayerCreate(1024);
 #else
 			if(pocIdtAttr.player == 0)
 			{
@@ -1561,7 +1567,9 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 				pocIdtAttr.recorder = pocAudioRecorderCreate(40960, 320, 20, lvPocGuiIdtCom_send_data_callback);
 			}
 #if POC_AUDIO_MODE_PIPE
-			if(pocIdtAttr.pipe == 0 || pocIdtAttr.recorder == 0)
+			if(pocIdtAttr.pipe == 0
+				|| pocIdtAttr.recorder == 0
+				|| pocIdtAttr.player == 0)
 			{
 				pocIdtAttr.isReady = false;
 				osiThreadExit();

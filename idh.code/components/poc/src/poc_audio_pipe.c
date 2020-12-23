@@ -17,9 +17,27 @@
 #include "lv_include/lv_poc.h"
 #include "audio_device.h"
 
-#ifndef CONFIG_POC_AUDIO_PIPE_SUPPORT
+#ifdef CONFIG_POC_AUDIO_PLAYER_PIPE_SUPPORT
 
 #define POC_PIPE_RECV_IND (6025)
+
+struct osiPipe
+{
+    volatile bool running;
+    volatile bool eof;
+    unsigned size;
+    unsigned rd;
+    unsigned wr;
+    osiSemaphore_t *rd_avail_sema;
+    osiSemaphore_t *wr_avail_sema;
+    unsigned rd_cb_mask;
+    osiPipeEventCallback_t rd_cb;
+    void *rd_cb_ctx;
+    unsigned wr_cb_mask;
+    osiPipeEventCallback_t wr_cb;
+    void *wr_cb_ctx;
+    char data[];
+};
 
 static PocPipeAttr PipeAttr = {0};
 
@@ -30,7 +48,7 @@ static void prvPocPlyPipeWriteCallback(void *param, unsigned event)
     {
         OSI_LOGXI(OSI_LOGPAR_I, 0, "[pocPipe]prvPocPlyPipeWriteCallback  event:%d", event);
         osiEvent_t poc_event = {.id = POC_PIPE_RECV_IND};
-        osiEventSend(d->recv_thread_id, &poc_event);
+		osiEventSend(d->recv_thread_id, &poc_event);
     }
 }
 
@@ -41,7 +59,7 @@ static void prvPocPipeRecvThreadEntry(void *param)
 
     for (;;)
     {
-        osiEvent_t event = {};
+        osiEvent_t event = {0};
         osiEventWait(thread, &event);
         if (event.id == OSI_EVENT_ID_QUIT)
             break;
@@ -50,11 +68,18 @@ static void prvPocPipeRecvThreadEntry(void *param)
         {
             //send data to player pipe
             uint8_t *data = (uint8_t *)event.param1;
-			OSI_LOGI(0, "[pocPipe]write data(%d), size(%d)", data, event.param2);
-            int bytes = osiPipeWriteAll(d->plypipe, data, event.param2, 2000);
-
-			if(bytes < 0)
+			if(osiPipeWriteAvail(d->plypipe) < 0
+				|| data == NULL
+				|| event.param2 == 0)
 			{
+				continue;
+			}
+			OSI_LOGI(0, "[pocPipe][thread]pipe writeall -> data(%d), size(%d)", data, event.param2);
+            int bytes = osiPipeWriteAll(d->plypipe, data, event.param2, 1);
+
+			if(bytes <= 0)
+			{
+				OSI_LOGI(0, "[pocPipe][thread]pipe write error");
 				break;
 			}
         }
@@ -124,14 +149,8 @@ bool pocAudioPipeStart(void)
 		osiPipeSetWriterCallback(PipeAttr.plypipe, OSI_PIPE_EVENT_TX_COMPLETE,
 									 prvPocPlyPipeWriteCallback, &PipeAttr);
 
-    	PipeAttr.recv_thread_id = osiThreadCreate("pocPiperecv", prvPocPipeRecvThreadEntry, NULL, OSI_PRIORITY_NORMAL, (8192 * 4), 32);
+    	PipeAttr.recv_thread_id = osiThreadCreate("pocPiperecv", prvPocPipeRecvThreadEntry, NULL, OSI_PRIORITY_HIGH, (8192 * 4), 32);
 	}
-
-//	//launch
-//    {
-//        osiEvent_t poc_event = {.id = POC_PIPE_RECV_IND};
-//        osiEventSend(PipeAttr.recv_thread_id, &poc_event);
-//    }
 
 	return true;
 }
@@ -164,7 +183,9 @@ bool pocAudioPipeStop(void)
 		OSI_LOGI(0, "[pocPipe][Pipe]stop poc mode failed");
 	}
 	auRecorderStop(PipeAttr.recorder);
-	auPlayerStop(PipeAttr.player);
+	auPlayerStop(PipeAttr.player);	
+    osiPipeSetEof(PipeAttr.plypipe);	
+    osiPipeSetEof(PipeAttr.recpipe);
 	osiPipeStop(PipeAttr.plypipe);
 	osiPipeStop(PipeAttr.recpipe);
 	pocAudioPipeReset();
@@ -192,6 +213,8 @@ bool pocAudioPipeDelete(void)
 
 void pocAudioPipeWriteData(const uint8_t *data, uint32_t length)
 {
+	PocPipeAttr *d = &PipeAttr;
+
 	if(PipeAttr.plypipe == NULL
 		|| PipeAttr.recpipe == NULL)
 	{
@@ -201,12 +224,10 @@ void pocAudioPipeWriteData(const uint8_t *data, uint32_t length)
 	OSI_PRINTFI("[pocPipe](%s)(%d):data(%d), length(%d)", __func__, __LINE__, data, length);
 
 	osiEvent_t poc_event = {0};
-
 	poc_event.id = POC_PIPE_RECV_IND;
 	poc_event.param1 = (uint32_t)data;
 	poc_event.param2 = length;
-
-	osiEventSend(PipeAttr.recv_thread_id, &poc_event);
+	osiEventSend(d->recv_thread_id, &poc_event);
 
 	lv_poc_pcm_write_to_file(data, length);//pcm to file
 }

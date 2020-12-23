@@ -1,4 +1,4 @@
-﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -110,6 +110,10 @@ typedef struct PocPipeAttr_T
     auRecorder_t *recorder;
     osiThread_t *recv_thread_id;
     osiThread_t *send_thread_id;
+	//
+	auPocMemReader_t * recreader;
+	auPlayer_t * recplayer;
+	bool recpipestatus;
 }PocPipeAttr;
 
 enum
