@@ -534,6 +534,13 @@ enum
     POC_AUDIO_MSG_RUN = 2,
 };
 
+typedef enum
+{
+    POC_APPLY_NOTE_TYPE_NONETWORK = 1,
+    POC_APPLY_NOTE_TYPE_NOLOGIN = 2,
+    POC_APPLY_NOTE_TYPE_LOGINSUCCESS = 3,
+}lv_poc_apply_note_type_t;
+
 typedef enum _lv_poc_cit_auto_test_type
 {
 	LV_POC_CIT_AUTO_TEST_TYPE_START    = 0,

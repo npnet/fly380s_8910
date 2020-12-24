@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "hal_adi_bus.h"/*register include*/
+#include "hal_adi_bus.h"
 #include "hwreg_access.h"
 #include "drv_keypad.h"
 #include "at_engine.h"
@@ -86,6 +86,7 @@ static bool is_poc_touch_status = false;
 static bool poc_earkey_state = false;
 static bool poc_key_state = false;
 static int lv_poc_inside_group = false;
+static int lv_poc_note_type = 0;
 static bool lv_poc_group_list_refr = false;
 static bool lv_poc_grouplist_refr_complete = false;
 static bool lv_poc_memberlist_refr_complete = false;
@@ -1345,15 +1346,17 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Insert_SIM_Card, 50, false);
 		}
 		number++;
+		lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
 		return false;
 	}
 
-	if ((CFW_CfgGetNwStatus(&status, sim) != 0 ||
-		CFW_NwGetStatus(&nStatusInfo, sim) != 0)
+	if ((CFW_CfgGetNwStatus(&status, sim) != 0
+		|| CFW_NwGetStatus(&nStatusInfo, sim) != 0)
 		&& (!pub_lv_poc_get_watchdog_status()))
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
+		lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NONETWORK);
 		return false;
 	}
 
@@ -1364,6 +1367,7 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
+		lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NONETWORK);
 		return false;
 	}
 	return true;
@@ -4072,5 +4076,25 @@ void lv_poc_set_first_membercall(bool status)
 bool lv_poc_get_first_membercall(void)
 {
    return is_first_membercall;
+}
+
+/*
+ name : lv_poc_set_apply_note
+ param :
+ date : 2020-12-24
+*/
+void lv_poc_set_apply_note(lv_poc_apply_note_type_t type)
+{
+   lv_poc_note_type = type;
+}
+
+/*
+     name : lv_poc_get_apply_note
+     param :
+     date : 2020-12-24
+*/
+lv_poc_apply_note_type_t lv_poc_get_apply_note(void)
+{
+   return lv_poc_note_type;
 }
 

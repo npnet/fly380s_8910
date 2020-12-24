@@ -96,9 +96,281 @@ static void LvGuiIdtCom_delay_close_listen_timer_cb(void *ctx);
 static void LvGuiIdtCom_start_speak_voice_timer_cb(void *ctx);
 static void prvPocGuiIdtTaskHandleCallFailed(uint32_t id, uint32_t ctx, uint32_t cause_str);
 
+/*************************************************************************************/
+#define     CPTM_MM_REG         0x10        // 注册请求
+#define     CPTM_MM_OFFLINE     0x11        // 离线扫描
+#define     CPTM_MM_PERIOD      0x12        // 周期注册
+#define     CPTM_MM_MODIFY      0x13        // 修改用户属性
+#define     CPTM_MM_NAT         0x14        // NAT
+
+#define     CPTM_CC_SETUPACK    0x20        // 发送SETUP,等待SETUP_ACK
+#define     CPTM_CC_CONN        0x21        // 发送SETUP,等待CONN
+#define     CPTM_CC_ANSWER      0x22        // 发送CallIn给用户,等用户应答
+#define     CPTM_CC_CONNACK     0x23        // 发送CONN给对端,等待CONNACK
+#define     CPTM_CC_HB          0x24        // 通话后的心跳定时器
+#define     CPTM_CC_PRESS       0x25        // 按键定时器
+
+char* LvPocGetIdtTmStr(WORD wTm)
+{
+    static char cBuf[32];
+
+    switch (wTm)
+    {
+    case CPTM_MM_REG:
+        return (char*)"CPTM_MM_REG";
+    case CPTM_MM_OFFLINE:
+        return (char*)"CPTM_MM_OFFLINE";
+    case CPTM_MM_PERIOD:
+        return (char*)"CPTM_MM_PERIOD";
+    case CPTM_MM_MODIFY:
+        return (char*)"CPTM_MM_MODIFY";
+    case CPTM_MM_NAT:
+        return (char*)"CPTM_MM_NAT";
+    case CPTM_CC_SETUPACK:
+        return (char*)"CPTM_CC_SETUPACK";
+    case CPTM_CC_CONN:
+        return (char*)"CPTM_CC_CONN";
+    case CPTM_CC_ANSWER:
+        return (char*)"CPTM_CC_ANSWER";
+    case CPTM_CC_CONNACK:
+        return (char*)"CPTM_CC_CONNACK";
+    case CPTM_CC_HB:
+        return (char*)"CPTM_CC_HB";
+    case CPTM_CC_PRESS:
+        return (char*)"CPTM_CC_PRESS";
+    default:
+        snprintf(cBuf, sizeof(cBuf), "Tm=%d", wTm);
+        return cBuf;
+    }
+}
+
+enum
+{
+    CCTM_HB_CSA_P               = 1,
+    CCTM_HB_CSA_MG              = 2,
+    CCTM_HB_BCSM                = 3,
+
+    //CSA消息
+    CCTM_WAIT_MGBINGRSP         = 4,
+    CCTM_WAIT_MGIVRRSP          = 5,
+    CCTM_WAIT_MGCONNRSP         = 6,
+    CCTM_WAIT_MGDISCRSP         = 7,
+    CCTM_WAIT_MMACCRSP          = 8,
+    CCTM_WAIT_PSETUPACK         = 9,
+    CCTM_WAIT_PCONNACK          = 10,
+    CCTM_WAIT_MY_MGMODMYRSP     = 11,
+    CCTM_WAIT_MY_PMODRSP        = 12,
+    CCTM_WAIT_MY_MGMODPEERRSP   = 13,
+    CCTM_WAIT_P_MGMODRSP        = 14,
+
+    //BCSM消息
+    //消息定时器
+    CCTM_WAIT_SETUPACK          = 15,
+    CCTM_WAIT_CONNACK           = 16,
+    //收号定时器
+    CCTM_RECVNUM_START          = 17,
+    CCTM_RECVNUM_INTER          = 18,
+    CCTM_RECVNUM_TOTAL          = 19,
+    //O端
+    CCTM_O_PIC_AuthorizeOriginationAttempt = 20,        //等待MM的接入响应,CSA
+    CCTM_O_PIC_CollectInfomation= 21,
+    CCTM_O_PIC_AnalyzeInfomation= 22,
+    CCTM_O_PIC_SelectRoute      = 23,                   //等待MM的路由响应 BCSM
+    CCTM_O_PIC_AuthorizeCallSetup= 24,
+    CCTM_O_PIC_SendCall         = 25,
+    CCTM_O_PIC_Alerting         = 26,
+    CCTM_O_PIC_Active           = 27,
+    CCTM_O_PIC_Suspended        = 28,
+    CCTM_O_PIC_Exception        = 29,
+    //T端
+    CCTM_T_PIC_AuthorizeTerminationAttempt = 30,
+    CCTM_T_PIC_SelectFacility   = 31,
+    CCTM_T_PIC_PresentCall      = 32,
+    CCTM_T_PIC_Alerting         = 33,
+    CCTM_T_PIC_Active           = 34,
+    CCTM_T_PIC_Suspended        = 35,
+    CCTM_T_PIC_Exception        = 36,
+
+    CCTM_RE_CALL                = 37,
+    CCTM_CS_MICGET              = 38,
+    CCTM_CS_MICREL              = 39,
+
+    CCTM_RECV_NUM               = 40,
+    CCTM_RECV_NUM_TOTAL         = 41,
+
+    CCTM_SCAN_DEV               = 42,                   //扫描设备
+    CCTM_SCAN_TER               = 43,                   //扫描终端
+
+    CCTM_WAIT_SETUP             = 44,
+
+
+    MSG_TM_MAX,
+};
+
+char* LvPocGetMcTmStr(WORD wTm)
+{
+    static char cBuf[64];
+
+    switch (wTm)
+    {
+    case CCTM_HB_CSA_P:
+        return (char*)"CCTM_HB_CSA_P";
+    case CCTM_HB_CSA_MG:
+        return (char*)"CCTM_HB_CSA_MG";
+    case CCTM_HB_BCSM:
+        return (char*)"CCTM_HB_BCSM";
+
+    //CSA消息
+    case CCTM_WAIT_MGBINGRSP:
+        return (char*)"CCTM_WAIT_MGBINGRSP";
+    case CCTM_WAIT_MGIVRRSP:
+        return (char*)"CCTM_WAIT_MGIVRRSP";
+    case CCTM_WAIT_MGCONNRSP:
+        return (char*)"CCTM_WAIT_MGCONNRSP";
+    case CCTM_WAIT_MGDISCRSP:
+        return (char*)"CCTM_WAIT_MGDISCRSP";
+    case CCTM_WAIT_MMACCRSP:
+        return (char*)"CCTM_WAIT_MMACCRSP";
+    case CCTM_WAIT_PSETUPACK:
+        return (char*)"CCTM_WAIT_PSETUPACK";
+    case CCTM_WAIT_PCONNACK:
+        return (char*)"CCTM_WAIT_PCONNACK";
+    case CCTM_WAIT_MY_MGMODMYRSP:
+        return (char*)"CCTM_WAIT_MY_MGMODMYRSP";
+    case CCTM_WAIT_MY_PMODRSP:
+        return (char*)"CCTM_WAIT_MY_PMODRSP";
+    case CCTM_WAIT_MY_MGMODPEERRSP:
+        return (char*)"CCTM_WAIT_MY_MGMODPEERRSP";
+    case CCTM_WAIT_P_MGMODRSP:
+        return (char*)"CCTM_WAIT_P_MGMODRSP";
+
+    //BCSM消息
+    //消息定时器
+    case CCTM_WAIT_SETUPACK:
+        return (char*)"CCTM_WAIT_SETUPACK";
+    case CCTM_WAIT_CONNACK:
+        return (char*)"CCTM_WAIT_CONNACK";
+    //收号定时器
+    case CCTM_RECVNUM_START:
+        return (char*)"CCTM_RECVNUM_START";
+    case CCTM_RECVNUM_INTER:
+        return (char*)"CCTM_RECVNUM_INTER";
+    case CCTM_RECVNUM_TOTAL:
+        return (char*)"CCTM_RECVNUM_TOTAL";
+    //O端
+    case CCTM_O_PIC_AuthorizeOriginationAttempt:
+        return (char*)"CCTM_O_PIC_AuthorizeOriginationAttempt";
+    case CCTM_O_PIC_CollectInfomation:
+        return (char*)"CCTM_O_PIC_CollectInfomation";
+    case CCTM_O_PIC_AnalyzeInfomation:
+        return (char*)"CCTM_O_PIC_AnalyzeInfomation";
+    case CCTM_O_PIC_SelectRoute:
+        return (char*)"CCTM_O_PIC_SelectRoute";
+    case CCTM_O_PIC_AuthorizeCallSetup:
+        return (char*)"CCTM_O_PIC_AuthorizeCallSetup";
+    case CCTM_O_PIC_SendCall:
+        return (char*)"CCTM_O_PIC_SendCall";
+    case CCTM_O_PIC_Alerting:
+        return (char*)"CCTM_O_PIC_Alerting";
+    case CCTM_O_PIC_Active:
+        return (char*)"CCTM_O_PIC_Active";
+    case CCTM_O_PIC_Suspended:
+        return (char*)"CCTM_O_PIC_Suspended";
+    case CCTM_O_PIC_Exception:
+        return (char*)"CCTM_O_PIC_Exception";
+    //T端
+    case CCTM_T_PIC_AuthorizeTerminationAttempt:
+        return (char*)"CCTM_T_PIC_AuthorizeTerminationAttempt";
+    case CCTM_T_PIC_SelectFacility:
+        return (char*)"CCTM_T_PIC_SelectFacility";
+    case CCTM_T_PIC_PresentCall:
+        return (char*)"CCTM_T_PIC_PresentCall";
+    case CCTM_T_PIC_Alerting:
+        return (char*)"CCTM_T_PIC_Alerting";
+    case CCTM_T_PIC_Active:
+        return (char*)"CCTM_T_PIC_Active";
+    case CCTM_T_PIC_Suspended:
+        return (char*)"CCTM_T_PIC_Suspended";
+    case CCTM_T_PIC_Exception:
+        return (char*)"CCTM_T_PIC_Exception";
+
+    case CCTM_RE_CALL:
+        return (char*)"CCTM_RE_CALL";
+    case CCTM_CS_MICGET:
+        return (char*)"CCTM_CS_MICGET";
+    case CCTM_CS_MICREL:
+        return (char*)"CCTM_CS_MICREL";
+
+    case CCTM_RECV_NUM:
+        return (char*)"CCTM_RECV_NUM";
+    case CCTM_RECV_NUM_TOTAL:
+        return (char*)"CCTM_RECV_NUM_TOTAL";
+
+    case CCTM_SCAN_DEV:
+        return (char*)"CCTM_SCAN_DEV";
+    case CCTM_SCAN_TER:
+        return (char*)"CCTM_SCAN_TER";
+
+    case CCTM_WAIT_SETUP:
+        return (char*)"CCTM_WAIT_SETUP";
+
+    default:
+        snprintf(cBuf, sizeof(cBuf), "Tm=%d", wTm);
+        return cBuf;
+    }
+}
+
+#define     CPTM_SCAN        0x01   //TCP扫描定时器
+#define     CPTM_HB          0x02   //状态机与主控状态机的心跳定时器
+#define     CPTM_NUM         0x03   //发送号码定时器
+
+char* LvPocGetMgTmStr(WORD wTm)
+{
+    static char cBuf[32];
+
+    switch (wTm)
+    {
+    case CPTM_SCAN:
+        return (char*)"CPTM_SCAN";
+    case CPTM_HB:
+        return (char*)"CPTM_HB";
+    case CPTM_NUM:
+        return (char*)"CPTM_NUM";
+    default:
+        snprintf(cBuf, sizeof(cBuf), "Tm=%d", wTm);
+        return cBuf;
+    }
+}
+
 char *LvPocGetCauseStr(USHORT usCause)
 {
     static char cBuf[32];
+
+	if (14 == (usCause & 0xff))//定时器超时
+	{
+		WORD ucSrc = (usCause & 0xc000);
+//		UCHAR ucH = (usCause & 0x3f00) >> 8;
+		switch (ucSrc)
+		{
+		case 0x0000://IDT定时器超时
+//			snprintf(cBuf, sizeof(cBuf), "定时器超时:IDT-%s", LvPocGetIdtTmStr(ucH));
+//			break;
+			return (char*)"申请话语权失败";
+		case 0x4000://MC定时器超时
+//			snprintf(cBuf, sizeof(cBuf), "定时器超时:MC-%s", LvPocGetMcTmStr(ucH));
+//			break;
+			return (char*)"申请话语权失败";
+		case 0x8000://MG定时器超时
+//			snprintf(cBuf, sizeof(cBuf), "定时器超时:MG-%s", LvPocGetMgTmStr(ucH));
+//			break;
+			return (char*)"申请话语权失败";
+		default:
+//			snprintf(cBuf, sizeof(cBuf), "定时器超时:%d-%d", ucSrc, ucH);
+//			break;
+			return (char*)"申请话语权失败";
+		}
+		return cBuf;
+	}
 
     switch (usCause)
     {
@@ -273,6 +545,7 @@ char *LvPocGetCauseStr(USHORT usCause)
         return cBuf;
     }
 }
+/******************************************************************************************/
 
 //--------------------------------------------------------------------------------
 //      TRACE小函数
@@ -1332,11 +1605,10 @@ static void LvGuiIdtCom_check_listen_timer_cb(void *ctx)
 
 static void LvGuiIdtCom_try_login_timer_cb(void *ctx)
 {
-	if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
+	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
 	{
-		osiTimerStop(pocIdtAttr.try_login_timer);
+		osiTimerStart(pocIdtAttr.try_login_timer, 2000);
 	}
-	osiTimerStop(pocIdtAttr.try_login_timer);
 	OSI_PRINTFI("[poc][time cb][login]%s(%d):try to relogin", __func__, __LINE__);
 }
 
@@ -1418,6 +1690,7 @@ static void LvGuiIdtCom_check_ack_timeout_timer_cb(void *ctx)
 	m_IdtUser.m_status = UT_STATUS_OFFLINE;
 	m_IdtUser.m_Group.m_Group_Num = 0;
 	pocIdtAttr.pPocMemberList->dwNum = 0;
+	lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
 }
 
 //--------------------------------------------------------------------------------
@@ -1648,6 +1921,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 					//开启自动登陆功能
 					osiTimerStart(pocIdtAttr.auto_login_timer, 20000);
 				}
+				lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
 				m_IdtUser.m_status = UT_STATUS_OFFLINE;
 				m_IdtUser.m_Group.m_Group_Num = 0;
 				pocIdtAttr.pPocMemberList->dwNum = 0;
@@ -1685,6 +1959,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 			LvGuiIdtCom_self_info_json_parse_status();
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
 			osiTimerStartRelaxed(pocIdtAttr.get_group_list_timer, 500, OSI_WAIT_FOREVER);
+			lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS);
 			break;
 		}
 
@@ -1718,12 +1993,14 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND:
 		{
 
-			if(pocIdtAttr.loginstatus_t != LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS)//加入尝试登录中功能
+			if(pocIdtAttr.loginstatus_t != LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS
+				|| lv_poc_get_apply_note() == POC_APPLY_NOTE_TYPE_NOLOGIN)
 			{
-				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING;//登陆中
-				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "尝试登陆中...");
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"发出申请", (const uint8_t *)"");
-				osiTimerStartRelaxed(pocIdtAttr.try_login_timer, 2000, OSI_WAIT_FOREVER);
+				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING;
+				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "尝试登录中...");
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"未登录", (const uint8_t *)"尝试登录...");
+				osiTimerIsRunning(pocIdtAttr.try_login_timer) ? 0 : osiTimerStart(pocIdtAttr.try_login_timer, 2000);
 				break;
 			}
 			else if(pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING)
@@ -1731,15 +2008,9 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				break;
 			}
 
-			if(m_IdtUser.m_status < UT_STATUS_ONLINE)
-			{
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"未登录", (const uint8_t *)"");
-				break;
-			}
-
 			if(pocIdtAttr.is_release_call)//call no exist
 			{
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在申请", (const uint8_t *)"");
+				//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"正在申请", (const uint8_t *)"");
 			}
 
 			if(pocIdtAttr.listen_status == true)
@@ -4451,6 +4722,8 @@ extern "C" void lvPocGuiIdtCom_Init(void)
 	{
 		memset(pocIdtAttr.pLockGroup, 0, sizeof(CGroup));
 	}
+	lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
+	m_IdtUser.m_status = 0;
 	pocGuiIdtComStart();
 }
 

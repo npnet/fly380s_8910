@@ -216,7 +216,7 @@ static auPocMemReader_t *prvPocAudioPlayerMemReaderCreate(const void *buf, unsig
     p->ops.is_eof = prvPocAudioPlayerMemReaderEof;
     p->buf = buf;
     p->size = size;
-    p->pos = 2048;
+    p->pos = 320;
     return p;
 }
 
@@ -439,7 +439,7 @@ int pocAudioPlayerReset(POCAUDIOPLAYER_HANDLE player_id)
 
 	player->writer->pos = 0;
 
-	player->reader->pos = 2048;
+	player->reader->pos = 320;//2048
 
 	memset(player->writer->buf, 0, player->writer->max_size);
 
@@ -598,7 +598,7 @@ int pocAudioPlayerWriteData(POCAUDIOPLAYER_HANDLE player_id, const uint8_t *data
 		count = player->writer->max_size + (count<=0 ? count:-count);
 	}
 
-	if(player->reduce)
+	if(player->reduce)//give up player->reader->pos(320)
 	{
 		player->reduce_index = !(player->reduce_index);
 		if(player->reduce_index)

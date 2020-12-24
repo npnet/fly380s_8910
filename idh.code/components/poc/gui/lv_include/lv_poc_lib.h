@@ -1372,6 +1372,20 @@ void lv_poc_index_next_file(void);
 */
 struct PocPcmToFileAttr_s lv_poc_pcm_file_attr(void);
 
+/*
+ name : lv_poc_set_apply_note
+ param :
+ date : 2020-12-24
+*/
+void lv_poc_set_apply_note(lv_poc_apply_note_type_t type);
+
+/*
+	 name : lv_poc_get_apply_note
+	 param :
+	 date : 2020-12-24
+*/
+lv_poc_apply_note_type_t lv_poc_get_apply_note(void);
+
 #ifdef __cplusplus
 }
 #endif
