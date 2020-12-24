@@ -26,7 +26,7 @@
 #include "at_cfg.h"
 #include "sockets.h"
 #include "ppp_interface.h"
-#include "guiZzdCom_api.h"
+#include "guiOemCom_api.h"
 
 
 void atCmdHandleLOGAPZZD(atCommand_t *cmd)
@@ -75,12 +75,12 @@ void atCmdHandleLOGAPZZD(atCommand_t *cmd)
 			            break;
 		            }
 
-					if(ap_zzd_engine == NULL)
-					{
-						ap_zzd_engine = cmd->engine;
-					}
+//					if(ap_Oem_engine == NULL)
+//					{
+//						ap_Oem_engine = cmd->engine;
+//					}
 
-					lvPocGuiZzdCom_Msg(LVPOCGUIZZDCOM_SIGNAL_AP_POC_IND, (void *)apzzddata, NULL);
+					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_AP_POC_IND, (void *)apzzddata);
 					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]apzzddata is %s", apzzddata);
 			    }while(0);
 		    }

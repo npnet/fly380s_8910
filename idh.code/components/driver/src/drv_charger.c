@@ -25,7 +25,7 @@
 #include "drv_efuse_pmic.h"
 //poc
 #include "lv_include/lv_poc_type.h"
-#include "guiZzdCom_api.h"
+#include "guiOemCom_api.h"
 
 #include <string.h>
 

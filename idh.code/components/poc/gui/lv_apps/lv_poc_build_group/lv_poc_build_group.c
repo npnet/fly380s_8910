@@ -576,7 +576,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
         	lv_list_set_btn_selected(activity_list, btn);
         }
     }
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+	//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_buildgroup_refr_is_complete(true);
 }
 

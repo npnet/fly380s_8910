@@ -30,7 +30,7 @@
 #endif
 //poc
 #include "lv_include/lv_poc_type.h"
-#include "guiZzdCom_api.h"
+#include "guiOemCom_api.h"
 
 #define INT8 int8_t
 #define UINT8 uint8_t
@@ -2916,7 +2916,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
 		//open pa
 		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
 		{
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)200);//delay 200ms
+			//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)200);//delay 200ms
 		}
 
         osiWorkEnqueue(d->ipc_work, d->wq);
@@ -2983,7 +2983,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
 		//open pa
 		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
 		{
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)200);//delay 200ms
+			//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)200);//delay 200ms
 		}
 
 	    if (d->clk_users != 0) // disable when any other users is working

@@ -563,7 +563,7 @@ Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 
         case LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND:
         {
-            lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SCREEN_ON_IND, NULL);
+            //lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SCREEN_ON_IND, NULL);
             break;
         }
     }
