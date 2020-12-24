@@ -156,6 +156,16 @@ static void lv_poc_fota_check_update_cb(lv_task_t * task)
 			break;
 		}
 
+		case ABUP_FOTA_DOWNLOAD_FAILED://下载失败
+		{
+			strcpy(lv_poc_fota_text_cur_status, "下载失败");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
+			OSI_LOGI(0, "[abup](%d):no network", __LINE__);
+			break;
+		}
+
 		case ABUP_FOTA_NO_NEW_VERSION://无新版本
 		{
 			strcpy(lv_poc_fota_text_cur_status, "无新版本");
@@ -183,6 +193,68 @@ static void lv_poc_fota_check_update_cb(lv_task_t * task)
 			break;
 		}
 
+		case ABUP_FOTA_UART_TIMEOUT: //串口超时
+		{
+			strcpy(lv_poc_fota_text_cur_status, "串口超时");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
+			break;
+		}
+
+		case ABUP_FOTA_DNS_FAIL://DNS解析失败
+		{
+			strcpy(lv_poc_fota_text_cur_status, "DNS解析失败");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
+			break;
+		}
+
+		case ABUP_FOTA_CREATE_SOCKET_FAIL://建立socket失败
+		{
+			strcpy(lv_poc_fota_text_cur_status, "建立socket失败");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
+			break;
+		}
+		case ABUP_FOTA_NETWORK_ERROR://网络错误
+		{
+			strcpy(lv_poc_fota_text_cur_status, "网络错误");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
+			break;
+		}
+
+		case ABUP_FOTA_MD5_NOT_MATCH://MD5校验失败
+		{
+			strcpy(lv_poc_fota_text_cur_status, "MD5校验失败");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
+			break;
+		}
+
+		case ABUP_FOTA_ERASE_FLASH://擦除flash
+		{
+			strcpy(lv_poc_fota_text_cur_status, "擦除flash");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
+			break;
+		}
+
+		case ABUP_FOTA_WRITE_FLASH://写flash
+		{
+			strcpy(lv_poc_fota_text_cur_status, "写flash");
+			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			lv_task_del(monitor_check_update);
+			monitor_check_update = NULL;
+			break;
+		}
+
 		case ABUP_FOTA_REBOOT_UPDATE://准备重启更新
 		{
 			strcpy(lv_poc_fota_text_cur_status, "准备重启更新");
@@ -202,14 +274,12 @@ static void lv_poc_fota_pressed_cb(lv_obj_t * obj, lv_event_t event)
     if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
         //open software update
-        if(abup_update_status() == ABUP_FOTA_START
-			|| abup_update_status() == ABUP_FOTA_ERROR
-			|| abup_update_status() == ABUP_FOTA_IDLEI
+        if(!(abup_update_status() == ABUP_FOTA_IDLEI
 			|| abup_update_status() == ABUP_FOTA_CHECK
-			|| abup_update_status() == ABUP_FOTA_NO_NETWORK
-			|| abup_update_status() == ABUP_FOTA_NO_NEW_VERSION
-			|| abup_update_status() == ABUP_FOTA_NOT_ENOUGH_SPACE
-			|| abup_update_status() == ABUP_FOTA_NO_ACCESS_TIMES)
+			|| abup_update_status() == ABUP_FOTA_READY
+			|| abup_update_status() == ABUP_FOTA_RMI
+			|| abup_update_status() == ABUP_FOTA_CVI
+			|| abup_update_status() == ABUP_FOTA_DLI))
         {
 			if(obj->user_data != NULL)
 			{

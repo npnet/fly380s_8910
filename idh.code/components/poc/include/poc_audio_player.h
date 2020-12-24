@@ -21,106 +21,34 @@
 #define POCAUDIOPLAYERDATAPREBUFFSIZE (30*320U)
 
 OSI_EXTERN_C_BEGIN
-/**
- * \brief initialize poc audio player
- *
- * poc Audio player is designed as singleton.
- */
+
 void pocAudioPlayerInit(void);
 
-/**
- * \brief create poc audio player
- *
- * param max_size     length of storage data
- *
- * return ID of POC audio player, zero is failed
- */
 POCAUDIOPLAYER_HANDLE pocAudioPlayerCreate(const uint32_t max_size);
 
-/**
- * \brief start poc audio player
- *
- * param player_id  ID of POC audio player
- *
- * return false is failed to start player, true is success
- */
 bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id);
 
-/**
- * \brief reset poc audio player
- *
- * param player_id  ID of POC audio player
- *
- * return none
- */
 int pocAudioPlayerReset(POCAUDIOPLAYER_HANDLE player_id);
 
-/**
- * \brief stop poc audio player
- *
- * param player_id  ID of POC audio player
- *
- * return false is failed to stop player, true is success
- */
 bool pocAudioPlayerStop(POCAUDIOPLAYER_HANDLE player_id);
 
-/**
- * \brief delete poc audio player
- *
- * param player_id  ID of POC audio player
- *
- * return false is failed to delete player, true is success
- */
-bool pocAudioPlayerDelete(POCAUDIOPLAYER_HANDLE       player_id);
+bool pocAudioPlayerDelete(POCAUDIOPLAYER_HANDLE player_id);
 
-/**
- * \brief write data to poc audio player
- *
- * param player_id  ID of POC audio player
- *       data       address of data
- *       length     length of data
- *
- * return -1 is fail write data, others is length of write data
- */
-int pocAudioPlayerWriteData(POCAUDIOPLAYER_HANDLE player_id, const uint8_t *data, uint32_t length);
-
-/**
- * \brief get status of poc audio player
- *
- * param player_id  ID of POC audio player
- *
- * return true is playying
- */
 bool pocAudioPlayerGetStatus(POCAUDIOPLAYER_HANDLE player_id);
 
-/**
- * \brief get poc audio player id
- *
- * param NULL
- *
- * return id
- */
 POCAUDIOPLAYER_HANDLE pocAudioPlayerId(void);
 
-/**
- * \brief start poc read
- *
- * param none
- *
- * return true is ok
- */
 bool pocAudioPlayerStartPocModeReady(void);
 
-/**
- * \brief stop poc_mode audio player
- *
- * param NULL
- *
- * return false is failed to stop player, true is success
- */
 bool pocAudioPlayerStopPocMode(void);
 
-bool pocAudioPlayerSound(void);
+void pocAudioSendMsgWriteData(const uint8_t *data, uint32_t length);
+
+int pocAudioPlayerWriteData(POCAUDIOPLAYER_HANDLE player_id, const uint8_t *data, uint32_t length);
+
+void pocAudioPlayerThreadResume(void);
+
+void pocAudioPlayerThreadSuspend(void);
 
 OSI_EXTERN_C_END
 

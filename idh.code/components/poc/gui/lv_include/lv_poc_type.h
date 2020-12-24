@@ -4,18 +4,14 @@
 #include "poc_config.h"
 #include "ats_config.h"
 
-//typedef char         		 INT8;
 typedef unsigned char 		 UINT8;
 typedef short int     		 INT16;
 typedef unsigned short int   UINT16;
 typedef int          		 INT32;
 typedef unsigned int  		 UINT32;
-//typedef char         		 int8_t;
 typedef unsigned char 		 uint8_t;
 typedef short int    		 int16_t;
 typedef unsigned short int   uint16_t;
-//typedef int          		 int32_t;
-//typedef unsigned int  	 uint32_t;
 
 #define IN  const
 #define OUT
@@ -531,6 +527,12 @@ typedef enum _lv_poc_record_mic_adcGain
     POC_MIC_ADC_GAIN_LEVEL_14 = 14,
     POC_MIC_ADC_GAIN_LEVEL_15 = 15,
 } lv_poc_record_mic_adcGain;
+
+enum
+{
+    POC_AUDIO_MSG_STOP = 1,
+    POC_AUDIO_MSG_RUN = 2,
+};
 
 typedef enum _lv_poc_cit_auto_test_type
 {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -64,6 +64,25 @@ struct auPocMemReader
 };
 
 typedef struct auPocMemReader auPocMemReader_t;
+
+/**
+ * poc audio thread struct
+ */
+ struct pocAudioThread_t
+ {
+ 	osiThread_t *thread;
+	osiMessageQueue_t *queue;
+ };
+
+/**
+ * poc audio msg struct
+ */
+ struct pocAudioMsg_t
+ {
+	int type;
+	const uint8_t *data;
+	uint32_t len;
+ };
 
 /**
  * poc audio player struct

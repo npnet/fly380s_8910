@@ -131,30 +131,97 @@ void abup_exit_restore_context(void)
     }
     else
     {
-        if (abup_get_socket_type() == 5)
-        {
-            OSI_LOGI(0, "abup:network error");
-			abup_current_state = ABUP_FOTA_NO_NETWORK;
-        }
-        else if (abup_get_socket_type() == 6)
-        {
-            OSI_LOGI(0, "abup:not found new update");
-			abup_current_state = ABUP_FOTA_NO_NEW_VERSION;
-        }
-        else if (abup_get_socket_type() == 8)
-        {
-            OSI_LOGI(0, "abup:Not enough space.");
-			abup_current_state = ABUP_FOTA_NOT_ENOUGH_SPACE;
-        }
-        else if (abup_get_socket_type() == 11)
-        {
-            OSI_LOGI(0, "abup:imei access count max is 100");
-			abup_current_state = ABUP_FOTA_NO_ACCESS_TIMES;
-        }
-		else
+		if (abup_get_http_dl_state() == 8)
 		{
-            OSI_LOGI(0, "abup:error");
-			abup_current_state = ABUP_FOTA_ERROR;
+            OSI_LOGI(0, "abup:download failed");
+			abup_current_state = ABUP_FOTA_DOWNLOAD_FAILED;
+		}
+
+		switch(abup_get_socket_type())
+		{
+			case 1://串口超时
+			{
+				OSI_LOGI(0, "abup:uart timeout");
+				abup_current_state = ABUP_FOTA_UART_TIMEOUT;
+				break;
+			}
+
+			case 2://无网络
+			{
+				OSI_LOGI(0, "abup:no network");
+				abup_current_state = ABUP_FOTA_NO_NETWORK;
+				break;
+			}
+
+			case 3://DNS解析失败
+			{
+				OSI_LOGI(0, "abup:dns failed");
+				abup_current_state = ABUP_FOTA_DNS_FAIL;
+				break;
+			}
+
+			case 4://建立socket失败
+			{
+				OSI_LOGI(0, "abup:create socket failed");
+				abup_current_state = ABUP_FOTA_CREATE_SOCKET_FAIL;
+				break;
+			}
+
+			case 5://网络错误
+			{
+				OSI_LOGI(0, "abup:network error");
+				abup_current_state = ABUP_FOTA_NETWORK_ERROR;
+				break;
+			}
+
+			case 6://无最新版本
+			{
+				OSI_LOGI(0, "abup:not found new update");
+				abup_current_state = ABUP_FOTA_NO_NEW_VERSION;
+				break;
+			}
+
+			case 7://MD5校验失败
+			{
+				OSI_LOGI(0, "abup:md5 not match");
+				abup_current_state = ABUP_FOTA_MD5_NOT_MATCH;
+				break;
+			}
+
+			case 8://空间不足
+			{
+				OSI_LOGI(0, "abup:Not enough space.");
+				abup_current_state = ABUP_FOTA_NOT_ENOUGH_SPACE;
+				break;
+			}
+
+			case 9://擦除flash
+			{
+				OSI_LOGI(0, "abup:erase flash");
+				abup_current_state = ABUP_FOTA_ERASE_FLASH;
+				break;
+			}
+
+			case 10://写flash
+			{
+				OSI_LOGI(0, "abup:erase flash");
+				abup_current_state = ABUP_FOTA_WRITE_FLASH;
+				break;
+			}
+
+			case 11://当天此IMEI达到最大访问次数,100次
+			{
+				OSI_LOGI(0, "abup:imei access count max is 100");
+				abup_current_state = ABUP_FOTA_NO_ACCESS_TIMES;
+				break;
+			}
+
+			default:
+			{
+			    OSI_LOGI(0, "abup:error");
+				abup_current_state = ABUP_FOTA_ERROR;
+				break;
+			}
 		}
 		abup_task_exit();
     }

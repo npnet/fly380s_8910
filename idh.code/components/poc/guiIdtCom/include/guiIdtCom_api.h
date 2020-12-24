@@ -131,6 +131,7 @@ typedef enum
     LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND,
     LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND,
 	LVPOCGUIIDTCOM_SIGNAL_SET_SCREEN_STATUS_IND,
+	LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND,
 
     LVPOCGUIIDTCOM_SIGNAL_END,
 } LvPocGuiIdtCom_SignalType_t;
@@ -199,6 +200,8 @@ bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * 
 int lvPocGuiIdtCom_get_current_exist_selfgroup(void);
 
 void lvPocGuiComLogSwitch(bool status);
+
+void lvPocGuiIdtCom_stop_check_ack(void);
 
 OSI_EXTERN_C_END
 
