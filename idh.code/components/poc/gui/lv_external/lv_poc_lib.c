@@ -1521,6 +1521,7 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	for(int i = 0; i < sizeof(poc_setting->nv_monitor_group)/sizeof(nv_poc_monitor_info); i++)
 	{
 		memset(&poc_setting->nv_monitor_group[i], 0, sizeof(nv_poc_monitor_info));
+		strcpy((char *)poc_setting->nv_monitor_group[i].m_ucGID, "nomonitor");
 	}
 }
 

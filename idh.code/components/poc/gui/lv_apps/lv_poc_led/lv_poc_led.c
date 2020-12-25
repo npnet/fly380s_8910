@@ -62,7 +62,7 @@ void poc_Status_Led_Task(void)
     pocLedIdtAttr.jumpperiod = 1000;
     pocLedIdtAttr.pledjump = NULL;
 
-    pocLedIdtAttr.thread = osiThreadCreate("status led", lv_poc_led_entry, NULL, OSI_PRIORITY_LOW, 1024, 64);
+    pocLedIdtAttr.thread = osiThreadCreate("status led", lv_poc_led_entry, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 }
 
 /*

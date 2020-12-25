@@ -2756,13 +2756,13 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     {
         return false;
     }
-	/*open pa*/
+
+	//open pa
 	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
 	{
-		extern bool poc_set_ext_pa_status(bool open);
+		OSI_PRINTFI("[poc][audio](%s)(%d)open pa", __func__, __LINE__);
+	    extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(true);
-
-		//OSI_LOGI(0, "[songpa] open");
 	}
 
     OSI_LOGI(0, "audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
@@ -2921,12 +2921,6 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         memcpy(&(d->play.stream), &stream, sizeof(HAL_AIF_STREAM_T));
         memcpy(&(d->play.level), &level, sizeof(AUD_LEVEL_T));
 
-		//open pa
-		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
-		{
-			//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)200);//delay 200ms
-		}
-
         osiWorkEnqueue(d->ipc_work, d->wq);
         osiMutexUnlock(d->lock);
 
@@ -2988,12 +2982,6 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     }
 	else if (type == AUDEV_PLAY_TYPE_POC) //poc
     {
-		//open pa
-		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
-		{
-			//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)200);//delay 200ms
-		}
-
 	    if (d->clk_users != 0) // disable when any other users is working
 		    goto failed;
 	    if ((frame->sample_rate != 8000) && (frame->sample_rate != 16000)) //only support 8k 16k
@@ -3045,10 +3033,9 @@ bool audevStopPlayV2(void)
 
     if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
     {
+		OSI_PRINTFI("[poc][audio](%s)(%d)close pa", __func__, __LINE__);
 	    extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(false);
-
-		//OSI_LOGI(0, "[songpa] close");
     }
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)

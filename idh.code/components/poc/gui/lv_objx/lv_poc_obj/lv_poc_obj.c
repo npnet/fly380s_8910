@@ -898,7 +898,7 @@ static bool lv_poc_status_bar_init(void)
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	lv_poc_init_stabar_gps_img(NULL);
 #endif
-    lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
+    lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_MID);
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
     lv_poc_status_bar_task_ext_add(lv_poc_stabar_signal_task);

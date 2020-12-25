@@ -96,6 +96,7 @@ typedef struct _PocGuiOemComAttr_t
 	osiTimer_t *Oem_PoweronRequestMonitorGroup_timer;
 	osiTimer_t *Oem_Nologin_timer;
 	osiTimer_t *Oem_Check_ack_timeout_timer;
+	osiTimer_t *Oem_Openpa_timer;
 
 	//Info
 	OemCGroup OemCurrentGroupInfo;
@@ -382,12 +383,13 @@ void lvPocGuiOemCom_Request_Stop_Speak(void)
 	OEMPOC_AT_Recv((char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPSPEAK, strlen((char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPSPEAK));
 }
 
-void lvPocGuiOemCom_Request_Set_Volum(char *volum)
+void lvPocGuiOemCom_Request_Set_Tone_Volum(char *volum)//0-100
 {
 	char volumoptcode[64] = {0};
 
 	strcpy(volumoptcode, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SETVOLUM);
 	strcat(volumoptcode, volum);
+	strcat(volumoptcode, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_END);//end eof
 
 	OEMPOC_AT_Recv(volumoptcode, strlen(volumoptcode));
 }
@@ -455,8 +457,20 @@ void lvPocGuiOemCom_Request_Set_Tone(char *tonestatus)
 
 	strcpy(toneoptcode, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOTETONE);
 	strcat(toneoptcode, tonestatus);
+	strcat(toneoptcode, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_END);//end eof
 
 	OEMPOC_AT_Recv(toneoptcode, strlen(toneoptcode));
+}
+
+void lvPocGuiOemCom_Request_Set_Log(char *switchstatus)
+{
+	char logoptcode[64] = {0};
+
+	strcpy(logoptcode, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPEN_LOG);
+	strcat(logoptcode, switchstatus);
+	strcat(logoptcode, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_END);//end eof
+
+	OEMPOC_AT_Recv(logoptcode, strlen(logoptcode));
 }
 
 static
@@ -500,30 +514,36 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_REP, apopt);
 						break;
 					}
-					//listen start--8B0001应答
-					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTLISTEN_ACK))
-					{
-						pocOemAttr.m_status = USER_OPRATOR_LISTENNING;
-						lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_LISTEN_SPEAKER_REP, NULL);
-						break;
-					}
-					//listen stop--8B0000应答
-					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPLISTEN_ACK))
-					{
-						lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_LISTEN_STOP_REP, NULL);
-						break;
-					}
-					//speak start--0B应答
+					//speak start--960000应答
 					else if(NULL != strstr(apopt->oembuf, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTSPEAK_ACK))
 					{
 						pocOemAttr.m_status = USER_OPRATOR_SPEAKING;
 						lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_REP, NULL);
 						break;
 					}
-					//speak stop--0C应答
+					//speak stop--960001应答
 					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPSPEAK_ACK))
 					{
 						lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_REP, NULL);
+						break;
+					}
+					//call failed--960002应答
+					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CALLOUT_FAILED_ACK))
+					{
+						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"呼叫失败", NULL);
+						break;
+					}
+					//listen start--960003应答
+					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STARTLISTEN_ACK))
+					{
+						pocOemAttr.m_status = USER_OPRATOR_LISTENNING;
+						lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_LISTEN_SPEAKER_REP, NULL);
+						break;
+					}
+					//listen stop--960004应答
+					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_STOPLISTEN_ACK))
+					{
+						lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_LISTEN_STOP_REP, NULL);
 						break;
 					}
 					//join group info--notify ack:86
@@ -616,11 +636,6 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 						lvPocGuiOemCom_Request_PocParam();
 						break;
 					}
-//					//network connect
-//					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NETWORK_CONNECTED_ACK))
-//					{
-//						break;
-//					}
 					//open poc
 					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_OPENPOC_ACK))
 					{
@@ -644,14 +659,16 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 								pocOemAttr.is_oem_nologin_status = true;
 								osiTimerStart(pocOemAttr.Oem_Nologin_timer, 6000);
 							}
-							osiTimerStartRelaxed(pocOemAttr.Oem_AutoLogin_timer, 3000, OSI_WAIT_FOREVER);
-							OSI_LOGI(0, "[oemack][login]accout error, please to set");
+							OSI_PRINTFI("[oemack][login]accout error, please to set");
 						}
+						osiTimerIsRunning(pocOemAttr.Oem_AutoLogin_timer) ? 0 : osiTimerStart(pocOemAttr.Oem_AutoLogin_timer, 5000);
+						OSI_PRINTFI("[oemack][login](%s)(%d):accout ori(%s), nv(%s)", __func__, __LINE__, apopt->oembuf, poc_config->oem_account);
 						break;
 					}
 					//login success
 					else if(NULL != strstr(apopt->oembuf,LVPOCPOCOEMCOM_SIGNAL_OPTCODE_LOGIN_SUCCESS_ACK))
 					{
+						osiTimerIsRunning(pocOemAttr.Oem_AutoLogin_timer) ? osiTimerStop(pocOemAttr.Oem_AutoLogin_timer) : 0;
 						pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS;
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOGIN_REP, apopt);
 						break;
@@ -809,8 +826,12 @@ void prvPocGuiOemTaskHandleLogin(uint32_t id, uint32_t ctx)
 					poc_play_voice_one_time(LVPOCAUDIO_Type_This_Account_Already_Logined, 50, false);
 				}
 				else if(NULL != strstr(OfflineInfo.buf[3].oembuf, OEM_NO_NETWORK))
-				{
-
+				{//auto login
+					osiTimerIsRunning(pocOemAttr.Oem_AutoLogin_timer) ? 0 : osiTimerStart(pocOemAttr.Oem_AutoLogin_timer, 5000);
+				}
+				else
+				{//auto login
+					osiTimerIsRunning(pocOemAttr.Oem_AutoLogin_timer) ? 0 : osiTimerStart(pocOemAttr.Oem_AutoLogin_timer, 5000);
 				}
 				pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_LOGIN_FAILED;
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_1500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
@@ -861,7 +882,7 @@ void prvPocGuiOemTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			if(pocOemAttr.m_status == USER_OPRATOR_SPEAKING)
 			{
 				char speak_name[100] = "";
-				strcat((char *)speak_name, (const char *)pocOemAttr.OemSpeakerInfo.OemUserName);
+				strcpy((char *)speak_name, (const char *)pocOemAttr.OemUserInfo.OemUserName);
 				if(!pocOemAttr.is_member_call)
 				{
 					char group_name[100] = "";
@@ -1913,6 +1934,28 @@ void prvPocGuiOemTaskHandleMonitorOpt(uint32_t id, uint32_t ctx)
 	}
 }
 
+static void prvPocGuiOemTaskHandleDelayOpenPA(uint32_t id, uint32_t ctx)
+{
+   switch(id)
+   {
+      case LVPOCGUIOEMCOM_SIGNAL_DELAY_OPEN_PA_IND:
+      {
+	  	 if(ctx == 0
+		 	|| !lvPocGuiOemCom_get_listen_status())
+	  	 {
+	     	break;
+		 }
+		 osiTimerStart(pocOemAttr.Oem_Openpa_timer, ctx);
+		 break;
+      }
+
+      default:
+      {
+         break;
+      }
+   }
+}
+
 static void prvPocGuiOemTaskHandleOther(uint32_t id, uint32_t ctx)
 {
     switch(id)
@@ -2033,6 +2076,14 @@ static void LvGuiOemCom_check_ack_timeout_timer_cb(void *ctx)
     }
 	pocOemAttr.loginstatus_t = LVPOCOEMCOM_SIGNAL_LOGIN_FAILED;
 	lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
+	//auto login
+	osiTimerIsRunning(pocOemAttr.Oem_AutoLogin_timer) ? 0 : osiTimerStart(pocOemAttr.Oem_AutoLogin_timer, 5000);
+}
+
+static void LvGuiOemCom_open_pa_timer_cb(void *ctx)
+{
+	OSI_LOGI(0, "[pa][timecb](%d):open pa", __LINE__);
+	poc_set_ext_pa_status(true);
 }
 
 void PocGuiOemComStart(void)
@@ -2052,6 +2103,7 @@ void PocGuiOemComStart(void)
 	pocOemAttr.Oem_PoweronRequestMonitorGroup_timer = osiTimerCreate(pocOemAttr.thread, LvGuiOemCom_poweron_request_monitor_group_timer_cb, NULL);//上电检查监听群组定时器
 	pocOemAttr.Oem_Nologin_timer = osiTimerCreate(pocOemAttr.thread, LvGuiOemCom_nologin_timer_cb, NULL);//未登录定时器
 	pocOemAttr.Oem_Check_ack_timeout_timer = osiTimerCreate(pocOemAttr.thread, LvGuiOemCom_check_ack_timeout_timer_cb, NULL);
+	pocOemAttr.Oem_Openpa_timer = osiTimerCreate(pocOemAttr.thread, LvGuiOemCom_open_pa_timer_cb, NULL);
 }
 
 void lvPocGuiOemCom_Init(void)
@@ -2090,8 +2142,9 @@ void pocGuiOemComTaskEntry(void *argument)
 	pocOemAttr.pocnetstatus = true;
 	OEMNetworkStatusChange(pocOemAttr.pocnetstatus);
 
-	lvPocGuiOemCom_Request_Set_Volum("64");//set volum:0-FFFF
-	lvPocGuiOemCom_Request_Set_Tone("01");//open tone
+	lvPocGuiOemCom_Request_Set_Tone(OEM_FUNC_OPEN);
+	lvPocGuiOemCom_Request_Set_Tone_Volum("32");//set volum:0-64(hex)
+	lvPocGuiOemCom_Request_Set_Log(OEM_FUNC_CLOSE);
     while(1)
     {
     	if(!osiEventWait(pocOemAttr.thread, &event))
@@ -2235,6 +2288,12 @@ void pocGuiOemComTaskEntry(void *argument)
    				prvPocGuiOemTaskHandleMonitorOpt(event.param1, event.param2);
 				break;
 			}
+
+			case LVPOCGUIOEMCOM_SIGNAL_DELAY_OPEN_PA_IND:
+	        {
+	            prvPocGuiOemTaskHandleDelayOpenPA(event.param1, event.param2);
+	            break;
+	     	}
 
 			case LVPOCGUIOEMCOM_SIGNAL_STOP_PLAYER_VOICE:
 			case LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE:

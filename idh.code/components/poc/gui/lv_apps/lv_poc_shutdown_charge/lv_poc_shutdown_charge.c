@@ -45,7 +45,7 @@ const lv_img_dsc_t *charge_battery_img_dispaly[8] = { &indeterminate0
 */
 void pocLvgl_ShutdownCharge_Start(void)
 {
-	osiThreadCreate("osiShutdownChargeAnimation", lv_poc_shutdown_charge_Animation_Task, NULL, OSI_PRIORITY_NORMAL, 1024 * 15, 64);
+	osiThreadCreate("osiShutdownChargeAnimation", lv_poc_shutdown_charge_Animation_Task, NULL, OSI_PRIORITY_NORMAL, 1024 * 2, 64);
 }
 
 /*

@@ -1213,7 +1213,7 @@ static void lv_poc_idle_start_task_cb(lv_task_t *task)
 	if(idle_page_task_msg != NULL)
 	{
 		memset(idle_page_task_msg, 0, sizeof(lv_poc_idle_page2_msg_t));
-		idle_page_task = lv_task_create(lv_poc_idle_page_task_cb, 100, LV_TASK_PRIO_LOWEST, idle_page_task_msg);
+		idle_page_task = lv_task_create(lv_poc_idle_page_task_cb, 100, LV_TASK_PRIO_MID, idle_page_task_msg);
 	}
 
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在检查网络");
@@ -1238,7 +1238,7 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	lv_obj_set_click(activity_idle->control->right_button, true);
 	lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
 
-	lv_poc_refr_task_once(lv_poc_idle_start_task_cb, 300, LV_TASK_PRIO_LOWEST);
+	lv_poc_refr_task_once(lv_poc_idle_start_task_cb, 300, LV_TASK_PRIO_MID);
 
 	return activity_idle;
 }
