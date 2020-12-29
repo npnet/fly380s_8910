@@ -159,6 +159,7 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 	{
 		if(status == 1 || status == 2)
 		{
+			OSI_PRINTFI("[oemack][member][signal](%s)(%d):signal call, press", __func__, __LINE__);
 			lv_poc_activity_func_cb_set.member_call_open(lv_poc_member_call_obj_information);
 			lv_poc_member_list_set_hightlight_index();
 		}
@@ -257,10 +258,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 					if(lv_poc_is_memberlist_refr_complete()
 						|| lv_poc_get_refr_error_info())
 					{
-						lv_poc_set_group_status(false);
-						lv_poc_member_list_set_hightlight_index();
-						OSI_LOGI(0, "[grouprefr]exit memberlist\n");
-						lv_poc_del_activity(poc_member_list_activity);
+						lv_poc_memberlist_activity_close(POC_EXITGRP_INITIATIVE);
 					}
 					break;
 				}
@@ -616,6 +614,12 @@ void lv_poc_member_list_refresh(lv_task_t * task)
 	}
 	lv_poc_set_memberlist_refr_is_complete(true);
 	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+
+	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) >= POC_TMPGRP_VIEW
+		&& lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) <= POC_TMPGRP_OPENMEMLIST)
+	{
+		lv_poc_build_tempgrp_progress(POC_TMPGRP_FINISH);
+	}
 }
 
 void lv_poc_member_list_refresh_with_data(lv_poc_oem_member_list *member_list_obj)
@@ -840,6 +844,29 @@ void lv_poc_memberlist_activity_open(lv_task_t * task)
 	lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);
 	lv_poc_activity_set_design_cb(poc_member_list_activity, lv_poc_member_list_design_func);
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, true);
+}
+
+void lv_poc_memberlist_activity_close(lv_poc_exitgrp_t type)
+{
+	if(type == POC_EXITGRP_PASSIVE
+		&& lvPocGuiOemCom_get_listen_status())
+	{
+		return;
+	}
+
+	lv_poc_set_group_status(false);
+	lv_poc_member_list_set_hightlight_index();
+	OSI_LOGI(0, "[oemack][grouprefr][auto]exit memberlist\n");
+	poc_member_list_activity ? lv_poc_del_activity(poc_member_list_activity) : 0;
+
+	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) == POC_TMPGRP_FINISH)
+	{
+		OSI_LOGI(0, "[oemack][multi-call][auto]exit multi call\n");
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Temp_Group, 50, false);
+		type == POC_EXITGRP_INITIATIVE ? \
+		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP, NULL) : 0;
+		lv_poc_build_tempgrp_progress(POC_TMPGRP_START);
+	}
 }
 
 #ifdef __cplusplus

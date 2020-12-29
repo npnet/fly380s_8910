@@ -33,8 +33,10 @@ static lv_poc_cit_test_type_t cit_info = {
 	.cit_calib_attr.valid = false,
 	.cit_calib_attr.cb = lv_poc_get_calib_status,
 
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 	.cit_rtc_attr.valid = false,
 	.cit_rtc_attr.cb = lv_poc_get_time,
+#endif
 
 	.cit_backlight_attr.valid = false,
 	.cit_backlight_attr.cb = poc_set_lcd_status,
@@ -62,27 +64,35 @@ static lv_poc_cit_test_type_t cit_info = {
 	.cit_charge_attr.valid = false,
 	.cit_charge_attr.cb = poc_battery_get_status,
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	.cit_gps_attr.valid = false,
 	.cit_gps_attr.cb = lv_poc_type_gps_cb,
+#endif
+
 #ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 	.cit_touch_attr.valid = false,
 	.cit_touch_attr.cb = poc_set_torch_status,
 #endif
+
 	.cit_rgb_attr.valid = false,
 	.cit_rgb_attr.cb = lv_poc_type_rgb_cb,
 
 	.cit_headset_attr.valid = false,
 	.cit_headset_attr.cb = lv_poc_set_loopback_recordplay,
 
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 	.cit_flash_attr.valid = false,
 	.cit_flash_attr.cb = lv_poc_type_flash_cb,
+#endif
 };
 
 lv_poc_activity_t * poc_cit_part_test_activity;
 
 static void lv_poc_system_version_test_cb(lv_obj_t * obj);
 static void lv_poc_calibration_test_cb(lv_obj_t * obj);
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 static void lv_poc_rtc_test_cb(lv_obj_t * obj);
+#endif
 static void lv_poc_backlight_test_cb(lv_obj_t * obj);
 static void lv_poc_lcd_test_cb(lv_obj_t * obj);
 static void lv_poc_volum_test_cb(lv_obj_t * obj);
@@ -99,7 +109,9 @@ static void lv_poc_touch_test_cb(lv_obj_t * obj);
 #endif
 static void lv_poc_rgb_test_cb(lv_obj_t * obj);
 static void lv_poc_headset_test_cb(lv_obj_t * obj);
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 static void lv_poc_flash_test_cb(lv_obj_t * obj);
+#endif
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
@@ -150,72 +162,74 @@ lv_poc_cit_part_test_label_struct_t lv_poc_cit_part_test_label_array[] = {
         lv_poc_calibration_test_cb,
     },
 
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 	{
 		NULL,
 		"项3"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"RTC测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_rtc_test_cb,
 	},
+#endif
 
 	{
 		NULL,
-		"项4"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项3"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"背光灯测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_backlight_test_cb,
 	},
 
 	{
 		NULL,
-		"项5"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项4"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"LCD测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_lcd_test_cb,
 	},
 
 	{
 		NULL,
-		"项6"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项5"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"音量测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_volum_test_cb,
 	},
 
 	{
 		NULL,
-		"项7"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项6"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"麦克风测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_micspk_test_cb,
 	},
 
 	{
 		NULL,
-		"项8"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项7"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"信号测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_signal_test_cb,
 	},
 
 	{
 		NULL,
-		"项9"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项8"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"按键测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_key_test_cb,
 	},
 
 	{
 		NULL,
-		"项10"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项9"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"充电测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_charge_test_cb,
 	},
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	{
 		NULL,
-		"项11"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项10"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"GPS测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_gps_test_cb,
 	},
 #endif
 	{
 		NULL,
-		"项12"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项11"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"SIM卡测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_sim_test_cb,
 	},
@@ -223,7 +237,7 @@ lv_poc_cit_part_test_label_struct_t lv_poc_cit_part_test_label_array[] = {
 #ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 	{
 		NULL,
-		"项13"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项12"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"手电筒测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_touch_test_cb,
 	},
@@ -231,24 +245,26 @@ lv_poc_cit_part_test_label_struct_t lv_poc_cit_part_test_label_array[] = {
 
 	{
 		NULL,
-		"项14"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项13"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"三色灯测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_rgb_test_cb,
 	},
 
 	{
 		NULL,
-		"项15"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项14"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"耳机测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_headset_test_cb,
 	},
 
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 	{
 		NULL,
-		"项16"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+		"项15"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"Flash测试"			   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_flash_test_cb,
 	},
+#endif
 };
 
 static void lv_poc_cit_config_init(void)
@@ -273,6 +289,7 @@ static void lv_poc_calibration_test_cb(lv_obj_t * obj)
 	lv_poc_test_ui_open((void *)&cit_info);
 }
 
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 static void lv_poc_rtc_test_cb(lv_obj_t * obj)
 {
 	lv_poc_cit_config_init();
@@ -281,6 +298,7 @@ static void lv_poc_rtc_test_cb(lv_obj_t * obj)
 	strcpy(cit_info.name, "RTC测试");
 	lv_poc_test_ui_open((void *)&cit_info);
 }
+#endif
 
 static void lv_poc_backlight_test_cb(lv_obj_t * obj)
 {
@@ -398,6 +416,7 @@ static void lv_poc_headset_test_cb(lv_obj_t * obj)
 	lv_poc_test_ui_open((void *)&cit_info);
 }
 
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 static void lv_poc_flash_test_cb(lv_obj_t * obj)
 {
 	lv_poc_cit_config_init();
@@ -406,6 +425,7 @@ static void lv_poc_flash_test_cb(lv_obj_t * obj)
 	strcpy(cit_info.name, "Flash测试");
 	lv_poc_test_ui_open((void *)&cit_info);
 }
+#endif
 
 static void lv_poc_cit_part_test_pressed_cb(lv_obj_t * obj, lv_event_t event)
 {

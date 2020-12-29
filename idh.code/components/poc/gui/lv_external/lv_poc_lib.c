@@ -621,7 +621,6 @@ extern lv_poc_audio_dsc_t lv_poc_audio_tone_start_listen;
 extern lv_poc_audio_dsc_t lv_poc_audio_tone_start_speak;
 extern lv_poc_audio_dsc_t lv_poc_audio_tone_stop_listen;
 extern lv_poc_audio_dsc_t lv_poc_audio_tone_stop_sepak;
-//新加入
 extern lv_poc_audio_dsc_t lv_poc_audio_start_login;
 extern lv_poc_audio_dsc_t lv_poc_audio_now_loginning;
 extern lv_poc_audio_dsc_t lv_poc_audio_try_to_login;
@@ -633,6 +632,8 @@ extern lv_poc_audio_dsc_t lv_poc_audio_fail_to_build_group_due_to_less_than_two_
 extern lv_poc_audio_dsc_t lv_poc_audio_fail_due_to_already_exist_selfgroup;
 extern lv_poc_audio_dsc_t lv_poc_audio_this_account_already_logined;
 extern lv_poc_audio_dsc_t lv_poc_audio_test_volum;
+extern lv_poc_audio_dsc_t lv_poc_audio_enter_temp_group;
+extern lv_poc_audio_dsc_t lv_poc_audio_exit_temp_group;
 
 static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	NULL,
@@ -659,6 +660,8 @@ static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	&lv_poc_audio_fail_due_to_already_exist_selfgroup,
 	&lv_poc_audio_this_account_already_logined,
 	&lv_poc_audio_test_volum,
+	&lv_poc_audio_enter_temp_group,
+    &lv_poc_audio_exit_temp_group,
 
 	&lv_poc_audio_tone_cannot_speak,
 	&lv_poc_audio_tone_lost_mic,
@@ -708,7 +711,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			{
 				continue;
 			}
-			lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);
 
 			voice_type = event.param1;
 
@@ -729,18 +731,11 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		}
 		else
 		{
-			//get volum
-			#if 0
-			unsigned volum = audevGetPlayVolume();
-			OSI_LOGI(0, "[song]play volum %d", volum);
-			#endif
-
 			if(isPlayVoice)
 			{
 				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 50))
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
-					lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE, NULL);
 					isPlayVoice = false;
 					is_poc_play_voice = false;
 
@@ -753,6 +748,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					if(voice_queue_reader == voice_queue_writer)
 					{
 						prv_play_voice_one_time_thread = NULL;
+						lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE, NULL);
 						osiThreadExit();
 					}
 				}
@@ -799,6 +795,8 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Fail_To_Build_Group_Due_To_Less_Than_Two_People:
 			case LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup:
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
+			case LVPOCAUDIO_Type_Enter_Temp_Group:
+         	case LVPOCAUDIO_Type_Exit_Temp_Group:
 			{
 				voice_formate = AUSTREAM_FORMAT_MP3;
 				audevSetPlayVolume(50);
@@ -882,6 +880,7 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 void
 poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN bool isBreak)
 {
+	lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);
 	if(NULL != prv_play_btn_voice_one_time_player)
 	{
 		auPlayerStop(prv_play_btn_voice_one_time_player);
@@ -892,6 +891,7 @@ poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN b
 		prv_play_voice_one_time_player = auPlayerCreate();
 		if(NULL == prv_play_voice_one_time_player)
 		{
+			lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE, NULL);
 			return;
 		}
 	}
@@ -901,6 +901,7 @@ poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN b
 		prv_play_voice_one_time_thread = osiThreadCreate("play_voice", prv_play_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024*3, 64);
 		if(prv_play_voice_one_time_thread == NULL)
 		{
+			lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE, NULL);
 			return;
 		}
 	}
@@ -2579,9 +2580,6 @@ static int prv_member_list_type  = 0;
 static void
 prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *OempGroup)
 {
-	//lv_poc_member_info_t self_info = lv_poc_get_self_info();
-	//char *self_name = lv_poc_get_member_name(self_info);
-
 	if(prv_member_list == NULL
 		|| prv_member_list_cb == NULL
 		|| (prv_member_list_type < 1 || prv_member_list_type > 3))
@@ -2595,7 +2593,6 @@ prv_lv_poc_get_member_list_cb(int msg_type, unsigned long num, Msg_GData_s *Oemp
 		prv_member_list_cb = NULL;
 		return;
 	}
-
 	if(num < 1)
     {
         if(msg_type == 0)
@@ -2749,6 +2746,36 @@ lv_poc_check_member_equation(void * A, void *B, void *C, void *D, void *E)
 	}
 
 	return ret1;
+}
+
+/*
+	  name : lv_poc_build_new_tempgrp
+	  param :
+	  date : 2020-12-28
+*/
+bool
+lv_poc_build_new_tempgrp(lv_poc_member_info_t *members, int32_t num, poc_build_tempgrp_cb func)
+{
+	if(members == NULL || num < 1 || func == NULL)
+	{
+		return false;
+	}
+
+	if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_REGISTER_BIUILD_TEMPGRP_CB_IND, func))
+	{
+		return false;
+	}
+	static lv_poc_build_new_tempgrp_t group_member = {0};
+	memset(&group_member, 0, sizeof(lv_poc_build_new_tempgrp_t));
+	group_member.members = members;
+	group_member.num = num;
+
+	if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_BIUILD_TEMPGRP_IND, &group_member))
+	{
+		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_CANCEL_REGISTER_BIUILD_TEMPGRP_CB_IND, func);
+		return false;
+	}
+	return true;
 }
 
 /*
@@ -3899,7 +3926,7 @@ bool lv_poc_type_volum_cb(int status)
 	}
 	else
 	{
-		//lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND, NULL);
+		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_TEST_VLOUM_PLAY_IND, NULL);
 	}
 	return false;
 }
@@ -4057,9 +4084,17 @@ lv_poc_get_network_status_is_ready(void)
      param :
      date : 2020-12-1
 */
-void
+bool
 lv_poc_stop_player_voice(void)
 {
-	auPlayerStop(prv_play_voice_one_time_player);
+	if(auPlayerGetStatus(prv_play_voice_one_time_player))
+	{
+		if(auPlayerStop(prv_play_voice_one_time_player))
+		{
+			return true;
+		}
+		return false;
+	}
+	return true;
 }
 

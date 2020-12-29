@@ -13,7 +13,7 @@ enum
     ACT_ID_POC_MEMBER_CALL,             /*4: single call*/
     ACT_ID_POC_IDLE,                    /*5: poc idle*/
     ACT_ID_POC_MAIN_MENU,               /*6: main menu*/
-    ACT_ID_POC_MAKE_GROUP,              /*7: make group*/
+    ACT_ID_POC_MAKE_TEMPGRP,            /*7: make tempgroup*/
     ACT_ID_POC_MAIN_SETTING,            /*8: main setting*/
     ACT_ID_POC_BRIGHT_TIME,             /*9: birght time*/
     ACT_ID_POC_THEME_SWITCH,            /*10: theme switch*/

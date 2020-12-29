@@ -58,6 +58,7 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_cit/lv_poc_log_switch/lv_poc_log_switch.c
 	gui/lv_apps/lv_poc_cit/lv_poc_test_ui/lv_poc_test_ui.c
 	gui/lv_apps/lv_poc_record_playback/lv_poc_record_playback.c
+	gui/lv_apps/lv_poc_build_tempgrp/lv_poc_build_tempgrp.c
 	
 	gui/resource/image/battery/stat_sys_no_battery.c
 	gui/resource/image/battery/stat_sys_battery_0.c
@@ -312,6 +313,8 @@ add_library(${target} STATIC
 	gui/resource/audiofile/lv_poc_audio_current_no_any_network.c
 	gui/resource/audiofile/lv_poc_audio_this_account_already_logined.c
 	gui/resource/audiofile/lv_poc_audio_test_volum.c
+	gui/resource/audiofile/lv_poc_audio_enter_temp_group.c
+	gui/resource/audiofile/lv_poc_audio_exit_temp_group.c
 	
 	gps/gps_nmea.c 
 	gps/uart3_gps.c

@@ -264,6 +264,30 @@ typedef enum {
     POC_UNKNOWN_FAULT
 } lv_poc_status_t;
 
+typedef enum {
+    POC_TMPGRP_START,
+    POC_TMPGRP_ERROR,
+
+    POC_TMPGRP_READ,
+
+	POC_TMPGRP_VIEW,//
+    POC_TMPGRP_GETMEMLIST,
+    POC_TMPGRP_OPENMEMLIST,
+	POC_TMPGRP_FINISH,
+
+	POC_CIT_ENTER,//
+    POC_CIT_EXIT,
+
+} lv_poc_tmpgrp_t;
+
+typedef enum {
+    POC_EXITGRP_START,
+
+    POC_EXITGRP_INITIATIVE,
+    POC_EXITGRP_PASSIVE,
+
+} lv_poc_exitgrp_t;
+
 typedef enum
 {
 	LV_POC_NOTATION_NONE       = 0,
@@ -473,6 +497,8 @@ typedef enum{
 	LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup, //建组失败-已有自建群组
 	LVPOCAUDIO_Type_This_Account_Already_Logined, //该账号已在别处登陆
 	LVPOCAUDIO_Type_Test_Volum, //CIT测试音量
+	LVPOCAUDIO_Type_Enter_Temp_Group, //进入临时群组
+    LVPOCAUDIO_Type_Exit_Temp_Group, //退出临时群组
 
 	LVPOCAUDIO_Type_Tone_Cannot_Speak,   //
 	LVPOCAUDIO_Type_Tone_Lost_Mic,   //
@@ -562,7 +588,9 @@ typedef enum _lv_poc_cit_test_ui_id
 {
 	LV_POC_CIT_OPRATOR_TYPE_START = 0,
 	LV_POC_CIT_OPRATOR_TYPE_CALIBATE,
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 	LV_POC_CIT_OPRATOR_TYPE_RTC ,
+#endif
 	LV_POC_CIT_OPRATOR_TYPE_BACKLIGHT,
 	LV_POC_CIT_OPRATOR_TYPE_LCD ,
 	LV_POC_CIT_OPRATOR_TYPE_VOLUM,
@@ -579,7 +607,9 @@ typedef enum _lv_poc_cit_test_ui_id
 #endif
 	LV_POC_CIT_OPRATOR_TYPE_RGB ,//12
 	LV_POC_CIT_OPRATOR_TYPE_HEADSET ,//13
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 	LV_POC_CIT_OPRATOR_TYPE_FLASH ,//14
+#endif
 
 	LV_POC_CIT_OPRATOR_TYPE_END ,//15
 } lv_poc_cit_test_ui_id;

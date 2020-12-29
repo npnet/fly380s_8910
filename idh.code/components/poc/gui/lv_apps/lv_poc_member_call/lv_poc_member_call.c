@@ -266,24 +266,26 @@ void lv_poc_member_call_open(void * information)
 
     if(poc_member_call_activity != NULL || information == NULL)
     {
+		OSI_LOGI(0, "[membercall] infomation of call obj is empty");
     	return;
     }
 
-	if(lvPocGuiOemCom_get_listen_status())//listen status cannot member call
+	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) == POC_TMPGRP_FINISH)
 	{
+		OSI_LOGI(0, "[membercall] multi'view, no open");
 		return;
 	}
 
-	if(information == NULL)
+	if(lvPocGuiOemCom_get_listen_status())//listen status cannot member call
 	{
-		OSI_LOGI(0, "[membercall] infomation of call obj is empty\n");
+		OSI_LOGI(0, "[membercall] listen isn't signal");
 		return;
 	}
 
     lv_poc_member_call_member_list_obj = (lv_poc_oem_member_list *)lv_mem_alloc(sizeof(lv_poc_oem_member_list));
 	if(lv_poc_member_call_member_list_obj == NULL)
 	{
-		OSI_LOGI(0, "[membercall] apply memory of member list failed!\n");
+		OSI_LOGI(0, "[membercall] apply memory of member list failed!");
 		return;
 	}
 	lv_poc_member_call_member_list_obj->offline_list = NULL;
@@ -294,9 +296,10 @@ void lv_poc_member_call_open(void * information)
     poc_member_call_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     if(poc_member_call_activity == NULL)
     {
+		OSI_LOGI(0, "[membercall] error");
 	    lv_mem_free(lv_poc_member_call_member_list_obj);
 	    lv_poc_member_call_member_list_obj = NULL;
-		return ;/*failed open, return*/
+		return ;
     }
     lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_CALL, true);
 	lv_poc_activity_set_signal_cb(poc_member_call_activity, lv_poc_member_call_signal_func);
@@ -411,6 +414,8 @@ void lv_poc_member_call_refresh(lv_task_t *task_t)
         btn->user_data = p_cur->information;
         p_cur = p_cur->next;
     }
+	//rec ack, stop ack timeout
+	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 }
 
 lv_poc_status_t lv_poc_member_call_set_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information, bool is_online)

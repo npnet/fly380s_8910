@@ -110,17 +110,23 @@ static void activity_destory(lv_obj_t *obj)
 	activity_list = NULL;
 	poc_cit_test_ui_activity = NULL;
 	cit_test_info->id = LV_POC_CIT_OPRATOR_TYPE_START;
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	cit_test_info->cit_gps_attr.valid ? cit_test_info->cit_gps_attr.cb(0) : 0;
 	cit_test_info->cit_gps_attr.valid = false;
+#endif
 	cit_test_info->cit_calib_attr.valid = false;
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 	cit_test_info->cit_rtc_attr.valid = false;
+#endif
 	cit_test_info->cit_backlight_attr.valid = false;
 	cit_test_info->cit_volum_attr.valid = false;
 	cit_test_info->cit_signal_attr.valid = false;
 	cit_test_info->cit_charge_attr.valid = false;
 	cit_test_info->cit_touch_attr.valid = false;
 	cit_test_info->cit_rgb_attr.valid = false;
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 	cit_test_info->cit_flash_attr.valid = false;
+#endif
 	cit_test_info->cit_key_attr.valid = false;
 	cit_test_info->cit_mic_attr.cb ? cit_test_info->cit_mic_attr.cb(false) : 0;
 	cit_test_info->cit_headset_attr.cb ? cit_test_info->cit_headset_attr.cb(false) : 0;
@@ -140,6 +146,8 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 
 	switch(cit_test_info->id)
 	{
+
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_RTC:
 		{
 			char rtcinfo[64];
@@ -168,6 +176,7 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 			task->user_data != NULL ? lv_label_set_text(task->user_data, rtcinfo) : 0;
 			break;
 		}
+#endif
 
 		case LV_POC_CIT_OPRATOR_TYPE_BACKLIGHT:
 		{
@@ -635,6 +644,7 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 			break;
 		}
 
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_FLASH:
 		{
 			if(task->user_data == NULL || cit_test_info->cit_flash_attr.cb == NULL)
@@ -660,6 +670,7 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 			pKey->keyattr.label[2] ? lv_label_set_text(pKey->keyattr.label[2], unavailmem) : 0;
 			break;
 		}
+#endif
 
 		default:
 		{
@@ -713,6 +724,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			break;
 		}
 
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_RTC:
 		{
 			lv_obj_t *label = lv_label_create(list, NULL);
@@ -742,6 +754,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			}
 			break;
 		}
+#endif
 
 		case LV_POC_CIT_OPRATOR_TYPE_BACKLIGHT:
 		{
@@ -819,7 +832,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			lv_obj_set_width(label, lv_obj_get_width(list));
 			lv_obj_set_height(label, lv_obj_get_width(list)/4);
 			lv_obj_align(label, NULL, LV_ALIGN_IN_TOP_MID, 0, 0);
-			lv_label_set_text(label, "1.请按下PPT开始\n讲话录音.");
+			lv_label_set_text(label, "1.请先按下UP,+PPT\n开始讲话录音.");
 			//listen
 			lv_obj_t *label2 = lv_label_create(list, NULL);
 			lv_label_set_style(label2, LV_LABEL_STYLE_MAIN, style_label);
@@ -828,7 +841,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			lv_obj_set_width(label2, lv_obj_get_width(list));
 			lv_obj_set_height(label2, lv_obj_get_width(list)/4);
 			lv_obj_align(label2, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
-			lv_label_set_text(label2, "2.松开PPT键,播放\n录音内容.");
+			lv_label_set_text(label2, "2.松开UP+PPT播放\n录音内容.");
 			cit_test_info->cit_mic_attr.cb(true);;//loopback
 			//open pa
 			poc_set_ext_pa_status(true);
@@ -1281,6 +1294,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			break;
 		}
 
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_FLASH:
 		{
 			lv_style_t * style_label;
@@ -1323,6 +1337,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			}
 			break;
 		}
+#endif
 
 		default:
 		{

@@ -21,6 +21,7 @@ extern "C" {
 *
 *************************************************/
 extern lv_poc_activity_t * poc_group_list_activity;
+extern lv_poc_activity_t * poc_member_list_activity;
 extern bool pub_lv_poc_get_watchdog_status(void);
 extern int lv_poc_cit_get_run_status(void);
 extern void lv_poc_record_playback_open(void);
@@ -3521,19 +3522,36 @@ lv_poc_activity_t *lv_poc_get_current_activity(void)
 }
 
 /*******************
+*	  NAME:    lv_poc_is_memberlist_activity
+* DESCRIPT:    刷新member
+*	  DATE:    2020-12-29
+********************/
+bool lv_poc_is_memberlist_activity(void)
+{
+	if(lv_poc_get_current_activity() == poc_member_list_activity)
+	{
+		return true;
+	}
+	return false;
+}
+
+/*******************
 *	  NAME:    lv_poc_cbn_key_obj
 * DESCRIPT:    组合键
 *	  DATE:    2020-12-04
 ********************/
 bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 {
-	//0(nul)1(volum down)1(volum up)1(power)
+	//1(ptt)1(volum down)1(volum up)1(power)
 	#define CBN_KEY_STATE_PRESS     (1<<0)
 	#define CBN_KEY_GPS_DEBUG       (0b0011)
 	#define CBN_KEY_CIT_CHECK       (0b0101)
 	#define CBN_KEY_RECORDERBACK	(0b0110)
+	#define CBN_KEY_PTT				(0b1010)
 
 	static int  multi_keyvalue = 0;//multi-key
+	//extra
+	static bool  mic_status = false;
 
 	switch(data->key)
 	{
@@ -3584,6 +3602,26 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 
 			break;
 		}
+
+		case LV_GROUP_KEY_POC:
+		{
+			int status = data->state == CBN_KEY_STATE_PRESS?true:false;
+
+			do
+			{
+				status == true ? (multi_keyvalue|=0b1000):(multi_keyvalue&=0b0000);
+			}while(0);
+
+			//extra
+			if(mic_status == true
+				&& status == false)
+			{
+				mic_status = false;
+				lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_MIC ? lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : 0;
+			}
+
+			break;
+		}
 	}
 
 	switch(multi_keyvalue)
@@ -3605,6 +3643,13 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 		case CBN_KEY_RECORDERBACK://record playback
 		{
 			lv_poc_record_playback_open();
+			return true;
+		}
+
+		case CBN_KEY_PTT://ptt
+		{
+			lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_MIC ? lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : 0;
+			mic_status = true;
 			return true;
 		}
 	}

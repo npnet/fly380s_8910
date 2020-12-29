@@ -902,6 +902,13 @@ void lv_poc_net_ping_task_create(void);
 ********************/
 lv_poc_activity_t *lv_poc_get_current_activity(void);
 
+/*******************
+*	  NAME:    lv_poc_is_memberlist_activity
+* DESCRIPT:    刷新member
+*	  DATE:    2020-12-29
+********************/
+bool lv_poc_is_memberlist_activity(void);
+
 #ifdef __cplusplus
 }
 #endif

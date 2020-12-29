@@ -82,7 +82,8 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		if(prvPttKeyState != state
 			&&(lv_poc_get_current_activity() == activity_idle
 				|| lv_poc_get_current_activity() == poc_member_call_activity
-				|| lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY))
+				|| lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY
+				|| lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) == POC_TMPGRP_FINISH))
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{

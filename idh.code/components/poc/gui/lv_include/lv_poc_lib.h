@@ -100,6 +100,13 @@ typedef void (*lv_poc_get_member_list_cb_t)(int msg_type, unsigned long num, Msg
 /*
 	  name :回调函数
 	  param :
+	  date : 2020-12-28
+*/
+typedef void (*poc_build_tempgrp_cb)(int result_type);
+
+/*
+	  name :回调函数
+	  param :
 	  date : 2020-05-21
 */
 typedef void (*poc_get_member_status_cb)(int status);
@@ -196,11 +203,11 @@ typedef struct _lv_poc_activity_attribute_cb_set
 	void (*member_call_close)(void);
 } lv_poc_activity_attribute_cb_set;
 
-typedef struct _lv_poc_build_new_group_t
+typedef struct _lv_poc_build_new_tempgrp_t
 {
 	lv_poc_member_info_t *members;
 	int32_t num;
-} lv_poc_build_new_group_t;
+} lv_poc_build_new_tempgrp_t;
 
 typedef struct _lv_poc_member_call_config_t
 {
@@ -1324,8 +1331,16 @@ lv_poc_apply_note_type_t lv_poc_get_apply_note(void);
      param :
      date : 2020-12-1
 */
-void
+bool
 lv_poc_stop_player_voice(void);
+
+/*
+	  name : lv_poc_build_new_tempgrp
+	  param :
+	  date : 2020-12-28
+*/
+bool
+lv_poc_build_new_tempgrp(lv_poc_member_info_t *members, int32_t num, poc_build_tempgrp_cb func);
 
 #ifdef __cplusplus
 }
