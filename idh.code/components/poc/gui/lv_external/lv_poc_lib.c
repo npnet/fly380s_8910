@@ -455,6 +455,16 @@ void poc_config_Lcd_power_vol(void)
 }
 
 /*
+      name : poc_UpdateLastActiTime
+    return :
+      date : 2020-12-29
+*/
+void poc_UpdateLastActiTime(void)
+{
+	lvGuiUpdateLastActivityTime();
+}
+
+/*
       name : poc_SetPowerLevel
     return : set lcd power register
       date : 2020-08-27
@@ -2004,7 +2014,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		ear_key_attr.ear_key_press = true;
 		poc_earkey_state = true;
 		OSI_LOGI(0, "[headset]key is press,start speak\n");
-		//lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_IND, NULL);
+		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : 0 ) : lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_IND, NULL);
 	}
 	else
 	{
@@ -2022,7 +2032,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 			   ear_key_attr.ear_key_press = false;
 			   poc_earkey_state = false;
 			   OSI_LOGI(0, "[headset]key is release,stop speak\n");
-			   //lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+			   lv_poc_get_loopback_recordplay_status() ? lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		   }
 		   checkcbnum = 0;
 	    }
@@ -2061,6 +2071,11 @@ void lv_poc_ear_ppt_key_init(void)
 static
 void poc_ear_ppt_irq(void *ctx)
 {
+	if(!lv_poc_get_headset_is_ready())
+	{
+		return;
+	}
+
 	if(ear_key_attr.ear_key_press == false)
 	{
 		if(!osiTimerStop(ear_key_attr.ear_press_timer))
@@ -2074,7 +2089,7 @@ void poc_ear_ppt_irq(void *ctx)
 		ear_key_attr.ear_key_press = false;
 		poc_earkey_state = false;
 		OSI_LOGI(0, "[headset]key is release,stop speak\n");
-		//lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		lv_poc_get_loopback_recordplay_status() ? lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 	}
 	else//press
 	{

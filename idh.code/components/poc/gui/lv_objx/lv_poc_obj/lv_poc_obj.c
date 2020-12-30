@@ -2356,34 +2356,34 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		}
 
-        if(battery_t.battery_value >= 100)//4.12v
+        if(battery_t.battery_value >= 100)
         {
             battery_img = &stat_sys_battery_100;
         }
-        else if(battery_t.battery_value >= 85)//4.019v
+        else if(battery_t.battery_value >= 85)
         {
             battery_img = &stat_sys_battery_85;
         }
-        else if(battery_t.battery_value >= 70)//3.90v
+        else if(battery_t.battery_value >= 70)
         {
             battery_img = &stat_sys_battery_71;
         }
-        else if(battery_t.battery_value >= 42)//3.764v
+        else if(battery_t.battery_value >= 42)
         {
             battery_img = &stat_sys_battery_57;
         }
-        else if(battery_t.battery_value >= 20)//3.7v
+        else if(battery_t.battery_value >= 20)
         {
             battery_img = &stat_sys_battery_43;
         }
-        else if(battery_t.battery_value >= 8)//3.615v
+        else if(battery_t.battery_value >= 8)
         {
             battery_img = &stat_sys_battery_15;
         }
-        else if(battery_t.battery_value >= 0)//3.501
+        else if(battery_t.battery_value >= 0)
         {
             battery_img = &stat_sys_battery_0;
-            if(low_battery_check_count < 1 && battery_t.battery_value <= 5)//3.6v
+            if(low_battery_check_count < 1 && battery_t.battery_value <= 2)//3.474v
             {
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, 50, false);

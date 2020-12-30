@@ -11,7 +11,7 @@
 */
 #include "ats_config.h"
 #include "cfw.h"
- 
+
 #ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
 #include "osi_api.h"
 #include "osi_log.h"
@@ -30,22 +30,22 @@
 #include "ppp_interface.h"
 #include "lv_include/lv_poc_lib.h"
 #include "guiOemCom_api.h"
- 
- 
+
+
 void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 {
     char rspStr[200];
     bool paramok = true;
     char *pocparam = NULL;
     //int userOpt = 0;
- 
+
     if(cmd->type == AT_CMD_TEST)
     {
         atCmdRespInfoText(cmd->engine, "+LOGACCOUNT=<opt>\n<pocparam>");
         atCmdRespOK(cmd->engine);
         return;
     }
- 
+
     nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
     if(poc_config == NULL)
     {
@@ -53,7 +53,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
         atCmdRespOK(cmd->engine);
         return;
     }
- 
+
     switch (cmd->type)
     {
     case AT_CMD_EXE:
@@ -65,25 +65,25 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
             {
                 strcat(rspStr, "\nexit log:");
             }
- 
+
             if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOGIN_IND, NULL))
             {
                 break;
             }
             strcat(rspStr, "\nrestart log:");
         }while(0);
- 
+
         atCmdRespInfoText(cmd->engine, rspStr);
         atCmdRespOK(cmd->engine);
         break;
- 
+
     case AT_CMD_READ:
         strcpy(rspStr, "pocparam:");
         strcat(rspStr, poc_config->account_name);
         atCmdRespInfoText(cmd->engine, rspStr);
         atCmdRespOK(cmd->engine);
         break;
- 
+
     case AT_CMD_SET:
         do{
             if(cmd->param_count < 1)
@@ -94,30 +94,29 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
             else if(cmd->param_count == 1)
             {
                 do{
-                    //userOpt = atParamInt(cmd->params[0], &paramok);
                     if (!paramok)
                     {
                         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
                         break;
                     }
-                    /*get set poc param*/
+
                     pocparam = (char *)atParamStr(cmd->params[0], &paramok);
- 
+
                     if (!paramok || strlen((char *)pocparam) > 128)
                     {
                         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
                         break;
                     }
- 
+
                     lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)pocparam);
-                    OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]pocParam is %s", pocparam);
+                    OSI_LOGXI(OSI_LOGPAR_SI, 0, "[poc][at]pocParam is %s", pocparam);
                 }while(0);
                 break;
             }
- 
+
             if(pocparam != NULL)
                 strcpy(poc_config->account_name, (char *)pocparam);
- 
+
             if(lv_poc_setting_conf_write() < 1)
             {
                 atCmdRespInfoText(cmd->engine, "can not write nvm\n");
@@ -125,12 +124,12 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
         }while(0);
         atCmdRespOK(cmd->engine);
         break;
- 
+
     default:
         atCmdRespCmeError(cmd->engine, ERR_AT_CME_EXE_NOT_SURPORT);
         break;
     }
 }
- 
- 
+
+
 #endif

@@ -204,10 +204,10 @@ void drvDummyHeadsetCustCB(void *ctx, drvHeadsetNotifyMsg_t id, uint32_t param)
             audevSetInput(0);
         audevSetOutput(1);
 		//send msg
-//		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_HEADSET_INSERT, NULL))
-//		{
-//		    lv_poc_set_headset_status(true);
-//	  	}
+		if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_HEADSET_INSERT, NULL))
+		{
+		    lv_poc_set_headset_status(true);
+	  	}
     }
 
     break;
@@ -219,10 +219,10 @@ void drvDummyHeadsetCustCB(void *ctx, drvHeadsetNotifyMsg_t id, uint32_t param)
         audevSetInput(0);
 		audevSetOutput(0);//default 2
 	    //send msg
-//		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_HEADSET_PULL_OUT, NULL))
-//		{
-//			lv_poc_set_headset_status(false);
-//	    }
+		if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_HEADSET_PULL_OUT, NULL))
+		{
+			lv_poc_set_headset_status(false);
+	    }
     }
     break;
 
@@ -294,7 +294,7 @@ void drvHandsetInit(void)
         if (d->notify_cb != NULL)
             d->notify_cb(d->notify_cb_ctx, MSG_HEADSET_PLUGIN, d->type);
     }
-	else
+	else//add, power off's plugout
     {
         if (d->notify_cb != NULL)
             d->notify_cb(d->notify_cb_ctx, MSG_HEADSET_PLUGOUT, 0);

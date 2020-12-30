@@ -39,13 +39,13 @@ void sntpSyncDoneCB(void *param)
     {
         sprintf(cString, "+SNTP: FAILED\r\n");
 		/*校时失败*/
-		OSI_LOGI(0, "[song]sntp network update time failed");
+		OSI_LOGI(0, "[poc][sntp]sntp network update time failed");
     }
     else
     {
         sprintf(cString, "+SNTP: OK\r\n");
 		/*校时成功*/
-		OSI_LOGI(0, "[song]sntp network update time success");
+		OSI_LOGI(0, "[poc][sntp]sntp network update time success");
     }
     atCmdRespDefUrcText(cString);
 

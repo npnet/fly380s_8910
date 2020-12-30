@@ -920,6 +920,13 @@ lv_poc_get_speak_tone_status(void);
 void poc_config_Lcd_power_vol(void);
 
 /*
+      name : poc_UpdateLastActiTime
+    return :
+      date : 2020-12-29
+*/
+void poc_UpdateLastActiTime(void);
+
+/*
       name : poc_set_keypad_led_status
      param : open  true is open keypad led
       date : 2020-04-30

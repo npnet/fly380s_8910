@@ -509,19 +509,19 @@ static void _onEV_CFW_NW_NETWORKINFO_IND(const osiEvent_t *event)
             atCmdRespDefUrcText(rsp);
         }
     }
-	/*！----------自定义加入这层*/
-	/*判断是否有网络下发校时功能*/
+	/*！----------自定义加入这层---------------*/
+	/*--------判断是否有网络下发校时功能-------*/
 	if(p->nUniversalTimeZoneLen == 0)
 	{
-		OSI_LOGI(0, "[song]nas network haven't update time\n");
+		OSI_LOGI(0, "[poc][sntp]nas network haven't update time\n");
 		Net_Time_flag = false;
 	}
 	else
 	{
-		OSI_LOGI(0, "[song]nas network have update time\n");
+		OSI_LOGI(0, "[poc][sntp]nas network have update time\n");
  		Net_Time_flag = true;
 	}
-	/*----------------------！*/
+	/*--------------------------------------！*/
 }
 #ifdef CFW_VOLTE_SUPPORT
 extern CFW_NW_EMC_NUM_LIST_INFO gAtNwEmcNumList;

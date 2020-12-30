@@ -83,7 +83,7 @@
     ITEM_NAME    = NV_IMEI[6]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x85
+    ITEM_CONTENT = 0x34
     ITEM_INDEX   = 7
     ITEM_PARENT  = 0
     ITEM_DESC    =  
@@ -93,7 +93,7 @@
     ITEM_NAME    = NV_IMEI[7]
     ITEM_ID      = 5
     ITEM_TYPE    = 1 (CHAR)
-    ITEM_CONTENT = 0x90
+    ITEM_CONTENT = 0x27
     ITEM_INDEX   = 8
     ITEM_PARENT  = 0
     ITEM_DESC    =  

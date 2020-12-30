@@ -79,7 +79,7 @@ static void lv_poc_led_entry(void *param)
     {
         if(osiEventWait(pocLedIdtAttr.thread, &event))
         {
-            OSI_LOGI(0, "[IDTLED][EVENT]rec msg, start");
+			OSI_PRINTFI("[led](%s)(%d):rec msg, start", __func__, __LINE__);
             if(event.id != 200)
             {
                 continue;
@@ -116,12 +116,12 @@ static void lv_poc_led_entry(void *param)
                 {
                     if(pocLedIdtAttr.task == NULL)
                     {
-                        pocLedIdtAttr.task = lv_task_create(Lv_Poc_Led_Status_Callback_Check, pocLedIdtAttr.jumpperiod, LV_TASK_PRIO_MID, NULL);
+                        pocLedIdtAttr.task = lv_task_create(Lv_Poc_Led_Status_Callback_Check, pocLedIdtAttr.jumpperiod, LV_TASK_PRIO_HIGH, NULL);
                     }
                     lv_poc_led_status_all_close(NULL);
                     break;
                 }
-#ifndef CONFIG_POC_PING_NETWORK_SUPPORT
+
                 case LVPOCLEDIDTCOM_SIGNAL_POWERON_STATUS:
                 {
                     pocLedIdtAttr.pledjump = NULL;
@@ -286,7 +286,7 @@ static void lv_poc_led_entry(void *param)
                     lv_poc_red_close_green_open(NULL);
                     break;
                 }
-#else
+#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
                 case LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_IND:
                 {
                     pocLedIdtAttr.pledjump = NULL;

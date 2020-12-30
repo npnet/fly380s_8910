@@ -81,7 +81,7 @@ void atCmdHandleLOGAPZZD(atCommand_t *cmd)
 //					}
 
 					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_AP_POC_IND, (void *)apzzddata);
-					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]apzzddata is %s", apzzddata);
+					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[poc][at]apzzddata is %s", apzzddata);
 			    }while(0);
 		    }
 
