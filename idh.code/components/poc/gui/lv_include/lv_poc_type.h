@@ -135,9 +135,6 @@ typedef struct
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	uint8_t keypad_led_switch;        //[0]close   [1]open   [default 0]
 #endif
-#ifdef CONFIG_POC_LOW_POWER_SUPPORT
-	uint8_t lowpower_switch;               //[0]close   [1]open   [default 0]
-#endif
 	uint8_t GPS_switch;               //[0]close   [1]open   [default 0]
 	uint8_t electric_torch_switch;    //[0]close   [1]open   [default 0]
 	uint8_t screen_brightness;        //[0 - 9]    [default 4]
@@ -176,6 +173,7 @@ typedef struct
 	char poc_info[64];
 	char poc_secret_key[24];
 	char poc_flash_key[7];//6位密码
+	char curren_group_name[64];
 } nv_poc_setting_msg_t;
 
 typedef enum

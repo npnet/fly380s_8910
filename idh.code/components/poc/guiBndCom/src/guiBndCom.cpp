@@ -1252,6 +1252,18 @@ void callback_BND_Callmember(int ret)
 
 void callback_BND_Join_Group(const char* groupname, bnd_gid_t gid)
 {
+	nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+	static bool temp = false;
+	if(temp == false && poc_config->curren_group_name != NULL)
+	{
+		pocBndAttr.BndCurrentGroupInfo.gid = gid;
+
+		OSI_LOGI(0,"[cbbnd][joingroup]group call ack ,BndCurrentGroupInfo.gid %d",	pocBndAttr.BndCurrentGroupInfo.gid);
+		strncpy(pocBndAttr.BndCurrentGroupInfo.name, groupname, strlen(groupname));
+		temp = true;
+		return;
+	}
+
 	OSI_LOGXI(OSI_LOGPAR_SIIS, 0, "[cbbnd][joingroup](%s)(%d), gid:(%d), gname:(%s)", __FUNCTION__, __LINE__, gid, groupname);
 	bnd_group_t BndMsgCurGInf = {0};
 
@@ -1511,8 +1523,8 @@ void LvGuiBndCom_Group_update_timer_cb(void *ctx)
 	{
 		bnd_group_t Bnd_CurGInfo = {0};
 		bnd_group_t BndCGroup[GUIBNDCOM_GROUPMAX] = {0};
-
 		pocBndAttr.PoweronCurGInfo = true;
+		nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 
 		if(broad_group_getbyid(0, &Bnd_CurGInfo) == 0)
 		{
@@ -1525,13 +1537,44 @@ void LvGuiBndCom_Group_update_timer_cb(void *ctx)
 			}
 			else
 			{
-				for(unsigned int  i = 0; i < m_GNum; i++)
+				if(poc_config->curren_group_name != NULL)
 				{
-					if(0 == strcmp((char *)BndCGroup[i].name, Bnd_CurGInfo.name))
+					unsigned int  i = 0;
+					for(i = 0; i < m_GNum; i++)
 					{
-						pocBndAttr.current_group = BndCGroup[i].index;
-						OSI_LOGI(0, "[groupindex]cur group index(%d)", pocBndAttr.current_group);
-						break;
+						if(0 == strcmp((char *)BndCGroup[i].name, poc_config->curren_group_name))
+						{
+							pocBndAttr.current_group = BndCGroup[i].index;
+							pocBndAttr.BndCurrentGroupInfo.gid =BndCGroup[i].gid;
+							broad_joingroup(BndCGroup[i].gid);
+							  strncpy(pocBndAttr.BndCurrentGroupInfo.name, poc_config->curren_group_name, strlen(poc_config->curren_group_name));
+							OSI_LOGI(0, "[groupindex]cur group index(%d)", pocBndAttr.current_group);
+							break;
+						}
+					}
+					if(i == m_GNum)
+					{
+						for(unsigned int  i = 0; i < m_GNum; i++)
+						{
+							if(0 == strcmp((char *)BndCGroup[i].name, Bnd_CurGInfo.name))
+							{
+								pocBndAttr.current_group = BndCGroup[i].index;
+								OSI_LOGI(0, "[groupindex]cur group index(%d)", pocBndAttr.current_group);
+								break;
+							}
+						}
+					 }
+				}
+				else
+				{
+					for(unsigned int  i = 0; i < m_GNum; i++)
+					{
+						if(0 == strcmp((char *)BndCGroup[i].name, Bnd_CurGInfo.name))
+						{
+							pocBndAttr.current_group = BndCGroup[i].index;
+							OSI_LOGI(0, "[groupindex]cur group index(%d)", pocBndAttr.current_group);
+							break;
+						}
 					}
 				}
 			}
