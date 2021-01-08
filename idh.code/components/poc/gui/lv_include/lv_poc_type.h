@@ -4,18 +4,14 @@
 #include "poc_config.h"
 #include "ats_config.h"
 
-//typedef char         		 INT8;
 typedef unsigned char 		 UINT8;
 typedef short int     		 INT16;
 typedef unsigned short int   UINT16;
 typedef int          		 INT32;
 typedef unsigned int  		 UINT32;
-//typedef char         		 int8_t;
 typedef unsigned char 		 uint8_t;
 typedef short int    		 int16_t;
 typedef unsigned short int   uint16_t;
-//typedef int          		 int32_t;
-//typedef unsigned int  	 uint32_t;
 
 #define IN  const
 #define OUT
@@ -38,11 +34,11 @@ typedef unsigned short int   uint16_t;
 #define POC_TYPE_VAT_PING "AT+PING=\"www.baidu.com\",50,128,1\r\n"
 
 /*******************
-+*     NAME:   lv_poc_time_t
-+*   AUTHOR:   lugj
-+* DESCRIPT:   获取时间的结构体
-+*     DATE:   2019-11-01
-+********************/
+*     NAME:   lv_poc_time_t
+*   AUTHOR:   lugj
+* DESCRIPT:   获取时间的结构体
+*     DATE:   2019-11-01
+********************/
 typedef struct
 {
     INT32 tm_sec;                                                                 // seconds [0,59]
@@ -291,10 +287,12 @@ typedef enum{
 
 	LVPOCLEDIDTCOM_SIGNAL_STATUS_START = 0,
 	//led
-	LVPOCLEDIDTCOM_SIGNAL_POWERON_STATUS ,
-	LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS ,
-	LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS ,//正常状态
-	LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS ,//运行状态
+	LVPOCLEDIDTCOM_SIGNAL_POWERON_STATUS ,//开机
+	LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS ,//关机
+	LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS ,//正常
+	LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS ,//搜网
+	LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS ,//守候状态
+	LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS ,//设置状态
 	LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS ,//未充电
 	LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS ,//充电中状态
 	LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS ,//充电完成状态
@@ -528,6 +526,12 @@ typedef enum _lv_poc_record_mic_adcGain
 	POC_MIC_ADC_GAIN_LEVEL_15 = 15,
 } lv_poc_record_mic_adcGain;
 
+typedef enum
+{
+    POC_APPLY_NOTE_TYPE_NONETWORK = 1,
+    POC_APPLY_NOTE_TYPE_NOLOGIN = 2,
+    POC_APPLY_NOTE_TYPE_LOGINSUCCESS = 3,
+}lv_poc_apply_note_type_t;
 typedef enum _lv_poc_cit_auto_test_type
 {
 	LV_POC_CIT_AUTO_TEST_TYPE_START    = 0,
@@ -547,7 +551,9 @@ typedef enum _lv_poc_cit_test_ui_id
 	LV_POC_CIT_OPRATOR_TYPE_SIGNAL,
 	LV_POC_CIT_OPRATOR_TYPE_KEY ,
 	LV_POC_CIT_OPRATOR_TYPE_CHARGE ,
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	LV_POC_CIT_OPRATOR_TYPE_GPS ,
+#endif
 	LV_POC_CIT_OPRATOR_TYPE_SIM ,//11
 #ifdef CONFIG_POC_GUI_TOUCH_SUPPORT
 	LV_POC_CIT_OPRATOR_TYPE_TOUCH ,
@@ -559,10 +565,11 @@ typedef enum _lv_poc_cit_test_ui_id
 	LV_POC_CIT_OPRATOR_TYPE_END ,//15
 } lv_poc_cit_test_ui_id;
 
-#define LV_LCD_WIDTH  (132)
-#define LV_LCD_HEIGHT (132)
-#define LV_KEY_AVERAGE_WIDTH     (LV_LCD_WIDTH/4)
-#define LV_LCD_COLUMN (3)
+#define LV_LCD_WIDTH  (160)
+#define LV_LCD_HEIGHT (128)
+#define LV_KEY_AVERAGE_WIDTH     (LV_LCD_WIDTH/10)
+#define LV_LCD_COLUMN (4)
+#define LV_KEY_NUMBER (10)
 
 struct poc_key_attr_t
 {

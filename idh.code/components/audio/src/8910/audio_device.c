@@ -30,6 +30,7 @@
 #endif
 //poc
 #include "lv_include/lv_poc_type.h"
+#include "lv_include/lv_poc_lib.h"
 #include "guiIdtCom_api.h"
 
 #define INT8 int8_t
@@ -2919,8 +2920,8 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         memcpy(&(d->play.stream), &stream, sizeof(HAL_AIF_STREAM_T));
         memcpy(&(d->play.level), &level, sizeof(AUD_LEVEL_T));
 
-		/*open pa*/
-		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+		//open pa
+		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER && (!lv_poc_get_btn_status()))
 		{
 			extern bool poc_set_ext_pa_status(bool open);
 			poc_set_ext_pa_status(true);
@@ -3040,6 +3041,7 @@ bool audevStopPlayV2(void)
     {
 	    extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(false);
+		lv_poc_set_btn_status(false);
     }
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)

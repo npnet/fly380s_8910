@@ -1103,6 +1103,34 @@ int lv_poc_type_key_poc_cb(bool status);
 	 date : 2020-12-10
 */
 int lv_poc_type_key_power_cb(bool status);
+
+/*
+	 name : lv_poc_type_key_enter_cb
+	 param :
+	 date : 2021-01-04
+*/
+int lv_poc_type_key_enter_cb(bool status);
+
+/*
+	 name : lv_poc_type_key_group_cb
+	 param :
+	 date : 2021-01-04
+*/
+int lv_poc_type_key_group_cb(bool status);
+
+/*
+	 name : lv_poc_type_key_member_cb
+	 param :
+	 date : 2021-01-04
+*/
+int lv_poc_type_key_member_cb(bool status);
+
+/*
+	 name : lv_poc_type_key_escape_cb
+	 param :
+	 date : 2021-01-04
+*/
+int lv_poc_type_key_escape_cb(bool status);
 #endif
 
 /*
@@ -1146,6 +1174,10 @@ void lv_poc_type_plog_switch_cb(bool status);
 	 date : 2020-12-12
 */
 void lv_poc_type_modemlog_switch_cb(bool status);
+
+void lv_poc_set_btn_status(bool status);
+
+bool lv_poc_get_btn_status(void);
 
 #ifdef __cplusplus
 }

@@ -62,30 +62,47 @@ typedef struct lv_poc_cit_test_t
 
 static lv_poc_cit_test_t pocCitAttr;
 
-lv_poc_cit_key_label_struct_t lv_poc_cit_key_label_array[16] = {//2(rows)*3(columns)
+lv_poc_cit_key_label_struct_t lv_poc_cit_key_label_array[16] = {//3(rows)*4(columns)
     {
-        "up"     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 7, 0,
+        "grp"     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 0, 0,
     },
 
     {
-        "dow"     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 7 + 8 + LV_KEY_AVERAGE_WIDTH, 0,
+        "up"    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 2*(6 + LV_KEY_AVERAGE_WIDTH) - 1, 0,
     },
 
     {
-        "v+"      , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, LV_LCD_WIDTH - LV_KEY_AVERAGE_WIDTH - 11, 0,
+		"down"	 , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 4*(6 + LV_KEY_AVERAGE_WIDTH) - 2, 0,
+	},
+
+	{
+		"meb"	 , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, LV_LCD_WIDTH - LV_KEY_AVERAGE_WIDTH - 15, 0,
+	},
+
+	{
+		"ptt"	 , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 0, 0,
+	},
+
+	{
+		"v+"	 , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 2*(6 + LV_KEY_AVERAGE_WIDTH) - 1, 0,
+	},
+
+	{
+		"v-"     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 4*(6 + LV_KEY_AVERAGE_WIDTH) - 2, 0,
+	},
+
+	{
+		"pow"	 , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, LV_LCD_WIDTH - LV_KEY_AVERAGE_WIDTH - 15, 0,
+	},
+
+	{
+		"ent"	 , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 2*(6 + LV_KEY_AVERAGE_WIDTH) - 1, 0,
+	},
+
+	{
+		"esc"	 , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 4*(6 + LV_KEY_AVERAGE_WIDTH) - 2, 0,
     },
 
-    {
-        "v-"    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 7, 0,
-    },
-
-    {
-        "ppt"     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, 7 + 8 + LV_KEY_AVERAGE_WIDTH, 0,
-    },
-
-    {
-        "pow"   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_CENTER, LV_ALIGN_IN_LEFT_MID, LV_LCD_WIDTH - LV_KEY_AVERAGE_WIDTH - 11, 0,
-    },
 };
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
@@ -587,7 +604,7 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 					default:
 						strcat(simnettype, "UNKNOW");
 						break;
-				}
+				}
 				pKey->keyattr.label[13] ? lv_label_set_text(pKey->keyattr.label[13], simnettype) : 0;
 			}
 			break;
@@ -829,6 +846,8 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			lv_obj_align(label2, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 			lv_label_set_text(label2, "2.松开PPT键,播放\n录音内容.");
 			cit_test_info->cit_mic_attr.cb(true);;//loopback
+			//open pa
+            poc_set_ext_pa_status(true);
 			break;
 		}
 
@@ -1271,6 +1290,8 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			lv_label_set_text(label3, "3.松开耳机上的PPT\n键，播放录音内容.");
 			pocCitAttr.keyattr.label[2] = label3;
 			cit_test_info->cit_headset_attr.cb ? cit_test_info->cit_headset_attr.cb(true) : 0;//loopback
+			//open pa
+            poc_set_ext_pa_status(true);
 			break;
 		}
 

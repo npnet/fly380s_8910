@@ -12,9 +12,9 @@ extern "C" {
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
- 
+
 #define IDT_POC_MODE 1//录音及播放使用POC模式
- 
+
 /*************************************************
 *
 *                  EXTERN
@@ -945,7 +945,7 @@ static bool lv_poc_status_bar_init(void)
 #endif
     lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
- 
+
     lv_poc_status_bar_task_ext_add(lv_poc_stabar_signal_task);
 	lv_task_create(lv_poc_stabar_task,1000,LV_TASK_PRIO_HIGH,NULL);
 	return ret_val;
@@ -1423,7 +1423,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     poc_setting_conf = lv_poc_setting_conf_read();
     if(param == NULL) return LV_RES_OK;
     unsigned int cur_key = *(unsigned int *)param;
- 
+
     if(false == is_keypad_msg)
     {
         ret = (*ancient_signal_func)(obj,sign,param);
@@ -1450,11 +1450,6 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 		return ret;
 	}
 
-	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
-	{
-		return LV_RES_INV;
-	}
-
     lv_poc_activity_t * activity = lv_poc_activity_list_lookup(obj);
     if(NULL == activity)
     {
@@ -1463,19 +1458,21 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     OSI_LOGI(0, "[sigal][cb](%d):key(%d), sign(%d), is_keypad_msg(%d)", __LINE__, cur_key, sign, is_keypad_msg);
     if(activity != current_activity)
     {
- 
+
     }
     uint8_t vol_cur = 0;
- 
+
 #if IDT_POC_MODE
- 
-    if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_VOLUM)
-    {
-        vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
-        if(is_keypad_msg)
-        {
-            cur_key = *((uint32_t *)param);
- 
+
+	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_VOLUM
+		|| lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_MIC
+		|| lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET)
+	{
+		vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+		if(is_keypad_msg)
+		{
+			cur_key = *((uint32_t *)param);
+
             if(cur_key == LV_GROUP_KEY_VOL_DOWN)
             {
                 if(vol_cur > 0)
@@ -1515,9 +1512,14 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
         if(is_keypad_msg)
         {
             cur_key = *((uint32_t *)param);
- 
+
             if(cur_key == LV_GROUP_KEY_VOL_DOWN)
             {
+				if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+				{
+					lv_poc_type_key_volum_down_cb(true);
+					return false;
+				}
                 if(vol_cur > 0)
                 {
                     vol_cur = vol_cur - 1;
@@ -1526,13 +1528,18 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
             }
             else if(cur_key == LV_GROUP_KEY_VOL_UP)
             {
+				if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+				{
+					lv_poc_type_key_volum_up_cb(true);
+					return false;
+				}
                 if(vol_cur < 11)
                 {
                     vol_cur = vol_cur + 1;
                     lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
                 }
             }
-            else if(cur_key != LV_GROUP_KEY_POC)//按键音
+			else if((cur_key != LV_GROUP_KEY_POC) && (sign != LV_SIGNAL_LONG_PRESS_REP))//按键音
             {
                 if(lv_poc_get_screenon_status())
                 {
@@ -1554,7 +1561,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     if(is_keypad_msg)
     {
         cur_key = *((uint32_t *)param);
- 
+
         if(cur_key == LV_GROUP_KEY_VOL_DOWN)
         {
             if(vol_cur > 0)
@@ -1588,6 +1595,26 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 		}
 	}
 #endif
+	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+	{
+		return LV_RES_INV;
+	}
+	if(sign ==  LV_SIGNAL_RELEASED)//after
+	{
+		switch(cur_key)
+		{
+			case LV_GROUP_KEY_POC:
+			{
+				if(activity_idle != current_activity)//enter key
+				{
+					sign = LV_SIGNAL_CONTROL;
+					*(unsigned int *)param = LV_GROUP_KEY_ENTER;
+				}
+				OSI_LOGI(0, "[poc][signal](%d)pwer key esc or enter", __LINE__);
+				break;
+			}
+		}
+	}
 
     if(NULL != activity->signal_func)
     {
@@ -2455,7 +2482,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			charge_complete_status = false;
 			lv_poc_set_charge_status(charge_status);
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_RUN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 		}
 
         if(battery_t.battery_value >= 100)//4.12v
@@ -3686,6 +3713,50 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 			{
 				status == true ? (multi_keyvalue|=0b0100):(multi_keyvalue&=0b0000);
 			}while(0);
+
+			break;
+		}
+
+		case LV_GROUP_KEY_ENTER:
+		{
+			if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+			{
+				lv_poc_type_key_enter_cb(true);
+				return false;
+			}
+
+			break;
+		}
+
+		case LV_GROUP_KEY_ESC:
+		{
+			if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+			{
+				lv_poc_type_key_escape_cb(true);
+				return false;
+			}
+
+			break;
+		}
+
+		case LV_GROUP_KEY_GP:
+		{
+			if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+			{
+				lv_poc_type_key_group_cb(true);
+				return false;
+			}
+
+			break;
+		}
+
+		case LV_GROUP_KEY_MB:
+		{
+			if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+			{
+				lv_poc_type_key_member_cb(true);
+				return false;
+			}
 
 			break;
 		}

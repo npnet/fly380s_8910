@@ -308,7 +308,7 @@ static bool prv_lv_poc_volum_display(POC_MMI_VOICE_TYPE_E type, uint8_t volume)
 bool lv_poc_set_volum(POC_MMI_VOICE_TYPE_E type, uint8_t volume, bool play, bool display)
 {
 	static uint8_t old_volum = 0;
-	if(old_volum == volume) return false;
+	if((volume == 11) || (volume == 0)) return false;
 
 	old_volum = volume;
 	lv_poc_setting_set_current_volume(type, old_volum, play);

@@ -96,6 +96,12 @@
 #cmakedefine CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 
 /**
+ * Wheth the POC touch is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_TOUCH_SUPPORT
+
+/**
  * Wheth the POC FOTA is enabled.
  *
  */
