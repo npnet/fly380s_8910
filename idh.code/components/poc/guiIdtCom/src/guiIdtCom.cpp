@@ -1988,10 +1988,12 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "开始对讲", NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
-			/*开始闪烁*/
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+
 			if(m_IdtUser.m_status == USER_OPRATOR_SPEAKING)
 			{
+				/*开始闪烁*/
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+
 				char speak_name[100] = "";
 				strcpy((char *)speak_name, (const char *)"主讲:");
 				strcat((char *)speak_name, (const char *)pocIdtAttr.self_info.ucName);
@@ -2041,8 +2043,10 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_REP:
 		{
-			if(ctx == USER_OPRATOR_SPEAKING
+			if((ctx == USER_OPRATOR_SPEAKING
 				&& pocIdtAttr.is_makeout_call == true)
+				|| (ctx == USER_OPRATOR_START_SPEAK
+					&& pocIdtAttr.is_makeout_call == true))
 			{
 				/*恢复run闪烁*/
 			    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);

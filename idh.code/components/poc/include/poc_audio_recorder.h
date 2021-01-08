@@ -85,11 +85,36 @@ bool pocAudioRecorderDelete(POCAUDIORECORDER_HANDLE recorder_id);
  */
 bool pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id);
 
+/**
+ * \brief get poc audio recorder Thread id
+ *
+ * param NULL
+ *
+ * return id
+ */
+osiThread_t *pocAudioRecorderThread(void);
+
+/**
+ * \brief get poc audio recorder id
+ *
+ * param NULL
+ *
+ * return id
+ */
+POCAUDIORECORDER_HANDLE pocAudioRecordId(void);
+
+/**
+ * \brief stop poc_mode audio recorder
+ *
+ * param NULL
+ *
+ * return false is fail to stop record, true is success
+ */
+bool pocAudioRecorderStopPocMode(void);
+
 void lv_poc_start_recordwriter(void);
 
 void lv_poc_start_playfile(void);
-
-osiThread_t *pocAudioRecorderThread(void);
 
 void lv_poc_start_recordwriter_pocmode(void);
 

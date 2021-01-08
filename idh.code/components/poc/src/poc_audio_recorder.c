@@ -13,12 +13,15 @@
 // #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
 #include "poc_audio_recorder.h"
+#include "poc_audio_player.h"
 #include "audio_device.h"
 
 #ifdef CONFIG_POC_AUDIO_RECORDER_SUPPORT
-
-#define RECORDER_POC_MODE 0
-
+ 
+#define RECORDER_POC_MODE 1
+ 
+static POCAUDIORECORDER_HANDLE PocMode_recordid = 0;
+ 
 static osiThread_t *RecorderThreadID = NULL;
 
 static void prvPocAudioRecorderMemWriterDelete(auWriter_t *d)
@@ -391,6 +394,7 @@ POCAUDIORECORDER_HANDLE pocAudioRecorderCreate(const uint32_t max_size,
 		return 0;
 	}
 
+    PocMode_recordid = (POCAUDIORECORDER_HANDLE)recorder;
 	return (POCAUDIORECORDER_HANDLE)recorder;
 }
 
@@ -412,45 +416,19 @@ bool pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
 	recorder->writer->pos = 0;
 	recorder->writer->size = 0;
 	recorder->reader->pos = 0;
-
-	if(recorder->status)
-	{
-		return true;
-	}
 	recorder->status = true;
 
 #if RECORDER_POC_MODE
 
-	if (!audevSetRecordSampleRate(8000))
-    {
-        OSI_LOGI(0, "audio poc set samplerate fail");
-        return false;
-    }
-
-	bool ret = auRecorderStartWriter(recorder->recorder, AUDEV_RECORD_TYPE_POC, AUSTREAM_FORMAT_PCM, NULL, (auWriter_t *)recorder->writer);
-	if(ret == false)
+    pocAudioPlayerStartPocModeReady();
+ 
+    if(!audevPocModeSwitch(LV_POC_MODE_RECORDER))
 	{
 		recorder->status = false;
-	}
-
-	//poc mode
-	if(!audevStartPocMode(AUPOC_STATUS_HALF_DUPLEX) && !recorder->status)
-	{
-		OSI_LOGI(0, "[idtpoc]recorder start poc mode failed");
-		auRecorderStop(recorder->recorder);
-		return false;
-	}
-
-	if(!audevPocModeSwitch(LV_POC_MODE_RECORDER))
-	{
-		if(!audevPocModeSwitch(LV_POC_MODE_RECORDER))
-		{
-			OSI_LOGI(0, "[idtpoc]switch recorder failed");
+        OSI_LOGI(0, "[poc][recorder](%d):switch recorder failed", __LINE__);
 			return false;
 		}
-		OSI_LOGI(0, "[idtpoc]switch recorder success");
-	}
-
+ 
 #else
 
 	bool ret = auRecorderStartWriter(recorder->recorder, AUDEV_RECORD_TYPE_MIC, AUSTREAM_FORMAT_PCM, NULL, (auWriter_t *)recorder->writer);
@@ -461,7 +439,7 @@ bool pocAudioRecorderStart(POCAUDIORECORDER_HANDLE recorder_id)
 
 #endif
 
-	return ret;
+    return true;
 }
 
 /**
@@ -505,13 +483,14 @@ bool pocAudioRecorderStop(POCAUDIORECORDER_HANDLE recorder_id)
 	bool ret = false;
 
 #if RECORDER_POC_MODE
-
-	if(!audevStopPocMode())
-	{
-		OSI_LOGI(0, "[idtpoc][recorder]stop poc mode failed");
-		return false;
-	}
-
+ 
+    if(!audevStopPocMode())
+    {
+        OSI_LOGI(0, "[poc][recorder]stop poc mode failed");
+        return false;
+    }
+    pocAudioPlayerStopPocMode();
+ 
 #endif
 
 	pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)recorder_id;
@@ -573,12 +552,59 @@ bool pocAudioRecorderGetStatus(POCAUDIORECORDER_HANDLE recorder_id)
 
 	return recorder->status;
 }
-
+ 
+/**
+ * \brief get poc audio recorder Thread id
+ *
+ * param NULL
+ *
+ * return id
+ */
 osiThread_t *pocAudioRecorderThread(void)
 {
 	return RecorderThreadID;
 }
-
+ 
+/**
+ * \brief get poc audio recorder id
+ *
+ * param NULL
+ *
+ * return id
+ */
+POCAUDIORECORDER_HANDLE pocAudioRecordId(void)
+{
+    return PocMode_recordid;
+}
+ 
+/**
+ * \brief stop poc_mode audio recorder
+ *
+ * param NULL
+ *
+ * return false is fail to stop record, true is success
+ */
+bool pocAudioRecorderStopPocMode(void)
+{
+    bool ret = false;
+    pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)pocAudioRecordId();
+ 
+    if(!recorder->status)
+    {
+        return true;
+    }
+ 
+    recorder->status = false;
+ 
+    if(auRecorderStop((auRecorder_t *)recorder->recorder))
+    {
+        ret = true;
+    }
+    pocAudioRecorderReset(pocAudioRecordId());
+ 
+    return ret;
+}
+ 
 //自测录音 play mode
 #define RECORDER_FILE_NAME "/example_playmode.pcm"
 static auWriter_t *pocwriter = NULL;

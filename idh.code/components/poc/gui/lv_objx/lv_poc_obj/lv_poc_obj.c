@@ -12,9 +12,9 @@ extern "C" {
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
-
-#define IDT_POC_MODE 0//录音及播放使用POC模式
-
+ 
+#define IDT_POC_MODE 1//录音及播放使用POC模式
+ 
 /*************************************************
 *
 *                  EXTERN
@@ -943,9 +943,9 @@ static bool lv_poc_status_bar_init(void)
 #ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	lv_poc_init_stabar_gps_img(NULL);
 #endif
+    lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
-
-	lv_poc_refr_task_once(lv_poc_power_on_delay_refresh_battery_img_task, LVPOCLISTIDTCOM_LIST_PERIOD_2000, LV_TASK_PRIO_LOW);
+ 
     lv_poc_status_bar_task_ext_add(lv_poc_stabar_signal_task);
 	lv_task_create(lv_poc_stabar_task,1000,LV_TASK_PRIO_HIGH,NULL);
 	return ret_val;
@@ -1421,8 +1421,9 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 	}
 
     poc_setting_conf = lv_poc_setting_conf_read();
-    uint32_t cur_key = 0;
-
+    if(param == NULL) return LV_RES_OK;
+    unsigned int cur_key = *(unsigned int *)param;
+ 
     if(false == is_keypad_msg)
     {
         ret = (*ancient_signal_func)(obj,sign,param);
@@ -1459,26 +1460,107 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     {
 	    return ret;
     }
-
+    OSI_LOGI(0, "[sigal][cb](%d):key(%d), sign(%d), is_keypad_msg(%d)", __LINE__, cur_key, sign, is_keypad_msg);
     if(activity != current_activity)
     {
-        OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] current activity is empty or is not current_activity\n");
-        //return ret;
+ 
     }
-
+    uint8_t vol_cur = 0;
+ 
 #if IDT_POC_MODE
-    uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_VOICE);
+ 
+    if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_VOLUM)
+    {
+        vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
+        if(is_keypad_msg)
+        {
+            cur_key = *((uint32_t *)param);
+ 
+            if(cur_key == LV_GROUP_KEY_VOL_DOWN)
+            {
+                if(vol_cur > 0)
+                {
+                    vol_cur = vol_cur - 1;
+                    lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+                }
+            }
+            else if(cur_key == LV_GROUP_KEY_VOL_UP)
+            {
+                if(vol_cur < 11)
+                {
+                    vol_cur = vol_cur + 1;
+                    lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
+                }
+            }
+            else if(cur_key != LV_GROUP_KEY_POC)//按键音
+            {
+                if(lv_poc_get_screenon_status())
+                {
+                    OSI_LOGI(0, "[poc][signal](%d)screen on first, cannel key tone", __LINE__);
+                }
+                else
+                {
+                    poc_play_btn_voice_one_time(0,
+#ifdef CONFIG_POC_TTS_SUPPORT
+                       poc_setting_conf->voice_broadcast_switch ||
+#endif
+                       !(poc_setting_conf->btn_voice_switch));
+                }
+            }
+        }
+    }
+    else
+    {
+        vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_VOICE);
+        if(is_keypad_msg)
+        {
+            cur_key = *((uint32_t *)param);
+ 
+            if(cur_key == LV_GROUP_KEY_VOL_DOWN)
+            {
+                if(vol_cur > 0)
+                {
+                    vol_cur = vol_cur - 1;
+                    lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
+                }
+            }
+            else if(cur_key == LV_GROUP_KEY_VOL_UP)
+            {
+                if(vol_cur < 11)
+                {
+                    vol_cur = vol_cur + 1;
+                    lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
+                }
+            }
+            else if(cur_key != LV_GROUP_KEY_POC)//按键音
+            {
+                if(lv_poc_get_screenon_status())
+                {
+                    OSI_LOGI(0, "[poc][signal](%d)screen on first, cannel key tone", __LINE__);
+                }
+                else
+                {
+                    poc_play_btn_voice_one_time(0,
+#ifdef CONFIG_POC_TTS_SUPPORT
+			    poc_setting_conf->voice_broadcast_switch ||
+#endif
+                       !(poc_setting_conf->btn_voice_switch));
+                }
+            }
+        }
+    }
+#else
+    vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
     if(is_keypad_msg)
     {
-		cur_key = *((uint32_t *)param);
-
-		OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] cur_key <- %d \n", cur_key);
-		if(cur_key == LV_GROUP_KEY_VOL_DOWN)
+        cur_key = *((uint32_t *)param);
+ 
+        if(cur_key == LV_GROUP_KEY_VOL_DOWN)
         {
             if(vol_cur > 0)
             {
                 vol_cur = vol_cur - 1;
-                lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
+                lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
             }
         }
         else if(cur_key == LV_GROUP_KEY_VOL_UP)
@@ -1486,50 +1568,18 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
             if(vol_cur < 11)
             {
                 vol_cur = vol_cur + 1;
-                lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
+                lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
             }
         }
         else if(cur_key != LV_GROUP_KEY_POC)//按键音
         {
-		    poc_play_btn_voice_one_time(0,
-#ifdef CONFIG_POC_TTS_SUPPORT
-			    poc_setting_conf->voice_broadcast_switch ||
-#endif
-			    !(poc_setting_conf->btn_voice_switch));
-        }
-    }
-#else
-	uint8_t vol_cur = lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY);
-	if(is_keypad_msg)
-	{
-		cur_key = *((uint32_t *)param);
-
-		OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] cur_key <- %d \n", cur_key);
-		if(cur_key == LV_GROUP_KEY_VOL_DOWN)
-		{
-			if(vol_cur > 0)
-			{
-				vol_cur = vol_cur - 1;
-				lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
-			}
-		}
-		else if(cur_key == LV_GROUP_KEY_VOL_UP)
-		{
-			if(vol_cur < 11)
-			{
-				vol_cur = vol_cur + 1;
-				lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
-			}
-		}
-		else if(cur_key != LV_GROUP_KEY_POC)//按键音
-		{
-			if(lv_poc_get_screenon_status())
-			{
-				OSI_LOGI(0, "[poc][signal](%d)screen on first, cannel key tone", __LINE__);
-			}
-			else
-			{
-				poc_play_btn_voice_one_time(0,
+            if(lv_poc_get_screenon_status())
+            {
+                OSI_LOGI(0, "[poc][signal](%d)screen on first, cannel key tone", __LINE__);
+            }
+            else
+            {
+                poc_play_btn_voice_one_time(0,
 #ifdef CONFIG_POC_TTS_SUPPORT
 				   poc_setting_conf->voice_broadcast_switch ||
 #endif
@@ -1541,7 +1591,6 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 
     if(NULL != activity->signal_func)
     {
-        OSI_LOGI(0, "[poc][signal][lv_poc_signal_cb] call current signal_cb of activity\n");
         ret = activity->signal_func(obj, sign, param);
     }
     return ret;

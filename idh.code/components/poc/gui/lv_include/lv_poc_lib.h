@@ -11,6 +11,8 @@
 #include "hal_iomux.h"
 #include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
 #include "guiIdtCom_api.h"
+#include "../../cfw/include/cfw.h"
+#include "../../newlib/include/stdlib.h"
 
 #define LV_POC_ACTIVITY_ATTRIBUTE_CB_SET_SIZE (10)
 

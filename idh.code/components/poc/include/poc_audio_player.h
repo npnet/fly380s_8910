@@ -93,11 +93,32 @@ int pocAudioPlayerWriteData(POCAUDIOPLAYER_HANDLE player_id, const uint8_t *data
  */
 bool pocAudioPlayerGetStatus(POCAUDIOPLAYER_HANDLE player_id);
 
-bool pocAudioLaunchPocMode(bool status);
+/**
+ * \brief get poc audio player id
+ *
+ * param NULL
+ *
+ * return id
+ */
+POCAUDIOPLAYER_HANDLE pocAudioPlayerId(void);
 
-bool pocAudioSetMode(bool mode);
+/**
+ * \brief start poc read
+ *
+ * param none
+ *
+ * return true is ok
+ */
+bool pocAudioPlayerStartPocModeReady(void);
 
-bool pocAudioStopPocMode(void);
+/**
+ * \brief stop poc_mode audio player
+ *
+ * param NULL
+ *
+ * return false is failed to stop player, true is success
+ */
+bool pocAudioPlayerStopPocMode(void);
 
 bool pocAudioPlayerSound(void);
 

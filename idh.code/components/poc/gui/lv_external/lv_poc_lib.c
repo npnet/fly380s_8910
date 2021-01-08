@@ -3413,7 +3413,7 @@ void lv_poc_type_plog_switch_cb(bool status)
 */
 void lv_poc_type_modemlog_switch_cb(bool status)
 {
-	status ? 0 : 0;
+//	status ? 0 : 0;
 }
 
 /********************************************CIT*****************************************************/

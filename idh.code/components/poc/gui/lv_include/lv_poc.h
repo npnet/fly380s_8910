@@ -29,6 +29,7 @@
 #include "lv_apps/lv_poc_member_call/lv_poc_member_call.h"
 #include "lv_apps/lv_poc_edeg_key/lv_poc_edeg_key.h"
 #include "lv_apps/lv_poc_about/lv_poc_about.h"
+#include "lv_apps/lv_poc_state_info/lv_poc_state_info.h"
 #include "lv_apps/lv_poc_notation/lv_poc_notation.h"
 #include "lv_apps/lv_poc_led/lv_poc_led.h"
 #include "lv_apps/lv_poc_sntp/lv_poc_sntp.h"

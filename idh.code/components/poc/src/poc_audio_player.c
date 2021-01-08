@@ -13,14 +13,17 @@
 // #define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
 
 #include "poc_audio_player.h"
+#include "poc_audio_recorder.h"
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc.h"
 #include "audio_device.h"
 
 #ifdef CONFIG_POC_AUDIO_PLAYER_SUPPORT
-
-#define PLAYER_POC_MODE 0
-
+ 
+#define PLAYER_POC_MODE 1
+ 
+static POCAUDIOPLAYER_HANDLE PocMode_playerid;
+ 
 static void prvPocAudioPlayerMemWriterDelete(auWriter_t *d)
 {
     auPocMemWriter_t *p = (auPocMemWriter_t *)d;
@@ -313,7 +316,11 @@ POCAUDIOPLAYER_HANDLE pocAudioPlayerCreate(const uint32_t max_size)
 	player->reduce  = false;
 	player->raise   = false;
 
-	return (POCAUDIOPLAYER_HANDLE)player;
+#if PLAYER_POC_MODE
+    PocMode_playerid = (POCAUDIOPLAYER_HANDLE)player;
+#endif
+ 
+    return (POCAUDIOPLAYER_HANDLE)player;
 }
 
 /**
@@ -325,44 +332,40 @@ POCAUDIOPLAYER_HANDLE pocAudioPlayerCreate(const uint32_t max_size)
  */
 bool pocAudioPlayerStart(POCAUDIOPLAYER_HANDLE player_id)
 {
-	if(player_id == 0)
-	{
-		return false;
-	}
-
-	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
-
-    auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
-   	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
-
-#if PLAYER_POC_MODE
-	player->status = auPlayerStartReaderV2(player->player, AUDEV_PLAY_TYPE_POC, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
-
-	//poc mode
-	if(!audevStartPocMode(AUPOC_STATUS_HALF_DUPLEX) && !player->status)
+    if(player_id == 0)
     {
-		OSI_LOGI(0, "[idtpoc]start poc mode failed");
-        auPlayerStop((auPlayer_t *)player->player);
         return false;
     }
-
-	if(!audevPocModeSwitch(LV_POC_MODE_PLAYER))
-	{
-		if(!audevPocModeSwitch(LV_POC_MODE_PLAYER))
-		{
-			OSI_LOGI(0, "[idtpoc]switch player failed");
-			return false;
-		}
-		OSI_LOGI(0, "[idtpoc]switch player success");
-	}
+ 
+#if PLAYER_POC_MODE
+ 
+    if(!pocAudioPlayerStartPocModeReady())
+    {
+        OSI_LOGI(0, "[poc][readywork][player]ready error");
+        return false;
+    }
+ 
+    if(!audevPocModeSwitch(LV_POC_MODE_PLAYER))
+    {
+        OSI_LOGI(0, "[poc][readywork][player]switch player failed");
+        return false;
+    }
+ 
+    OSI_LOGI(0, "[poc][readywork][player](%d):audio poc'reader launching", __LINE__);
+ 
+    return true;
 #else
-
-	lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
-	player->status = auPlayerStartReader(player->player, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
-
+    pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
+ 
+    auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
+       auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
+ 
+    lv_poc_setting_set_current_volume(POC_MMI_VOICE_PLAY, lv_poc_setting_get_current_volume(POC_MMI_VOICE_PLAY), true);
+    player->status = auPlayerStartReader(player->player, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
+ 
+    return player->status;
+ 
 #endif
-
-	return player->status;
 }
 
 /**
@@ -412,13 +415,14 @@ bool pocAudioPlayerStop(POCAUDIOPLAYER_HANDLE player_id)
 	}
 
 #if PLAYER_POC_MODE
-
-	if(!audevStopPocMode())
-	{
-		OSI_LOGI(0, "[idtpoc][player]stop poc mode failed");
-		return false;
-	}
-
+ 
+    if(!audevStopPocMode())
+    {
+        OSI_LOGI(0, "[idtpoc][player]stop poc mode failed");
+        return false;
+    }
+    pocAudioRecorderStopPocMode();
+ 
 #endif
 
 	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
@@ -471,41 +475,37 @@ bool pocAudioPlayerDelete(POCAUDIOPLAYER_HANDLE       player_id)
  */
 int pocAudioPlayerWriteData(POCAUDIOPLAYER_HANDLE player_id, const uint8_t *data, uint32_t length)
 {
-	if(player_id == 0)
-	{
-		return -1;
-	}
-#if 0
-	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
-	return auWriterWrite((auWriter_t *)player->writer, data, length);
-#elif 1
-	int ret = 0;
-	pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
-	int count = player->writer->pos - player->reader->pos;
-	if(player->restart == true)
-	{
-		count = player->writer->max_size + (count<=0 ? count:-count);
-	}
-
-	if(player->reduce)
-	{
-		player->reduce_index = !player->reduce_index;
-		if(player->reduce_index)
-		{
-			ret = auWriterWrite((auWriter_t *)player->writer, data, length);
-		}
-		if(count <= POCAUDIOPLAYERDATAPREBUFFSIZE/2)
-		{
-			player->reduce = false;
-		}
-		return ret;
-	}
-	if(count >= POCAUDIOPLAYERDATAPREBUFFSIZE)
-	{
-		player->reduce = true;
-	}
-	return auWriterWrite((auWriter_t *)player->writer, data, length);
-#endif
+    if(player_id == 0)
+    {
+        return -1;
+    }
+ 
+    int ret = 0;
+    pocAudioPlayer_t * player = (pocAudioPlayer_t *)player_id;
+    int count = player->writer->pos - player->reader->pos;
+    if(player->restart == true)
+    {
+        count = player->writer->max_size + (count<=0 ? count:-count);
+    }
+ 
+    if(player->reduce)
+    {
+        player->reduce_index = !player->reduce_index;
+        if(player->reduce_index)
+        {
+            ret = auWriterWrite((auWriter_t *)player->writer, data, length);
+        }
+        if(count <= POCAUDIOPLAYERDATAPREBUFFSIZE/2)
+        {
+            player->reduce = false;
+        }
+        return ret;
+    }
+    if(count >= POCAUDIOPLAYERDATAPREBUFFSIZE)
+    {
+        player->reduce = true;
+    }
+    return auWriterWrite((auWriter_t *)player->writer, data, length);
 }
 
 /**
@@ -525,7 +525,85 @@ bool pocAudioPlayerGetStatus(POCAUDIOPLAYER_HANDLE player_id)
 
 	return player->status;
 }
-
+ 
+/**
+ * \brief get poc audio player id
+ *
+ * param NULL
+ *
+ * return id
+ */
+POCAUDIOPLAYER_HANDLE pocAudioPlayerId(void)
+{
+    return PocMode_playerid;
+}
+ 
+/**
+ * \brief stop poc_mode audio player
+ *
+ * param NULL
+ *
+ * return false is failed to stop player, true is success
+ */
+bool pocAudioPlayerStopPocMode(void)
+{
+    pocAudioPlayer_t * player = (pocAudioPlayer_t *)pocAudioPlayerId();
+    if(auPlayerStop((auPlayer_t *)player->player))
+    {
+        player->status = false;
+        pocAudioPlayerReset(pocAudioPlayerId());
+        return true;
+    }
+ 
+    return false;
+}
+ 
+/**
+ * \brief start poc read
+ *
+ * param none
+ *
+ * return true is ok
+ */
+bool pocAudioPlayerStartPocModeReady(void)
+{
+    pocAudioRecorder_t * recorder = (pocAudioRecorder_t *)pocAudioRecordId();
+    pocAudioPlayer_t * player = (pocAudioPlayer_t *)pocAudioPlayerId();
+ 
+    auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
+    auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
+ 
+    if (!audevSetRecordSampleRate(8000))
+    {
+        OSI_LOGI(0, "[poc][readywork](%d):audio poc set samplerate fail", __LINE__);
+        return false;
+    }
+ 
+    player->status = auPlayerStartReaderV2(player->player, AUDEV_PLAY_TYPE_POC, AUSTREAM_FORMAT_PCM, params, (auReader_t *)player->reader);
+    if(!player->status)
+    {
+        OSI_LOGI(0, "[poc][readywork](%d):recorder's reconfig error", __LINE__);
+        return false;
+    }
+ 
+    recorder->status = auRecorderStartWriter(recorder->recorder, AUDEV_RECORD_TYPE_POC, AUSTREAM_FORMAT_PCM, NULL, (auWriter_t *)recorder->writer);
+    if(!recorder->status)
+    {
+        OSI_LOGI(0, "[poc][readywork](%d):recorder's audio poc recorder startwriter failed", __LINE__);
+        return false;
+    }
+ 
+    if(!audevStartPocMode(AUPOC_STATUS_HALF_DUPLEX))
+    {
+        OSI_LOGI(0, "[poc][readywork](%d):poc mode start failed", __LINE__);
+        auRecorderStop(recorder->recorder);
+        auPlayerStop(player->player);
+        return false;
+    }
+ 
+    return true;
+}
+ 
 const unsigned char pcm_di[] = {0x19, 0xEC, 0x41, 0xCC, 0xAC, 0xB3, 0xA4, 0xA8, 0x5F, 0xAC, 0x34, 0xBC, 0x51, 0xD6, 0x11, 0xF7, 0xDF, 0x19, 0xA6, 0x37,
                                 0xA3, 0x4B, 0xE1, 0x54, 0xBD, 0x4F, 0xEB, 0x3B, 0xC5, 0x1D, 0x97, 0xFB, 0xBF, 0xD9, 0x21, 0xBD, 0x0D, 0xAC, 0x57, 0xA9, 0xF2, 0xB3, 0x7C, 0xC9, 0x6D, 0xE7, 0x98, 0x09, 0xFD, 0x28, 0xD2, 0x40,
                                 0xDC, 0x4E, 0x83, 0x50, 0x8C, 0x43, 0x97, 0x2A, 0x0B, 0x0B, 0x94, 0xE9, 0x26, 0xCB, 0x4C, 0xB5, 0xF1, 0xAC, 0x89, 0xB1, 0xFE, 0xC0, 0x8A, 0xDA, 0xC1, 0xF9, 0xA3, 0x18, 0x5C, 0x32, 0x62, 0x43,
