@@ -29,7 +29,7 @@ typedef unsigned short int   uint16_t;
 
 #define LV_POC_NAME_LEN LIST_ELEMENT_NAME_MAX_LENGTH
 
-#define POC_MAX_BRIGHT 9
+#define POC_MAX_BRIGHT 7//7:0-6 default:9 0->8
 
 #define POC_TYPE_VAT_PING "AT+PING=\"www.baidu.com\",50,128,1\r\n"
 
@@ -142,7 +142,15 @@ typedef struct
 	uint8_t electric_torch_switch;    //[0]close   [1]open   [default 0]
 	uint8_t screen_brightness;        //[0 - 9]    [default 4]
 	uint8_t screen_bright_time;       //[0]5秒 [1]15秒 [2]30秒 [3]1分钟 [4]2分钟 [5]5分钟 [6]10分钟 [7]30分钟     [default 2]
-	//uint8_t current_theme;          //[0] white theme   [1]black theme    [default 0]
+#ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
+	uint8_t current_sound_quality;	  //[0]4k	[1]8k	  [default 0]
+#endif
+#ifdef CONFIG_POC_TONE_SWITCH_SUPPORT
+	uint8_t current_tone_switch;	  //[0]close   [1]open	  [default 0]
+#endif
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
+	uint8_t current_theme;          //[0] white theme   [1]black theme    [default 0]
+#endif
 	uint8_t main_SIM;                 //[0]SIM 1   [1]SIM 2     [default 0]
 #ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
 	uint8_t net_type;                 //[0]4G/3G/2G  [1]only 3G/2G    [default 0]
@@ -168,6 +176,7 @@ typedef struct
 	nv_poc_monitor_info nv_monitor_group[5];
 	char oem_account[64];
 	char poc_info[64];
+	char poc_secret_key[24];
 } nv_poc_setting_msg_t;
 
 typedef enum

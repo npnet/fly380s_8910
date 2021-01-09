@@ -627,6 +627,12 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_JOIN_GROUP_REP, apopt);
 						break;
 					}
+					//user name update
+					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_USERNAME_UPDATE_ACK))
+					{
+						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_USERNAME_UPDATE_IND, apopt);
+						break;
+					}
 					//group number(群组个数)--0D应答
 					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_INDEX_ACK))
 					{
@@ -898,9 +904,9 @@ void prvPocGuiOemTaskHandleLogin(uint32_t id, uint32_t ctx)
 			//user info
 			pocOemAttr.OemUserInfo = prv_lv_poc_power_on_get_self_infomation(apopt->oembuf);
 
-#ifdef CONFIG_POC_LOW_POWER_SUPPORT
 			//get poc config
 			nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+#ifdef CONFIG_POC_LOW_POWER_SUPPORT
 			if(poc_config->lowpower_switch)
 			{
 				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_POWER_SAVE_OPEN_IND, NULL);
@@ -912,6 +918,18 @@ void prvPocGuiOemTaskHandleLogin(uint32_t id, uint32_t ctx)
 #else
 			lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_POWER_SAVE_CLOSE_IND, NULL);
 #endif
+			if(poc_config->current_sound_quality == 2)
+			{
+				poc_config->current_sound_quality = 0;
+				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_4K_IND, NULL);
+			}
+			if(poc_config->current_tone_switch == 2)
+			{
+				poc_config->current_tone_switch = 0;
+				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_TONE_CLOSE_IND, NULL);
+			}
+			lv_poc_setting_conf_write();
+
 			break;
 		}
 
@@ -1001,7 +1019,8 @@ void prvPocGuiOemTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			if(pocOemAttr.m_status == USER_OPRATOR_SPEAKING)
 			{
 				char speak_name[100] = "";
-				strcpy((char *)speak_name, (const char *)pocOemAttr.OemUserInfo.OemUserName);
+				strcpy((char *)speak_name, (const char *)"主讲:");
+				strcat((char *)speak_name, (const char *)pocOemAttr.OemUserInfo.OemUserName);
 				if(!pocOemAttr.is_member_call)
 				{
 					char group_name[100] = "";
@@ -2424,6 +2443,56 @@ static void prvPocGuiOemTaskHandleOther(uint32_t id, uint32_t ctx)
 			break;
 		}
 
+		case LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_4K_IND:
+		{
+			OSI_PRINTFI("[quality](%s)(%d):switch 4k sq", __func__, __LINE__);
+			lvPocGuiOemCom_Request_Set_AudioQuility("0101");//01-4k,01-自动识别音质
+			break;
+		}
+
+		case LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_8K_IND:
+		{
+			OSI_PRINTFI("[quality](%s)(%d):switch 8k sq", __func__, __LINE__);
+			lvPocGuiOemCom_Request_Set_AudioQuility("0201");//02-8k,01-自动识别音质
+			break;
+		}
+
+		case LVPOCGUIOEMCOM_SIGNAL_TONE_OPEN_IND:
+		{
+			OSI_PRINTFI("[tone](%s)(%d):tone open", __func__, __LINE__);
+			lvPocGuiOemCom_Request_Set_Tone(OEM_FUNC_OPEN);//tone open
+			break;
+		}
+
+		case LVPOCGUIOEMCOM_SIGNAL_TONE_CLOSE_IND:
+		{
+			OSI_PRINTFI("[tone](%s)(%d):tone close", __func__, __LINE__);
+			lvPocGuiOemCom_Request_Set_Tone(OEM_FUNC_CLOSE);//tone close
+			break;
+		}
+
+		case LVPOCGUIOEMCOM_SIGNAL_USERNAME_UPDATE_IND:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+
+			PocGuiOemApSendAttr_t *apopt = (PocGuiOemApSendAttr_t *)ctx;
+
+			PocGuiOemAtBufferAttr_t UserNameInfo;
+			PocGuiOemAtTableAttr_t table[3] = {
+				{5,2},//应答号--87
+				{7,2},//结果码
+				{9,0},//用户名字(unicode码) *尾部填0为取到'\0'
+			};
+
+			UserNameInfo = prv_lv_poc_oem_get_global_atcmd_info(apopt->oembuf, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
+			lv_poc_oem_unicode_to_utf8_convert(UserNameInfo.buf[2].oembuf, (uint8_t *)pocOemAttr.OemUserInfo.OemUserName);
+			OSI_PRINTFI("[userinfo][update](%s)(%d):name:(%s)", __func__, __LINE__, pocOemAttr.OemUserInfo.OemUserName);
+			break;
+		}
+
 		default:
 		{
 			break;
@@ -2657,10 +2726,8 @@ void pocGuiOemComTaskEntry(void *argument)
 	pocOemAttr.pocnetstatus = true;
 	OEMNetworkStatusChange(pocOemAttr.pocnetstatus);
 
-	lvPocGuiOemCom_Request_Set_Tone(OEM_FUNC_OPEN);
 	lvPocGuiOemCom_Request_Set_Tone_Volum("32");//set volum:0-64(hex)
 	lvPocGuiOemCom_Request_Set_Log(OEM_FUNC_CLOSE);
-	lvPocGuiOemCom_Request_Set_AudioQuility("0201");//02-8k,01-自动识别音质
 
     while(1)
     {
@@ -2845,6 +2912,11 @@ void pocGuiOemComTaskEntry(void *argument)
 			case LVPOCGUIOEMCOM_SIGNAL_POWER_SAVE_OPEN_REP:
 			case LVPOCGUIOEMCOM_SIGNAL_POWER_SAVE_CLOSE_IND:
 			case LVPOCGUIOEMCOM_SIGNAL_POWER_SAVE_CLOSE_REP:
+			case LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_4K_IND:
+    		case LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_8K_IND:
+			case LVPOCGUIOEMCOM_SIGNAL_TONE_OPEN_IND:
+    		case LVPOCGUIOEMCOM_SIGNAL_TONE_CLOSE_IND:
+			case LVPOCGUIOEMCOM_SIGNAL_USERNAME_UPDATE_IND:
    			{
    				prvPocGuiOemTaskHandleOther(event.param1, event.param2);
 				break;
@@ -3065,13 +3137,20 @@ void prv_lv_poc_oem_update_member_status(void *information)
 		if((0 == strcmp((char *)prv_userstatus_info.m_ucUID, (char *)pocOemAttr.Msg_GroupMemberData_s.member[i].m_ucUID))
 			&& (0 != strcmp((char *)prv_userstatus_info.m_ucUStatus, (char *)pocOemAttr.Msg_GroupMemberData_s.member[i].m_ucUStatus)))
 		{//id same && status different
-			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[grouprefr]member status ack[%s]", prv_userstatus_info.m_ucUStatus);
-
+			OSI_PRINTFI("[grouprefr]member status ack[%s]", __func__, __LINE__, prv_userstatus_info.m_ucUStatus);
 			memcpy(&pocOemAttr.Msg_GroupMemberData_s.member[i], &prv_userstatus_info, sizeof(OemCGroupMember));
 			pocOemAttr.OemGroupMemberInfoBufIndex = i;
 			pocOemAttr.is_OemGroupMemberInfoBuf_update = true;
 			break;
 		}
+	}
+
+	//copy self info
+	if(NULL != strstr(pocOemAttr.OemUserInfo.OemUserID, (char *)prv_userstatus_info.m_ucUID)
+		&& (NULL == strstr(pocOemAttr.OemUserInfo.OemUserName, (char *)prv_userstatus_info.m_ucUName)))
+	{
+		OSI_PRINTFI("[memberinfo][update](%s)(%d):self info", __func__, __LINE__);
+		strcpy(pocOemAttr.OemUserInfo.OemUserName, (char *)prv_userstatus_info.m_ucUName);
 	}
 }
 

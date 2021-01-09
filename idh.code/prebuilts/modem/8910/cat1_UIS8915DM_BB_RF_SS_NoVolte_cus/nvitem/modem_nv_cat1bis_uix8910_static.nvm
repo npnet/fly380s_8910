@@ -62,7 +62,7 @@
     ITEM_NAME    = bit_field
     ITEM_ID      = 601
     ITEM_TYPE    = 4 (LONG)
-    ITEM_CONTENT = 0x8200800
+    ITEM_CONTENT = 0x200800
     ITEM_INDEX   = 5
     ITEM_PARENT  = 4
     ITEM_DESC    =  

@@ -23,30 +23,6 @@ static lv_obj_t * activity_list;
 
 lv_poc_activity_t * poc_about_activity;
 
-
-
-static lv_obj_t * activity_create(lv_poc_display_t *display)
-{
-    about_win = lv_poc_win_create(display, "关于本机", about_list_create);
-    return (lv_obj_t *)about_win;
-}
-
-static void activity_destory(lv_obj_t *obj)
-{
-	if(about_win != NULL)
-	{
-		lv_mem_free(about_win);
-		about_win = NULL;
-	}
-}
-
-static void * about_list_create(lv_obj_t * parent, lv_area_t display_area)
-{
-    activity_list = lv_poc_list_create(parent, NULL, display_area, about_list_config);
-    lv_poc_notation_refresh();//把弹框显示在最顶层
-    return (void *)activity_list;
-}
-
 typedef struct
 {
     lv_img_dsc_t * ic;
@@ -62,14 +38,49 @@ typedef struct
     lv_coord_t content_align_y;
 } lv_poc_about_label_struct_t;
 
-
 static char lv_poc_about_text_accout[64] = {0};
 static char lv_poc_about_text_imei[64] = {0};
 static char lv_poc_about_text_iccid[64] = {0};
 static char lv_poc_about_text_sysversion[64] = {0};
 static char lv_poc_about_text_version_number[64] = {0};
 static char lv_poc_about_text_update[64] = {0};
+static char lv_poc_about_text_boot_time[64] = {0};
 
+//boot time
+struct poc_bt_t
+{
+	lv_task_t *task;
+	lv_obj_t *obj[1];
+};
+static struct poc_bt_t btattr = {0};
+
+static lv_obj_t * activity_create(lv_poc_display_t *display)
+{
+    about_win = lv_poc_win_create(display, "关于本机", about_list_create);
+    return (lv_obj_t *)about_win;
+}
+
+static void activity_destory(lv_obj_t *obj)
+{
+	if(about_win != NULL)
+	{
+		lv_mem_free(about_win);
+		about_win = NULL;
+	}
+
+	if(btattr.task != NULL)
+	{
+		lv_task_del(btattr.task);
+		btattr.task = NULL;
+	}
+}
+
+static void * about_list_create(lv_obj_t * parent, lv_area_t display_area)
+{
+    activity_list = lv_poc_list_create(parent, NULL, display_area, about_list_config);
+    lv_poc_notation_refresh();//把弹框显示在最顶层
+    return (void *)activity_list;
+}
 
 lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
     {
@@ -107,6 +118,12 @@ lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
         "软件"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
         lv_poc_about_text_update, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
     },
+
+    {
+        NULL,
+        "开机时间"                    , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_boot_time, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+    },
 };
 
 static void lv_poc_about_pressed_cb(lv_obj_t * obj, lv_event_t event)
@@ -116,6 +133,14 @@ static void lv_poc_about_pressed_cb(lv_obj_t * obj, lv_event_t event)
         //open software update
 		lv_poc_fota_update_open();
     }
+}
+
+static void lv_poc_boot_time_refresh(lv_task_t *task)
+{
+	if(btattr.obj[0] != NULL)
+	{
+		lv_label_set_text(btattr.obj[0], lv_poc_boot_time_get_info());
+	}
 }
 
 static void about_list_config(lv_obj_t * list, lv_area_t list_area)
@@ -160,6 +185,8 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
         btn_label = lv_list_get_btn_label(btn);
         label = lv_label_create(btn, NULL);
         btn->user_data = (void *)label;
+		//add boot time
+		i == (label_array_size - 1) ? (btattr.obj[0] = label) : 0;
 
         lv_label_set_text(label, lv_poc_about_label_array[i].content);
 
@@ -178,8 +205,8 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_list_set_btn_selected(list, btn_array[0]);
 
 #ifdef CONFIG_POC_FOTA_SUPPORT
-    lv_obj_set_click(btn_array[label_array_size - 1], true);
-    lv_obj_set_event_cb(btn_array[label_array_size -1], lv_poc_about_pressed_cb);
+    lv_obj_set_click(btn_array[label_array_size - 2], true);//note software update
+    lv_obj_set_event_cb(btn_array[label_array_size -2], lv_poc_about_pressed_cb);
 #endif
 	//free
 	if(btn_array != NULL)
@@ -280,6 +307,7 @@ void lv_poc_about_open(void)
     poc_about_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_about_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_about_activity, design_func);
+	btattr.task = lv_task_create(lv_poc_boot_time_refresh, 500, LV_TASK_PRIO_HIGH, NULL);
 }
 
 

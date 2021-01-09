@@ -1359,6 +1359,21 @@ void
 poc_set_power_save_mode_state(bool open);
 #endif
 
+/*
+     name : lv_poc_boot_timeing_task_create
+     param :
+     date : 2020-01-09
+*/
+void lv_poc_boot_timeing_task_create(void);
+
+/*
+	 name : lv_poc_boot_time_get_info
+	 param :
+	 date : 2020-01-09
+*/
+char *
+lv_poc_boot_time_get_info(void);
+
 #ifdef __cplusplus
 }
 #endif

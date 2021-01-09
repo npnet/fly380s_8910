@@ -37,7 +37,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
     char rspStr[200];
     bool paramok = true;
     char *pocparam = NULL;
-    //int userOpt = 0;
+    char accoutparam[128];
 
     if(cmd->type == AT_CMD_TEST)
     {
@@ -96,6 +96,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
                 do{
                     if (!paramok)
                     {
+						atCmdRespInfoText(cmd->engine, "error");
                         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
                         break;
                     }
@@ -104,14 +105,15 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 
 					if(!paramok || strlen((char *)pocparam) > 128)
                     {
+						atCmdRespInfoText(cmd->engine, "error");
                         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
                         break;
                     }
-
+					//read nv
+					nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 					if(NULL != strstr((const char *)pocparam, (const char *)"info"))
 					{
 						char pocinfo[256];
-						nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 						strcpy(pocinfo, "your'info:");
 						strcat(pocinfo, poc_config->poc_info);
 						atCmdRespInfoText(cmd->engine, pocinfo);
@@ -119,8 +121,49 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 					}
                     else
                     {
-						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)pocparam);
-						OSI_LOGXI(OSI_LOGPAR_SI, 0, "[poc][at]pocParam is %s", pocparam);
+						char *psk = strstr((const char *)pocparam, (const char *)"sk=");
+						if(psk != NULL)
+						{
+							psk+=3;
+							if(psk == NULL)
+		                    {
+								atCmdRespInfoText(cmd->engine, "error");
+		                        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+		                        break;
+		                    }
+
+							if(0 == strcmp(poc_config->poc_secret_key, "000000"))
+							{
+								//OSI_PRINTFI("[poc][account](%s)(%d):null, secret key(%s), rd(%s)", __func__, __LINE__, psk, pocparam);
+								strcpy(poc_config->poc_secret_key, psk);
+								lv_poc_setting_conf_write();
+								strncpy(accoutparam, pocparam, (strlen(pocparam) - strlen(psk)));
+								OSI_PRINTFI("[poc][account](%s)(%d):sk correct, param(%s)", __func__, __LINE__, accoutparam);
+								lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
+							}
+							else
+							{
+								//OSI_PRINTFI("[poc][account](%s)(%d):new_sk(%s), ori_sk(%s), rd(%s)", __func__, __LINE__, psk, poc_config->poc_secret_key, pocparam);
+								if(0 == strcmp(poc_config->poc_secret_key, psk))
+								{
+									strncpy(accoutparam, pocparam, (strlen(pocparam) - strlen(psk) - 3));
+									OSI_PRINTFI("[poc][account](%s)(%d):sk correct, param(%s)", __func__, __LINE__, accoutparam);
+									lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
+								}
+								else
+								{
+									OSI_PRINTFI("[poc][account](%s)(%d):secret key error", __func__, __LINE__);
+									atCmdRespInfoText(cmd->engine, "secret key error");
+									break;
+								}
+							}
+						}
+						else
+						{
+							OSI_PRINTFI("[poc][account](%s)(%d):error", __func__, __LINE__);
+							atCmdRespInfoText(cmd->engine, "param error");
+							break;
+						}
 					}
                 }while(0);
                 break;

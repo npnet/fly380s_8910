@@ -24,29 +24,6 @@ static lv_obj_t * activity_list;
 
 lv_poc_activity_t * poc_gps_monitor_activity;
 
-static lv_obj_t * activity_create(lv_poc_display_t *display)
-{
-    gps_win = lv_poc_win_create(display, "GPS", gps_list_create);
-    return (lv_obj_t *)gps_win;
-}
-
-static void activity_destory(lv_obj_t *obj)
-{
-	if(gps_win != NULL)
-	{
-		lv_mem_free(gps_win);
-		gps_win = NULL;
-	}
-	poc_gps_monitor_activity = NULL;
-}
-
-static void * gps_list_create(lv_obj_t * parent, lv_area_t display_area)
-{
-    activity_list = lv_poc_list_create(parent, NULL, display_area, gps_list_config);
-    lv_poc_notation_refresh();//把弹框显示在最顶层
-    return (void *)activity_list;
-}
-
 typedef struct
 {
     lv_img_dsc_t * ic;
@@ -74,6 +51,7 @@ static char lv_poc_gps_text_cur_current_location_time[64] = {0};
 static char lv_poc_gps_text_cur_poweron_location_number[64] = {0};
 static lv_task_t * monitor_gps_info = NULL;
 static osiTimer_t * gps_once_timer = NULL;
+static lv_obj_t ** btn_array = NULL;
 
 lv_poc_gps_label_struct_t lv_poc_gps_label_array[] = {
     {
@@ -136,6 +114,35 @@ lv_poc_gps_label_struct_t lv_poc_gps_label_array[] = {
 		lv_poc_gps_text_cur_poweron_location_number, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 };
+
+static lv_obj_t * activity_create(lv_poc_display_t *display)
+{
+    gps_win = lv_poc_win_create(display, "GPS", gps_list_create);
+    return (lv_obj_t *)gps_win;
+}
+
+static void activity_destory(lv_obj_t *obj)
+{
+	if(gps_win != NULL)
+	{
+		lv_mem_free(gps_win);
+		gps_win = NULL;
+	}
+	poc_gps_monitor_activity = NULL;
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
+}
+
+static void * gps_list_create(lv_obj_t * parent, lv_area_t display_area)
+{
+    activity_list = lv_poc_list_create(parent, NULL, display_area, gps_list_config);
+    lv_poc_notation_refresh();//把弹框显示在最顶层
+    return (void *)activity_list;
+}
 
 static void lv_poc_gps_check_monitor_cb(lv_task_t * task)
 {
@@ -329,7 +336,7 @@ static void gps_list_config(lv_obj_t * list, lv_area_t list_area)
     style_label->text.font = (lv_font_t *)poc_setting_conf->font.fota_label_current_font;
 
     int label_array_size = sizeof(lv_poc_gps_label_array)/sizeof(lv_poc_gps_label_struct_t);
-    lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
+    btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
     for(int i = 0; i < label_array_size; i++)
     {
@@ -363,12 +370,6 @@ static void gps_list_config(lv_obj_t * list, lv_area_t list_area)
 		monitor_gps_info = lv_task_create(lv_poc_gps_check_monitor_cb, 1000, LV_TASK_PRIO_HIGH, (void **)btn_array);
 		lv_task_ready(monitor_gps_info);
 		osiTimerStart(gps_once_timer, 2000);
-	}
-	//free
-	if(btn_array != NULL)
-	{
-		lv_mem_free(btn_array);
-		btn_array = NULL;
 	}
 }
 

@@ -37,6 +37,7 @@ add_library(${target} STATIC
 	gui/lv_apps/lv_poc_setting/lv_poc_setting.c
 	gui/lv_apps/lv_poc_setting/lv_poc_display/lv_poc_display.c
 	gui/lv_apps/lv_poc_setting/lv_poc_display/lv_poc_bright.c
+	gui/lv_apps/lv_poc_setting/lv_poc_display/lv_poc_sound_qulity.c
 	gui/lv_apps/lv_poc_setting/lv_poc_display/lv_poc_theme.c
 	gui/lv_apps/lv_poc_setting/lv_poc_net/lv_poc_net.c
 	gui/lv_apps/lv_poc_setting/lv_poc_sim/lv_poc_sim.c

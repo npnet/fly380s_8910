@@ -64,6 +64,7 @@ typedef struct
 static char lv_poc_fota_text_cur_version[64] = {0};
 static char lv_poc_fota_text_cur_status[64] = {0};
 static lv_task_t * monitor_check_update = NULL;
+static bool is_enter_fota_acti = true;
 
 lv_poc_fota_label_struct_t lv_poc_fota_label_array[] = {
     {
@@ -317,7 +318,7 @@ static void fota_list_config(lv_obj_t * list, lv_area_t list_area)
     int label_array_size = sizeof(lv_poc_fota_label_array)/sizeof(lv_poc_fota_label_struct_t);
     lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
-	strcpy(lv_poc_fota_text_cur_version, "8910DM_A500L_V0.0.2");
+	strcpy(lv_poc_fota_text_cur_version, "8910DM_A500L_ZZD_V0.0.2");
 	strcpy(lv_poc_fota_text_cur_status, "检查版本");
 
     for(int i = 0; i < label_array_size; i++)
@@ -458,6 +459,8 @@ void lv_poc_fota_update_open(void)
     poc_fota_update_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_fota_update_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_fota_update_activity, design_func);
+	is_enter_fota_acti ? abup_set_status(ABUP_FOTA_START) : 0;
+	is_enter_fota_acti = false;
 }
 
 

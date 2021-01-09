@@ -107,6 +107,18 @@ struct poc_key_tone
 };
 static struct poc_key_tone keytoneattr = {0};
 
+//boot time
+struct poc_boot_time
+{
+	lv_task_t *task;
+	int is_boot_time_h_cnt;
+	int is_boot_time_m_cnt;
+	int is_boot_time_s_cnt;
+	char boot_time[256];
+};
+static struct poc_boot_time boottimeattr = {0};
+
+
 static void poc_ear_ppt_irq(void *ctx);
 static void poc_Lcd_Set_BackLightNess(uint32_t level);
 static void poc_SetPowerLevel(uint32_t id, uint32_t mv);
@@ -1521,7 +1533,14 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->ip_port = 10000;
 #endif
 	poc_setting->nv_monitor_group_number = 0;
+#ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
+	poc_setting->current_sound_quality = 2;
+#endif
+#ifdef CONFIG_POC_TONE_SWITCH_SUPPORT
+	poc_setting->current_tone_switch = 2;
+#endif
 	strcpy(poc_setting->poc_info, "");
+	strcpy(poc_setting->poc_secret_key, "000000");
 	for(int i = 0; i < sizeof(poc_setting->nv_monitor_group)/sizeof(nv_poc_monitor_info); i++)
 	{
 		memset(&poc_setting->nv_monitor_group[i], 0, sizeof(nv_poc_monitor_info));
@@ -4107,4 +4126,64 @@ poc_set_power_save_mode_state(bool open)
 	}
 }
 #endif
+
+/*
+     name : lv_poc_boot_timeing_task
+     param :
+     date : 2020-01-09
+*/
+static
+void lv_poc_boot_timeing_task(lv_task_t *task)
+{
+	boottimeattr.is_boot_time_s_cnt++;
+	if(boottimeattr.is_boot_time_s_cnt >= 60)
+	{
+		boottimeattr.is_boot_time_m_cnt++;
+		boottimeattr.is_boot_time_s_cnt = 0;
+	}
+
+	if(boottimeattr.is_boot_time_m_cnt >= 60)
+	{
+		boottimeattr.is_boot_time_h_cnt > 99 ? (boottimeattr.is_boot_time_h_cnt = 0) \
+		: (boottimeattr.is_boot_time_h_cnt++);
+		boottimeattr.is_boot_time_m_cnt = 0;
+	}
+}
+
+/*
+     name : lv_poc_boot_timeing_task_create
+     param :
+     date : 2020-01-09
+*/
+void lv_poc_boot_timeing_task_create(void)
+{
+	boottimeattr.task = lv_task_create(lv_poc_boot_timeing_task, 1000, LV_TASK_PRIO_HIGH, NULL);
+}
+
+/*
+     name : lv_poc_boot_time_get_info
+     param :
+     date : 2020-01-09
+*/
+char *
+lv_poc_boot_time_get_info(void)
+{
+	char hour[12] = {0};
+	char min[12] = {0};
+	char sec[12] = {0};
+
+	__itoa(boottimeattr.is_boot_time_h_cnt, (char *)&hour, 10);
+	strcpy(boottimeattr.boot_time, hour);
+	boottimeattr.is_boot_time_h_cnt < 10 ? strcat(boottimeattr.boot_time, "0") : 0;
+	strcat(boottimeattr.boot_time, ":");
+	__itoa(boottimeattr.is_boot_time_m_cnt, (char *)&min, 10);
+	boottimeattr.is_boot_time_m_cnt < 10 ? strcat(boottimeattr.boot_time, "0") : 0;
+	strcat(boottimeattr.boot_time, min);
+	strcat(boottimeattr.boot_time, ":");
+	__itoa(boottimeattr.is_boot_time_s_cnt, (char *)&sec, 10);
+	boottimeattr.is_boot_time_s_cnt < 10 ? strcat(boottimeattr.boot_time, "0") : 0;
+	strcat(boottimeattr.boot_time, sec);
+
+	return boottimeattr.boot_time;
+}
 
