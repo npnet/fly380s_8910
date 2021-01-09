@@ -216,6 +216,11 @@ static void activity_destory(lv_obj_t *obj)
 	style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
 	style_label->text.color = LV_COLOR_BLACK;
 	poc_cit_result_activity = NULL;
+	if(cit_result_win != NULL)
+	{
+		lv_mem_free(cit_result_win);
+		cit_result_win = NULL;
+	}
 }
 
 static void * cit_result_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -275,6 +280,12 @@ static void cit_result_list_config(lv_obj_t * list, lv_area_t list_area)
 		lv_obj_align(label, btn_label, lv_poc_cit_result_label_array[i].content_align, lv_poc_cit_result_label_array[i].content_align_x, lv_poc_cit_result_label_array[i].content_align_y);
 	}
 	lv_list_set_btn_selected(list, btn_array[0]);
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

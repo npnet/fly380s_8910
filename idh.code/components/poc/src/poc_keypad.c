@@ -58,7 +58,7 @@ static void prvPowerKeyCb(void *ctx)
 		{
 			return;
 		}
-		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS, true);
 		lv_poc_set_power_on_status(false);
 		lv_poc_refr_func_ui(lv_poc_shutdown_animation,
 			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)2);
@@ -98,14 +98,14 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 					case POC_APPLY_NOTE_TYPE_NOLOGIN:
 					case POC_APPLY_NOTE_TYPE_LOGINSUCCESS:
 					{
-						lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY ? lv_poc_type_key_poc_cb(true) : (lv_poc_get_loopback_recordplay_status() ? lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_IND, NULL));
+						lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY ? lv_poc_type_key_poc_cb(true) : (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_RECORDER_IND, false) : lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_START_IND, NULL));
 						break;
 					}
 				}
             }
             else
             {
-				lv_poc_get_loopback_recordplay_status() ? lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+				lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SPEAK_STOP_IND, NULL);
             }
 		}
 		prvPttKeyState = state;
@@ -159,28 +159,6 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
         }
         prvPowerKeyState = state;
         ret = true;
-#else
-		if(prvPttKeyState != state)
-        {
-           if(state == LV_INDEV_STATE_PR)
-           {
-              OSI_LOGI(0, "[poc][powerkey]power key press");
-           }
-           else
-           {
-              OSI_LOGI(0, "[poc][powerkey]power key release");
-
-			  if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
-			  {
-
-			  }
-			  lv_poc_set_power_on_status(false);//设备挂起
-              lv_poc_refr_func_ui(lv_poc_shutdown_animation, LVPOCLISTIDTCOM_LIST_PERIOD_10,
-                 LV_TASK_PRIO_HIGH, (void *)2);
-           }
-        }
-        prvPttKeyState = state;
-        ret = false;
 #endif
 	}
 	preKey = id;

@@ -36,6 +36,11 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(volume_win != NULL)
+	{
+		lv_mem_free(volume_win);
+		volume_win = NULL;
+	}
 	poc_volum_activity = NULL;
 }
 
@@ -300,7 +305,7 @@ static bool prv_lv_poc_volum_display(POC_MMI_VOICE_TYPE_E type, uint8_t volume)
 
 	if(volum_slider_task == NULL)
 	{
-		volum_slider_task = lv_task_create(prv_lv_poc_volum_display_slider_task, 500, LV_TASK_PRIO_MID, &info);
+		volum_slider_task = lv_task_create(prv_lv_poc_volum_display_slider_task, 500, LV_TASK_PRIO_HIGHEST, &info);
 		if(volum_slider_task == NULL)
 		{
 			return false;

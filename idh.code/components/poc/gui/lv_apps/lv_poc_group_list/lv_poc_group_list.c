@@ -160,6 +160,7 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     }
 	else if(msg_type == 2)
 	{
+		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 		lv_poc_set_refr_error_info(true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"组内无成员", (const uint8_t *)"");
 	}
@@ -201,9 +202,8 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 			lvPocGuiOemCom_modify_current_group_info((OemCGroup *)group_item->information);
 			lv_poc_group_current_info = group_info;
 
-			OSI_LOGI(0, "[song]set current group");
+			OSI_PRINTFI("[grouproptack](%s)(%d):set current group", __func__, __LINE__);
 		}
-		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"切换群组", (const uint8_t *)"成功");
 	}
 	else if(result_type == 2)//已在群组
 	{
@@ -225,11 +225,8 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 {
 	lv_poc_group_list_item_info_t * p_info = (lv_poc_group_list_item_info_t *)obj->user_data;
 
-
-	Ap_OSI_ASSERT((p_info != NULL), "[song]group_list_item NULL");
 	lv_area_t monitor_window_area = {0};
 	oem_list_element_t * p_element = (oem_list_element_t *)p_info->item_information;
-	Ap_OSI_ASSERT((p_element != NULL), "[song]group_list list_element_t NULL");
 
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
@@ -258,7 +255,6 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 		if(prv_group_list_cur_opt == 1)
 		{
 			lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_MONITORORUNMONITOR_GROUP_STATUS);
-			Ap_OSI_ASSERT(lv_poc_group_list_info != NULL, "[song]monitor group_list info NULL");
 			lv_poc_group_monitor_info = p_info;
 
 			if(p_info->is_monitor)//取消监听该组
@@ -351,10 +347,10 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 		case LV_SIGNAL_FOCUS:
 		{
-			OSI_LOGI(0, "[grouprefr]grouplist focus\n");
+			OSI_PRINTFI("[grouprefr](%s)(%d):grouplist focus", __func__, __LINE__);
 			if(lv_poc_is_group_list_refr())
 			{
-				OSI_LOGI(0, "[grouprefr]grouplist focus have refr\n");
+				OSI_PRINTFI("[grouprefr](%s)(%d):grouplist focus have refr", __func__, __LINE__);
 				lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
 				lv_poc_set_group_refr(false);
 			}
@@ -363,6 +359,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 		case LV_SIGNAL_DEFOCUS:
 		{
+			OSI_PRINTFI("[grouprefr](%s)(%d):grouplist defocus", __func__, __LINE__);
 			break;
 		}
 		case LV_SIGNAL_LONG_PRESS_REP:
@@ -695,7 +692,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	if(current_activity != poc_group_list_activity
 		|| group_list_obj == NULL)
 	{
-		OSI_LOGI(0, "[grouprefr](%d):error", __LINE__);
+		OSI_PRINTFI("[grouprefr](%s)(%d):error, no in cur_act or NULL", __func__, __LINE__);
 		lv_poc_set_refr_error_info(true);
 		return;
 	}
@@ -803,26 +800,11 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	}
 	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_grouplist_refr_is_complete(true);
-	OSI_LOGI(0, "[grouprefr](%d):refresh finish", __LINE__);
+	OSI_PRINTFI("[grouprefr](%s)(%d):refresh finish", __func__, __LINE__);
 }
 
 void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj)
 {
-	if(lv_poc_is_inside_group())//若当前设备在某个群组里,禁止群组的所有更新(包括添组、删组、组信息更新)
-	{
-		OSI_LOGI(0, "[grouprefr]grouplist have refresh info\n");
-		lv_poc_set_group_refr(true);//记录有信息待刷新
-		return;
-	}
-
-	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)
-	{
-		lv_poc_set_group_refr(true);//记录有信息待刷新
-		OSI_LOGI(0, "[grouprefr]grouplist can't refresh\n");
-		return;
-	}
-	OSI_LOGI(0, "[grouprefr]grouplist refresh_with_data running");
-
 	if(group_list_obj == NULL)
 	{
 		group_list_obj = lv_poc_group_list;
@@ -830,6 +812,28 @@ void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj)
 
 	if(group_list_obj == NULL)
 	{
+		OSI_PRINTFI("[grouprefr](%s)(%d):error, NULL", __func__, __LINE__);
+		return;
+	}
+
+	if(current_activity != poc_group_list_activity)
+	{
+		OSI_PRINTFI("[grouprefr](%s)(%d):no cur grouplist", __func__, __LINE__);
+		lv_poc_set_group_refr(true);
+		return;
+	}
+
+	if(lv_poc_is_inside_group())//若当前设备在某个群组里,禁止群组的所有更新(包括添组、删组、组信息更新)
+	{
+		OSI_PRINTFI("[grouprefr](%s)(%d):grouplist have refresh info", __func__, __LINE__);
+		lv_poc_set_group_refr(true);//记录有信息待刷新
+		return;
+	}
+
+	if(lv_poc_opt_refr_status(false) != LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS)
+	{
+		lv_poc_set_group_refr(true);//记录有信息待刷新
+		OSI_PRINTFI("[grouprefr](%s)(%d):grouplist can't refresh", __func__, __LINE__);
 		return;
 	}
 
@@ -837,8 +841,9 @@ void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj)
 	lv_poc_group_list_set_hightlight_index();
 	lv_list_clean(activity_list);
 	lv_poc_group_list_clear(group_list_obj);
+	OSI_PRINTFI("[grouprefr](%s)(%d):grouplist refresh_with_data running", __func__, __LINE__);
 
-//	lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb);
+	lv_poc_get_group_list(lv_poc_group_list, lv_poc_get_group_list_cb);
 }
 
 lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_oem_group_list *group_list_obj, const char * name, void * information)

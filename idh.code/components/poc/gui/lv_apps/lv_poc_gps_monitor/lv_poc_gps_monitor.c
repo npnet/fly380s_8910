@@ -32,6 +32,11 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(gps_win != NULL)
+	{
+		lv_mem_free(gps_win);
+		gps_win = NULL;
+	}
 	poc_gps_monitor_activity = NULL;
 }
 
@@ -358,6 +363,12 @@ static void gps_list_config(lv_obj_t * list, lv_area_t list_area)
 		monitor_gps_info = lv_task_create(lv_poc_gps_check_monitor_cb, 1000, LV_TASK_PRIO_HIGH, (void **)btn_array);
 		lv_task_ready(monitor_gps_info);
 		osiTimerStart(gps_once_timer, 2000);
+	}
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
 	}
 }
 

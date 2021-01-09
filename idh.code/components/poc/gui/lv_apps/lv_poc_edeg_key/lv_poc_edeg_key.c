@@ -55,9 +55,15 @@ static void lv_poc_edeg_key_setting_update_UI_task(lv_task_t * task)
 	is_poc_edeg_key_setting_update_UI_task_running = 1;
 	lv_obj_del(edeg_key_set_win->header);
 	lv_obj_del(activity_list);
-	lv_mem_free(edeg_key_set_win);
-	edeg_key_set_win = lv_poc_win_create(poc_edeg_key_set_activity->display, "设置", edeg_key_set_list_create);
-	poc_edeg_key_set_activity->ext_data = (void *)edeg_key_set_win;
+	if(edeg_key_set_win != NULL)
+	{
+		lv_mem_free(edeg_key_set_win);
+		edeg_key_set_win = NULL;
+	}
+	if(edeg_key_set_win == NULL)
+	{
+		edeg_key_set_win = lv_poc_win_create(poc_edeg_key_set_activity->display, "设置", edeg_key_set_list_create);
+	}
 	is_poc_edeg_key_setting_update_UI_task_running = 0;
 }
 
@@ -69,6 +75,11 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(edeg_key_set_win != NULL)
+	{
+		lv_mem_free(edeg_key_set_win);
+		edeg_key_set_win = NULL;
+	}
 	poc_edeg_key_set_activity = NULL;
 	edeg_key_set_selected_item = 0;
 }

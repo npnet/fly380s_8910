@@ -172,7 +172,7 @@ typedef bool (*lv_poc_notation_msg_cb)(lv_poc_notation_msg_type_t msg_type, cons
 
 typedef void (*lv_poc_idle_set_page2_cb)(lv_poc_idle_page2_display_t msg_type, int num, ...);
 
-typedef bool (*lvPocLedIdtCom_Msg_cb)(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count);
+typedef bool (*lvPocLedIdtCom_Msg_cb)(LVPOCIDTCOM_Led_SignalType_t signal, bool steals);
 
 typedef struct _lv_poc_activity_attribute_cb_set
 {
@@ -1338,7 +1338,7 @@ lv_poc_apply_note_type_t lv_poc_get_apply_note(void);
      param :
      date : 2020-12-1
 */
-bool
+int
 lv_poc_stop_player_voice(void);
 
 /*
@@ -1348,6 +1348,16 @@ lv_poc_stop_player_voice(void);
 */
 bool
 lv_poc_build_new_tempgrp(lv_poc_member_info_t *members, int32_t num, poc_build_tempgrp_cb func);
+
+#ifdef CONFIG_POC_LOW_POWER_SUPPORT
+/*
+	  name : poc_set_power_save_mode_state
+	 param :
+	  date : 2020-12-30
+*/
+void
+poc_set_power_save_mode_state(bool open);
+#endif
 
 #ifdef __cplusplus
 }

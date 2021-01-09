@@ -15,9 +15,9 @@ struct PocLedOnOff_t
 	int turnofftime;
 };
 
-void poc_Status_Led_Task(void);
+void poc_status_led_task(void);
 
-bool lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count);
+bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool steals);
 
 #ifdef __cplusplus
 }

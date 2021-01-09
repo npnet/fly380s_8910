@@ -122,6 +122,11 @@ static lv_obj_t * poc_record_playback_create(lv_poc_display_t *display)
 
 static void poc_record_playback_destory(lv_obj_t *obj)
 {
+	if(poc_record_playback_win != NULL)
+	{
+		lv_mem_free(poc_record_playback_win);
+		poc_record_playback_win = NULL;
+	}
 	poc_record_playback_activity = NULL;
 	memset(&poc_record_playback_attr, 0, sizeof(struct lv_poc_cit_record_playback_t));
 }
@@ -198,6 +203,12 @@ static void poc_record_playback_list_config(lv_obj_t * list, lv_area_t list_area
 		lv_poc_record_playback_items_funcs[i] = lv_poc_record_playback_label_array[i].cb;
 	}
 	lv_list_set_btn_selected(list, btn_array[0]);
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static void lv_poc_record_playback_btn_1_cb(lv_obj_t * obj)

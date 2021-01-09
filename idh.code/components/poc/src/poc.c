@@ -83,7 +83,7 @@ void pub_lv_poc_set_watchdog_status(bool status)
 
 static void pocIdtStartHandleTask(void * ctx)
 {
-    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_REGISTER_STATUS, true);
 	if(!pub_lv_poc_get_watchdog_status())
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, 50, true);
@@ -97,7 +97,7 @@ static void pocIdtStartHandleTask(void * ctx)
 		osiThreadSleepRelaxed(5000*6, OSI_WAIT_FOREVER);//30s
 	}
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
 	if(!pub_lv_poc_get_watchdog_status())
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, 50, true);
@@ -195,7 +195,7 @@ void pocStart(void *ctx)
 {
     OSI_LOGI(0, "[launch]lvgl poc start");
 
-    poc_Status_Led_Task();
+    poc_status_led_task();
 	poc_config_Lcd_power_vol();
 	poc_set_lcden_status(true);//lcd en
 	drvLcdInitV2();
@@ -209,12 +209,6 @@ void pocStart(void *ctx)
     halPmuSwitchPower(HAL_POWER_REDLED, true, false);
     halPmuSwitchPower(HAL_POWER_GREENLED, true, false);
     poc_set_red_blacklight(false);
-
-#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
-    poc_set_green_blacklight(false);
-#else
-    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWERON_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-#endif
 
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
     poc_set_keypad_led_status(false);
@@ -243,6 +237,11 @@ void pocStart(void *ctx)
 	}
 	else//设备重启或正常开机
 	{
+#ifdef CONFIG_POC_PING_NETWORK_SUPPORT
+    poc_set_green_blacklight(false);
+#else
+    poc_set_green_blacklight(true);
+#endif
 		pub_lv_poc_set_watchdog_status(false);
 		lvGuiInit(pocLvglStart);
 	}

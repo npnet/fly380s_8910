@@ -72,8 +72,8 @@ set(pac_fdl_files ${out_hex_dir}/fdl1.sign.img ${out_hex_dir}/fdl2.sign.img)
 
 function(pacvariant_gen)
     # Sign fdl1/fdl2/boot/ap. They are common to all variants
-    set(sign_password 12345678)     # customer product shall replace with customer's key
-    set(sign_product test)          # customer product shall replace with customer's product name
+    set(sign_password 17834926)     # customer product shall replace with customer's key 17834926
+    set(sign_product k19h_a500l_ver1_0_1)          # customer product shall replace with customer's product name k19h_a500l_ver1_0_1
     set(sign_boot_padlen 0xbce0)    # can't be changed
     add_custom_command(OUTPUT ${pac_fdl_files} ${out_hex_dir}/boot.sign.img ${out_hex_dir}/${BUILD_TARGET}.sign.img
         COMMAND vlrsign --pw ${sign_password} --pn ${sign_product} --ha Blake2

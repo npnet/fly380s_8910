@@ -53,7 +53,11 @@ static void lv_poc_main_menu_activity_ext_destory_cb(lv_obj_t *obj)
 {
     main_menu_selecte_item_index = 0;
     main_menu_activity = NULL;
-    lv_mem_free(main_menu_win);
+	if(main_menu_win != NULL)
+	{
+		lv_mem_free(main_menu_win);
+		main_menu_win = NULL;
+	}
 }
 
 static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
@@ -155,9 +159,15 @@ static void poc_main_menu_update_UI_task(lv_task_t * task)
 	is_poc_main_menu_update_UI_task_running = 1;
 	lv_obj_del(main_menu_win->header);
 	lv_obj_del(main_menu_list);
-	lv_mem_free(main_menu_win);
-	main_menu_win = lv_poc_win_create(main_menu_activity->display, MAIN_MENU_TITLE, lv_poc_main_menu_list_create);
-	main_menu_activity->ext_data = (void *)main_menu_win;
+	if(main_menu_win != NULL)
+	{
+		lv_mem_free(main_menu_win);
+		main_menu_win = NULL;
+	}
+	if(main_menu_win == NULL)
+	{
+		main_menu_win = lv_poc_win_create(main_menu_activity->display, MAIN_MENU_TITLE, lv_poc_main_menu_list_create);
+	}
 	is_poc_main_menu_update_UI_task_running = 0;
 }
 

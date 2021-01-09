@@ -37,14 +37,17 @@ static char is_poc_theme_update_UI_task_running = 0;
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
-#if 1
     activity_win = lv_poc_win_create(display, "主题切换", list_create);
-#endif
     return (lv_obj_t *)activity_win;
 }
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(activity_win != NULL)
+	{
+		lv_mem_free(activity_win);
+		activity_win = NULL;
+	}
 	poc_theme_switch_activity = NULL;
 }
 
@@ -113,9 +116,15 @@ static void poc_theme_update_UI_task(lv_task_t * task)
 	is_poc_theme_update_UI_task_running = 1;
 	lv_obj_del(activity_win->header);
 	lv_obj_del(activity_list);
-	lv_mem_free(activity_win);
-	activity_win = lv_poc_win_create(poc_theme_switch_activity->display, "主题切换", list_create);
-	poc_theme_switch_activity->ext_data = (void *)activity_win;
+	if(activity_win != NULL)
+	{
+		lv_mem_free(activity_win);
+		activity_win = NULL;
+	}
+	if(activity_win == NULL)
+	{
+		activity_win = lv_poc_win_create(poc_theme_switch_activity->display, "主题切换", list_create);
+	}
 	is_poc_theme_update_UI_task_running = 0;
 }
 

@@ -56,6 +56,7 @@ typedef struct lv_poc_cit_test_t
 	int rgb_number;
 	int gps_run_tim;
 	bool delayexitgpsflag;
+	bool issimcheck;
 	int delayexitgpsnum;
 	struct poc_cit_key_obj_t keyattr;
 }lv_poc_cit_test_t;
@@ -135,6 +136,11 @@ static void activity_destory(lv_obj_t *obj)
 	cit_test_info->cit_touch_attr.cb(false);
 #endif
 	cit_test_info = NULL;
+	if(cit_win != NULL)
+	{
+		lv_mem_free(cit_win);
+		cit_win = NULL;
+	}
 }
 
 static void lv_poc_cit_refresh_cb(lv_task_t *task)
@@ -510,6 +516,16 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 				pKey->keyattr.label[11] ? lv_label_set_text(pKey->keyattr.label[11], "Network County:\ncn") : 0;
 				pKey->keyattr.label[12] ? lv_label_set_text(pKey->keyattr.label[12], "Network Opera\ntor:46000") : 0;
 				pKey->keyattr.label[13] ? lv_label_set_text(pKey->keyattr.label[13], "Network Type:\ncan'tget") : 0;
+				//check not pass, delay 4s exit
+				if(pocCitAttr.delayexitcheckkeyTasknum >= 4)
+				{
+					lv_task_del(pocCitAttr.refresh_task);
+					pocCitAttr.refresh_task = NULL;
+					lv_poc_del_activity(poc_cit_test_ui_activity);
+					lvPocCitAutoTestCom_Msg(LV_POC_CIT_AUTO_TEST_TYPE_FAILED);
+					pocCitAttr.issimcheck = false;
+					break;
+				}
 			}
 			else
 			{
@@ -599,7 +615,18 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 						break;
 				}
 				pKey->keyattr.label[13] ? lv_label_set_text(pKey->keyattr.label[13], simnettype) : 0;
+				//check pass, delay 6s exit
+				if(pocCitAttr.delayexitcheckkeyTasknum >= 4)
+				{
+					lv_task_del(pocCitAttr.refresh_task);
+					pocCitAttr.refresh_task = NULL;
+					lv_poc_del_activity(poc_cit_test_ui_activity);
+					lvPocCitAutoTestCom_Msg(LV_POC_CIT_AUTO_TEST_TYPE_SUCCESS);
+					pocCitAttr.issimcheck = false;
+					break;
+				}
 			}
+			pocCitAttr.delayexitcheckkeyTasknum++;
 			break;
 		}
 
@@ -1198,7 +1225,8 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 
 			if(pocCitAttr.refresh_task == NULL)
 			{
-				pocCitAttr.refresh_task = lv_task_create(lv_poc_cit_refresh_cb, 20000, LV_TASK_PRIO_MID, (void *)&pocCitAttr);
+				pocCitAttr.issimcheck = true;
+				pocCitAttr.refresh_task = lv_task_create(lv_poc_cit_refresh_cb, 1000, LV_TASK_PRIO_MID, (void *)&pocCitAttr);
 				lv_task_ready(pocCitAttr.refresh_task);
 			}
 			break;
@@ -1359,6 +1387,11 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			{
 				case LV_GROUP_KEY_ENTER:
 				{
+					if(pocCitAttr.issimcheck)
+					{
+						break;
+					}
+
 					if(pocCitAttr.refresh_task != NULL)
 					{
 						lv_task_del(pocCitAttr.refresh_task);
@@ -1370,6 +1403,11 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 				}
 				case LV_KEY_ESC:
 				{
+					if(pocCitAttr.issimcheck)
+					{
+						break;
+					}
+
 					if(pocCitAttr.refresh_task != NULL)
 					{
 						lv_task_del(pocCitAttr.refresh_task);

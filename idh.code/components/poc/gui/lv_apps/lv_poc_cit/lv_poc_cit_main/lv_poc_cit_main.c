@@ -53,6 +53,11 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(cit_win != NULL)
+	{
+		lv_mem_free(cit_win);
+		cit_win = NULL;
+	}
 	poc_cit_activity = NULL;
 }
 
@@ -187,6 +192,12 @@ static void cit_list_config(lv_obj_t * list, lv_area_t list_area)
 		lv_poc_cit_btn_func_items[i] = lv_poc_cit_label_array[i].lv_poc_item_press_cb;
 	}
     lv_list_set_btn_selected(list, btn_array[0]);
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

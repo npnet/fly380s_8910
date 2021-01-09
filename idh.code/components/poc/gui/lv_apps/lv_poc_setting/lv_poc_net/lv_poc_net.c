@@ -35,14 +35,17 @@ static lv_poc_rb_t * net_switch_rb;
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
-#if 1
     activity_win = lv_poc_win_create(display, "网络切换", list_create);
-#endif
     return (lv_obj_t *)activity_win;
 }
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(activity_win != NULL)
+	{
+		lv_mem_free(activity_win);
+		activity_win = NULL;
+	}
 	poc_net_switch_activity = NULL;
 }
 

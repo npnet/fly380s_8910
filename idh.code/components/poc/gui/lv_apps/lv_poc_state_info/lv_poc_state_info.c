@@ -31,6 +31,11 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(state_info_win != NULL)
+	{
+		lv_mem_free(state_info_win);
+		state_info_win = NULL;
+	}
 }
 
 static void * state_info_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -347,6 +352,12 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_battery);
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_network_connection);
     lv_list_set_btn_selected(list, btn_array[0]);
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

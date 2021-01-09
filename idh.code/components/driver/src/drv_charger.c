@@ -117,41 +117,41 @@ uint8_t gChgTaskReady = 0;
 #define BAT_CAPACITY_STEP 12
 static uint16_t dischg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
     {
-        {4138, 100},
-        {4075, 90},
-        {3953, 80},
-        {3894, 70},
-        {3787, 60},
-        {3702, 50},
-        {3642, 40},
-        {3605, 30},
-        {3583, 20},
-        {3562, 15},
-        {3523, 5},
-        {3442, 0},
+        {(4138 - 12), 100},//比实际电压高12mv
+        {(4075 - 12), 90},
+        {(3953 - 12), 80},
+        {(3894 - 12), 70},
+        {(3787 - 12), 60},
+        {(3702 - 12), 50},
+        {(3642 - 12), 40},
+        {(3605 - 12), 30},
+        {(3583 - 12), 20},
+        {(3562 - 12), 15},
+        {(3463 - 12), 5},
+        {(3352 - 12), 0},
 };
 
 static uint16_t chg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
     {
-        {4230, 100},
-        {4180, 90},
-        {4119, 80},
-        {4080, 70},
-        {4020, 60},
-        {3970, 50},
-        {3920, 40},
-        {3880, 30},
-        {3860, 20},
-        {3830, 15},
-        {3730, 5},
-        {3251, 0},
+        {(4250 - 12), 100},//比实际电压高12mv, charge more 200mv
+        {(4208 - 12), 90},
+        {(4125 - 12), 80},
+        {(3986 - 12), 70},
+        {(3933 - 12), 60},
+        {(3894 - 12), 50},
+        {(3865 - 12), 40},
+        {(3839 - 12), 30},
+        {(3804 - 12), 20},
+        {(3780 - 12), 15},
+        {(3676 - 12), 5},
+        {(3251 - 12), 0},
 };
 
 
 static chgDischarge_t dischg_param =
     {
         3430, //warning_vol
-        3350, //shutdown_vol
+        3320, //shutdown_vol
         3300, //deadline_vol
         24,   //warning_count,warning interval
 };
@@ -950,7 +950,11 @@ static void _drvChargerSendMsgToClient(CHR_SVR_MSG_SERVICE_E msg, uint32_t param
 {
     drvChargerContext_t *p = &gDrvChargeCtx;
     if (p->notice_cb)
+    {
         p->notice_cb();
+    }
+	//send chg msg
+	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_SHUTDOWN_POC, (void *)msg);
 }
 
 /*****************************************************************************/

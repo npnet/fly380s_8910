@@ -78,6 +78,11 @@ static lv_obj_t * poc_logswitch_create(lv_poc_display_t *display)
 
 static void poc_logswitch_destory(lv_obj_t *obj)
 {
+	if(poc_logswitch_win != NULL)
+	{
+		lv_mem_free(poc_logswitch_win);
+		poc_logswitch_win = NULL;
+	}
 	poc_logswitch_activity = NULL;
 	memset(&poc_logswitch_attr, 0, sizeof(struct lv_poc_cit_logswitch_t));
 }

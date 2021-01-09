@@ -137,6 +137,13 @@ config POC_CIT_KEY_SUPPORT
     default y
     help
         poc gui should be supported.
+		
+config POC_LOW_POWER_SUPPORT
+    bool "POC low power mode supported"
+    default n
+    help
+        poc gui should be supported.
+		
 endif
 
 endmenu

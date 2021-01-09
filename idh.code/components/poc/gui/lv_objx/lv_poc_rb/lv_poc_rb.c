@@ -1,4 +1,4 @@
-
+ï»¿
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,10 +12,10 @@ extern "C" {
 
 
 /*******************
-*     NAME:   lv_poc_rb_create  
-*   AUTHOR:   lugj  
-* DESCRIPT:   ´´½¨poc radio box¶ÔÏó×é
-*     DATE:   2019-11-25 
+*     NAME:   lv_poc_rb_create
+*   AUTHOR:   lugj
+* DESCRIPT:   åˆ›å»ºpoc radio boxå¯¹è±¡ç»„
+*     DATE:   2019-11-25
 ********************/
 lv_poc_rb_t * lv_poc_rb_create(void)
 {
@@ -31,21 +31,21 @@ lv_poc_rb_t * lv_poc_rb_create(void)
 }
 
 /*******************
-*     NAME:   lv_poc_rb_add  
-*   AUTHOR:   lugj  
-* DESCRIPT:   ½«check box×÷Îªradio boxÌí¼Óµ½radio box¶ÔÏó×éÖÐ,·µ»ØÉÏÒ»¸ö±»Ñ¡ÖÐµÄcb
-*     DATE:   2019-11-25 
+*     NAME:   lv_poc_rb_add
+*   AUTHOR:   lugj
+* DESCRIPT:   å°†check boxä½œä¸ºradio boxæ·»åŠ åˆ°radio boxå¯¹è±¡ç»„ä¸­,è¿”å›žä¸Šä¸€ä¸ªè¢«é€‰ä¸­çš„cb
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
     lv_btn_state_t cb_state;
     lv_poc_rb_node_t * new_rb_node;
-    
+
     if(rb == NULL || cb == NULL)
     {
         return;
     }
-    
+
     cb_state = lv_btn_get_state(cb);
     new_rb_node = (lv_poc_rb_node_t *)lv_mem_alloc(sizeof(lv_poc_rb_node_t));
     if(new_rb_node == NULL)
@@ -69,7 +69,7 @@ void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
     lv_poc_rb_node_t * p_rb_node;
     p_rb_node = rb->cbs;
     if(p_rb_node != NULL)
-    {        
+    {
         if(cb_state == LV_BTN_STATE_PR || cb_state == LV_BTN_STATE_TGL_PR)
         {
             if(p_rb_node->state == LV_BTN_STATE_PR || p_rb_node->state == LV_BTN_STATE_TGL_PR)
@@ -98,24 +98,24 @@ void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
         }
         p_rb_node->next = new_rb_node;
         return rb->last_cb;
-        
+
     }
     else
     {
         rb->cbs = new_rb_node;
-        //rb->last_cb = cb;        
+        //rb->last_cb = cb;
         //new_rb_node->state = LV_BTN_STATE_PR;
         //lv_btn_set_state(cb, LV_BTN_STATE_PR);
         return rb->last_cb;
-    } 
+    }
 #endif
 }
 
 /*******************
-*     NAME:   lv_poc_rb_press  
-*   AUTHOR:   lugj  
-* DESCRIPT:   Ñ¡ÖÐrbÖÐcb
-*     DATE:   2019-11-25 
+*     NAME:   lv_poc_rb_press
+*   AUTHOR:   lugj
+* DESCRIPT:   é€‰ä¸­rbä¸­cb
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
@@ -169,7 +169,7 @@ void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
     {
         return rb->last_cb;
     }
-    
+
     p_rb_node = rb->cbs;
     while(p_rb_node)
     {
@@ -192,16 +192,16 @@ void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
 }
 
 /*******************
-*     NAME:   lv_poc_rb_get_pressed  
-*   AUTHOR:   lugj  
-* DESCRIPT:   »ñÈ¡rbÖÐµ±Ç°±»Ñ¡ÖÐµÄcb
-*     DATE:   2019-11-25 
+*     NAME:   lv_poc_rb_get_pressed
+*   AUTHOR:   lugj
+* DESCRIPT:   èŽ·å–rbä¸­å½“å‰è¢«é€‰ä¸­çš„cb
+*     DATE:   2019-11-25
 ********************/
 lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb)
 {
     lv_poc_rb_node_t * p_rb_node;
     lv_btn_state_t cb_state;
-    
+
     if(rb == NULL || rb->cbs == NULL)
     {
         return NULL;
@@ -221,15 +221,15 @@ lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb)
 }
 
 /*******************
-*     NAME:   lv_poc_rb_remove_cb  
-*   AUTHOR:   lugj  
-* DESCRIPT:   É¾³ýrbÖÐÖ¸¶¨µÄcb
-*     DATE:   2019-11-25 
+*     NAME:   lv_poc_rb_remove_cb
+*   AUTHOR:   lugj
+* DESCRIPT:   åˆ é™¤rbä¸­æŒ‡å®šçš„cb
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
     lv_poc_rb_node_t * p_rb_node;
-    
+
     if(rb == NULL || rb->cbs == NULL || cb == NULL)
     {
         return;
@@ -257,12 +257,12 @@ void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb)
     {
         return;
     }
-    
+
     if(rb->last_cb == cb)
     {
         rb->last_cb = NULL;
     }
-    
+
     if(rb->cbs->cb == cb)
     {
         rb->cbs = rb->cbs->next;
@@ -284,13 +284,13 @@ void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb)
 }
 
 /*******************
-*     NAME:   lv_poc_rb_clean  
-*   AUTHOR:   lugj  
-* DESCRIPT:   Çå¿ÕrbÖÐËùÓÐcb
-*     DATE:   2019-11-25 
+*     NAME:   lv_poc_rb_clean
+*   AUTHOR:   lugj
+* DESCRIPT:   æ¸…ç©ºrbä¸­æ‰€æœ‰cb
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_clean(lv_poc_rb_t * rb)
-{    
+{
     lv_poc_rb_node_t * p_rb_node;
     lv_poc_rb_node_t * p;
     p_rb_node = rb->cbs->next;
@@ -301,14 +301,14 @@ void lv_poc_rb_clean(lv_poc_rb_t * rb)
         p_rb_node = p_rb_node->next;
         lv_mem_free(p);
     }
-    
+
 }
 
 /*******************
-*     NAME:   lv_poc_rb_del  
-*   AUTHOR:   lugj  
-* DESCRIPT:   É¾³ýrb²¢Çå¿ÕËùÓÐcb
-*     DATE:   2019-11-25 
+*     NAME:   lv_poc_rb_del
+*   AUTHOR:   lugj
+* DESCRIPT:   åˆ é™¤rbå¹¶æ¸…ç©ºæ‰€æœ‰cb
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_del(lv_poc_rb_t * rb)
 {

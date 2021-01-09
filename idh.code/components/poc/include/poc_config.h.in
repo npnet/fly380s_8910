@@ -132,6 +132,12 @@
 #cmakedefine CONFIG_POC_CIT_KEY_SUPPORT
 
 /**
+ * Wheth the POC low power mode is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_LOW_POWER_SUPPORT
+
+/**
  * Wheth the POC audio data buff is enabled more than 3.
  *
  */

@@ -88,6 +88,12 @@ static void lv_poc_build_tempgrp_activity_destory(lv_obj_t *obj)
     lv_poc_build_tempgrp_info = NULL;
     lv_poc_build_tempgrp_selected_num = 0;
 
+	if(activity_win != NULL)
+	{
+		lv_mem_free(activity_win);
+		activity_win = NULL;
+	}
+
     poc_build_tempgrp_activity = NULL;
 }
 

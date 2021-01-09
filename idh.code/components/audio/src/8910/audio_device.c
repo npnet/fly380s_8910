@@ -2685,7 +2685,15 @@ failed:
 bool audevStopPocMode(void)
 {
     audevContext_t *d = &gAudevCtx;
-    OSI_LOGI(0, "[poc][StopPoc]audio record stop, user/0x%x", d->clk_users);
+    OSI_LOGI(0, "[poc][StopPoc]audio audevStopPocMode, user/0x%x", d->clk_users);
+
+	//close pa---------poc mode must closed in here
+	if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+	{
+		OSI_PRINTFI("[poc][stoppocmode](%s)(%d):close pa", __func__, __LINE__);
+		extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(false);
+	}
 
     osiMutexLock(d->lock);
 
@@ -2757,15 +2765,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         return false;
     }
 
-	//open pa
-	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
-	{
-		OSI_PRINTFI("[poc][audio](%s)(%d)open pa", __func__, __LINE__);
-	    extern bool poc_set_ext_pa_status(bool open);
-		poc_set_ext_pa_status(true);
-	}
-
-    OSI_LOGI(0, "audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
+    OSI_LOGI(0, "[poc][audio]audio start play, type/%d sample/%d channels/%d rate/%d user/0x%x", type,
              frame->sample_format, frame->channel_count,
              frame->sample_rate, d->clk_users);
 
@@ -2782,6 +2782,15 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     }
 
     osiMutexLock(d->lock);
+
+	//open pa
+	if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+	{
+		OSI_PRINTFI("[poc][audio](%s)(%d):open pa", __func__, __LINE__);
+		extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(true);
+	}
+
     d->play.type = type;
     if (type == AUDEV_PLAY_TYPE_LOCAL)
     {
@@ -3027,16 +3036,18 @@ bool audevStartPlay(const audevPlayOps_t *play_ops, void *play_ctx,
 bool audevStopPlayV2(void)
 {
     audevContext_t *d = &gAudevCtx;
-    OSI_LOGI(0, "audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
+
+    OSI_LOGI(0, "[poc][stopaudio]audio play stop, user/0x%x,type=%d", d->clk_users, d->play.type);
 
     osiMutexLock(d->lock);
 
-    if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
-    {
-		OSI_PRINTFI("[poc][audio](%s)(%d)close pa", __func__, __LINE__);
-	    extern bool poc_set_ext_pa_status(bool open);
+	//close pa
+	if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+	{
+		OSI_PRINTFI("[poc][audio](%s)(%d):close pa", __func__, __LINE__);
+		extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(false);
-    }
+	}
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
     {

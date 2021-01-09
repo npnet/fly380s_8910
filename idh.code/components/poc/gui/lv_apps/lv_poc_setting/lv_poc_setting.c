@@ -24,6 +24,9 @@ static const char * lv_poc_setting_btn_text_btn_voice = "按键音";
 #ifdef CONFIG_POC_TTS_SUPPORT
 static const char * lv_poc_setting_btn_text_broadcast = "语音播报";
 #endif
+#ifdef CONFIG_POC_LOW_POWER_SUPPORT
+static const char * lv_poc_setting_btn_text_lowpower = "省电模式";
+#endif
 #ifdef CONFIG_POC_BIGFONT_SUPPORT
 static const char * lv_poc_setting_btn_text_big_font = "大号字体";
 #endif
@@ -76,9 +79,15 @@ static void poc_setting_update_UI_task(lv_task_t * task)
 	is_poc_setting_update_UI_task_running = 1;
 	lv_obj_del(poc_setting_win->header);
 	lv_obj_del(activity_list);
-	lv_mem_free(poc_setting_win);
-	poc_setting_win = lv_poc_win_create(poc_setting_activity->display, "设置", poc_setting_list_create);
-	poc_setting_activity->ext_data = (void *)poc_setting_win;
+	if(poc_setting_win != NULL)
+	{
+		lv_mem_free(poc_setting_win);
+		poc_setting_win = NULL;
+	}
+	if(poc_setting_win == NULL)
+	{
+		poc_setting_win = lv_poc_win_create(poc_setting_activity->display, "设置", poc_setting_list_create);
+	}
 	is_poc_setting_update_UI_task_running = 0;
 }
 
@@ -184,14 +193,14 @@ static void lv_poc_setting_GPS_btn_cb(lv_obj_t * obj)
 		lv_sw_off(ext_obj, LV_ANIM_OFF);
 		poc_setting_conf->GPS_switch = 0;
 		lv_poc_stabar_show_gps_img(false);
-		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, 0, 0);
+		lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, false);
 	}
 	else
 	{
 		lv_sw_on(ext_obj, LV_ANIM_OFF);
 		poc_setting_conf->GPS_switch = 1;
 		lv_poc_stabar_show_gps_img(true);
-		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, 0, 0);
+		lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, false);
 	}
 	lv_poc_setting_conf_write();
 }
@@ -254,20 +263,43 @@ static void lv_poc_setting_net_switch_btn_cb(lv_obj_t * obj)
 }
 #endif
 
+#ifdef CONFIG_POC_LOW_POWER_SUPPORT
+static void lv_poc_setting_low_power_btn_cb(lv_obj_t * obj)
+{
+    lv_obj_t * ext_obj = NULL;
+	ext_obj = (lv_obj_t *)obj->user_data;
+	poc_setting_conf->lowpower_switch = !poc_setting_conf->lowpower_switch;
+	poc_set_power_save_mode_state(poc_setting_conf->lowpower_switch);
+	if(poc_setting_conf->lowpower_switch != 0)
+	{
+		lv_sw_on(ext_obj, LV_ANIM_OFF);
+	}
+	else
+	{
+		lv_sw_off(ext_obj, LV_ANIM_OFF);
+	}
+	lv_poc_setting_conf_write();
+}
+#endif
+
 static lv_obj_t * poc_setting_create(lv_poc_display_t *display)
 {
-#if 1
     poc_setting_win = lv_poc_win_create(display, lv_poc_setting_title_text, poc_setting_list_create);
-#endif
-	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
+	lv_poc_notation_refresh();//把弹框显示在最顶层
     return (lv_obj_t  *)poc_setting_win;
 }
 
 static void poc_setting_destory(lv_obj_t *obj)
 {
+	if(poc_setting_win != NULL)
+	{
+		lv_mem_free(poc_setting_win);
+		poc_setting_win = NULL;
+	}
+
 	poc_setting_activity = NULL;
 	setting_selected_item = 0;
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
 }
 
 static void * poc_setting_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -327,6 +359,35 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     }
 
     lv_list_set_btn_selected(list, btn);
+
+#ifdef CONFIG_POC_LOW_POWER_SUPPORT//save electricity mode
+	btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_lowpower);
+	lv_obj_set_click(btn, true);
+	lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
+	lv_poc_setting_items_funcs[storage_index] = lv_poc_setting_low_power_btn_cb;
+	btns[storage_index++] = btn;
+	lv_btn_set_fit(btn, LV_FIT_NONE);
+	lv_obj_set_height(btn, btn_height);
+	btn_label = lv_list_get_btn_label(btn);
+	sw = lv_sw_create(btn, NULL);
+	lv_sw_set_style(sw, LV_SW_STYLE_BG, bg_style);
+	lv_sw_set_style(sw, LV_SW_STYLE_INDIC, indic_style);
+	lv_sw_set_style(sw, LV_SW_STYLE_KNOB_ON, knob_on_style);
+	lv_sw_set_style(sw, LV_SW_STYLE_KNOB_OFF, knob_off_style);
+	lv_obj_set_size(sw, lv_obj_get_width(sw)*9/17, btn_sw_height*9/17);
+	btn->user_data = (void *)sw;
+	lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(sw)*5/4 - 5);
+	lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
+	lv_obj_align(sw, btn_label, LV_ALIGN_OUT_RIGHT_MID, lv_obj_get_width(sw), 0);
+	if(poc_setting_conf->lowpower_switch == 1)
+	{
+		lv_sw_on(sw, LV_ANIM_OFF);
+	}
+	else
+	{
+		lv_sw_off(sw, LV_ANIM_OFF);
+	}
+#endif
 
 #ifdef CONFIG_POC_TTS_SUPPORT
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_broadcast);
@@ -704,7 +765,7 @@ void lv_poc_setting_open(void)
 	{
 		return;
 	}
-    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS, true);
 	poc_setting_conf = lv_poc_setting_conf_read();
 	setting_selected_item = 0;
     poc_setting_activity = lv_poc_create_activity(&activity_main_menu_ext, true, false, NULL);

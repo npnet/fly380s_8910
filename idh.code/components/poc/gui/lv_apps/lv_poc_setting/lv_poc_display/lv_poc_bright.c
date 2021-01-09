@@ -41,15 +41,18 @@ static char *bright_time_notation[8]={"亮屏时间:5秒",
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
-#if 1
     poc_bright_time_win = lv_poc_win_create(display, "亮屏时间", list_create);
-#endif
-	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
+	lv_poc_notation_refresh();//把弹框显示在最顶层
     return (lv_obj_t *)poc_bright_time_win;
 }
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(poc_bright_time_win != NULL)
+	{
+		lv_mem_free(poc_bright_time_win);
+		poc_bright_time_win = NULL;
+	}
 }
 
 static void * list_create(lv_obj_t * parent, lv_area_t display_area)

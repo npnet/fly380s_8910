@@ -204,7 +204,7 @@ void drvDummyHeadsetCustCB(void *ctx, drvHeadsetNotifyMsg_t id, uint32_t param)
             audevSetInput(0);
         audevSetOutput(1);
 		//send msg
-		if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_HEADSET_INSERT, NULL))
+		if(!lv_poc_activity_func_cb_set.status_led(LVPOCGUIOEMCOM_SIGNAL_HEADSET_INSERT, false))
 		{
 		    lv_poc_set_headset_status(true);
 	  	}
@@ -219,7 +219,7 @@ void drvDummyHeadsetCustCB(void *ctx, drvHeadsetNotifyMsg_t id, uint32_t param)
         audevSetInput(0);
 		audevSetOutput(0);//default 2
 	    //send msg
-		if(!lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_HEADSET_PULL_OUT, NULL))
+		if(!lv_poc_activity_func_cb_set.status_led(LVPOCGUIOEMCOM_SIGNAL_HEADSET_PULL_OUT, false))
 		{
 			lv_poc_set_headset_status(false);
 	    }

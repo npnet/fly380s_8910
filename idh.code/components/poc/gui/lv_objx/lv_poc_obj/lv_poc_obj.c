@@ -111,12 +111,12 @@ lv_style_t theme_black_style_control = {0};
 //static lv_obj_t *lv_poc_base_activity_base_obj = NULL;
 
 static char lv_poc_time[LV_POC_STABAR_TIME_LEN_DEFAULT]   =   {0};
-static lv_poc_activity_list_t *lv_poc_activity_list;
+static lv_poc_activity_list_t *lv_poc_activity_list = NULL;
 static lv_signal_cb_t ancient_signal_func = NULL;
 static lv_design_cb_t ancient_design_func = NULL;
 static lv_event_cb_t  ancient_event_func  = NULL;
 static status_bar_task_t status_bar_task_ext[LV_POC_STABAR_TASK_EXT_LENGTH];
-static lv_poc_activity_t * _idle_activity;
+static lv_poc_activity_t * _idle_activity = NULL;
 static char lv_poc_refresh_ui_state = 0;
 static POC_LONGPRESS_MSG_TYPE_T long_press_msg = 0;
 #define LV_POC_STACK_SIZE   100
@@ -144,7 +144,7 @@ static lv_poc_status_t prv_lv_poc_group_list_lock_group(lv_poc_oem_group_list *g
 
 static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_type, int num, ...);
 
-static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count);
+static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, bool steals);
 
 static void prv_lv_poc_member_call_open(void * information);
 
@@ -885,8 +885,11 @@ static bool lv_poc_status_bar_init(void)
     lv_obj_set_pos(lv_poc_status_bar, LV_POC_STATUS_BAR_POSITION_X, LV_POC_STATUS_BAR_POSITION_Y);
     lv_obj_set_style(lv_poc_status_bar, poc_stabar_style);
 
-    lv_poc_status_bar_fptr = (lv_poc_status_bar_fptr_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_fptr_t));
-    memset(lv_poc_status_bar_fptr, 0, sizeof(lv_poc_status_bar_fptr_t));
+	if(lv_poc_status_bar_fptr == NULL)
+	{
+    	lv_poc_status_bar_fptr = (lv_poc_status_bar_fptr_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_fptr_t));
+	}
+	memset(lv_poc_status_bar_fptr, 0, sizeof(lv_poc_status_bar_fptr_t));
     lv_poc_status_bar->user_data = lv_poc_status_bar_fptr;
 
     lv_poc_init_stabar_time_label();
@@ -1065,10 +1068,10 @@ static bool lv_poc_init_stabar_gps_img(lv_obj_t ** align_obj)
 		lv_obj_set_size(lv_poc_status_bar_fptr->gps_img->gps_location_img, 18, 18);
 
 		if(gps_config->GPS_switch == 1){
-			lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, 0, 0);
+			lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, false);
 		}
 		else{
-			lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, 0, 0);
+			lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, false);
 		}
 	}
 
@@ -1187,7 +1190,7 @@ static bool lv_poc_init_stabar_sim1_img(void)
     bool ret_val = true;
     lv_poc_status_bar_fptr->has_sim1 = lv_poc_get_sim1_state();
     lv_poc_status_bar_fptr->sim1    = (lv_poc_status_bar_sim_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_sim_obj_t));
-    memset(lv_poc_status_bar_fptr->sim1, 0, sizeof(lv_poc_status_bar_sim_obj_t));
+	memset(lv_poc_status_bar_fptr->sim1, 0, sizeof(lv_poc_status_bar_sim_obj_t));
     lv_poc_status_bar_fptr->sim1->align_r_obj = &(lv_poc_status_bar_fptr->battery_img);
     lv_poc_status_bar_fptr->sim1->align_l_obj = lv_poc_status_bar_fptr->sim1->align_r_obj;
 
@@ -1205,7 +1208,7 @@ static bool lv_poc_init_stabar_sim2_img(void)
     bool ret_val = true;
     lv_poc_status_bar_fptr->has_sim2 = lv_poc_get_sim2_state();
     lv_poc_status_bar_fptr->sim2    = (lv_poc_status_bar_sim_obj_t *)lv_mem_alloc(sizeof(lv_poc_status_bar_sim_obj_t));
-    memset(lv_poc_status_bar_fptr->sim2, 0, sizeof(lv_poc_status_bar_sim_obj_t));
+	memset(lv_poc_status_bar_fptr->sim2, 0, sizeof(lv_poc_status_bar_sim_obj_t));
     lv_poc_status_bar_fptr->sim2->align_r_obj = lv_poc_status_bar_fptr->sim1->align_l_obj;
     lv_poc_status_bar_fptr->sim2->align_l_obj = lv_poc_status_bar_fptr->sim2->align_r_obj;
 
@@ -1235,13 +1238,16 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
                                        const char *middle_text,
                                        const char *right_text)
 {
-    lv_poc_control_t *control;
+    lv_poc_control_t *control = NULL;
     lv_style_t * ctrl_background_style;
     poc_setting_conf = lv_poc_setting_conf_read();
     ctrl_background_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_control);
     ctrl_background_style->text.font = (lv_font_t *)poc_setting_conf->font.activity_control_font;
 
-    control = (lv_poc_control_t *)lv_mem_alloc(sizeof(lv_poc_control_t));
+	if(control == NULL)
+	{
+    	control = (lv_poc_control_t *)lv_mem_alloc(sizeof(lv_poc_control_t));
+	}
 
     control->background = lv_obj_create(activity->display, NULL);
 
@@ -1287,12 +1293,14 @@ static void lv_poc_control_init(lv_poc_activity_t *activity,
 ********************/
 static void	lv_poc_activity_list_init(void)
 {
-    lv_poc_activity_list = (lv_poc_activity_list_t *)lv_mem_alloc(sizeof(lv_poc_activity_list_t));
-    //lv_mem_assert(lv_poc_activity_list);
-    lv_poc_activity_list->size = 0;
+	if(lv_poc_activity_list == NULL)
+	{
+    	lv_poc_activity_list = (lv_poc_activity_list_t *)lv_mem_alloc(sizeof(lv_poc_activity_list_t));
+	}
+
+	lv_poc_activity_list->size = 0;
     lv_poc_activity_list->head = (lv_poc_activity_list_node_t *)lv_mem_alloc(sizeof(lv_poc_activity_list_node_t));
-    //lv_mem_assert(lv_poc_activity_list->head);
-    lv_poc_activity_list->head->activity = NULL;
+	lv_poc_activity_list->head->activity = NULL;
     lv_poc_activity_list->head->next = NULL;
 }
 
@@ -2124,9 +2132,9 @@ static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_
 	lv_poc_idle_set_page2(msg_type, content, index);
 }
 
-static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count)
+static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, bool steals)
 {
-	return lvPocLedIdtCom_Msg(signal, ctx, count);
+	return lvPocLedCom_Msg(signal, steals);
 }
 
 static void prv_lv_poc_member_call_open_cb(lv_task_t *task)
@@ -2244,10 +2252,22 @@ void lv_poc_stabar_task(lv_task_t * task)
 ********************/
 UINT8 lv_poc_get_battery_state(void)
 {
-    battery_values_t * battery_value = lv_mem_alloc(sizeof(battery_values_t));
+    static battery_values_t * battery_value = NULL;
+
+	if(battery_value == NULL)
+	{
+		battery_value = lv_mem_alloc(sizeof(battery_values_t));
+	}
+
+	if(battery_value == NULL)
+	{
+		return 0;
+	}
+
+	memset(battery_value, 0, sizeof(battery_values_t));
     poc_battery_get_status(battery_value);
     lv_poc_status_bar_fptr->has_battery = battery_value->battery_status == 1? true:false;
-    lv_mem_free(battery_value);
+
     return battery_value->battery_status;
 }
 
@@ -2329,14 +2349,32 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 
 	static bool charge_status = false;
 	static bool charge_complete_status = false;
+	static uint8_t battery_pri_cnt = 0;
+
+	if(battery_pri_cnt >= 5)//bat pri
+	{
+#if 0
+		OSI_PRINTFI("[charge][mv](%s)(%d):volt(%d mv), cur(%d ma), val(%d), temp(%d)", __func__, __LINE__, battery_t.battery_val_mV, \
+			battery_t.charge_cur_mA, battery_t.battery_value, battery_t.battery_temp);
+#endif
+		battery_pri_cnt = 0;
+	}
+	else
+	{
+		battery_pri_cnt++;
+	}
 
 	if(battery_img_cur == 100)//获取一次当前电量图标基础值
 	{
 		battery_img_cur = lv_poc_get_battery_cnt(&battery_t);
 		if(POC_CHG_DISCONNECTED == battery_t.charging)
+		{
 			charge_status = true;//上次为充电状态
+		}
 		else
+		{
 			charge_status = false;//上次为不充电状态
+		}
 	}
 
     if(!battery_t.battery_status)
@@ -2352,8 +2390,8 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			charge_status = false;
 			charge_complete_status = false;
 			lv_poc_set_charge_status(charge_status);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, true);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
 		}
 
         if(battery_t.battery_value >= 100)
@@ -2376,19 +2414,19 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
         {
             battery_img = &stat_sys_battery_43;
         }
-        else if(battery_t.battery_value >= 8)
+        else if(battery_t.battery_value >= 4)
         {
             battery_img = &stat_sys_battery_15;
         }
         else if(battery_t.battery_value >= 0)
         {
             battery_img = &stat_sys_battery_0;
-            if(low_battery_check_count < 1 && battery_t.battery_value <= 2)//3.474v
+            if(low_battery_check_count < 1 && battery_t.battery_value <= 1)
             {
-				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, true);
 	            poc_play_voice_one_time(LVPOCAUDIO_Type_Low_Battery, 50, false);
             }
-            low_battery_check_count = (low_battery_check_count + 1) % (60*5);/*5min提示一次*/
+            low_battery_check_count = (low_battery_check_count + 1) % (60*5);//5min提示一次
             return (lv_img_dsc_t *)battery_img;
         }
         low_battery_check_count = 0;
@@ -2398,27 +2436,27 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 		if(charge_status == false)
 		{
 			charge_status = true;
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false);
 		}
 
-        if(battery_t.battery_value >= 100)//4.25v
+        if(battery_t.battery_value >= 100)
         {
 			if(charge_complete_status == false)
 			{
 				charge_complete_status = true;
-				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, false);
 			}
 			battery_img_cur = 6;
             battery_img = battery_img_dispaly[battery_img_cur];
         }
-        else if(battery_t.battery_value >= 85)//4.149v
+        else if(battery_t.battery_value >= 85)
         {
 			battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
 			battery_img_cur=5;
         }
-        else if(battery_t.battery_value >= 70)//4.08v
+        else if(battery_t.battery_value >= 70)
         {
 			battery_img = battery_img_dispaly[battery_img_cur];
 
@@ -2426,28 +2464,28 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			if(battery_img_cur>6)
 			battery_img_cur=4;
         }
-        else if(battery_t.battery_value >= 42)//3.93v
+        else if(battery_t.battery_value >= 42)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
 			battery_img_cur=3;
         }
-        else if(battery_t.battery_value >= 20)//3.86v
+        else if(battery_t.battery_value >= 20)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
 			battery_img_cur=2;
         }
-        else if(battery_t.battery_value >= 8)
+        else if(battery_t.battery_value >= 4)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)
 			battery_img_cur=1;
         }
-        else if(battery_t.battery_value >= 0)//3.251v
+        else if(battery_t.battery_value >= 0)
         {
             battery_img = battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
@@ -2523,6 +2561,7 @@ void lv_poc_update_stabar_sim_img(void)
 								    };
     static unsigned short old_sim_state_code[MAX_SIM_COUNT] = { 0 };
     static bool is_continue = true;
+    static int is_net_type = 5;
     int k;
     static lv_obj_t * obj2 = NULL;
     static lv_obj_t * obj3 = NULL;
@@ -2619,6 +2658,11 @@ void lv_poc_update_stabar_sim_img(void)
                 {	//显示G
                 	(lvPocGuiOemCom_get_login_status() != 2) ? lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS) : lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
                     lv_img_set_src(obj3, &stat_sys_data_connected_2g_sprd);
+					if(is_net_type != 1)
+					{
+						is_net_type = 1;
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+					}
                     break;
                 }
 
@@ -2626,6 +2670,11 @@ void lv_poc_update_stabar_sim_img(void)
                 {
                 	(lvPocGuiOemCom_get_login_status() != 2) ? lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS) : lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
                     lv_img_set_src(obj3, &stat_sys_data_fully_connected_3g_sprd_reliance);
+					if(is_net_type != 1)
+					{
+						is_net_type = 1;
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+					}
                     break;
                 }
 
@@ -2634,12 +2683,22 @@ void lv_poc_update_stabar_sim_img(void)
                 {
                 	(lvPocGuiOemCom_get_login_status() != 2) ? lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS) : lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
                     lv_img_set_src(obj3, &stat_sys_data_connected_4g_sprd);
-                    break;
+					if(is_net_type != 1)
+					{
+						is_net_type = 1;
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+					}
+					break;
                 }
 				case 6://显示无服务
 				{
 					lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NONETWORK);
 					lv_img_set_src(obj3, &ic_signal_no_server);
+					if(is_net_type != 2)
+					{
+						is_net_type = 2;
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, true);
+					}
 					break;
 
 				}
@@ -2824,7 +2883,6 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     activity->design_func = NULL;
     activity->event_func = NULL;
 
-#if 1
     if(poc_indev_group == NULL)
     {
         poc_indev_group = lv_group_create();
@@ -2837,7 +2895,7 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     lv_group_add_obj(poc_indev_group,activity->display);
     lv_group_focus_obj(activity->display);
     lv_group_focus_freeze(poc_indev_group,true);
-#endif
+
     if(activity->activity_ext.create != NULL)
     {
         activity->ext_data = (void *)activity->activity_ext.create(activity->display);
@@ -2860,7 +2918,6 @@ lv_poc_activity_t *lv_poc_create_mini_activity(lv_poc_activity_ext_t *activity_e
     poc_setting_conf = lv_poc_setting_conf_read();
     poc_display_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_base);
     lv_poc_activity_t *activity = (lv_poc_activity_t *)lv_mem_alloc(sizeof(lv_poc_activity_t));
-    //lv_mem_assert(activity);
     memset(activity,0,sizeof(lv_poc_activity_t));
 
     lv_poc_stack_push(activity);
@@ -3522,13 +3579,14 @@ lv_poc_activity_t *lv_poc_get_current_activity(void)
 }
 
 /*******************
-*	  NAME:    lv_poc_is_memberlist_activity
-* DESCRIPT:    刷新member
+*	  NAME:    lv_poc_is_build_tmpgroup
+* DESCRIPT:    tmp grp
 *	  DATE:    2020-12-29
 ********************/
-bool lv_poc_is_memberlist_activity(void)
+bool lv_poc_is_build_tmpgroup(void)
 {
-	if(lv_poc_get_current_activity() == poc_member_list_activity)
+	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) <= POC_TMPGRP_OPENMEMLIST//must wait refr'compele
+		&& lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) >= POC_TMPGRP_VIEW)
 	{
 		return true;
 	}
@@ -3612,14 +3670,6 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 				status == true ? (multi_keyvalue|=0b1000):(multi_keyvalue&=0b0000);
 			}while(0);
 
-			//extra
-			if(mic_status == true
-				&& status == false)
-			{
-				mic_status = false;
-				lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_MIC ? lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : 0;
-			}
-
 			break;
 		}
 	}
@@ -3642,15 +3692,31 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 
 		case CBN_KEY_RECORDERBACK://record playback
 		{
-			lv_poc_record_playback_open();
+			//lv_poc_record_playback_open();
 			return true;
 		}
 
 		case CBN_KEY_PTT://ptt
 		{
-			lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_MIC ? lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : 0;
-			mic_status = true;
+			if(mic_status == false
+				&& lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_MIC)
+			{
+				lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_RECORDER_IND, false);
+				mic_status = true;
+			}
 			return true;
+		}
+
+		default:
+		{
+			//extra
+			if(mic_status == true
+				&& lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_MIC)
+			{
+				mic_status = false;
+				lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false);
+			}
+			return false;
 		}
 	}
 

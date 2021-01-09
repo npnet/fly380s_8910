@@ -102,14 +102,26 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 
                     pocparam = (char *)atParamStr(cmd->params[0], &paramok);
 
-                    if (!paramok || strlen((char *)pocparam) > 128)
+					if(!paramok || strlen((char *)pocparam) > 128)
                     {
                         RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
                         break;
                     }
 
-                    lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)pocparam);
-                    OSI_LOGXI(OSI_LOGPAR_SI, 0, "[poc][at]pocParam is %s", pocparam);
+					if(NULL != strstr((const char *)pocparam, (const char *)"info"))
+					{
+						char pocinfo[256];
+						nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+						strcpy(pocinfo, "your'info:");
+						strcat(pocinfo, poc_config->poc_info);
+						atCmdRespInfoText(cmd->engine, pocinfo);
+						break;
+					}
+                    else
+                    {
+						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)pocparam);
+						OSI_LOGXI(OSI_LOGPAR_SI, 0, "[poc][at]pocParam is %s", pocparam);
+					}
                 }while(0);
                 break;
             }

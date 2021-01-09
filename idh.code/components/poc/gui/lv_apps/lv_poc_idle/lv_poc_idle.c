@@ -1209,7 +1209,11 @@ static void lv_poc_idle_start_task_cb(lv_task_t *task)
 	lv_poc_idle_time_task();
 	lv_poc_idle_page_2_hide();
 
-	idle_page_task_msg = (lv_poc_idle_page2_msg_t *)lv_mem_alloc(sizeof(lv_poc_idle_page2_msg_t));
+	if(idle_page_task_msg == NULL)
+	{
+		idle_page_task_msg = (lv_poc_idle_page2_msg_t *)lv_mem_alloc(sizeof(lv_poc_idle_page2_msg_t));
+	}
+
 	if(idle_page_task_msg != NULL)
 	{
 		memset(idle_page_task_msg, 0, sizeof(lv_poc_idle_page2_msg_t));

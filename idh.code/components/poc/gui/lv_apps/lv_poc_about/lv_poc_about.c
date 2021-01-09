@@ -33,6 +33,11 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(about_win != NULL)
+	{
+		lv_mem_free(about_win);
+		about_win = NULL;
+	}
 }
 
 static void * about_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -144,7 +149,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_poc_about_text_iccid[0] = 0;
 	poc_get_device_iccid_rep((int8_t *)lv_poc_about_text_iccid);
     strcpy(lv_poc_about_text_sysversion, "A500L");
-    strcpy(lv_poc_about_text_version_number, "V20.35.2-D12.30");
+    strcpy(lv_poc_about_text_version_number, "V20.35.2-D01.06");
     strcpy(lv_poc_about_text_update, "检查更新");
     for(int i = 0; i < label_array_size; i++)
     {
@@ -176,6 +181,12 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_set_click(btn_array[label_array_size - 1], true);
     lv_obj_set_event_cb(btn_array[label_array_size -1], lv_poc_about_pressed_cb);
 #endif
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

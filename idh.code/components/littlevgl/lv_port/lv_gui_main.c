@@ -515,7 +515,7 @@ void lvGuiScreenOff(void)
     d->screen_on = false;
 
 	//close
-	lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND, 0, 0);
+	lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_OFF_SCREEN_IND, false);
 }
 
 /**
@@ -536,7 +536,7 @@ void lvGuiScreenOn(void)
     d->screen_on = true;
 
 	//open
-	lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND, 0, 0);
+	lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TURN_ON_SCREEN_IND, false);
 }
 
 /**

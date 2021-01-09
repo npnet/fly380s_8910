@@ -268,6 +268,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 		case LV_SIGNAL_FOCUS:
 		{
+			OSI_PRINTFI("[memberrefr](%s)(%d):memberlist focus", __func__, __LINE__);
 			if(lv_poc_member_list_obj != NULL && current_activity == poc_member_list_activity)
 			{
 
@@ -279,6 +280,7 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 		case LV_SIGNAL_DEFOCUS:
 		{
+			OSI_PRINTFI("[memberrefr](%s)(%d):memberlist defocus", __func__, __LINE__);
 			break;
 		}
 
@@ -307,6 +309,12 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	{
 		lv_poc_refr_func_ui(lv_poc_member_list_refresh,
 			LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
+	}
+	else if(msg_type == 2)
+	{
+		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+		lv_poc_set_refr_error_info(true);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"组内无成员", NULL);
 	}
 	else
 	{
@@ -634,6 +642,13 @@ void lv_poc_member_list_refresh_with_data(lv_poc_oem_member_list *member_list_ob
 		return;
 	}
 
+	if(current_activity != poc_member_list_activity)
+	{
+		OSI_PRINTFI("[grouprefr](%s)(%d):no cur memberlist", __func__, __LINE__);
+		lv_poc_set_group_refr(true);
+		return;
+	}
+
 	if(lv_poc_is_inside_group())//若当前设备在某个群组里,禁止群组的所有更新(包括添组、删组、组信息更新)
 	{
 		lv_poc_set_group_refr(true);//记录有信息待刷新
@@ -645,12 +660,12 @@ void lv_poc_member_list_refresh_with_data(lv_poc_oem_member_list *member_list_ob
 	if(lv_poc_member_list_get_member_type == 1)//成员列表为空
 	{
 		lv_poc_member_list_clear(member_list_obj);
-		//lv_poc_get_member_list(NULL, member_list_obj, 1,lv_poc_member_list_get_list_cb);
+		lv_poc_get_member_list(NULL, member_list_obj, 1,lv_poc_member_list_get_list_cb);
 	}
 	else if(lv_poc_member_list_get_member_type == 2 && lv_poc_group_list_get_member_list_info != NULL)
 	{
 		lv_poc_member_list_clear(member_list_obj);
-		//lv_poc_get_member_list(lv_poc_group_list_get_member_list_info, member_list_obj, 1,lv_poc_member_list_get_list_cb);
+		lv_poc_get_member_list(lv_poc_group_list_get_member_list_info, member_list_obj, 1,lv_poc_member_list_get_list_cb);
 	}
 	//one
    	lv_poc_member_list_get_member_type = -1;
@@ -846,14 +861,10 @@ void lv_poc_memberlist_activity_open(lv_task_t * task)
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, true);
 }
 
-void lv_poc_memberlist_activity_close(lv_poc_exitgrp_t type)
+static
+void lv_poc_member_list_exit_tmpgrp(lv_task_t * task)
 {
-	if(type == POC_EXITGRP_PASSIVE
-		&& lvPocGuiOemCom_get_listen_status())
-	{
-		return;
-	}
-
+	lv_poc_exitgrp_t type = (lv_poc_exitgrp_t)task->user_data;
 	lv_poc_set_group_status(false);
 	lv_poc_member_list_set_hightlight_index();
 	OSI_LOGI(0, "[oemack][grouprefr][auto]exit memberlist\n");
@@ -867,6 +878,17 @@ void lv_poc_memberlist_activity_close(lv_poc_exitgrp_t type)
 		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP, NULL) : 0;
 		lv_poc_build_tempgrp_progress(POC_TMPGRP_START);
 	}
+}
+
+void lv_poc_memberlist_activity_close(lv_poc_exitgrp_t type)
+{
+	if(type == POC_EXITGRP_PASSIVE
+		&& lvPocGuiOemCom_get_listen_status())
+	{
+		return;
+	}
+	lv_task_t *task = lv_task_create(lv_poc_member_list_exit_tmpgrp, 100, LV_TASK_PRIO_HIGHEST, (void *)type);
+	lv_task_once(task);
 }
 
 #ifdef __cplusplus

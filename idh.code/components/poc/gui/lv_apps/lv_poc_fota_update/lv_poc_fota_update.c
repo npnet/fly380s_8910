@@ -31,6 +31,11 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(fota_win != NULL)
+	{
+		lv_mem_free(fota_win);
+		fota_win = NULL;
+	}
 }
 
 static void * fota_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -345,6 +350,12 @@ static void fota_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_set_click(btn_array[0], true);
     lv_obj_set_event_cb(btn_array[0], lv_poc_fota_pressed_cb);
 #endif
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)
