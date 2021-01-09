@@ -461,6 +461,12 @@ static void cit_part_test_list_config(lv_obj_t * list, lv_area_t list_area)
 		lv_poc_cit_part_test_btn_func_items[i] = lv_poc_cit_part_test_label_array[i].func;
 	}
     lv_list_set_btn_selected(list, btn_array[0]);
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

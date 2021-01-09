@@ -347,13 +347,21 @@ lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t
 		return false;
 	}
 
-	osiEvent_t event = {0};
-	memset(&event, 0, sizeof(osiEvent_t));
-	event.id = 200;
-	event.param1 = signal;
-	event.param2 = (LVPOCIDTCOM_Led_Period_t)ctx;
-	event.param3 = (LVPOCIDTCOM_Led_Jump_Count_t)count;
-	return osiEventTrySend(pocLedIdtAttr.thread, &event, 500);
+	if(signal == LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS)
+    {
+       pocLedIdtAttr.task ? lv_task_del(pocLedIdtAttr.task) : 0;
+       lv_poc_red_open_green_close(NULL);
+       return true;
+    }
+
+    osiEvent_t event = {0};
+    memset(&event, 0, sizeof(osiEvent_t));
+    event.id = 200;
+    event.param1 = signal;
+    event.param2 = (LVPOCIDTCOM_Led_Period_t)ctx;
+    event.param3 = (LVPOCIDTCOM_Led_Jump_Count_t)count;
+
+    return osiEventSend(pocLedIdtAttr.thread, &event);
 }
 
 /*

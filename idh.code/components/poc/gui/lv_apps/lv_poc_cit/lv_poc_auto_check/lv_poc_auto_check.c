@@ -269,6 +269,12 @@ static void cit_result_list_config(lv_obj_t * list, lv_area_t list_area)
 		lv_obj_align(label, btn_label, lv_poc_cit_result_label_array[i].content_align, lv_poc_cit_result_label_array[i].content_align_x, lv_poc_cit_result_label_array[i].content_align_y);
 	}
 	lv_list_set_btn_selected(list, btn_array[0]);
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

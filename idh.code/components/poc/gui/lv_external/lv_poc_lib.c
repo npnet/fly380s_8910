@@ -592,9 +592,9 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 			&& !lvPocGuiIdtCom_get_listen_status()
 			&& !lvPocGuiIdtCom_get_speak_status())
 		{
-			poc_set_ext_pa_status(true);
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)20);
 			lv_poc_set_btn_status(true);
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_CLOSE_PA_IND, (void *)168);
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_CLOSE_PA_IND, (void *)160);
 			audevSetPlayVolume(40);
 			char playkey[4] = "9";
 			ttsPlayText(playkey, strlen(playkey), ML_UTF8);

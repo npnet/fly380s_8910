@@ -183,7 +183,8 @@ static int lv_poc_state_info_network_server(void)
 	{
 		strcpy(lv_poc_state_info_text_service_status, "Voice:未使用/Data:正在使用中");
 		nStatus  = 3;
-	}
+
+	}
 
 	return nStatus;
 }
@@ -215,7 +216,8 @@ static void lv_poc_state_info_network_connection(void)
 		default:
 			strcpy(lv_poc_state_info_text_local_network, "UNKNOW");
 			break;
-	}
+
+	}
 
 }
 
@@ -237,7 +239,8 @@ static void lv_poc_state_info_battery(void)
 		else
 		{
 			strcpy(lv_poc_state_info_text_battery_state, "良好");
-		}
+
+		}
 	}
 	else
 	{
@@ -369,6 +372,12 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_network_connection);
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_operator);
     lv_list_set_btn_selected(list, btn_array[0]);
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

@@ -173,6 +173,12 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_set_event_cb(btn_array[5], lv_poc_about_pressed_fota_update_cb);
 #endif
     lv_obj_set_event_cb(btn_array[0], lv_poc_about_pressed_state_info_cb);
+	//free
+	if(btn_array != NULL)
+	{
+		lv_mem_free(btn_array);
+		btn_array = NULL;
+	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

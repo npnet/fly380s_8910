@@ -2690,6 +2690,12 @@ bool audevStopPocMode(void)
 
     osiMutexLock(d->lock);
 
+	if (d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+	{
+		extern bool poc_set_ext_pa_status(bool open);
+		poc_set_ext_pa_status(false);
+	}
+
     if ((d->clk_users & AUDEV_CLK_USER_POC) == 0)
         goto success;
 
@@ -2758,7 +2764,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         return false;
     }
 	/*open pa*/
-	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
+	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER && (!lv_poc_get_btn_status()))
 	{
 		extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(true);

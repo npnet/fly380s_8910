@@ -3999,7 +3999,7 @@ static void prvPocGuiIdtTaskHandleChargerOpt(uint32_t id, uint32_t ctx)
 
 		case CHR_SHUTDOWN_IND:
 		{
-			/*add shutdown opt*/
+			//add shutdown opt
 			osiShutdown(OSI_SHUTDOWN_POWER_OFF);
 			break;
 		}
@@ -4218,8 +4218,7 @@ static void prvPocGuiIdtTaskHandleDelayOpenPA(uint32_t id, uint32_t ctx)
 	{
 		case LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND:
 		{
-			if(ctx == 0
-				|| !lvPocGuiIdtCom_get_listen_status())
+			if(ctx == 0)
 			{
 				break;
 			}
