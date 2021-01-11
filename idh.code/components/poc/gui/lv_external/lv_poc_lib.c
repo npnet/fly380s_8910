@@ -2977,37 +2977,35 @@ bool lv_poc_get_loopback_recordplay_status(void)
 void
 lv_poc_get_mobile_card_operator(char *operator_name, bool abbr)
 {
-   static char poc_iccid[20] = {0};
-   int operator;
-   char poc_iccid_operator[20] = {0};
-   if(poc_iccid != NULL)
-      poc_get_device_iccid_rep((int8_t *)poc_iccid);
+	static char poc_iccid[20] = {0};
+	int operator;
+	char poc_iccid_operator[20] = {0};
+	if(poc_iccid != NULL)
+	poc_get_device_iccid_rep((int8_t *)poc_iccid);
 
-   if(poc_iccid == NULL)
-   {
-      abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
-   }
+	if(poc_iccid == NULL)
+	{
+		abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
+	}
 
-   strncpy(poc_iccid_operator, poc_iccid, 6);
-   operator = atoi(poc_iccid_operator);
-   if(operator == 898600 || operator == 898602 ||operator == 898604 || operator == 898607)//China Mobile
-   {
-      abbr ? strcpy(operator_name, "CMCC") : strcpy(operator_name, "中国移动");
-   }
-   else if(operator == 898601 || operator == 898609 ||operator == 898606)//China Telecom
-   {
-      abbr ? strcpy(operator_name, "CTCC") : strcpy(operator_name, "中国电信");
-
-   }
-   else if(operator == 898603 || operator == 898611 )//China Unicom
-   {
-
-      abbr ? strcpy(operator_name, "CUCC") : strcpy(operator_name, "中国联通");
-   }
-   else
-   {
-      abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
-   }
+	strncpy(poc_iccid_operator, poc_iccid, 6);
+	operator = atoi(poc_iccid_operator);
+	if(operator == 898600 || operator == 898602 ||operator == 898604 || operator == 898607)//China Mobile
+	{
+		abbr ? strcpy(operator_name, "CMCC") : strcpy(operator_name, "中国移动");
+	}
+	else if(operator == 898603 || operator == 898611 )//China Telecom
+	{
+		abbr ? strcpy(operator_name, "CTCC") : strcpy(operator_name, "中国电信");
+	}
+	else if(operator == 898601 || operator == 898609 ||operator == 898606)//China Unicom
+	{
+		abbr ? strcpy(operator_name, "CUCC") : strcpy(operator_name, "中国联通");
+	}
+	else
+	{
+		abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
+	}
 }
 
 static osiPipe_t *poc_at_rx_pipe;

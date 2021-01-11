@@ -55,8 +55,8 @@ typedef struct
     lv_coord_t content_align_x;
     lv_coord_t content_align_y;
 } lv_poc_about_label_struct_t;
- 
- 
+
+
 static char lv_poc_about_text_stateinfo[64] = {0};
 static char lv_poc_about_text_model[64] = {0};
 static char lv_poc_about_text_processor[64] = {0};
@@ -101,7 +101,7 @@ lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
         lv_poc_about_text_update, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
     },
 };
- 
+
 static void lv_poc_about_pressed_fota_update_cb(lv_obj_t * obj, lv_event_t event)
 {
     if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
@@ -110,7 +110,7 @@ static void lv_poc_about_pressed_fota_update_cb(lv_obj_t * obj, lv_event_t event
 		lv_poc_fota_update_open();
     }
 }
- 
+
 static void lv_poc_about_pressed_state_info_cb(lv_obj_t * obj, lv_event_t event)
 {
     if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
@@ -119,7 +119,7 @@ static void lv_poc_about_pressed_state_info_cb(lv_obj_t * obj, lv_event_t event)
         lv_poc_state_info_open();
     }
 }
- 
+
 static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 {
     lv_obj_t *btn;
@@ -134,12 +134,12 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 
     int label_array_size = sizeof(lv_poc_about_label_array)/sizeof(lv_poc_about_label_struct_t);
     lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
- 
+
     strcpy(lv_poc_about_text_stateinfo, "电池状态/网络信号等");
     strcpy(lv_poc_about_text_model, "FT02");
     strcpy(lv_poc_about_text_processor, "UIS8910DM_IE_AIOT_AIM");
     strcpy(lv_poc_about_text_sysversion, "8910_MODULE_V1_3_W20.35.2");
-    strcpy(lv_poc_about_text_version_number, "V20.35.2-D01.07");
+    strcpy(lv_poc_about_text_version_number, "V20.35.2-D01.11");
     strcpy(lv_poc_about_text_update, "检查更新");
 
     for(int i = 0; i < label_array_size; i++)

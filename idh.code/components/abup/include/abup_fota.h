@@ -35,6 +35,14 @@ typedef enum
 	ABUP_FOTA_NOT_ENOUGH_SPACE, //空间不足
 	ABUP_FOTA_NO_ACCESS_TIMES,  //当天访问次数上限
 	ABUP_FOTA_REBOOT_UPDATE,	//准备重启更新
+	ABUP_FOTA_DOWNLOAD_FAILED,	//下载失败
+	ABUP_FOTA_UART_TIMEOUT,//串口超时
+    ABUP_FOTA_DNS_FAIL,//DNS解析失败
+    ABUP_FOTA_CREATE_SOCKET_FAIL,//建立socket失败
+    ABUP_FOTA_NETWORK_ERROR,//网络错误
+    ABUP_FOTA_MD5_NOT_MATCH,//MD5校验失败
+    ABUP_FOTA_ERASE_FLASH,//擦除flash
+    ABUP_FOTA_WRITE_FLASH,//写flash
 	ABUP_FOTA_ERROR,	//升级异常
 	ABUP_FOTA_END,
 }ABUP_FOTA_PROCESS_STATUS;
@@ -76,6 +84,7 @@ void abup_check_update_result(void);
 void abup_check_version(void);
 uint8_t abup_update_status(void);
 void abup_set_status(uint8_t status);
+bool abup_system_run_status(void);
 
 #endif
 

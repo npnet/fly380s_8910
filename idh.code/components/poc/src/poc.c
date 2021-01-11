@@ -94,7 +94,7 @@ static void pocIdtStartHandleTask(void * ctx)
 	lv_poc_set_power_on_status(true);
 	while(!poc_get_network_register_status(POC_SIM_1))
 	{
-		OSI_LOGI(0, "[poc][idt] checking network\n");
+		OSI_LOGI(0, "[poc][idt] checking network");
 		osiThreadSleepRelaxed(5000*6, OSI_WAIT_FOREVER);//30s
 	}
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
@@ -104,10 +104,8 @@ static void pocIdtStartHandleTask(void * ctx)
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, 50, true);
 	}
 	osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
-
-#ifdef CONFIG_POC_FOTA_POWER_ON_SUPPORT
+	//upload result
 	abup_check_update_result();
-#endif
 
 #ifdef CONFIG_POC_SUPPORT
 	lvPocGuiIdtCom_log();

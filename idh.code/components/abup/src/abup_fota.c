@@ -131,26 +131,98 @@ void abup_exit_restore_context(void)
     }
     else
     {
-        if (abup_get_socket_type() == 5)
-        {
-            OSI_LOGI(0, "abup:network error");
-			abup_current_state = ABUP_FOTA_NO_NETWORK;
-        }
-        else if (abup_get_socket_type() == 6)
-        {
-            OSI_LOGI(0, "abup:not found new update");
-			abup_current_state = ABUP_FOTA_NO_NEW_VERSION;
-        }
-        else if (abup_get_socket_type() == 8)
-        {
-            OSI_LOGI(0, "abup:Not enough space.");
-			abup_current_state = ABUP_FOTA_NOT_ENOUGH_SPACE;
-        }
-        else if (abup_get_socket_type() == 11)
-        {
-            OSI_LOGI(0, "abup:imei access count max is 100");
-			abup_current_state = ABUP_FOTA_NO_ACCESS_TIMES;
-        }
+		if (abup_get_http_dl_state() == 8)
+		{
+            OSI_LOGI(0, "abup:download failed");
+			abup_current_state = ABUP_FOTA_DOWNLOAD_FAILED;
+		}
+
+		switch(abup_get_socket_type())
+		{
+			case 1://串口超时
+			{
+				OSI_LOGI(0, "abup:uart timeout");
+				abup_current_state = ABUP_FOTA_UART_TIMEOUT;
+				break;
+			}
+
+			case 2://无网络
+			{
+				OSI_LOGI(0, "abup:no network");
+				abup_current_state = ABUP_FOTA_NO_NETWORK;
+				break;
+			}
+
+			case 3://DNS解析失败
+			{
+				OSI_LOGI(0, "abup:dns failed");
+				abup_current_state = ABUP_FOTA_DNS_FAIL;
+				break;
+			}
+
+			case 4://建立socket失败
+			{
+				OSI_LOGI(0, "abup:create socket failed");
+				abup_current_state = ABUP_FOTA_CREATE_SOCKET_FAIL;
+				break;
+			}
+
+			case 5://网络错误
+			{
+				OSI_LOGI(0, "abup:network error");
+				abup_current_state = ABUP_FOTA_NETWORK_ERROR;
+				break;
+			}
+
+			case 6://无最新版本
+			{
+				OSI_LOGI(0, "abup:not found new update");
+				abup_current_state = ABUP_FOTA_NO_NEW_VERSION;
+				break;
+			}
+
+			case 7://MD5校验失败
+			{
+				OSI_LOGI(0, "abup:md5 not match");
+				abup_current_state = ABUP_FOTA_MD5_NOT_MATCH;
+				break;
+			}
+
+			case 8://空间不足
+			{
+				OSI_LOGI(0, "abup:Not enough space.");
+				abup_current_state = ABUP_FOTA_NOT_ENOUGH_SPACE;
+				break;
+			}
+
+			case 9://擦除flash
+			{
+				OSI_LOGI(0, "abup:erase flash");
+				abup_current_state = ABUP_FOTA_ERASE_FLASH;
+				break;
+			}
+
+			case 10://写flash
+			{
+				OSI_LOGI(0, "abup:erase flash");
+				abup_current_state = ABUP_FOTA_WRITE_FLASH;
+				break;
+			}
+
+			case 11://当天此IMEI达到最大访问次数,100次
+			{
+				OSI_LOGI(0, "abup:imei access count max is 100");
+				abup_current_state = ABUP_FOTA_NO_ACCESS_TIMES;
+				break;
+			}
+
+			default:
+			{
+			    OSI_LOGI(0, "abup:error");
+				abup_current_state = ABUP_FOTA_ERROR;
+				break;
+			}
+		}
 		abup_task_exit();
     }
 }
@@ -260,11 +332,10 @@ static void abup_fota_task (void *argument)
 
 	abup_current_state = ABUP_FOTA_READY;
     for (int i = 0 ; i < 2 ; i++) {
-        osiThreadSleep (6000);
-        OSI_LOGI (0, "abup: wait 6s\n");
+        osiThreadSleep (1000);
+        OSI_LOGI (0, "abup: wait 1s\n");
     }
-    OSI_LOGI (0,"abup: wait 12s end\n");
-    //osiThreadSleep (1000);
+    OSI_LOGI (0,"abup: wait 2s end\n");
 
 	abup_init_file();
 	osiThreadSleep (100);
@@ -284,7 +355,7 @@ static void abup_fota_task (void *argument)
 			OSI_LOGI(0,"abup: Current fota in idle.");
 			abup_fota_exit();
 			osiThreadSleep (1000);
-			abup_current_state = ABUP_FOTA_IDLEI;
+			abup_set_status(ABUP_FOTA_ERROR);
 			break;
 		}
 
@@ -304,6 +375,7 @@ static void abup_fota_task (void *argument)
 				if(dns_retry>10){
 					dns_retry=0;
 					abup_fota_exit();
+					abup_set_status(ABUP_FOTA_ERROR);
 					break;
 				}
 				else
@@ -336,6 +408,7 @@ static void abup_fota_task (void *argument)
 				if(abup_socket_retry>5)
 				{
 					abup_socket_retry=0;
+					abup_set_status(ABUP_FOTA_ERROR);
 					abup_fota_exit();
 					break;
 				}
@@ -446,16 +519,19 @@ void abup_check_version(void)
 //如需开机不启动，app_start.c 去掉调用此函数的地方，自行调用
 void abup_check_update_result(void)
 {
-	OSI_LOGI (0,"abup_check_update_result");
 	if (abup_check_upgrade() != 0)
 	{
-		abup_process_state=0;
+		OSI_LOGI (0,"[abup]have exist update, start upload");
+		abup_process_state = 0;
 		abup_create_fota_task();
 	}
-	else
+#ifdef CONFIG_POC_FOTA_POWER_ON_SUPPORT
+	else//关闭开机自动检测升级
 	{
+		OSI_LOGI (0,"[abup]no exist update, start check");
 		abup_check_version();
 	}
+#endif
 }
 
 //返回检查版本是否在运行
@@ -474,4 +550,11 @@ void abup_set_status(uint8_t status)
 {
 	abup_current_state = status;
 }
+
+//返回系统运行状态
+bool abup_system_run_status(void)
+{
+	return s_abup_task_data.is_quit;
+}
+
 
