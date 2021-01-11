@@ -519,6 +519,16 @@ void lv_poc_reboot_warning_cancel_event_handler(lv_obj_t *obj, lv_event_t event)
 	}
 }
 
+void lv_poc_shutdown_note_auto_delete(void)
+{
+	if(poc_shutdown_list_activity == NULL)
+	{
+		return;
+	}
+
+	lv_poc_del_activity(poc_shutdown_list_activity);
+}
+
 #ifdef __cplusplus
 }
 #endif

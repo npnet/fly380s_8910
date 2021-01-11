@@ -29,6 +29,7 @@ void lv_poc_warnning_open(const char *title,
 	void (*opt_right_cb)(lv_obj_t * obj, lv_event_t event),
 	lv_area_t warnningarea);
 
+void lv_poc_warnning_auto_delete(void);
 
 #ifdef __cplusplus
 }

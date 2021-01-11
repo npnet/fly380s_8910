@@ -20,7 +20,7 @@ extern "C" {
 */
 void lv_poc_shutdown_note_activity_open(lv_task_t * task);
 
-
+void lv_poc_shutdown_note_auto_delete(void);
 
 #ifdef __cplusplus
 }

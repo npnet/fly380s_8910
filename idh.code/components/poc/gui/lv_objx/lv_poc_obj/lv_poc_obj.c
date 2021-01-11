@@ -2260,6 +2260,7 @@ static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, LVP
 static void prv_lv_poc_member_call_open_cb(lv_task_t *task)
 {
 	void *infomation = (void *)task->user_data;
+	lv_poc_auto_del_note(true);
 	lv_poc_member_call_open(infomation);
 }
 
@@ -3766,12 +3767,14 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 	{
 		case CBN_KEY_GPS_DEBUG://debug gps
 		{
+			lv_poc_auto_del_note(true);
 			lv_poc_gps_monitor_open();
 			return true;
 		}
 
 		case CBN_KEY_CIT_CHECK://cit test
 		{
+			lv_poc_auto_del_note(true);
 			lv_poc_cit_open();
 			return true;
 		}
@@ -3799,6 +3802,22 @@ void lv_poc_net_ping_task(lv_task_t *task)
 void lv_poc_net_ping_task_create(void)
 {
 	lv_task_create(lv_poc_net_ping_task, 1000, LV_TASK_PRIO_HIGH, NULL);
+}
+
+/*******************
+*	  NAME:    lv_poc_auto_del_note
+* DESCRIPT:	   del shutdown note act or warning act
+*	  DATE:    2021-01-11
+********************/
+void lv_poc_auto_del_note(bool operate)
+{
+	if(!operate)
+	{
+		return;
+	}
+
+	lv_poc_shutdown_note_auto_delete();
+	lv_poc_warnning_auto_delete();
 }
 
 #ifdef __cplusplus

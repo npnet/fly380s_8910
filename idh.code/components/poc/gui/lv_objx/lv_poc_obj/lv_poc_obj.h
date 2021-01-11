@@ -889,6 +889,13 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data);
 ********************/
 void lv_poc_net_ping_task_create(void);
 
+/*******************
+*	  NAME:    lv_poc_auto_del_note
+* DESCRIPT:	   del shutdown note act or warning act
+*	  DATE:    2021-01-11
+********************/
+void lv_poc_auto_del_note(bool operate);
+
 #ifdef __cplusplus
 }
 #endif

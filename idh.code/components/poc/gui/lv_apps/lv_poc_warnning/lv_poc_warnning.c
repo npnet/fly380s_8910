@@ -346,7 +346,20 @@ void lv_poc_warnning_open(const char *title,
 	lv_poc_activity_set_signal_cb(warnning->activity, prv_lv_poc_warnning_signal_func);
 }
 
+void lv_poc_warnning_auto_delete(void)
+{
+	lv_poc_warnning_t *warnning = prv_lv_poc_warnning_stack_top_obj();
+	if(warnning == NULL)
+	{
+		return;
+	}
 
+	if(warnning->opt_right_cb != NULL)
+	{
+		warnning->opt_right_cb(warnning->activity->display, LV_EVENT_CANCEL);
+	}
+	lv_poc_del_activity(warnning->activity);
+}
 
 #ifdef __cplusplus
 }
