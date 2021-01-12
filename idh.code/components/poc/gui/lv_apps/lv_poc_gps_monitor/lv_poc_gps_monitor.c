@@ -24,6 +24,8 @@ static lv_obj_t * activity_list;
 
 lv_poc_activity_t * poc_gps_monitor_activity;
 
+static lv_obj_t ** btn_array;
+
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
     gps_win = lv_poc_win_create(display, "GPS", gps_list_create);
@@ -322,7 +324,7 @@ static void gps_list_config(lv_obj_t * list, lv_area_t list_area)
     style_label->text.font = (lv_font_t *)poc_setting_conf->font.fota_label_current_font;
 
     int label_array_size = sizeof(lv_poc_gps_label_array)/sizeof(lv_poc_gps_label_struct_t);
-    lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
+    btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
     for(int i = 0; i < label_array_size; i++)
     {
@@ -356,12 +358,6 @@ static void gps_list_config(lv_obj_t * list, lv_area_t list_area)
 		monitor_gps_info = lv_task_create(lv_poc_gps_check_monitor_cb, 1000, LV_TASK_PRIO_HIGH, (void **)btn_array);
 		lv_task_ready(monitor_gps_info);
 		osiTimerStart(gps_once_timer, 2000);
-	}
-	//free
-	if(btn_array != NULL)
-	{
-		lv_mem_free(btn_array);
-		btn_array = NULL;
 	}
 }
 
@@ -427,6 +423,14 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 						osiTimerDelete(gps_once_timer);
 						gps_once_timer = NULL;
 					}
+
+					//free
+					if(btn_array != NULL)
+					{
+						lv_mem_free(btn_array);
+						btn_array = NULL;
+					}
+
 					lv_poc_del_activity(poc_gps_monitor_activity);
 					break;
 				}

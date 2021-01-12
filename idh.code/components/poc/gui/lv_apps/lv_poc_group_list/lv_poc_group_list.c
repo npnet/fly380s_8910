@@ -1106,6 +1106,7 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	{
 		lv_list_set_btn_selected(activity_list, btn_index[current_index]);
 	}
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_grouplist_refr_is_complete(true);
 	OSI_LOGI(0, "[grouprefr](%d):refr list end", __LINE__);
 }

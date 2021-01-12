@@ -710,6 +710,7 @@ void lv_poc_member_list_refresh(lv_task_t * task)
 	{
 		lv_list_set_btn_selected(activity_list, btn_index[0]);
 	}
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_memberlist_refr_is_complete(true);
 }
 

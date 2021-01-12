@@ -1179,6 +1179,20 @@ void lv_poc_set_btn_status(bool status);
 
 bool lv_poc_get_btn_status(void);
 
+/*
+	 name : lv_poc_set_apply_note
+	 param :
+	 date : 2020-12-24
+*/
+void lv_poc_set_apply_note(lv_poc_apply_note_type_t type);
+
+/*
+	 name : lv_poc_get_apply_note
+	 param :
+	 date : 2020-12-24
+*/
+lv_poc_apply_note_type_t lv_poc_get_apply_note(void);
+
 #ifdef __cplusplus
 }
 #endif
