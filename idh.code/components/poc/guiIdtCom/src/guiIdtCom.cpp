@@ -1131,7 +1131,9 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"下发空号码或名字", (const uint8_t *)"");
 		}
 		OSI_LOGI(0, "[poc][TalkingIDInd](%d):pcNum or pcName NULL, m_status(%d)", __LINE__, m_IdtUser.m_status);
-	    if(m_IdtUser.m_status >= USER_OPRATOR_START_LISTEN && m_IdtUser.m_status <= USER_OPRATOR_LISTENNING)
+	    if(m_IdtUser.m_status >= USER_OPRATOR_START_LISTEN
+			&& m_IdtUser.m_status <= USER_OPRATOR_LISTENNING
+			&& m_IdtUser.m_iRxCount > 5)
 	    {
 		    if(pocIdtAttr.delay_close_listen_timer != NULL)
 		    {
@@ -1177,7 +1179,8 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
     strcpy((char *)pocIdtAttr.speaker.ucName, (const char *)pcName);
 
     pocIdtAttr.speaker.ucStatus = UT_STATUS_ONLINE;
-    if(m_IdtUser.m_status < USER_OPRATOR_START_LISTEN || m_IdtUser.m_status > USER_OPRATOR_LISTENNING)
+    if(m_IdtUser.m_status < USER_OPRATOR_START_LISTEN
+		|| m_IdtUser.m_status > USER_OPRATOR_LISTENNING)
     {
 		OSI_LOGI(0, "[poc][TalkingIDInd](%d):status(%d), start listen", __LINE__, m_IdtUser.m_status);
 	    if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
@@ -1546,9 +1549,7 @@ static void LvGuiIdtCom_get_lock_group_status_timer_cb(void *ctx)
 
 static void LvGuiIdtCom_check_listen_timer_cb(void *ctx)
 {
-	if(pocIdtAttr.check_listen_count < 1
-		|| m_IdtUser.m_status < USER_OPRATOR_START_LISTEN
-		|| m_IdtUser.m_status > USER_OPRATOR_LISTENNING)
+	if(pocIdtAttr.check_listen_count < 1)
 	{
 		if(m_IdtUser.m_status > UT_STATUS_OFFLINE)
 		{
@@ -1560,8 +1561,11 @@ static void LvGuiIdtCom_check_listen_timer_cb(void *ctx)
 		    osiTimerStop(pocIdtAttr.delay_close_listen_timer);
 		    pocIdtAttr.delay_close_listen_timer_running = false;
 	    }
-	    osiTimerStart(pocIdtAttr.delay_close_listen_timer, 460);
-	    pocIdtAttr.delay_close_listen_timer_running = true;
+		if(!lv_poc_get_first_membercall())
+		{
+		    osiTimerStart(pocIdtAttr.delay_close_listen_timer, 460);
+		    pocIdtAttr.delay_close_listen_timer_running = true;
+		}
 		pocIdtAttr.check_listen_count = 0;
 		osiTimerStop(pocIdtAttr.check_listen_timer);
 		return;
@@ -1594,7 +1598,7 @@ static void LvGuiIdtCom_auto_login_timer_cb(void *ctx)
 static void LvGuiIdtCom_ppt_release_timer_cb(void *ctx)
 {
 	static int makecallcnt = 0;
-	bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
+	bool pttStatus = pocGetPttKeyState() || lv_poc_get_earppt_state();
 	if(true == pttStatus && pocIdtAttr.is_makeout_call == true)
 	{
 		osiTimerStart(pocIdtAttr.monitor_pptkey_timer, 50);
@@ -2226,7 +2230,7 @@ static void prvPocGuiIdtTaskHandleMic(uint32_t id, uint32_t ctx)
 				break;
 			}
 			unsigned int mic_ctl = (unsigned int)ctx;
-			bool pttStatus = pocGetPttKeyState()|lv_poc_get_earppt_state();
+			bool pttStatus = pocGetPttKeyState() || lv_poc_get_earppt_state();
 
 			if(mic_ctl > 1 && pocIdtAttr.mic_ctl <= 1 && m_IdtUser.m_status == USER_OPRATOR_START_SPEAK)  //获得话权
 			{

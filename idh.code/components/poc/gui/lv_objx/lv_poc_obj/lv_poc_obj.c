@@ -3674,18 +3674,6 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 
 	switch(data->key)
 	{
-		case 0xf0:
-		{
-			int status = data->state == CBN_KEY_STATE_PRESS?true:false;
-
-			do
-			{
-				status == true ? (multi_keyvalue|=0b0001):(multi_keyvalue&=0b0000);
-			}while(0);
-
-			break;
-		}
-
 		case LV_GROUP_KEY_UP:
 		{
 			if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
@@ -3740,6 +3728,13 @@ bool lv_poc_cbn_key_obj(lv_indev_data_t *data)
 				lv_poc_type_key_escape_cb(true);
 				return false;
 			}
+
+			int status = data->state == CBN_KEY_STATE_PRESS?true:false;
+
+			do
+			{
+				status == true ? (multi_keyvalue|=0b0001):(multi_keyvalue&=0b0000);
+			}while(0);
 
 			break;
 		}
