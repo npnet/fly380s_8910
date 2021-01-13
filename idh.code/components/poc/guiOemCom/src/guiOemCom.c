@@ -918,15 +918,22 @@ void prvPocGuiOemTaskHandleLogin(uint32_t id, uint32_t ctx)
 #else
 			lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_POWER_SAVE_CLOSE_IND, NULL);
 #endif
-			if(poc_config->current_sound_quality == 2)
+			if(poc_config->current_sound_quality == 0)
 			{
-				poc_config->current_sound_quality = 0;
 				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_4K_IND, NULL);
 			}
-			if(poc_config->current_tone_switch == 2)
+			else
 			{
-				poc_config->current_tone_switch = 0;
+				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_8K_IND, NULL);
+			}
+
+			if(poc_config->current_tone_switch == 0)
+			{
 				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_TONE_CLOSE_IND, NULL);
+			}
+			else
+			{
+				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_TONE_OPEN_IND, NULL);
 			}
 			lv_poc_setting_conf_write();
 
