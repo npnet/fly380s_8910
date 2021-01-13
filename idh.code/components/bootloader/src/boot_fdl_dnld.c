@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2019 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -33,6 +33,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+
+//add
+#include "lv_include/lv_poc_lib.h"
+
+
 
 // Work memory size in context
 #define WORKMEM_SIZE 0x20000
@@ -87,6 +92,96 @@ typedef struct
     osiElapsedTimer_t connect_timer;
     char work_mem[WORKMEM_SIZE];
 } fdlContext_t;
+
+/*********************************************************************************
+	                           加入nv读取
+**********************************************************************************/
+static nv_poc_setting_msg_t fdl_poc_setting_conf_local = {0};
+static bool fdl_nv_poc_setting_config_is_writed = false;
+static bool prvFsInit(fdlContext_t *d);
+
+#define FDL_POC_SETTING_CONFIG_FILENAME CONFIG_FS_AP_NVM_DIR "/poc_setting_config.nv"
+#define FDL_POC_SETTING_CONFIG_FILESIZE (sizeof(nv_poc_setting_msg_t))
+#define FDL_POC_SETTING_CONFIG_BUFFER (&fdl_poc_setting_conf_local)
+
+static
+bool lv_poc_setting_conf_fdl(fdlContext_t *d)
+{
+	static bool isInit = false;
+	if(!isInit)
+	{
+		if(!prvFsInit(d))
+		{
+			return false;
+		}
+	    // besure ap nvm directory exist
+	    vfs_mkdir(CONFIG_FS_AP_NVM_DIR, 0);
+		isInit = true;
+	}
+	char * path = FDL_POC_SETTING_CONFIG_FILENAME;
+	int32_t size = FDL_POC_SETTING_CONFIG_FILESIZE;
+	int fd = -1;
+	int file_size = -1;
+	file_size = vfs_file_size(path);
+	if(file_size != size)
+	{
+		if(file_size >= 0)
+		{
+			vfs_unlink(path);
+		}
+		fd = vfs_open(path, O_WRONLY | O_CREAT | O_TRUNC, O_CREAT);
+	    if(fd < 0)
+	    {
+		    goto lv_poc_setting_nvm_failed;
+	    }
+	    vfs_close(fd);
+
+		memset(&fdl_poc_setting_conf_local, 0, size);
+		strcpy(fdl_poc_setting_conf_local.poc_flash_key, "123456");//默认刷机秘钥->at_cmd_account
+		strcpy(fdl_poc_setting_conf_local.poc_secret_key, "000000");
+	}
+	else
+	{
+		file_size = vfs_file_read(path, &fdl_poc_setting_conf_local, sizeof(nv_poc_setting_msg_t));
+		if(file_size != size)
+		{
+			goto lv_poc_setting_nvm_failed;
+		}
+	}
+
+	if(vfs_sfile_init(path) < 0)
+	{
+		goto lv_poc_setting_nvm_failed;
+	}
+
+	file_size = vfs_sfile_write(path, &fdl_poc_setting_conf_local, sizeof(nv_poc_setting_msg_t));
+	if(file_size != size)
+	{
+		goto lv_poc_setting_nvm_failed;
+	}
+	return true;
+
+lv_poc_setting_nvm_failed:
+	strcpy(fdl_poc_setting_conf_local.poc_flash_key, "123456");//默认刷机秘钥->at_cmd_account
+	strcpy(fdl_poc_setting_conf_local.poc_secret_key, "000000");
+	return false;
+}
+
+static
+nv_poc_setting_msg_t * lv_poc_setting_conf_read_fdl(void)
+{
+	if(fdl_nv_poc_setting_config_is_writed)
+	{
+		fdl_nv_poc_setting_config_is_writed = false;
+		vfs_sfile_read(FDL_POC_SETTING_CONFIG_FILENAME, &fdl_poc_setting_conf_local, sizeof(nv_poc_setting_msg_t));
+	}
+
+    return &fdl_poc_setting_conf_local;
+}
+
+/*********************************************************************************
+	                                end
+**********************************************************************************/
 
 /**
  * Calculate nvbin CRC, return 0 on read fail. It will reuse \p work_mem.
@@ -410,10 +505,31 @@ static void prvDataStart(fdlEngine_t *fdl, fdlPacket_t *pkt, fdlContext_t *d)
     uint32_t *ptr = (uint32_t *)pkt->content;
     uint32_t start_addr = OSI_FROM_BE32(*ptr++);
     uint32_t file_size = OSI_FROM_BE32(*ptr++);
+	/*-----------add fk item-----------------*/
+    uint32_t flash_key = OSI_FROM_BE32(*ptr++);
+	/*---------------end---------------------*/
 
     OSI_LOGI(0, "FDL: data start, start_addr/0x%x, size/0x%x", start_addr, file_size);
 
-    d->dnld.start_address = start_addr;
+	/*-----------add fk item-----------------*/
+	if(lv_poc_setting_conf_fdl(d))
+	{
+		nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read_fdl();
+		int orifk = atoi((const char *)poc_config->poc_flash_key);
+		if(flash_key != orifk)
+		{
+			OSI_PRINTFI("[poc][fk](%s)(%d):error, new_fk(%d)", __func__, __LINE__, flash_key);
+			fdlEngineSendRespNoData(fdl, BSL_REP_VERIFY_ERROR);
+			return;
+		}
+		else
+		{
+			OSI_PRINTFI("[poc][fk](%s)(%d):correct, new_fk(%d)", __func__, __LINE__, flash_key);
+		}
+	}
+	/*---------------end---------------------*/
+
+	d->dnld.start_address = start_addr;
     d->dnld.total_size = file_size;
     d->dnld.received_size = 0;
 
@@ -725,7 +841,7 @@ static void prvReadFlash(fdlEngine_t *fdl, fdlPacket_t *pkt, fdlContext_t *d)
     else
         OSI_LOGD(0, "FDL: read flash, addr/0x%x, size/0x%x, offset/0x%x", addr, size, offset);
 
-    if (addr == PHASECHECK_LOGIC_ADDRESS)
+	if (addr == PHASECHECK_LOGIC_ADDRESS)
     {
         if (!prvFsInit(d))
             ERR_REP_RETURN(fdl, BSL_REP_INCOMPATIBLE_PARTITION);
@@ -794,8 +910,29 @@ static void prvEraseFlash(fdlEngine_t *fdl, fdlPacket_t *pkt, fdlContext_t *d)
     uint32_t *ptr = (uint32_t *)pkt->content;
     uint32_t addr = OSI_FROM_BE32(*ptr++);
     uint32_t size = OSI_FROM_BE32(*ptr++);
+	/*-----------add fk item-----------------*/
+    uint32_t flash_key = OSI_FROM_BE32(*ptr++);
+	/*---------------end---------------------*/
 
     OSI_LOGI(0, "FDL: erase flash, addr/0x%x, size/0x%x", addr, size);
+
+	/*-----------add fk item-----------------*/
+	if(lv_poc_setting_conf_fdl(d))
+	{
+		nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read_fdl();
+		int orifk = atoi((const char *)poc_config->poc_flash_key);
+		if(flash_key != orifk)
+		{
+			OSI_PRINTFI("[poc][fk](%s)(%d):error, new_fk(%d)", __func__, __LINE__, flash_key);
+			fdlEngineSendRespNoData(fdl, BSL_REP_VERIFY_ERROR);
+			return;
+		}
+		else
+		{
+			OSI_PRINTFI("[poc][fk](%s)(%d):correct, new_fk(%d)", __func__, __LINE__, flash_key);
+		}
+	}
+	/*---------------end---------------------*/
 
     if (addr == ERASE_RUNNING_NV_LOGIC_ADDRESS)
     {

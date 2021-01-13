@@ -177,6 +177,7 @@ typedef struct
 	char oem_account[64];
 	char poc_info[64];
 	char poc_secret_key[24];
+	char poc_flash_key[7];//6位密码
 } nv_poc_setting_msg_t;
 
 typedef enum

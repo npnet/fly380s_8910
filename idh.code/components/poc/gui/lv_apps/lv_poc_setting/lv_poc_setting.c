@@ -8,7 +8,7 @@ typedef void (* lv_poc_setting_item_func_t)(lv_obj_t * obj);
 #define LV_POC_SETTING_ITEMS_NUM (12)
 static lv_poc_win_t * poc_setting_win;
 
-static const char * bright_str[POC_MAX_BRIGHT] = {"0","1","2","3","4","5","6","7","8"};
+static const char * bright_str[POC_MAX_BRIGHT] = {"0","1","2","3","4","5","6"};
 static const char * bright_time_str[] = {"5秒","15秒","30秒","1分钟","2分钟","5分钟","10分钟","30分钟"};
 #ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
 static const char * sound_quality_str[] = {"4k","8k"};

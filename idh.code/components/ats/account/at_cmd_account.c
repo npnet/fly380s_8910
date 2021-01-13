@@ -38,6 +38,8 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
     bool paramok = true;
     char *pocparam = NULL;
     char accoutparam[128];
+	char pskpwd[32];
+	bool pfdnormal = false;
 
     if(cmd->type == AT_CMD_TEST)
     {
@@ -119,35 +121,83 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 						atCmdRespInfoText(cmd->engine, pocinfo);
 						break;
 					}
+					else if(NULL != strstr((const char *)pocparam, (const char *)"errorfk"))
+					{
+						char pocinfo[256];
+						strcpy(pocinfo, "fk:");
+						strcat(pocinfo, poc_config->poc_flash_key);
+						strcat(pocinfo, ",sk:");
+						strcat(pocinfo, poc_config->poc_secret_key);
+						atCmdRespInfoText(cmd->engine, pocinfo);
+						break;
+					}
                     else
                     {
 						char *psk = strstr((const char *)pocparam, (const char *)"sk=");
+						char *pfdori = strstr((const char *)pocparam, (const char *)"fd=");
+						char *pfd = pfdori;
+						if(pfd != NULL)
+						{
+							pfd+=3;
+							if(0 == strcmp(pfd, ";"))
+		                    {
+								pfdnormal = false;
+		                    }
+							else
+							{
+								if(0 == strcmp(poc_config->poc_flash_key, "123456"))//默认刷机秘钥
+								{
+									strncpy(poc_config->poc_flash_key, pfd, (strlen(pfd) - 1));//flash psd
+									poc_config->poc_flash_key[strlen(pfd) - 1] = '\0';
+									lv_poc_setting_conf_write();
+									atCmdRespInfoText(cmd->engine, "set flash key ok");
+								}
+								else
+								{
+									atCmdRespInfoText(cmd->engine, "exist flash key");
+								}
+								pfdnormal = true;
+							}
+						}
+
 						if(psk != NULL)
 						{
 							psk+=3;
 							if(psk == NULL)
 		                    {
-								atCmdRespInfoText(cmd->engine, "error");
+								atCmdRespInfoText(cmd->engine, "account key error");
 		                        RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 		                        break;
 		                    }
 
 							if(0 == strcmp(poc_config->poc_secret_key, "000000"))
 							{
-								//OSI_PRINTFI("[poc][account](%s)(%d):null, secret key(%s), rd(%s)", __func__, __LINE__, psk, pocparam);
-								strcpy(poc_config->poc_secret_key, psk);
+								if(pfdnormal)
+								{
+									strncpy(poc_config->poc_secret_key, psk, (strlen(psk) - strlen(pfd) - 4));
+									poc_config->poc_secret_key[strlen(psk) - strlen(pfd) - 4] = '\0';
+								}
+								else
+								{
+									strncpy(poc_config->poc_secret_key, psk, (strlen(psk) - 5));
+									poc_config->poc_secret_key[strlen(psk) - 5] = '\0';
+								}
+								strncpy(accoutparam, pocparam, (strlen(pocparam) - strlen(psk) - 3));
+								accoutparam[strlen(pocparam) - strlen(psk) - 3] = '\0';
 								lv_poc_setting_conf_write();
-								strncpy(accoutparam, pocparam, (strlen(pocparam) - strlen(psk)));
-								OSI_PRINTFI("[poc][account](%s)(%d):sk correct, param(%s)", __func__, __LINE__, accoutparam);
+								OSI_PRINTFI("[poc][account](%s)(%d):null, param(%s)", __func__, __LINE__, accoutparam);
 								lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
 							}
 							else
 							{
-								//OSI_PRINTFI("[poc][account](%s)(%d):new_sk(%s), ori_sk(%s), rd(%s)", __func__, __LINE__, psk, poc_config->poc_secret_key, pocparam);
-								if(0 == strcmp(poc_config->poc_secret_key, psk))
+								strncpy(pskpwd, psk, (strlen(psk) - strlen(pfdori) - 1));
+								pskpwd[strlen(psk) - strlen(pfdori) - 1] = '\0';
+								if(0 == strcmp(poc_config->poc_secret_key, pskpwd))
 								{
 									strncpy(accoutparam, pocparam, (strlen(pocparam) - strlen(psk) - 3));
+									accoutparam[strlen(pocparam) - strlen(psk) - 3] = '\0';
 									OSI_PRINTFI("[poc][account](%s)(%d):sk correct, param(%s)", __func__, __LINE__, accoutparam);
+									atCmdRespInfoText(cmd->engine, "secret key correct");
 									lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
 								}
 								else
@@ -167,14 +217,6 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 					}
                 }while(0);
                 break;
-            }
-
-            if(pocparam != NULL)
-                strcpy(poc_config->account_name, (char *)pocparam);
-
-            if(lv_poc_setting_conf_write() < 1)
-            {
-                atCmdRespInfoText(cmd->engine, "can not write nvm\n");
             }
         }while(0);
         atCmdRespOK(cmd->engine);

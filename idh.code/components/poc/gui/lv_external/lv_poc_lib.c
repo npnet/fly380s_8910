@@ -111,6 +111,7 @@ static struct poc_key_tone keytoneattr = {0};
 struct poc_boot_time
 {
 	lv_task_t *task;
+	lv_poc_time_t boottime;
 	int is_boot_time_h_cnt;
 	int is_boot_time_m_cnt;
 	int is_boot_time_s_cnt;
@@ -1541,6 +1542,7 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 #endif
 	strcpy(poc_setting->poc_info, "");
 	strcpy(poc_setting->poc_secret_key, "000000");
+	strcpy(poc_setting->poc_flash_key, "000000");
 	for(int i = 0; i < sizeof(poc_setting->nv_monitor_group)/sizeof(nv_poc_monitor_info); i++)
 	{
 		memset(&poc_setting->nv_monitor_group[i], 0, sizeof(nv_poc_monitor_info));
@@ -4135,18 +4137,34 @@ poc_set_power_save_mode_state(bool open)
 static
 void lv_poc_boot_timeing_task(lv_task_t *task)
 {
-	boottimeattr.is_boot_time_s_cnt++;
-	if(boottimeattr.is_boot_time_s_cnt >= 60)
+	static uint32_t lastsec = 0;
+	lv_poc_time_t boottime = {0};
+	lv_poc_get_time(&boottime);
+	//sec
+	if(lastsec != boottime.tm_sec)
 	{
-		boottimeattr.is_boot_time_m_cnt++;
-		boottimeattr.is_boot_time_s_cnt = 0;
-	}
+		lastsec = boottime.tm_sec;
+		if(boottime.tm_sec >= boottimeattr.boottime.tm_sec)
+		{
+			boottimeattr.is_boot_time_s_cnt = boottime.tm_sec - boottimeattr.boottime.tm_sec;
+		}
+		else
+		{
+			boottimeattr.is_boot_time_s_cnt += 1;
+		}
 
-	if(boottimeattr.is_boot_time_m_cnt >= 60)
-	{
-		boottimeattr.is_boot_time_h_cnt > 99 ? (boottimeattr.is_boot_time_h_cnt = 0) \
-		: (boottimeattr.is_boot_time_h_cnt++);
-		boottimeattr.is_boot_time_m_cnt = 0;
+		if(boottimeattr.is_boot_time_s_cnt == 0)
+		{
+			boottimeattr.is_boot_time_m_cnt += 1;
+			boottimeattr.is_boot_time_s_cnt = 0;
+			if(boottimeattr.is_boot_time_m_cnt > 59)
+			{
+				boottimeattr.is_boot_time_h_cnt += 1;
+				boottimeattr.is_boot_time_h_cnt > 99 ? (boottimeattr.is_boot_time_h_cnt = 0) : 0;
+				boottimeattr.is_boot_time_m_cnt = 0;
+			}
+		}
+		OSI_PRINTFI("[poc][boottime4](%s)(%d):time(%d):(%d):(%d)", __func__, __LINE__, boottimeattr.is_boot_time_h_cnt, boottimeattr.is_boot_time_m_cnt, boottimeattr.is_boot_time_s_cnt);
 	}
 }
 
@@ -4157,7 +4175,8 @@ void lv_poc_boot_timeing_task(lv_task_t *task)
 */
 void lv_poc_boot_timeing_task_create(void)
 {
-	boottimeattr.task = lv_task_create(lv_poc_boot_timeing_task, 1000, LV_TASK_PRIO_HIGH, NULL);
+	lv_poc_get_time(&boottimeattr.boottime);
+	boottimeattr.task = lv_task_create(lv_poc_boot_timeing_task, 500, LV_TASK_PRIO_HIGH, NULL);
 }
 
 /*
@@ -4173,8 +4192,15 @@ lv_poc_boot_time_get_info(void)
 	char sec[12] = {0};
 
 	__itoa(boottimeattr.is_boot_time_h_cnt, (char *)&hour, 10);
-	strcpy(boottimeattr.boot_time, hour);
-	boottimeattr.is_boot_time_h_cnt < 10 ? strcat(boottimeattr.boot_time, "0") : 0;
+	if(boottimeattr.is_boot_time_h_cnt < 10)
+	{
+		strcpy(boottimeattr.boot_time, "0");
+		strcat(boottimeattr.boot_time, hour);
+	}
+	else
+	{
+		strcpy(boottimeattr.boot_time, hour);
+	}
 	strcat(boottimeattr.boot_time, ":");
 	__itoa(boottimeattr.is_boot_time_m_cnt, (char *)&min, 10);
 	boottimeattr.is_boot_time_m_cnt < 10 ? strcat(boottimeattr.boot_time, "0") : 0;

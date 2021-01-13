@@ -42,7 +42,7 @@ if(CONFIG_SOC_8910)
     target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_BOOT)
     target_include_directories(${target} PUBLIC include)
     target_link_libraries(${target} PRIVATE boot_encrypt calclib)
-    target_include_targets(${target} PRIVATE hal fs sffs bdev driver fsmount nvm cpio_parser)
+    target_include_targets(${target} PRIVATE hal fs sffs bdev driver fsmount nvm cpio_parser lvgl poc)
 
     set(rmarun_ld ldscripts/ramrun_uimage_arm.ld)
 
