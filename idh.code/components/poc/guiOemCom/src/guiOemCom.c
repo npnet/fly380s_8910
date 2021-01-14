@@ -106,6 +106,7 @@ typedef struct _PocGuiOemComAttr_t
 	osiTimer_t *Oem_Check_ack_timeout_timer;
 	osiTimer_t *Oem_Workpa_timer;
 	osiTimer_t *Oem_BrightScreen_timer;
+	osiTimer_t *Oem_CheckQuilityMode_timer;
 
 	//Info
 	OemCGroup OemCurrentGroupInfo;
@@ -527,6 +528,16 @@ void lvPocGuiOemCom_Request_Set_AudioQuility(char *quility)
 	OEMPOC_AT_Recv(quilityoptcode, strlen(quilityoptcode));
 }
 
+void lvPocGuiOemCom_Request_Check_QuilityMode(void)
+{
+	char quilitymodecode[64] = {0};
+
+	strcpy(quilitymodecode, (char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_AUDIOQUILITY);
+	strcat(quilitymodecode, "0000");
+
+	OEMPOC_AT_Recv(quilitymodecode, strlen(quilitymodecode));
+}
+
 void lvPocGuiOemCom_Request_Set_HeartBeat(char *heartBeat)
 {
 	char heartBeatoptcode[64] = {0};
@@ -713,6 +724,12 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CANNELLISTENGROUP_ACK))
 					{
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_UNMONITOR_GROUP_REP, apopt);
+						break;
+					}
+					//check quility mode--ack:30
+					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CHECK_QUILITY_MODE_ACK))
+					{
+						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_CHECK_QUILITY_MODE_IND, apopt);
 						break;
 					}
 					break;
@@ -1107,6 +1124,7 @@ void prvPocGuiOemTaskHandleListen(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 
 			lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_CALL_BRIGHT_SCREEN_EXIT, (void *)LVPOCOEMCOM_CALL_DIR_TYPE_LISTEN);
+			osiTimerStop(pocOemAttr.Oem_CheckQuilityMode_timer);
 			break;
 		}
 
@@ -1117,6 +1135,11 @@ void prvPocGuiOemTaskHandleListen(uint32_t id, uint32_t ctx)
 			memset(speaker_name, 0, sizeof(char) * 100);
 			strcpy(speaker_name, (const char *)pocOemAttr.OemSpeakerInfo.OemUserName);
 			strcat(speaker_name, (const char *)"正在讲话");
+			//error info
+			if(NULL != strstr(pocOemAttr.OemSpeakerInfo.OemUserName, "话权空闲"))
+			{
+				break;
+			}
 			pocOemAttr.is_listen_status = true;
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, false);
 			//poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Stop_Listen, 30, true);
@@ -1132,7 +1155,7 @@ void prvPocGuiOemTaskHandleListen(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, speaker_name, speaker_group);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)speaker_group_name);
 			}
-
+			osiTimerStart(pocOemAttr.Oem_CheckQuilityMode_timer, 1000);
 			break;
 		}
 
@@ -2500,6 +2523,62 @@ static void prvPocGuiOemTaskHandleOther(uint32_t id, uint32_t ctx)
 			break;
 		}
 
+		case LVPOCGUIOEMCOM_SIGNAL_CHECK_QUILITY_MODE_IND:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+
+			OSI_PRINTFI("[quility][mode](%s)(%d):rec", __func__, __LINE__);
+			PocGuiOemApSendAttr_t *apopt = (PocGuiOemApSendAttr_t *)ctx;
+
+			if(!pocOemAttr.is_listen_status)
+			{
+				break;
+			}
+
+			PocGuiOemAtBufferAttr_t QuilityMode;
+			PocGuiOemAtTableAttr_t table[4] = {
+				{5,2},//应答号--30
+				{7,2},//结果码
+				{9,4},//操作ID--忽略
+				{13,0},//模式
+			};
+
+			QuilityMode = prv_lv_poc_oem_get_global_atcmd_info(apopt->oembuf, sizeof(table)/sizeof(PocGuiOemAtTableAttr_t), table);
+
+			if(0 == strcmp(QuilityMode.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_FAILED))
+			{
+				OSI_PRINTFI("[quility][mode](%s)(%d):error", __func__, __LINE__);
+				break;
+			}
+			else
+			{
+				OSI_PRINTFI("[quility][mode](%s)(%d):quilty(%s)", __func__, __LINE__, QuilityMode.buf[1].oembuf);
+			}
+
+			if(0 == strcmp(QuilityMode.buf[3].oembuf, "01"))
+			{
+				OSI_PRINTFI("[quility][mode](%s)(%d):correct", __func__, __LINE__);
+			}
+			else
+			{
+				OSI_PRINTFI("[quility][mode](%s)(%d):error, mode(%s)", __func__, __LINE__, QuilityMode.buf[3].oembuf);
+//				nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+//				if(poc_config->current_sound_quality == 0)
+//				{
+//					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_4K_IND, NULL);
+//				}
+//				else
+//				{
+//					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_8K_IND, NULL);
+//				}
+			}
+
+			break;
+		}
+
 		default:
 		{
 			break;
@@ -2675,6 +2754,12 @@ static void LvGuiOemCom_Call_Bright_Screen_timer_cb(void *ctx)
 	}
 }
 
+static void LvGuiOemCom_Check_Quility_Mode_timer_cb(void *ctx)
+{
+	OSI_PRINTFI("[check][quility][timer](%s)(%d):cb", __func__, __LINE__);
+	lvPocGuiOemCom_Request_Check_QuilityMode();
+}
+
 void PocGuiOemComStart(void)
 {
 	pocOemAttr.thread = osiThreadCreate(
@@ -2694,6 +2779,7 @@ void PocGuiOemComStart(void)
 	pocOemAttr.Oem_Check_ack_timeout_timer = osiTimerCreate(pocOemAttr.thread, LvGuiOemCom_check_ack_timeout_timer_cb, NULL);
 	pocOemAttr.Oem_Workpa_timer = osiTimerCreate(pocOemAttr.thread, LvGuiOemCom_pa_timer_cb, NULL);
 	pocOemAttr.Oem_BrightScreen_timer = osiTimerCreate(pocOemAttr.thread, LvGuiOemCom_Call_Bright_Screen_timer_cb, NULL);
+	pocOemAttr.Oem_CheckQuilityMode_timer = osiTimerCreate(pocOemAttr.thread, LvGuiOemCom_Check_Quility_Mode_timer_cb, NULL);
 }
 
 void lvPocGuiOemCom_Init(void)
@@ -2924,6 +3010,7 @@ void pocGuiOemComTaskEntry(void *argument)
 			case LVPOCGUIOEMCOM_SIGNAL_TONE_OPEN_IND:
     		case LVPOCGUIOEMCOM_SIGNAL_TONE_CLOSE_IND:
 			case LVPOCGUIOEMCOM_SIGNAL_USERNAME_UPDATE_IND:
+			case LVPOCGUIOEMCOM_SIGNAL_CHECK_QUILITY_MODE_IND:
    			{
    				prvPocGuiOemTaskHandleOther(event.param1, event.param2);
 				break;

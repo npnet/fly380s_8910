@@ -40,6 +40,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
     char accoutparam[128];
 	char pskpwd[32];
 	bool pfdnormal = false;
+	bool is_invalid_account = false;
 
     if(cmd->type == AT_CMD_TEST)
     {
@@ -139,9 +140,12 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 						if(pfd != NULL)
 						{
 							pfd+=3;
-							if(0 == strcmp(pfd, ";"))
+							char pfd_chr = 0;
+							strncpy(&pfd_chr, pfd, 1);
+							if(pfd_chr == ';')
 		                    {
 								pfdnormal = false;
+								OSI_PRINTFI("[poc][account](%s)(%d):null fd(%c)", __func__, __LINE__, pfd_chr);
 		                    }
 							else
 							{
@@ -154,6 +158,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 								}
 								else
 								{
+									OSI_PRINTFI("[poc][account](%s)(%d):exist fd", __func__, __LINE__);
 									atCmdRespInfoText(cmd->engine, "exist flash key");
 								}
 								pfdnormal = true;
@@ -170,21 +175,39 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 		                        break;
 		                    }
 
+							char psk_chr = 0;
+							strncpy(&psk_chr, psk, 1);
+							if(psk_chr == ';')
+							{
+								is_invalid_account = true;
+								OSI_PRINTFI("[poc][account](%s)(%d):null sk(%c)", __func__, __LINE__, psk_chr);
+							}
+
 							if(0 == strcmp(poc_config->poc_secret_key, "000000"))
 							{
-								if(pfdnormal)
+								if(!is_invalid_account)
 								{
-									strncpy(poc_config->poc_secret_key, psk, (strlen(psk) - strlen(pfd) - 4));
-									poc_config->poc_secret_key[strlen(psk) - strlen(pfd) - 4] = '\0';
+									if(pfdnormal)
+									{
+										strncpy(poc_config->poc_secret_key, psk, (strlen(psk) - strlen(pfd) - 4));
+										poc_config->poc_secret_key[strlen(psk) - strlen(pfd) - 4] = '\0';
+									}
+									else
+									{
+										strncpy(poc_config->poc_secret_key, psk, (strlen(psk) - 5));
+										poc_config->poc_secret_key[strlen(psk) - 5] = '\0';
+
+									}
+									lv_poc_setting_conf_write();
+									OSI_PRINTFI("[poc][account](%s)(%d):valid sk", __func__, __LINE__);
+									atCmdRespInfoText(cmd->engine, "set sk success");
 								}
 								else
 								{
-									strncpy(poc_config->poc_secret_key, psk, (strlen(psk) - 5));
-									poc_config->poc_secret_key[strlen(psk) - 5] = '\0';
+									OSI_PRINTFI("[poc][account](%s)(%d):invalid sk", __func__, __LINE__);
 								}
 								strncpy(accoutparam, pocparam, (strlen(pocparam) - strlen(psk) - 3));
 								accoutparam[strlen(pocparam) - strlen(psk) - 3] = '\0';
-								lv_poc_setting_conf_write();
 								OSI_PRINTFI("[poc][account](%s)(%d):null, param(%s)", __func__, __LINE__, accoutparam);
 								lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
 							}
@@ -197,13 +220,13 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 									strncpy(accoutparam, pocparam, (strlen(pocparam) - strlen(psk) - 3));
 									accoutparam[strlen(pocparam) - strlen(psk) - 3] = '\0';
 									OSI_PRINTFI("[poc][account](%s)(%d):sk correct, param(%s)", __func__, __LINE__, accoutparam);
-									atCmdRespInfoText(cmd->engine, "secret key correct");
+									atCmdRespInfoText(cmd->engine, "sk correct");
 									lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SETPOC_IND, (void *)accoutparam);
 								}
 								else
 								{
-									OSI_PRINTFI("[poc][account](%s)(%d):secret key error", __func__, __LINE__);
-									atCmdRespInfoText(cmd->engine, "secret key error");
+									OSI_PRINTFI("[poc][account](%s)(%d):sk error", __func__, __LINE__);
+									atCmdRespInfoText(cmd->engine, "sk error");
 									break;
 								}
 							}

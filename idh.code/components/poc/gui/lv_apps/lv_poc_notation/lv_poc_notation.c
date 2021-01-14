@@ -9,7 +9,7 @@
 
 #define LV_POC_NOTATIONWINDOW_LABEL_TEXT_MAX_SIZE 50
 
-#define LV_POC_NOTATION_TASK_QUEUE_SIZE (15)
+#define LV_POC_NOTATION_TASK_QUEUE_SIZE (50)
 
 #define LV_POC_NOTATIONWINDOW_X (-1)//偏移
 
@@ -440,7 +440,7 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 	lv_poc_notation_task_msg_t * notation_msg = &lv_poc_notation_task_queue[lv_poc_notation_task_queue_reader];
 	lv_poc_notation_msg_type_t   msg_type = notation_msg->msg_type;
-	if(msg_type == LV_POC_NOTATION_NONE)// && lv_poc_notationwindow_obj != NULL)
+	if(msg_type == LV_POC_NOTATION_NONE)
 	{
 		return;
 	}
@@ -578,7 +578,7 @@ bool lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *tex
 {
 	if(lv_poc_notation_task == NULL)
 	{
-		lv_poc_notation_task = lv_task_create(lv_poc_notation_task_cb, 200, LV_TASK_PRIO_HIGH, NULL);
+		lv_poc_notation_task = lv_task_create(lv_poc_notation_task_cb, 50, LV_TASK_PRIO_HIGHEST, NULL);//high speed
 		if(lv_poc_notation_task == NULL)
 		{
 			return false;

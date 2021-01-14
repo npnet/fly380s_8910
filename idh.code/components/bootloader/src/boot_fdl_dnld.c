@@ -105,6 +105,65 @@ static bool prvFsInit(fdlContext_t *d);
 #define FDL_POC_SETTING_CONFIG_BUFFER (&fdl_poc_setting_conf_local)
 
 static
+void poc_mmi_poc_setting_config_fdl(nv_poc_setting_msg_t * poc_setting)
+{
+	poc_setting->theme.type = 0;
+	poc_setting->theme.current_theme = poc_setting->theme.white;
+	poc_setting->read_and_write_check = 0x3f;
+	poc_setting->btn_voice_switch = 0;
+#ifdef CONFIG_POC_TTS_SUPPORT
+	poc_setting->voice_broadcast_switch = 0;
+#endif
+#ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
+	poc_setting->keypad_led_switch = 0;
+#endif
+#ifdef CONFIG_POC_LOW_POWER_SUPPORT
+	poc_setting->lowpower_switch = 0;
+#endif
+	poc_setting->GPS_switch = 0;
+	poc_setting->electric_torch_switch = 0;
+	poc_setting->screen_brightness = 4;
+	poc_setting->screen_bright_time = 2;
+	poc_setting->main_SIM = 0;
+#ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
+	poc_setting->net_type = 0;
+#endif
+	poc_setting->font.big_font_switch = 1;
+	poc_setting->font.list_page_colum_count = 3;
+	poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
+	poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
+	poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
+	poc_setting->font.cit_label_current_font = poc_setting->font.cit_label_small_font;
+	poc_setting->volume = 5;
+	poc_setting->language = 0;
+	poc_setting->is_exist_selfgroup = 1;
+	strcpy(poc_setting->selfbuild_group_num, "");
+#ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
+	strcpy(poc_setting->account_name, "00000");
+	strcpy(poc_setting->account_passwd, "00000");
+	strcpy(poc_setting->old_account_name, "");
+	strcpy(poc_setting->old_account_current_group, "");
+	strcpy(poc_setting->ip_address, "124.160.11.21");
+	poc_setting->ip_port = 10000;
+#endif
+	poc_setting->nv_monitor_group_number = 0;
+#ifdef CONFIG_POC_SOUND_QUALITY_SUPPORT
+	poc_setting->current_sound_quality = 0;
+#endif
+#ifdef CONFIG_POC_TONE_SWITCH_SUPPORT
+	poc_setting->current_tone_switch = 0;
+#endif
+	strcpy(poc_setting->poc_info, "");
+	strcpy(poc_setting->poc_secret_key, "000000");
+	strcpy(poc_setting->poc_flash_key, "123456");//默认刷机秘钥->at_cmd_account
+	for(int i = 0; i < sizeof(poc_setting->nv_monitor_group)/sizeof(nv_poc_monitor_info); i++)
+	{
+		memset(&poc_setting->nv_monitor_group[i], 0, sizeof(nv_poc_monitor_info));
+		strcpy((char *)poc_setting->nv_monitor_group[i].m_ucGID, "nomonitor");
+	}
+}
+
+static
 bool lv_poc_setting_conf_fdl(fdlContext_t *d)
 {
 	static bool isInit = false;
@@ -139,6 +198,7 @@ bool lv_poc_setting_conf_fdl(fdlContext_t *d)
 		memset(&fdl_poc_setting_conf_local, 0, size);
 		strcpy(fdl_poc_setting_conf_local.poc_flash_key, "123456");//默认刷机秘钥->at_cmd_account
 		strcpy(fdl_poc_setting_conf_local.poc_secret_key, "000000");
+		poc_mmi_poc_setting_config_fdl(FDL_POC_SETTING_CONFIG_BUFFER);
 	}
 	else
 	{
@@ -162,8 +222,7 @@ bool lv_poc_setting_conf_fdl(fdlContext_t *d)
 	return true;
 
 lv_poc_setting_nvm_failed:
-	strcpy(fdl_poc_setting_conf_local.poc_flash_key, "123456");//默认刷机秘钥->at_cmd_account
-	strcpy(fdl_poc_setting_conf_local.poc_secret_key, "000000");
+	poc_mmi_poc_setting_config_fdl(FDL_POC_SETTING_CONFIG_BUFFER);
 	return false;
 }
 

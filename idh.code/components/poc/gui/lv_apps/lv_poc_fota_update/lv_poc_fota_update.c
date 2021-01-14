@@ -36,6 +36,7 @@ static void activity_destory(lv_obj_t *obj)
 		lv_mem_free(fota_win);
 		fota_win = NULL;
 	}
+	poc_fota_update_activity = NULL;
 }
 
 static void * fota_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -65,6 +66,7 @@ static char lv_poc_fota_text_cur_version[64] = {0};
 static char lv_poc_fota_text_cur_status[64] = {0};
 static lv_task_t * monitor_check_update = NULL;
 static bool is_enter_fota_acti = true;
+static bool fota_check_act_status = false;
 
 lv_poc_fota_label_struct_t lv_poc_fota_label_array[] = {
     {
@@ -93,6 +95,7 @@ static void lv_poc_fota_check_update_cb(lv_task_t * task)
 		return;
 	}
 	last_fota_status = fota_status;
+	fota_check_act_status = false;
 
 	switch(fota_status)
 	{
@@ -126,6 +129,7 @@ static void lv_poc_fota_check_update_cb(lv_task_t * task)
 		{
 			strcpy(lv_poc_fota_text_cur_status, "准备环境");
 			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			fota_check_act_status = true;
 			break;
 		}
 
@@ -133,6 +137,7 @@ static void lv_poc_fota_check_update_cb(lv_task_t * task)
 		{
 			strcpy(lv_poc_fota_text_cur_status, "注册设备信息");
 			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
+			fota_check_act_status = true;
 			break;
 		}
 
@@ -141,6 +146,7 @@ static void lv_poc_fota_check_update_cb(lv_task_t * task)
 			strcpy(lv_poc_fota_text_cur_status, "检测版本");
 			lv_label_set_text((lv_obj_t *)task->user_data, lv_poc_fota_text_cur_status);
 			OSI_LOGI(0, "[abup](%d):check version", __LINE__);
+			fota_check_act_status = true;
 			break;
 		}
 
@@ -289,6 +295,7 @@ static void lv_poc_fota_pressed_cb(lv_obj_t * obj, lv_event_t event)
         {
 			if(obj->user_data != NULL)
 			{
+				fota_check_act_status = true;
 				//fota
 				abup_check_version();
 				//view
@@ -411,8 +418,9 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 				case LV_KEY_ESC:
 				{
-					if(monitor_check_update == NULL
+					if((monitor_check_update == NULL
 						|| abup_system_run_status())
+						&& fota_check_act_status == false)
 					{
 						lv_poc_del_activity(poc_fota_update_activity);
 						abup_set_status(ABUP_FOTA_START);

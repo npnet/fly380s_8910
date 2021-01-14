@@ -578,6 +578,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     btn_label = lv_list_get_btn_label(btn);
     label = lv_label_create(btn, NULL);
     btn->user_data = (void *)label;
+	poc_setting_conf->screen_brightness >= POC_MAX_BRIGHT ? (poc_setting_conf->screen_brightness = POC_MAX_BRIGHT - 1) : 0;
     lv_label_set_text(label, bright_str[poc_setting_conf->screen_brightness]);
     lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
@@ -593,6 +594,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     btn_label = lv_list_get_btn_label(btn);
     label = lv_label_create(btn, NULL);
     btn->user_data = (void *)label;
+	poc_setting_conf->screen_bright_time >= 8 ? (poc_setting_conf->screen_bright_time = 7) : 0;
     lv_label_set_text(label, bright_time_str[poc_setting_conf->screen_bright_time]);
     lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
@@ -609,6 +611,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     btn_label = lv_list_get_btn_label(btn);
     label = lv_label_create(btn, NULL);
     btn->user_data = (void *)label;
+	poc_setting_conf->current_sound_quality > 1 ? (poc_setting_conf->current_sound_quality = 1) : 0;
     lv_label_set_text(label, sound_quality_str[poc_setting_conf->current_sound_quality]);
     lv_obj_set_width(btn_label, btn_width - lv_obj_get_width(label) - 15);
     lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
