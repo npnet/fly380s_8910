@@ -710,7 +710,10 @@ static void prv_monitor_key_tone_task_callback(lv_task_t *task)
 		&& (!ttsIsPlaying()))
 	{
 		keytoneattr.is_poc_play_key_tone = false;
-		lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE, NULL);
+		if(!keytoneattr.is_poc_play_voice)//voice play finish
+		{
+			lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE, NULL);
+		}
 		memset(&keytoneattr, 0, sizeof(struct poc_key_tone));
 	}
 	else
@@ -729,17 +732,24 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
 	do
 	{
-		if(!ttsIsPlaying()
-			&& !lvPocGuiOemCom_get_listen_status()
+		if(!lvPocGuiOemCom_get_listen_status()
 			&& !lvPocGuiOemCom_get_speak_status())
 		{
+			if(ttsIsPlaying())
+			{
+				ttsStop();
+			}
 			OSI_PRINTFI("[keytone](%s)(%d)launch", __func__, __LINE__);
-			lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);//send msg
+			if(!keytoneattr.is_poc_play_voice)//voice play finish
+			{
+				lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);//send msg
+			}
 			poc_set_ext_pa_status(true);
 			audevSetPlayVolume(35);
 			char playkey[4] = "9";
 			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
 			keytoneattr.is_poc_play_key_tone = true;
+			keytoneattr.is_task_cnt = 0;
 		}
 		else
 		{
@@ -951,6 +961,13 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 void
 poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN bool isBreak)
 {
+	if(lvPocGuiOemCom_get_listen_status()
+		|| lvPocGuiOemCom_get_speak_status())
+	{
+		OSI_PRINTFI("[voice][listen][speak](%s)(%d)not allow", __func__, __LINE__);
+		return;
+	}
+
 	lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);
 	if(NULL != prv_play_btn_voice_one_time_player)
 	{

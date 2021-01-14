@@ -427,7 +427,11 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 					}
 					else
 					{
-						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LAUNCH_NOTE_MSG, (const uint8_t *)"正在检查更新", (const uint8_t *)"请勿退出");
+						if(!lvPocGuiOemCom_get_listen_status()
+							&& !lvPocGuiOemCom_get_speak_status())
+						{
+							lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LAUNCH_NOTE_MSG, (const uint8_t *)"正在检查更新", (const uint8_t *)"请勿退出");
+						}
 					}
 					break;
 				}

@@ -1501,7 +1501,8 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 					lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
 				}
 			}
-			else if(cur_key != LV_GROUP_KEY_POC)//按键音
+			else if(cur_key != LV_GROUP_KEY_POC
+					&& (sign ==	LV_SIGNAL_RELEASED))//按键音
 			{
 				if(lv_poc_get_screenon_status())
 				{
@@ -1541,7 +1542,8 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 					lv_poc_set_volum(POC_MMI_VOICE_VOICE , vol_cur, poc_setting_conf->btn_voice_switch, true);
 				}
 			}
-			else if(cur_key != LV_GROUP_KEY_POC)//按键音
+			else if(cur_key != LV_GROUP_KEY_POC
+					&& (sign ==	LV_SIGNAL_RELEASED))//按键音
 			{
 				if(lv_poc_get_screenon_status())
 				{
@@ -1581,7 +1583,8 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 				lv_poc_set_volum(POC_MMI_VOICE_PLAY , vol_cur, poc_setting_conf->btn_voice_switch, true);
 			}
 		}
-		else if(cur_key != LV_GROUP_KEY_POC)//按键音
+		else if(cur_key != LV_GROUP_KEY_POC
+				&& (sign ==	LV_SIGNAL_RELEASED))//按键音
 		{
 			if(lv_poc_get_screenon_status())
 			{
@@ -3586,6 +3589,7 @@ lv_poc_activity_t *lv_poc_get_current_activity(void)
 ********************/
 bool lv_poc_is_build_tmpgroup(void)
 {
+	OSI_PRINTFI("[tmpgrp](%s)(%d):tmp state(%d)", __func__, __LINE__, lv_poc_build_tempgrp_progress(POC_TMPGRP_READ));
 	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) <= POC_TMPGRP_OPENMEMLIST//must wait refr'compele
 		&& lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) >= POC_TMPGRP_VIEW)
 	{

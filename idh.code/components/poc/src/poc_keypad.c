@@ -60,6 +60,7 @@ static void prvPowerKeyCb(void *ctx)
 		}
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS, true);
 		lv_poc_set_power_on_status(false);
+		poc_set_ext_pa_status(false);
 		lv_poc_refr_func_ui(lv_poc_shutdown_animation,
 			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)2);
 	}

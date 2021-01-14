@@ -690,19 +690,25 @@ void prvPocGuiOemTaskHandleMsgCB(uint32_t id, uint32_t ctx)
 					//single call(单呼)--0a应答
 					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_MEMBERCALL_ACK))
 					{
-						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP, apopt);
-						break;
-					}
-					//update user or group info--notify ack:85
-					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_UPDATEDATAI_ACK))
-					{
-						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_MEMBER_GROUP_INFO_UPDATE, apopt);
+						//opt result
 						break;
 					}
 					//speaker info--notify ack:83
 					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_SPEAKERINFO_ACK))
 					{
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_CALL_TALKING_ID_IND, apopt);
+						break;
+					}
+					//call note info--notify ack:84
+					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_NOTE_INFO_ACK))
+					{
+						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP, (void *)1);
+						break;
+					}
+					//update user or group info--notify ack:85
+					else if(NULL != strstr(apopt->oembuf,(const char *)LVPOCPOCOEMCOM_SIGNAL_OPTCODE_UPDATEDATAI_ACK))
+					{
+						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_MEMBER_GROUP_INFO_UPDATE, apopt);
 						break;
 					}
 					//request monitor group--ack:07
@@ -1201,7 +1207,7 @@ void prvPocGuiOemTaskHandleGroupUpdateOpt(uint32_t id, uint32_t ctx)
 						if(pocOemAttr.signal_multi_call_type == USER_OPRATOR_SIGNAL_CALL)
 						{
 							OSI_PRINTFI("[build][tempgrp](%s)(%d):signal-call, exit group", __func__, __LINE__);
-							lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP, NULL);
+							lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP, (void *)2);
 						}
 						else
 						{
@@ -1285,7 +1291,12 @@ void prvPocGuiOemTaskHandleGroupList(uint32_t id, uint32_t ctx)
 #endif
 			lvPocGuiOemCom_Request_AllGroupInfo();
 			lvPocGuiOemCom_set_obtainning_state(true);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组列表...", NULL);
+			//not allow
+			if(!lvPocGuiOemCom_get_listen_status()
+				&& !lvPocGuiOemCom_get_speak_status())
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组列表...", NULL);
+			}
 			break;
 		}
 	    case LVPOCGUIOEMCOM_SIGNAL_GROUP_LIST_QUERY_REP:
@@ -1310,7 +1321,12 @@ void prvPocGuiOemTaskHandleGroupList(uint32_t id, uint32_t ctx)
 
 			if(0 == strcmp(Grouplist.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_FAILED))
 			{
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				//not allow
+				if(!lvPocGuiOemCom_get_listen_status()
+					&& !lvPocGuiOemCom_get_speak_status())
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				}
 
 				pocOemAttr.pocGetGroupListCb(1, 0, NULL);
 				pocOemAttr.pocGetGroupListCb = NULL;
@@ -1328,10 +1344,12 @@ void prvPocGuiOemTaskHandleGroupList(uint32_t id, uint32_t ctx)
 				//refr group
 				pocOemAttr.pocGetGroupListCb(2, pocOemAttr.GroupData_s.m_Group_Num, &pocOemAttr.GroupData_s);
 				lvPocGuiOemCom_set_obtainning_state(false);
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
-#if GUIIDTCOM_OEM_SELF_MSG
-				lvPocGuiOemCom_set_response_speed(LVPOCOEMCOM_TYPE_REPPONSE_SPEED_NORMAL);
-#endif
+				//not allow
+				if(!lvPocGuiOemCom_get_listen_status()
+					&& !lvPocGuiOemCom_get_speak_status())
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				}
 			}
 			break;
 		}
@@ -1493,7 +1511,12 @@ void prvPocGuiOemTaskHandleSetCurrentGroup(uint32_t id, uint32_t ctx)
 			//request join group
 			lvPocGuiOemCom_Request_Join_Groupx((char *)SetCGroup->m_ucGID);
 			lvPocGuiOemCom_set_obtainning_state(true);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组成员...", NULL);
+			//not allow
+			if(!lvPocGuiOemCom_get_listen_status()
+				&& !lvPocGuiOemCom_get_speak_status())
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组成员...", NULL);
+			}
 
 			lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.member_list.group_member_act, 50, LV_TASK_PRIO_HIGHEST, (void *)SetCGroup->m_ucGName);
             lv_task_once(oncetask);
@@ -1642,7 +1665,12 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 					{
 						lvPocGuiOemCom_Request_Groupx_MemeberInfo((char *)CurrentGUInfo->m_ucGID);
 						lvPocGuiOemCom_set_obtainning_state(true);
-						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取成员列表...", NULL);
+						//not allow
+						if(!lvPocGuiOemCom_get_listen_status()
+							&& !lvPocGuiOemCom_get_speak_status())
+						{
+							lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取成员列表...", NULL);
+						}
 					}
 				}
 				break;
@@ -1678,7 +1706,13 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 
 			if(0 == strcmp(Mmemberlist.buf[1].oembuf, LVPOCPOCOEMCOM_SIGNAL_OPTCODE_FAILED))
 			{
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				//not allow
+				if(!lvPocGuiOemCom_get_listen_status()
+					&& !lvPocGuiOemCom_get_speak_status())
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				}
+
 				if(pocOemAttr.is_member_update == false)
 				{
 					pocOemAttr.pocGetMemberListCb ? pocOemAttr.pocGetMemberListCb(1, 0, NULL) : 0;
@@ -1698,6 +1732,14 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 				{
 					//refr member
 					OSI_PRINTFI("[multi-call](%s)(%d)multi call, start refr list, member'number(%d)", __func__, __LINE__, pocOemAttr.Msg_GroupMemberData_s.dwNum);
+
+					if(pocOemAttr.Msg_GroupMemberData_s.dwNum > 5)//max 5
+					{
+						pocOemAttr.pocGetMemberListCb = NULL;
+						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"错误参数", NULL);
+						lvPocGuiOemCom_set_obtainning_state(false);
+						break;
+					}
 					lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.member_list.group_member_act, 50, LV_TASK_PRIO_HIGHEST, (void *)pocOemAttr.OemCurrentGroupInfo.m_ucGName);
 					lv_task_once(oncetask);
 					lv_task_ready(oncetask);
@@ -1717,6 +1759,7 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 					{
 						OSI_PRINTFI("[signalcall](%s)(%d):have in signal call, break", __func__, __LINE__);
 						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP, NULL);
 						break;
 					}
 
@@ -1741,7 +1784,12 @@ void prvPocGuiOemTaskHandleMemberList(uint32_t id, uint32_t ctx)
 				pocOemAttr.pocGetMemberListCb(2, pocOemAttr.Msg_GroupMemberData_s.dwNum, &pocOemAttr.Msg_GroupMemberData_s);
 				pocOemAttr.pocGetMemberListCb = NULL;
 				lvPocGuiOemCom_set_obtainning_state(false);
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				//not allow
+				if(!lvPocGuiOemCom_get_listen_status()
+					&& !lvPocGuiOemCom_get_speak_status())
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				}
 			}else
 			{
 				//update online or offline member
@@ -1891,17 +1939,13 @@ void prvPocGuiOemTaskHandleMemberSignalCall(uint32_t id, uint32_t ctx)
 					//request member signal call
 					lvPocGuiOemCom_Request_Member_Call((char *)member_call_obj->m_ucUID);
 
-					#if GUIIDTCOM_OEMSINGLECALL_DEBUG_LOG
-					OSI_LOGI(0, "[oemsinglecall]start request single call");
-					#endif
+					OSI_PRINTFI("[oemsinglecall](%s)(%d):start request single call", __func__, __LINE__);
 				}else
 				{
 					member_call_config->func(0, 0);
 					pocOemAttr.is_member_call = true;
 
-					#if GUIIDTCOM_OEMSINGLECALL_DEBUG_LOG
-					OSI_LOGI(0, "[oemsinglecall]recive single call");
-					#endif
+					OSI_PRINTFI("[oemsinglecall](%s)(%d):recive single call", __func__, __LINE__);
 				}
 			}
 			else//exit single
@@ -1917,9 +1961,7 @@ void prvPocGuiOemTaskHandleMemberSignalCall(uint32_t id, uint32_t ctx)
 				member_call_config->func(1, 1);
 				lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP, NULL);
 
-				#if GUIIDTCOM_OEMSINGLECALL_DEBUG_LOG
-				OSI_LOGI(0, "[oemsinglecall]local exit single call");
-				#endif
+				OSI_PRINTFI("[oemsinglecall](%s)(%d):local exit single call", __func__, __LINE__);
 			}
 
 			break;
@@ -1928,29 +1970,35 @@ void prvPocGuiOemTaskHandleMemberSignalCall(uint32_t id, uint32_t ctx)
 		case LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP:
 		{
 			//对方同意了单呼通话
-		    if(pocOemAttr.pocMemberCallCb != NULL)
-		    {
-			    pocOemAttr.pocMemberCallCb(0, 0);
-			    pocOemAttr.pocMemberCallCb = NULL;
-		    }
-
-			#if GUIIDTCOM_OEMSINGLECALL_DEBUG_LOG
-			OSI_LOGI(0, "[oemsinglecall]receive single call ack");
-			#endif
+			if(pocOemAttr.pocMemberCallCb != NULL)
+			{
+				pocOemAttr.pocMemberCallCb(0, 0);
+				pocOemAttr.pocMemberCallCb = NULL;
+			}
+			OSI_PRINTFI("[oemsinglecall](%s)(%d):receive single call ack", __func__, __LINE__);
 
 			break;
 		}
 
 		case LVPOCGUIOEMCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP:
 		{
+			//对方拒绝或内部释放了单呼通话
+			if(ctx == 1)
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"用户忙线中", NULL);
+			}
+			else if(ctx == 2)
+			{
+				poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Member_Call, 30, false);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
+			}
+			else
+			{
+				break;
+			}
 			pocOemAttr.is_member_call = false;
 			pocOemAttr.member_call_dir = 0;
-
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Member_Call, 30, true);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
-
 			lv_poc_activity_func_cb_set.member_call_close();
-
 			OSI_PRINTFI("[oemsinglecall](%s)(%d):exit single call", __func__, __LINE__);
 			break;
 		}
@@ -2429,6 +2477,7 @@ static void prvPocGuiOemTaskHandleOther(uint32_t id, uint32_t ctx)
 			if(lvPocGuiOemCom_get_login_status() == LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS
 				&& lvPocGuiOemCom_cit_status(POC_TMPGRP_READ) != POC_CIT_ENTER)
 			{
+				OSI_PRINTFI("[tts][status](%s)(%d):false", __func__, __LINE__);
 				OEM_TTS_Status_CB(false);
 			}
 			break;
@@ -2438,6 +2487,7 @@ static void prvPocGuiOemTaskHandleOther(uint32_t id, uint32_t ctx)
 		{
 			if(lvPocGuiOemCom_get_login_status() == LVPOCOEMCOM_SIGNAL_LOGIN_SUCCESS)
 			{
+				OSI_PRINTFI("[tts][status](%s)(%d):true", __func__, __LINE__);
 				OEM_TTS_Status_CB(true);
 			}
 			break;
@@ -2553,29 +2603,22 @@ static void prvPocGuiOemTaskHandleOther(uint32_t id, uint32_t ctx)
 				OSI_PRINTFI("[quility][mode](%s)(%d):error", __func__, __LINE__);
 				break;
 			}
-			else
-			{
-				OSI_PRINTFI("[quility][mode](%s)(%d):quilty(%s)", __func__, __LINE__, QuilityMode.buf[1].oembuf);
-			}
 
-			if(0 == strcmp(QuilityMode.buf[3].oembuf, "01"))
+			if(NULL == strstr(QuilityMode.buf[3].oembuf, "01"))
 			{
-				OSI_PRINTFI("[quility][mode](%s)(%d):correct", __func__, __LINE__);
+				OSI_PRINTFI("[quility][mode](%s)(%d):mode error(%s), reconfig", __func__, __LINE__, QuilityMode.buf[3].oembuf);
+				nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+				if(poc_config->current_sound_quality == 0)
+				{
+					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_4K_IND, NULL);
+				}
+				else
+				{
+					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_8K_IND, NULL);
+				}
+				break;
 			}
-			else
-			{
-				OSI_PRINTFI("[quility][mode](%s)(%d):error, mode(%s)", __func__, __LINE__, QuilityMode.buf[3].oembuf);
-//				nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
-//				if(poc_config->current_sound_quality == 0)
-//				{
-//					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_4K_IND, NULL);
-//				}
-//				else
-//				{
-//					lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_SOUND_QUALITY_8K_IND, NULL);
-//				}
-			}
-
+			OSI_PRINTFI("[quility][mode](%s)(%d):quilty(%s), mode(%s)", __func__, __LINE__, QuilityMode.buf[1].oembuf, QuilityMode.buf[3].oembuf);
 			break;
 		}
 
@@ -2820,7 +2863,7 @@ void pocGuiOemComTaskEntry(void *argument)
 	OEMNetworkStatusChange(pocOemAttr.pocnetstatus);
 
 	lvPocGuiOemCom_Request_Set_Tone_Volum("32");//set volum:0-64(hex)
-	lvPocGuiOemCom_Request_Set_Log(OEM_FUNC_CLOSE);
+	lvPocGuiOemCom_Request_Set_Log(OEM_FUNC_OPEN);
 
     while(1)
     {

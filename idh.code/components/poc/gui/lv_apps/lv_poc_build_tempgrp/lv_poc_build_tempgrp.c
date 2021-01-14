@@ -193,6 +193,12 @@ bool lv_poc_build_tempgrp_operator(lv_poc_build_tempgrp_item_info_t * info, int3
 		return false;
 	}
 
+	if(lvPocGuiOemCom_get_listen_status())//listen status cannot launch tmpgrp func
+	{
+		OSI_LOGI(0, "[build][tmpgrp] listen isn't signal");
+		return false;
+	}
+
 	return lv_poc_build_new_tempgrp((void **)lv_poc_build_tempgrp_selected_members, real_num, lv_poc_build_tempgrp_new_group_cb);
 }
 
@@ -355,6 +361,12 @@ void lv_poc_build_tempgrp_open(void)
     {
     	return;
     }
+
+	if(lvPocGuiOemCom_get_listen_status())//listen status cannot build tmpgrp
+	{
+		OSI_LOGI(0, "[membercall] listen isn't signal");
+		return;
+	}
 
 	if(lv_poc_build_tempgrp_member_list == NULL)
 	{

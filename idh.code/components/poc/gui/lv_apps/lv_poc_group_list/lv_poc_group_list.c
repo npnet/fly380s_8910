@@ -223,6 +223,13 @@ static void lv_poc_group_list_set_current_group_cb(int result_type)
 
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 {
+	if(lvPocGuiOemCom_get_listen_status()
+		|| lvPocGuiOemCom_get_speak_status())
+	{
+		OSI_PRINTFI("[voice][listen][speak](%s)(%d)not allow", __func__, __LINE__);
+		return;
+	}
+
 	lv_poc_group_list_item_info_t * p_info = (lv_poc_group_list_item_info_t *)obj->user_data;
 
 	lv_area_t monitor_window_area = {0};
