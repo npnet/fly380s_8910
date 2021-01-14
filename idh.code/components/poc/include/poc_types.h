@@ -66,6 +66,25 @@ struct auPocMemReader
 typedef struct auPocMemReader auPocMemReader_t;
 
 /**
+ * poc audio thread struct
+ */
+ struct pocAudioThread_t
+ {
+ 	osiThread_t *thread;
+	osiMessageQueue_t *queue;
+ };
+
+/**
+ * poc audio msg struct
+ */
+ struct pocAudioMsg_t
+ {
+	int type;
+	const uint8_t *data;
+	uint32_t len;
+ };
+
+/**
  * poc audio player struct
  */
 typedef struct
@@ -96,6 +115,25 @@ typedef struct
 	pocAudioRecorderCallback_t callback;//user specify func
 	bool              status;           //status of recorder
 } pocAudioRecorder_t;
+
+/**
+ * poc audio pipe struct
+ */
+typedef struct PocPipeAttr_T
+{
+	bool plystatus;
+	bool recstatus;
+	osiPipe_t *plypipe;
+	osiPipe_t *recpipe;
+	auPlayer_t *player;
+    auRecorder_t *recorder;
+    osiThread_t *recv_thread_id;
+    osiThread_t *send_thread_id;
+	//
+	auPocMemReader_t * recreader;
+	auPlayer_t * recplayer;
+	bool recpipestatus;
+}PocPipeAttr;
 
 enum
 {

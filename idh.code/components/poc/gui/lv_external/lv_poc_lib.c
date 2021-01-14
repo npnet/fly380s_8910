@@ -72,6 +72,7 @@ static drvGpio_t * poc_iic_sda_gpio = NULL;
 drvGpioConfig_t* configport = NULL;
 
 static bool is_poc_play_voice = false;
+static bool is_poc_listen_tone_complete = false;
 static bool lv_poc_is_insert_headset = false;
 static bool is_first_membercall = false;
 static bool is_play_btn_voice = false;
@@ -90,6 +91,7 @@ static bool poc_power_on_status = false;
 static bool poc_charging_status = false;
 static bool lv_poc_screenon_first = false;
 static bool lv_poc_cit_test_self_record = false;
+static bool lv_poc_is_play_tone_complete = false;
 static void poc_ear_ppt_irq(void *ctx);
 
 static void poc_Lcd_Set_BackLightNess(uint32_t level);
@@ -653,6 +655,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					isPlayVoice = false;
 					is_poc_play_voice = false;
 
+					if(is_poc_listen_tone_complete == true)
+					{
+						is_poc_listen_tone_complete = false;
+						lv_poc_set_play_tone_status(true);
+					}
+
 					if(voice_queue_reader == voice_queue_writer)
 					{
 						prv_play_voice_one_time_thread = NULL;
@@ -717,10 +725,18 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				break;
 			}
 
+			case LVPOCAUDIO_Type_Tone_Start_Listen:
+			{
+				voice_formate = AUSTREAM_FORMAT_MP3;
+				audevSetPlayVolume(40);
+			    is_poc_play_voice = true;
+				is_poc_listen_tone_complete = true;
+				break;
+			}
+
 			case LVPOCAUDIO_Type_Tone_Cannot_Speak:
 			case LVPOCAUDIO_Type_Tone_Lost_Mic:
 			case LVPOCAUDIO_Type_Tone_Note:
-			case LVPOCAUDIO_Type_Tone_Start_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 			case LVPOCAUDIO_Type_Tone_Start_Speak:
@@ -1071,7 +1087,6 @@ LV_POC_GET_SIGNAL_TYPR_ENDLE:
 /*
 	  name : poc_get_operator_network_type_req
 	 param : none
-	author : wangls
   describe : 获取网络类型
 	  date : 2020-07-07
 */
@@ -1091,7 +1106,6 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 
 	if (CFW_NwGetStatus(&nStatusInfo, nSim) != 0)//检索GSM的网络状态
 	{
-		//OSI_LOGI(0, "[song]Failed to retrieve the status of the GSM network!");//检索网络失败
 		strcpy((char *)operat, "UN");
 		_signal_type = MMI_MODEM_PLMN_RAT_UNKNOW;
 		goto LV_POC_GET_SIGNAL_TYPR_ENDLE;
@@ -1115,7 +1129,7 @@ poc_get_operator_network_type_req(IN POC_SIM_ID sim, OUT int8_t * operat, OUT PO
 
 	}
 
-	ret = cereg_Respond(true);//死机，待排查
+	ret = cereg_Respond(true);
 	if(nStatusInfo.nStatus == 0
 		|| nStatusInfo.nStatus == 3
 		|| nStatusInfo.nStatus == 4)
@@ -1189,7 +1203,6 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	if(!poc_check_sim_prsent(sim))
 	{
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
-
 		if(number >= 10 || number == 0)//5min
 		{
 			number = 1;
@@ -1390,7 +1403,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 
 	if(poc_setting->font.big_font_switch == 0)
 	{
-		poc_setting->font.list_page_colum_count = 4;
+		poc_setting->font.list_page_colum_count = 3;//显示几行
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
 		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
@@ -1398,7 +1411,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 	}
 	else if(poc_setting->font.big_font_switch == 1)
 	{
-		poc_setting->font.list_page_colum_count = 3;
+		poc_setting->font.list_page_colum_count = 3;//显示几行
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
 		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_big_font;
@@ -1460,7 +1473,6 @@ poc_get_device_iccid_rep(int8_t * iccid)
     {
 		memset(ICCID, 0, 21);
     }
-    OSI_LOGXI(OSI_LOGPAR_S, 0, "[iccid]iccid %s", ICCID);
     strcpy((char *)iccid, (const char *)ICCID);
 }
 
@@ -2099,16 +2111,11 @@ prv_lv_poc_get_group_list_cb(int msg_type, uint32_t num, CGroup *group)
 bool
 lv_poc_get_group_list(lv_poc_group_list_t * group_list, get_group_list_cb func)
 {
-	#ifndef AP_ASSERT_ENABLE
 	if(group_list == NULL || func == NULL)
 	{
 		OSI_LOGI(0, "[grouprefr](%d):data error", __LINE__);
 		return false;
 	}
-	#else
-	Ap_OSI_ASSERT((group_list != NULL), "[song]delete prv_group_list NULL");
-	Ap_OSI_ASSERT((func != NULL), "[song]delete prv_group_list_cb NULL");
-	#endif
 
 	prv_group_list = group_list;
 	prv_group_list_cb = func;
@@ -2936,6 +2943,28 @@ bool lv_poc_get_first_membercall(void)
 }
 
 /*
+	  name : lv_poc_set_play_tone_status
+	  describe :
+	  param :
+	  date : 2020-12-23
+*/
+void lv_poc_set_play_tone_status(bool status)
+{
+	lv_poc_is_play_tone_complete = status;
+}
+
+/*
+	  name : lv_poc_get_play_tone_status
+	  describe :
+	  param :
+	  date : 2020-12-23
+*/
+bool lv_poc_get_play_tone_status(void)
+{
+	return lv_poc_is_play_tone_complete;
+}
+
+/*
      name : lv_poc_get_audio_voice_status
      param :
      date : 2020-12-04
@@ -2989,7 +3018,14 @@ lv_poc_get_mobile_card_operator(char *operator_name, bool abbr)
 
 	if(poc_iccid == NULL)
 	{
-		abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
+		if(!poc_check_sim_prsent(POC_SIM_1))
+		{
+			abbr ? strcpy(operator_name, "NOSIM") : strcpy(operator_name,"无SIM卡");
+		}
+		else
+		{
+			abbr ? strcpy(operator_name, "SEARCH") : strcpy(operator_name, "正在搜索");
+		}
 	}
 
 	strncpy(poc_iccid_operator, poc_iccid, 6);
@@ -3008,7 +3044,14 @@ lv_poc_get_mobile_card_operator(char *operator_name, bool abbr)
 	}
 	else
 	{
-		abbr ? strcpy(operator_name, "NO") : strcpy(operator_name, "无服务");
+		if(!poc_check_sim_prsent(POC_SIM_1))
+		{
+			abbr ? strcpy(operator_name, "NOSIM") : strcpy(operator_name,"无SIM卡");
+		}
+		else
+		{
+			abbr ? strcpy(operator_name, "SEARCH") : strcpy(operator_name, "正在搜索");
+		}
 	}
 }
 
@@ -3376,6 +3419,7 @@ int lv_poc_type_key_escape_cb(bool status)
 */
 void lv_poc_type_gps_cb(int status)
 {
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
    	nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 	if(status == 0)
 	{
@@ -3393,6 +3437,7 @@ void lv_poc_type_gps_cb(int status)
 		}
 	}
 	lv_poc_setting_conf_write();
+#endif
 }
 
 /*

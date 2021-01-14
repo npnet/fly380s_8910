@@ -172,7 +172,7 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 		}
 		else
 		{
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, 50, true);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, 50, false);
 			lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, false);
 			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_offline, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
 			lv_task_once(once_task);
@@ -199,7 +199,7 @@ static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 		sigal_member_list = lv_list_get_btn_selected(activity_list);
 		if(NULL != strstr(lv_list_get_btn_text(sigal_member_list),"我"))//如果是自己
 		{
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Unable_To_Call_Yourself, 50, true);
+			poc_play_voice_one_time(LVPOCAUDIO_Type_Unable_To_Call_Yourself, 50, false);
 			lv_poc_member_call_obj_information = NULL;
 			return;
 		}

@@ -17,6 +17,7 @@ add_library(${target} STATIC
 	src/poc.c
 	src/poc_audio_player.c
 	src/poc_audio_recorder.c
+	src/poc_audio_pipe.c
 	src/poc_keypad.c
 
 	gui/lv_objx/lv_poc_obj/lv_poc_obj.c

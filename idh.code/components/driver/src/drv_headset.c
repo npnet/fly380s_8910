@@ -210,7 +210,7 @@ void drvDummyHeadsetCustCB(void *ctx, drvHeadsetNotifyMsg_t id, uint32_t param)
         //atCmdRespDefUrcText(rsp);
         OSI_LOGXI(OSI_LOGPAR_S, 0, "%s\n", rsp);
         audevSetInput(0);
-        audevSetOutput(2);
+        audevSetOutput(0);
     }
     break;
 
@@ -281,6 +281,11 @@ void drvHandsetInit(void)
         __sprd_codec_headset_related_oper(d->type);
         if (d->notify_cb != NULL)
             d->notify_cb(d->notify_cb_ctx, MSG_HEADSET_PLUGIN, d->type);
+    }
+	else
+    {
+		if (d->notify_cb != NULL)
+			d->notify_cb(d->notify_cb_ctx, MSG_HEADSET_PLUGOUT, 0);
     }
 }
 

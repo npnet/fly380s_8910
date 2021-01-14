@@ -1193,6 +1193,22 @@ void lv_poc_set_apply_note(lv_poc_apply_note_type_t type);
 */
 lv_poc_apply_note_type_t lv_poc_get_apply_note(void);
 
+/*
+	  name : lv_poc_set_play_tone_status
+	  describe :
+	  param :
+	  date : 2020-12-23
+*/
+void lv_poc_set_play_tone_status(bool status);
+
+/*
+	  name : lv_poc_get_play_tone_status
+	  describe :
+	  param :
+	  date : 2020-12-23
+*/
+bool lv_poc_get_play_tone_status(void);
+
 #ifdef __cplusplus
 }
 #endif

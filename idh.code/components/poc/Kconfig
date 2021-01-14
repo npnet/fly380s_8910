@@ -30,6 +30,12 @@ config POC_AUDIO_PLAYER_SUPPORT
     help
         poc audio player should be supported.
 
+config POC_AUDIO_PLAYER_PIPE_SUPPORT
+	bool "POC audio player pipe supported"
+	default y
+	help
+		poc audio player pipe should be supported.
+
 config POC_KEYPAD_SUPPORT
     bool "POC keypad supported"
     default y
