@@ -12,6 +12,8 @@ extern lv_poc_activity_t * main_menu_activity;
 
 void lv_poc_main_menu_open(void);
 
+void lv_poc_main_menu_refresh(void);
+
 #ifdef __cplusplus
 }
 #endif

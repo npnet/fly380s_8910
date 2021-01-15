@@ -248,6 +248,11 @@ void lv_poc_main_menu_open(void)
    	lv_poc_activity_set_design_cb(main_menu_activity, lv_poc_main_menu_design_cb);
 }
 
+void lv_poc_main_menu_refresh(void)
+{
+	poc_main_menu_update_UI_task(NULL);
+}
+
 #ifdef __cplusplus
 }
 #endif

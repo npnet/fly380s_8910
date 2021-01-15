@@ -169,7 +169,8 @@ static void lv_poc_led_entry(void *param)
                 }
 				case LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS:
                 {
-                	if(pocLedIdtAttr.before_last_status == LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS)
+                	if((pocLedIdtAttr.before_last_status == LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS)
+						&& lv_poc_get_charge_status())
                 	{
 						pocLedIdtAttr.before_status = LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS;
 					}

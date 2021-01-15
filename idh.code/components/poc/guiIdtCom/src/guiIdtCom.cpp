@@ -1976,6 +1976,7 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 			}
 			pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_EXIT;
 			IDT_Exit();
+            pocIdtAttr.isReady = false;//关机后禁止发消息
 			break;
 		}
 
