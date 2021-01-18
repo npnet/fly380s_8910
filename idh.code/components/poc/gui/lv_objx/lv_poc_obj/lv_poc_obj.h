@@ -896,6 +896,10 @@ void lv_poc_net_ping_task_create(void);
 ********************/
 void lv_poc_auto_del_note(bool operate);
 
+bool lv_poc_get_cit_backlight_activity(void);
+
+bool lv_poc_get_cit_mic_activity(void);
+
 #ifdef __cplusplus
 }
 #endif

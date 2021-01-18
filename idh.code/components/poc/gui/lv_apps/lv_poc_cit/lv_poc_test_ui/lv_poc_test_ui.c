@@ -5,6 +5,7 @@ extern "C" {
 #include "stdlib.h"
 #include "gps_nmea.h"
 #include "uart3_gps.h"
+#include "lv_gui_main.h"
 
 static lv_obj_t * activity_create(lv_poc_display_t *display);
 
@@ -194,6 +195,7 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 			}
 			pocCitAttr.screenonoff++;
 			(pocCitAttr.screenonoff % 2 == 1) ? cit_test_info->cit_backlight_attr.cb(0) : cit_test_info->cit_backlight_attr.cb(1);
+			lvGuiUpdateLastActivityTime();	// 刷新屏幕倒计时，防止熄屏闪屏
 			if(pocCitAttr.screenonoff == 8)
 			{
 				if(pocCitAttr.refresh_task)

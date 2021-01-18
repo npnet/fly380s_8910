@@ -247,6 +247,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 				case LV_KEY_ESC:
 				{
+					lvPocGuiComCitStatus(LVPOCCIT_TYPE_EXIT);
 					lv_poc_del_activity(poc_cit_activity);
 					break;
 				}
@@ -292,6 +293,8 @@ void lv_poc_cit_open(void)
     poc_cit_activity = lv_poc_create_activity(&activity_ext, true, true, &control);
     lv_poc_activity_set_signal_cb(poc_cit_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_cit_activity, design_func);
+
+	lvPocGuiComCitStatus(LVPOCCIT_TYPE_ENTER);
 }
 
 #ifdef __cplusplus

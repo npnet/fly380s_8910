@@ -593,7 +593,8 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 	{
 		if(!ttsIsPlaying()
 			&& !lvPocGuiIdtCom_get_listen_status()
-			&& !lvPocGuiIdtCom_get_speak_status())
+			&& !lvPocGuiIdtCom_get_speak_status()
+			&& (lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) != LVPOCCIT_TYPE_ENTER))
 		{
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)20);
 			lv_poc_set_btn_status(true);
@@ -682,6 +683,14 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		}
 
 		if(voice_type <= LVPOCAUDIO_Type_Start_Index || voice_type >= LVPOCAUDIO_Type_End_Index)
+		{
+			continue;
+		}
+
+
+		if((lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) == LVPOCCIT_TYPE_ENTER)
+			&& (voice_type != LVPOCAUDIO_Type_Test_Volum)
+			&& !lv_poc_get_cit_mic_activity())
 		{
 			continue;
 		}

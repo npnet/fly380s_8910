@@ -724,6 +724,7 @@ public:
 	bool   is_check_listen;
 	int    call_error_case;
 	int    current_group_member_dwnum;
+	lv_poc_cit_status_type    isCitStatus;
 } PocGuiIIdtComAttr_t;
 
 typedef struct
@@ -934,6 +935,11 @@ int callback_IDT_CallIn(int ID, char *pcMyNum, char *pcPeerNum, char *pcPeerName
 			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[poc][call in]%s(%d):m_iCallId != -1 and have conf to release group call", __func__, __LINE__);
 			return 0;
 		}
+	}
+
+	if(lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) == LVPOCCIT_TYPE_ENTER)
+	{
+		return -1;
 	}
 
     m_IdtUser.m_iCallId = ID;
@@ -4766,6 +4772,12 @@ extern "C" bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ct
 	    return true;
     }
 
+	if((lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) == LVPOCCIT_TYPE_ENTER)
+		&& (signal < LVPOCGUIIDTCOM_SIGNAL_ENTER_CIT_STATUS ))
+	{
+		return false;
+	}
+
 	static osiEvent_t event = {0};
 
 	uint32_t critical = osiEnterCritical();
@@ -4880,6 +4892,16 @@ extern "C" void lvPocGuiComLogSwitch(bool status)
 	{
 		g_iLog = 0;
 	}
+}
+
+extern "C" lv_poc_cit_status_type lvPocGuiComCitStatus(lv_poc_cit_status_type status)
+{
+	if(status > LVPOCCIT_TYPE_READ_STATUS)
+	{
+		pocIdtAttr.isCitStatus = status;
+	}
+
+	return pocIdtAttr.isCitStatus;
 }
 
 #endif

@@ -3822,6 +3822,22 @@ void lv_poc_auto_del_note(bool operate)
 	lv_poc_warnning_auto_delete();
 }
 
+bool lv_poc_get_cit_backlight_activity(void)
+{
+	return (lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_BACKLIGHT) ? true : false;
+}
+
+bool lv_poc_get_cit_mic_activity(void)
+{
+	if((lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_MIC)
+		|| (lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET))
+	{
+		return true;
+	}
+
+	return false;
+}
+
 #ifdef __cplusplus
 }
 #endif

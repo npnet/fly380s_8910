@@ -118,6 +118,8 @@ typedef enum
 	LVPOCGUIIDTCOM_SIGNAL_SUSPEND_IND,
 	LVPOCGUIIDTCOM_SIGNAL_RESUME_IND,
 
+	LVPOCGUIIDTCOM_SIGNAL_ENTER_CIT_STATUS, // for cit judgement
+
 	LVPOCGUIIDTCOM_SIGNAL_HEADSET_INSERT,
 	LVPOCGUIIDTCOM_SIGNAL_HEADSET_PULL_OUT,
 
@@ -202,6 +204,8 @@ int lvPocGuiIdtCom_get_current_exist_selfgroup(void);
 void lvPocGuiComLogSwitch(bool status);
 
 void lvPocGuiIdtCom_stop_check_ack(void);
+
+lv_poc_cit_status_type lvPocGuiComCitStatus(lv_poc_cit_status_type status);
 
 OSI_EXTERN_C_END
 

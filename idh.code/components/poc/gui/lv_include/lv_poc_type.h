@@ -565,6 +565,13 @@ typedef enum _lv_poc_cit_test_ui_id
 	LV_POC_CIT_OPRATOR_TYPE_END ,//15
 } lv_poc_cit_test_ui_id;
 
+typedef enum{
+    LVPOCCIT_TYPE_READ_STATUS = 0 ,
+    LVPOCCIT_TYPE_ENTER ,
+    LVPOCCIT_TYPE_EXIT ,
+    LVPOCCIT_TYPE_END ,
+}lv_poc_cit_status_type;
+
 #define LV_LCD_WIDTH  (160)
 #define LV_LCD_HEIGHT (128)
 #define LV_KEY_AVERAGE_WIDTH     (LV_LCD_WIDTH/10)

@@ -469,7 +469,15 @@ void lvGuiScreenOff(void)
     lvGuiContext_t *d = &gLvGuiCtx;
 
     if (!d->screen_on)
+    {
         return;
+    }
+
+	if ((lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) == LVPOCCIT_TYPE_ENTER)
+		&& !lv_poc_get_cit_backlight_activity())
+	{
+		return;
+	}
 
     OSI_LOGI(0, "screen off");
     drvLcdSetBackLightEnable(d->lcd, false);
