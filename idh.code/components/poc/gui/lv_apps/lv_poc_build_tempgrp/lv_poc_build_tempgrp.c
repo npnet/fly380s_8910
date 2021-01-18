@@ -113,17 +113,19 @@ void lv_poc_build_tempgrp_list_config(lv_obj_t * list, lv_area_t list_area)
 }
 
 static
-void lv_poc_tempgrp_get_membet_list_cb(int msg_type)
+void lv_poc_build_tempgrp_get_membet_list_cb(int msg_type)
 {
     if(lv_poc_member_list == NULL)
     {
+		OSI_PRINTFI("[tmpgrp](%s)(%d):lv_poc_member_list null", __func__, __LINE__);
 	    return;
     }
 
     if(msg_type == 1)
     {
+		OSI_PRINTFI("[tmpgrp](%s)(%d):get member cb", __func__, __LINE__);
 		lv_poc_build_tempgrp_progress(POC_TMPGRP_GETMEMLIST);
-		lv_poc_member_list_open(NULL, lv_poc_member_list, lv_poc_member_list->hide_offline);
+		lv_poc_build_tempgrp_member_list_open(lv_poc_member_list, lv_poc_member_list->hide_offline);
     }
     else
     {
@@ -138,7 +140,7 @@ void lv_poc_build_tempgrp_new_group_cb(int result_type)
 {
 	if(result_type == 1)
 	{
-		lv_poc_tmpgrp_multi_call_open();
+		lv_poc_build_tempgrp_get_tmpgrp_member_list();
 	}
 	else
 	{
@@ -175,7 +177,8 @@ bool lv_poc_build_tempgrp_operator(lv_poc_build_tempgrp_item_info_t * info, int3
 	int32_t real_num = 0;
 	for(int i = 0; i < info_num; i++)
 	{
-		if(p_info->item_information == NULL)
+		if(p_info == NULL
+			|| (p_info->item_information == NULL))
 		{
 			return false;
 		}
@@ -299,7 +302,18 @@ lv_res_t lv_poc_build_tempgrp_signal_func(struct _lv_obj_t * obj, lv_signal_t si
 					if(lv_poc_is_buildgroup_refr_complete()
 						|| lv_poc_get_refr_error_info())
 					{
-						lv_poc_refr_task_once(lv_poc_build_tempgrp_success_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+						if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) == POC_TMPGRP_FINISH)
+						{
+							if(lvPocGuiOemCom_get_listen_status())//正在接听讲话时不准退出
+							{
+								break;
+							}
+							lv_poc_refr_func_ui(lv_poc_build_tempgrp_memberlist_activity_close, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH, (void *)POC_EXITGRP_INITIATIVE);
+						}
+						else
+						{
+							lv_poc_refr_task_once(lv_poc_build_tempgrp_success_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+						}
 					}
 					break;
 				}
@@ -396,7 +410,7 @@ void lv_poc_build_tempgrp_open(void)
 	}
 }
 
-void lv_poc_tmpgrp_multi_call_open(void)
+void lv_poc_build_tempgrp_get_tmpgrp_member_list(void)
 {
 	if(lv_poc_member_list != NULL)//free
 	{
@@ -433,7 +447,7 @@ void lv_poc_tmpgrp_multi_call_open(void)
 		lv_poc_get_member_list(NULL,
 						lv_poc_member_list,
 						1,
-						lv_poc_tempgrp_get_membet_list_cb);
+						lv_poc_build_tempgrp_get_membet_list_cb);
 	}
 }
 
@@ -493,6 +507,13 @@ void lv_poc_build_tempgrp_refresh(lv_task_t * task)
     lv_coord_t btn_height = (build_tempgrp_display_area.y2 - build_tempgrp_display_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (build_tempgrp_display_area.x2 - build_tempgrp_display_area.x1);
     char member_list_is_first_item = 1;
+
+	if(activity_list == NULL)
+	{
+		lv_poc_set_refr_error_info(true);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空窗口列表", NULL);
+		return;
+	}
     lv_list_clean(activity_list);
 
     if(!(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL))
@@ -744,6 +765,219 @@ lv_poc_status_t lv_poc_build_tempgrp_get_state(lv_poc_oem_member_list *member_li
 	}
 
 	return lv_poc_member_list_get_state(member_list_obj, name, information);
+}
+
+static int8_t lv_poc_build_tempgrp_member_list_title[100] = {0};
+static lv_area_t build_tempgrp_member_list_display_area;
+lv_poc_activity_t * poc_build_tempgrp_member_list_activity;
+static lv_poc_oem_member_list * lv_poc_build_tempgrp_member_list_obj;
+
+void lv_poc_build_tempgrp_member_list_refresh(lv_task_t * task);
+
+static void lv_poc_build_tempgrp_member_list_list_config(lv_obj_t * list, lv_area_t list_area)
+{
+
+}
+
+#if 0
+static void lv_poc_build_tempgrp_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
+{
+	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
+	{
+
+	}
+}
+#endif
+
+static void * lv_poc_build_tempgrp_member_list_list_create(lv_obj_t * parent, lv_area_t display_area)
+{
+    build_tempgrp_member_list_display_area.x1 = display_area.x1;
+    build_tempgrp_member_list_display_area.x2 = display_area.x2;
+    build_tempgrp_member_list_display_area.y1 = display_area.y1;
+    build_tempgrp_member_list_display_area.y2 = display_area.y2;
+    activity_list = lv_poc_list_create(parent, NULL, display_area, lv_poc_build_tempgrp_member_list_list_config);
+    return (void *)activity_list;
+}
+
+static lv_obj_t * lv_poc_build_tempgrp_member_list_activity_create(lv_poc_display_t *display)
+{
+    activity_win = lv_poc_win_create(display, (const char *)lv_poc_build_tempgrp_member_list_title, lv_poc_build_tempgrp_member_list_list_create);
+	lv_poc_notation_refresh();//把弹框显示在最顶层
+	return (lv_obj_t *)activity_win;
+}
+
+static void lv_poc_build_tempgrp_member_list_activity_destory(lv_obj_t *obj)
+{
+	lv_poc_member_list_cb_set_active(ACT_ID_POC_TMPGRP_MEMBER_LIST, false);
+
+	activity_list = NULL;
+	if(activity_win != NULL)
+	{
+		lv_mem_free(activity_win);
+		activity_win = NULL;
+	}
+
+	lv_poc_build_tempgrp_member_list_obj = NULL;
+	poc_build_tempgrp_member_list_activity = NULL;
+}
+
+void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t * task)
+{
+	lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_TMPGRP_MEMBER_LIST,
+		lv_poc_build_tempgrp_member_list_activity_create,
+		lv_poc_build_tempgrp_member_list_activity_destory};
+
+	strcpy((char *)lv_poc_build_tempgrp_member_list_title, (const char *)task->user_data);
+
+	lv_poc_set_buildgroup_refr_is_complete(false);
+	poc_build_tempgrp_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
+	lv_poc_activity_set_signal_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_signal_func);
+	lv_poc_activity_set_design_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_design_func);
+	lv_poc_member_list_cb_set_active(ACT_ID_POC_TMPGRP_MEMBER_LIST, true);
+}
+
+void lv_poc_build_tempgrp_member_list_open(IN lv_poc_oem_member_list *members, IN bool hide_offline)
+{
+	if(members == NULL)
+	{
+		OSI_PRINTFI("[build_tmpgrp_memberopen](%s)(%d):null", __func__, __LINE__);
+		lv_poc_set_refr_error_info(true);
+		return;
+	}
+	lv_poc_build_tempgrp_member_list_obj = (lv_poc_oem_member_list *)members;
+
+	if(lv_poc_build_tempgrp_member_list_obj == NULL)
+	{
+		lv_poc_set_refr_error_info(true);
+		OSI_PRINTFI("[build_tmpgrp_memberopen](%s)(%d):null", __func__, __LINE__);
+		return;
+	}
+
+	lv_poc_build_tempgrp_member_list_obj->hide_offline = hide_offline;
+
+	lv_poc_refr_func_ui(lv_poc_build_tempgrp_member_list_refresh,
+		LVPOCLISTIDTCOM_LIST_PERIOD_100,LV_TASK_PRIO_MID,NULL);
+}
+
+void lv_poc_build_tempgrp_member_list_refresh(lv_task_t * task)
+{
+	lv_poc_oem_member_list *member_list_obj = NULL;
+
+	member_list_obj = (lv_poc_oem_member_list *)task->user_data;
+
+	if(member_list_obj == NULL)
+	{
+		member_list_obj = lv_poc_build_tempgrp_member_list_obj;
+	}
+
+	if(member_list_obj == NULL)
+	{
+		OSI_PRINTFI("[member][refresh](%s)(%d):null", __func__, __LINE__);
+		lv_poc_set_refr_error_info(true);
+		return;
+	}
+
+	if(current_activity != poc_build_tempgrp_member_list_activity)
+	{
+		OSI_PRINTFI("[member][refresh](%s)(%d):cur act error", __func__, __LINE__);
+		lv_poc_set_refr_error_info(true);
+		return;
+	}
+
+	oem_list_element_t * p_cur = NULL;
+	lv_obj_t * btn = NULL;
+	lv_obj_t * btn_index[64];//assume member number is 64
+	lv_coord_t btn_height = (build_tempgrp_member_list_display_area.y2 - build_tempgrp_member_list_display_area.y1)/LV_POC_LIST_COLUM_COUNT;
+
+	int list_item_count = 0;
+	char is_set_btn_selected = 0;
+
+	if(activity_list == NULL)
+	{
+		lv_poc_set_refr_error_info(true);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空窗口列表", NULL);
+		return;
+	}
+	lv_list_clean(activity_list);
+
+	if(!(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL))
+	{
+		OSI_PRINTFI("[member][refresh](%s)(%d):null", __func__, __LINE__);
+		lv_poc_set_refr_error_info(true);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
+		return;
+	}
+
+	p_cur = member_list_obj->online_list;
+	while(p_cur)
+	{
+		btn = lv_list_add_btn(activity_list, &ic_member_online, p_cur->name);
+		btn_index[list_item_count] = btn;
+		list_item_count++;
+		//lv_obj_set_click(btn, true);
+		//lv_obj_set_event_cb(btn, lv_poc_build_tempgrp_member_list_prssed_btn_cb);
+		p_cur->list_item = btn;
+		lv_btn_set_fit(btn, LV_FIT_NONE);
+		lv_obj_set_height(btn, btn_height);
+		btn->user_data = p_cur->information;
+
+		p_cur = p_cur->next;
+	}
+
+	p_cur = member_list_obj->offline_list;
+	while(p_cur)
+	{
+		btn = lv_list_add_btn(activity_list, &ic_member_offline, p_cur->name);
+		btn_index[list_item_count] = btn;
+		list_item_count++;
+		//lv_obj_set_click(btn, true);
+		//lv_obj_set_event_cb(btn, lv_poc_build_tempgrp_member_list_prssed_btn_cb);
+		p_cur->list_item = btn;
+		lv_btn_set_fit(btn, LV_FIT_NONE);
+		lv_obj_set_height(btn, btn_height);
+		btn->user_data = p_cur->information;
+
+		p_cur = p_cur->next;
+	}
+
+	//not find member,index 1
+	if(0 == is_set_btn_selected)
+	{
+		lv_list_set_btn_selected(activity_list, btn_index[0]);
+	}
+
+	lv_poc_set_buildgroup_refr_is_complete(true);
+	lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+
+	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) >= POC_TMPGRP_VIEW
+		&& lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) <= POC_TMPGRP_OPENMEMLIST)
+	{
+		lv_poc_build_tempgrp_progress(POC_TMPGRP_FINISH);
+	}
+}
+
+void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t * task)
+{
+	lv_poc_exitgrp_t type = (lv_poc_exitgrp_t)task->user_data;
+
+	if(type == POC_EXITGRP_PASSIVE
+		&& lvPocGuiOemCom_get_listen_status())
+	{
+		return;
+	}
+
+	lv_poc_set_group_status(false);
+	OSI_LOGI(0, "[tmpgrp]exit memberlist");
+	poc_build_tempgrp_member_list_activity ? lv_poc_del_activity(poc_build_tempgrp_member_list_activity) : 0;
+
+	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) == POC_TMPGRP_FINISH)
+	{
+		OSI_LOGI(0, "[tmpgrp][multi-call]exit multi call");
+		poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Temp_Group, 50, false);
+		type == POC_EXITGRP_INITIATIVE ? \
+		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP, NULL) : 0;
+		lv_poc_build_tempgrp_progress(POC_TMPGRP_START);
+	}
 }
 
 lv_poc_tmpgrp_t lv_poc_build_tempgrp_progress(lv_poc_tmpgrp_t status)

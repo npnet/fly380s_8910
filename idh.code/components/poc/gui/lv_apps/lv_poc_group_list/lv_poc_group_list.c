@@ -139,6 +139,13 @@ static void lv_poc_group_list_list_config(lv_obj_t * list, lv_area_t list_area)
 static
 void lv_poc_group_list_title_refr(lv_task_t * task)
 {
+	if(lv_poc_member_list == NULL)
+	{
+		lv_poc_set_refr_error_info(true);
+		OSI_PRINTFI("[group][refr list title](%s)(%d):member list NULL", __func__, __LINE__);
+		return;
+	}
+
 	lv_poc_member_list_open(lv_poc_group_member_list_title,
 		lv_poc_member_list,
 		lv_poc_member_list->hide_offline);
@@ -148,13 +155,13 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 {
     if(lv_poc_member_list == NULL)
     {
-		OSI_LOGI(0, "[grouprefr](%d):member list NULL", __LINE__);
+		OSI_PRINTFI("[group][getmemberlist](%s)(%d):member list NULL", __func__, __LINE__);
 	    return;
     }
 
     if(msg_type == 1)
     {
-		OSI_LOGI(0, "[grouprefr](%d):success get member list, to refr", __LINE__);
+		OSI_PRINTFI("[group][getmemberlist](%s)(%d):success get member list, to refr", __func__, __LINE__);
 		lv_poc_refr_task_once(lv_poc_group_list_title_refr,
 			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
     }
@@ -237,6 +244,7 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
+		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_GROUP_REFR_REP, NULL);
 		lv_poc_set_current_group((lv_poc_group_info_t)p_element->information, lv_poc_group_list_set_current_group_cb);
 
 		if(lv_poc_member_list == NULL)
@@ -343,6 +351,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 					if(lv_poc_is_grouplist_refr_complete()
 						|| lv_poc_get_refr_error_info())
 					{
+						lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_GROUP_REFR_REP, NULL);
 						lv_poc_group_list_set_hightlight_index();
 						lv_poc_del_activity(poc_group_list_activity);
 					}
@@ -430,6 +439,7 @@ static void lv_poc_get_group_list_cb(int result_type)
 
 	if(result_type == 1)
 	{
+		OSI_PRINTFI("[group][refresh](%s)(%d):goto refresh", __func__, __LINE__);
 		lv_poc_refr_func_ui(lv_poc_group_list_refresh,
 			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH, NULL);
 	}
@@ -719,6 +729,12 @@ void lv_poc_group_list_refresh(lv_task_t * task)
     char is_set_current_group = 1;
 	char is_set_btn_selected = 0;
 
+	if(activity_list == NULL)
+	{
+		lv_poc_set_refr_error_info(true);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空窗口列表", NULL);
+		return;
+	}
     lv_list_clean(activity_list);
 
     if(group_list_obj->group_list == NULL)
@@ -846,6 +862,12 @@ void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj)
 
 	//set hight index
 	lv_poc_group_list_set_hightlight_index();
+
+	if(activity_list == NULL)
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空窗口列表", NULL);
+		return;
+	}
 	lv_list_clean(activity_list);
 	lv_poc_group_list_clear(group_list_obj);
 	OSI_PRINTFI("[grouprefr](%s)(%d):grouplist refresh_with_data running", __func__, __LINE__);

@@ -33,7 +33,7 @@
 #include "uart3_gps.h"
 #include "abup_fota.h"
 
-static bool lv_poc_watchdog_power_on_mode = false;
+static int lv_poc_watchdog_power_on_mode = 0x0;
 static lv_obj_t *poc_power_on_backgroup_sprd_image = NULL;
 static lv_obj_t *poc_power_on_backgroup_image = NULL;
 
@@ -70,13 +70,13 @@ void prv_lv_poc_power_on_backgroup_image(lv_task_t * task)
 	extern lv_img_dsc_t img_poweron_poc_logo_unicom;
 	lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
 }
-
-bool pub_lv_poc_get_watchdog_status(void)
+										//421
+int pub_lv_poc_get_watchdog_status(void)//1(login success)1(join group)1(flag)
 {
 	return lv_poc_watchdog_power_on_mode;
 }
 
-void pub_lv_poc_set_watchdog_status(bool status)
+void pub_lv_poc_set_watchdog_status(int status)
 {
 	lv_poc_watchdog_power_on_mode = status;
 }
@@ -84,11 +84,9 @@ void pub_lv_poc_set_watchdog_status(bool status)
 static void pocIdtStartHandleTask(void * ctx)
 {
     lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_REGISTER_STATUS, true);
-	if(!pub_lv_poc_get_watchdog_status())
-	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, 50, true);
-		osiThreadSleepRelaxed(5000, OSI_WAIT_FOREVER);
-	}
+
+	poc_play_voice_one_time(LVPOCAUDIO_Type_Start_Machine, 50, true);
+	osiThreadSleepRelaxed(5000, OSI_WAIT_FOREVER);
 
 	lv_poc_set_power_on_status(true);
 	while(!poc_get_network_register_status(POC_SIM_1))
@@ -155,7 +153,7 @@ static void pocStartAnimation(void *ctx)
 	else//watchdog
 	{
 		lv_poc_setting_init();
-		osiThreadSleepRelaxed(3000, OSI_WAIT_FOREVER);
+		osiThreadSleepRelaxed(5000, OSI_WAIT_FOREVER);
 		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
 		lv_poc_refr_task_once(prv_lv_poc_power_on_picture,
@@ -231,7 +229,7 @@ void pocStart(void *ctx)
 	else if(boot_causes == OSI_BOOTCAUSE_WDG
 		||  boot_causes == (OSI_BOOTCAUSE_CHARGE|OSI_BOOTCAUSE_WDG))
 	{
-		pub_lv_poc_set_watchdog_status(true);
+		pub_lv_poc_set_watchdog_status(0x7);
 		OSI_LOGI(0, "[launch]poc boot mode is wdg power on");
 		lvGuiInit(pocLvglStart);
 	}
@@ -242,7 +240,7 @@ void pocStart(void *ctx)
 #else
     poc_set_green_blacklight(true);
 #endif
-		pub_lv_poc_set_watchdog_status(false);
+		pub_lv_poc_set_watchdog_status(0x0);
 		lvGuiInit(pocLvglStart);
 	}
 

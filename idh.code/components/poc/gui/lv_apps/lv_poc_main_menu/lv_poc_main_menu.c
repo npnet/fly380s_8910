@@ -109,6 +109,12 @@ static void  lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_t *btn;
     lv_coord_t btn_height = (int16_t)abs(list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_obj_t * btns[5];
+
+	if(list == NULL)
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空窗口列表", NULL);
+		return;
+	}
     lv_list_clean(list);
 
     btn = lv_list_add_btn(list, &ic_menu_friend, (const char *)lv_poc_main_menu_item_text_member_list);

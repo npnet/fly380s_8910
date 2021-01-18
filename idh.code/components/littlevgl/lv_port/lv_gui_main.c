@@ -107,7 +107,7 @@ static const lvGuiKeypadMap_t gLvKeyMap[] = {/*song is here*/
 
 static lvGuiContext_t gLvGuiCtx;
 static bool gLvScreenStatusFirstKey = true;
-extern bool pub_lv_poc_get_watchdog_status(void);
+extern int pub_lv_poc_get_watchdog_status(void);
 extern void pub_lv_poc_set_watchdog_status(bool status);
 
 /**
@@ -278,13 +278,18 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 
 	    if(!pocKeypadHandle(data->key, data->state, &cnt_key_state))
 	    {
-			if(pub_lv_poc_get_watchdog_status())
+			if((pub_lv_poc_get_watchdog_status()&0x1) == 0x1)
 			{
+				int status = pub_lv_poc_get_watchdog_status()&0x6;
+				pub_lv_poc_set_watchdog_status(status);
+				//screen
+				lvGuiRequestSceenOn(3);
 				drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
 				drvLcdSetBackLightEnable(lcd, true);
 				pub_lv_poc_set_watchdog_status(false);
 				poc_setting_conf = lv_poc_setting_conf_read();
 				poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
+				lvGuiReleaseScreenOn(3);
 			}
 			lvGuiScreenOn();
 			OSI_LOGI(0, "[poc][key][screen](%d)wake up", __LINE__);

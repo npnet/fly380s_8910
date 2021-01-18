@@ -34,9 +34,15 @@ lv_poc_status_t lv_poc_build_tempgrp_is_exists(lv_poc_oem_member_list *member_li
 
 lv_poc_status_t lv_poc_build_tempgrp_get_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
 
-lv_poc_tmpgrp_t lv_poc_build_tempgrp_progress(lv_poc_tmpgrp_t status);
+void lv_poc_build_tempgrp_get_tmpgrp_member_list(void);
 
-void lv_poc_tmpgrp_multi_call_open(void);
+void lv_poc_build_tempgrp_member_list_open(IN lv_poc_oem_member_list *members, IN bool hide_offline);
+
+void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t * task);
+
+void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t * task);
+
+lv_poc_tmpgrp_t lv_poc_build_tempgrp_progress(lv_poc_tmpgrp_t status);
 
 #ifdef __cplusplus
 }

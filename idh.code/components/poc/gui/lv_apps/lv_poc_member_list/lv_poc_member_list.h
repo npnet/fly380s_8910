@@ -12,8 +12,6 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
 
 void lv_poc_memberlist_activity_open(lv_task_t * task);
 
-void lv_poc_memberlist_activity_close(lv_poc_exitgrp_t type);
-
 lv_poc_status_t lv_poc_member_list_add(lv_poc_oem_member_list *member_list_obj, const char * name, bool is_online, void * information);
 
 void lv_poc_member_list_clear(lv_poc_oem_member_list *member_list_obj);

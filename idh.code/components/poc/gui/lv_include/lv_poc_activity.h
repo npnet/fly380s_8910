@@ -38,6 +38,7 @@ enum
     ACT_ID_POC_CIT_RESULT_UI,			/*29: cit result ui*/
     ACT_ID_POC_RECORD_PALYBACK,			/*30: record playback*/
     ACT_ID_POC_SOUND_QUALITY,           /*31: sound quality*/
+    ACT_ID_POC_TMPGRP_MEMBER_LIST,      /*32: tempgroup member list*/
     ACT_ID_ANYOBJ,                      /* : any object for example*/
 
     ACT_ID_MAX,

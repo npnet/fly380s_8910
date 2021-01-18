@@ -154,6 +154,12 @@ typedef lv_poc_status_t (*lv_poc_group_list_is_exists_cb)(lv_poc_oem_group_list 
 
 typedef lv_poc_status_t (*lv_poc_group_list_lock_group_cb)(lv_poc_oem_group_list *group_list_obj, lv_poc_group_oprator_type opt);
 
+typedef void (*lv_poc_build_tmpgrp_get_member_list_cb)(void);
+
+typedef void (*lv_poc_build_tmpgrp_open_cb)(lv_task_t * task);
+
+typedef void (*lv_poc_build_tmpgrp_close_cb)(lv_task_t * task);
+
 /*
 	  name : lv_poc_notation_msg
 	  param : msg_type  (1,2)
@@ -201,6 +207,9 @@ typedef struct _lv_poc_activity_attribute_cb_set
 	lvPocLedIdtCom_Msg_cb status_led;
 	void (*member_call_open)(void * information);
 	void (*member_call_close)(void);
+	lv_poc_build_tmpgrp_get_member_list_cb build_tmp_get_info;
+	lv_poc_build_tmpgrp_open_cb build_tmp_open;
+	lv_poc_build_tmpgrp_close_cb build_tmp_close;
 } lv_poc_activity_attribute_cb_set;
 
 typedef struct _lv_poc_build_new_tempgrp_t
@@ -942,13 +951,6 @@ poc_set_gps_ant_status(bool open);
 void *lv_poc_recorder_Thread(void);
 
 /*
-	  name : lv_poc_watchdog_status
-	  param :
-	  date : 2020-10-30
-*/
-bool lv_poc_watchdog_status(void);
-
-/*
 	  name : lv_poc_play_voice_status
 	  param :
 	  date : 2020-11-04
@@ -1373,6 +1375,21 @@ void lv_poc_boot_timeing_task_create(void);
 */
 char *
 lv_poc_boot_time_get_info(void);
+
+/*
+	 name : lv_poc_get_audevplay_status
+	 param :
+	 date : 2021-01-18
+*/
+bool lv_poc_get_audevplay_status(void);
+
+/*
+	  name : lv_poc_set_audevplay_status
+	  param :
+	  date : 2021-01-18
+*/
+void
+lv_poc_set_audevplay_status(bool status);
 
 #ifdef __cplusplus
 }

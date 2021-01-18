@@ -35,7 +35,7 @@
 *                  EXTERN
 *
 *************************************************/
-extern bool pub_lv_poc_get_watchdog_status(void);
+extern int pub_lv_poc_get_watchdog_status(void);
 extern int lv_poc_cit_get_run_status(void);
 extern bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool steals);
 extern bool pubPocIdtGpsTaskStatus(void);
@@ -96,6 +96,7 @@ static bool lv_poc_screenon_first = false;
 static bool lv_poc_cit_test_self_record = false;
 static bool lv_poc_is_play_tone_complete = false;
 static uint16_t poc_cur_unopt_status;
+static bool lv_poc_audevplay_status = false;
 
 //key tone
 struct poc_key_tone
@@ -739,17 +740,21 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 			{
 				ttsStop();
 			}
-			OSI_PRINTFI("[keytone](%s)(%d)launch", __func__, __LINE__);
-			if(!keytoneattr.is_poc_play_voice)//voice play finish
+
+			if(!lv_poc_get_audevplay_status())
 			{
-				lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);//send msg
+				OSI_PRINTFI("[keytone](%s)(%d)launch", __func__, __LINE__);
+				if(!keytoneattr.is_poc_play_voice)//voice play finish
+				{
+					lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);//send msg
+				}
+				poc_set_ext_pa_status(true);
+				audevSetPlayVolume(35);
+				char playkey[4] = "9";
+				ttsPlayText(playkey, strlen(playkey), ML_UTF8);
+				keytoneattr.is_poc_play_key_tone = true;
+				keytoneattr.is_task_cnt = 0;
 			}
-			poc_set_ext_pa_status(true);
-			audevSetPlayVolume(35);
-			char playkey[4] = "9";
-			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
-			keytoneattr.is_poc_play_key_tone = true;
-			keytoneattr.is_task_cnt = 0;
 		}
 		else
 		{
@@ -843,6 +848,20 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		switch(voice_type)
 		{
 			case LVPOCAUDIO_Type_Start_Machine:
+			{
+				if(pub_lv_poc_get_watchdog_status())
+				{
+					audevSetPlayVolume(0);
+				}
+				else
+				{
+					audevSetPlayVolume(50);
+				}
+				keytoneattr.is_poc_play_voice = true;
+				voice_formate = AUSTREAM_FORMAT_MP3;
+				break;
+			}
+
 			case LVPOCAUDIO_Type_Fail_Update_Group:
 			case LVPOCAUDIO_Type_Fail_Update_Member:
 			case LVPOCAUDIO_Type_Insert_SIM_Card:
@@ -906,11 +925,11 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				voice_formate = AUSTREAM_FORMAT_WAVPCM;
 				break;
 		}
-		osiThreadSleep(50);
 
 		if(prv_lv_poc_audio_array[voice_type] != NULL)
 		{
-			while(ttsIsPlaying())//tts
+			while(ttsIsPlaying()//remove silent
+					|| lv_poc_get_audevplay_status())
 			{
 				osiDelayUS(5000);
 			}
@@ -3205,16 +3224,6 @@ void *lv_poc_recorder_Thread(void)
 }
 
 /*
-	  name : lv_poc_watchdog_status
-	  param :
-	  date : 2020-10-30
-*/
-bool lv_poc_watchdog_status(void)
-{
-	return pub_lv_poc_get_watchdog_status();
-}
-
-/*
 	  name : lv_poc_play_voice_status
 	  param :
 	  date : 2020-11-04
@@ -4211,5 +4220,26 @@ lv_poc_boot_time_get_info(void)
 	strcat(boottimeattr.boot_time, sec);
 
 	return boottimeattr.boot_time;
+}
+
+/*
+     name : lv_poc_get_audevplay_status
+     param :
+     date : 2021-01-18
+*/
+bool lv_poc_get_audevplay_status(void)
+{
+   return lv_poc_audevplay_status;
+}
+
+/*
+	  name : lv_poc_set_audevplay_status
+	  param :
+	  date : 2021-01-18
+*/
+void
+lv_poc_set_audevplay_status(bool status)
+{
+	lv_poc_audevplay_status = status;
 }
 

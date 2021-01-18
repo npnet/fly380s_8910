@@ -394,6 +394,11 @@ void lv_poc_member_call_refresh(lv_task_t *task_t)
     lv_obj_t * btn;
     lv_coord_t btn_height = (member_call_display_area.y2 - member_call_display_area.y1)/LV_POC_LIST_COLUM_COUNT;
 
+	if(activity_list == NULL)
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空窗口列表", NULL);
+		return;
+	}
     lv_list_clean(activity_list);
 
 	if(!(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL))

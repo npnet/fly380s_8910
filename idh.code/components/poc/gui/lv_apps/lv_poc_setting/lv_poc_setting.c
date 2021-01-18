@@ -363,6 +363,12 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
 	indic_style = (lv_style_t *)poc_setting_conf->theme.current_theme->style_switch_indic;
 	knob_on_style = (lv_style_t *)poc_setting_conf->theme.current_theme->style_switch_knob_off;
 	knob_off_style = (lv_style_t *)poc_setting_conf->theme.current_theme->style_switch_knob_on;
+
+	if(list == NULL)
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空窗口列表", NULL);
+		return;
+	}
 	lv_list_clean(list);
 
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_btn_voice);

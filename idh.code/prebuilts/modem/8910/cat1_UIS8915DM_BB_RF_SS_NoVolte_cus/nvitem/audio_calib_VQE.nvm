@@ -36792,7 +36792,7 @@
     ITEM_NAME    = ana
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0x2
+    ITEM_CONTENT = 0x1
     ITEM_INDEX   = 3678
     ITEM_PARENT  = 3677
     ITEM_DESC    =  
@@ -36802,7 +36802,7 @@
     ITEM_NAME    = adc
     ITEM_ID      = 632
     ITEM_TYPE    = 2 (SHORT)
-    ITEM_CONTENT = 0xE
+    ITEM_CONTENT = 0xC
     ITEM_INDEX   = 3679
     ITEM_PARENT  = 3677
     ITEM_DESC    =  

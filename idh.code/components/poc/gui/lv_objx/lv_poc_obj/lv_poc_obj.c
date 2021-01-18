@@ -22,7 +22,7 @@ extern "C" {
 *************************************************/
 extern lv_poc_activity_t * poc_group_list_activity;
 extern lv_poc_activity_t * poc_member_list_activity;
-extern bool pub_lv_poc_get_watchdog_status(void);
+extern int pub_lv_poc_get_watchdog_status(void);
 extern int lv_poc_cit_get_run_status(void);
 extern void lv_poc_record_playback_open(void);
 
@@ -150,6 +150,12 @@ static void prv_lv_poc_member_call_open(void * information);
 
 static void prv_lv_poc_member_call_close(void);
 
+static void prv_lv_poc_build_tempgrp_get_member_list(void);
+
+static void prv_lv_poc_build_tmpgrp_open(lv_task_t *task);
+
+static void prv_lv_poc_build_tmpgrp_close(lv_task_t *task);
+
 static bool prv_lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
 
 static __attribute__((unused)) lv_poc_activity_attribute_cb_set_obj prv_lv_poc_activity_attribute_cb_set = {
@@ -253,6 +259,9 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
     .status_led = prv_lvPocLedIdtCom_Msg_func,
     .member_call_open = prv_lv_poc_member_call_open,
     .member_call_close = prv_lv_poc_member_call_close,
+	.build_tmp_get_info = prv_lv_poc_build_tempgrp_get_member_list,
+    .build_tmp_open = prv_lv_poc_build_tmpgrp_open,
+    .build_tmp_close = prv_lv_poc_build_tmpgrp_close,
 };
 
 
@@ -2161,6 +2170,23 @@ static void prv_lv_poc_member_call_close_cb(lv_task_t *task)
 static void prv_lv_poc_member_call_close(void)
 {
 	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_close_cb, 5, LV_TASK_PRIO_HIGH, NULL);
+	lv_task_once(once_task);
+}
+
+static void prv_lv_poc_build_tempgrp_get_member_list(void)
+{
+	lv_poc_build_tempgrp_get_tmpgrp_member_list();
+}
+
+static void prv_lv_poc_build_tmpgrp_open(lv_task_t *task)
+{
+	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_member_list_activity_open, 5, LV_TASK_PRIO_HIGH, (void *)task->user_data);
+	lv_task_once(once_task);
+}
+
+static void prv_lv_poc_build_tmpgrp_close(lv_task_t *task)
+{
+	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_memberlist_activity_close, 5, LV_TASK_PRIO_HIGH, (void *)task->user_data);
 	lv_task_once(once_task);
 }
 
