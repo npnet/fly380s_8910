@@ -1209,6 +1209,10 @@ void lv_poc_set_play_tone_status(bool status);
 */
 bool lv_poc_get_play_tone_status(void);
 
+void lv_poc_set_cur_grp_list_status(bool status);
+
+bool lv_poc_get_cur_grp_list_status(void);
+
 #ifdef __cplusplus
 }
 #endif

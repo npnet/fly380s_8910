@@ -2008,6 +2008,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			if(pocIdtAttr.loginstatus_t != LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS
 				|| lv_poc_get_apply_note() == POC_APPLY_NOTE_TYPE_NOLOGIN)
 			{
+				OSI_PRINTFI("[group][%s][%d]login status is (%d), apply note is (%d)", __func__, __LINE__, lvPocGetLoginStatus(), lv_poc_get_apply_note());
 				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_ING;
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "尝试登录中...");
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
@@ -2891,8 +2892,11 @@ static void prvPocGuiIdtTaskHandleMemberInfo(uint32_t id, uint32_t ctx)
 						else
 						{
 							pocIdtAttr.isLockGroupStatus = true;
-							lv_poc_activity_func_cb_set.group_list.lock_group(NULL, LV_POC_GROUP_OPRATOR_TYPE_LOCK);
-
+							if(!lv_poc_get_cur_grp_list_status())
+							{
+								lv_poc_activity_func_cb_set.group_list.lock_group(NULL, LV_POC_GROUP_OPRATOR_TYPE_LOCK);
+							}
+							lv_poc_set_cur_grp_list_status(false);
 							nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 							strcpy((char *)poc_config->old_account_current_group, lock_group_num);
 					        lv_poc_setting_conf_write();
@@ -3950,12 +3954,7 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 			{
 				if(pocIdtAttr.pocDeleteGroupcb != NULL)//local poc delete group updater it
 				{
-					#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG|GUIIDTCOM_IDTGROUPLISTDEL_DEBUG_LOG
-					char cOutstr[128] = {0};
-		    		cOutstr[0] = '\0';
-		    		sprintf(cOutstr, "[grouprefr][idtgroupdel]%s(%d):start del group cb, groupnum[%s]", __func__, __LINE__, grop->pGroup.ucNum);
-		    		OSI_LOGI(0, cOutstr);
-					#endif
+		    		OSI_PRINTFI("[grouprefr][idtgroupdel]%s(%d):start del group cb, groupnum[%s]", __func__, __LINE__, grop->pGroup.ucNum);
 
 					pocIdtAttr.pocDeleteGroupcb(grop->wRes);//0 success
 					pocIdtAttr.pocDeleteGroupcb = NULL;
@@ -3969,12 +3968,7 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 				{
 					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_GROUP_LIST_INCLUDE_SELF, NULL);
 
-					#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG
-					char cOutstr2[256] = {0};
-		    		cOutstr2[0] = '\0';
-		    		sprintf(cOutstr2, "[idtgroupdel]%s(%d):lock group[%s], del group[%s]", __func__, __LINE__, pocIdtAttr.pLockGroup->m_ucGNum, grop->pGroup.ucNum);
-		    		OSI_LOGI(0, cOutstr2);
-					#endif
+		    		OSI_PRINTFI("[idtgroupdel]%s(%d):lock group[%s], del group[%s]", __func__, __LINE__, pocIdtAttr.pLockGroup->m_ucGNum, grop->pGroup.ucNum);
 
 					if(0 == strcmp((char *)pocIdtAttr.pLockGroup->m_ucGNum, (char *)grop->pGroup.ucNum))//delete lock group
 					{
@@ -3991,35 +3985,19 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 					strcpy((char *)poc_config->selfbuild_group_num, (char *)"");
 			    	lv_poc_setting_conf_write();
 
-					#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG
-					char cOutstr2[256] = {0};
-		    		cOutstr2[0] = '\0';
-		    		sprintf(cOutstr2, "[idtgroupdel]%s(%d):del self_build group[%s]", __func__, __LINE__, grop->pGroup.ucNum);
-		    		OSI_LOGI(0, cOutstr2);
-					#endif
+		    		OSI_PRINTFI("[idtgroupdel]%s(%d):del self_build group[%s]", __func__, __LINE__, grop->pGroup.ucNum);
 				}
 
 				break;
 			}
 
-			#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG|GUIIDTCOM_IDTGROUPLISTDEL_DEBUG_LOG
-			char cOutstr[128] = {0};
-    		cOutstr[0] = '\0';
-    		sprintf(cOutstr, "[grouprefr][idtgroupdel]%s(%d):other del opt", __func__, __LINE__);
-    		OSI_LOGI(0, cOutstr);
-			#endif
 
 			break;
 		}
 
 		case LVPOCGUIIDTCOM_SIGNAL_UNLOCK_BE_DELETED_LOCK_GROUP_IND:
 		{
-			#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG|GUIIDTCOM_IDTGROUPLISTDEL_DEBUG_LOG
-			char cOutstr[128] = {0};
-    		cOutstr[0] = '\0';
-    		sprintf(cOutstr, "[grouprefr][idtgroupdel]%s(%d):start unlock be deleted group", __func__, __LINE__);
-    		OSI_LOGI(0, cOutstr);
-			#endif
+    		OSI_PRINTFI("[grouprefr][idtgroupdel]%s(%d):start unlock be deleted group", __func__, __LINE__);
 
 			pocIdtAttr.lockGroupOpt = LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_BE_DELETED_GROUP;
 			IDT_SetGMemberExtInfo(0, NULL, (UCHAR *)"#", NULL);//解锁被删除的组
@@ -4036,12 +4014,7 @@ static void prvPocGuiIdtTaskHandleDeleteGroup(uint32_t id, uint32_t ctx)
 			strcpy((char *)pocIdtAttr.pLockGroup->m_ucGName, (const char *)"");
 			pocIdtAttr.pLockGroup->m_ucPriority = 0;
 
-			#if GUIIDTCOM_GROUPLISTREFR_DEBUG_LOG|GUIIDTCOM_IDTGROUPLISTDEL_DEBUG_LOG
-			char cOutstr[128] = {0};
-    		cOutstr[0] = '\0';
-    		sprintf(cOutstr, "[grouprefr][idtgroupdel]%s(%d):be deleted group, have unlocked success", __func__, __LINE__);
-    		OSI_LOGI(0, cOutstr);
-			#endif
+    		OSI_PRINTFI("[grouprefr][idtgroupdel]%s(%d):be deleted group, have unlocked success", __func__, __LINE__);
 			break;
 		}
 
@@ -4098,6 +4071,7 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SCREEN_ON_IND:
 		{
+			lv_poc_set_cur_grp_list_status(true);
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_LOCK_GROUP_STATUS_IND, NULL);
 			break;
 		}
@@ -4902,6 +4876,11 @@ extern "C" lv_poc_cit_status_type lvPocGuiComCitStatus(lv_poc_cit_status_type st
 	}
 
 	return pocIdtAttr.isCitStatus;
+}
+
+extern "C" uint16_t lvPocGetLoginStatus(void)
+{
+	return pocIdtAttr.loginstatus_t;
 }
 
 #endif

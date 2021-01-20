@@ -207,6 +207,8 @@ void lvPocGuiIdtCom_stop_check_ack(void);
 
 lv_poc_cit_status_type lvPocGuiComCitStatus(lv_poc_cit_status_type status);
 
+uint16_t lvPocGetLoginStatus(void);
+
 OSI_EXTERN_C_END
 
 #endif

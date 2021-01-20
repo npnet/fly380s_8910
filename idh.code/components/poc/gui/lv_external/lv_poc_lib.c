@@ -76,6 +76,7 @@ static bool is_poc_listen_tone_complete = false;
 static bool lv_poc_is_insert_headset = false;
 static bool is_first_membercall = false;
 static bool is_play_btn_voice = false;
+static bool is_group_list_btn = false;
 
 static bool poc_earkey_state = false;
 static bool poc_key_state = false;
@@ -1370,7 +1371,7 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
 	poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
 	poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_big_font;
-	poc_setting->font.cit_label_current_font = poc_setting->font.cit_label_small_font;
+	poc_setting->font.cit_label_current_font = poc_setting->font.cit_label_big_font;
 	poc_setting->volume = 5;
 	poc_setting->language = 0;
 	poc_setting->is_exist_selfgroup = 1;
@@ -1412,7 +1413,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 
 	if(poc_setting->font.big_font_switch == 0)
 	{
-		poc_setting->font.list_page_colum_count = 3;//显示几行
+		poc_setting->font.list_page_colum_count = 4;//显示几行
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_small_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_small_font;
 		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
@@ -1424,7 +1425,7 @@ poc_mmi_poc_setting_config_restart(OUT nv_poc_setting_msg_t * poc_setting)
 		poc_setting->font.list_btn_current_font = poc_setting->font.list_btn_big_font;
 		poc_setting->font.about_label_current_font = poc_setting->font.about_label_big_font;
 		poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_big_font;
-		poc_setting->font.cit_label_current_font = poc_setting->font.cit_label_small_font;
+		poc_setting->font.cit_label_current_font = poc_setting->font.cit_label_big_font;
 	}
 #endif
 }
@@ -1841,6 +1842,11 @@ static PocEarKeyComAttr_t ear_key_attr = {0};
 
 static void Lv_ear_ppt_timer_cb(void *ctx)
 {
+	if(!lv_poc_get_headset_is_ready())
+	{
+		return;
+	}
+
 	if(drvGpioRead(poc_ear_ppt_gpio) == false)//press
 	{
 		static int checkcbpress = 0;
@@ -1917,6 +1923,11 @@ void lv_poc_ear_ppt_key_init(void)
 static
 void poc_ear_ppt_irq(void *ctx)
 {
+	if(!lv_poc_get_headset_is_ready())
+	{
+		return;
+	}
+
 	if(ear_key_attr.ear_key_press == false)
 	{
 		if(!osiTimerStop(ear_key_attr.ear_press_timer))
@@ -1934,6 +1945,7 @@ void poc_ear_ppt_irq(void *ctx)
 	}
 	else//press
 	{
+		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SET_SCREEN_STATUS_IND, NULL);
 		osiTimerStart(ear_key_attr.ear_press_timer, 80);
 		OSI_LOGI(0, "[headset]ear time start\n");
 	}
@@ -3585,5 +3597,15 @@ void lv_poc_set_apply_note(lv_poc_apply_note_type_t type)
 lv_poc_apply_note_type_t lv_poc_get_apply_note(void)
 {
 	return lv_poc_note_type;
+}
+
+void lv_poc_set_cur_grp_list_status(bool status)
+{
+   is_group_list_btn = status;
+}
+
+bool lv_poc_get_cur_grp_list_status(void)
+{
+   return is_group_list_btn;
 }
 

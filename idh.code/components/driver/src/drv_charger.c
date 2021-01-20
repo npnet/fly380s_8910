@@ -118,18 +118,18 @@ uint8_t gChgTaskReady = 0;
 #define BAT_CAPACITY_STEP 12
 static uint16_t dischg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
     {
-        {4120, 100},
-        {4060, 90},
-        {3979, 80},
-        {3900, 70},
-        {3840, 60},
-        {3800, 50},
-        {3760, 40},
-        {3730, 30},
-        {3700, 20},
-        {3650, 15},
-        {3600, 5},
-        {3501, 0},
+        {4120 - 13, 100},
+        {4060 - 19, 90},
+        {3979 - 19, 80},
+        {3900 - 17, 70},
+        {3840 - 22, 60},
+        {3800 - 22, 50},
+        {3760 - 20, 40},
+        {3730 - 17, 30},
+        {3700 - 17, 20},
+        {3650 - 17, 15},
+        {3600 - 17, 5},
+        {3501 - 12, 0},
 };
 
 static uint16_t chg_bat_capacity_table[BAT_CAPACITY_STEP][2] =
@@ -1150,11 +1150,10 @@ static uint32_t _drvChargerCheckChargerIsOverVolBySoft(uint32_t chgVol)
 /*****************************************************************************/
 static uint32_t _drvChargerGetVbatVol(void)
 {
-	OSI_LOGI(0, "[chg]into _drvChargerGetVbatVol");
     uint32_t vol;
 
     vol = (uint32_t)drvAdcGetChannelVolt(ADC_CHANNEL_VBATSENSE, ADC_SCALE_5V000);
-    OSI_LOGI(0, "chg: _drvChargerGetVbatVol vol:%d", vol);
+    OSI_LOGD(0, "chg: _drvChargerGetVbatVol vol:%d", vol);
     return vol;
 }
 static uint32_t _drvChargerCheckIsBatOverVolBySoft(uint32_t batChargingVol)

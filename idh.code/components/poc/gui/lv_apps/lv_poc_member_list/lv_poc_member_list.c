@@ -324,6 +324,7 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	}
 	else
 	{
+		OSI_PRINTFI("[group][%s][%d]login status is (%d), apply note is (%d)", __func__, __LINE__, lvPocGetLoginStatus(), lv_poc_get_apply_note());
 		lv_poc_set_refr_error_info(true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
@@ -386,6 +387,7 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
 		OSI_LOGI(0, "[song]member null to get\n");
 		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
 		{
+			OSI_PRINTFI("[group][%s][%d]login status is (%d), apply note is (%d)", __func__, __LINE__, lvPocGetLoginStatus(), lv_poc_get_apply_note());
 			lv_poc_set_refr_error_info(true);
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);

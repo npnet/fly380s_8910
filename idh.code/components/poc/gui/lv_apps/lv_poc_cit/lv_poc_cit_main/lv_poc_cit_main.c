@@ -248,6 +248,9 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 				case LV_KEY_ESC:
 				{
 					lvPocGuiComCitStatus(LVPOCCIT_TYPE_EXIT);
+					/*恢复run闪烁*/
+					lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+					lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
 					lv_poc_del_activity(poc_cit_activity);
 					break;
 				}

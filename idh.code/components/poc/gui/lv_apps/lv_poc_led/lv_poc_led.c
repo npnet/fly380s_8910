@@ -30,6 +30,7 @@ static void callback_lv_poc_green_open_red_jump(void);
 static void callback_lv_poc_green_jump_red_jump(void);
 static void Lv_Poc_Led_Status_Callback_Check(lv_task_t *task);
 static void Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2);
+static void Lv_Poc_Led_Status_Task_Handle_Headset_Insert(uint32_t id, uint32_t ctx1, uint32_t ctx2);
 
 typedef void (*lv_poc_led_jump_status)(void);
 
@@ -309,6 +310,13 @@ static void lv_poc_led_entry(void *param)
 					break;
 				}
 
+				case LVPOCGUIIDTCOM_SIGNAL_HEADSET_PLUGIN_IND:
+				case LVPOCGUIIDTCOM_SIGNAL_HEADSET_PLUGOUT_IND:
+				{
+					Lv_Poc_Led_Status_Task_Handle_Headset_Insert(event.param1, event.param2, event.param3);
+					break;
+				}
+
 				default:
 				{
 					OSI_LOGI(0, "[IDTLED][EVENT]default error");
@@ -548,6 +556,35 @@ Lv_Poc_Led_Status_Task_Handle_Other(uint32_t id, uint32_t ctx1, uint32_t ctx2)
 		}
 	}
 
+}
+
+static void Lv_Poc_Led_Status_Task_Handle_Headset_Insert(uint32_t id, uint32_t ctx1, uint32_t ctx2)
+{
+   switch(id)
+   {
+	  case LVPOCGUIIDTCOM_SIGNAL_HEADSET_PLUGIN_IND:
+	  {
+		 if(!lvPocGuiIdtCom_get_listen_status()
+			&& !lvPocGuiIdtCom_get_speak_status())
+		 {
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机插入", (const uint8_t *)"");
+		 }
+		 break;
+	  }
+	  case LVPOCGUIIDTCOM_SIGNAL_HEADSET_PLUGOUT_IND:
+	  {
+		 if(!lvPocGuiIdtCom_get_listen_status()
+			&& !lvPocGuiIdtCom_get_speak_status())
+		 {
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机拔出", (const uint8_t *)"");
+		 }
+		 break;
+	  }
+	  default:
+		 break;
+   }
 }
 
 #ifdef __cplusplus
