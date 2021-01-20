@@ -325,7 +325,7 @@ static void fota_list_config(lv_obj_t * list, lv_area_t list_area)
     int label_array_size = sizeof(lv_poc_fota_label_array)/sizeof(lv_poc_fota_label_struct_t);
     lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
-	strcpy(lv_poc_fota_text_cur_version, "8910DM_A500L_ZZD_V1.0.1");
+	strcpy(lv_poc_fota_text_cur_version, "8910DM_A500L_ZZD_V1.0.2");
 	strcpy(lv_poc_fota_text_cur_status, "检查版本");
 
     for(int i = 0; i < label_array_size; i++)

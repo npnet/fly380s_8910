@@ -39,6 +39,8 @@ extern int pub_lv_poc_get_watchdog_status(void);
 extern int lv_poc_cit_get_run_status(void);
 extern bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool steals);
 extern bool pubPocIdtGpsTaskStatus(void);
+extern lv_poc_activity_t * poc_group_list_activity;
+extern lv_poc_activity_t * poc_member_list_activity;
 
 /*************************************************
 *
@@ -97,6 +99,18 @@ static bool lv_poc_cit_test_self_record = false;
 static bool lv_poc_is_play_tone_complete = false;
 static uint16_t poc_cur_unopt_status;
 static bool lv_poc_audevplay_status = false;
+
+//play voice
+struct poc_voice_player
+{
+	bool isPlayVoice;
+	LVPOCAUDIO_Type_e voice_queue[10];
+	int voice_queue_reader;
+	int voice_queue_writer;
+	LVPOCAUDIO_Type_e voice_type;
+	auStreamFormat_t voice_formate;
+};
+static struct poc_voice_player poc_voice_player_attr = {0};
 
 //key tone
 struct poc_key_tone
@@ -748,7 +762,6 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 				{
 					lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);//send msg
 				}
-				poc_set_ext_pa_status(true);
 				audevSetPlayVolume(35);
 				char playkey[4] = "9";
 				ttsPlayText(playkey, strlen(playkey), ML_UTF8);
@@ -769,13 +782,16 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 {
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
    	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
-	bool isPlayVoice = false;
+	poc_voice_player_attr.isPlayVoice = false;
 	osiEvent_t event = {0};
-	LVPOCAUDIO_Type_e voice_queue[10] = {0};
-	int voice_queue_reader = 0;
-	int voice_queue_writer = 0;
-	LVPOCAUDIO_Type_e voice_type = 0;
-	auStreamFormat_t voice_formate = AUSTREAM_FORMAT_UNKNOWN;
+	for(int i = 0; i < 10; i++)
+	{
+		poc_voice_player_attr.voice_queue[i] = 0;
+	}
+	poc_voice_player_attr.voice_queue_reader = 0;
+	poc_voice_player_attr.voice_queue_writer = 0;
+	poc_voice_player_attr.voice_type = 0;
+	poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_UNKNOWN;
 
 	while(1)
 	{
@@ -786,31 +802,31 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				continue;
 			}
 
-			voice_type = event.param1;
+			poc_voice_player_attr.voice_type = event.param1;
 
 			if(event.param2 > 0)
 			{
-				if(isPlayVoice)
+				if(poc_voice_player_attr.isPlayVoice)
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
-					isPlayVoice = false;
+					poc_voice_player_attr.isPlayVoice = false;
 				}
 			}
-			else if(isPlayVoice)
+			else if(poc_voice_player_attr.isPlayVoice)
 			{
-				voice_queue[voice_queue_writer] = voice_type;
-				voice_queue_writer = (voice_queue_writer + 1) % 10;
+				poc_voice_player_attr.voice_queue[poc_voice_player_attr.voice_queue_writer] = poc_voice_player_attr.voice_type;
+				poc_voice_player_attr.voice_queue_writer = (poc_voice_player_attr.voice_queue_writer + 1) % 10;
 				continue;
 			}
 		}
 		else
 		{
-			if(isPlayVoice)
+			if(poc_voice_player_attr.isPlayVoice)
 			{
 				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 50))
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
-					isPlayVoice = false;
+					poc_voice_player_attr.isPlayVoice = false;
 					keytoneattr.is_poc_play_voice = false;
 
 					if(is_poc_listen_tone_complete == true)
@@ -819,7 +835,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 						lv_poc_set_play_tone_status(true);
 					}
 
-					if(voice_queue_reader == voice_queue_writer)
+					if(poc_voice_player_attr.voice_queue_reader == poc_voice_player_attr.voice_queue_writer)
 					{
 						prv_play_voice_one_time_thread = NULL;
 						lvPocGuiOemCom_CriRe_Msg(LVPOCGUIOEMCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE, NULL);
@@ -832,20 +848,20 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				}
 			}
 
-			if(voice_queue_reader == voice_queue_writer)
+			if(poc_voice_player_attr.voice_queue_reader == poc_voice_player_attr.voice_queue_writer)
 			{
 				continue;
 			}
-			voice_type = voice_queue[voice_queue_reader];
-			voice_queue_reader = (voice_queue_reader + 1) % 10;
+			poc_voice_player_attr.voice_type = poc_voice_player_attr.voice_queue[poc_voice_player_attr.voice_queue_reader];
+			poc_voice_player_attr.voice_queue_reader = (poc_voice_player_attr.voice_queue_reader + 1) % 10;
 		}
 
-		if(voice_type <= LVPOCAUDIO_Type_Start_Index || voice_type >= LVPOCAUDIO_Type_End_Index)
+		if(poc_voice_player_attr.voice_type <= LVPOCAUDIO_Type_Start_Index || poc_voice_player_attr.voice_type >= LVPOCAUDIO_Type_End_Index)
 		{
 			continue;
 		}
 
-		switch(voice_type)
+		switch(poc_voice_player_attr.voice_type)
 		{
 			case LVPOCAUDIO_Type_Start_Machine:
 			{
@@ -858,7 +874,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					audevSetPlayVolume(50);
 				}
 				keytoneattr.is_poc_play_voice = true;
-				voice_formate = AUSTREAM_FORMAT_MP3;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
 				break;
 			}
 
@@ -886,7 +902,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Enter_Temp_Group:
          	case LVPOCAUDIO_Type_Exit_Temp_Group:
 			{
-				voice_formate = AUSTREAM_FORMAT_MP3;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
 				audevSetPlayVolume(50);
 			    keytoneattr.is_poc_play_voice = true;
 				break;
@@ -894,14 +910,14 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 
 			case LVPOCAUDIO_Type_Test_Volum:
 			{
-				voice_formate = AUSTREAM_FORMAT_MP3;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
 			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
 
 			case LVPOCAUDIO_Type_Tone_Start_Listen:
 			{
-				voice_formate = AUSTREAM_FORMAT_MP3;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
 				audevSetPlayVolume(40);
 			    keytoneattr.is_poc_play_voice = true;
 				is_poc_listen_tone_complete = true;
@@ -915,27 +931,31 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 			case LVPOCAUDIO_Type_Tone_Start_Speak:
 			{
-				voice_formate = AUSTREAM_FORMAT_MP3;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
 				audevSetPlayVolume(40);
 			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
 
 			default:
-				voice_formate = AUSTREAM_FORMAT_WAVPCM;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_WAVPCM;
 				break;
 		}
 
-		if(prv_lv_poc_audio_array[voice_type] != NULL)
+		while(ttsIsPlaying())
 		{
-			while(ttsIsPlaying()//remove silent
-					|| lv_poc_get_audevplay_status())
-			{
-				osiDelayUS(5000);
-			}
-			poc_set_ext_pa_status(true);
-			auPlayerStartMem(prv_play_voice_one_time_player, voice_formate, params, prv_lv_poc_audio_array[voice_type]->data, prv_lv_poc_audio_array[voice_type]->data_size);
-			isPlayVoice = true;
+			osiDelayUS(20000);
+		}
+
+		if(lv_poc_get_audevplay_status())
+		{
+			continue;
+		}
+
+		if(prv_lv_poc_audio_array[poc_voice_player_attr.voice_type] != NULL)
+		{
+			auPlayerStartMem(prv_play_voice_one_time_player, poc_voice_player_attr.voice_formate, params, prv_lv_poc_audio_array[poc_voice_player_attr.voice_type]->data, prv_lv_poc_audio_array[poc_voice_player_attr.voice_type]->data_size);
+			poc_voice_player_attr.isPlayVoice = true;
 		}
 	}
 }
@@ -1429,6 +1449,7 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NONETWORK);
 		return false;
 	}
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
 	return true;
 }
 
@@ -4126,13 +4147,24 @@ lv_poc_stop_player_voice(void)
 {
 	if(auPlayerGetStatus(prv_play_voice_one_time_player))
 	{
-		if(auPlayerStop(prv_play_voice_one_time_player))
-		{
-			return 1;
-		}
+//		if(auPlayerStop(prv_play_voice_one_time_player))
+//		{
+//			return 1;
+//		}
 		return 0;
 	}
 	return 2;
+}
+
+/*
+     name : lv_poc_get_keytone_status
+     param :
+     date : 2021-01-19
+*/
+bool
+lv_poc_get_keytone_status(void)
+{
+	return keytoneattr.is_poc_play_key_tone;
 }
 
 #ifdef CONFIG_POC_LOW_POWER_SUPPORT
@@ -4241,5 +4273,35 @@ void
 lv_poc_set_audevplay_status(bool status)
 {
 	lv_poc_audevplay_status = status;
+}
+
+/*
+	  name : lv_poc_get_is_in_memberlist
+	  param :
+	  date : 2021-01-19
+*/
+bool
+lv_poc_get_is_in_memberlist(void)
+{
+	if(poc_member_list_activity == lv_poc_get_current_activity())
+	{
+		return true;
+	}
+	return false;
+}
+
+/*
+	  name : lv_poc_get_is_in_grouplist
+	  param :
+	  date : 2021-01-19
+*/
+bool
+lv_poc_get_is_in_grouplist(void)
+{
+	if(poc_group_list_activity == lv_poc_get_current_activity())
+	{
+		return true;
+	}
+	return false;
 }
 

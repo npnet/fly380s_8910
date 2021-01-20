@@ -244,7 +244,6 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 
 	if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
 	{
-		lvPocGuiOemCom_Msg(LVPOCGUIOEMCOM_SIGNAL_STOP_GROUP_REFR_REP, NULL);
 		lv_poc_set_current_group((lv_poc_group_info_t)p_element->information, lv_poc_group_list_set_current_group_cb);
 
 		if(lv_poc_member_list == NULL)

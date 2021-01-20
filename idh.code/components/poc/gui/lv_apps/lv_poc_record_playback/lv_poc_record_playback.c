@@ -415,7 +415,6 @@ void lv_poc_record_playback_thread(void * ctx)
 		if(poc_record_playback_attr.index >= 0
 			&& poc_record_playback_attr.index <= 4)
 		{
-			poc_set_ext_pa_status(true);
 			bool status = auPlayerStartFile(poc_record_playback_attr.player, AUSTREAM_FORMAT_PCM, params, pcmtofile[poc_record_playback_attr.index]);
 			poc_record_playback_attr.index = 6;//cannot 0-4 and 10
 			OSI_LOGXI(OSI_LOGPAR_S, 0, "[poc][playback]play:(%s)", status ? "success" : "failed");

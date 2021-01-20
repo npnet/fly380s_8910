@@ -178,13 +178,6 @@ osiThread_t *osiThreadCurrent(void)
 
 void osiThreadSetFPUEnabled(bool enabled)
 {
-    if (IS_IRQ())
-        return;
-
-    // Though it is possible to change ulPortTaskHasFPUContext to false
-    // at disable, it is not necessary.
-    if (enabled)
-        vPortTaskUsesFPU();
 }
 
 uint32_t osiThreadPriority(osiThread_t *thread)
@@ -311,7 +304,17 @@ bool osiMessageQueuePut(osiMessageQueue_t *mq, const void *msg)
     if (mq == NULL || msg == NULL)
         return false;
 
-    return xQueueSendToBack(mq, msg, portMAX_DELAY) == pdPASS;
+    if (IS_IRQ())
+    {
+        BaseType_t yield = pdFALSE;
+        if (xQueueSendToBackFromISR((QueueHandle_t)mq, msg, &yield) != pdPASS)
+            return false;
+
+        portYIELD_FROM_ISR(yield);
+        return true;
+    }
+
+    return xQueueSendToBack((QueueHandle_t)mq, msg, portMAX_DELAY) == pdPASS;
 }
 
 bool osiMessageQueueTryPut(osiMessageQueue_t *mq, const void *msg, uint32_t timeout)
@@ -321,18 +324,15 @@ bool osiMessageQueueTryPut(osiMessageQueue_t *mq, const void *msg, uint32_t time
 
     if (IS_IRQ())
     {
-        if (timeout != 0)
-            return false;
-
         BaseType_t yield = pdFALSE;
-        if (xQueueSendToBackFromISR(mq, msg, &yield) != pdPASS)
+        if (xQueueSendToBackFromISR((QueueHandle_t)mq, msg, &yield) != pdPASS)
             return false;
 
         portYIELD_FROM_ISR(yield);
         return true;
     }
 
-    return xQueueSendToBack(mq, msg, osiMsToOSTick(timeout)) == pdPASS;
+    return xQueueSendToBack((QueueHandle_t)mq, msg, osiMsToOSTick(timeout)) == pdPASS;
 }
 
 bool osiMessageQueueGet(osiMessageQueue_t *mq, void *msg)
@@ -340,7 +340,17 @@ bool osiMessageQueueGet(osiMessageQueue_t *mq, void *msg)
     if (mq == NULL || msg == NULL)
         return false;
 
-    return xQueueReceive(mq, msg, OSI_WAIT_FOREVER) == pdPASS;
+    if (IS_IRQ())
+    {
+        BaseType_t yield = pdFALSE;
+        if (xQueueReceiveFromISR((QueueHandle_t)mq, msg, &yield) != pdPASS)
+            return false;
+
+        portYIELD_FROM_ISR(yield);
+        return true;
+    }
+
+    return xQueueReceive((QueueHandle_t)mq, msg, OSI_WAIT_FOREVER) == pdPASS;
 }
 
 bool osiMessageQueueTryGet(osiMessageQueue_t *mq, void *msg, uint32_t timeout)
@@ -350,18 +360,15 @@ bool osiMessageQueueTryGet(osiMessageQueue_t *mq, void *msg, uint32_t timeout)
 
     if (IS_IRQ())
     {
-        if (timeout != 0)
-            return false;
-
         BaseType_t yield = pdFALSE;
-        if (xQueueReceiveFromISR(mq, msg, &yield) != pdPASS)
+        if (xQueueReceiveFromISR((QueueHandle_t)mq, msg, &yield) != pdPASS)
             return false;
 
         portYIELD_FROM_ISR(yield);
         return true;
     }
 
-    return xQueueReceive(mq, msg, osiMsToOSTick(timeout)) == pdPASS;
+    return xQueueReceive((QueueHandle_t)mq, msg, osiMsToOSTick(timeout)) == pdPASS;
 }
 
 bool osiEventSend(osiThread_t *thread, const osiEvent_t *event)
@@ -373,9 +380,19 @@ bool osiEventSend(osiThread_t *thread, const osiEvent_t *event)
     if (queue == NULL)
         return false;
 
-    if (thread == xTaskGetCurrentTaskHandle())
+    if (IS_IRQ())
     {
-        if (xQueueSendToBack(queue, event, 0) != pdPASS)
+        BaseType_t yield = pdFALSE;
+        if (xQueueSendToBackFromISR((QueueHandle_t)queue, event, &yield) != pdPASS)
+            return false;
+
+        portYIELD_FROM_ISR(yield);
+        return true;
+    }
+
+    if ((TaskHandle_t)thread == xTaskGetCurrentTaskHandle())
+    {
+        if (xQueueSendToBack((QueueHandle_t)queue, event, 0) != pdPASS)
         {
             OSI_LOGE(0, "failed to send event to current thread");
             osiPanic();
@@ -383,7 +400,7 @@ bool osiEventSend(osiThread_t *thread, const osiEvent_t *event)
         return true;
     }
 
-    return xQueueSendToBack(queue, event, portMAX_DELAY) == pdPASS;
+    return xQueueSendToBack((QueueHandle_t)queue, event, portMAX_DELAY) == pdPASS;
 }
 
 bool osiEventTrySend(osiThread_t *thread, const osiEvent_t *event, uint32_t timeout)
@@ -397,18 +414,15 @@ bool osiEventTrySend(osiThread_t *thread, const osiEvent_t *event, uint32_t time
 
     if (IS_IRQ())
     {
-        if (timeout != 0)
-            return false;
-
         BaseType_t yield = pdFALSE;
-        if (xQueueSendToBackFromISR(queue, event, &yield) != pdTRUE)
+        if (xQueueSendToBackFromISR((QueueHandle_t)queue, event, &yield) != pdPASS)
             return false;
 
         portYIELD_FROM_ISR(yield);
         return true;
     }
 
-    return xQueueSendToBack(queue, event, osiMsToOSTick(timeout)) == pdPASS;
+    return xQueueSendToBack((QueueHandle_t)queue, event, osiMsToOSTick(timeout)) == pdPASS;
 }
 
 bool osiSendQuitEvent(osiThread_t *thread, bool wait)
@@ -545,17 +559,26 @@ osiMutex_t *osiMutexCreate(void)
 
 void osiMutexLock(osiMutex_t *mutex)
 {
-    xSemaphoreTakeRecursive(mutex, portMAX_DELAY);
+    if (IS_IRQ())
+        return;
+
+    xSemaphoreTakeRecursive((QueueHandle_t)mutex, portMAX_DELAY);
 }
 
 bool osiMutexTryLock(osiMutex_t *mutex, uint32_t timeout)
 {
-    return xSemaphoreTakeRecursive(mutex, osiMsToOSTick(timeout));
+    if (IS_IRQ())
+        return false;
+
+    return xSemaphoreTakeRecursive((QueueHandle_t)mutex, osiMsToOSTick(timeout));
 }
 
 void osiMutexUnlock(osiMutex_t *mutex)
 {
-    xSemaphoreGiveRecursive(mutex);
+    if (IS_IRQ())
+        return;
+
+    xSemaphoreGiveRecursive((QueueHandle_t)mutex);
 }
 
 void osiMutexDelete(osiMutex_t *mutex)
@@ -601,14 +624,40 @@ osiSemaphore_t *osiSemaphoreCreateStatic(osiSemaphoreStatic_t *buf, uint32_t max
     return (osiSemaphore_t *)xSemaphoreCreateCountingStatic(max_count, init_count, (StaticSemaphore_t *)buf);
 }
 
-void osiSemaphoreAcquire(osiSemaphore_t *sem)
+bool osiSemaphoreAcquire(osiSemaphore_t *sem)
 {
-    xSemaphoreTake(sem, portMAX_DELAY);
+    if (sem == NULL)
+        return false;
+
+    if (IS_IRQ())
+    {
+        BaseType_t yield = pdFALSE;
+        if (xSemaphoreTakeFromISR((QueueHandle_t)sem, &yield) != pdPASS)
+            return false;
+
+        portYIELD_FROM_ISR(yield);
+        return true;
+    }
+
+    return xSemaphoreTake((QueueHandle_t)sem, portMAX_DELAY) == pdPASS;
 }
 
 bool osiSemaphoreTryAcquire(osiSemaphore_t *sem, uint32_t timeout)
 {
-    return xSemaphoreTake(sem, osiMsToOSTick(timeout));
+    if (sem == NULL)
+        return false;
+
+    if (IS_IRQ())
+    {
+        BaseType_t yield = pdFALSE;
+        if (xSemaphoreTakeFromISR((QueueHandle_t)sem, &yield) != pdPASS)
+            return false;
+
+        portYIELD_FROM_ISR(yield);
+        return true;
+    }
+
+    return xSemaphoreTake((QueueHandle_t)sem, osiMsToOSTick(timeout)) == pdPASS;
 }
 
 void osiSemaphoreRelease(osiSemaphore_t *sem)

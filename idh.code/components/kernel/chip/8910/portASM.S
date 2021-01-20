@@ -1,263 +1,318 @@
-/*
- * FreeRTOS Kernel V10.0.1
- * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+ * All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
- *
- * 1 tab == 4 spaces!
+ * This software is supplied "AS IS" without any warranties.
+ * RDA assumes no responsibility or liability for the use of the software,
+ * conveys no license or title under any patent, copyright, or mask work
+ * right to the product. RDA reserves the right to make changes in the
+ * software without notification.  RDA also make no representation or
+ * warranty that such application will be suitable for the specified use
+ * without further testing or modification.
  */
 
-	.text
-	.arm
+#define USR_MODE 0x10
+#define SYS_MODE 0x1f
+#define SVC_MODE 0x13
+#define IRQ_MODE 0x12
 
-	.set SYS_MODE,	0x1f
-	.set SVC_MODE,	0x13
-	.set IRQ_MODE,	0x12
+#define CONTEXT_TYPE_NOFP 0
+#define CONTEXT_TYPE_FULLFP 1
+#define CONTEXT_TYPE_SMALLFP 2
 
-	/* Hardware registers. */
-	.extern ulICCIAR
-	.extern ulICCEOIR
-	.extern ulICCPMR
+    .text
+    .arm
 
-	/* Variables and functions. */
-	.extern ulMaxAPIPriorityMask
-	.extern _freertos_vector_table
-	.extern pxCurrentTCB
-	.extern vTaskSwitchContext
-	.extern vApplicationIRQHandler
-	.extern ulPortInterruptNesting
-	.extern ulPortTaskHasFPUContext
+    /* Hardware registers. */
+    .extern ulICCIAR
+    .extern ulICCEOIR
 
-	.global IRQ_Handler
-	.global SVC_Handler
-	.global vPortRestoreTaskContext
+    /* Variables and functions. */
+    .extern pxCurrentTCB
+    .extern vTaskSwitchContext
+    .extern vApplicationIRQHandler
+    .extern ulPortInterruptNesting
 
+// ====================================================================
+// Save small context. It is used by svc. It is assumed portYIELD function
+// is called, rather than an individual instruction. Due to ABI convention,
+// not all registers are needed to be saved. For floating point registers,
+// only {d8-d15} are needed to be saved, others are caller save. Though
+// {r0-r3} are caller save also, they are saved in context, to keep
+// compatible, and the cost is small.
+// ====================================================================
+.macro portSAVE_CONTEXT_SMALL
+    SRSDB   sp!, #SYS_MODE      // {SPSR, lr_svc} -> sp_sys
 
+    CPS     #SYS_MODE
+    PUSH    {r0-r12, r14}
 
+    // Push the critical nesting count. (not used)
+    MOV     r1, #0
+    PUSH    {r1}
 
-.macro portSAVE_CONTEXT
+    // Save the small floating point context.
+    VMRS    r1, FPSCR
+    VPUSH   {d8-d15}
 
-	/* Save the LR and SPSR onto the system mode stack before switching to
-	system mode to save the remaining system mode registers. */
-	SRSDB	sp!, #SYS_MODE
-	CPS		#SYS_MODE
-	PUSH	{R0-R12, R14}
+    // Save {context_type, FPSCR}
+    MOV     r0, #CONTEXT_TYPE_SMALLFP
+    PUSH    {r0, r1}
 
-	/* Push the critical nesting count. (not used) */
-	MOV 	R1, #0
-	PUSH	{R1}
+    // Save the stack pointer in the TCB.
+    LDR     r0, pxCurrentTCBConst
+    LDR     r1, [r0]
+    STR     sp, [r1]
+    .endm
 
-	/* Does the task have a floating point context that needs saving?  If
-	ulPortTaskHasFPUContext is 0 then no. */
-	LDR		R2, ulPortTaskHasFPUContextConst
-	LDR		R3, [R2]
-	CMP		R3, #0
+// ====================================================================
+// Save full context
+// ====================================================================
+.macro portSAVE_CONTEXT_FULL
+    SRSDB   sp!, #SYS_MODE      // {SPSR, lr_irq} -> sp_sys
 
-	/* Save the floating point context, if any. */
-	FMRXNE  R1,  FPSCR
-	VPUSHNE {D0-D15}
-	VPUSHNE	{D16-D31}
-	PUSHNE	{R1}
+    CPS     #SYS_MODE
+    PUSH    {r0-r12, r14}
 
-	/* Save ulPortTaskHasFPUContext itself. */
-	PUSH	{R3}
+    // Push the critical nesting count. (not used)
+    MOV     r1, #0
+    PUSH    {r1}
 
-	/* Save the stack pointer in the TCB. */
-	LDR		R0, pxCurrentTCBConst
-	LDR		R1, [R0]
-	STR		SP, [R1]
+    // Save the full floating point context.
+    VMRS    r1, FPSCR
+    VPUSH   {d16-d31}
+    VPUSH   {d0-d15}
 
-	.endm
+    // Save {context_type, FPSCR}
+    MOV     r0, #CONTEXT_TYPE_FULLFP
+    PUSH    {r0, r1}
 
-; /**********************************************************************/
+    // Save the stack pointer in the TCB.
+    LDR     r0, pxCurrentTCBConst
+    LDR     r1, [r0]
+    STR     sp, [r1]
+    .endm
 
+// ====================================================================
+// Restore context, either small or full
+// ====================================================================
 .macro portRESTORE_CONTEXT
+    // Set the SP to point to the stack of the task being restored.
+    LDR     r0, pxCurrentTCBConst
+    LDR     r1, [r0]
+    LDR     sp, [r1]
 
-	/* Set the SP to point to the stack of the task being restored. */
-	LDR		R0, pxCurrentTCBConst
-	LDR		R1, [R0]
-	LDR		SP, [R1]
+    POP     {r0, r1}            // {context_type, FPSCR}
 
-	/* Is there a floating point context to restore?  If the restored
-	ulPortTaskHasFPUContext is zero then no. */
-	LDR		R0, ulPortTaskHasFPUContextConst
-	POP		{R1}
-	STR		R1, [R0]
-	CMP		R1, #0
+    // Restore the floating point context
+    CMP     r0, #CONTEXT_TYPE_SMALLFP
+    VPOPEQ  {d8-d15}
+    VPOPNE  {d0-d15}
+    VPOPNE  {d16-d31}
+    VMSR    FPSCR, r1
 
-	/* Restore the floating point context, if any. */
-	POPNE 	{R0}
-	VPOPNE	{D16-D31}
-	VPOPNE	{D0-D15}
-	VMSRNE  FPSCR, R0
+    // Restore the critical section nesting depth. (not used)
+    POP     {r1}
 
-	/* Restore the critical section nesting depth. (not used) */
-	POP		{R1}
+    POP     {r0-r12, r14}
 
-	/* Restore all system mode registers other than the SP (which is already
-	being used). */
-	POP		{R0-R12, R14}
+    CLREX
 
-	CLREX
+    // Return to the task code, loading CPSR on the way.
+    RFEIA   sp!
+    .endm
 
-	/* Return to the task code, loading CPSR on the way. */
-	RFEIA	sp!
-
-	.endm
-
-
-
-
-/******************************************************************************
- * SVC handler is used to start the scheduler.
- *****************************************************************************/
-.align 4
-.type SVC_Handler, %function
+// ====================================================================
+// SVC Handler
+// ====================================================================
+    .global SVC_Handler
+    .align 5
+    .type SVC_Handler, %function
+    .func
 SVC_Handler:
-	/* Save the context of the current task and select a new task to run. */
-	portSAVE_CONTEXT
-	LDR R0, vTaskSwitchContextConst
-	BLX	R0
-	portRESTORE_CONTEXT
+    portSAVE_CONTEXT_SMALL
 
+    // Align down sp to 8 bytes aligned. Due to portRESTORE_CONTEXT will
+    // load new sp, it is not needed to restore it.
+    MOV     r0, sp
+    BIC     sp, r0, #7
 
-/******************************************************************************
- * vPortRestoreTaskContext is used to start the scheduler.
- *****************************************************************************/
-.type vPortRestoreTaskContext, %function
-vPortRestoreTaskContext:
-	/* Switch to system mode. */
-	CPS		#SYS_MODE
-	portRESTORE_CONTEXT
+    LDR     r0, vTaskSwitchContextConst
+    BLX     r0
 
-.align 4
-.type IRQ_Handler, %function
+    portRESTORE_CONTEXT
+
+    .size   SVC_Handler, .-SVC_Handler
+    .endfunc
+
+// ====================================================================
+// IRQ Handler
+// ====================================================================
+    .global IRQ_Handler
+    .align 5
+    .type IRQ_Handler, %function
+    .func
 IRQ_Handler:
-	/* Return to the interrupted instruction. */
-	SUB		lr, lr, #4
+    SUB     lr, lr, #4          // The real interrupted instruction
+    SRSDB   sp!, #IRQ_MODE      // {SPSR, lr_irq} -> sp_irq
 
-	/* Push the return address and SPSR. */
-	PUSH	{lr}
-	MRS		lr, SPSR
-	PUSH	{lr}
+    CPS     #SVC_MODE           // Change to SVC mode to allow reentry
+    PUSH    {r0-r4, r12, lr}    // Push registers to sp_svc
 
-	/* Change to supervisor mode to allow reentry. */
-	CPS		#SVC_MODE
+    // Save floating point context to svc stack. d8-d15 will be preserved
+    // inside interrupt handler.
+    VMRS    r0, FPSCR
+    VPUSH   {d0-d7}             // Push d0-d7, d8-d15 won't be changed by ABI
+    VPUSH   {d16-d31}           // Push d16-d31
+    PUSH    {r0}                // Push FPSCR
 
-	/* Push used registers. */
-	PUSH	{r0-r4, r12}
+    // Increment nesting count. r1, r3 will be used later.
+    LDR     r3, ulPortInterruptNestingConst
+    LDR     r1, [r3]
+    ADD     r4, r1, #1
+    STR     r4, [r3]
 
-	/* Increment nesting count.  r3 holds the address of ulPortInterruptNesting
-	for future use.  r1 holds the original ulPortInterruptNesting value for
-	future use. */
-	LDR		r3, ulPortInterruptNestingConst
-	LDR		r1, [r3]
-	ADD		r4, r1, #1
-	STR		r4, [r3]
+    /// Read value from the interrupt acknowledge register, r0 will be used later
+    LDR     r2, ulICCIARConst
+    LDR     r2, [r2]
+    LDR     r0, [r2]
 
-	/* Read value from the interrupt acknowledge register, which is stored in r0
-	for future parameter and interrupt clearing use. */
-	LDR 	r2, ulICCIARConst
-	LDR		r2, [r2]
-	LDR		r0, [r2]
+    // Align down sp to 8 bytes aligned, r2 will be used later.
+    MOV     r2, sp
+    BIC     sp, r2, #7
 
-	MOV		r2, sp
-	AND		r2, r2, #4
-	SUB		sp, sp, r2
+    // Call the interrupt handler.
+    PUSH    {r0, r1, r2, r3}
+    MOV     lr, #2      /* bogus address to make gdb happy */
+    LDR     r1, vApplicationIRQHandlerConst
+    BLX     r1
+    POP     {r0, r1, r2, r3}
 
-	/* Call the interrupt handler. */
-	PUSH 	{r0-r2, lr}
-	MOV 	lr, #2		/* bogus address to make gdb happy */
-	LDR 	r1, vApplicationIRQHandlerConst
-	PUSH	{r3, lr}
-	BLX 	r1
-	POP		{r3, lr}
-	POP 	{r0-r2, lr}
+    // Restore the sp before alignment.
+    MOV     sp, r2
 
-	CPSID	i
-	DSB
-	ISB
+    // Restore floating point context
+    POP     {r2}
+    VPOP    {d16-d31}
+    VPOP    {d0-d7}
+    VMSR    FPSCR, r2
 
-	/* Write the value read from ICCIAR to ICCEOIR. */
-	LDR 	r4, ulICCEOIRConst
-	LDR		r4, [r4]
-	STR		r0, [r4]
+    CPSID   i
+    DSB
+    ISB
 
-	/* Restore the old nesting count. */
-	STR		r1, [r3]
+    // Write the value read from ICCIAR to ICCEOIR.
+    LDR     r4, ulICCEOIRConst
+    LDR     r4, [r4]
+    STR     r0, [r4]
 
-	/* A context switch is never performed if the nesting count is not 0. */
-	CMP		r1, #0
-	BNE		exit_without_switch
+    // Restore the old nesting count.
+    STR     r1, [r3]
 
-	/* Did the interrupt request a context switch?  r1 holds the address of
-	ulPortYieldRequired and r0 the value of ulPortYieldRequired for future
-	use. */
-	LDR		r1, =ulPortYieldRequired
-	LDR		r0, [r1]
-	CMP		r0, #0
-	BNE		switch_before_exit
+    // A context switch is never performed if the nesting count is not 0.
+    CMP     r1, #0
+    BNE     $L_exit_without_switch
 
-exit_without_switch:
-	/* No context switch.  Restore used registers, LR_irq and SPSR before
-	returning. */
-	POP		{r0-r4, r12}
-	CPS		#IRQ_MODE
-	POP		{LR}
-	MSR		SPSR_cxsf, LR
-	POP		{LR}
-	MOVS	PC, LR
+    // Check whether context switch needed. r1 will be used later
+    LDR     r1, =ulPortYieldRequired
+    LDR     r0, [r1]
+    CMP     r0, #0
+    BNE     $L_switch_before_exit
 
-switch_before_exit:
-	/* A context swtich is to be performed.  Clear the context switch pending
-	flag. */
-	MOV		r0, #0
-	STR		r0, [r1]
+$L_exit_without_switch:
+    POP     {r0-r4, r12, lr}
+    CPS     #IRQ_MODE
+    RFEIA   sp!
 
-	/* Restore used registers, LR-irq and SPSR before saving the context
-	to the task stack. */
-	POP		{r0-r4, r12}
-	CPS		#IRQ_MODE
-	POP		{LR}
-	MSR		SPSR_cxsf, LR
-	POP		{LR}
-	portSAVE_CONTEXT
+$L_switch_before_exit:
+    // Clear the context switch pending
+    MOV     r0, #0
+    STR     r0, [r1]
 
-	/* Call the function that selects the new task to execute.
-	vTaskSwitchContext() if vTaskSwitchContext() uses LDRD or STRD
-	instructions, or 8 byte aligned stack allocated data.  LR does not need
-	saving as a new LR will be loaded by portRESTORE_CONTEXT anyway. */
-	LDR		R0, vTaskSwitchContextConst
-	BLX		R0
+    POP     {r0-r4, r12, lr}
+    CPS     #IRQ_MODE
 
-	/* Restore the context of, and branch to, the task selected to execute
-	next. */
-	portRESTORE_CONTEXT
+    // Restore LR_irq and SPSR from IRQ stack, which will be stored to
+    // thread stack later. No intermediate registers can be used.
+    LDR     lr, [sp, #4]
+    MSR     SPSR_cxsf, lr
+    LDR     lr, [sp, #0]
+    ADD     sp, sp, #8
 
-ulICCIARConst:	.word ulICCIAR
-ulICCEOIRConst:	.word ulICCEOIR
-ulICCPMRConst: .word ulICCPMR
+    portSAVE_CONTEXT_FULL
+
+    // Align down sp to 8 bytes aligned. Due to portRESTORE_CONTEXT will
+    // load new sp, it is not needed to restore it.
+    MOV     r0, sp
+    BIC     sp, r0, #7
+
+    LDR     r0, vTaskSwitchContextConst
+    BLX     r0
+
+    // Restore thread context
+    portRESTORE_CONTEXT
+
+    .size   IRQ_Handler, .-IRQ_Handler
+    .endfunc
+
+// ====================================================================
+// Set memory by word. r2 is the value
+// ====================================================================
+.macro MEM_SET start_sym, end_sym
+    LDR     r0, =\start_sym
+    LDR     r1, =\end_sym
+1:
+    CMP     r0, r1
+    BGE     2f
+    STR     r2, [r0]
+    ADD     r0, #4
+    B       1b
+2:
+    .endm
+
+// ====================================================================
+// Start the scheduler
+// ====================================================================
+    .global vPortRestoreTaskContext
+    .type vPortRestoreTaskContext, %function
+    .func
+vPortRestoreTaskContext:
+    LDR     r2, =#0xa5a5a5a5
+    MEM_SET __blue_screen_end, __stack_top
+
+    CPS     #SYS_MODE
+    portRESTORE_CONTEXT
+
+    .size   vPortRestoreTaskContext, .-vPortRestoreTaskContext
+    .endfunc
+
+// ====================================================================
+// YIELD with svc
+// ====================================================================
+    .global portYIELD
+    .type portYIELD, %function
+    .func
+portYIELD:
+    MRS     r3, CPSR
+    AND     r3, r3, #0x1f
+    CMP     r3, #USR_MODE
+    BEQ     1f
+    CMP     r3, #SYS_MODE
+    BEQ     1f
+
+    LDR     r3, =ulPortYieldRequired
+    MOV     r2, #1
+    STR     r2, [r3]
+    BX      lr
+1:
+    SWI     0
+    BX      lr
+
+    .size   portYIELD, .-portYIELD
+    .endfunc
+
+ulICCIARConst:  .word ulICCIAR
+ulICCEOIRConst: .word ulICCEOIR
 pxCurrentTCBConst: .word pxCurrentTCB
-ulPortTaskHasFPUContextConst: .word ulPortTaskHasFPUContext
-ulMaxAPIPriorityMaskConst: .word ulMaxAPIPriorityMask
 vTaskSwitchContextConst: .word vTaskSwitchContext
 vApplicationIRQHandlerConst: .word vApplicationIRQHandler
 ulPortInterruptNestingConst: .word ulPortInterruptNesting

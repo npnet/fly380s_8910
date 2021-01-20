@@ -1391,6 +1391,30 @@ bool lv_poc_get_audevplay_status(void);
 void
 lv_poc_set_audevplay_status(bool status);
 
+/*
+	  name : lv_poc_get_is_in_memberlist
+	  param :
+	  date : 2021-01-19
+*/
+bool
+lv_poc_get_is_in_memberlist(void);
+
+/*
+	  name : lv_poc_get_is_in_grouplist
+	  param :
+	  date : 2021-01-19
+*/
+bool
+lv_poc_get_is_in_grouplist(void);
+
+/*
+	 name : lv_poc_get_keytone_status
+	 param :
+	 date : 2021-01-19
+*/
+bool
+lv_poc_get_keytone_status(void);
+
 #ifdef __cplusplus
 }
 #endif

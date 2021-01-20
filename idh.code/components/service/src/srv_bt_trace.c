@@ -24,7 +24,7 @@
 #include <string.h>
 
 #define BT_THREAD_PRIORITY (OSI_PRIORITY_LOW)
-#define BT_THREAD_STACK_SIZE (1024)
+#define BT_THREAD_STACK_SIZE (2048)
 
 #define BT_LOG_RETRY_INTERVAL (10)
 #define BT_USB_TX_MAX_SIZE (256)

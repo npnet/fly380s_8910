@@ -19,6 +19,7 @@ struct lv_poc_cit_auto_test_t
 	bool ready;
 	int testindex;
 	int result[LV_POC_CIT_OPRATOR_TYPE_END];
+	osiMutex_t *mutex;
 };
 
 struct lv_poc_cit_auto_test_t poc_auto_test_attr = {0};
@@ -133,13 +134,16 @@ static
 void prvlvPocCitAutoTestComRefresh(lv_task_t *task)
 {
 	int *id = (int*)task->user_data;
-	if(id == NULL)
+	if(id == NULL
+		|| poc_auto_test_attr.mutex == NULL)
 	{
 		OSI_LOGI(0, "[cit][autotest](%d):rec msg, NULL", __LINE__);
 		return;
 	}
 	OSI_LOGI(0, "[cit][autotest](%d):rec msg(%d)", __LINE__, (*id) - 1);
+	osiMutexLock(poc_auto_test_attr.mutex);
 	lv_poc_cit_auto_test_items_perform((*id) - 1);
+	osiMutexUnlock(poc_auto_test_attr.mutex);
 }
 
 void lvPocCitAutoTestActiOpen(void)
@@ -147,19 +151,21 @@ void lvPocCitAutoTestActiOpen(void)
 	memset(&poc_auto_test_attr, 0, sizeof(struct lv_poc_cit_auto_test_t));
 	poc_auto_test_attr.testindex = LV_POC_CIT_OPRATOR_TYPE_CALIBATE;
 	poc_auto_test_attr.ready = true;
+	!poc_auto_test_attr.mutex ? poc_auto_test_attr.mutex = osiMutexCreate() : 0;
 	lv_poc_cit_auto_test_items_register_cb(true);
 	lv_poc_cit_auto_test_items_perform(poc_auto_test_attr.testindex - 1);//auto enter first items
 }
 
 void lvPocCitAutoTestActiClose(void)
 {
+	poc_auto_test_attr.mutex ? osiMutexDelete(poc_auto_test_attr.mutex) : 0;
 	memset(&poc_auto_test_attr, 0, sizeof(struct lv_poc_cit_auto_test_t));
 	lv_poc_cit_auto_test_items_register_cb(false);
 }
 
 void lvPocCitAutoTestCom_Msg(lv_poc_cit_auto_test_type result)
 {
-	if(result == 0 || !poc_auto_test_attr.ready)
+	if(result == 0 || !poc_auto_test_attr.ready || poc_auto_test_attr.mutex == NULL)
 	{
 		return;
 	}
@@ -172,8 +178,10 @@ void lvPocCitAutoTestCom_Msg(lv_poc_cit_auto_test_type result)
 	}
 	else
 	{
+		osiMutexLock(poc_auto_test_attr.mutex);
 		lv_task_t *task = lv_task_create(prvlvPocCitAutoTestComRefresh, 10, LV_TASK_PRIO_HIGH, (void *)&poc_auto_test_attr.testindex);
 		lv_task_once(task);
+		osiMutexUnlock(poc_auto_test_attr.mutex);
 	}
 }
 

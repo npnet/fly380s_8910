@@ -228,7 +228,7 @@ typedef enum{
 #define    LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ADDLISTENGROUP              "072200"//请求监听组
 #define    LVPOCPOCOEMCOM_SIGNAL_OPTCODE_CANNELLISTENGROUP           "082200"//请求取消监听组
 #define    LVPOCPOCOEMCOM_SIGNAL_OPTCODE_REQUESTJOINGROUP            "092200"//请求加入群组
-#define    LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_INDEX                    "0D0000"//请求组的个数
+#define    LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_INDEX                 "0D0000"//请求组的个数
 #define    LVPOCPOCOEMCOM_SIGNAL_OPTCODE_ALL_MEMBER_INDEX            "0E0000"//请求索引成员信息
 #define    LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GROUP_MEMBER_INDEX          "130000"//请求某个组的成员信息
 #define    LVPOCPOCOEMCOM_SIGNAL_OPTCODE_GET_GROUP_MEMBER_ONLINE     "3B0000"//请求组成员在线人数
@@ -402,6 +402,8 @@ void lvPocGuiOemCom_stop_check_ack(void);
 lv_poc_tmpgrp_t lvPocGuiOemCom_cit_status(lv_poc_tmpgrp_t status);
 
 void lvPocGuiOemCom_set_launch_scrsta(bool status);
+
+int lvPocGuiOemCom_tts_state(int status);
 
 OSI_EXTERN_C_END
 

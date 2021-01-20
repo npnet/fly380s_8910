@@ -28,6 +28,7 @@
 
 #define USBE_TX_QUEUE_COUNT 64
 #define USBE_RX_QUEUE_COUNT 16
+#define USBE_THREAD_STACK_SIZE 2048
 
 typedef struct usb_ether_request usbEtherReq_t;
 
@@ -472,7 +473,7 @@ usbEther_t *usbEtherCreate(const usbEtherConfig_t *config)
     {
         char name[16];
         snprintf(name, 16, "usb-ether(%4c)", *(char *)(&config->name));
-        usbe->wq = osiWorkQueueCreate(name, 1, OSI_PRIORITY_HIGH, 1024);
+        usbe->wq = osiWorkQueueCreate(name, 1, OSI_PRIORITY_HIGH, USBE_THREAD_STACK_SIZE);
         if (usbe->wq == NULL)
             break;
 

@@ -151,6 +151,8 @@
 
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS 1
 
+#define configUSE_TASK_FPU_SUPPORT              2
+
 //------------- <<< end of configuration section >>> ---------------------------
 
 /* Defines needed by FreeRTOS to implement CMSIS RTOS2 API. Do not change! */
