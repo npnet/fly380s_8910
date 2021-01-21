@@ -211,9 +211,9 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 			OSI_PRINTFI("[grouproptack](%s)(%d):set current group", __func__, __LINE__);
 		}
 	}
-	else if(result_type == 2)//已在群组
+	else if(result_type == 2)
 	{
-		//lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", (const uint8_t *)"");
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"已在群组", (const uint8_t *)"");
 	}
 	else
 	{
@@ -651,7 +651,6 @@ void lv_poc_group_list_clear(lv_poc_oem_group_list *group_list_obj)
 	{
 		temp_p = cur_p;
 		cur_p =cur_p->next;
-		//lv_obj_del(temp_p->list_item);
 		lv_mem_free(temp_p);
 	}
 	group_list_obj->group_list = NULL;
@@ -716,7 +715,9 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	int list_btn_count = 0;
 
     oem_list_element_t * p_cur = NULL;
-//	CGroup *pGroupInfo = NULL;
+#if 0
+	CGroup *pGroupInfo = NULL;
+#endif
     lv_obj_t * btn;
 	lv_obj_t * btn_index[32];//assume group number is 32
     lv_obj_t * img;
@@ -794,18 +795,22 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 
 		img = lv_img_create(btn, NULL);
 		p_group_info->monitor_img = img;
-//		pGroupInfo = (CGroup *)p_cur->information;
-//      if(NULL != strstr((char *)pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR))
-//      {
-//			lv_img_set_src(img, &locked);
-//			p_group_info->is_monitor = true;
-//		}
-//		else
-//		{
+#if 0
+		pGroupInfo = (CGroup *)p_cur->information;
+        if(NULL != strstr((char *)pGroupInfo->m_ucGMonitor, OEM_GROUP_MONITOR))
+        {
+			lv_img_set_src(img, &locked);
+			p_group_info->is_monitor = true;
+		}
+		else
+		{
 			lv_img_set_src(img, &unlock);
 			p_group_info->is_monitor = false;
-//		}
-
+		}
+#else
+		lv_img_set_src(img, &unlock);
+		p_group_info->is_monitor = false;
+#endif
 		lv_img_set_auto_size(img, false);
 		lv_obj_set_width(btn_label, btn_width - (lv_coord_t)unlock.header.w - (lv_coord_t)ic_group.header.w - 15);//-15是减去间隙(两个图标)
 		lv_obj_align(img, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);

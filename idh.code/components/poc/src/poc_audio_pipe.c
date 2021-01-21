@@ -183,8 +183,8 @@ bool pocAudioPipeStop(void)
 		OSI_LOGI(0, "[pocPipe][Pipe]stop poc mode failed");
 	}
 	auRecorderStop(PipeAttr.recorder);
-	auPlayerStop(PipeAttr.player);	
-    osiPipeSetEof(PipeAttr.plypipe);	
+	auPlayerStop(PipeAttr.player);
+    osiPipeSetEof(PipeAttr.plypipe);
     osiPipeSetEof(PipeAttr.recpipe);
 	osiPipeStop(PipeAttr.plypipe);
 	osiPipeStop(PipeAttr.recpipe);
@@ -256,10 +256,13 @@ bool pocAudioPipeStopPocMode(void)
 
 bool pocAudioPipeStartPocModeReady(void)
 {
-	if (!audevSetRecordSampleRate(8000))
+	if(audevGetRecordSampleRate() != 8000)
 	{
-		OSI_LOGI(0, "[pocPipe][readywork](%d):audio poc set samplerate fail", __LINE__);
-		return false;
+		if (!audevSetRecordSampleRate(8000))
+		{
+			OSI_LOGI(0, "[pocPipe][readywork](%d):audio poc set samplerate fail", __LINE__);
+			return false;
+		}
 	}
     osiPipeReset(PipeAttr.plypipe);
 
