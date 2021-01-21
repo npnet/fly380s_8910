@@ -135,6 +135,9 @@ typedef enum
 	LVPOCGUIIDTCOM_SIGNAL_SET_SCREEN_STATUS_IND,
 	LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND,
 
+	LVPOCGUIIDTCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE,
+    LVPOCGUIIDTCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE,
+
     LVPOCGUIIDTCOM_SIGNAL_END,
 } LvPocGuiIdtCom_SignalType_t;
 
@@ -198,6 +201,8 @@ bool lvPocGuiIdtCom_get_listen_status(void);
 void *lvPocGuiIdtCom_get_current_lock_group(void);
 
 bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str);
+
+bool lvPocGuiIdtCom_CriRe_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
 
 int lvPocGuiIdtCom_get_current_exist_selfgroup(void);
 

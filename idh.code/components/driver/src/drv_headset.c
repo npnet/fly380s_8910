@@ -24,9 +24,10 @@
 #include "audio_device.h"
 #include <string.h>
 // poc
-#include "lv_include/lv_poc_type.h"
-#include "lv_include/lv_poc_lib.h"
-#include "lv_apps/lv_poc_led/lv_poc_led.h"
+#include "lv_include/lv_poc.h"
+//#include "lv_include/lv_poc_type.h"
+//#include "lv_include/lv_poc_lib.h"
+//#include "lv_apps/lv_poc_led/lv_poc_led.h"
 
 #define DRV_HEADSET_WQ_PRIO OSI_PRIORITY_HIGH
 #define SCI_GetTickCount() (uint32_t) osiUpTime()
@@ -207,7 +208,11 @@ void drvDummyHeadsetCustCB(void *ctx, drvHeadsetNotifyMsg_t id, uint32_t param)
         audevSetOutput(1);
 
 		lv_poc_set_headset_status(true);
-		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_HEADSET_PLUGIN_IND, 0, 0);
+		if(lv_poc_cit_get_run_status() != LV_POC_CIT_OPRATOR_TYPE_KEY)
+		{
+			lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_HEADSET_PLUGIN_IND, 0, 0);
+		}
+
     }
 
     break;
@@ -220,7 +225,10 @@ void drvDummyHeadsetCustCB(void *ctx, drvHeadsetNotifyMsg_t id, uint32_t param)
         audevSetOutput(0);
 
 		lv_poc_set_headset_status(false);
-		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_HEADSET_PLUGOUT_IND, 0, 0);
+		if(lv_poc_cit_get_run_status() != LV_POC_CIT_OPRATOR_TYPE_KEY)
+		{
+			lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_HEADSET_PLUGOUT_IND, 0, 0);
+		}
     }
     break;
 

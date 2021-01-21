@@ -36,6 +36,7 @@
 #define CCID_RXBUF_SIZE OSI_ALIGN_UP(sizeof(struct ccid_bulk_out_header), CONFIG_CACHE_LINE_SIZE)
 #define CCID_TXBUF_SIZE OSI_ALIGN_UP(sizeof(struct ccid_bulk_in_header), CONFIG_CACHE_LINE_SIZE)
 #define CCID_NOTIFY_SIZE sizeof(struct ccid_notification)
+#define CCID_THREAD_STACK_SIZE (2048)
 
 struct ccid_xfer;
 typedef STAILQ_ENTRY(ccid_xfer) ccidXferIter_t;
@@ -403,7 +404,7 @@ static int _ccidBind(copsFunc_t *f, cops_t *cops, udc_t *udc)
     if (intf_num < 0)
         goto intf_assign_fail;
 
-    c->wq = osiWorkQueueCreate("ccid", 1, OSI_PRIORITY_NORMAL, 512);
+    c->wq = osiWorkQueueCreate("ccid", 1, OSI_PRIORITY_NORMAL, CCID_THREAD_STACK_SIZE);
     if (c->wq == NULL)
         goto base_fail;
 

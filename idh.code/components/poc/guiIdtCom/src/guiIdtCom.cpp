@@ -2180,6 +2180,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				osiTimerStop(pocIdtAttr.monitor_pptkey_timer);
 				pocIdtAttr.speak_status = false;
 
+				poc_set_ptt_key_status(false);
 				OSI_PRINTFI("[poc][idtspeak]%s(%d):receive stop_speak_rep", __func__, __LINE__);
 				//monitor recorder thread
 				osiTimerStart(pocIdtAttr.monitor_recorder_timer, 10000);//10S
@@ -4762,6 +4763,32 @@ extern "C" bool lvPocGuiIdtCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ct
 	event.param2 = (uint32_t)ctx;
 
 	osiExitCritical(critical);
+
+	return osiEventSend(pocIdtAttr.thread, &event);
+}
+
+bool lvPocGuiIdtCom_CriRe_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx)
+{
+	if(pocIdtAttr.thread == NULL)
+	{
+		OSI_LOGI(0, "[Event]Thread NULL");
+		return false;
+	}
+
+	if((lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) == LVPOCCIT_TYPE_ENTER)
+		&& (signal < LVPOCGUIIDTCOM_SIGNAL_ENTER_CIT_STATUS ))
+	{
+		return false;
+	}
+
+	osiEvent_t event = {0};
+	uint32_t osiECtc = osiEnterCritical();
+
+	event.id = 200;
+	event.param1 = signal;
+	event.param2 = (uint32_t)ctx;
+
+	osiExitCritical(osiECtc);
 
 	return osiEventSend(pocIdtAttr.thread, &event);
 }

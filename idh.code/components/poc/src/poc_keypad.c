@@ -28,6 +28,7 @@
 #include "lv_include/lv_poc.h"
 #include "lv_gui_main.h"
 #include "poc_audio_recorder.h"
+#include "drv_keypad.h"
 
 #define POC_RECORD_OR_SPEAK_CALL 1//1-正常对讲，0-自录自播
 #define POC_RECORDER_PLAY_MODE 1//1-play 0-poc
@@ -44,6 +45,9 @@ static lv_indev_state_t prvPowerKeyState = 0xff;
 static bool isReadyPowerOff = false;
 static bool *isReadyCtnKeyState = NULL;
 static osiTimer_t * prvPowerTimer = NULL;
+static osiTimer_t * prvPttKeyStateTimer = NULL;
+static bool pttKeyStatus = false;
+static bool prvPttKeyStateTimerRunning = false;
 static void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus);
 
 static void prvPowerKeyCb(void *ctx)
@@ -68,6 +72,23 @@ static void prvPowerKeyCb(void *ctx)
 	}
 }
 
+static void prvPttKeyStateCb(void *ctx)
+{
+	if(drvKeypadState(5)) // ptt key's id is 5
+	{
+		OSI_PRINTFI("[poc][voice][%s](%d)Ptt key is press", __func__, __LINE__);
+		osiTimerStart(prvPttKeyStateTimer, 2000);
+	}
+	else
+	{
+		OSI_PRINTFI("[poc][voice][%s](%d)Ptt key is release", __func__, __LINE__);
+		osiTimerStop(prvPttKeyStateTimer);
+		prvPttKeyStateTimerRunning = false;
+		lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		poc_set_ptt_key_status(false);
+	}
+}
+
 bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 {
 	bool ret = false;
@@ -81,6 +102,19 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{
+				if(prvPttKeyStateTimer == NULL)
+				{
+					prvPttKeyStateTimer = osiTimerCreate(NULL, prvPttKeyStateCb, NULL);
+				}
+
+				if(!prvPttKeyStateTimerRunning)
+				{
+					osiTimerStart(prvPttKeyStateTimer, 2000);
+					prvPttKeyStateTimerRunning = true;
+
+					poc_set_ptt_key_status(true);
+				}
+
 				switch(lv_poc_get_apply_note())
 				{
 					case POC_APPLY_NOTE_TYPE_NONETWORK:
@@ -100,9 +134,11 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
             else
             {
 				lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
-            }
+				poc_set_ptt_key_status(false);
+			}
 		}
 		prvPttKeyState = state;
+
 		ret = false;
 	}
 	else if(id == 0xf0)//power key
@@ -174,6 +210,16 @@ void poc_power_on_charge_set_lcd_status(uint8_t lcdstatus)
 		lvGuiScreenOff();
 	}
 
+}
+
+void poc_set_ptt_key_status(bool keyStatus)
+{
+	pttKeyStatus = keyStatus;
+}
+
+bool poc_get_ptt_key_status(void)
+{
+	return pttKeyStatus;
 }
 
 #endif

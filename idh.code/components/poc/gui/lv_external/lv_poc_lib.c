@@ -28,6 +28,7 @@
 #include "drv_keypad.h"
 #include "at_engine.h"
 #include "osi_pipe.h"
+#include "poc_keypad.h"
 
 #define SUPPORT_CIT_KEY_TEST
 /*************************************************
@@ -444,8 +445,13 @@ void poc_Lcd_Set_BackLightNess(uint32_t level)
 void poc_config_Lcd_power_vol(void)
 {
 	REG_RDA2720M_GLOBAL_LDO_LCD_REG1_T lcd_reg1 = {};
+#ifdef CONFIG_POC_GUI_LCD_VOL_2_3_SUPPORT
 	//目前配为2.3v
     lcd_reg1.b.ldo_lcd_v = 0x37; // (2.3 - 1.6125)=0.0125*n---000 0000
+#else
+	//目前配为1.8v
+    lcd_reg1.b.ldo_lcd_v = 0xF; // (1.8 - 1.6125)=0.0125*n---000 0000
+#endif
     halAdiBusWrite(&hwp_rda2720mGlobal->ldo_lcd_reg1, lcd_reg1.v);
 }
 
@@ -519,6 +525,7 @@ static osiThread_t * prv_play_btn_voice_one_time_thread = NULL;
 static auPlayer_t * prv_play_btn_voice_one_time_player = NULL;
 static osiThread_t * prv_play_voice_one_time_thread = NULL;
 static auPlayer_t * prv_play_voice_one_time_player = NULL;
+
 extern lv_poc_audio_dsc_t lv_poc_audio_msg;
 extern lv_poc_audio_dsc_t lv_poc_audio_start_machine;
 extern lv_poc_audio_dsc_t lv_poc_audio_no_connected;
@@ -677,6 +684,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 
 			if(voice_queue_reader == voice_queue_writer)
 			{
+				is_poc_play_voice = false;
 				continue;
 			}
 			voice_type = voice_queue[voice_queue_reader];
@@ -787,7 +795,11 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 {
 	if(!quiet)
 	{
-		if(prv_play_btn_voice_one_time_thread != NULL || is_poc_play_voice == true)
+		OSI_PRINTFI("[poc][voice](%s)(%d)pttKey(%d), is_poc_play_voice(%d), earptt(%d)", __func__, __LINE__, poc_get_ptt_key_status(), is_poc_play_voice, lv_poc_get_earppt_state());
+		if(prv_play_btn_voice_one_time_thread != NULL
+			|| is_poc_play_voice == true
+			|| poc_get_ptt_key_status()
+			|| lv_poc_get_earppt_state())
 		{
 			return;
 		}

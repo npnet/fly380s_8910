@@ -139,7 +139,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     strcpy(lv_poc_about_text_model, "FT02");
     strcpy(lv_poc_about_text_processor, "UIS8910DM_IE_AIOT_AIM");
     strcpy(lv_poc_about_text_sysversion, "8910_MODULE_V1_3_W20.35.2");
-    strcpy(lv_poc_about_text_version_number, "V20.35.2-D01.11");
+    strcpy(lv_poc_about_text_version_number, "V20.35.2-D01.21");
     strcpy(lv_poc_about_text_update, "检查更新");
 
     for(int i = 0; i < label_array_size; i++)

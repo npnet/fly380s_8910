@@ -34,6 +34,10 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t evt, void *p);
 
 bool pocGetPttKeyState(void);
 
+void poc_set_ptt_key_status(bool keyStatus);
+
+bool poc_get_ptt_key_status(void);
+
 OSI_EXTERN_C_END
 
 #endif

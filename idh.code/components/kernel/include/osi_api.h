@@ -708,18 +708,8 @@ osiThread_t *osiThreadCurrent(void);
 /**
  * set whether current thread need FPU
  *
- * By default, FPU isn't permitted for new created thread. To enable FPU,
- * \p osiThreadSetFPUEnabled(true) should be called before floating point
- * instructions.
- *
- * Though it is possible to call \p osiThreadSetFPUEnabled(false) if it is
- * known that floating point instructions won't be used any more, it is not
- * necessary. It will only increase a little context save and restore cycles.
- * Typical usage it to call \p osiThreadSetFPUEnabled(true) at the beginning
- * of thread entry.
- *
- * It is undefined if thread uses floating point instructions whthout call
- * of \p osiThreadSetFPUEnabled(true).
+ * Obsoleted. Floating point can be used in all threads, and ISR. This API
+ * is just for compatible, and implemented as empty.
  *
  * \param enabled   true for enable FPU, false for disable FPU.
  */
@@ -875,6 +865,9 @@ void osiShowThreadState(void);
  * When event queue of the target thread is full, the caller thread
  * will be block until there are rooms in target thread event queue.
  *
+ * This can be called in ISR. And in ISR, it will return false when event
+ * queue is full, and not wait.
+ *
  * \param thread    thread pointer, can't be NULL
  * \param event     event to be sent
  * \return
@@ -920,7 +913,7 @@ bool osiSendQuitEvent(osiThread_t *thread, bool wait);
  * is \p OSI_WAIT_FOREVER, this will wait forever until there are
  * rooms in target thread event queue.
  *
- * This can be called in ISR. And in ISR, \p timeout must be 0.
+ * This can be called in ISR. And in ISR, \p timeout will be ignored.
  *
  * \param thread    thread pointer, can't be NULL
  * \param event     event to be sent
@@ -944,6 +937,8 @@ bool osiEventTrySend(osiThread_t *thread, const osiEvent_t *event, uint32_t time
  * and process, this will return an event with ID of 0. Application can
  * ignore event ID 0 safely.
  *
+ * It **can't** be called in ISR. And in ISR, it will return false directly.
+ *
  * \param thread    thread pointer, can't be NULL
  * \param event     event pointer
  * \return
@@ -958,6 +953,8 @@ bool osiEventWait(osiThread_t *thread, osiEvent_t *event);
  * When \p timeout is 0, this will return false immediately. When \p timeout
  * is \p OSI_WAIT_FOREVER, this will wait forever until there are
  * events in target thread event queue.
+ *
+ * It **can't** be called in ISR. And in ISR, it will return false directly.
  *
  * \param thread    thread pointer, can't be NULL
  * \param event     event pointer
@@ -1623,6 +1620,9 @@ void osiMessageQueueDelete(osiMessageQueue_t *mq);
  *
  * When \p mq is full, it will be blocked until there are rooms.
  *
+ * This can be called in ISR. And in ISR, it will return false when queue
+ * is full, and not wait.
+ *
  * \param mq    message queue pointer
  * \param msg   mesage pointer
  * \return
@@ -1634,7 +1634,7 @@ bool osiMessageQueuePut(osiMessageQueue_t *mq, const void *msg);
 /**
  * put a message to message queue with timeout
  *
- * This can be called in ISR. And in ISR, \p timeout must be 0.
+ * This can be called in ISR. And in ISR, \p timeout will be ignored.
  *
  * \param mq        message queue pointer
  * \param msg       mesage pointer
@@ -1655,6 +1655,9 @@ bool osiMessageQueueTryPut(osiMessageQueue_t *mq, const void *msg, uint32_t time
  *
  * When \p mq is empty, it will be blocked until there are messages.
  *
+ * This can be called in ISR. And in ISR, it will return false when queue
+ * is empty, and not wait.
+ *
  * \param mq    message queue pointer
  * \param msg   mesage pointer
  * \return
@@ -1666,7 +1669,7 @@ bool osiMessageQueueGet(osiMessageQueue_t *mq, void *msg);
 /**
  * get a message to message queue with timeout
  *
- * This can be called in ISR. And in ISR, \p timeout must be 0.
+ * This can be called in ISR. And in ISR, \p timeout will be ignored.
  *
  * \param mq        message queue pointer
  * \param msg       mesage pointer
@@ -1709,14 +1712,20 @@ void osiSemaphoreDelete(osiSemaphore_t *semaphore);
  * When the count of semaphore is 0, it will be blocked until the count
  * becomes non-zero (increased by \p osiSemaphoreRelease).
  *
+ * This can be called in ISR. And in ISR, it will return false when
+ * semaphore is unavailable, and not wait.
+ *
  * \param semaphore     semaphore pointer
+ * \return
+ *      - true on success
+ *      - false on invalid parameter, or unavailable in ISR
  */
-void osiSemaphoreAcquire(osiSemaphore_t *semaphore);
+bool osiSemaphoreAcquire(osiSemaphore_t *semaphore);
 
 /**
  * acquire from semaphore with timeout
  *
- * This can be called in ISR. And in ISR, \p timeout must be 0.
+ * This can be called in ISR. And in ISR, \p timeout will be ignored.
  *
  * \param semaphore     semaphore pointer
  * \param timeout       timeout in milliseconds
@@ -1765,12 +1774,16 @@ void osiMutexDelete(osiMutex_t *mutex);
  * When \p mutex is locked by another thread, it will wait forever
  * until the mutex is unlocked.
  *
+ * It **can't** be called in ISR. And in ISR, it will return directly.
+ *
  * \param mutex     mutex pointer to be locked
  */
 void osiMutexLock(osiMutex_t *mutex);
 
 /**
  * lock the mutex with timeout
+ *
+ * It **can't** be called in ISR. And in ISR, it will return false directly.
  *
  * \param mutex     mutex pointer to be locked
  * \param timeout   timeout in milliseconds
@@ -1782,6 +1795,8 @@ bool osiMutexTryLock(osiMutex_t *mutex, uint32_t timeout);
 
 /**
  * unlock the mutex
+ *
+ * It **can't** be called in ISR. And in ISR, it will return directly.
  *
  * \param mutex     mutex pointer to be unlocked
  */

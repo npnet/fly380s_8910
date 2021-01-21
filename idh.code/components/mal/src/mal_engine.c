@@ -17,7 +17,7 @@
 #include "osi_log.h"
 #include <stdlib.h>
 
-#define MAL_THREAD_STACK_SIZE (1024)
+#define MAL_THREAD_STACK_SIZE (2048)
 #define MAL_THREAD_EVENT_COUNT (32)
 
 typedef enum

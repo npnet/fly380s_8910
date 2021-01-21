@@ -22,11 +22,8 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_CPU_ARMV7A)
-#define CPSR_MODE_USER 0x10U
-#define CPSR_MODE_SYSTEM 0x1FU
-#define IS_IRQ_MASKED() (0U)
-#define IS_IRQ_MODE() ((__get_mode() != CPSR_MODE_USER) && (__get_mode() != CPSR_MODE_SYSTEM))
-#define IS_IRQ() (IS_IRQ_MODE() || IS_IRQ_MASKED())
+#define IS_IRQ() ({ unsigned _mode = __get_mode(); !(_mode == CPSR_M_USR || _mode == CPSR_M_SYS); })
+
 #elif defined(CONFIG_CPU_ARMV7M)
 #define IS_IRQ() (__get_IPSR() != 0)
 #elif defined(CONFIG_CPU_MIPS)

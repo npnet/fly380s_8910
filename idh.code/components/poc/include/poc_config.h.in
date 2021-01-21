@@ -132,6 +132,12 @@
 #cmakedefine CONFIG_POC_CIT_KEY_SUPPORT
 
 /**
+ * Wheth the POC LCD 2.3V is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_LCD_VOL_2_3_SUPPORT
+
+/**
  * Wheth the POC audio data buff is enabled more than 3.
  *
  */

@@ -261,13 +261,12 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
 		            gLvScreenStatusFirstKey = true;
 	            }
                 data->key = gLvKeyMap[n].lv_key;
-
+				OSI_PRINTFI("[poc][key]key is (%d)", data->key);
                 break;
             }
         }
 
 		lv_poc_cbn_key_obj(data) == true ? (cnt_key_state = true) : (cnt_key_state = false);
-
 	    if(!pocKeypadHandle(data->key, data->state, &cnt_key_state))
 	    {
 			if(pub_lv_poc_get_watchdog_status())
