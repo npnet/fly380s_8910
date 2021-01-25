@@ -93,7 +93,8 @@ enum{
 
 static void LvGuiBndCom_delay_close_listen_timer_cb(void *ctx);
 static void prvPocGuiBndTaskHandleErrorInfo(uint32_t id, uint32_t ctx);
-static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length);
+static void lvPocGuiBndCom_send_data_callback(uint8_t * data, uint32_t length);
+static int lvPocGuiBndCom_try_get_memberinfo(bnd_gid_t gid, bnd_member_t* dst);
 
 //全部的组
 class CAllGroup
@@ -232,6 +233,7 @@ public:
 	lv_poc_get_group_list_cb_t pocGetGroupListCb;
 	lv_poc_get_member_list_cb_t pocGetMemberListCb;
 	poc_set_current_group_cb pocSetCurrentGroupCb;
+	poc_build_tempgrp_cb pocBuildTempGrpCb;
 	poc_get_member_status_cb pocGetMemberStatusCb;
 	poc_set_member_call_status_cb pocMemberCallCb;
 	void (*pocLockGroupCb)(lv_poc_group_oprator_type opt);
@@ -245,6 +247,8 @@ public:
 	bool is_member_call;
 	bool is_have_join_group;
 	bool onepoweron;
+	bool is_enter_signal_multi_call;
+	bool is_list_update;
 
 	//num
 	int delay_play_voice;
@@ -255,14 +259,18 @@ public:
 	int signalcall_gid;
 	uint16_t loginstatus_t;
 	lv_poc_tmpgrp_t cit_status;
+	int single_multi_call_type;
+	int info_error_type;
 
 	//info
 	bnd_group_t BndCurrentGroupInfo;
+	bnd_group_t BndTmpGrpInf;
 	bnd_member_t BndUserInfo;
 	Msg_GROUP_MEMBER_s self_info;
 	Msg_GROUP_MEMBER_s member_call_obj;
 	PocGuiBndPaAttr_t pa_attr;
 	Msg_GData_s BndMsgGMemberBuf;
+	bnd_group_t *SignalCallInf;
 
 	//Mutex
 	osiMutex_t *lock;
@@ -1159,16 +1167,29 @@ void callback_BND_Audio(AUDIO_STATE state, bnd_uid_t uid, const char* name, int 
     }
 }
 
-void callback_BND_Callmember(int ret)
+void callback_BND_SingalCallmember(int ret)
 {
     if(ret==1)
 	{
-		OSI_LOGXI(OSI_LOGPAR_IS, 0, "[cbbnd][membercall](%d)state:(%s)", __LINE__, "call sucess");
+		OSI_LOGXI(OSI_LOGPAR_IS, 0, "[cbbnd][singalcall](%d)state:(%s)", __LINE__, "call sucess");
     }
 	else
 	{
-		OSI_LOGXI(OSI_LOGPAR_IS, 0, "[cbbnd][membercall](%d)state:(%s)", __LINE__, "call failed");
+		OSI_LOGXI(OSI_LOGPAR_IS, 0, "[cbbnd][singalcall](%d)state:(%s)", __LINE__, "call failed");
 		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP, NULL);
+    }
+}
+
+void callback_BND_MultiCallmember(int ret)
+{
+    if(ret==1)
+	{
+		OSI_LOGXI(OSI_LOGPAR_IS, 0, "[cbbnd][multicall](%d)state:(%s)", __LINE__, "call sucess");
+    }
+	else
+	{
+		OSI_LOGXI(OSI_LOGPAR_IS, 0, "[cbbnd][multicall](%d)state:(%s)", __LINE__, "call failed");
+		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_REP, (void *)ret);
     }
 }
 
@@ -1193,10 +1214,14 @@ void callback_BND_Join_Group(const char* groupname, bnd_gid_t gid)
 		{
 			case GRP_COMMON://组呼
 			{
-				OSI_PRINTFI("[cbbnd][groupcall](%s)(%d):group call ack", __func__, __LINE__);
-				if(pocBndAttr.is_member_call)//signal call
+				if(pocBndAttr.is_member_call)//single call
 				{
+					OSI_PRINTFI("[cbbnd][singlecall](%s)(%d):exit single call ack, join group", __func__, __LINE__);
 					lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP, (void *)2);
+				}
+				else
+				{
+					OSI_PRINTFI("[cbbnd][groupcall](%s)(%d):group call ack, join group", __func__, __LINE__);
 				}
 				//cur gro
 				pocBndAttr.call_type = GRP_COMMON;
@@ -1217,11 +1242,13 @@ void callback_BND_Join_Group(const char* groupname, bnd_gid_t gid)
 				}
 				else
 				{
-					OSI_PRINTFI("[cbbnd][singlecall](%s)(%d):rec single call", __func__, __LINE__);
-					bnd_group_t BndSignalInf = {0};
+					OSI_PRINTFI("[cbbnd][singlecall](%s)(%d):rec multi call or single call", __func__, __LINE__);
+					static bnd_group_t BndSignalInf = {0};
+					memset(&BndSignalInf, 0, sizeof(bnd_group_t));
+
 					BndSignalInf.gid = gid;
 					strcpy(BndSignalInf.name, groupname);
-					lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_GET_MEMBER_CALL_IND, (void *)&BndSignalInf);
+					lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_SELECT_CALL_MODE, (void *)&BndSignalInf);
 				}
 				pocBndAttr.call_type = GRP_SINGLECALL;
 				break;
@@ -1258,6 +1285,7 @@ void callback_BND_ListUpdate(int flag)
 		{
 			str = "you need get memberlist -- update";
 			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_GU_STATUS_REP, (void *)2);
+			pocBndAttr.is_list_update = true;
 			break;
 		}
 
@@ -1275,11 +1303,11 @@ void callback_BND_MemberChange(int flag, bnd_gid_t gid, int num, bnd_uid_t* uids
     if(flag == 1)//leave group
 	{
         OSI_LOGXI(OSI_LOGPAR_SIII, 0, "[cbbnd][memberchange][leave group](%s)(%d):gid(%d), m_MemNum(%d)", __FUNCTION__, __LINE__, gid, num);
-		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP, (void *)gid);
+		pocBndAttr.single_multi_call_type == USER_OPRATOR_SIGNAL_CALL ? lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP, (void *)gid) : 0;
 	}
 	else
 	{
-        OSI_LOGXI(OSI_LOGPAR_SII, 0, "[cbbnd][memberchange](%s)(%d):gid(%d)", __FUNCTION__, __LINE__, gid);
+        OSI_LOGXI(OSI_LOGPAR_SII, 0, "[cbbnd][memberchange](%s)(%d):gid(%d), m_MemNum(%d)", __FUNCTION__, __LINE__, gid, num);
 	}
 }
 
@@ -1343,7 +1371,43 @@ static void LvGuiBndCom_delay_close_listen_timer_cb(void *ctx)
 
 static void LvGuiBndCom_get_member_list_timer_cb(void *ctx)
 {
+	bnd_member_t BndGData_s[GUIBNDCOM_MEMBERMAX] = {0};
+	int m_GNum = 0;
 
+	switch(pocBndAttr.info_error_type)
+	{
+		case ERROR_TYPE_SINGLE_OR_MULTI_CALL:
+		{
+			m_GNum = lvPocGuiBndCom_try_get_memberinfo(pocBndAttr.SignalCallInf->gid, BndGData_s);
+			break;
+		}
+
+		case ERROR_TYPE_MEMBER_REFRESH:
+		{
+			int gid = atoi((char *)m_BndUser.m_Group.m_Group[pocBndAttr.current_group].m_ucGNum);
+			m_GNum = lvPocGuiBndCom_try_get_memberinfo(gid, BndGData_s);
+			break;
+		}
+
+		default:
+		{
+			OSI_PRINTFI("[cbbnd][memberinfo][cb](%s)(%d):error", __func__, __LINE__);
+			osiTimerStop(pocBndAttr.get_member_list_timer);
+			break;
+		}
+	}
+
+	if(m_GNum >= 0)
+	{
+		OSI_PRINTFI("[cbbnd][memberinfo][cb](%s)(%d):reget success, start to refresh", __func__, __LINE__);
+		pocBndAttr.info_error_type = ERROR_TYPE_START;
+		osiTimerStop(pocBndAttr.get_member_list_timer);
+		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_REGET_INFO_IND, (void *)m_GNum);
+	}
+	else
+	{
+		OSI_PRINTFI("[cbbnd][memberinfo][cb](%s)(%d):reget info(%d)", __func__, __LINE__, m_GNum);
+	}
 }
 
 static void LvGuiBndCom_get_group_list_timer_cb(void *ctx)
@@ -1449,11 +1513,7 @@ void LvGuiBndCom_Member_update_timer_cb(void *ctx)
 			}
 		}
 
-		if(pocBndAttr.self_info.ucName != NULL//show
-			&& pocBndAttr.BndCurrentGroupInfo.name != NULL)
-		{
-			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, pocBndAttr.self_info.ucName, (char *)pocBndAttr.BndCurrentGroupInfo.name);
-		}
+		lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, pocBndAttr.self_info.ucName, (char *)pocBndAttr.BndCurrentGroupInfo.name);
 		OSI_PRINTFI("[member][update](%s)(%d):start request memberrefr, SelfName(%s), SelfId(%s), CurGName(%s)", __func__, __LINE__, pocBndAttr.self_info.ucName, pocBndAttr.self_info.ucNum, pocBndAttr.BndCurrentGroupInfo.name);
 	}
 	else
@@ -1530,7 +1590,7 @@ static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 
 			if(pocBndAttr.recorder == 0)
 			{
-				pocBndAttr.recorder = pocAudioRecorderCreate(40960, 320, 20, lvPocGuiIdtCom_send_data_callback);
+				pocBndAttr.recorder = pocAudioRecorderCreate(40960, 320, 20, lvPocGuiBndCom_send_data_callback);
 			}
 
 #if POC_AUDIO_MODE_PIPE
@@ -1869,15 +1929,33 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 			{
 				do
 				{
-					int MemberNum = broad_get_membercount(pocBndAttr.BndCurrentGroupInfo.gid);
-					pocBndAttr.BndMsgGMemberBuf.dwNum = broad_get_memberlist(pocBndAttr.BndCurrentGroupInfo.gid, BndGData_s, GUIBNDCOM_MEMBERMAX, 0, MemberNum);
+					if(pocBndAttr.is_enter_signal_multi_call == true)//multi-call
+					{
+						pocBndAttr.BndMsgGMemberBuf.dwNum = lvPocGuiBndCom_try_get_memberinfo(pocBndAttr.BndTmpGrpInf.gid, BndGData_s);
+					}
+					else
+					{
+						pocBndAttr.BndMsgGMemberBuf.dwNum = lvPocGuiBndCom_try_get_memberinfo(pocBndAttr.BndCurrentGroupInfo.gid, BndGData_s);
+					}
 
 					if(pocBndAttr.BndMsgGMemberBuf.dwNum < 0)
 					{
 						pocBndAttr.pocGetMemberListCb(0, 0, NULL);
 						pocBndAttr.pocGetMemberListCb = NULL;
+						pocBndAttr.is_enter_signal_multi_call = false;//multi-call
+						OSI_PRINTFI("[memberlist](%s)(%d):error", __func__, __LINE__);
 						break;
 					}
+
+					if(pocBndAttr.is_enter_signal_multi_call == true)//multi-call
+					{
+						OSI_PRINTFI("[multi-call][activitylist](%s)(%d):open", __func__, __LINE__);
+						pocBndAttr.is_enter_signal_multi_call = false;
+						lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.build_tmp_open, 5, LV_TASK_PRIO_HIGHEST, (void *)pocBndAttr.BndTmpGrpInf.name);
+						lv_task_once(oncetask);
+						poc_play_voice_one_time(LVPOCAUDIO_Type_Enter_Temp_Group, 50, false);
+					}
+
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取成员列表...", NULL);
 					for(unsigned long  i = 0; i < pocBndAttr.BndMsgGMemberBuf.dwNum; i++)
 					{
@@ -1901,7 +1979,6 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 				}while(0);
 
-				OSI_PRINTFI("[memberlist](%s)(%d):m_gid(%d), m_Member_Num(%d)", __func__, __LINE__, pocBndAttr.BndCurrentGroupInfo.gid, pocBndAttr.BndMsgGMemberBuf.dwNum);
 				pocBndAttr.pocGetMemberListCb = NULL;
 			}
 			else//group x member
@@ -1974,8 +2051,7 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 
 			do
 			{
-				int MemberNum = broad_get_membercount(gid);
-				pocBndAttr.BndMsgGMemberBuf.dwNum = broad_get_memberlist(gid, BndGData_s, GUIBNDCOM_MEMBERMAX, 0, MemberNum);
+				pocBndAttr.BndMsgGMemberBuf.dwNum = lvPocGuiBndCom_try_get_memberinfo(gid, BndGData_s);
 				OSI_PRINTFI("[groupxmember](%s)(%d):m_gid(%d), m_Member_Num(%d)", __func__, __LINE__, gid, pocBndAttr.BndMsgGMemberBuf.dwNum);
 
 				if(pocBndAttr.BndMsgGMemberBuf.dwNum < 0 || pocBndAttr.BndMsgGMemberBuf.dwNum > GUIBNDCOM_MEMBERMAX)
@@ -2048,16 +2124,19 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 			bnd_member_t BndGData_s[GUIBNDCOM_MEMBERMAX] = {0};
 			int gid = atoi((char *)m_BndUser.m_Group.m_Group[pocBndAttr.current_group].m_ucGNum);
 
-			int MemberNum = broad_get_membercount(gid);
-			BndMsgGMember.dwNum = broad_get_memberlist(gid, BndGData_s, GUIBNDCOM_MEMBERMAX, 0, MemberNum);
+			BndMsgGMember.dwNum = lvPocGuiBndCom_try_get_memberinfo(gid, BndGData_s);
 
 			if(BndMsgGMember.dwNum < 0 || BndMsgGMember.dwNum > GUIBNDCOM_MEMBERMAX)
 			{
-				OSI_PRINTFI("[member][update](%s)(%d):error", __func__, __LINE__);
+				OSI_PRINTFI("[member][update](%s)(%d):error, launch time to get", __func__, __LINE__);
+				pocBndAttr.info_error_type = ERROR_TYPE_MEMBER_REFRESH;
+				osiTimerStartPeriodic(pocBndAttr.get_member_list_timer, 50);
 				break;
 			}
 
 			int  objindex = 0;
+			bool is_update = false;
+
 			for(unsigned long i = 0; i < BndMsgGMember.dwNum; i++)//1--online, 2--offline, 3--online in group
 			{
 				for(unsigned long j = 0; j < BndMsgGMember.dwNum; j++)
@@ -2065,23 +2144,25 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 					if(0 == strcmp(BndGData_s[i].name, (char *)pocBndAttr.BndMsgGMemberBuf.member[j].ucName))
 					{
 						if(BndGData_s[i].state == 1
-							|| BndGData_s[i].state == 3)
+							|| BndGData_s[i].state == 3)//1 and 3 online
 						{
 							if(pocBndAttr.BndMsgGMemberBuf.member[j].ucStatus == 0)
 							{
 								Usesta = true;
 								objindex = j;
+								is_update = true;
 								pocBndAttr.BndMsgGMemberBuf.member[j].ucStatus = 1;
 								OSI_PRINTFI("[member][refresh](%s)(%d):member update online", __func__, __LINE__);
 								break;
 							}
 						}
-						else
+						else//2 offline
 						{
 							if(pocBndAttr.BndMsgGMemberBuf.member[j].ucStatus == 1)
 							{
 								Usesta = false;
 								objindex = j;
+								is_update = true;
 								pocBndAttr.BndMsgGMemberBuf.member[j].ucStatus = 0;
 								OSI_PRINTFI("[member][refresh](%s)(%d):member update offline", __func__, __LINE__);
 								break;
@@ -2090,11 +2171,20 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 					}
 				}
 			}
-			//update member
-			osiMutexTryLock(pocBndAttr.lock, 50);
-			lv_poc_activity_func_cb_set.member_list.set_state(NULL, (const char *)pocBndAttr.BndMsgGMemberBuf.member[objindex].ucName, (void *)&pocBndAttr.BndMsgGMemberBuf.member[objindex], Usesta);
-			lv_poc_activity_func_cb_set.member_list.refresh(NULL);
-			osiMutexUnlock(pocBndAttr.lock);
+
+			if(!is_update)
+			{
+				OSI_PRINTFI("[member][update](%s)(%d):no update", __func__, __LINE__);
+			}
+			else
+			{
+				//update member
+				OSI_PRINTFI("[member][update](%s)(%d):start refresh", __func__, __LINE__);
+				osiMutexTryLock(pocBndAttr.lock, 50);
+				lv_poc_activity_func_cb_set.member_list.set_state(NULL, (const char *)pocBndAttr.BndMsgGMemberBuf.member[objindex].ucName, (void *)&pocBndAttr.BndMsgGMemberBuf.member[objindex], Usesta);
+				lv_poc_activity_func_cb_set.member_list.refresh(NULL);
+				osiMutexUnlock(pocBndAttr.lock);
+			}
 
 			break;
 		}
@@ -2148,9 +2238,11 @@ static void prvPocGuiBndTaskHandleCurrentGroup(uint32_t id, uint32_t ctx)
 			}
 			else//切组成功
 			{
-				nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
-				strcpy(poc_config->curren_group_name, (char *)m_BndUser.m_Group.m_Group[index].m_ucGName);
-				lv_poc_setting_conf_write();
+				{
+					nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+					strcpy(poc_config->curren_group_name, (char *)m_BndUser.m_Group.m_Group[index].m_ucGName);
+					lv_poc_setting_conf_write();
+				}//wait for some time
 				pocBndAttr.haveingroup = false;
 				pocBndAttr.current_group = index;
 				pocBndAttr.pocSetCurrentGroupCb(1);
@@ -2175,6 +2267,115 @@ static void prvPocGuiBndTaskHandleCurrentGroup(uint32_t id, uint32_t ctx)
 		case LVPOCGUIBNDCOM_SIGNAL_CANCEL_REGISTER_SET_CURRENT_GROUP_CB_IND:
 		{
 			pocBndAttr.pocSetCurrentGroupCb = NULL;
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+}
+
+static void prvPocGuiBndTaskHandleBuildTempGrp(uint32_t id, uint32_t ctx)
+{
+	switch(id)
+	{
+		case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_IND:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+
+			if(pocBndAttr.pocBuildTempGrpCb == NULL)
+			{
+				break;
+			}
+
+			if(lvPocGuiBndCom_get_status() == USER_OFFLINE)
+			{
+				pocBndAttr.pocBuildTempGrpCb(0);
+				pocBndAttr.pocBuildTempGrpCb = NULL;
+				break;
+			}
+
+			char multimemberid[512];
+			bnd_uid_t multi_uid[GUIBNDCOM_MEMBERMAX] = {0};
+			lv_poc_build_new_tempgrp_t * new_tempgrp = (lv_poc_build_new_tempgrp_t *)ctx;
+			Msg_GROUP_MEMBER_s *member_info = NULL;
+			memset(multimemberid, 0, sizeof(512));
+
+			for(int i = 0; i < new_tempgrp->num; i++)
+			{
+				member_info = (Msg_GROUP_MEMBER_s *)new_tempgrp->members[i];
+				if(member_info == NULL)
+				{
+					OSI_PRINTFI("[build][tempgrp](%s)(%d)failed", __func__, __LINE__);
+					pocBndAttr.pocBuildTempGrpCb(0);
+					pocBndAttr.pocBuildTempGrpCb = NULL;
+					return;
+				}
+				multi_uid[i] = atoi((const char *)member_info->ucNum);
+				strcat(multimemberid, (const char *)member_info->ucNum);
+				strcat(multimemberid, "/");
+			}
+			OSI_PRINTFI("[build][tempgrp](%s)(%d):multi-id(%s)", __func__, __LINE__, multimemberid);
+			//request member multi calls
+			broad_callusers(multi_uid, new_tempgrp->num, callback_BND_MultiCallmember);
+			break;
+		}
+
+		case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_REP:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+
+			pocBndAttr.pocBuildTempGrpCb((int)ctx);
+			pocBndAttr.pocBuildTempGrpCb = NULL;
+			OSI_PRINTFI("[build][tempgrp](%s)(%d)query all group", __func__, __LINE__);
+			break;
+		}
+
+		case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_GET_MEMBER_REP:
+		{
+			if(pocBndAttr.pocBuildTempGrpCb == NULL)
+			{
+				OSI_PRINTFI("[call][tempgrp](%s)(%d):rev call_memberinfo", __func__, __LINE__);
+				lv_poc_activity_func_cb_set.build_tmp_get_info();
+			}
+			else
+			{
+				OSI_PRINTFI("[call][tempgrp](%s)(%d):start request call_memberinfo", __func__, __LINE__);
+				pocBndAttr.pocBuildTempGrpCb(1);
+				pocBndAttr.pocBuildTempGrpCb = NULL;
+			}
+			break;
+		}
+
+		case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_EXIT_REP:
+		{
+			lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.build_tmp_close, 50, LV_TASK_PRIO_HIGHEST, (void *)POC_EXITGRP_PASSIVE);
+			lv_task_once(oncetask);
+			break;
+		}
+
+		case LVPOCGUIBNDCOM_SIGNAL_REGISTER_BIUILD_TEMPGRP_CB_IND:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+			pocBndAttr.pocBuildTempGrpCb = (poc_build_tempgrp_cb)ctx;
+			break;
+		}
+
+		case LVPOCGUIBNDCOM_SIGNAL_CANCEL_REGISTER_BIUILD_TEMPGRP_CB_IND:
+		{
+			OSI_PRINTFI("[tempgrp](%s)(%d):cannel build tempgrp cb", __func__, __LINE__);
+			pocBndAttr.pocBuildTempGrpCb = NULL;
 			break;
 		}
 
@@ -2404,7 +2605,7 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 					//request member signal call
 					unsigned int callnumber = 0;
 					callnumber = atoi((char *)member_call_obj->ucNum);
-					broad_calluser(callnumber, callback_BND_Callmember);
+					broad_calluser(callnumber, callback_BND_SingalCallmember);
 
 					OSI_LOGI(0, "[singlecall](%d)start request single call", __LINE__);
 				}else
@@ -2461,6 +2662,14 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 				break;
 			}
 
+			if(pocBndAttr.single_multi_call_type == USER_OPRATOR_MULTI_CALL)
+			{
+				pocBndAttr.is_member_call = false;
+				OSI_PRINTFI("[cbbnd][tmpgrp](%s)(%d):rec exit multi-call, launch", __func__, __LINE__);
+				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_EXIT_REP, NULL);
+				break;
+			}
+
 			int SigalCallgid = (int)ctx;
 
 			if(pocBndAttr.signalcall_gid == SigalCallgid
@@ -2483,6 +2692,99 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			break;
 		}
 
+		case LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_GET_MEMBER_CALL_IND:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+
+			pocBndAttr.SignalCallInf = (bnd_group_t *)ctx;
+
+			static Msg_GROUP_MEMBER_s member_call_obj = {0};
+			memset(&member_call_obj, 0, sizeof(Msg_GROUP_MEMBER_s));
+			strcpy((char *)member_call_obj.ucName, (const char *)pocBndAttr.SignalCallInf->name);//临时呼叫的群组名就是用户名
+			member_call_obj.ucStatus = USER_ONLINE;
+			pocBndAttr.signalcall_gid = pocBndAttr.SignalCallInf->gid;
+			pocBndAttr.member_call_dir = 1;
+			lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
+			break;
+		}
+
+		case LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_SELECT_CALL_MODE:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+			pocBndAttr.SignalCallInf = (bnd_group_t *)ctx;
+			bnd_member_t BndGData_s[GUIBNDCOM_MEMBERMAX] = {0};
+			int m_GNum = lvPocGuiBndCom_try_get_memberinfo(pocBndAttr.SignalCallInf->gid, BndGData_s);
+
+			if(m_GNum < 0)
+			{
+				OSI_PRINTFI("[cbbnd][calltype](%s)(%d):get memberinf error, launch time to get", __func__, __LINE__);
+				pocBndAttr.info_error_type = ERROR_TYPE_SINGLE_OR_MULTI_CALL;
+				osiTimerStartPeriodic(pocBndAttr.get_member_list_timer, 50);
+				break;
+			}
+
+			if(m_GNum < 2)//single call
+			{
+				OSI_PRINTFI("[cbbnd][calltype](%s)(%d):launch single call", __func__, __LINE__);
+				pocBndAttr.single_multi_call_type = USER_OPRATOR_SIGNAL_CALL;
+				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_GET_MEMBER_CALL_IND, (void *)pocBndAttr.SignalCallInf);
+			}
+			else//multi call
+			{
+				OSI_PRINTFI("[cbbnd][calltype](%s)(%d):launch multi call", __func__, __LINE__);
+				pocBndAttr.single_multi_call_type = USER_OPRATOR_MULTI_CALL;
+				pocBndAttr.is_member_call = true;
+				pocBndAttr.is_enter_signal_multi_call = true;
+
+				//tmpgrp info
+				pocBndAttr.BndTmpGrpInf.gid = pocBndAttr.SignalCallInf->gid;
+				pocBndAttr.BndTmpGrpInf.type = pocBndAttr.SignalCallInf->type;
+				pocBndAttr.BndTmpGrpInf.index = pocBndAttr.SignalCallInf->index;
+				strcpy(pocBndAttr.BndTmpGrpInf.name, pocBndAttr.SignalCallInf->name);
+				//launch
+				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_GET_MEMBER_REP, NULL);
+			}
+			break;
+		}
+
+		case LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_REGET_INFO_IND:
+		{
+			if(ctx == 0)
+			{
+				break;
+			}
+
+			int m_GNum = (int)ctx;
+			if(m_GNum < 2)//single call
+			{
+				OSI_PRINTFI("[cbbnd][calltype][reget](%s)(%d):launch single call", __func__, __LINE__);
+				pocBndAttr.single_multi_call_type = USER_OPRATOR_SIGNAL_CALL;
+				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_GET_MEMBER_CALL_IND, (void *)pocBndAttr.SignalCallInf);
+			}
+			else//multi call
+			{
+				OSI_PRINTFI("[cbbnd][calltype][reget](%s)(%d):launch multi call", __func__, __LINE__);
+				pocBndAttr.single_multi_call_type = USER_OPRATOR_MULTI_CALL;
+				pocBndAttr.is_member_call = true;
+				pocBndAttr.is_enter_signal_multi_call = true;
+
+				//tmpgrp info
+				pocBndAttr.BndTmpGrpInf.gid = pocBndAttr.SignalCallInf->gid;
+				pocBndAttr.BndTmpGrpInf.type = pocBndAttr.SignalCallInf->type;
+				pocBndAttr.BndTmpGrpInf.index = pocBndAttr.SignalCallInf->index;
+				strcpy(pocBndAttr.BndTmpGrpInf.name, pocBndAttr.SignalCallInf->name);
+				//launch
+				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_GET_MEMBER_REP, NULL);
+			}
+			break;
+		}
+
 		case LVPOCGUIBNDCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP:
 		{
 			int gid = pocBndAttr.BndCurrentGroupInfo.gid;
@@ -2491,25 +2793,6 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 				OSI_LOGXI(OSI_LOGPAR_II, 0, "[exitsinglecall](%d)join group error, gid(%d)", __LINE__, gid);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"加入群组失败", NULL);
 			}
-			break;
-		}
-
-		case LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_GET_MEMBER_CALL_IND:
-		{
-			if(ctx == 0)
-			{
-				break;
-			}
-
-			bnd_group_t *SignalCallInf = (bnd_group_t *)ctx;
-
-			static Msg_GROUP_MEMBER_s member_call_obj = {0};
-			memset(&member_call_obj, 0, sizeof(Msg_GROUP_MEMBER_s));
-			strcpy((char *)member_call_obj.ucName, (const char *)SignalCallInf->name);//临时呼叫的群组名就是用户名
-			member_call_obj.ucStatus = USER_ONLINE;
-			pocBndAttr.signalcall_gid = SignalCallInf->gid;
-			pocBndAttr.member_call_dir = 1;
-			lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
 			break;
 		}
 
@@ -2983,6 +3266,17 @@ static void pocGuiBndComTaskEntry(void *argument)
 				break;
 			}
 
+			case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_IND:
+			case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_REP:
+			case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_GET_MEMBER_REP:
+			case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_EXIT_REP:
+			case LVPOCGUIBNDCOM_SIGNAL_REGISTER_BIUILD_TEMPGRP_CB_IND:
+			case LVPOCGUIBNDCOM_SIGNAL_CANCEL_REGISTER_BIUILD_TEMPGRP_CB_IND:
+			{
+				prvPocGuiBndTaskHandleBuildTempGrp(event.param1, event.param2);
+				break;
+			}
+
 			case LVPOCGUIBNDCOM_SIGNAL_MEMBER_INFO_IND:
 			case LVPOCGUIBNDCOM_SIGNAL_MEMBER_INFO_REP:
 			{
@@ -3017,6 +3311,8 @@ static void pocGuiBndComTaskEntry(void *argument)
 			case LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP:
 			case LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP:
 			case LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_GET_MEMBER_CALL_IND:
+			case LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_SELECT_CALL_MODE:
+			case LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_REGET_INFO_IND:
 			case LVPOCGUIBNDCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP:
 			{
 				prvPocGuiBndTaskHandleMemberCall(event.param1, event.param2);
@@ -3130,7 +3426,7 @@ extern "C" void pocGuiBndComStart(void)
 	pocBndAttr.lock = osiMutexCreate();
 }
 
-static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
+static void lvPocGuiBndCom_send_data_callback(uint8_t * data, uint32_t length)
 {
 	OSI_LOGI(0, "[bnd][record](%d):start write data to record, data(%d), lenth(%d)", __LINE__, data, length);
     if (pocBndAttr.recorder == 0 || data == NULL || length < 1)
@@ -3145,6 +3441,18 @@ static void lvPocGuiIdtCom_send_data_callback(uint8_t * data, uint32_t length)
 
 	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SEND_RECORD_DATA_IND, (void *)data);
 	m_BndUser.m_iTxCount = m_BndUser.m_iTxCount + 1;
+}
+
+static int lvPocGuiBndCom_try_get_memberinfo(bnd_gid_t gid, bnd_member_t* dst)
+{
+	int MemberNum = 0;
+	int m_GNum = 0;
+
+	MemberNum = broad_get_membercount(gid);
+ 	m_GNum = broad_get_memberlist(gid, dst, GUIBNDCOM_MEMBERMAX, 0, MemberNum);
+
+	OSI_PRINTFI("[memberinf](%s)(%d):info'get, m_Gnum(%d)", __func__, __LINE__, m_GNum);
+	return m_GNum;
 }
 
 extern "C" void lvPocGuiBndCom_Init(void)

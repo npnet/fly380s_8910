@@ -967,12 +967,12 @@ void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t * task)
 	}
 
 	lv_poc_set_group_status(false);
-	OSI_LOGI(0, "[tmpgrp]exit memberlist");
+	OSI_PRINTFI("[tmpgrp](%s)(%d):exit memberlist", __func__, __LINE__);
 	poc_build_tempgrp_member_list_activity ? lv_poc_del_activity(poc_build_tempgrp_member_list_activity) : 0;
 
 	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) == POC_TMPGRP_FINISH)
 	{
-		OSI_LOGI(0, "[tmpgrp][multi-call]exit multi call");
+		OSI_PRINTFI("[tmpgrp][multi-call](%s)(%d):exit multi call", __func__, __LINE__);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Temp_Group, 50, false);
 		type == POC_EXITGRP_INITIATIVE ? \
 		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP, NULL) : 0;
