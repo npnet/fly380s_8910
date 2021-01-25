@@ -228,6 +228,7 @@ public:
 	osiTimer_t * Bnd_MemberUpdate_timer;
 	osiTimer_t * ping_timer;
 	osiTimer_t * Bnd_workpa_timer;
+	osiTimer_t * BrightScreen_timer;
 
 	//cb
 	lv_poc_get_group_list_cb_t pocGetGroupListCb;
@@ -261,6 +262,8 @@ public:
 	lv_poc_tmpgrp_t cit_status;
 	int single_multi_call_type;
 	int info_error_type;
+	int  call_briscr_dir;
+	int  call_curscr_state;
 
 	//info
 	bnd_group_t BndCurrentGroupInfo;
@@ -1531,6 +1534,25 @@ static void LvGuiBndCom_check_ack_timeout_timer_cb(void *ctx)
 		pocBndAttr.pocGetMemberListCb(0, 0, NULL);
 		pocBndAttr.pocGetMemberListCb = NULL;
 	}
+    else if(pocBndAttr.pocGetGroupListCb != NULL)
+    {
+        pocBndAttr.pocGetGroupListCb(0, 0, NULL);
+        pocBndAttr.pocGetGroupListCb = NULL;
+    }
+	else if(pocBndAttr.pocBuildTempGrpCb != NULL)
+    {
+        pocBndAttr.pocBuildTempGrpCb(0);
+        pocBndAttr.pocBuildTempGrpCb = NULL;
+    }
+	else
+	{
+		return;
+	}
+
+	pocBndAttr.loginstatus_t = LVPOCBNDCOM_SIGNAL_LOGIN_FAILED;
+	lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
+	osiTimerIsRunning(pocBndAttr.auto_login_timer) ? osiTimerStop(pocBndAttr.auto_login_timer) : 0;
+	osiTimerStart(pocBndAttr.auto_login_timer, 5000);
 }
 
 static void LvGuiBndCom_pa_timer_cb(void *ctx)
@@ -1563,6 +1585,50 @@ static void LvGuiBndCom_ping_timer_cb(void *ctx)
 
 	pingnumber++;
 	osiTimerStart(pocBndAttr.ping_timer, 1000);
+}
+
+static void LvGuiBndCom_Call_Bright_Screen_timer_cb(void *ctx)
+{
+	OSI_PRINTFI("[CallBriScr][timecb](%s)(%d):cb, briscr_dir(%d), curscr_state(%d)", __func__, __LINE__, pocBndAttr.call_briscr_dir, pocBndAttr.call_curscr_state);
+	switch(pocBndAttr.call_briscr_dir)
+	{
+		case LVPOCBNDCOM_CALL_DIR_TYPE_ENTER:
+		{
+			poc_UpdateLastActiTime();
+			break;
+		}
+
+		case LVPOCBNDCOM_CALL_DIR_TYPE_SPEAK:
+		case LVPOCBNDCOM_CALL_DIR_TYPE_LISTEN:
+		{
+			osiTimerStop(pocBndAttr.BrightScreen_timer);
+
+			switch(pocBndAttr.call_curscr_state)
+			{
+				case LVPOCBNDCOM_CALL_LASTSCR_STATE_OPEN:
+				{
+					OSI_PRINTFI("[callscr](%s)(%d):scr open, scr on continue", __func__, __LINE__);
+					poc_UpdateLastActiTime();//continue last'state
+					break;
+				}
+
+				case LVPOCBNDCOM_CALL_LASTSCR_STATE_CLOSE:
+				{
+					OSI_PRINTFI("[callscr](%s)(%d):scr close, scr off", __func__, __LINE__);
+					poc_set_lcd_status(false);
+					break;
+				}
+			}
+			pocBndAttr.call_briscr_dir = LVPOCBNDCOM_CALL_DIR_TYPE_ENTER;
+			pocBndAttr.call_curscr_state = LVPOCBNDCOM_CALL_LASTSCR_STATE_START;
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
 }
 
 static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
@@ -1701,6 +1767,14 @@ static void prvPocGuiBndTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"未登录", NULL);
 				break;
 			}
+
+			if(lv_poc_stop_player_voice() != 2)
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"呼叫错误", NULL);
+				break;
+			}
+
 			m_BndUser.m_status = USER_OPRATOR_START_SPEAK;
 			if(osiTimerIsRunning(pocBndAttr.monitor_recorder_timer))
 			{
@@ -1710,6 +1784,8 @@ static void prvPocGuiBndTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			{
 				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_RESUME_IND, NULL);
 			}
+
+			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_ENTER, NULL);
 			broad_speak(1);
 
 			OSI_PRINTFI("[speak](%s)(%d):start apply speak", __func__, __LINE__);
@@ -1772,6 +1848,7 @@ static void prvPocGuiBndTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 				//monitor recorder thread
 				osiTimerStart(pocBndAttr.monitor_recorder_timer, 10000);//10S
+				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_EXIT, (void *)LVPOCBNDCOM_CALL_DIR_TYPE_SPEAK);
 				OSI_PRINTFI("[speak](%s)(%d):rec stop speak, destory windows", __func__, __LINE__);
 			}
 			break;
@@ -1887,6 +1964,7 @@ static void prvPocGuiBndTaskHandleGroupList(uint32_t id, uint32_t ctx)
 				break;
 			}
 			pocBndAttr.pocGetGroupListCb = (lv_poc_get_group_list_cb_t)ctx;
+			osiTimerStart(pocBndAttr.check_ack_timeout_timer, 3000);
 			break;
 		}
 
@@ -2822,6 +2900,7 @@ static void prvPocGuiBndTaskHandleListen(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, NULL, NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[listen][cbbnd](%s)(%d):rec stop listen and destory windows", __FUNCTION__, __LINE__);
+			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_EXIT, (void *)LVPOCBNDCOM_CALL_DIR_TYPE_LISTEN);
 			break;
 		}
 
@@ -2850,6 +2929,7 @@ static void prvPocGuiBndTaskHandleListen(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)pocBndAttr.BndCurrentGroupInfo.name);
 			}
 			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[listen][cbbnd](%s)(%d):rec start listen and display windows", __FUNCTION__, __LINE__);
+			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_ENTER, NULL);
 			break;
 		}
 
@@ -2927,7 +3007,7 @@ static void prvPocGuiBndTaskHandleChargerOpt(uint32_t id, uint32_t ctx)
 
 		case CHR_SHUTDOWN_IND:
 		{
-			/*add shutdown opt*/
+			//add shutdown opt
 			osiShutdown(OSI_SHUTDOWN_POWER_OFF);
 			break;
 		}
@@ -3130,22 +3210,104 @@ static void prvPocGuiBndTaskHandleSetVolum(uint32_t id, uint32_t ctx)
 
 }
 
+static void prvPocGuiBndTaskHandleCallBrightScreen(uint32_t id, uint32_t ctx)
+{
+   switch(id)
+   {
+      case LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_ENTER:
+      {
+		 if(!poc_get_lcd_status())
+		 {
+			 poc_set_lcd_status(true);
+			 pocBndAttr.call_curscr_state = LVPOCBNDCOM_CALL_LASTSCR_STATE_CLOSE;
+			 OSI_PRINTFI("[callscr](%s)(%d):cur scr close", __func__, __LINE__);
+		 }
+		 else
+		 {
+			 pocBndAttr.call_curscr_state = LVPOCBNDCOM_CALL_LASTSCR_STATE_OPEN;
+			 OSI_PRINTFI("[callscr](%s)(%d):cur scr open", __func__, __LINE__);
+		 }
+		 poc_UpdateLastActiTime();
+		 osiTimerStartPeriodic(pocBndAttr.BrightScreen_timer, 4000);
+		 pocBndAttr.call_briscr_dir = LVPOCBNDCOM_CALL_DIR_TYPE_ENTER;
+		 break;
+      }
+
+	  case LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_EXIT:
+	  {
+	  	 if(ctx == 0)
+	  	 {
+			break;
+		 }
+
+		 switch(ctx)
+		 {
+			 case LVPOCBNDCOM_CALL_DIR_TYPE_SPEAK:
+			 {
+				 pocBndAttr.call_briscr_dir = LVPOCBNDCOM_CALL_DIR_TYPE_SPEAK;
+				 osiTimerIsRunning(pocBndAttr.BrightScreen_timer) ? \
+	     		 osiTimerStop(pocBndAttr.BrightScreen_timer) : 0;
+				 osiTimerStart(pocBndAttr.BrightScreen_timer, 4000);
+				 OSI_PRINTFI("[callscr](%s)(%d):speak stop", __func__, __LINE__);
+				 break;
+			 }
+
+
+			 case LVPOCBNDCOM_CALL_DIR_TYPE_LISTEN:
+			 {
+				 pocBndAttr.call_briscr_dir = LVPOCBNDCOM_CALL_DIR_TYPE_LISTEN;
+				 osiTimerIsRunning(pocBndAttr.BrightScreen_timer) ? \
+	     		 osiTimerStop(pocBndAttr.BrightScreen_timer) : 0;
+				 osiTimerStart(pocBndAttr.BrightScreen_timer, 4000);
+				 OSI_PRINTFI("[callscr](%s)(%d):listen stop", __func__, __LINE__);
+				 break;
+			 }
+		 }
+		 break;
+	  }
+
+	  case LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_BREAK:
+	  {
+	  	 pocBndAttr.call_briscr_dir != LVPOCBNDCOM_CALL_DIR_TYPE_ENTER ? \
+	     osiTimerIsRunning(pocBndAttr.BrightScreen_timer) ? \
+	     osiTimerStop(pocBndAttr.BrightScreen_timer) : 0 \
+	     : 0;
+		 OSI_PRINTFI("[callscr](%s)(%d):break", __func__, __LINE__);
+		 break;
+	  }
+
+      default:
+      {
+         break;
+      }
+   }
+}
+
 static void prvPocGuiBndTaskHandleOther(uint32_t id, uint32_t ctx)
 {
 	switch(id)
 	{
-		case LVPOCGUIBNDCOM_SIGNAL_DELAY_IND:
+		case LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND:
 		{
+			OSI_PRINTFI("[timeout](%s)(%d):stop", __func__, __LINE__);
+			if(pocBndAttr.check_ack_timeout_timer != NULL)
+			{
+				osiTimerStop(pocBndAttr.check_ack_timeout_timer);
+			}
 			break;
 		}
 
-		case LVPOCGUIBNDCOM_SIGNAL_SCREEN_ON_IND:
+		case LVPOCGUIBNDCOM_SIGNAL_VOICE_PLAY_START_IND:
 		{
+			OSI_PRINTFI("[poc][audev](%s)(%d):start", __func__, __LINE__);
+			lv_poc_set_audevplay_status(true);
 			break;
 		}
 
-		case LVPOCGUIBNDCOM_SIGNAL_SCREEN_OFF_IND:
+		case LVPOCGUIBNDCOM_SIGNAL_VOICE_PLAY_STOP_IND:
 		{
+			OSI_PRINTFI("[poc][audev](%s)(%d):stop", __func__, __LINE__);
+			lv_poc_set_audevplay_status(false);
 			break;
 		}
 
@@ -3333,9 +3495,9 @@ static void pocGuiBndComTaskEntry(void *argument)
 				break;
 			}
 
-			case LVPOCGUIBNDCOM_SIGNAL_DELAY_IND:
-			case LVPOCGUIBNDCOM_SIGNAL_SCREEN_ON_IND:
-			case LVPOCGUIBNDCOM_SIGNAL_SCREEN_OFF_IND:
+			case LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND:
+			case LVPOCGUIBNDCOM_SIGNAL_VOICE_PLAY_START_IND:
+			case LVPOCGUIBNDCOM_SIGNAL_VOICE_PLAY_STOP_IND:
 			{
 				prvPocGuiBndTaskHandleOther(event.param1, event.param2);
 				break;
@@ -3396,6 +3558,14 @@ static void pocGuiBndComTaskEntry(void *argument)
 				break;
 			}
 
+			case LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_ENTER:
+			case LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_EXIT:
+			case LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_BREAK:
+			{
+				prvPocGuiBndTaskHandleCallBrightScreen(event.param1, event.param2);
+				break;
+			}
+
 			default:
 			{
 				OSI_PRINTFI("[gic](%s)(%d):receive a invalid event", __func__, __LINE__);
@@ -3422,6 +3592,7 @@ extern "C" void pocGuiBndComStart(void)
 	pocBndAttr.check_ack_timeout_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_check_ack_timeout_timer_cb, NULL);
 	pocBndAttr.ping_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_ping_timer_cb, NULL);
 	pocBndAttr.Bnd_workpa_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_pa_timer_cb, NULL);
+	pocBndAttr.BrightScreen_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_Call_Bright_Screen_timer_cb, NULL);
 
 	pocBndAttr.lock = osiMutexCreate();
 }
