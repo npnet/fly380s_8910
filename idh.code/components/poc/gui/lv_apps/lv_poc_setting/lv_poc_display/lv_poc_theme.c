@@ -1,11 +1,10 @@
 ﻿
-#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 #include "lv_include/lv_poc.h"
 
+#ifdef CONFIG_POC_GUI_CHOICE_THEME_SUPPORT
 
 static lv_obj_t * activity_create(lv_poc_display_t *display);
 
@@ -21,19 +20,15 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
+static lv_poc_win_t * activity_win = NULL;
 
+static lv_obj_t * activity_list = NULL;
 
-static lv_poc_win_t * activity_win;
-static lv_obj_t * activity_list;
+lv_poc_activity_t * poc_theme_switch_activity = NULL;
 
-lv_poc_activity_t * poc_theme_switch_activity;
-
-static lv_poc_rb_t * theme_switch_rb;
+static lv_poc_rb_t * theme_switch_rb = NULL;
 
 static char is_poc_theme_update_UI_task_running = 0;
-
-
-
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
@@ -48,6 +43,12 @@ static void activity_destory(lv_obj_t *obj)
 		lv_mem_free(activity_win);
 		activity_win = NULL;
 	}
+
+	if(theme_switch_rb != NULL)
+	{
+		lv_poc_rb_del(theme_switch_rb);
+		theme_switch_rb = NULL;
+	}
 	poc_theme_switch_activity = NULL;
 }
 
@@ -59,9 +60,9 @@ static void * list_create(lv_obj_t * parent, lv_area_t display_area)
 
 static void list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    lv_obj_t *cb;
-    lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    lv_obj_t *cb = NULL;
+    lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
     lv_coord_t btn_cb_height = (list_area.y2 - list_area.y1)/3;
@@ -103,8 +104,6 @@ static void list_config(lv_obj_t * list, lv_area_t list_area)
 
     lv_list_set_btn_selected(list, btn_array[poc_setting_conf->theme.type]);
     lv_poc_rb_press(theme_switch_rb, btn_array[poc_setting_conf->theme.type]->user_data);
-#if 0
-#endif
 }
 
 static void poc_theme_update_UI_task(lv_task_t * task)
@@ -114,8 +113,14 @@ static void poc_theme_update_UI_task(lv_task_t * task)
 		return;
 	}
 	is_poc_theme_update_UI_task_running = 1;
-	lv_obj_del(activity_win->header);
-	lv_obj_del(activity_list);
+	if(activity_win->header != NULL)
+	{
+		lv_obj_del(activity_win->header);
+	}
+	if(activity_list != NULL)
+	{
+		lv_obj_del(activity_list);
+	}
 	if(activity_win != NULL)
 	{
 		lv_mem_free(activity_win);
@@ -253,7 +258,6 @@ void lv_poc_theme_switch_open(void)
 	lv_poc_activity_set_signal_cb(poc_theme_switch_activity, signal_func);
 	lv_poc_activity_set_design_cb(poc_theme_switch_activity, design_func);
 }
-
 
 #ifdef __cplusplus
 }

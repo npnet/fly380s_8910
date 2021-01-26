@@ -6,7 +6,7 @@ extern "C" {
 
 typedef void (* lv_poc_setting_item_func_t)(lv_obj_t * obj);
 #define LV_POC_SETTING_ITEMS_NUM (12)
-static lv_poc_win_t * poc_setting_win;
+static lv_poc_win_t * poc_setting_win = NULL;
 
 static const char * bright_str[POC_MAX_BRIGHT] = {"0","1","2","3","4","5","6"};
 static const char * bright_time_str[] = {"5秒","15秒","30秒","1分钟","2分钟","5分钟","10分钟","30分钟"};
@@ -70,17 +70,25 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_obj_t *                 activity_list;
-lv_poc_activity_t * poc_setting_activity;
+static lv_obj_t * activity_list = NULL;
+lv_poc_activity_t * poc_setting_activity = NULL;
 static int setting_selected_item = 0;
 
 static void poc_setting_update_UI_task(lv_task_t * task)
 {
 	if(is_poc_setting_update_UI_task_running == 1)
+	{
 		return;
+	}
 	is_poc_setting_update_UI_task_running = 1;
-	lv_obj_del(poc_setting_win->header);
-	lv_obj_del(activity_list);
+	if(poc_setting_win->header != NULL)
+	{
+		lv_obj_del(poc_setting_win->header);
+	}
+	if(activity_list != NULL)
+	{
+		lv_obj_del(activity_list);
+	}
 	if(poc_setting_win != NULL)
 	{
 		lv_mem_free(poc_setting_win);
@@ -126,8 +134,6 @@ static void lv_poc_setting_broadcast_btn_cb(lv_obj_t * obj)
 		poc_setting_conf->voice_broadcast_switch = 1;
 	}
 	lv_poc_setting_conf_write();
-	//sw_state = lv_sw_get_state(ext_obj) == true? false : true;
-	//lv_sw_toggle(ext_obj);
 }
 #endif
 
@@ -227,7 +233,7 @@ static void lv_poc_setting_torch_btn_cb(lv_obj_t * obj)
 static void lv_poc_setting_brightness_btn_cb(lv_obj_t * obj)
 {
     lv_obj_t * ext_obj = NULL;
-	int cur_bright;
+	int cur_bright = 0;
 	ext_obj = (lv_obj_t *)obj->user_data;
 	cur_bright = poc_setting_conf->screen_brightness;
 	cur_bright = (cur_bright + 1) % POC_MAX_BRIGHT;
@@ -314,20 +320,20 @@ static void * poc_setting_list_create(lv_obj_t * parent, lv_area_t display_area)
 
 static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    lv_obj_t *sw;
-    lv_obj_t *label;
-    lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    lv_obj_t *sw = NULL;
+    lv_obj_t *label = NULL;
+    lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
     lv_coord_t btn_sw_height = (list_area.y2 - list_area.y1)/3;
     lv_obj_t * btns[LV_POC_SETTING_ITEMS_NUM];
     uint8_t storage_index = 0;
-    /*Create styles for the switch*/
-    lv_style_t * bg_style;
-    lv_style_t * indic_style;
-    lv_style_t * knob_on_style;
-    lv_style_t * knob_off_style;
+    //Create styles for the switch
+    lv_style_t * bg_style = NULL;
+    lv_style_t * indic_style = NULL;
+    lv_style_t * knob_on_style = NULL;
+    lv_style_t * knob_off_style = NULL;
    	poc_setting_conf = lv_poc_setting_conf_read();
 	bg_style = (lv_style_t *)poc_setting_conf->theme.current_theme->style_switch_bg;
 	indic_style = (lv_style_t *)poc_setting_conf->theme.current_theme->style_switch_indic;
@@ -399,7 +405,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     }
 #endif
 
-#ifdef CONFIG_POC_BIGFONT_SUPPORT/*big font*/
+#ifdef CONFIG_POC_BIGFONT_SUPPORT//big font
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_big_font);
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
@@ -486,7 +492,7 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
     }
 #endif
 
-#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT/*touch function*/
+#ifdef CONFIG_POC_GUI_TOUCH_SUPPORT//touch function
     btn = lv_list_add_btn(list, NULL, lv_poc_setting_btn_text_tourch);
     lv_obj_set_click(btn, true);
     lv_obj_set_event_cb(btn, lv_poc_setting_pressed_cb);
@@ -644,7 +650,6 @@ static void poc_setting_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_obj_align(label, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
 	lv_list_set_btn_selected(list, btns[setting_selected_item]);
-
 }
 
 static void lv_poc_setting_pressed_cb(lv_obj_t * obj, lv_event_t event)
@@ -652,8 +657,19 @@ static void lv_poc_setting_pressed_cb(lv_obj_t * obj, lv_event_t event)
 	int index = 0;
     if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
+		if(poc_setting_win->display_obj == NULL
+			|| obj == NULL)
+		{
+			OSI_PRINTFI("[setting](%s)(%d):error", __func__, __LINE__);
+			return;
+		}
 	    index = lv_list_get_btn_index((lv_obj_t *)poc_setting_win->display_obj, obj);
 	    char * text = (char *)lv_list_get_btn_text((const lv_obj_t *)obj);
+		if(text == NULL)
+		{
+			OSI_PRINTFI("[setting](%s)(%d):error", __func__, __LINE__);
+			return;
+		}
 #ifdef CONFIG_POC_TTS_SUPPORT
 	    poc_broadcast_play_rep((uint8_t *)text, strlen(text), poc_setting_conf->voice_broadcast_switch, false);
 #else

@@ -36,7 +36,6 @@ lv_obj_t * lv_poc_list_create(lv_obj_t * parent, lv_obj_t * copy,lv_area_t list_
     style_list_btn_ina->text.font = (lv_font_t *)poc_setting_conf->font.list_btn_current_font;
     lv_list_set_style(new_list, LV_LIST_STYLE_BTN_INA, style_list_btn_ina);
 
-    //lv_obj_set_pos(new_list, list_area.x1, list_area.y1);
     lv_obj_align(new_list, parent, LV_ALIGN_IN_TOP_LEFT, 0, list_area.y1);
     lv_obj_set_size(new_list, list_area.x2 - list_area.x1, list_area.y2 - list_area.y1);
     lv_obj_set_size(scroll, list_area.x2 - list_area.x1, list_area.y2 - list_area.y1);

@@ -21,14 +21,14 @@ static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t s
 
 static bool lv_poc_main_menu_design_cb(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_obj_t * main_menu_list;
-static lv_poc_win_t * main_menu_win;
+static lv_obj_t * main_menu_list = NULL;
+static lv_poc_win_t * main_menu_win = NULL;
 static char is_poc_main_menu_update_UI_task_running = 0;
 
-lv_poc_oem_member_list * poc_member_list;
-lv_poc_oem_group_list  * poc_group_list;
+lv_poc_oem_member_list * poc_member_list = NULL;
+lv_poc_oem_group_list  * poc_group_list = NULL;
 
-lv_poc_activity_t * main_menu_activity;
+lv_poc_activity_t * main_menu_activity = NULL;
 
 static int main_menu_selecte_item_index = 0;
 
@@ -106,7 +106,7 @@ static void * lv_poc_main_menu_list_create(lv_obj_t * parent, lv_area_t display_
 
 static void  lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
+    lv_obj_t *btn = NULL;
     lv_coord_t btn_height = (int16_t)abs(list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_obj_t * btns[5];
 
@@ -153,7 +153,6 @@ static void  lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_obj_set_height(btn, btn_height);
 
     lv_list_set_btn_selected(list, btns[main_menu_selecte_item_index]);
-
 }
 
 static void poc_main_menu_update_UI_task(lv_task_t * task)
@@ -163,8 +162,14 @@ static void poc_main_menu_update_UI_task(lv_task_t * task)
 		return;
 	}
 	is_poc_main_menu_update_UI_task_running = 1;
-	lv_obj_del(main_menu_win->header);
-	lv_obj_del(main_menu_list);
+	if(main_menu_win->header != NULL)
+	{
+		lv_obj_del(main_menu_win->header);
+	}
+	if(main_menu_list != NULL)
+	{
+		lv_obj_del(main_menu_list);
+	}
 	if(main_menu_win != NULL)
 	{
 		lv_mem_free(main_menu_win);

@@ -10,7 +10,7 @@ extern "C" {
 #include "guiBndCom_api.h"
 #include "lv_objx/lv_poc_obj/lv_poc_obj.h"
 
-static lv_poc_oem_member_list * lv_poc_member_list_obj;
+static lv_poc_oem_member_list * lv_poc_member_list_obj = NULL;
 
 static lv_obj_t * lv_poc_member_list_activity_create(lv_poc_display_t *display);
 
@@ -28,11 +28,11 @@ static bool lv_poc_member_list_design_func(struct _lv_obj_t * obj, const lv_area
 
 static void lv_poc_member_list_get_list_cb(int msg_type);
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
-static lv_poc_win_t * activity_win;
+static lv_poc_win_t * activity_win = NULL;
 
-static lv_area_t member_list_display_area;
+static lv_area_t member_list_display_area = {0};
 
 static int8_t lv_poc_member_list_title[100] = {0};
 
@@ -43,7 +43,7 @@ static char prv_member_list_last_index_membername[64] = {0};
 
 static bool lv_poc_member_list_need_free_member_list = true;
 
-lv_poc_activity_t * poc_member_list_activity;
+lv_poc_activity_t * poc_member_list_activity = NULL;
 
 static void * lv_poc_member_call_obj_information = NULL;
 
@@ -73,7 +73,7 @@ static void lv_poc_member_list_activity_destory(lv_obj_t *obj)
 	if(lv_poc_member_list_need_free_member_list == true && lv_poc_member_list_obj != NULL)
 	{
 		oem_list_element_t * cur_p = lv_poc_member_list_obj->online_list;
-		oem_list_element_t * temp_p;
+		oem_list_element_t * temp_p = NULL;
 		while(cur_p != NULL)
 		{
 			temp_p = cur_p;
@@ -408,7 +408,7 @@ void lv_poc_member_list_clear(lv_poc_oem_member_list *member_list_obj)
 	}
 
 	oem_list_element_t * cur_p = member_list_obj->online_list;
-	oem_list_element_t * temp_p;
+	oem_list_element_t * temp_p = NULL;
 	while(cur_p != NULL)
 	{
 		temp_p = cur_p;
@@ -828,7 +828,7 @@ lv_poc_status_t lv_poc_member_list_get_state(lv_poc_oem_member_list *member_list
         return POC_OPERATE_FAILD;
 	}
 
-    oem_list_element_t * p_cur;
+    oem_list_element_t * p_cur = NULL;
     if(NULL == name)
     {
         return POC_OPERATE_FAILD;

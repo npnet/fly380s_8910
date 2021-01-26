@@ -20,7 +20,7 @@ static bool lv_poc_build_tempgrp_design_func(struct _lv_obj_t * obj, const lv_ar
 
 static void lv_poc_build_tempgrp_success_refresh(lv_task_t *task);
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
 static lv_poc_build_tempgrp_item_info_t * lv_poc_build_tempgrp_info = NULL;
 
@@ -30,15 +30,15 @@ static lv_poc_tmpgrp_t is_lv_poc_build_tempgrp = 0;
 
 static void *lv_poc_build_tempgrp_selected_members[6] = {0};
 
-static lv_poc_win_t * activity_win;
+static lv_poc_win_t * activity_win = NULL;
 
-static lv_area_t build_tempgrp_display_area;
+static lv_area_t build_tempgrp_display_area = {0};
 
-static lv_poc_oem_member_list *lv_poc_build_tempgrp_member_list;
+static lv_poc_oem_member_list *lv_poc_build_tempgrp_member_list = NULL;
 
 static lv_poc_oem_member_list * lv_poc_member_list = NULL;
 
-lv_poc_activity_t * poc_build_tempgrp_activity;
+lv_poc_activity_t * poc_build_tempgrp_activity = NULL;
 
 static char * lv_poc_build_tempgrp_failed_text = "创建临时组失败";
 
@@ -61,7 +61,7 @@ static void lv_poc_build_tempgrp_activity_destory(lv_obj_t *obj)
     if(lv_poc_build_tempgrp_member_list != NULL)
     {
 		oem_list_element_t * cur_p = lv_poc_build_tempgrp_member_list->online_list;
-		oem_list_element_t * temp_p;
+		oem_list_element_t * temp_p = NULL;
 		while(cur_p != NULL)
 		{
 			temp_p = cur_p;
@@ -415,7 +415,7 @@ void lv_poc_build_tempgrp_get_tmpgrp_member_list(void)
 	if(lv_poc_member_list != NULL)//free
 	{
 		oem_list_element_t * cur_p = lv_poc_member_list->online_list;
-		oem_list_element_t * temp_p;
+		oem_list_element_t * temp_p = NULL;
 		while(cur_p != NULL)
 		{
 			temp_p = cur_p;
@@ -500,7 +500,7 @@ void lv_poc_build_tempgrp_refresh(lv_task_t * task)
 	}
 
     oem_list_element_t * p_cur = NULL;
-    lv_obj_t * btn;
+    lv_obj_t * btn = NULL;
     lv_obj_t * btn_checkbox = NULL;
     lv_obj_t * btn_label = NULL;
     lv_poc_build_tempgrp_item_info_t * p_info = NULL;
@@ -719,7 +719,7 @@ lv_poc_status_t lv_poc_build_tempgrp_set_state(lv_poc_oem_member_list *member_li
 
     return POC_UNKNOWN_FAULT;
 
-    LV_POC_BUILD_TEMPGRP_SET_STATE_SUCCESS:
+LV_POC_BUILD_TEMPGRP_SET_STATE_SUCCESS:
 	if(p_cur != NULL && p_cur->list_item != NULL)
 	{
 		lv_obj_t *btn_item = (lv_obj_t *)p_cur->list_item;
@@ -768,9 +768,9 @@ lv_poc_status_t lv_poc_build_tempgrp_get_state(lv_poc_oem_member_list *member_li
 }
 
 static int8_t lv_poc_build_tempgrp_member_list_title[100] = {0};
-static lv_area_t build_tempgrp_member_list_display_area;
-lv_poc_activity_t * poc_build_tempgrp_member_list_activity;
-static lv_poc_oem_member_list * lv_poc_build_tempgrp_member_list_obj;
+static lv_area_t build_tempgrp_member_list_display_area = {0};
+lv_poc_activity_t * poc_build_tempgrp_member_list_activity = NULL;
+static lv_poc_oem_member_list * lv_poc_build_tempgrp_member_list_obj = NULL;
 
 void lv_poc_build_tempgrp_member_list_refresh(lv_task_t * task);
 

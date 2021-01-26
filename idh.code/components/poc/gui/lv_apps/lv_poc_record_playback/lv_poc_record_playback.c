@@ -9,7 +9,7 @@ extern "C" {
 
 typedef void (* lv_poc_record_playback_item_func_t)(lv_obj_t * obj);
 
-static lv_poc_win_t * poc_record_playback_win;
+static lv_poc_win_t * poc_record_playback_win = NULL;
 
 static lv_poc_record_playback_item_func_t lv_poc_record_playback_items_funcs[LV_POC_RECORD_PLAYBACK_ITEMS_NUM] = {0};
 
@@ -39,9 +39,9 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_obj_t *activity_list;
+static lv_obj_t *activity_list = NULL;
 
-lv_poc_activity_t *poc_record_playback_activity;
+lv_poc_activity_t *poc_record_playback_activity = NULL;
 
 static const char *pcmtofile[5] = {
 	"/pcmfile1.pcm",
@@ -139,12 +139,12 @@ static void * poc_record_playback_list_create(lv_obj_t * parent, lv_area_t displ
 
 static void poc_record_playback_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-	lv_obj_t *btn;
-	lv_obj_t *label;
-	lv_obj_t *btn_label;
+	lv_obj_t *btn = NULL;
+	lv_obj_t *label = NULL;
+	lv_obj_t *btn_label = NULL;
 	lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
 	lv_coord_t btn_width = (list_area.x2 - list_area.x1);
-	lv_style_t * style_label;
+	lv_style_t * style_label = NULL;
 
 	struct PocPcmToFileAttr_s fileInfo;
 	fileInfo = lv_poc_pcm_file_attr();

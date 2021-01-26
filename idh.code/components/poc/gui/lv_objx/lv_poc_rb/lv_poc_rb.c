@@ -39,7 +39,7 @@ lv_poc_rb_t * lv_poc_rb_create(void)
 void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
     lv_btn_state_t cb_state;
-    lv_poc_rb_node_t * new_rb_node;
+    lv_poc_rb_node_t * new_rb_node = NULL;
 
     if(rb == NULL || cb == NULL)
     {
@@ -66,7 +66,7 @@ void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
         rb->cbs = new_rb_node;
     }
 #if 0
-    lv_poc_rb_node_t * p_rb_node;
+    lv_poc_rb_node_t * p_rb_node = NULL;
     p_rb_node = rb->cbs;
     if(p_rb_node != NULL)
     {
@@ -119,7 +119,7 @@ void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
 ********************/
 void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
-    lv_poc_rb_node_t * p_rb_node;
+    lv_poc_rb_node_t * p_rb_node = NULL;
     lv_btn_state_t cb_state;
 
     if(rb == NULL || rb->cbs == NULL || cb == NULL)
@@ -199,7 +199,7 @@ void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
 ********************/
 lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb)
 {
-    lv_poc_rb_node_t * p_rb_node;
+    lv_poc_rb_node_t * p_rb_node = NULL;
     lv_btn_state_t cb_state;
 
     if(rb == NULL || rb->cbs == NULL)
@@ -228,7 +228,7 @@ lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb)
 ********************/
 void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
-    lv_poc_rb_node_t * p_rb_node;
+    lv_poc_rb_node_t * p_rb_node = NULL;
 
     if(rb == NULL || rb->cbs == NULL || cb == NULL)
     {
@@ -291,8 +291,8 @@ void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb)
 ********************/
 void lv_poc_rb_clean(lv_poc_rb_t * rb)
 {
-    lv_poc_rb_node_t * p_rb_node;
-    lv_poc_rb_node_t * p;
+    lv_poc_rb_node_t * p_rb_node = NULL;
+    lv_poc_rb_node_t * p = NULL;
     p_rb_node = rb->cbs->next;
     lv_mem_free(rb->cbs);
     while(p_rb_node)
@@ -315,9 +315,6 @@ void lv_poc_rb_del(lv_poc_rb_t * rb)
     lv_poc_rb_clean(rb);
     lv_mem_free(rb);
 }
-
-
-
 
 #ifdef __cplusplus
 }

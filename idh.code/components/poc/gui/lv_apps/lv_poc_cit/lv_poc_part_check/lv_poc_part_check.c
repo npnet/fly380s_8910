@@ -22,9 +22,9 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_poc_win_t * cit_part_test_win;
+static lv_poc_win_t * cit_part_test_win = NULL;
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
 static lv_poc_cit_test_type_t cit_info = {
 	.id = LV_POC_CIT_OPRATOR_TYPE_START,
@@ -86,7 +86,7 @@ static lv_poc_cit_test_type_t cit_info = {
 #endif
 };
 
-lv_poc_activity_t * poc_cit_part_test_activity;
+lv_poc_activity_t * poc_cit_part_test_activity = NULL;
 
 static void lv_poc_system_version_test_cb(lv_obj_t * obj);
 static void lv_poc_calibration_test_cb(lv_obj_t * obj);
@@ -445,12 +445,12 @@ static void lv_poc_cit_part_test_pressed_cb(lv_obj_t * obj, lv_event_t event)
 
 static void cit_part_test_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    lv_obj_t *label;
-    lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    lv_obj_t *label = NULL;
+    lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
-    lv_style_t * style_label;
+    lv_style_t * style_label = NULL;
     poc_setting_conf = lv_poc_setting_conf_read();
     style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
     style_label->text.font = (lv_font_t *)poc_setting_conf->font.cit_label_current_font;

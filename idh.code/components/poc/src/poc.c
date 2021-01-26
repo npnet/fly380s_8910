@@ -56,19 +56,25 @@ static
 void prv_lv_poc_power_on_sprd_image(lv_task_t * task)
 {
 	poc_power_on_backgroup_sprd_image = lv_img_create(lv_scr_act(), NULL);
-	lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
-	lv_obj_set_size(poc_power_on_backgroup_sprd_image, 132, 132);
-	lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+	if(poc_power_on_backgroup_sprd_image)
+	{
+		lv_img_set_auto_size(poc_power_on_backgroup_sprd_image, false);
+		lv_obj_set_size(poc_power_on_backgroup_sprd_image, 132, 132);
+		lv_img_set_src(poc_power_on_backgroup_sprd_image, &img_poweron_poc_logo_sprd);
+	}
 }
 
 static
 void prv_lv_poc_power_on_backgroup_image(lv_task_t * task)
 {
 	poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
-	lv_img_set_auto_size(poc_power_on_backgroup_image, false);
-	lv_obj_set_size(poc_power_on_backgroup_image, 132, 132);
-	extern lv_img_dsc_t img_poweron_poc_logo_unicom;
-	lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
+	if(poc_power_on_backgroup_image)
+	{
+		lv_img_set_auto_size(poc_power_on_backgroup_image, false);
+		lv_obj_set_size(poc_power_on_backgroup_image, 132, 132);
+		extern lv_img_dsc_t img_poweron_poc_logo_unicom;
+		lv_img_set_src(poc_power_on_backgroup_image, &img_poweron_poc_logo_unicom);
+	}
 }
 										//421
 int pub_lv_poc_get_watchdog_status(void)//1(login success)1(join group)1(flag)
@@ -236,9 +242,9 @@ void pocStart(void *ctx)
 	else//设备重启或正常开机
 	{
 #ifdef CONFIG_POC_PING_NETWORK_SUPPORT
-    poc_set_green_blacklight(false);
+    	poc_set_green_blacklight(false);
 #else
-    poc_set_green_blacklight(true);
+    	poc_set_green_blacklight(true);
 #endif
 		pub_lv_poc_set_watchdog_status(0x0);
 		lvGuiInit(pocLvglStart);

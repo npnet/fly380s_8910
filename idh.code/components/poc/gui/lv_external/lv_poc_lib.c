@@ -880,6 +880,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			{
 				continue;
 			}
+
+			if(lv_poc_get_audevplay_status())
+			{
+				continue;
+			}
+
 			poc_voice_player_attr.voice_type = poc_voice_player_attr.voice_queue[poc_voice_player_attr.voice_queue_reader];
 			poc_voice_player_attr.voice_queue_reader = (poc_voice_player_attr.voice_queue_reader + 1) % 10;
 		}
@@ -983,8 +989,10 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			osiDelayUS(20000);
 		}
 
-		if(lv_poc_get_audevplay_status())
+		if(lvPocGuiBndCom_get_listen_status()
+			|| lvPocGuiBndCom_get_speak_status())
 		{
+			OSI_PRINTFI("[voice][listen][speak](%s)(%d)not allow", __func__, __LINE__);
 			continue;
 		}
 
@@ -1036,16 +1044,10 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 void
 poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN bool isBreak)
 {
-	if(lvPocGuiBndCom_get_listen_status()
-		|| lvPocGuiBndCom_get_speak_status())
-	{
-		OSI_PRINTFI("[voice][listen][speak](%s)(%d)not allow", __func__, __LINE__);
-		return;
-	}
-
 	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);
 	if(NULL != prv_play_btn_voice_one_time_player)
 	{
+		OSI_PRINTFI("[voice](%s)(%d):stop keytone", __func__, __LINE__);
 		auPlayerStop(prv_play_btn_voice_one_time_player);
 	}
 
@@ -3668,8 +3670,8 @@ void lv_poc_index_next_file(void)
 	OSI_LOGI(0, "[poc][file]next file:(%d)", pcmtofileattr.index);
 }
 
-static osiPipe_t *poc_at_rx_pipe;
-static osiPipe_t *poc_at_tx_pipe;
+static osiPipe_t *poc_at_rx_pipe = NULL;
+static osiPipe_t *poc_at_tx_pipe = NULL;
 
 /*
      name : lv_poc_virt_at_resp_cb
@@ -4207,7 +4209,7 @@ void lv_poc_boot_timeing_task(lv_task_t *task)
 		if(boottimeattr.is_boot_time_m_cnt > 59)
 		{
 			boottimeattr.is_boot_time_h_cnt += 1;
-			boottimeattr.is_boot_time_h_cnt > 99 ? (boottimeattr.is_boot_time_h_cnt = 0) : 0;
+			boottimeattr.is_boot_time_h_cnt > 999 ? (boottimeattr.is_boot_time_h_cnt = 0) : 0;
 			boottimeattr.is_boot_time_m_cnt = 0;
 		}
 	}

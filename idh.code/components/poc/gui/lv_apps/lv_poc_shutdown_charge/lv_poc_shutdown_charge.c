@@ -22,7 +22,7 @@ static lv_style_t lv_poc_shutdown_charge_style = {0};
 static lv_obj_t *lv_poc_shutdown_charge_obj = NULL;//背景框
 static lv_obj_t *poc_charge_battery_image = NULL;
 static bool poc_charge_poweron_status = false;
-static lv_obj_t *poc_power_on_backgroup_sprd_image;
+static lv_obj_t *poc_power_on_backgroup_sprd_image = NULL;
 
 
 /*充电开机电池图标*/

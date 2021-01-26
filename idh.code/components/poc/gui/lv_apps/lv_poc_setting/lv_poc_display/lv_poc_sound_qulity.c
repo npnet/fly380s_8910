@@ -20,15 +20,13 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
+static lv_poc_win_t * poc_sound_quality_win = NULL;
 
+static lv_obj_t * activity_list = NULL;
 
-static lv_poc_win_t * poc_sound_quality_win;
+static lv_poc_rb_t * sound_quality_rb = NULL;
 
-static lv_obj_t * activity_list;
-
-static lv_poc_rb_t * sound_quality_rb;
-
-lv_poc_activity_t * sound_quality_activity;
+lv_poc_activity_t * sound_quality_activity = NULL;
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
@@ -44,6 +42,12 @@ static void activity_destory(lv_obj_t *obj)
 		lv_mem_free(poc_sound_quality_win);
 		poc_sound_quality_win = NULL;
 	}
+
+	if(sound_quality_rb != NULL)
+	{
+		lv_poc_rb_del(sound_quality_rb);
+		sound_quality_rb = NULL;
+	}
 }
 
 static void * list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -54,9 +58,9 @@ static void * list_create(lv_obj_t * parent, lv_area_t display_area)
 
 static void list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    lv_obj_t *cb;
-    lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    lv_obj_t *cb = NULL;
+    lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_cb_height = (list_area.y2 - list_area.y1)/3;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);

@@ -25,6 +25,10 @@ OSI_EXTERN_C_BEGIN
 
 void pocStart(void *ctx);
 
+int pub_lv_poc_get_watchdog_status(void);//1(login success)1(join group)1(flag)
+
+void pub_lv_poc_set_watchdog_status(int status);
+
 OSI_EXTERN_C_END
 
 #endif

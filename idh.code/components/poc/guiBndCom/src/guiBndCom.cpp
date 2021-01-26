@@ -41,6 +41,7 @@
 #include "type.h"
 #include "oem_lib_api.h"
 #include "poc_audio_pipe.h"
+#include "poc.h"
 
 /*************************************************
 *
@@ -247,9 +248,10 @@ public:
 	bool haveingroup;
 	bool is_member_call;
 	bool is_have_join_group;
-	bool onepoweron;
 	bool is_enter_signal_multi_call;
 	bool is_list_update;
+	bool enterfinalgrp;
+	bool poweronautoentergrp;
 
 	//num
 	int delay_play_voice;
@@ -1198,13 +1200,13 @@ void callback_BND_MultiCallmember(int ret)
 
 void callback_BND_Join_Group(const char* groupname, bnd_gid_t gid)
 {
-	static bool enterfinalgrp = false;
-	if(enterfinalgrp == false)
+	pocBndAttr.poweronautoentergrp = true;
+	if(pocBndAttr.enterfinalgrp == true)
 	{
 		pocBndAttr.BndCurrentGroupInfo.gid = gid;
-		OSI_PRINTFI("[cbbnd][joingroup](%s)(%d):group call ack, gid(%d)", __func__, __LINE__, gid);
+		OSI_PRINTFI("[cbbnd][joingroup](%s)(%d):enter final grp, gid(%d)", __func__, __LINE__, gid);
 		strncpy(pocBndAttr.BndCurrentGroupInfo.name, groupname, strlen(groupname));
-		enterfinalgrp = true;
+		pocBndAttr.enterfinalgrp = false;
 		return;
 	}
 
@@ -1374,6 +1376,7 @@ static void LvGuiBndCom_delay_close_listen_timer_cb(void *ctx)
 
 static void LvGuiBndCom_get_member_list_timer_cb(void *ctx)
 {
+	static int run_Num = 0;
 	bnd_member_t BndGData_s[GUIBNDCOM_MEMBERMAX] = {0};
 	int m_GNum = 0;
 
@@ -1405,10 +1408,12 @@ static void LvGuiBndCom_get_member_list_timer_cb(void *ctx)
 		OSI_PRINTFI("[cbbnd][memberinfo][cb](%s)(%d):reget success, start to refresh", __func__, __LINE__);
 		pocBndAttr.info_error_type = ERROR_TYPE_START;
 		osiTimerStop(pocBndAttr.get_member_list_timer);
+		run_Num = 0;
 		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_REGET_INFO_IND, (void *)m_GNum);
 	}
 	else
 	{
+		run_Num >= 5 ? osiTimerStop(pocBndAttr.get_member_list_timer) : (run_Num++);
 		OSI_PRINTFI("[cbbnd][memberinfo][cb](%s)(%d):reget info(%d)", __func__, __LINE__, m_GNum);
 	}
 }
@@ -1474,6 +1479,7 @@ void LvGuiBndCom_Group_update_timer_cb(void *ctx)
 						pocBndAttr.BndCurrentGroupInfo.gid =BndCGroup[i].gid;
 						broad_joingroup(BndCGroup[i].gid);
 						strncpy(pocBndAttr.BndCurrentGroupInfo.name, poc_config->curren_group_name, strlen(poc_config->curren_group_name));
+						pocBndAttr.poweronautoentergrp ? 0 : pocBndAttr.enterfinalgrp = true;
 						OSI_PRINTFI("[groupindex](%s)(%d):cur group index(%d)", __func__, __LINE__, pocBndAttr.current_group);
 						break;
 					}
@@ -1481,6 +1487,8 @@ void LvGuiBndCom_Group_update_timer_cb(void *ctx)
 				if(i == m_GNum)
 				{
 					pocBndAttr.current_group = 0;
+					pocBndAttr.enterfinalgrp = false;
+					OSI_PRINTFI("[groupindex](%s)(%d):no cur group", __func__, __LINE__);
 				}
 			}
 		}
@@ -1685,18 +1693,13 @@ static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 			if (USER_OFFLINE == UserState
 				&& m_BndUser.m_status != USER_OFFLINE)
 			{
-				if(pocBndAttr.onepoweron == false)
-					//&& !lv_poc_watchdog_status())
+				pocBndAttr.delay_play_voice++;
+				if(pocBndAttr.delay_play_voice >= 30 || pocBndAttr.delay_play_voice == 1)
 				{
-					pocBndAttr.delay_play_voice++;
-
-					if(pocBndAttr.delay_play_voice >= 30 || pocBndAttr.delay_play_voice == 1)
-					{
-						pocBndAttr.delay_play_voice = 1;
-						poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, 50, false);
-					}
+					pocBndAttr.delay_play_voice = 1;
+					poc_play_voice_one_time(LVPOCAUDIO_Type_No_Login, 50, false);
 				}
-
+				OSI_PRINTFI("[login](%s)(%d):exit", __func__, __LINE__);
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, true);
 				m_BndUser.m_status = USER_OFFLINE;
 				pocBndAttr.loginstatus_t = LVPOCBNDCOM_SIGNAL_LOGIN_EXIT;
@@ -1706,6 +1709,7 @@ static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 				pocBndAttr.isReady = true;
 				pocBndAttr.PoweronUpdateIdleInfo = false;
 				pocBndAttr.PoweronCurGInfo = false;
+				break;
 			}
 
 			if(USER_ONLINE == UserState
@@ -1715,12 +1719,16 @@ static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
 				pocBndAttr.loginstatus_t = LVPOCBNDCOM_SIGNAL_LOGIN_SUCCESS;
 
-				if(pocBndAttr.onepoweron == false)
-					//&& !lv_poc_watchdog_status())
+				if((pub_lv_poc_get_watchdog_status()&0x4) == 0x4)
+				{
+					int status = pub_lv_poc_get_watchdog_status()&0x3;
+					pub_lv_poc_set_watchdog_status(status);
+				}
+				else
 				{
 					poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Login, 50, false);
+					OSI_PRINTFI("[login](%s)(%d):success", __func__, __LINE__);
 				}
-				pocBndAttr.onepoweron = true;
 				osiTimerStop(pocBndAttr.auto_login_timer);
 
 				pocBndAttr.isReady = true;
@@ -1729,6 +1737,7 @@ static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 				osiTimerStart(pocBndAttr.monitor_recorder_timer, 20000);//20S
 				osiTimerStartRelaxed(pocBndAttr.get_group_list_timer, 500, OSI_WAIT_FOREVER);
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, NULL);
+				OSI_PRINTFI("[login](%s)(%d):login in", __func__, __LINE__);
 
 				nv_poc_setting_msg_t * poc_setting_conf = lv_poc_setting_conf_read();
 				if(poc_setting_conf->ping > 0)
@@ -2191,7 +2200,8 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIBNDCOM_SIGNAL_MEMBER_LIST_QUERY_REFRESH_REP:
 		{
-			if(!lv_poc_get_is_in_memberlist())
+			if(!lv_poc_get_is_in_memberlist()
+				|| !pocBndAttr.haveingroup)
 			{
 				OSI_PRINTFI("[member][refresh](%s)(%d):refr request error, no in list", __func__, __LINE__);
 				break;
@@ -2696,6 +2706,7 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			}
 			else//exit single
 			{
+				OSI_PRINTFI("[singlecall](%s)(%d):local exit single call", __func__, __LINE__);
 				bool is_member_call = pocBndAttr.is_member_call;
                 pocBndAttr.is_member_call = false;
                 pocBndAttr.member_call_dir = 0;
@@ -2706,7 +2717,6 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 
                 member_call_config->func(1, 1);
 				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_EXIT_SINGLE_JOIN_CURRENT_GROUP, NULL);
-				OSI_LOGI(0, "[singlecall](%d)local exit single call", __LINE__);
 			}
 
 			break;

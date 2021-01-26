@@ -37,7 +37,7 @@ static lv_poc_warnning_stack_t prv_lv_poc_warnning_stack = {0};
 
 static lv_style_t lv_poc_lockgroup_style = {0};
 static lv_style_t lv_poc_lockgroupbutton_style = {0};
-static lv_style_t style_line;
+static lv_style_t style_line = {0};
 
 static lv_obj_t * prv_lv_poc_warnning_activity_create(lv_poc_display_t *display);
 

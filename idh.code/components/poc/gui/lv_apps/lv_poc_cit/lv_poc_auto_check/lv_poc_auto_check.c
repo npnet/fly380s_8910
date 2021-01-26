@@ -20,6 +20,8 @@ struct lv_poc_cit_auto_test_t
 	int testindex;
 	int result[LV_POC_CIT_OPRATOR_TYPE_END];
 	osiMutex_t *mutex;
+	lv_task_t *task;
+	bool is_msg;
 };
 
 struct lv_poc_cit_auto_test_t poc_auto_test_attr = {0};
@@ -135,13 +137,14 @@ void prvlvPocCitAutoTestComRefresh(lv_task_t *task)
 {
 	int *id = (int*)task->user_data;
 	if(id == NULL
-		|| poc_auto_test_attr.mutex == NULL)
+		|| poc_auto_test_attr.mutex == NULL
+		|| poc_auto_test_attr.is_msg == false)
 	{
-		OSI_LOGI(0, "[cit][autotest](%d):rec msg, NULL", __LINE__);
 		return;
 	}
 	OSI_LOGI(0, "[cit][autotest](%d):rec msg(%d)", __LINE__, (*id) - 1);
 	osiMutexLock(poc_auto_test_attr.mutex);
+	poc_auto_test_attr.is_msg = false;
 	lv_poc_cit_auto_test_items_perform((*id) - 1);
 	osiMutexUnlock(poc_auto_test_attr.mutex);
 }
@@ -153,12 +156,18 @@ void lvPocCitAutoTestActiOpen(void)
 	poc_auto_test_attr.ready = true;
 	!poc_auto_test_attr.mutex ? poc_auto_test_attr.mutex = osiMutexCreate() : 0;
 	lv_poc_cit_auto_test_items_register_cb(true);
+	poc_auto_test_attr.is_msg = true;
 	lv_poc_cit_auto_test_items_perform(poc_auto_test_attr.testindex - 1);//auto enter first items
 }
 
 void lvPocCitAutoTestActiClose(void)
 {
 	poc_auto_test_attr.mutex ? osiMutexDelete(poc_auto_test_attr.mutex) : 0;
+	if(poc_auto_test_attr.task)
+	{
+		lv_task_del(poc_auto_test_attr.task);
+		poc_auto_test_attr.task = NULL;
+	}
 	memset(&poc_auto_test_attr, 0, sizeof(struct lv_poc_cit_auto_test_t));
 	lv_poc_cit_auto_test_items_register_cb(false);
 }
@@ -171,17 +180,18 @@ void lvPocCitAutoTestCom_Msg(lv_poc_cit_auto_test_type result)
 	}
 	poc_auto_test_attr.result[poc_auto_test_attr.testindex - 1] = result;//record last result
 	poc_auto_test_attr.testindex++;
-	OSI_LOGI(0, "[cit][autotest](%d):send msg(%d)", __LINE__, poc_auto_test_attr.testindex - 1);
+	OSI_PRINTFI("[cit][autotest](%s)(%d):send msg(%d)", __func__, __LINE__, poc_auto_test_attr.testindex - 1);
 	if(poc_auto_test_attr.testindex > LV_POC_CIT_OPRATOR_TYPE_END)//auto test finish
 	{
 		lv_poc_refr_task_once(lv_poc_cit_result_open, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
 	}
 	else
 	{
-		osiMutexLock(poc_auto_test_attr.mutex);
-		lv_task_t *task = lv_task_create(prvlvPocCitAutoTestComRefresh, 10, LV_TASK_PRIO_HIGH, (void *)&poc_auto_test_attr.testindex);
-		lv_task_once(task);
-		osiMutexUnlock(poc_auto_test_attr.mutex);
+		if(poc_auto_test_attr.task == NULL)
+		{
+			poc_auto_test_attr.task = lv_task_create(prvlvPocCitAutoTestComRefresh, 30, LV_TASK_PRIO_HIGH, (void *)&poc_auto_test_attr.testindex);
+		}
+		poc_auto_test_attr.is_msg = true;
 	}
 }
 
@@ -220,7 +230,7 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
-	lv_style_t * style_label;
+	lv_style_t * style_label = NULL;
 	style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
 	style_label->text.color = LV_COLOR_BLACK;
 	poc_cit_result_activity = NULL;
@@ -240,13 +250,13 @@ static void * cit_result_list_create(lv_obj_t * parent, lv_area_t display_area)
 
 static void cit_result_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-	lv_obj_t *btn;
-	lv_obj_t *label;
-	lv_obj_t *btn_label;
+	lv_obj_t *btn = NULL;
+	lv_obj_t *label = NULL;
+	lv_obj_t *btn_label = NULL;
 	lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
 	lv_coord_t btn_width = (list_area.x2 - list_area.x1);
-	lv_style_t * style_label;
-	static lv_style_t error_style_label;
+	lv_style_t * style_label = NULL;
+	static lv_style_t error_style_label = {0};
 	style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
 	style_label->text.font = (lv_font_t *)poc_setting_conf->font.cit_label_current_font;
 

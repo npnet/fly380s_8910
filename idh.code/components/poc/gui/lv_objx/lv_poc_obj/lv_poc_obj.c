@@ -46,11 +46,11 @@ lv_poc_display_t         *lv_poc_base_activity_nostabar_control_obj    = NULL;
 lv_poc_display_t         *lv_poc_base_activity_nostabar_nocontrol_obj  = NULL;
 #endif
 
-lv_group_t                      *poc_indev_group;
+lv_group_t                      *poc_indev_group = NULL;
 
 lv_indev_t               *poc_keypad_dev = NULL;
 
-lv_poc_activity_t       * current_activity;
+lv_poc_activity_t       * current_activity = NULL;
 
 nv_poc_setting_msg_t * poc_setting_conf = NULL;
 
@@ -108,8 +108,6 @@ lv_style_t theme_black_style_control = {0};
 *                  LOCAL
 *
 *************************************************/
-//static lv_obj_t *lv_poc_base_activity_base_obj = NULL;
-
 static char lv_poc_time[LV_POC_STABAR_TIME_LEN_DEFAULT]   =   {0};
 static lv_poc_activity_list_t *lv_poc_activity_list = NULL;
 static lv_signal_cb_t ancient_signal_func = NULL;
@@ -1442,6 +1440,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 
     if(false == is_keypad_msg)
     {
+		OSI_PRINTFI("[ancient][sigal](%s)(%d):other, key(%d), sign(%d)", __func__, __LINE__, cur_key, sign);
         ret = (*ancient_signal_func)(obj,sign,param);
 
         if(ret != LV_RES_OK)
@@ -1476,11 +1475,13 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     {
 	    return ret;
     }
-	OSI_LOGI(0, "[sigal][cb](%d):key(%d), sign(%d), is_keypad_msg(%d)", __LINE__, cur_key, sign, is_keypad_msg);
-    if(activity != current_activity)
+
+	if(activity != current_activity)
     {
 
     }
+	OSI_PRINTFI("[ancient][sigal](%s)(%d):key(%d), sign(%d), is_keypad_msg(%d)", __func__, __LINE__, cur_key, sign, is_keypad_msg);
+
 	uint8_t vol_cur = 0;
 
 #if IDT_POC_MODE
@@ -1711,7 +1712,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 		}
 	}
 
-	OSI_LOGI(0, "[sigal][finish]key(%d), sign(%d)", cur_key, sign);
+	OSI_PRINTFI("[ancient][sigal](%s)(%d):key(%d), sign(%d)", __func__, __LINE__, cur_key, sign);
 
     if(NULL != activity->signal_func)
     {
@@ -3081,7 +3082,6 @@ bool lv_poc_del_activity(lv_poc_activity_t *activity)
 	}
 
     lv_obj_invalidate(pre_activity->base);
-    //lv_obj_invalidate(pre_activity->display);
 
     if(ext->prepare_destory != NULL)
     {
@@ -3134,7 +3134,6 @@ void lv_poc_activity_set_signal_cb(lv_poc_activity_t *activity,
 {
     if(NULL != func)
     {
-        //activity->display->signal_func = func;
         activity->signal_func = func;
     }
 }
