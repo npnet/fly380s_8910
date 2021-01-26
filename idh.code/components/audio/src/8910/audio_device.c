@@ -2763,8 +2763,19 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     {
         return false;
     }
+
+	//monitor audev
+	if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_START_IND, NULL))
+	{
+		OSI_PRINTFI("[poc][audev][voice]%s(%d)send voice play start succ", __func__, __LINE__);
+	}
+	else
+	{
+		OSI_PRINTFI("[poc][audev][voice]%s(%d)send voice play start failed", __func__, __LINE__);
+	}
+
 	/*open pa*/
-	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER && (!lv_poc_get_btn_status()))
+	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
 	{
 		extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(true);
@@ -2927,7 +2938,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
         memcpy(&(d->play.level), &level, sizeof(AUD_LEVEL_T));
 
 		//open pa
-		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER && (!lv_poc_get_btn_status()))
+		if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
 		{
 			extern bool poc_set_ext_pa_status(bool open);
 			poc_set_ext_pa_status(true);
@@ -3047,8 +3058,17 @@ bool audevStopPlayV2(void)
     {
 	    extern bool poc_set_ext_pa_status(bool open);
 		poc_set_ext_pa_status(false);
-		lv_poc_set_btn_status(false);
     }
+
+	//monitor audev
+	if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_STOP_IND, NULL))
+	{
+		OSI_PRINTFI("[poc][audev][voice]%s(%d)send voice play stop succ", __func__, __LINE__);
+	}
+	else
+	{
+		OSI_PRINTFI("[poc][audev][voice]%s(%d)send voice play stop failed", __func__, __LINE__);
+	}
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
     {

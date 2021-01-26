@@ -82,10 +82,14 @@ static void prvPttKeyStateCb(void *ctx)
 	else
 	{
 		OSI_PRINTFI("[poc][voice][%s](%d)Ptt key is release", __func__, __LINE__);
-		osiTimerStop(prvPttKeyStateTimer);
-		prvPttKeyStateTimerRunning = false;
+		if(prvPttKeyStateTimerRunning)
+		{
+			osiTimerStop(prvPttKeyStateTimer);
+			prvPttKeyStateTimerRunning = false;
+		}
 		lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		poc_set_ptt_key_status(false);
+		prvPttKeyState = false;
 	}
 }
 
@@ -113,6 +117,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 					prvPttKeyStateTimerRunning = true;
 
 					poc_set_ptt_key_status(true);
+					prvPttKeyState = true;
 				}
 
 				switch(lv_poc_get_apply_note())
@@ -134,10 +139,17 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
             else
             {
 				lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+
+				if(prvPttKeyStateTimerRunning)
+				{
+					osiTimerStop(prvPttKeyStateTimer);
+					prvPttKeyStateTimerRunning = false;
+				}
+
 				poc_set_ptt_key_status(false);
+				prvPttKeyState = false;
 			}
 		}
-		prvPttKeyState = state;
 
 		ret = false;
 	}

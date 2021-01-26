@@ -274,9 +274,9 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 					{
 						lv_poc_set_group_status(false);
 						lv_poc_member_list_set_hightlight_index();
-						OSI_LOGI(0, "[grouprefr]exit memberlist\n");
 						lv_poc_del_activity(poc_member_list_activity);
 					}
+					OSI_PRINTFI("[memberr][exit](%s)(%d):exit memberlist, memrefr_complete(%d), error(%d)", __func__, __LINE__, lv_poc_is_memberlist_refr_complete(), lv_poc_get_refr_error_info());
 					break;
 				}
 			}
@@ -1290,7 +1290,6 @@ void lv_poc_memberlist_activity_open(lv_task_t * task)
 
 	strcpy((char *)lv_poc_member_list_title, (const char *)task->user_data);
 
-	lv_poc_set_refr_error_info(false);
 	lv_poc_set_memberlist_refr_is_complete(false);
 	poc_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
 	lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);

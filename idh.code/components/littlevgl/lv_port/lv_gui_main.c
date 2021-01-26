@@ -266,6 +266,10 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
             }
         }
 
+		{//break scrbri
+			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CALL_BRIGHT_SCREEN_BREAK, NULL);
+		}
+
 		lv_poc_cbn_key_obj(data) == true ? (cnt_key_state = true) : (cnt_key_state = false);
 	    if(!pocKeypadHandle(data->key, data->state, &cnt_key_state))
 	    {

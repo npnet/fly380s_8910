@@ -118,6 +118,13 @@ typedef enum
 	LVPOCGUIIDTCOM_SIGNAL_SUSPEND_IND,
 	LVPOCGUIIDTCOM_SIGNAL_RESUME_IND,
 
+	LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_START_IND,
+	LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_STOP_IND,
+
+	LVPOCGUIIDTCOM_SIGNAL_CALL_BRIGHT_SCREEN_ENTER,
+	LVPOCGUIIDTCOM_SIGNAL_CALL_BRIGHT_SCREEN_EXIT,
+	LVPOCGUIIDTCOM_SIGNAL_CALL_BRIGHT_SCREEN_BREAK,
+
 	LVPOCGUIIDTCOM_SIGNAL_ENTER_CIT_STATUS, // for cit judgement
 
 	LVPOCGUIIDTCOM_SIGNAL_HEADSET_INSERT,
@@ -134,9 +141,6 @@ typedef enum
     LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND,
 	LVPOCGUIIDTCOM_SIGNAL_SET_SCREEN_STATUS_IND,
 	LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND,
-
-	LVPOCGUIIDTCOM_SIGNAL_SET_STOP_PLAYER_TTS_VOICE,
-    LVPOCGUIIDTCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE,
 
     LVPOCGUIIDTCOM_SIGNAL_END,
 } LvPocGuiIdtCom_SignalType_t;
@@ -162,6 +166,18 @@ typedef enum{/*组状态*/
 
 	LVPOCGROUPIDTCOM_SIGNAL_SELF_END,
 }LVPOCIDTCOM_SELFGROUP_STATUS_T;
+
+enum{
+    LVPOCIDTCOM_CALL_DIR_TYPE_ENTER = 1 ,
+    LVPOCIDTCOM_CALL_DIR_TYPE_SPEAK = 2 ,
+    LVPOCIDTCOM_CALL_DIR_TYPE_LISTEN = 3 ,
+};
+
+enum{
+    LVPOCIDTCOM_CALL_LASTSCR_STATE_START = 1 ,
+    LVPOCIDTCOM_CALL_LASTSCR_STATE_OPEN  = 2 ,
+    LVPOCIDTCOM_CALL_LASTSCR_STATE_CLOSE = 3 ,
+};
 
 typedef struct
 {
@@ -202,8 +218,6 @@ void *lvPocGuiIdtCom_get_current_lock_group(void);
 
 bool lvPocGuiIdtCase_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx, void * cause_str);
 
-bool lvPocGuiIdtCom_CriRe_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ctx);
-
 int lvPocGuiIdtCom_get_current_exist_selfgroup(void);
 
 void lvPocGuiComLogSwitch(bool status);
@@ -213,6 +227,8 @@ void lvPocGuiIdtCom_stop_check_ack(void);
 lv_poc_cit_status_type lvPocGuiComCitStatus(lv_poc_cit_status_type status);
 
 uint16_t lvPocGetLoginStatus(void);
+
+int lvPocGuiIdtCom_tts_state(int status);
 
 OSI_EXTERN_C_END
 

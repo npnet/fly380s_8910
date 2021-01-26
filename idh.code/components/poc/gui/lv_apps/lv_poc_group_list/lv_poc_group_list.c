@@ -267,6 +267,7 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 			strcpy(lv_poc_group_member_list_title, (const char *)p_element->name);
 			member_list->hide_offline = false;
 			lv_poc_group_list_get_member_list_info = (lv_poc_group_info_t *)p_element->information;
+			lv_poc_set_refr_error_info(false);
 			lv_poc_get_member_list(lv_poc_group_list_get_member_list_info,
 				member_list,
 				1,

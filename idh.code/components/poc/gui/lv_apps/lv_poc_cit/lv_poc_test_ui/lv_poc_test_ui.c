@@ -19,13 +19,13 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
-static lv_poc_win_t * cit_win;
+static lv_poc_win_t * cit_win = NULL;
 
 static lv_poc_cit_test_type_t *cit_test_info = NULL;
 
-lv_poc_activity_t * poc_cit_test_ui_activity;
+lv_poc_activity_t * poc_cit_test_ui_activity = NULL;
 
 typedef struct
 {
@@ -692,6 +692,9 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 	{
 		return;
 	}
+	//protect
+	lv_obj_set_click(list, false);
+	lv_obj_set_event_cb(list, NULL);
 
 	switch(cit_test_info->id)
 	{
@@ -701,8 +704,9 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			{
 				break;
 			}
+
 			lv_obj_t *label = lv_label_create(list, NULL);
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
@@ -734,7 +738,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 		case LV_POC_CIT_OPRATOR_TYPE_RTC:
 		{
 			lv_obj_t *label = lv_label_create(list, NULL);
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
@@ -797,7 +801,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 				break;
 			}
 			lv_obj_t *label = lv_label_create(list, NULL);
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
@@ -825,7 +829,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 				break;
 			}
 			lv_obj_t *label = lv_label_create(list, NULL);
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 
 			//speak
 			poc_setting_conf = lv_poc_setting_conf_read();
@@ -856,7 +860,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 		case LV_POC_CIT_OPRATOR_TYPE_SIGNAL:
 		{
 			lv_obj_t *label = lv_label_create(list, NULL);
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 			//signal
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
@@ -914,7 +918,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 
 			for(int i = 0; i < cit_test_info->cit_key_attr.keynumber; i++)
 			{
-				lv_obj_t *label;
+				lv_obj_t *label = NULL;
 				if(i <= (1*LV_LCD_COLUMN - 1))//more LV_LCD_COLUMN*4 key
 				{
 					label = lv_label_create(pocCitAttr.keyattr.keyrow[0], NULL);
@@ -955,7 +959,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 
 		case LV_POC_CIT_OPRATOR_TYPE_CHARGE:
 		{
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 			//charge status
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
@@ -1002,7 +1006,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			{
 				break;
 			}
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 			//卫星数量
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
@@ -1056,7 +1060,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 
 		case LV_POC_CIT_OPRATOR_TYPE_SIM:
 		{
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 			//label1
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
@@ -1214,7 +1218,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 				break;
 			}
 			lv_obj_t *label = lv_label_create(list, NULL);
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
@@ -1233,7 +1237,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 		case LV_POC_CIT_OPRATOR_TYPE_RGB:
 		{
 			lv_obj_t *label = lv_label_create(list, NULL);
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
@@ -1259,7 +1263,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			{
 				break;
 			}
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
 			style_label->text.font = (lv_font_t *)poc_setting_conf->font.cit_label_current_font;
@@ -1299,7 +1303,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 
 		case LV_POC_CIT_OPRATOR_TYPE_FLASH:
 		{
-			lv_style_t * style_label;
+			lv_style_t * style_label = NULL;
 			//total memory
 			poc_setting_conf = lv_poc_setting_conf_read();
 			style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)

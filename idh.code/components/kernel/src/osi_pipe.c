@@ -82,6 +82,10 @@ void osiPipeReset(osiPipe_t *pipe)
 
 void osiPipeStop(osiPipe_t *pipe)
 {
+	if(pipe == NULL)
+	{
+		return;
+	}
     uint32_t critical = osiEnterCritical();
     pipe->running = false;
     osiSemaphoreRelease(pipe->wr_avail_sema);
@@ -96,6 +100,10 @@ bool osiPipeIsStopped(osiPipe_t *pipe)
 
 void osiPipeSetEof(osiPipe_t *pipe)
 {
+	if(pipe == NULL)
+	{
+		return;
+	}
     uint32_t critical = osiEnterCritical();
     pipe->eof = true;
     osiSemaphoreRelease(pipe->wr_avail_sema);

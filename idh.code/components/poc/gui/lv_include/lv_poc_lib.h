@@ -871,6 +871,13 @@ bool lv_poc_is_memberlist_refr_complete(void);
 bool lv_poc_is_group_list_refr(void);
 
 /*
+      name : poc_UpdateLastActiTime
+    return :
+      date : 2020-12-29
+*/
+void poc_UpdateLastActiTime(void);
+
+/*
       name : poc_set_keypad_led_status
      param : open  true is open keypad led
       date : 2020-04-30
@@ -891,13 +898,6 @@ void *lv_poc_recorder_Thread(void);
 	  date : 2020-10-30
 */
 bool lv_poc_watchdog_status(void);
-
-/*
-	  name : lv_poc_play_voice_status
-	  param :
-	  date : 2020-11-04
-*/
-bool lv_poc_play_voice_status(void);
 
 /*
 	  name : lv_poc_set_refr_error_info
@@ -1212,6 +1212,46 @@ bool lv_poc_get_play_tone_status(void);
 void lv_poc_set_cur_grp_list_status(bool status);
 
 bool lv_poc_get_cur_grp_list_status(void);
+
+/*
+	 name : lv_poc_get_audevplay_status
+	 param :
+	 date : 2021-01-18
+*/
+bool lv_poc_get_audevplay_status(void);
+
+/*
+	  name : lv_poc_set_audevplay_status
+	  param :
+	  date : 2021-01-18
+*/
+void
+lv_poc_set_audevplay_status(bool status);
+
+/*
+	 name : lv_poc_stop_poc_voice
+	 param :
+	 date : 2020-12-1
+*/
+int
+lv_poc_stop_player_voice(void);
+
+bool lv_poc_play_voice_status(void);
+
+/*
+	 name : lv_poc_get_keytone_status
+	 param :
+	 date : 2021-01-19
+*/
+bool
+lv_poc_get_keytone_status(void);
+
+/*
+     name : lv_poc_mutex_init
+     param :
+     date : 2021-01-25
+*/
+uint32_t lv_poc_mutex_init(void);
 
 #ifdef __cplusplus
 }

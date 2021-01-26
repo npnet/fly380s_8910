@@ -71,8 +71,8 @@ static drvGpio_t * poc_gps_ant_Gpio = NULL;
 static drvGpio_t * poc_iic_scl_gpio = NULL;
 static drvGpio_t * poc_iic_sda_gpio = NULL;
 drvGpioConfig_t* configport = NULL;
+static osiMutex_t  *mutex = NULL;
 
-static bool is_poc_play_voice = false;
 static bool is_poc_listen_tone_complete = false;
 static bool lv_poc_is_insert_headset = false;
 static bool is_first_membercall = false;
@@ -94,8 +94,31 @@ static bool poc_charging_status = false;
 static bool lv_poc_screenon_first = false;
 static bool lv_poc_cit_test_self_record = false;
 static bool lv_poc_is_play_tone_complete = false;
-static void poc_ear_ppt_irq(void *ctx);
+static bool lv_poc_audevplay_status = false;
 
+//play voice
+struct poc_voice_player
+{
+	bool isPlayVoice;
+	LVPOCAUDIO_Type_e voice_queue[10];
+	int voice_queue_reader;
+	int voice_queue_writer;
+	LVPOCAUDIO_Type_e voice_type;
+	auStreamFormat_t voice_formate;
+};
+static struct poc_voice_player poc_voice_player_attr = {0};
+
+//key tone
+struct poc_key_tone
+{
+	bool is_poc_play_key_tone;
+	bool is_poc_play_voice;
+	bool is_task_run;
+	int is_task_cnt;
+};
+static struct poc_key_tone keytoneattr = {0};
+
+static void poc_ear_ppt_irq(void *ctx);
 static void poc_Lcd_Set_BackLightNess(uint32_t level);
 static void poc_SetPowerLevel(uint32_t mv);
 
@@ -456,6 +479,16 @@ void poc_config_Lcd_power_vol(void)
 }
 
 /*
+      name : poc_UpdateLastActiTime
+    return :
+      date : 2020-12-29
+*/
+void poc_UpdateLastActiTime(void)
+{
+	lvGuiUpdateLastActivityTime();
+}
+
+/*
       name : poc_SetPowerLevel
     return : set lcd power register
       date : 2020-08-27
@@ -522,10 +555,10 @@ void poc_SetPowerLevel(uint32_t mv)
 
 
 static osiThread_t * prv_play_btn_voice_one_time_thread = NULL;
+static lv_task_t * prv_play_btn_voice_one_time_task = NULL;
 static auPlayer_t * prv_play_btn_voice_one_time_player = NULL;
 static osiThread_t * prv_play_voice_one_time_thread = NULL;
 static auPlayer_t * prv_play_voice_one_time_player = NULL;
-
 extern lv_poc_audio_dsc_t lv_poc_audio_msg;
 extern lv_poc_audio_dsc_t lv_poc_audio_start_machine;
 extern lv_poc_audio_dsc_t lv_poc_audio_no_connected;
@@ -546,7 +579,6 @@ extern lv_poc_audio_dsc_t lv_poc_audio_tone_start_listen;
 extern lv_poc_audio_dsc_t lv_poc_audio_tone_start_speak;
 extern lv_poc_audio_dsc_t lv_poc_audio_tone_stop_listen;
 extern lv_poc_audio_dsc_t lv_poc_audio_tone_stop_sepak;
-//新加入
 extern lv_poc_audio_dsc_t lv_poc_audio_start_login;
 extern lv_poc_audio_dsc_t lv_poc_audio_now_loginning;
 extern lv_poc_audio_dsc_t lv_poc_audio_try_to_login;
@@ -595,21 +627,61 @@ static lv_poc_audio_dsc_t *prv_lv_poc_audio_array[] = {
 	&lv_poc_audio_start_login,
 };
 
+static void prv_monitor_key_tone_task_callback(lv_task_t *task)
+{
+	if(keytoneattr.is_poc_play_key_tone
+		&& (!ttsIsPlaying()))
+	{
+		OSI_PRINTFI("[poc][voice][keytone](%s)(%d)tts is not Playing", __func__, __LINE__);
+		keytoneattr.is_poc_play_key_tone = false;
+		memset(&keytoneattr, 0, sizeof(struct poc_key_tone));
+	}
+	else
+	{
+		OSI_PRINTFI("[poc][voice][keytone](%s)(%d)is_task_cnt is (%d)", __func__, __LINE__, keytoneattr.is_task_cnt);
+		keytoneattr.is_task_run ? (keytoneattr.is_task_cnt++) : 0;
+		if(keytoneattr.is_task_cnt > 20)//2s
+		{
+			OSI_PRINTFI("[poc][voice][keytone](%s)(%d)set btn voice thread as null", __func__, __LINE__);
+			keytoneattr.is_task_run = false;
+			keytoneattr.is_task_cnt = 0;
+			prv_play_btn_voice_one_time_thread = NULL;
+		}
+	}
+}
+
 static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
 	do
 	{
-		if(!ttsIsPlaying()
-			&& !lvPocGuiIdtCom_get_listen_status()
+		OSI_PRINTFI("[poc][voice][keytone][%d]listen status (%d), speak status (%d), audev status (%d)", __LINE__, lvPocGuiIdtCom_get_listen_status(), lvPocGuiIdtCom_get_speak_status(), lv_poc_get_audevplay_status());
+		if(!lvPocGuiIdtCom_get_listen_status()
 			&& !lvPocGuiIdtCom_get_speak_status()
 			&& (lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) != LVPOCCIT_TYPE_ENTER))
 		{
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)20);
-			lv_poc_set_btn_status(true);
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_CLOSE_PA_IND, (void *)160);
-			audevSetPlayVolume(40);
-			char playkey[4] = "9";
-			ttsPlayText(playkey, strlen(playkey), ML_UTF8);
+			if(ttsIsPlaying())
+			{
+				OSI_PRINTFI("[poc][voice][keytone](%s)(%d)tts is stop", __func__, __LINE__);
+				ttsStop();
+			}
+
+			OSI_PRINTFI("[poc][voice][keytone]audev play status (%d)",lv_poc_get_audevplay_status());
+			if(!lv_poc_get_audevplay_status())
+			{
+				OSI_PRINTFI("[poc][voice][keytone](%s)(%d)launch", __func__, __LINE__);
+//				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)20);
+//				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_CLOSE_PA_IND, (void *)160);
+
+				audevSetPlayVolume(35);
+				char playkey[4] = "9";
+				ttsPlayText(playkey, strlen(playkey), ML_UTF8);
+				keytoneattr.is_poc_play_key_tone = true;
+				keytoneattr.is_task_cnt = 0;
+			}
+		}
+		else
+		{
+			OSI_PRINTFI("[poc][voice][keytone](%s)(%d)not stop", __func__, __LINE__);
 		}
 	}while(0);
 	prv_play_btn_voice_one_time_thread = NULL;
@@ -620,13 +692,16 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 {
     auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
    	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
-	bool isPlayVoice = false;
+	poc_voice_player_attr.isPlayVoice = false;
 	osiEvent_t event = {0};
-	LVPOCAUDIO_Type_e voice_queue[10] = {0};
-	int voice_queue_reader = 0;
-	int voice_queue_writer = 0;
-	LVPOCAUDIO_Type_e voice_type = 0;
-	auStreamFormat_t voice_formate = AUSTREAM_FORMAT_UNKNOWN;
+	for(int i = 0; i < 10; i++)
+	{
+		poc_voice_player_attr.voice_queue[i] = 0;
+	}
+	poc_voice_player_attr.voice_queue_reader = 0;
+	poc_voice_player_attr.voice_queue_writer = 0;
+	poc_voice_player_attr.voice_type = 0;
+	poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_UNKNOWN;
 
 	while(1)
 	{
@@ -637,32 +712,32 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				continue;
 			}
 
-			voice_type = event.param1;
+			poc_voice_player_attr.voice_type = event.param1;
 
 			if(event.param2 > 0)
 			{
-				if(isPlayVoice)
+				if(poc_voice_player_attr.isPlayVoice)
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
-					isPlayVoice = false;
+					poc_voice_player_attr.isPlayVoice = false;
 				}
 			}
-			else if(isPlayVoice)
+			else if(poc_voice_player_attr.isPlayVoice)
 			{
-				voice_queue[voice_queue_writer] = voice_type;
-				voice_queue_writer = (voice_queue_writer + 1) % 10;
+				poc_voice_player_attr.voice_queue[poc_voice_player_attr.voice_queue_writer] = poc_voice_player_attr.voice_type;
+				poc_voice_player_attr.voice_queue_writer = (poc_voice_player_attr.voice_queue_writer + 1) % 10;
 				continue;
 			}
 		}
 		else
 		{
-			if(isPlayVoice)
+			if(poc_voice_player_attr.isPlayVoice)
 			{
 				if(auPlayerWaitFinish(prv_play_voice_one_time_player, 50))
 				{
 					auPlayerStop(prv_play_voice_one_time_player);
-					isPlayVoice = false;
-					is_poc_play_voice = false;
+					poc_voice_player_attr.isPlayVoice = false;
+					keytoneattr.is_poc_play_voice = false;
 
 					if(is_poc_listen_tone_complete == true)
 					{
@@ -670,7 +745,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 						lv_poc_set_play_tone_status(true);
 					}
 
-					if(voice_queue_reader == voice_queue_writer)
+					if(poc_voice_player_attr.voice_queue_reader == poc_voice_player_attr.voice_queue_writer)
 					{
 						prv_play_voice_one_time_thread = NULL;
 						osiThreadExit();
@@ -682,29 +757,29 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				}
 			}
 
-			if(voice_queue_reader == voice_queue_writer)
+			if(poc_voice_player_attr.voice_queue_reader == poc_voice_player_attr.voice_queue_writer)
 			{
-				is_poc_play_voice = false;
 				continue;
 			}
-			voice_type = voice_queue[voice_queue_reader];
-			voice_queue_reader = (voice_queue_reader + 1) % 10;
+			poc_voice_player_attr.voice_type = poc_voice_player_attr.voice_queue[poc_voice_player_attr.voice_queue_reader];
+			poc_voice_player_attr.voice_queue_reader = (poc_voice_player_attr.voice_queue_reader + 1) % 10;
 		}
 
-		if(voice_type <= LVPOCAUDIO_Type_Start_Index || voice_type >= LVPOCAUDIO_Type_End_Index)
+		if(poc_voice_player_attr.voice_type <= LVPOCAUDIO_Type_Start_Index || poc_voice_player_attr.voice_type >= LVPOCAUDIO_Type_End_Index)
 		{
 			continue;
 		}
 
 
 		if((lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) == LVPOCCIT_TYPE_ENTER)
-			&& (voice_type != LVPOCAUDIO_Type_Test_Volum)
+			&& (poc_voice_player_attr.voice_type != LVPOCAUDIO_Type_Test_Volum)
 			&& !lv_poc_get_cit_mic_activity())
 		{
+			OSI_PRINTFI("[poc][voice][%s](%d)cit status", __func__, __LINE__);
 			continue;
 		}
 
-		switch(voice_type)
+		switch(poc_voice_player_attr.voice_type)
 		{
 			case LVPOCAUDIO_Type_Start_Machine:
 			case LVPOCAUDIO_Type_Fail_Update_Group:
@@ -729,25 +804,25 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup:
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
 			{
-				voice_formate = AUSTREAM_FORMAT_MP3;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
 				audevSetPlayVolume(70);
-			    is_poc_play_voice = true;
+			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
 
 			case LVPOCAUDIO_Type_Test_Volum:
 			{
-				voice_formate = AUSTREAM_FORMAT_MP3;
-			    is_poc_play_voice = true;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
+			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
 
 			case LVPOCAUDIO_Type_Tone_Start_Listen:
 			{
-				voice_formate = AUSTREAM_FORMAT_MP3;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
 				audevSetPlayVolume(40);
-			    is_poc_play_voice = true;
+			    keytoneattr.is_poc_play_voice = true;
 				is_poc_listen_tone_complete = true;
 				break;
 			}
@@ -759,26 +834,31 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 			case LVPOCAUDIO_Type_Tone_Start_Speak:
 			{
-				voice_formate = AUSTREAM_FORMAT_MP3;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
 				audevSetPlayVolume(60);
-			    is_poc_play_voice = true;
+			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
 
 			default:
-				voice_formate = AUSTREAM_FORMAT_WAVPCM;
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_WAVPCM;
 				break;
 		}
 
-		if(prv_lv_poc_audio_array[voice_type] != NULL)
+		while(ttsIsPlaying())
 		{
-			while(ttsIsPlaying())//tts
-			{
-				osiDelayUS(5000);
-			}
-			poc_set_ext_pa_status(true);
-			auPlayerStartMem(prv_play_voice_one_time_player, voice_formate, params, prv_lv_poc_audio_array[voice_type]->data, prv_lv_poc_audio_array[voice_type]->data_size);
-			isPlayVoice = true;
+			osiDelayUS(20000);
+		}
+
+		if(lv_poc_get_audevplay_status())
+		{
+			continue;
+		}
+
+		if(prv_lv_poc_audio_array[poc_voice_player_attr.voice_type] != NULL)
+		{
+			auPlayerStartMem(prv_play_voice_one_time_player, poc_voice_player_attr.voice_formate, params, prv_lv_poc_audio_array[poc_voice_player_attr.voice_type]->data, prv_lv_poc_audio_array[poc_voice_player_attr.voice_type]->data_size);
+			poc_voice_player_attr.isPlayVoice = true;
 		}
 	}
 }
@@ -793,17 +873,25 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 void
 poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 {
-	if(!quiet)
+	if(!quiet && !pocGetPttKeyState())
 	{
-		OSI_PRINTFI("[poc][voice](%s)(%d)pttKey(%d), is_poc_play_voice(%d), earptt(%d)", __func__, __LINE__, poc_get_ptt_key_status(), is_poc_play_voice, lv_poc_get_earppt_state());
-		if(prv_play_btn_voice_one_time_thread != NULL
-			|| is_poc_play_voice == true
-			|| poc_get_ptt_key_status()
-			|| lv_poc_get_earppt_state())
+		if(prv_play_btn_voice_one_time_task == NULL)//monitor key voice
 		{
+			keytoneattr.is_poc_play_key_tone = false;
+			prv_play_btn_voice_one_time_task = lv_task_create(prv_monitor_key_tone_task_callback, 200, LV_TASK_PRIO_HIGHEST, NULL);
+		}
+
+		if(prv_play_btn_voice_one_time_thread != NULL || keytoneattr.is_poc_play_voice == true)
+		{
+			OSI_PRINTFI("[keytone](%s)(%d)error, isplay(%d)", __func__, __LINE__, keytoneattr.is_poc_play_voice);
+			lv_poc_stop_player_voice() == 2 ? (keytoneattr.is_poc_play_voice = false) : 0;
 			return;
 		}
-		prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_LOW, 1024*3, 64);
+		prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+		if(prv_play_btn_voice_one_time_thread != NULL)
+		{
+			keytoneattr.is_task_run = true;
+		}
 	}
 }
 
@@ -2865,16 +2953,6 @@ bool lv_poc_watchdog_status(void)
 }
 
 /*
-	  name : lv_poc_play_voice_status
-	  param :
-	  date : 2020-11-04
-*/
-bool lv_poc_play_voice_status(void)
-{
-	return ttsIsPlaying();
-}
-
-/*
      name : lv_poc_set_headset_status
      param :
      date : 2020-09-29
@@ -3619,5 +3697,81 @@ void lv_poc_set_cur_grp_list_status(bool status)
 bool lv_poc_get_cur_grp_list_status(void)
 {
    return is_group_list_btn;
+}
+
+/*
+     name : lv_poc_get_audevplay_status
+     param :
+     date : 2021-01-18
+*/
+bool lv_poc_get_audevplay_status(void)
+{
+   return lv_poc_audevplay_status;
+}
+
+/*
+	  name : lv_poc_set_audevplay_status
+	  param :
+	  date : 2021-01-18
+*/
+void
+lv_poc_set_audevplay_status(bool status)
+{
+	lv_poc_audevplay_status = status;
+}
+
+/*
+     name : lv_poc_stop_poc_voice
+     param :
+     date : 2020-12-1
+*/
+int
+lv_poc_stop_player_voice(void)
+{
+	if(auPlayerGetStatus(prv_play_voice_one_time_player))
+	{
+//		if(auPlayerStop(prv_play_voice_one_time_player))
+//		{
+//			return 1;
+//		}
+		return 0;
+	}
+	return 2;
+}
+
+/*
+	  name : lv_poc_play_voice_status
+	  param :
+	  date : 2020-11-04
+*/
+bool lv_poc_play_voice_status(void)
+{
+	return ttsIsPlaying();
+}
+
+/*
+     name : lv_poc_get_keytone_status
+     param :
+     date : 2021-01-19
+*/
+bool
+lv_poc_get_keytone_status(void)
+{
+	return keytoneattr.is_poc_play_key_tone;
+}
+
+/*
+     name : lv_poc_mutex_init
+     param :
+     date : 2021-01-25
+*/
+uint32_t lv_poc_mutex_init(void)
+{
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	return (uint32_t)mutex;
 }
 
