@@ -43,7 +43,7 @@ static void lv_poc_delete_group_question_OK_cb(lv_obj_t * obj, lv_event_t event)
 
 static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t event);
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_list_info = NULL;
 
@@ -57,9 +57,9 @@ static lv_poc_group_list_item_info_t * lv_poc_group_current_info = NULL;
 
 lv_poc_group_info_t *lv_poc_group_list_get_member_list_info = NULL;
 
-static lv_area_t display_area;
+static lv_area_t display_area = {0};
 
-lv_poc_activity_t * poc_group_list_activity;
+lv_poc_activity_t * poc_group_list_activity = NULL;
 
 char group_member_list_is_open = 0;
 
@@ -87,7 +87,7 @@ static lv_obj_t * lv_poc_group_list_activity_create(lv_poc_display_t *display)
     display_area.y1 = 0;
     display_area.y2 = lv_poc_get_display_height(display);
     activity_list = lv_poc_list_create(display, NULL, display_area, lv_poc_group_list_list_config);
-	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
+	lv_poc_notation_refresh();//把弹框显示在最顶层
 	return (lv_obj_t *)activity_list;
 }
 
@@ -100,12 +100,11 @@ static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 	if(group_list != NULL)
 	{
 		list_element_t * cur_p = group_list->group_list;
-		list_element_t * temp_p;
+		list_element_t * temp_p = NULL;
 		while(cur_p != NULL)
 		{
 			temp_p = cur_p;
 			cur_p =cur_p->next;
-			//lv_obj_del(temp_p->list_item);
 			lv_mem_free(temp_p);
 		}
 
@@ -122,7 +121,7 @@ static void lv_poc_group_list_activity_destory(lv_obj_t *obj)
 	if(member_list != NULL)
 	{
 		list_element_t * cur_p = member_list->online_list;
-		list_element_t * temp_p;
+		list_element_t * temp_p = NULL;
 		while(cur_p != NULL)
 		{
 			temp_p = cur_p;
@@ -922,7 +921,7 @@ void lv_poc_group_list_clear(lv_poc_group_list_t *group_list_obj)
 	}
 
 	list_element_t * cur_p = group_list_obj->group_list;
-	list_element_t * temp_p;
+	list_element_t * temp_p = NULL;
 	while(cur_p != NULL)
 	{
 		temp_p = cur_p;
@@ -992,9 +991,9 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	int list_btn_count = 0;
 
     list_element_t * p_cur = NULL;
-    lv_obj_t * btn;
+    lv_obj_t * btn = NULL;
 	lv_obj_t * btn_index[32];//assume group number is 32
-    lv_obj_t * img;
+    lv_obj_t * img = NULL;
 	lv_obj_t * btn_label = NULL;
     lv_coord_t btn_height = (display_area.y2 - display_area.y1)/(LV_POC_LIST_COLUM_COUNT + 1);
 	lv_coord_t btn_width = (display_area.x2 - display_area.x1);

@@ -122,12 +122,12 @@ static void lv_poc_about_pressed_state_info_cb(lv_obj_t * obj, lv_event_t event)
 
 static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    lv_obj_t *label;
-    lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    lv_obj_t *label = NULL;
+    lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
-    lv_style_t * style_label;
+    lv_style_t * style_label = NULL;
     poc_setting_conf = lv_poc_setting_conf_read();
     style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_about_label;
     style_label->text.font = (lv_font_t *)poc_setting_conf->font.about_label_current_font;

@@ -14,9 +14,9 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_area_t display_area;
+static lv_area_t display_area = {0};
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
 static lv_style_t lv_poc_terminal_style = {0};
 
@@ -26,7 +26,7 @@ static lv_style_t lv_poc_terminal_btn_rel_style = {0};
 
 static lv_style_t lv_poc_terminal_sb_style = {0};
 
-lv_poc_activity_t * poc_cit_term_info_activity;
+lv_poc_activity_t * poc_cit_term_info_activity = NULL;
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {

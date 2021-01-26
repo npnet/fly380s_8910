@@ -43,11 +43,11 @@ lv_poc_display_t         *lv_poc_base_activity_nostabar_control_obj    = NULL;
 lv_poc_display_t         *lv_poc_base_activity_nostabar_nocontrol_obj  = NULL;
 #endif
 
-lv_group_t                      *poc_indev_group;
+lv_group_t                      *poc_indev_group = NULL;
 
 lv_indev_t               *poc_keypad_dev = NULL;
 
-lv_poc_activity_t       * current_activity;
+lv_poc_activity_t       * current_activity = NULL;
 
 nv_poc_setting_msg_t * poc_setting_conf = NULL;
 
@@ -105,7 +105,6 @@ lv_style_t theme_black_style_control = {0};
 *                  LOCAL
 *
 *************************************************/
-//static lv_obj_t *lv_poc_base_activity_base_obj = NULL;
 
 static char lv_poc_time[LV_POC_STABAR_TIME_LEN_DEFAULT]   =   {0};
 static lv_poc_activity_list_t *lv_poc_activity_list;

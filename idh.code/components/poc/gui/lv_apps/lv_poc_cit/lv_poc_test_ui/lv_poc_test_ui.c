@@ -61,7 +61,7 @@ typedef struct lv_poc_cit_test_t
 	struct poc_cit_key_obj_t keyattr;
 }lv_poc_cit_test_t;
 
-static lv_poc_cit_test_t pocCitAttr;
+static lv_poc_cit_test_t pocCitAttr = {0};
 
 lv_poc_cit_key_label_struct_t lv_poc_cit_key_label_array[16] = {//3(rows)*4(columns)
     {
@@ -757,7 +757,8 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			lv_obj_set_width(label2, lv_obj_get_width(list));
 			lv_obj_align(label2, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 
-			if(pocCitAttr.refresh_task == NULL)
+			if(pocCitAttr.refresh_task == NULL
+				&& label2 != NULL)
 			{
 				pocCitAttr.refresh_task = lv_task_create(lv_poc_cit_refresh_cb, 1000, LV_TASK_PRIO_MID, (void *)label2);
 				lv_task_ready(pocCitAttr.refresh_task);
@@ -786,7 +787,8 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			lv_obj_set_size(lcd_bg_obj, LV_HOR_RES, LV_VER_RES);
 			lv_obj_set_pos(lcd_bg_obj, 0, 0);
 
-			if(pocCitAttr.refresh_task == NULL)
+			if(pocCitAttr.refresh_task == NULL
+				&& lcd_bg_obj != NULL)
 			{
 				pocCitAttr.refresh_task = lv_task_create(lv_poc_cit_refresh_cb, 500, LV_TASK_PRIO_HIGH, (void *)lcd_bg_obj);
 				lv_task_ready(pocCitAttr.refresh_task);
@@ -871,7 +873,8 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			lv_obj_set_width(label, lv_obj_get_width(list));
 			lv_obj_align(label, NULL, LV_ALIGN_IN_TOP_MID, 0, 0);
 
-			if(pocCitAttr.refresh_task == NULL)
+			if(pocCitAttr.refresh_task == NULL
+				&& label != NULL)
 			{
 				pocCitAttr.refresh_task = lv_task_create(lv_poc_cit_refresh_cb, 200, LV_TASK_PRIO_MID, (void *)label);
 				lv_task_ready(pocCitAttr.refresh_task);

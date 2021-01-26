@@ -206,7 +206,7 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
-	lv_style_t * style_label;
+	lv_style_t * style_label = NULL;
 	style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
 	style_label->text.color = LV_COLOR_BLACK;
 	poc_cit_result_activity = NULL;
@@ -221,13 +221,13 @@ static void * cit_result_list_create(lv_obj_t * parent, lv_area_t display_area)
 
 static void cit_result_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-	lv_obj_t *btn;
-	lv_obj_t *label;
-	lv_obj_t *btn_label;
+	lv_obj_t *btn = NULL;
+	lv_obj_t *label = NULL;
+	lv_obj_t *btn_label = NULL;
 	lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
 	lv_coord_t btn_width = (list_area.x2 - list_area.x1);
-	lv_style_t * style_label;
-	static lv_style_t error_style_label;
+	lv_style_t * style_label = NULL;
+	static lv_style_t error_style_label = {0};
 	style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
 	style_label->text.font = (lv_font_t *)poc_setting_conf->font.cit_label_current_font;
 

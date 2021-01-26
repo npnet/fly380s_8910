@@ -28,9 +28,9 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_poc_win_t * edeg_key_set_win;
+static lv_poc_win_t * edeg_key_set_win = NULL;
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
 
 #ifdef CONFIG_POC_GUI_CHOICE_NET_TYPE_SUPPORT
@@ -42,7 +42,7 @@ static char is_poc_edeg_key_setting_update_UI_task_running = 0;
 static edeg_key_set_item_e edeg_key_set_selected_item = 0;
 
 
-lv_poc_activity_t * poc_edeg_key_set_activity;
+lv_poc_activity_t * poc_edeg_key_set_activity = NULL;
 
 extern lv_poc_activity_t * main_menu_activity;
 
@@ -122,9 +122,9 @@ static void lv_poc_edeg_key_set_press_btn_action(lv_obj_t * obj, lv_event_t even
 
 static void edeg_key_set_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    __attribute__((unused)) lv_obj_t *label;
-    __attribute__((unused)) lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    __attribute__((unused)) lv_obj_t *label = NULL;
+    __attribute__((unused)) lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     __attribute__((unused)) lv_coord_t btn_width = (list_area.x2 - list_area.x1);
     lv_obj_t * btns[4];

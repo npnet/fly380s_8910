@@ -28,9 +28,9 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_poc_win_t * display_win;
+static lv_poc_win_t * display_win = NULL;
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
 static poc_display_edeg_item_t display_selected_item = poc_display_edeg_big_font;
 
@@ -42,7 +42,7 @@ static const char * bright_time_str[] = {"5秒","15秒","30秒","1分钟","2分�
 static const char * theme_str[] = {"白色","黑色"};
 #endif
 
-lv_poc_activity_t * poc_display_activity;
+lv_poc_activity_t * poc_display_activity = NULL;
 
 
 
@@ -66,19 +66,19 @@ static void * display_list_create(lv_obj_t * parent, lv_area_t display_area)
 
 static void display_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    lv_obj_t *sw;
-    lv_obj_t *label;
-    lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    lv_obj_t *sw = NULL;
+    lv_obj_t *label = NULL;
+    lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
     lv_coord_t btn_sw_height = (list_area.y2 - list_area.y1)/3;
     lv_obj_t * btns[poc_display_edeg_item_max_num];
     /*Create styles for the switch*/
-    lv_style_t * bg_style;
-    lv_style_t * indic_style;
-    lv_style_t * knob_on_style;
-    lv_style_t * knob_off_style;
+    lv_style_t * bg_style = NULL;
+    lv_style_t * indic_style = NULL;
+    lv_style_t * knob_on_style = NULL;
+    lv_style_t * knob_off_style = NULL;
    	poc_setting_conf = lv_poc_setting_conf_read();
 	bg_style = (lv_style_t *)poc_setting_conf->theme.current_theme->style_switch_bg;
 	indic_style = (lv_style_t *)poc_setting_conf->theme.current_theme->style_switch_indic;

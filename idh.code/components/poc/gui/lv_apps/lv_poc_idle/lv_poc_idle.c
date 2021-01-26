@@ -91,8 +91,8 @@ lv_poc_activity_t *activity_idle = NULL;
 static lv_task_t * idle_page_task = NULL;
 static lv_poc_idle_page2_msg_t *idle_page_task_msg = NULL;
 static lv_poc_idle_page2_display_t page2_display_state = lv_poc_idle_page2_normal_info;
-static lv_obj_t * idle_date_label;
-static lv_obj_t * idle_big_clock;
+static lv_obj_t * idle_date_label = NULL;
+static lv_obj_t * idle_big_clock = NULL;
 static char idle_current_page = IDLE_PAGE_CURRENT;
 static char idle_old_page = IDLE_PAGE_CURRENT;
 static char idle_total_page = IDLE_PAGE_NUMBER;
@@ -109,11 +109,11 @@ static idle_display_func_t idle_display_funcs[] =
 *
 *************************************************/
 
-lv_obj_t * idle_title_label;
-lv_obj_t * idle_user_label;
-lv_obj_t * idle_user_name_label;
-lv_obj_t * idle_group_label;
-lv_obj_t * idle_group_name_label;
+lv_obj_t * idle_title_label = NULL;
+lv_obj_t * idle_user_label = NULL;
+lv_obj_t * idle_user_name_label = NULL;
+lv_obj_t * idle_group_label = NULL;
+lv_obj_t * idle_group_name_label = NULL;
 
 char * idle_title_label_text = "";
 char * idle_user_label_text  = "";
@@ -290,8 +290,8 @@ static void lv_poc_idle_time_task(void)
     static char old_str[IDLE_DATE_LABEL_STR_LEN] = {0};
     static bool isFirst = true;
 	static bool isInit = false;
-    static lv_style_t * idle_clock_style;
-	static lv_style_t * style;
+    static lv_style_t * idle_clock_style = NULL;
+	static lv_style_t * style = NULL;
 	static lv_coord_t screen_h = 0;
 	static bool isCreatedPocTask = false;
 	POC_MMI_MODEM_PLMN_RAT network_type = MMI_MODEM_PLMN_RAT_UNKNOW;
@@ -656,7 +656,7 @@ static void lv_poc_idle_page_2_hide(void)
 
 static void lv_poc_idle_page_2_init(void)
 {
-    static lv_style_t * style;
+    static lv_style_t * style = NULL;
     static bool isInit_page_2 = false;
     if(isInit_page_2 == false)
     {

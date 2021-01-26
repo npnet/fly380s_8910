@@ -7,7 +7,7 @@ extern "C" {
 
 typedef void (* lv_poc_logswitch_item_func_t)(lv_obj_t * obj);
 
-static lv_poc_win_t * poc_logswitch_win;
+static lv_poc_win_t * poc_logswitch_win = NULL;
 
 static lv_poc_logswitch_item_func_t lv_poc_logswitch_items_funcs[LV_POC_LOGSWITCH_ITEMS_NUM] = {0};
 
@@ -29,9 +29,9 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_obj_t *activity_list;
+static lv_obj_t *activity_list = NULL;
 
-lv_poc_activity_t *poc_logswitch_activity;
+lv_poc_activity_t *poc_logswitch_activity = NULL;
 
 struct lv_poc_cit_logswitch_t
 {
@@ -90,17 +90,17 @@ static void * poc_logswitch_list_create(lv_obj_t * parent, lv_area_t display_are
 
 static void poc_logswitch_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    lv_obj_t *sw;
-    lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    lv_obj_t *sw = NULL;
+    lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
     lv_coord_t btn_sw_height = (list_area.y2 - list_area.y1)/3;
 
-    lv_style_t * bg_style;
-    lv_style_t * indic_style;
-    lv_style_t * knob_on_style;
-    lv_style_t * knob_off_style;
+    lv_style_t * bg_style = NULL;
+    lv_style_t * indic_style = NULL;
+    lv_style_t * knob_on_style = NULL;
+    lv_style_t * knob_off_style = NULL;
    	poc_setting_conf = lv_poc_setting_conf_read();
 	bg_style = (lv_style_t *)poc_setting_conf->theme.current_theme->style_switch_bg;
 	indic_style = (lv_style_t *)poc_setting_conf->theme.current_theme->style_switch_indic;

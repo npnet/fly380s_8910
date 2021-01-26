@@ -30,7 +30,7 @@ static void * empty_win(lv_obj_t * parent, lv_area_t display_area)
 ********************/
 lv_poc_win_t * lv_poc_win_create(lv_obj_t * parent, const char * title, lv_poc_win_create_func_t func)
 {
-    lv_style_t * style_header;
+    lv_style_t * style_header = NULL;
     lv_poc_win_t * new_win = (lv_poc_win_t *)lv_mem_alloc(sizeof(lv_poc_win_t));
     poc_setting_conf = lv_poc_setting_conf_read();
     style_header = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_win_header);

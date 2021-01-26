@@ -12,10 +12,10 @@ extern "C" {
 
 
 /*******************
-*     NAME:   lv_poc_rb_create  
-*   AUTHOR:   lugj  
+*     NAME:   lv_poc_rb_create
+*   AUTHOR:   lugj
 * DESCRIPT:   创建poc radio box对象组
-*     DATE:   2019-11-25 
+*     DATE:   2019-11-25
 ********************/
 lv_poc_rb_t * lv_poc_rb_create(void)
 {
@@ -31,21 +31,21 @@ lv_poc_rb_t * lv_poc_rb_create(void)
 }
 
 /*******************
-*     NAME:   lv_poc_rb_add  
-*   AUTHOR:   lugj  
+*     NAME:   lv_poc_rb_add
+*   AUTHOR:   lugj
 * DESCRIPT:   将check box作为radio box添加到radio box对象组中,返回上一个被选中的cb
-*     DATE:   2019-11-25 
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
-    lv_btn_state_t cb_state;
-    lv_poc_rb_node_t * new_rb_node;
-    
+    lv_btn_state_t cb_state = 0;
+    lv_poc_rb_node_t * new_rb_node = NULL;
+
     if(rb == NULL || cb == NULL)
     {
         return;
     }
-    
+
     cb_state = lv_btn_get_state(cb);
     new_rb_node = (lv_poc_rb_node_t *)lv_mem_alloc(sizeof(lv_poc_rb_node_t));
     if(new_rb_node == NULL)
@@ -66,10 +66,10 @@ void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
         rb->cbs = new_rb_node;
     }
 #if 0
-    lv_poc_rb_node_t * p_rb_node;
+    lv_poc_rb_node_t * p_rb_node = NULL;
     p_rb_node = rb->cbs;
     if(p_rb_node != NULL)
-    {        
+    {
         if(cb_state == LV_BTN_STATE_PR || cb_state == LV_BTN_STATE_TGL_PR)
         {
             if(p_rb_node->state == LV_BTN_STATE_PR || p_rb_node->state == LV_BTN_STATE_TGL_PR)
@@ -98,29 +98,29 @@ void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
         }
         p_rb_node->next = new_rb_node;
         return rb->last_cb;
-        
+
     }
     else
     {
         rb->cbs = new_rb_node;
-        //rb->last_cb = cb;        
+        //rb->last_cb = cb;
         //new_rb_node->state = LV_BTN_STATE_PR;
         //lv_btn_set_state(cb, LV_BTN_STATE_PR);
         return rb->last_cb;
-    } 
+    }
 #endif
 }
 
 /*******************
-*     NAME:   lv_poc_rb_press  
-*   AUTHOR:   lugj  
+*     NAME:   lv_poc_rb_press
+*   AUTHOR:   lugj
 * DESCRIPT:   选中rb中cb
-*     DATE:   2019-11-25 
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
-    lv_poc_rb_node_t * p_rb_node;
-    lv_btn_state_t cb_state;
+    lv_poc_rb_node_t * p_rb_node = NULL;
+    lv_btn_state_t cb_state = 0;
 
     if(rb == NULL || rb->cbs == NULL || cb == NULL)
     {
@@ -169,7 +169,7 @@ void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
     {
         return rb->last_cb;
     }
-    
+
     p_rb_node = rb->cbs;
     while(p_rb_node)
     {
@@ -192,19 +192,19 @@ void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
 }
 
 /*******************
-*     NAME:   lv_poc_rb_get_pressed  
-*   AUTHOR:   lugj  
+*     NAME:   lv_poc_rb_get_pressed
+*   AUTHOR:   lugj
 * DESCRIPT:   获取rb中当前被选中的cb
-*     DATE:   2019-11-25 
+*     DATE:   2019-11-25
 ********************/
 lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb)
 {
-    lv_poc_rb_node_t * p_rb_node;
-    lv_btn_state_t cb_state;
-    
+    lv_poc_rb_node_t * p_rb_node = NULL;
+    lv_btn_state_t cb_state = 0;
+
     if(rb == NULL || rb->cbs == NULL)
     {
-        return NULL;
+return NULL;
     }
 
     p_rb_node = rb->cbs;
@@ -221,18 +221,18 @@ lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb)
 }
 
 /*******************
-*     NAME:   lv_poc_rb_remove_cb  
-*   AUTHOR:   lugj  
+*     NAME:   lv_poc_rb_remove_cb
+*   AUTHOR:   lugj
 * DESCRIPT:   删除rb中指定的cb
-*     DATE:   2019-11-25 
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
-    lv_poc_rb_node_t * p_rb_node;
-    
+    lv_poc_rb_node_t * p_rb_node = NULL;
+
     if(rb == NULL || rb->cbs == NULL || cb == NULL)
     {
-        return;
+return;
     }
     if(rb->cbs->cb == cb)
     {
@@ -255,14 +255,14 @@ void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb)
 #if 0
     if(rb == NULL || rb->cbs == NULL || rb->last_cb == NULL || cb == NULL)
     {
-        return;
+return;
     }
-    
+
     if(rb->last_cb == cb)
     {
         rb->last_cb = NULL;
     }
-    
+
     if(rb->cbs->cb == cb)
     {
         rb->cbs = rb->cbs->next;
@@ -284,15 +284,15 @@ void lv_poc_rb_remove_cb(lv_poc_rb_t * rb, lv_obj_t * cb)
 }
 
 /*******************
-*     NAME:   lv_poc_rb_clean  
-*   AUTHOR:   lugj  
+*     NAME:   lv_poc_rb_clean
+*   AUTHOR:   lugj
 * DESCRIPT:   清空rb中所有cb
-*     DATE:   2019-11-25 
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_clean(lv_poc_rb_t * rb)
-{    
-    lv_poc_rb_node_t * p_rb_node;
-    lv_poc_rb_node_t * p;
+{
+    lv_poc_rb_node_t * p_rb_node = NULL;
+    lv_poc_rb_node_t * p = NULL;
     p_rb_node = rb->cbs->next;
     lv_mem_free(rb->cbs);
     while(p_rb_node)
@@ -301,23 +301,20 @@ void lv_poc_rb_clean(lv_poc_rb_t * rb)
         p_rb_node = p_rb_node->next;
         lv_mem_free(p);
     }
-    
+
 }
 
 /*******************
-*     NAME:   lv_poc_rb_del  
-*   AUTHOR:   lugj  
+*     NAME:   lv_poc_rb_del
+*   AUTHOR:   lugj
 * DESCRIPT:   删除rb并清空所有cb
-*     DATE:   2019-11-25 
+*     DATE:   2019-11-25
 ********************/
 void lv_poc_rb_del(lv_poc_rb_t * rb)
 {
     lv_poc_rb_clean(rb);
     lv_mem_free(rb);
 }
-
-
-
 
 #ifdef __cplusplus
 }

@@ -15,22 +15,28 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_poc_win_t * state_info_win;
+static lv_poc_win_t * state_info_win = NULL;
 
-static lv_task_t * state_task;
+static lv_task_t * state_task = NULL;
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
-lv_poc_activity_t * poc_state_info_activity;
+lv_poc_activity_t * poc_state_info_activity = NULL;
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
     state_info_win = lv_poc_win_create(display, "状态信息", state_info_list_create);
+	lv_poc_notation_refresh();//把弹框显示在最顶层
     return (lv_obj_t *)state_info_win;
 }
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(state_info_win != NULL)
+	{
+		lv_mem_free(state_info_win);
+		state_info_win = NULL;
+	}
 }
 
 static void * state_info_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -191,8 +197,8 @@ static int lv_poc_state_info_network_server(void)
 
 static void lv_poc_state_info_network_connection(void)
 {
-	POC_MMI_MODEM_PLMN_RAT	rat;
-	int8_t	operat;
+	POC_MMI_MODEM_PLMN_RAT	rat = 0;
+	int8_t	operat = 0;
 
 	poc_get_operator_network_type_req(POC_SIM_1,&operat,&rat);
 	switch(rat)
@@ -224,7 +230,7 @@ static void lv_poc_state_info_network_connection(void)
 static void lv_poc_state_info_battery(void)
 {
 	char battery[24] = {0};
-	battery_values_t values;
+	battery_values_t values = {0};
 
 	poc_battery_get_status(&values);
 	__itoa(values.battery_value, (char *)&battery, 10);
@@ -251,7 +257,7 @@ static void lv_poc_state_info_battery(void)
 static void lv_poc_state_info_signalbdm(void)
 {
 	char sing[24] = "-";
-	uint8_t nSignalDBM;
+	uint8_t nSignalDBM = 0;
 
 	poc_get_signal_dBm(&nSignalDBM);
 	__itoa(nSignalDBM, (char *)&sing[1] , 10);

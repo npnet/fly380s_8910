@@ -21,13 +21,13 @@ static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_des
 
 
 
-static lv_poc_win_t * poc_bright_time_win;
+static lv_poc_win_t * poc_bright_time_win = NULL;
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
-static lv_poc_rb_t * bright_time_rb;
+static lv_poc_rb_t * bright_time_rb = NULL;
 
-lv_poc_activity_t * bright_time_activity;
+lv_poc_activity_t * bright_time_activity = NULL;
 
 static char *bright_time_notation[8]={"亮屏时间:5秒",
 									  "亮屏时间:15秒",
@@ -50,6 +50,17 @@ static lv_obj_t * activity_create(lv_poc_display_t *display)
 
 static void activity_destory(lv_obj_t *obj)
 {
+	if(poc_bright_time_win != NULL)
+	{
+		lv_mem_free(poc_bright_time_win);
+		poc_bright_time_win = NULL;
+	}
+
+	if(bright_time_rb != NULL)
+	{
+		lv_poc_rb_del(bright_time_rb);
+		bright_time_rb = NULL;
+	}
 }
 
 static void * list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -60,9 +71,9 @@ static void * list_create(lv_obj_t * parent, lv_area_t display_area)
 
 static void list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    lv_obj_t *cb;
-    lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    lv_obj_t *cb = NULL;
+    lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_cb_height = (list_area.y2 - list_area.y1)/3;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);

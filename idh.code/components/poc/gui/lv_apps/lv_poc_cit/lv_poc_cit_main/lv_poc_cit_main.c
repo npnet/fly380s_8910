@@ -31,11 +31,11 @@ static void lv_poc_part_check_cb(lv_obj_t * obj);
 
 static void lv_poc_log_switch_cb(lv_obj_t * obj);
 
-static lv_poc_win_t * cit_win;
+static lv_poc_win_t * cit_win = NULL;
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
-lv_poc_activity_t * poc_cit_activity;
+lv_poc_activity_t * poc_cit_activity = NULL;
 
 struct lv_poc_cit_main_t
 {
@@ -144,12 +144,12 @@ static void lv_poc_cit_pressed_cb(lv_obj_t * obj, lv_event_t event)
 
 static void cit_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn;
-    lv_obj_t *label;
-    lv_obj_t *btn_label;
+    lv_obj_t *btn = NULL;
+    lv_obj_t *label = NULL;
+    lv_obj_t *btn_label = NULL;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
-    lv_style_t * style_label;
+    lv_style_t * style_label = NULL;
     poc_setting_conf = lv_poc_setting_conf_read();
     style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
     style_label->text.font = (lv_font_t *)poc_setting_conf->font.cit_label_current_font;
@@ -207,14 +207,30 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 			{
 				case LV_GROUP_KEY_ENTER:
 				{
-					pubPocCitAutoTestMode() ? 0 : lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
+					if(pubPocCitAutoTestMode())
+					{
+						OSI_PRINTFI("[cit]auto moding");
+					}
+					else
+					{
+						OSI_PRINTFI("[cit]cit main");
+						lv_signal_send(activity_list, LV_SIGNAL_PRESSED, NULL);
+					}
 				}
 
 				case LV_GROUP_KEY_DOWN:
 
 				case LV_GROUP_KEY_UP:
 				{
-					pubPocCitAutoTestMode() ? 0 : lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
+					if(pubPocCitAutoTestMode())
+					{
+						OSI_PRINTFI("[cit]auto moding");
+					}
+					else
+					{
+						OSI_PRINTFI("[cit]cit main");
+						lv_signal_send(activity_list, LV_SIGNAL_CONTROL, param);
+					}
 					break;
 				}
 
