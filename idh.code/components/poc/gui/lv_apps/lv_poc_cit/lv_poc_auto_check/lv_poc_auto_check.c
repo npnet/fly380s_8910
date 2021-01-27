@@ -19,6 +19,9 @@ struct lv_poc_cit_auto_test_t
 	bool ready;
 	int testindex;
 	int result[LV_POC_CIT_OPRATOR_TYPE_END];
+	osiMutex_t *mutex;
+	lv_task_t *task;
+	bool is_msg;
 };
 
 struct lv_poc_cit_auto_test_t poc_auto_test_attr = {0};
@@ -48,10 +51,12 @@ lv_poc_cit_result_label_struct_t lv_poc_cit_result_label_array[] = {
         ""				   , LV_LABEL_LONG_SROLL, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
     },
 
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 	{
 		"3.RTC测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		""				   , LV_LABEL_LONG_SROLL, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
+#endif
 
 	{
 		"4.背光灯测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
@@ -88,10 +93,12 @@ lv_poc_cit_result_label_struct_t lv_poc_cit_result_label_array[] = {
 		""				   , LV_LABEL_LONG_SROLL, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	{
 		"11.GPS测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		""				   , LV_LABEL_LONG_SROLL, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
+#endif
 
 	{
 		"12.SIM卡测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
@@ -115,10 +122,12 @@ lv_poc_cit_result_label_struct_t lv_poc_cit_result_label_array[] = {
 		""				   , LV_LABEL_LONG_SROLL, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
 
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 	{
 		"16.Flash测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		""			   , LV_LABEL_LONG_SROLL, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 	},
+#endif
 };
 
 #define CIT_TEST_RESULT_ITEMS sizeof(lv_poc_cit_result_label_array)/sizeof(lv_poc_cit_result_label_struct_t)
@@ -127,13 +136,17 @@ static
 void prvlvPocCitAutoTestComRefresh(lv_task_t *task)
 {
 	int *id = (int*)task->user_data;
-	if(id == NULL)
+	if(id == NULL
+		|| poc_auto_test_attr.mutex == NULL
+		|| poc_auto_test_attr.is_msg == false)
 	{
-		OSI_LOGI(0, "[cit][autotest](%d):rec msg, NULL", __LINE__);
 		return;
 	}
 	OSI_LOGI(0, "[cit][autotest](%d):rec msg(%d)", __LINE__, (*id) - 1);
+	osiMutexLock(poc_auto_test_attr.mutex);
+	poc_auto_test_attr.is_msg = false;
 	lv_poc_cit_auto_test_items_perform((*id) - 1);
+	osiMutexUnlock(poc_auto_test_attr.mutex);
 }
 
 void lvPocCitAutoTestActiOpen(void)
@@ -141,33 +154,44 @@ void lvPocCitAutoTestActiOpen(void)
 	memset(&poc_auto_test_attr, 0, sizeof(struct lv_poc_cit_auto_test_t));
 	poc_auto_test_attr.testindex = LV_POC_CIT_OPRATOR_TYPE_CALIBATE;
 	poc_auto_test_attr.ready = true;
+	!poc_auto_test_attr.mutex ? poc_auto_test_attr.mutex = osiMutexCreate() : 0;
 	lv_poc_cit_auto_test_items_register_cb(true);
+	poc_auto_test_attr.is_msg = true;
 	lv_poc_cit_auto_test_items_perform(poc_auto_test_attr.testindex - 1);//auto enter first items
 }
 
 void lvPocCitAutoTestActiClose(void)
 {
+	poc_auto_test_attr.mutex ? osiMutexDelete(poc_auto_test_attr.mutex) : 0;
+	if(poc_auto_test_attr.task)
+	{
+		lv_task_del(poc_auto_test_attr.task);
+		poc_auto_test_attr.task = NULL;
+	}
 	memset(&poc_auto_test_attr, 0, sizeof(struct lv_poc_cit_auto_test_t));
 	lv_poc_cit_auto_test_items_register_cb(false);
 }
 
 void lvPocCitAutoTestCom_Msg(lv_poc_cit_auto_test_type result)
 {
-	if(result == 0 || !poc_auto_test_attr.ready)
+	if(result == 0 || !poc_auto_test_attr.ready || poc_auto_test_attr.mutex == NULL)
 	{
 		return;
 	}
 	poc_auto_test_attr.result[poc_auto_test_attr.testindex - 1] = result;//record last result
 	poc_auto_test_attr.testindex++;
-	OSI_LOGI(0, "[cit][autotest](%d):send msg(%d)", __LINE__, poc_auto_test_attr.testindex - 1);
+	OSI_PRINTFI("[cit][autotest](%s)(%d):send msg(%d)", __func__, __LINE__, poc_auto_test_attr.testindex - 1);
 	if(poc_auto_test_attr.testindex > LV_POC_CIT_OPRATOR_TYPE_END)//auto test finish
 	{
 		lv_poc_refr_task_once(lv_poc_cit_result_open, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
 	}
 	else
 	{
-		lv_task_t *task = lv_task_create(prvlvPocCitAutoTestComRefresh, 10, LV_TASK_PRIO_HIGH, (void *)&poc_auto_test_attr.testindex);
-		lv_task_once(task);
+		if(poc_auto_test_attr.task == NULL)
+		{
+			poc_auto_test_attr.task = lv_task_create(prvlvPocCitAutoTestComRefresh, 30, LV_TASK_PRIO_HIGH, (void *)&poc_auto_test_attr.testindex);
+		}
+		poc_auto_test_attr.is_msg = true;
 	}
 }
 
@@ -210,6 +234,11 @@ static void activity_destory(lv_obj_t *obj)
 	style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_fota_label;//no use dead(style_cit_label)
 	style_label->text.color = LV_COLOR_BLACK;
 	poc_cit_result_activity = NULL;
+	if(cit_result_win != NULL)
+	{
+		lv_mem_free(cit_result_win);
+		cit_result_win = NULL;
+	}
 }
 
 static void * cit_result_list_create(lv_obj_t * parent, lv_area_t display_area)
