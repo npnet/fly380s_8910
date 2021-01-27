@@ -1019,7 +1019,7 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 		if(prv_play_btn_voice_one_time_task == NULL)//monitor key voice
 		{
 			keytoneattr.is_poc_play_key_tone = false;
-			prv_play_btn_voice_one_time_task = lv_task_create(prv_monitor_key_tone_task_callback, 200, LV_TASK_PRIO_HIGHEST, NULL);
+			prv_play_btn_voice_one_time_task = lv_task_create(prv_monitor_key_tone_task_callback, 200, LV_TASK_PRIO_MID, NULL);
 		}
 
 		if(prv_play_btn_voice_one_time_thread != NULL || keytoneattr.is_poc_play_voice == true)
@@ -4223,7 +4223,7 @@ void lv_poc_boot_timeing_task(lv_task_t *task)
 void lv_poc_boot_timeing_task_create(void)
 {
 	lv_poc_get_time(&boottimeattr.boottime);
-	boottimeattr.task = lv_task_create(lv_poc_boot_timeing_task, 1000, LV_TASK_PRIO_HIGH, NULL);
+	boottimeattr.task = lv_task_create(lv_poc_boot_timeing_task, 1000, LV_TASK_PRIO_MID, NULL);
 }
 
 /*

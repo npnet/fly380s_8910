@@ -2038,8 +2038,7 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 					{
 						OSI_PRINTFI("[multi-call][activitylist](%s)(%d):open", __func__, __LINE__);
 						pocBndAttr.is_enter_signal_multi_call = false;
-						lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.build_tmp_open, 5, LV_TASK_PRIO_HIGHEST, (void *)pocBndAttr.BndTmpGrpInf.name);
-						lv_task_once(oncetask);
+						lv_poc_activity_func_cb_set.build_tmp_open(pocBndAttr.BndTmpGrpInf.name);
 						poc_play_voice_one_time(LVPOCAUDIO_Type_Enter_Temp_Group, 50, false);
 					}
 
@@ -2302,7 +2301,7 @@ static void prvPocGuiBndTaskHandleCurrentGroup(uint32_t id, uint32_t ctx)
 			}
 
 			CGroup * group_info = (CGroup *)ctx;
-			lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.member_list.group_member_act, 50, LV_TASK_PRIO_HIGHEST, (void *)group_info->m_ucGName);
+			lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.member_list.group_member_act, 50, LV_TASK_PRIO_MID, (void *)group_info->m_ucGName);
 			lv_task_once(oncetask);
 
 			unsigned int index = 0;
@@ -2445,8 +2444,7 @@ static void prvPocGuiBndTaskHandleBuildTempGrp(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_EXIT_REP:
 		{
-			lv_task_t *oncetask = lv_task_create(lv_poc_activity_func_cb_set.build_tmp_close, 50, LV_TASK_PRIO_HIGHEST, (void *)POC_EXITGRP_PASSIVE);
-			lv_task_once(oncetask);
+			lv_poc_activity_func_cb_set.build_tmp_close(POC_EXITGRP_PASSIVE);
 			break;
 		}
 

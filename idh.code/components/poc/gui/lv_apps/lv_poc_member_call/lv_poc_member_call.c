@@ -8,6 +8,22 @@ extern "C" {
 #define __attribute__(x)
 #endif
 
+enum
+{
+	POC_REFRESH_TYPE_MEMBER_CALL_START,
+
+	POC_REFRESH_TYPE_MEMBER_CALL_LIST,
+	POC_REFRESH_TYPE_MEMBER_CALL_LIST_FOCUS,
+};
+
+typedef struct
+{
+	osiMutex_t *mutex;
+	lv_task_t *task;
+	uint8_t refresh_type;
+	void *user_data;
+}lv_poc_member_call_refresh_t;
+
 static lv_poc_oem_member_list * lv_poc_member_call_member_list_obj = NULL;
 
 static lv_obj_t * lv_poc_member_call_activity_create(lv_poc_display_t *display);
@@ -33,6 +49,10 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 static lv_obj_t * activity_list = NULL;
 
 static lv_poc_win_t * activity_win = NULL;
+
+static lv_poc_member_call_refresh_t *member_call_refresh_attr = NULL;
+
+static int refresh_task_init = true;
 
 lv_poc_activity_t * poc_member_call_activity = NULL;
 
@@ -169,8 +189,11 @@ static lv_res_t lv_poc_member_call_signal_func(struct _lv_obj_t * obj, lv_signal
 		{
 			if(lv_poc_member_call_member_list_obj != NULL && current_activity == poc_member_call_activity)
 			{
-				lv_poc_refr_func_ui(lv_poc_member_call_refresh,
-					LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH, lv_poc_member_call_member_list_obj);
+				osiMutexLock(member_call_refresh_attr->mutex);
+				member_call_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_CALL_LIST_FOCUS;
+				member_call_refresh_attr->user_data = lv_poc_member_call_member_list_obj;
+				lv_task_ready(member_call_refresh_attr->task);
+				osiMutexUnlock(member_call_refresh_attr->mutex);
 			}
 			break;
 		}
@@ -308,7 +331,34 @@ void lv_poc_member_call_open(void * information)
 
 	lv_poc_member_call_add(lv_poc_member_call_member_list_obj, lv_poc_get_member_name((lv_poc_member_info_t)information), true, information);
 
-	lv_poc_member_call_refresh(NULL);
+	if(refresh_task_init == true)
+	{
+		if(member_call_refresh_attr == NULL)
+		{
+			member_call_refresh_attr = (lv_poc_member_call_refresh_t *)lv_mem_alloc(sizeof(lv_poc_member_call_refresh_t));
+		}
+		refresh_task_init = false;
+		member_call_refresh_attr->refresh_type = 0;
+		member_call_refresh_attr->task = NULL;
+		member_call_refresh_attr->mutex = NULL;
+		member_call_refresh_attr->user_data = NULL;
+	}
+
+	if(member_call_refresh_attr->task == NULL)
+	{
+		member_call_refresh_attr->task = lv_task_create(lv_poc_member_call_refresh_task, 500, LV_TASK_PRIO_MID, (void *)member_call_refresh_attr);
+	}
+
+	if(member_call_refresh_attr->mutex == NULL)
+	{
+		member_call_refresh_attr->mutex = osiMutexCreate();
+	}
+
+	osiMutexLock(member_call_refresh_attr->mutex);
+	member_call_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_CALL_LIST;
+	lv_task_ready(member_call_refresh_attr->task);
+	osiMutexUnlock(member_call_refresh_attr->mutex);
+
 	lv_poc_set_member_call_status(information, true, lv_poc_member_call_set_member_call_status_cb);
 }
 
@@ -367,15 +417,8 @@ int lv_poc_member_call_get_information(lv_poc_oem_member_list *member_list_obj, 
 	return lv_poc_member_list_get_information(member_list_obj, name, information);
 }
 
-void lv_poc_member_call_refresh(lv_task_t *task_t)
+void lv_poc_member_call_refresh(lv_poc_oem_member_list *member_list_obj)
 {
-	lv_poc_oem_member_list *member_list_obj = NULL;
-
-	if(task_t != NULL)
-	{
-		member_list_obj = (lv_poc_oem_member_list *)task_t->user_data;
-	}
-
 	if(member_list_obj == NULL)
 	{
 		member_list_obj = lv_poc_member_call_member_list_obj;
@@ -477,6 +520,35 @@ lv_poc_status_t lv_poc_member_call_get_state(lv_poc_oem_member_list *member_list
 	}
 
 	return lv_poc_member_list_get_state(member_list_obj, name, information);
+}
+
+void lv_poc_member_call_refresh_task(lv_task_t *task)
+{
+	if(member_call_refresh_attr->refresh_type == POC_REFRESH_TYPE_MEMBER_CALL_START)
+	{
+		return;
+	}
+
+	switch(member_call_refresh_attr->refresh_type)
+	{
+		case POC_REFRESH_TYPE_MEMBER_CALL_LIST:
+		{
+			lv_poc_member_call_refresh(NULL);
+			break;
+		}
+
+		case POC_REFRESH_TYPE_MEMBER_CALL_LIST_FOCUS:
+		{
+			lv_poc_member_call_refresh(member_call_refresh_attr->user_data);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+	member_call_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_CALL_START;
 }
 
 #ifdef __cplusplus

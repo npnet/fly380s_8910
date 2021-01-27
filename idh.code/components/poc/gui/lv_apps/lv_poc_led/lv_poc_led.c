@@ -201,7 +201,7 @@ lv_poc_led_register(void)
 {
     if(pocLedAttr.task == NULL)
     {
-        pocLedAttr.task = lv_task_create(lv_poc_led_status_callback_check, 100, LV_TASK_PRIO_HIGHEST, NULL);
+        pocLedAttr.task = lv_task_create(lv_poc_led_status_callback_check, 100, LV_TASK_PRIO_MID, NULL);
     }
     lv_poc_led_status_all_close();
 }

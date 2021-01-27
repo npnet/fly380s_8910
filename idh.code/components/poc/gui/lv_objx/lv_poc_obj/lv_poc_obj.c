@@ -150,9 +150,9 @@ static void prv_lv_poc_member_call_close(void);
 
 static void prv_lv_poc_build_tempgrp_get_member_list(void);
 
-static void prv_lv_poc_build_tmpgrp_open(lv_task_t *task);
+static void prv_lv_poc_build_tmpgrp_open(char *grpname);
 
-static void prv_lv_poc_build_tmpgrp_close(lv_task_t *task);
+static void prv_lv_poc_build_tmpgrp_close(int type);
 
 static bool prv_lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2);
 
@@ -914,7 +914,7 @@ static bool lv_poc_status_bar_init(void)
     memset(status_bar_task_ext, 0, sizeof(status_bar_task_t) * LV_POC_STABAR_TASK_EXT_LENGTH);
 
     lv_poc_status_bar_task_ext_add(lv_poc_stabar_signal_task);
-	lv_task_create(lv_poc_stabar_task,1000,LV_TASK_PRIO_HIGH,NULL);
+	lv_task_create(lv_poc_stabar_task, 1000, LV_TASK_PRIO_MID, NULL);
 	return ret_val;
 }
 
@@ -1440,7 +1440,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 
     if(false == is_keypad_msg)
     {
-		OSI_PRINTFI("[ancient][sigal](%s)(%d):other, key(%d), sign(%d)", __func__, __LINE__, cur_key, sign);
+		//OSI_PRINTFI("[ancient][sigal](%s)(%d):other, key(%d), sign(%d)", __func__, __LINE__, cur_key, sign);
         ret = (*ancient_signal_func)(obj,sign,param);
 
         if(ret != LV_RES_OK)
@@ -1946,8 +1946,7 @@ static void prv_lv_poc_member_list_refresh(lv_poc_oem_member_list *member_list_o
          {
             if(cb_set_obj->member_list[i].refresh != NULL)
             {
-                lv_task_t *onece_task = lv_task_create(cb_set_obj->member_list[i].refresh, 10, LV_TASK_PRIO_HIGHEST, member_list_obj);
-                lv_task_once(onece_task);
+                cb_set_obj->member_list[i].refresh(member_list_obj);
             }
          }
      }
@@ -2034,7 +2033,7 @@ static void prv_lv_poc_group_member_list_activity(lv_task_t *task)
    {
       if(cb_set_obj->member_list[i].group_member_act != NULL)
       {
-         lv_task_t *onece_task = lv_task_create(cb_set_obj->member_list[i].group_member_act, 10, LV_TASK_PRIO_HIGHEST, (void *)task->user_data);
+         lv_task_t *onece_task = lv_task_create(cb_set_obj->member_list[i].group_member_act, 50, LV_TASK_PRIO_MID, (void *)task->user_data);
          lv_task_once(onece_task);
       }
    }
@@ -2069,8 +2068,7 @@ static void prv_lv_poc_group_list_refresh(lv_poc_oem_group_list *group_list_obj)
          {
             if(cb_set_obj->group_list[i].refresh != NULL)
             {
-                lv_task_t *onece_task = lv_task_create(cb_set_obj->group_list[i].refresh, 10, LV_TASK_PRIO_HIGHEST, group_list_obj);
-                lv_task_once(onece_task);
+                cb_set_obj->group_list[i].refresh(group_list_obj);
             }
          }
      }
@@ -2159,7 +2157,7 @@ static void prv_lv_poc_member_call_open_cb(lv_task_t *task)
 
 static void prv_lv_poc_member_call_open(void * information)
 {
-	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_open_cb, 5, LV_TASK_PRIO_HIGH, information);
+	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_open_cb, 50, LV_TASK_PRIO_MID, information);
 	lv_task_once(once_task);
 }
 
@@ -2170,7 +2168,7 @@ static void prv_lv_poc_member_call_close_cb(lv_task_t *task)
 
 static void prv_lv_poc_member_call_close(void)
 {
-	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_close_cb, 5, LV_TASK_PRIO_HIGH, NULL);
+	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_close_cb, 50, LV_TASK_PRIO_MID, NULL);
 	lv_task_once(once_task);
 }
 
@@ -2179,15 +2177,15 @@ static void prv_lv_poc_build_tempgrp_get_member_list(void)
 	lv_poc_build_tempgrp_get_tmpgrp_member_list();
 }
 
-static void prv_lv_poc_build_tmpgrp_open(lv_task_t *task)
+static void prv_lv_poc_build_tmpgrp_open(char *grpname)
 {
-	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_member_list_activity_open, 5, LV_TASK_PRIO_HIGH, (void *)task->user_data);
+	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_member_list_activity_open, 50, LV_TASK_PRIO_MID, (void *)grpname);
 	lv_task_once(once_task);
 }
 
-static void prv_lv_poc_build_tmpgrp_close(lv_task_t *task)
+static void prv_lv_poc_build_tmpgrp_close(int type)
 {
-	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_memberlist_activity_close, 5, LV_TASK_PRIO_HIGH, (void *)task->user_data);
+	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_memberlist_activity_close, 50, LV_TASK_PRIO_MID, (void *)type);
 	lv_task_once(once_task);
 }
 
@@ -3222,7 +3220,7 @@ lv_poc_activity_t *	lv_poc_activity_send_sign(lv_poc_Activity_Id_t ID, int sign,
                     exec_obj->activity = p->activity;
                     exec_obj->sign = sign;
                     exec_obj->parameters = (void *)param;
-                    task = lv_task_create(lv_exec_task, 10, LV_TASK_PRIO_MID, (void *)exec_obj);
+                    task = lv_task_create(lv_exec_task, 50, LV_TASK_PRIO_MID, (void *)exec_obj);
                     lv_task_once(task);
                     return p->activity;
                 }
@@ -3771,7 +3769,7 @@ void lv_poc_net_ping_task(lv_task_t *task)
 ********************/
 void lv_poc_net_ping_task_create(void)
 {
-	lv_task_create(lv_poc_net_ping_task, 1000, LV_TASK_PRIO_HIGH, NULL);
+	lv_task_create(lv_poc_net_ping_task, 1000, LV_TASK_PRIO_MID, NULL);
 }
 
 #ifdef __cplusplus

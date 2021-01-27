@@ -306,7 +306,7 @@ void lv_poc_about_open(void)
     poc_about_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_about_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_about_activity, design_func);
-	btattr.task = lv_task_create(lv_poc_boot_time_refresh, 500, LV_TASK_PRIO_HIGH, NULL);
+	btattr.task = lv_task_create(lv_poc_boot_time_refresh, 500, LV_TASK_PRIO_MID, NULL);
 }
 
 

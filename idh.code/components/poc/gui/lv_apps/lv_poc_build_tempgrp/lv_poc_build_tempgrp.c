@@ -4,6 +4,23 @@ extern "C" {
 #endif
 #include "lv_include/lv_poc.h"
 
+enum
+{
+	POC_REFRESH_TYPE_TMPGRP_START,
+
+	POC_REFRESH_TYPE_TMPGRP_MEMBER_SELECT,
+	POC_REFRESH_TYPE_TMPGRP_SUCCESS,
+	POC_REFRESH_TYPE_TMPGRP_MEMBER_LIST,
+};
+
+typedef struct
+{
+	osiMutex_t *mutex;
+	lv_task_t *task;
+	uint8_t refresh_type;
+	void *user_data;
+}lv_poc_tmpgrp_refresh_t;
+
 static lv_obj_t * lv_poc_build_tempgrp_activity_create(lv_poc_display_t *display);
 
 static void lv_poc_build_tempgrp_activity_destory(lv_obj_t *obj);
@@ -18,7 +35,7 @@ static lv_res_t lv_poc_build_tempgrp_signal_func(struct _lv_obj_t * obj, lv_sign
 
 static bool lv_poc_build_tempgrp_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static void lv_poc_build_tempgrp_success_refresh(lv_task_t *task);
+static void lv_poc_build_tempgrp_success(void);
 
 static lv_obj_t * activity_list = NULL;
 
@@ -37,6 +54,10 @@ static lv_area_t build_tempgrp_display_area = {0};
 static lv_poc_oem_member_list *lv_poc_build_tempgrp_member_list = NULL;
 
 static lv_poc_oem_member_list * lv_poc_member_list = NULL;
+
+static lv_poc_tmpgrp_refresh_t *tmpgrp_refresh_attr = NULL;
+
+static int refresh_task_init = true;
 
 lv_poc_activity_t * poc_build_tempgrp_activity = NULL;
 
@@ -206,7 +227,7 @@ bool lv_poc_build_tempgrp_operator(lv_poc_build_tempgrp_item_info_t * info, int3
 }
 
 static
-void lv_poc_build_tempgrp_success_refresh(lv_task_t *task)
+void lv_poc_build_tempgrp_success(void)
 {
 	lv_poc_build_tempgrp_operator(lv_poc_build_tempgrp_info,
 							lv_poc_build_tempgrp_member_list->offline_number + lv_poc_build_tempgrp_member_list->online_number,
@@ -308,11 +329,15 @@ lv_res_t lv_poc_build_tempgrp_signal_func(struct _lv_obj_t * obj, lv_signal_t si
 							{
 								break;
 							}
-							lv_poc_refr_func_ui(lv_poc_build_tempgrp_memberlist_activity_close, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH, (void *)POC_EXITGRP_INITIATIVE);
+							lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_memberlist_activity_close, 50, LV_TASK_PRIO_MID, (void *)POC_EXITGRP_INITIATIVE);
+							lv_task_once(once_task);
 						}
 						else
 						{
-							lv_poc_refr_task_once(lv_poc_build_tempgrp_success_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+							tmpgrp_refresh_attr->mutex ? osiMutexLock(tmpgrp_refresh_attr->mutex) : 0;
+							tmpgrp_refresh_attr->refresh_type = POC_REFRESH_TYPE_TMPGRP_SUCCESS;
+							lv_task_ready(tmpgrp_refresh_attr->task);
+							tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
 						}
 					}
 					break;
@@ -355,7 +380,10 @@ void lv_poc_build_tempgrp_get_list_cb(int msg_type)
 
 	if(msg_type==1)//显示
 	{
-		lv_poc_refr_task_once(lv_poc_build_tempgrp_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+		tmpgrp_refresh_attr->mutex ? osiMutexLock(tmpgrp_refresh_attr->mutex) : 0;
+		tmpgrp_refresh_attr->refresh_type = POC_REFRESH_TYPE_TMPGRP_MEMBER_SELECT;
+		lv_task_ready(tmpgrp_refresh_attr->task);
+		tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
 	}
 	else
 	{
@@ -401,6 +429,29 @@ void lv_poc_build_tempgrp_open(void)
     lv_poc_member_list_cb_set_active(ACT_ID_POC_MAKE_TEMPGRP, true);
     lv_poc_activity_set_signal_cb(poc_build_tempgrp_activity, lv_poc_build_tempgrp_signal_func);
     lv_poc_activity_set_design_cb(poc_build_tempgrp_activity, lv_poc_build_tempgrp_design_func);
+
+	if(refresh_task_init == true)
+	{
+		if(tmpgrp_refresh_attr == NULL)
+		{
+			tmpgrp_refresh_attr = (lv_poc_tmpgrp_refresh_t *)lv_mem_alloc(sizeof(lv_poc_tmpgrp_refresh_t));
+		}
+		refresh_task_init = false;
+		tmpgrp_refresh_attr->refresh_type = 0;
+		tmpgrp_refresh_attr->task = NULL;
+		tmpgrp_refresh_attr->mutex = NULL;
+		tmpgrp_refresh_attr->user_data = NULL;
+	}
+
+	if(tmpgrp_refresh_attr->task == NULL)
+	{
+		tmpgrp_refresh_attr->task = lv_task_create(lv_poc_bulid_tempgroup_refresh_task, 500, LV_TASK_PRIO_MID, (void *)tmpgrp_refresh_attr);
+	}
+
+	if(tmpgrp_refresh_attr->mutex == NULL)
+	{
+		tmpgrp_refresh_attr->mutex = osiMutexCreate();
+	}
 
 	if(!lv_poc_get_member_list(NULL, lv_poc_build_tempgrp_member_list, 1, lv_poc_build_tempgrp_get_list_cb))
 	{
@@ -481,11 +532,11 @@ int lv_poc_build_tempgrp_get_information(lv_poc_oem_member_list *member_list_obj
 	return lv_poc_member_list_get_information(member_list_obj, name, information);
 }
 
-void lv_poc_build_tempgrp_refresh(lv_task_t * task)
+void lv_poc_build_tempgrp_refresh(lv_poc_oem_member_list *memberlist)
 {
 	lv_poc_oem_member_list *member_list_obj = NULL;
 
-	member_list_obj = (lv_poc_oem_member_list *)task->user_data;
+	member_list_obj = memberlist;
 
 	if(member_list_obj == NULL)
 	{
@@ -772,7 +823,7 @@ static lv_area_t build_tempgrp_member_list_display_area = {0};
 lv_poc_activity_t * poc_build_tempgrp_member_list_activity = NULL;
 static lv_poc_oem_member_list * lv_poc_build_tempgrp_member_list_obj = NULL;
 
-void lv_poc_build_tempgrp_member_list_refresh(lv_task_t * task);
+void lv_poc_build_tempgrp_member_list_refresh(lv_poc_oem_member_list *member_list_obj);
 
 static void lv_poc_build_tempgrp_member_list_list_config(lv_obj_t * list, lv_area_t list_area)
 {
@@ -821,7 +872,7 @@ static void lv_poc_build_tempgrp_member_list_activity_destory(lv_obj_t *obj)
 	poc_build_tempgrp_member_list_activity = NULL;
 }
 
-void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t * task)
+void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t *task)
 {
 	lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_TMPGRP_MEMBER_LIST,
 		lv_poc_build_tempgrp_member_list_activity_create,
@@ -834,6 +885,36 @@ void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t * task)
 	lv_poc_activity_set_signal_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_signal_func);
 	lv_poc_activity_set_design_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_design_func);
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_TMPGRP_MEMBER_LIST, true);
+	OSI_PRINTFI("[tmpgrp](%s)(%d):acti open", __func__, __LINE__);
+
+	if(refresh_task_init == true)
+	{
+		if(tmpgrp_refresh_attr == NULL)
+		{
+			tmpgrp_refresh_attr = (lv_poc_tmpgrp_refresh_t *)lv_mem_alloc(sizeof(lv_poc_tmpgrp_refresh_t));
+		}
+		refresh_task_init = false;
+		tmpgrp_refresh_attr->refresh_type = 0;
+		tmpgrp_refresh_attr->task = NULL;
+		tmpgrp_refresh_attr->mutex = NULL;
+		tmpgrp_refresh_attr->user_data = NULL;
+	}
+
+	if(tmpgrp_refresh_attr->task == NULL)
+	{
+		tmpgrp_refresh_attr->task = lv_task_create(lv_poc_bulid_tempgroup_refresh_task, 500, LV_TASK_PRIO_MID, (void *)tmpgrp_refresh_attr);
+	}
+
+	if(tmpgrp_refresh_attr->mutex == NULL)
+	{
+		tmpgrp_refresh_attr->mutex = osiMutexCreate();
+	}
+
+	osiMutexLock(tmpgrp_refresh_attr->mutex);
+	OSI_PRINTFI("[tmpgrp](%s)(%d):launch refresh", __func__, __LINE__);
+	tmpgrp_refresh_attr->refresh_type = POC_REFRESH_TYPE_TMPGRP_MEMBER_LIST;
+	lv_task_ready(tmpgrp_refresh_attr->task);
+	osiMutexUnlock(tmpgrp_refresh_attr->mutex);
 }
 
 void lv_poc_build_tempgrp_member_list_open(IN lv_poc_oem_member_list *members, IN bool hide_offline)
@@ -854,17 +935,11 @@ void lv_poc_build_tempgrp_member_list_open(IN lv_poc_oem_member_list *members, I
 	}
 
 	lv_poc_build_tempgrp_member_list_obj->hide_offline = hide_offline;
-
-	lv_poc_refr_func_ui(lv_poc_build_tempgrp_member_list_refresh,
-		LVPOCLISTIDTCOM_LIST_PERIOD_100,LV_TASK_PRIO_MID,NULL);
+	OSI_PRINTFI("[tmpgrp](%s)(%d):info get finish", __func__, __LINE__);
 }
 
-void lv_poc_build_tempgrp_member_list_refresh(lv_task_t * task)
+void lv_poc_build_tempgrp_member_list_refresh(lv_poc_oem_member_list *member_list_obj)
 {
-	lv_poc_oem_member_list *member_list_obj = NULL;
-
-	member_list_obj = (lv_poc_oem_member_list *)task->user_data;
-
 	if(member_list_obj == NULL)
 	{
 		member_list_obj = lv_poc_build_tempgrp_member_list_obj;
@@ -956,9 +1031,9 @@ void lv_poc_build_tempgrp_member_list_refresh(lv_task_t * task)
 	}
 }
 
-void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t * task)
+void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t *task)
 {
-	lv_poc_exitgrp_t type = (lv_poc_exitgrp_t)task->user_data;
+	int type = (int)task->user_data;
 
 	if(type == POC_EXITGRP_PASSIVE
 		&& lvPocGuiBndCom_get_listen_status())
@@ -989,6 +1064,42 @@ lv_poc_tmpgrp_t lv_poc_build_tempgrp_progress(lv_poc_tmpgrp_t status)
 	is_lv_poc_build_tempgrp = status;
 	return 0;
 }
+
+void lv_poc_bulid_tempgroup_refresh_task(lv_task_t *task)
+{
+	if(tmpgrp_refresh_attr->refresh_type == POC_REFRESH_TYPE_TMPGRP_START)
+	{
+		return;
+	}
+
+	switch(tmpgrp_refresh_attr->refresh_type)
+	{
+		case POC_REFRESH_TYPE_TMPGRP_MEMBER_SELECT:
+		{
+			lv_poc_build_tempgrp_refresh(NULL);
+			break;
+		}
+
+		case POC_REFRESH_TYPE_TMPGRP_SUCCESS:
+		{
+			lv_poc_build_tempgrp_success();
+			break;
+		}
+
+		case POC_REFRESH_TYPE_TMPGRP_MEMBER_LIST:
+		{
+			lv_poc_build_tempgrp_member_list_refresh(NULL);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+	tmpgrp_refresh_attr->refresh_type = POC_REFRESH_TYPE_TMPGRP_START;
+}
+
 
 #ifdef __cplusplus
 }

@@ -10,6 +10,21 @@ extern "C" {
 #include "guiBndCom_api.h"
 #include "lv_objx/lv_poc_obj/lv_poc_obj.h"
 
+enum
+{
+	POC_REFRESH_TYPE_MEMBER_START,
+
+	POC_REFRESH_TYPE_MEMBER_LIST,
+};
+
+typedef struct
+{
+	osiMutex_t *mutex;
+	lv_task_t *task;
+	uint8_t refresh_type;
+	void *user_data;
+}lv_poc_member_refresh_t;
+
 static lv_poc_oem_member_list * lv_poc_member_list_obj = NULL;
 
 static lv_obj_t * lv_poc_member_list_activity_create(lv_poc_display_t *display);
@@ -31,6 +46,10 @@ static void lv_poc_member_list_get_list_cb(int msg_type);
 static lv_obj_t * activity_list = NULL;
 
 static lv_poc_win_t * activity_win = NULL;
+
+static lv_poc_member_refresh_t *member_refresh_attr = NULL;
+
+static int refresh_task_init = true;
 
 static lv_area_t member_list_display_area = {0};
 
@@ -273,9 +292,10 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 			OSI_PRINTFI("[memberrefr](%s)(%d):memberlist focus", __func__, __LINE__);
 			if(lv_poc_member_list_obj != NULL && current_activity == poc_member_list_activity)
 			{
-
-				lv_poc_refr_func_ui(lv_poc_member_list_refresh,
-					LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH,NULL);
+				osiMutexLock(member_refresh_attr->mutex);
+				member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST;
+				lv_task_ready(member_refresh_attr->task);
+				osiMutexUnlock(member_refresh_attr->mutex);
 			}
 			break;
 		}
@@ -309,8 +329,10 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	//add your information
 	if(msg_type==1)//显示
 	{
-		lv_poc_refr_func_ui(lv_poc_member_list_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_10,LV_TASK_PRIO_HIGH, NULL);
+		osiMutexLock(member_refresh_attr->mutex);
+		member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST;
+		lv_task_ready(member_refresh_attr->task);
+		osiMutexUnlock(member_refresh_attr->mutex);
 	}
 	else if(msg_type == 2)
 	{
@@ -378,6 +400,29 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
 
     lv_poc_member_list_obj->hide_offline = hide_offline;
 
+	if(refresh_task_init == true)
+	{
+		if(member_refresh_attr == NULL)
+		{
+			member_refresh_attr = (lv_poc_member_refresh_t *)lv_mem_alloc(sizeof(lv_poc_member_refresh_t));
+		}
+		refresh_task_init = false;
+		member_refresh_attr->refresh_type = 0;
+		member_refresh_attr->task = NULL;
+		member_refresh_attr->mutex = NULL;
+		member_refresh_attr->user_data = NULL;
+	}
+
+	if(member_refresh_attr->task == NULL)
+	{
+		member_refresh_attr->task = lv_task_create(lv_poc_member_list_refresh_task, 500, LV_TASK_PRIO_MID, (void *)member_refresh_attr);
+	}
+
+	if(member_refresh_attr->mutex == NULL)
+	{
+		member_refresh_attr->mutex = osiMutexCreate();
+	}
+
     if(members == NULL)
     {
 		//get current group's memberlist info
@@ -390,8 +435,10 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
     }
     else
     {
-		lv_poc_refr_func_ui(lv_poc_member_list_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_100,LV_TASK_PRIO_HIGH,NULL);
+		osiMutexLock(member_refresh_attr->mutex);
+		member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST;
+		lv_task_ready(member_refresh_attr->task);
+		osiMutexUnlock(member_refresh_attr->mutex);
 	}
 }
 
@@ -535,12 +582,8 @@ int lv_poc_member_list_get_information(lv_poc_oem_member_list *member_list_obj, 
 
 }
 
-void lv_poc_member_list_refresh(lv_task_t * task)
+void lv_poc_member_list_refresh(lv_poc_oem_member_list *member_list_obj)
 {
-	lv_poc_oem_member_list *member_list_obj = NULL;
-
-	member_list_obj = (lv_poc_oem_member_list *)task->user_data;
-
 	if(member_list_obj == NULL)
 	{
 		OSI_PRINTFI("[member][refresh](%s)(%d):open", __func__, __LINE__);
@@ -880,6 +923,52 @@ void lv_poc_memberlist_activity_open(lv_task_t * task)
 	lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);
 	lv_poc_activity_set_design_cb(poc_member_list_activity, lv_poc_member_list_design_func);
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, true);
+
+	if(refresh_task_init == true)
+	{
+		if(member_refresh_attr == NULL)
+		{
+			member_refresh_attr = (lv_poc_member_refresh_t *)lv_mem_alloc(sizeof(lv_poc_member_refresh_t));
+		}
+		refresh_task_init = false;
+		member_refresh_attr->refresh_type = 0;
+		member_refresh_attr->task = NULL;
+		member_refresh_attr->mutex = NULL;
+		member_refresh_attr->user_data = NULL;
+	}
+
+	if(member_refresh_attr->task == NULL)
+	{
+		member_refresh_attr->task = lv_task_create(lv_poc_member_list_refresh_task, 500, LV_TASK_PRIO_MID, (void *)member_refresh_attr);
+	}
+
+	if(member_refresh_attr->mutex == NULL)
+	{
+		member_refresh_attr->mutex = osiMutexCreate();
+	}
+}
+
+void lv_poc_member_list_refresh_task(lv_task_t *task)
+{
+	if(member_refresh_attr->refresh_type == POC_REFRESH_TYPE_MEMBER_START)
+	{
+		return;
+	}
+
+	switch(member_refresh_attr->refresh_type)
+	{
+		case POC_REFRESH_TYPE_MEMBER_LIST:
+		{
+			lv_poc_member_list_refresh(NULL);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+	member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_START;
 }
 
 #ifdef __cplusplus

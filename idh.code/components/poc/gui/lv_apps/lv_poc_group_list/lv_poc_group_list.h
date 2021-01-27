@@ -18,7 +18,7 @@ void lv_poc_group_list_clear(lv_poc_oem_group_list *group_list_obj);
 
 int lv_poc_group_list_get_information(lv_poc_oem_group_list *group_list_obj, const char * name, void *** information);
 
-void lv_poc_group_list_refresh(lv_task_t * task);
+void lv_poc_group_list_refresh(lv_poc_oem_group_list *grouplist);
 
 void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj);
 
@@ -27,6 +27,8 @@ lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_oem_group_list *group_list_ob
 lv_poc_status_t lv_poc_group_list_monitor_group(lv_poc_oem_group_list *group_list_obj, lv_poc_group_oprator_type opt);
 
 void lv_poc_group_list_set_hightlight_index(void);
+
+void lv_poc_group_list_refresh_task(lv_task_t *task);
 
 #ifdef __cplusplus
 }

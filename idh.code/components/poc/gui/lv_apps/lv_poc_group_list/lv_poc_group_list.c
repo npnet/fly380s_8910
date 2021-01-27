@@ -7,7 +7,25 @@ extern "C" {
 
 #define CURRENR_GROUP_NAME_EXTERN 20
 
-//oem
+enum
+{
+	POC_REFRESH_TYPE_START,
+
+	POC_REFRESH_TYPE_GRP_TITLE,
+	POC_REFRESH_TYPE_SET_CUR_INFO,
+	POC_REFRESH_TYPE_MONITOR_GRP,
+	POC_REFRESH_TYPE_GROUP_LIST,
+};
+
+typedef struct
+{
+	osiMutex_t *mutex;
+	lv_task_t *task;
+	uint8_t refresh_type;
+	void *user_data;
+	uint8_t monitor_type;
+}lv_poc_grp_refresh_t;
+
 static lv_poc_oem_group_list * lv_poc_group_list = NULL;
 
 static lv_poc_oem_member_list * lv_poc_member_list = NULL;
@@ -43,6 +61,10 @@ static lv_poc_group_list_item_info_t * lv_poc_group_list_info = NULL;
 static lv_poc_group_list_item_info_t * lv_poc_group_monitor_info = NULL;
 
 static lv_poc_group_list_item_info_t * lv_poc_group_current_info = NULL;
+
+static lv_poc_grp_refresh_t *grp_refresh_attr = NULL;
+
+static int refresh_task_init = true;
 
 lv_poc_group_info_t *lv_poc_group_list_get_member_list_info = NULL;
 
@@ -136,15 +158,8 @@ static void lv_poc_group_list_list_config(lv_obj_t * list, lv_area_t list_area)
 }
 
 static
-void lv_poc_group_list_title_refr(lv_task_t * task)
+void lv_poc_group_list_title_refr(void)
 {
-	if(lv_poc_member_list == NULL)
-	{
-		lv_poc_set_refr_error_info(true);
-		OSI_PRINTFI("[group][refr list title](%s)(%d):member list NULL", __func__, __LINE__);
-		return;
-	}
-
 	lv_poc_member_list_open(lv_poc_group_member_list_title,
 		lv_poc_member_list,
 		lv_poc_member_list->hide_offline);
@@ -161,8 +176,10 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
     if(msg_type == 1)
     {
 		OSI_PRINTFI("[group][getmemberlist](%s)(%d):success get member list, to refr", __func__, __LINE__);
-		lv_poc_refr_task_once(lv_poc_group_list_title_refr,
-			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
+		osiMutexLock(grp_refresh_attr->mutex);
+		grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_GRP_TITLE;
+		lv_task_ready(grp_refresh_attr->task);
+		osiMutexUnlock(grp_refresh_attr->mutex);
     }
 	else if(msg_type == 2)
 	{
@@ -179,10 +196,8 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 }
 
 static
-void lv_poc_set_current_group_informartion_task(lv_task_t * task)
+void lv_poc_set_current_group_informartion(int result_type)
 {
-	int result_type = (int)task->user_data;
-
 	if(result_type == 1)
 	{
 		if(lv_poc_group_current_info != NULL && activity_list != NULL)
@@ -223,7 +238,11 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 
 static void lv_poc_group_list_set_current_group_cb(int result_type)
 {
-	lv_poc_refr_func_ui(lv_poc_set_current_group_informartion_task, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)result_type);
+	osiMutexLock(grp_refresh_attr->mutex);
+	grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_SET_CUR_INFO;
+	grp_refresh_attr->user_data = (void *)result_type;
+	lv_task_ready(grp_refresh_attr->task);
+	osiMutexUnlock(grp_refresh_attr->mutex);
 }
 
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
@@ -437,8 +456,10 @@ static void lv_poc_get_group_list_cb(int result_type)
 	if(result_type == 1)
 	{
 		OSI_PRINTFI("[group][refresh](%s)(%d):goto refresh", __func__, __LINE__);
-		lv_poc_refr_func_ui(lv_poc_group_list_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH, NULL);
+		osiMutexLock(grp_refresh_attr->mutex);
+		grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_GROUP_LIST;
+		lv_task_ready(grp_refresh_attr->task);
+		osiMutexUnlock(grp_refresh_attr->mutex);
 	}
 	else
 	{
@@ -448,10 +469,8 @@ static void lv_poc_get_group_list_cb(int result_type)
 	}
 }
 
-void lv_poc_group_monitor_oprator_refresh_task(lv_task_t * task)
+void lv_poc_group_monitor_oprator(lv_poc_group_oprator_type opt)
 {
-	lv_poc_group_oprator_type opt = (lv_poc_group_oprator_type)task->user_data;
-
 	if(opt == LV_POC_GROUP_OPRATOR_TYPE_MONITOR)
 	{
 		if(lv_poc_group_monitor_info == NULL)
@@ -507,8 +526,11 @@ static void lv_poc_group_monitor_oprator_cb(lv_poc_group_oprator_type opt)
 				break;
 			}
 			OSI_LOGI(0, "[oemmonitorgroup](%d):monitor group success", __LINE__);
-			lv_task_t *fresh_task = lv_task_create(lv_poc_group_monitor_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_MONITOR);
-			lv_task_once(fresh_task);
+			osiMutexLock(grp_refresh_attr->mutex);
+			grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_MONITOR_GRP;
+			grp_refresh_attr->monitor_type = LV_POC_GROUP_OPRATOR_TYPE_MONITOR_OK;
+			lv_task_ready(grp_refresh_attr->task);
+			osiMutexUnlock(grp_refresh_attr->mutex);
 			break;
 		}
 
@@ -526,8 +548,11 @@ static void lv_poc_group_monitor_oprator_cb(lv_poc_group_oprator_type opt)
 				break;
 			}
 			OSI_LOGI(0, "[oemmonitorgroup](%d):cannel monitor group success", __LINE__);
-			lv_task_t *fresh_task = lv_task_create(lv_poc_group_monitor_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR);
-			lv_task_once(fresh_task);
+			osiMutexLock(grp_refresh_attr->mutex);
+			grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_MONITOR_GRP;
+			grp_refresh_attr->monitor_type = LV_POC_GROUP_OPRATOR_TYPE_UNMONITOR;
+			lv_task_ready(grp_refresh_attr->task);
+			osiMutexUnlock(grp_refresh_attr->mutex);
 			break;
 		}
 
@@ -615,6 +640,29 @@ void lv_poc_group_list_open(lv_poc_oem_group_list *group_list_obj)
     lv_poc_activity_set_signal_cb(poc_group_list_activity, lv_poc_group_list_signal_func);
     lv_poc_activity_set_design_cb(poc_group_list_activity, lv_poc_group_list_design_func);
 
+	if(refresh_task_init == true)
+	{
+		if(grp_refresh_attr == NULL)
+		{
+			grp_refresh_attr = (lv_poc_grp_refresh_t *)lv_mem_alloc(sizeof(lv_poc_grp_refresh_t));
+		}
+		refresh_task_init = false;
+		grp_refresh_attr->refresh_type = 0;
+		grp_refresh_attr->task = NULL;
+		grp_refresh_attr->mutex = NULL;
+		grp_refresh_attr->user_data = NULL;
+	}
+
+	if(grp_refresh_attr->task == NULL)
+	{
+		grp_refresh_attr->task = lv_task_create(lv_poc_group_list_refresh_task, 500, LV_TASK_PRIO_MID, (void *)grp_refresh_attr);
+	}
+
+	if(grp_refresh_attr->mutex == NULL)
+	{
+		grp_refresh_attr->mutex = osiMutexCreate();
+	}
+
 	if(group_list_obj == NULL)
 	{
 		if(!lv_poc_get_group_list(lv_poc_group_list, lv_poc_get_group_list_cb))
@@ -627,8 +675,10 @@ void lv_poc_group_list_open(lv_poc_oem_group_list *group_list_obj)
 	}
     else
     {
-		lv_poc_refr_func_ui(lv_poc_group_list_refresh,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50,LV_TASK_PRIO_HIGH, NULL);
+		osiMutexLock(grp_refresh_attr->mutex);
+		grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_GROUP_LIST;
+		lv_task_ready(grp_refresh_attr->task);
+		osiMutexUnlock(grp_refresh_attr->mutex);
     }
 }
 
@@ -691,11 +741,11 @@ int lv_poc_group_list_get_information(lv_poc_oem_group_list *group_list_obj, con
 
 }
 
-void lv_poc_group_list_refresh(lv_task_t * task)
+void lv_poc_group_list_refresh(lv_poc_oem_group_list *grouplist)
 {
 	lv_poc_oem_group_list *group_list_obj = NULL;
 
-	group_list_obj = (lv_poc_oem_group_list *)task->user_data;
+	group_list_obj = grouplist;
 
 	if(group_list_obj == NULL)
 	{
@@ -910,9 +960,11 @@ lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_oem_group_list *group_list_ob
 
 lv_poc_status_t lv_poc_group_list_monitor_group(lv_poc_oem_group_list *group_list_obj, lv_poc_group_oprator_type opt)
 {
-	lv_task_t *fresh_task = lv_task_create(lv_poc_group_monitor_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)opt);
-	lv_task_once(fresh_task);
-
+	osiMutexLock(grp_refresh_attr->mutex);
+	grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_MONITOR_GRP;
+	grp_refresh_attr->monitor_type = opt;
+	lv_task_ready(grp_refresh_attr->task);
+	osiMutexUnlock(grp_refresh_attr->mutex);
     return POC_GROUP_NONENTITY;
 }
 
@@ -924,6 +976,49 @@ void lv_poc_group_list_set_hightlight_index(void)
 	{
 		strcpy(prv_group_list_last_index_groupname, lv_list_get_btn_text(current_btn));
 	}
+}
+
+void lv_poc_group_list_refresh_task(lv_task_t *task)
+{
+	if(grp_refresh_attr->refresh_type == POC_REFRESH_TYPE_START)
+	{
+		return;
+	}
+
+	switch(grp_refresh_attr->refresh_type)
+	{
+		case POC_REFRESH_TYPE_GRP_TITLE:
+		{
+			lv_poc_group_list_title_refr();
+			break;
+		}
+
+		case POC_REFRESH_TYPE_SET_CUR_INFO:
+		{
+			int type = (int)grp_refresh_attr->user_data;
+			lv_poc_set_current_group_informartion(type);
+			break;
+		}
+
+		case POC_REFRESH_TYPE_MONITOR_GRP:
+		{
+			lv_poc_group_monitor_oprator(grp_refresh_attr->monitor_type);
+			grp_refresh_attr->monitor_type = 0;
+			break;
+		}
+
+		case POC_REFRESH_TYPE_GROUP_LIST:
+		{
+			lv_poc_group_list_refresh(NULL);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+	grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_START;
 }
 
 #ifdef __cplusplus

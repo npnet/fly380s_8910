@@ -145,7 +145,7 @@ typedef void (*lv_poc_member_list_clear_cb)(lv_poc_oem_member_list *member_list_
 
 typedef int (*lv_poc_member_list_get_information_cb)(lv_poc_oem_member_list *member_list_obj, const char * name, void *** information);
 
-typedef void (*lv_poc_member_list_refresh_cb)(lv_task_t *task);
+typedef void (*lv_poc_member_list_refresh_cb)(lv_poc_oem_member_list *member_list_obj);
 
 typedef void (*lv_poc_member_list_refresh_with_data_cb)(lv_poc_oem_member_list *member_list_obj);
 
@@ -153,15 +153,13 @@ typedef lv_poc_status_t (*lv_poc_member_list_set_state_cb)(lv_poc_oem_member_lis
 
 typedef lv_poc_status_t (*lv_poc_member_list_is_exists_cb)(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
 
-typedef void (*lv_poc_group_list_member_act_cb)(lv_task_t * task);
+typedef void (*lv_poc_group_list_member_act_cb)(lv_task_t *task);
 
 typedef lv_poc_status_t (*lv_poc_member_list_get_state_cb)(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
 
-typedef void (*lv_poc_group_list_member_act_cb)(lv_task_t * task);
-
 typedef int (*lv_poc_group_list_get_information_cb)(lv_poc_oem_group_list *group_list_obj, const char * name, void *** information);
 
-typedef void (*lv_poc_group_list_refresh_cb)(lv_task_t *task);
+typedef void (*lv_poc_group_list_refresh_cb)(lv_poc_oem_group_list *grouplist);
 
 typedef void (*lv_poc_group_list_refresh_with_data_cb)(lv_poc_oem_group_list *group_list_obj);
 
@@ -171,9 +169,9 @@ typedef lv_poc_status_t (*lv_poc_group_list_lock_group_cb)(lv_poc_oem_group_list
 
 typedef void (*lv_poc_build_tmpgrp_get_member_list_cb)(void);
 
-typedef void (*lv_poc_build_tmpgrp_open_cb)(lv_task_t * task);
+typedef void (*lv_poc_build_tmpgrp_open_cb)(char *grpname);
 
-typedef void (*lv_poc_build_tmpgrp_close_cb)(lv_task_t * task);
+typedef void (*lv_poc_build_tmpgrp_close_cb)(int type);
 
 /*
 	  name : lv_poc_notation_msg

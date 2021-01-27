@@ -24,7 +24,7 @@ void lv_poc_build_tempgrp_clear(lv_poc_oem_member_list *member_list_obj);
 
 int lv_poc_build_tempgrp_get_information(lv_poc_oem_member_list *member_list_obj, const char * name, void *** information);
 
-void lv_poc_build_tempgrp_refresh(lv_task_t * task);
+void lv_poc_build_tempgrp_refresh(lv_poc_oem_member_list *memberlist);
 
 void lv_poc_build_tempgrp_refresh_with_data(lv_poc_oem_member_list *member_list_obj);
 
@@ -38,11 +38,13 @@ void lv_poc_build_tempgrp_get_tmpgrp_member_list(void);
 
 void lv_poc_build_tempgrp_member_list_open(IN lv_poc_oem_member_list *members, IN bool hide_offline);
 
-void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t * task);
+void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t *task);
 
-void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t * task);
+void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t *task);
 
 lv_poc_tmpgrp_t lv_poc_build_tempgrp_progress(lv_poc_tmpgrp_t status);
+
+void lv_poc_bulid_tempgroup_refresh_task(lv_task_t *task);
 
 #ifdef __cplusplus
 }

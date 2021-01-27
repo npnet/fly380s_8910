@@ -121,10 +121,10 @@ static void pocIdtStartHandleTask(void * ctx)
 static void pocStartAnimation(void *ctx)
 {
 	lvGuiRequestSceenOn(3);
-	lv_poc_refr_task_once(prv_lv_poc_network_config_task, 50, LV_TASK_PRIO_HIGH);
+	lv_poc_refr_task_once(prv_lv_poc_network_config_task, 50, LV_TASK_PRIO_MID);
 	if(!pub_lv_poc_get_watchdog_status())
 	{
-		lv_poc_refr_task_once(prv_lv_poc_power_on_sprd_image, 50, LV_TASK_PRIO_HIGH);
+		lv_poc_refr_task_once(prv_lv_poc_power_on_sprd_image, 50, LV_TASK_PRIO_MID);
 #ifdef SUPPORT_PROJECT_K19H
 		osiThreadSleepRelaxed(500, OSI_WAIT_FOREVER);
 #endif
@@ -138,7 +138,7 @@ static void pocStartAnimation(void *ctx)
 		{
 			lv_obj_del(poc_power_on_backgroup_sprd_image);
 		}
-		lv_poc_refr_task_once(prv_lv_poc_power_on_backgroup_image, 50, LV_TASK_PRIO_HIGH);
+		lv_poc_refr_task_once(prv_lv_poc_power_on_backgroup_image, 50, LV_TASK_PRIO_MID);
 		lv_poc_setting_init();
 #ifdef SUPPORT_PROJECT_K19H
 		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
@@ -147,7 +147,7 @@ static void pocStartAnimation(void *ctx)
 #ifdef SUPPORT_PROJECT_K19H
 		osiThreadSleepRelaxed(800, OSI_WAIT_FOREVER);
 #endif
- 		lv_poc_refr_task_once(prv_lv_poc_power_on_picture, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+ 		lv_poc_refr_task_once(prv_lv_poc_power_on_picture, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_MID);
 #ifdef SUPPORT_PROJECT_K19H
 		osiThreadSleepRelaxed(200, OSI_WAIT_FOREVER);
 #endif
@@ -163,7 +163,7 @@ static void pocStartAnimation(void *ctx)
 		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
 		lv_poc_refr_task_once(prv_lv_poc_power_on_picture,
-			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_MID);
 	}
 	lvGuiUpdateLastActivityTime();
 	lv_poc_sntp_Update_Time();

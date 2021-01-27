@@ -346,7 +346,7 @@ static void state_info_list_config(lv_obj_t * list, lv_area_t list_area)
 		lv_obj_align(label, btn_label, lv_poc_state_info_label_array[i].content_align, lv_poc_state_info_label_array[i].content_align_x, lv_poc_state_info_label_array[i].content_align_y);
 		label_array[i] = label;
 	}
-	state_task = lv_task_create(lv_poc_info_menu_task,1000,LV_TASK_PRIO_HIGH,NULL);
+	state_task = lv_task_create(lv_poc_info_menu_task, 1000, LV_TASK_PRIO_MID, NULL);
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_network_server);
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_signalbdm);
 	lv_poc_status_info_menu_task_ext_add(lv_poc_refresh_state_info_battery);

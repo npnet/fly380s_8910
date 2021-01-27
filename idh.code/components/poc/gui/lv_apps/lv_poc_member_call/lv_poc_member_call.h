@@ -17,13 +17,15 @@ void lv_poc_member_call_clear(lv_poc_oem_member_list *member_list_obj);
 
 int lv_poc_member_call_get_information(lv_poc_oem_member_list *member_list_obj, const char * name, void *** information);
 
-void lv_poc_member_call_refresh(lv_task_t *task_t);
+void lv_poc_member_call_refresh(lv_poc_oem_member_list *member_list_obj);
 
 lv_poc_status_t lv_poc_member_call_set_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information, bool is_online);
 
 lv_poc_status_t lv_poc_member_call_is_exists(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
 
 lv_poc_status_t lv_poc_member_call_get_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
+
+void lv_poc_member_call_refresh_task(lv_task_t *task);
 
 #ifdef __cplusplus
 }
