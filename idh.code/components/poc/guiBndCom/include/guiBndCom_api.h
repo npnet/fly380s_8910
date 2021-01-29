@@ -76,6 +76,7 @@ typedef enum
 
     LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_IND,
     LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_OK_REP,
+    LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_ERROR_REP,
     LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_EXIT_REP,
     LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_GET_MEMBER_CALL_IND,
     LVPOCGUIBNDCOM_SIGNAL_SINGLE_CALL_STATUS_SELECT_CALL_MODE,
@@ -155,6 +156,7 @@ enum{
  	ERROR_TYPE_START = 0,
  	ERROR_TYPE_SINGLE_OR_MULTI_CALL = 1,
  	ERROR_TYPE_MEMBER_REFRESH  = 2,
+ 	ERROR_TYPE_MEMBER_LIST_GET  = 3,
 };
 
 enum{
@@ -201,6 +203,10 @@ bool lvPocGuiBndCom_get_listen_status(void);
 void *lvPocGuiBndCom_get_current_lock_group(void);
 
 lv_poc_tmpgrp_t lvPocGuiBndCom_cit_status(lv_poc_tmpgrp_t status);
+
+bool lvPocGuiBndCom_SemaphoreAcquire(void);
+
+bool lvPocGuiBndCom_SemaphoreRelease(void);
 
 OSI_EXTERN_C_END
 

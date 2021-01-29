@@ -456,10 +456,10 @@ static void lv_poc_get_group_list_cb(int result_type)
 	if(result_type == 1)
 	{
 		OSI_PRINTFI("[group][refresh](%s)(%d):goto refresh", __func__, __LINE__);
-		osiMutexLock(grp_refresh_attr->mutex);
+		grp_refresh_attr->mutex ? osiMutexLock(grp_refresh_attr->mutex) : 0;
 		grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_GROUP_LIST;
 		lv_task_ready(grp_refresh_attr->task);
-		osiMutexUnlock(grp_refresh_attr->mutex);
+		grp_refresh_attr->mutex ? osiMutexUnlock(grp_refresh_attr->mutex) : 0;
 	}
 	else
 	{
@@ -743,6 +743,7 @@ int lv_poc_group_list_get_information(lv_poc_oem_group_list *group_list_obj, con
 
 void lv_poc_group_list_refresh(lv_poc_oem_group_list *grouplist)
 {
+	OSI_PRINTFI("[grouprefr](%s)(%d):refresh start", __func__, __LINE__);
 	lv_poc_oem_group_list *group_list_obj = NULL;
 
 	group_list_obj = grouplist;
@@ -791,6 +792,7 @@ void lv_poc_group_list_refresh(lv_poc_oem_group_list *grouplist)
 	    return;
     }
 
+	OSI_PRINTFI("[grouprefr](%s)(%d):refreshing", __func__, __LINE__);
     lv_poc_group_info_t current_group = lv_poc_get_current_group();
     char * current_group_name = lv_poc_get_group_name(current_group);
 
@@ -800,6 +802,7 @@ void lv_poc_group_list_refresh(lv_poc_oem_group_list *grouplist)
 	    lv_poc_group_list_info = NULL;
     }
 
+	OSI_PRINTFI("[group][refresh](%s)(%d):apply mem", __func__, __LINE__);
     lv_poc_group_list_info = (lv_poc_group_list_item_info_t *)lv_mem_alloc(sizeof(lv_poc_group_list_item_info_t) * group_list_obj->group_number);
     if(lv_poc_group_list_info == NULL)
     {
@@ -808,6 +811,7 @@ void lv_poc_group_list_refresh(lv_poc_oem_group_list *grouplist)
     memset(lv_poc_group_list_info, 0, sizeof(lv_poc_group_list_item_info_t) * group_list_obj->group_number);
     lv_poc_group_list_item_info_t * p_group_info = lv_poc_group_list_info;
 
+	OSI_PRINTFI("[group][refresh](%s)(%d):create node", __func__, __LINE__);
     p_cur = group_list_obj->group_list;
     while(p_cur)
     {
@@ -868,6 +872,7 @@ void lv_poc_group_list_refresh(lv_poc_oem_group_list *grouplist)
         p_group_info++;
     }
 
+	OSI_PRINTFI("[group][refresh](%s)(%d):select", __func__, __LINE__);
 	//not find group
 	if(0 == is_set_btn_selected)
 	{
@@ -875,7 +880,7 @@ void lv_poc_group_list_refresh(lv_poc_oem_group_list *grouplist)
 	}
 	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_grouplist_refr_is_complete(true);
-	OSI_PRINTFI("[grouprefr](%s)(%d):refresh finish", __func__, __LINE__);
+	OSI_PRINTFI("[group][refresh](%s)(%d):refresh finish", __func__, __LINE__);
 }
 
 void lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group_list_obj)
@@ -989,27 +994,38 @@ void lv_poc_group_list_refresh_task(lv_task_t *task)
 	{
 		case POC_REFRESH_TYPE_GRP_TITLE:
 		{
+			grp_refresh_attr->mutex ? osiMutexLock(grp_refresh_attr->mutex) : 0;
+			OSI_PRINTFI("[group][refresh](%s)(%d):group title", __func__, __LINE__);
 			lv_poc_group_list_title_refr();
+			grp_refresh_attr->mutex ? osiMutexUnlock(grp_refresh_attr->mutex) : 0;
 			break;
 		}
 
 		case POC_REFRESH_TYPE_SET_CUR_INFO:
 		{
+			grp_refresh_attr->mutex ? osiMutexLock(grp_refresh_attr->mutex) : 0;
+			OSI_PRINTFI("[group][refresh](%s)(%d):set cur info", __func__, __LINE__);
 			int type = (int)grp_refresh_attr->user_data;
 			lv_poc_set_current_group_informartion(type);
+			grp_refresh_attr->mutex ? osiMutexUnlock(grp_refresh_attr->mutex) : 0;
 			break;
 		}
 
 		case POC_REFRESH_TYPE_MONITOR_GRP:
 		{
+			grp_refresh_attr->mutex ? osiMutexLock(grp_refresh_attr->mutex) : 0;
 			lv_poc_group_monitor_oprator(grp_refresh_attr->monitor_type);
 			grp_refresh_attr->monitor_type = 0;
+			grp_refresh_attr->mutex ? osiMutexUnlock(grp_refresh_attr->mutex) : 0;
 			break;
 		}
 
 		case POC_REFRESH_TYPE_GROUP_LIST:
 		{
+			grp_refresh_attr->mutex ? osiMutexLock(grp_refresh_attr->mutex) : 0;
+			OSI_PRINTFI("[group][refresh](%s)(%d):list", __func__, __LINE__);
 			lv_poc_group_list_refresh(NULL);
+			grp_refresh_attr->mutex ? osiMutexUnlock(grp_refresh_attr->mutex) : 0;
 			break;
 		}
 

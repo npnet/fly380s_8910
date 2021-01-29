@@ -132,7 +132,7 @@ static void prv_lv_poc_member_list_refresh_with_data(lv_poc_oem_member_list *mem
 static lv_poc_status_t prv_lv_poc_member_list_set_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information, bool is_online);
 static lv_poc_status_t prv_lv_poc_member_list_is_exists(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
 static lv_poc_status_t prv_lv_poc_member_list_get_state(lv_poc_oem_member_list *member_list_obj, const char * name, void * information);
-static void prv_lv_poc_group_member_list_activity(lv_task_t *task);
+static void prv_lv_poc_group_member_list_activity(char *grpname);
 
 static int prv_lv_poc_group_list_get_information(lv_poc_oem_group_list *group_list_obj, const char * name, void *** information);
 static void prv_lv_poc_group_list_refresh(lv_poc_oem_group_list *group_list_obj);
@@ -241,7 +241,6 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
         .set_state = prv_lv_poc_member_list_set_state,
         .exists = prv_lv_poc_member_list_is_exists,
         .get_state = prv_lv_poc_member_list_get_state,
-        .group_member_act = prv_lv_poc_group_member_list_activity,
     },
 
     .group_list = {
@@ -260,6 +259,7 @@ __attribute__((unused)) lv_poc_activity_attribute_cb_set lv_poc_activity_func_cb
 	.build_tmp_get_info = prv_lv_poc_build_tempgrp_get_member_list,
     .build_tmp_open = prv_lv_poc_build_tmpgrp_open,
     .build_tmp_close = prv_lv_poc_build_tmpgrp_close,
+	.group_member_activity_open = prv_lv_poc_group_member_list_activity,
 };
 
 
@@ -2025,7 +2025,7 @@ static lv_poc_status_t prv_lv_poc_member_list_get_state(lv_poc_oem_member_list *
      return status;
 }
 
-static void prv_lv_poc_group_member_list_activity(lv_task_t *task)
+static void prv_lv_poc_group_member_list_activity(char *grpname)
 {
    lv_poc_activity_attribute_cb_set_obj * cb_set_obj = lv_poc_get_activity_attribute_cb_set_obj();
 
@@ -2033,7 +2033,7 @@ static void prv_lv_poc_group_member_list_activity(lv_task_t *task)
    {
       if(cb_set_obj->member_list[i].group_member_act != NULL)
       {
-         lv_task_t *onece_task = lv_task_create(cb_set_obj->member_list[i].group_member_act, 50, LV_TASK_PRIO_MID, (void *)task->user_data);
+         lv_task_t *onece_task = lv_task_create(cb_set_obj->member_list[i].group_member_act, 30, LV_TASK_PRIO_MID, (void *)grpname);
          lv_task_once(onece_task);
       }
    }
@@ -2157,7 +2157,7 @@ static void prv_lv_poc_member_call_open_cb(lv_task_t *task)
 
 static void prv_lv_poc_member_call_open(void * information)
 {
-	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_open_cb, 50, LV_TASK_PRIO_MID, information);
+	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_open_cb, 30, LV_TASK_PRIO_MID, information);
 	lv_task_once(once_task);
 }
 
@@ -2168,7 +2168,7 @@ static void prv_lv_poc_member_call_close_cb(lv_task_t *task)
 
 static void prv_lv_poc_member_call_close(void)
 {
-	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_close_cb, 50, LV_TASK_PRIO_MID, NULL);
+	lv_task_t *once_task = lv_task_create(prv_lv_poc_member_call_close_cb, 30, LV_TASK_PRIO_MID, NULL);
 	lv_task_once(once_task);
 }
 
@@ -2179,13 +2179,13 @@ static void prv_lv_poc_build_tempgrp_get_member_list(void)
 
 static void prv_lv_poc_build_tmpgrp_open(char *grpname)
 {
-	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_member_list_activity_open, 50, LV_TASK_PRIO_MID, (void *)grpname);
+	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_member_list_activity_open, 30, LV_TASK_PRIO_MID, (void *)grpname);
 	lv_task_once(once_task);
 }
 
 static void prv_lv_poc_build_tmpgrp_close(int type)
 {
-	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_memberlist_activity_close, 50, LV_TASK_PRIO_MID, (void *)type);
+	lv_task_t *once_task = lv_task_create(lv_poc_build_tempgrp_memberlist_activity_close, 30, LV_TASK_PRIO_MID, (void *)type);
 	lv_task_once(once_task);
 }
 
@@ -3220,7 +3220,7 @@ lv_poc_activity_t *	lv_poc_activity_send_sign(lv_poc_Activity_Id_t ID, int sign,
                     exec_obj->activity = p->activity;
                     exec_obj->sign = sign;
                     exec_obj->parameters = (void *)param;
-                    task = lv_task_create(lv_exec_task, 50, LV_TASK_PRIO_MID, (void *)exec_obj);
+                    task = lv_task_create(lv_exec_task, 30, LV_TASK_PRIO_MID, (void *)exec_obj);
                     lv_task_once(task);
                     return p->activity;
                 }

@@ -61,7 +61,7 @@ static int refresh_task_init = true;
 
 lv_poc_activity_t * poc_build_tempgrp_activity = NULL;
 
-static char * lv_poc_build_tempgrp_failed_text = "创建临时组失败";
+static char * lv_poc_build_tempgrp_failed_text = "用户均忙线中";
 
 static char * lv_poc_build_tempgrp_few_member_text1 = "成员数量不";
 
@@ -157,6 +157,12 @@ void lv_poc_build_tempgrp_get_membet_list_cb(int msg_type)
 }
 
 static
+void lv_poc_build_tempgrp_new_group_cb_refresh(lv_task_t *task)
+{
+	lv_poc_del_activity(poc_build_tempgrp_activity);
+}
+
+static
 void lv_poc_build_tempgrp_new_group_cb(int result_type)
 {
 	if(result_type == 1)
@@ -165,10 +171,9 @@ void lv_poc_build_tempgrp_new_group_cb(int result_type)
 	}
 	else
 	{
-		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_To_Build_Group, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_tempgrp_failed_text, NULL);
 	}
-	lv_poc_del_activity(poc_build_tempgrp_activity);
+	lv_poc_refr_task_once(lv_poc_build_tempgrp_new_group_cb_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_30, LV_TASK_PRIO_HIGH);
 }
 
 static
@@ -885,7 +890,7 @@ void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t *task)
 	lv_poc_activity_set_signal_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_signal_func);
 	lv_poc_activity_set_design_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_design_func);
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_TMPGRP_MEMBER_LIST, true);
-	OSI_PRINTFI("[tmpgrp](%s)(%d):acti open", __func__, __LINE__);
+	OSI_PRINTFI("[tmpgrp](%s)(%d):activity open", __func__, __LINE__);
 
 	if(refresh_task_init == true)
 	{
@@ -911,10 +916,10 @@ void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t *task)
 	}
 
 	osiMutexLock(tmpgrp_refresh_attr->mutex);
-	OSI_PRINTFI("[tmpgrp](%s)(%d):launch refresh", __func__, __LINE__);
 	tmpgrp_refresh_attr->refresh_type = POC_REFRESH_TYPE_TMPGRP_MEMBER_LIST;
 	lv_task_ready(tmpgrp_refresh_attr->task);
 	osiMutexUnlock(tmpgrp_refresh_attr->mutex);
+	OSI_PRINTFI("[tmpgrp](%s)(%d):launch refresh", __func__, __LINE__);
 }
 
 void lv_poc_build_tempgrp_member_list_open(IN lv_poc_oem_member_list *members, IN bool hide_offline)

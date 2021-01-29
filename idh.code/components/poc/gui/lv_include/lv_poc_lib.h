@@ -223,6 +223,7 @@ typedef struct _lv_poc_activity_attribute_cb_set
 	lv_poc_build_tmpgrp_get_member_list_cb build_tmp_get_info;
 	lv_poc_build_tmpgrp_open_cb build_tmp_open;
 	lv_poc_build_tmpgrp_close_cb build_tmp_close;
+	void (*group_member_activity_open)(char *grpname);
 } lv_poc_activity_attribute_cb_set;
 
 typedef struct _lv_poc_build_new_tempgrp_t

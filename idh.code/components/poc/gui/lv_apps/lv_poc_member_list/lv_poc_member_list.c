@@ -51,6 +51,8 @@ static lv_poc_member_refresh_t *member_refresh_attr = NULL;
 
 static int refresh_task_init = true;
 
+static int is_member_acitivity_open = false;
+
 static lv_area_t member_list_display_area = {0};
 
 static int8_t lv_poc_member_list_title[100] = {0};
@@ -386,6 +388,16 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
     }
     else
     {
+		strcpy((char *)lv_poc_member_list_title, (const char *)title);
+		if(is_member_acitivity_open == false)
+		{
+			is_member_acitivity_open = true;
+			lv_poc_memberlist_activity_open(NULL);
+		}
+		else
+		{
+			is_member_acitivity_open = false;
+		}
 	    lv_poc_member_list_obj = (lv_poc_oem_member_list *)members;
 		lv_poc_member_list_need_free_member_list = false;
 		OSI_PRINTFI("[memberopen](%s)(%d):open", __func__, __LINE__);
@@ -916,7 +928,22 @@ void lv_poc_memberlist_activity_open(lv_task_t * task)
 		lv_poc_member_list_activity_create,
 		lv_poc_member_list_activity_destory};
 
-	strcpy((char *)lv_poc_member_list_title, (const char *)task->user_data);
+	if(current_activity == poc_member_list_activity)
+	{
+		OSI_PRINTFI("[memberlist](%s)(%d):error", __func__, __LINE__);
+		is_member_acitivity_open = false;
+		return;
+	}
+	else
+	{
+		if(task->user_data == NULL)
+		{
+			OSI_PRINTFI("[memberlist](%s)(%d):error", __func__, __LINE__);
+			return;
+		}
+		strcpy((char *)lv_poc_member_list_title, (const char *)task->user_data);
+		is_member_acitivity_open = true;
+	}
 
 	lv_poc_set_memberlist_refr_is_complete(false);
 	poc_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);

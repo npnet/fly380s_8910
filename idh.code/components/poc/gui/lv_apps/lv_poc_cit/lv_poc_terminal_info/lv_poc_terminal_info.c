@@ -105,7 +105,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_label_set_text(txt, "RTOS : 10.0.1\n"
 						   "Modem : 8910_MOD\n"
 						   "ULE_V1_3_W20.35.2\n"
-						   "SofVer : v1.0.2-01.26");
+						   "SofVer : v1.0.2-01.29");
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

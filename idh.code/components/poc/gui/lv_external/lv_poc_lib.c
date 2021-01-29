@@ -789,11 +789,12 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 				{
 					lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);//send msg
 				}
-				audevSetPlayVolume(35);
+				audevGetPlayVolume() != 35 ? audevSetPlayVolume(35) : 0;
 				char playkey[4] = "9";
 				ttsPlayText(playkey, strlen(playkey), ML_UTF8);
 				keytoneattr.is_poc_play_key_tone = true;
 				keytoneattr.is_task_cnt = 0;
+				OSI_PRINTFI("[keytone](%s)(%d)start play", __func__, __LINE__);
 			}
 		}
 		else
@@ -801,6 +802,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 			OSI_PRINTFI("[keytone](%s)(%d)not stop", __func__, __LINE__);
 		}
 	}while(0);
+	OSI_PRINTFI("[keytone](%s)(%d)thread exit", __func__, __LINE__);
 	prv_play_btn_voice_one_time_thread = NULL;
 	osiThreadExit();
 }
@@ -856,6 +858,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					if(poc_voice_player_attr.is_play_listen_tone_start == true)
 					{
 						poc_voice_player_attr.is_play_listen_tone_start = false;
+						lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_START_PLAY_IND, NULL);
 					}
 					else if(poc_voice_player_attr.is_play_speak_tone_start == true)
 					{
@@ -901,11 +904,11 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			{
 				if(pub_lv_poc_get_watchdog_status())
 				{
-					audevSetPlayVolume(0);
+					audevGetPlayVolume() != 0 ? audevSetPlayVolume(0) : 0;
 				}
 				else
 				{
-					audevSetPlayVolume(50);
+					audevGetPlayVolume() != 50 ? audevSetPlayVolume(50) : 0;
 				}
 				keytoneattr.is_poc_play_voice = true;
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
@@ -937,7 +940,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
          	case LVPOCAUDIO_Type_Exit_Temp_Group:
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
-				audevSetPlayVolume(50);
+				audevGetPlayVolume() != 50 ? audevSetPlayVolume(50) : 0;
 			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
@@ -952,7 +955,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Start_Listen:
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
-				audevSetPlayVolume(40);
+				audevGetPlayVolume() != 40 ? audevSetPlayVolume(40) : 0;
 			    keytoneattr.is_poc_play_voice = true;
 				poc_voice_player_attr.is_play_listen_tone_start = true;
 				break;
@@ -961,7 +964,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Start_Speak:
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
-				audevSetPlayVolume(40);
+				audevGetPlayVolume() != 40 ? audevSetPlayVolume(40) : 0;
 			    keytoneattr.is_poc_play_voice = true;
 				poc_voice_player_attr.is_play_speak_tone_start = true;
 				break;
@@ -974,7 +977,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
-				audevSetPlayVolume(40);
+				audevGetPlayVolume() != 40 ? audevSetPlayVolume(40) : 0;
 			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
