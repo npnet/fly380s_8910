@@ -2765,14 +2765,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     }
 
 	//monitor audev
-	if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_START_IND, NULL))
-	{
-		OSI_PRINTFI("[poc][audev][voice]%s(%d)send voice play start succ", __func__, __LINE__);
-	}
-	else
-	{
-		OSI_PRINTFI("[poc][audev][voice]%s(%d)send voice play start failed", __func__, __LINE__);
-	}
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_START_IND, NULL);
 
 	/*open pa*/
 	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
@@ -3061,14 +3054,7 @@ bool audevStopPlayV2(void)
     }
 
 	//monitor audev
-	if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_STOP_IND, NULL))
-	{
-		OSI_PRINTFI("[poc][audev][voice]%s(%d)send voice play stop succ", __func__, __LINE__);
-	}
-	else
-	{
-		OSI_PRINTFI("[poc][audev][voice]%s(%d)send voice play stop failed", __func__, __LINE__);
-	}
+	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_STOP_IND, NULL);
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
     {

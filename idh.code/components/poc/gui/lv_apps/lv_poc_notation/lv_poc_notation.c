@@ -490,7 +490,7 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 			lv_poc_notation_delay_close_task = lv_task_create(lv_poc_notation_normal_msg_delay_close_task,
 				2000,
-				LV_TASK_PRIO_LOWEST,
+				LV_TASK_PRIO_MID,
 				NULL);
 
 			if(lv_poc_notation_delay_close_task != NULL)
@@ -514,7 +514,7 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 			lv_poc_notation_delay_close_task = lv_task_create(lv_poc_notation_normal_msg_delay_close_task,
 				4500,
-				LV_TASK_PRIO_LOWEST,
+				LV_TASK_PRIO_MID,
 				NULL);
 
 			if(lv_poc_notation_delay_close_task != NULL)
@@ -538,7 +538,7 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 			lv_poc_notation_delay_close_task = lv_task_create(lv_poc_notation_normal_msg_delay_close_task,
 				10000,
-				LV_TASK_PRIO_LOWEST,
+				LV_TASK_PRIO_MID,
 				NULL);
 
 			if(lv_poc_notation_delay_close_task != NULL)

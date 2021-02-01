@@ -63,7 +63,7 @@ void lv_poc_shutdown_charge_Animation_Task(void *ctx)
 	lv_poc_set_power_on_status(true);//设备准备就绪
 	//lv刷新图标
 	lv_task_create(lv_poc_charge_poweron_battery_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_800
-	, LV_TASK_PRIO_HIGH, NULL);
+	, LV_TASK_PRIO_MID, NULL);
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 	while(1)
 	{
@@ -84,7 +84,7 @@ void lv_poc_shutdown_charge_power_on_logo(void)
 	lvGuiRequestSceenOn(3);//开屏
 
 	//魔方图片
-	lv_poc_refr_task_once(lv_poc_show_sprd_image, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGHEST);
+	lv_poc_refr_task_once(lv_poc_show_sprd_image, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_MID);
 	osiThreadSleep(2000);
 
 	drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
@@ -112,7 +112,7 @@ void lv_poc_shutdown_charge_power_on_logo(void)
 	lv_obj_set_pos(lv_poc_shutdown_charge_obj, 0, 0);
 
 	//电池图片
-	lv_poc_refr_task_once(lv_poc_show_first_battery_image, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGHEST);
+	lv_poc_refr_task_once(lv_poc_show_first_battery_image, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_MID);
 
 	lvGuiReleaseScreenOn(3);//熄屏
 
@@ -150,7 +150,7 @@ lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 	if(battery_t.charging == POC_CHG_DISCONNECTED)//设备未充电
 	{
 		lv_task_t * task = lv_task_create(lv_poc_charge_power_outages_shutdown_task,
-			POC_CHARGE_POWER_DOWN_TIME, LV_TASK_PRIO_HIGH, NULL);
+			POC_CHARGE_POWER_DOWN_TIME, LV_TASK_PRIO_MID, NULL);
 		lv_task_once(task);
 	}
 	else//设备在充电

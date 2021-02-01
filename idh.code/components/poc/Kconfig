@@ -138,6 +138,12 @@ config POC_CIT_KEY_SUPPORT
     help
         poc gui should be supported.
 
+config POC_GUI_FLASH_SUPPORT
+	bool "POC gui flash supported"
+    default y
+    help
+        poc gui should be supported.
+
 config POC_GUI_LCD_VOL_2_3_SUPPORT
     bool "POC lcd 2.3V supported"
     default n

@@ -900,6 +900,8 @@ bool lv_poc_get_cit_backlight_activity(void);
 
 bool lv_poc_get_cit_mic_activity(void);
 
+bool lv_poc_get_group_list_activity(void);
+
 #ifdef __cplusplus
 }
 #endif

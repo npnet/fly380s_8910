@@ -74,6 +74,7 @@ drvGpioConfig_t* configport = NULL;
 static osiMutex_t  *mutex = NULL;
 
 static bool is_poc_listen_tone_complete = false;
+static bool is_poc_speak_tone_complete = false;
 static bool lv_poc_is_insert_headset = false;
 static bool is_first_membercall = false;
 static bool is_play_btn_voice = false;
@@ -638,7 +639,6 @@ static void prv_monitor_key_tone_task_callback(lv_task_t *task)
 	}
 	else
 	{
-		OSI_PRINTFI("[poc][voice][keytone](%s)(%d)is_task_cnt is (%d)", __func__, __LINE__, keytoneattr.is_task_cnt);
 		keytoneattr.is_task_run ? (keytoneattr.is_task_cnt++) : 0;
 		if(keytoneattr.is_task_cnt > 20)//2s
 		{
@@ -656,8 +656,7 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 	{
 		OSI_PRINTFI("[poc][voice][keytone][%d]listen status (%d), speak status (%d), audev status (%d)", __LINE__, lvPocGuiIdtCom_get_listen_status(), lvPocGuiIdtCom_get_speak_status(), lv_poc_get_audevplay_status());
 		if(!lvPocGuiIdtCom_get_listen_status()
-			&& !lvPocGuiIdtCom_get_speak_status()
-			&& (lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) != LVPOCCIT_TYPE_ENTER))
+			&& !lvPocGuiIdtCom_get_speak_status())
 		{
 			if(ttsIsPlaying())
 			{
@@ -665,14 +664,13 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 				ttsStop();
 			}
 
-			OSI_PRINTFI("[poc][voice][keytone]audev play status (%d)",lv_poc_get_audevplay_status());
 			if(!lv_poc_get_audevplay_status())
 			{
 				OSI_PRINTFI("[poc][voice][keytone](%s)(%d)launch", __func__, __LINE__);
 //				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)20);
 //				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_CLOSE_PA_IND, (void *)160);
 
-				audevSetPlayVolume(35);
+				audevGetPlayVolume() != 35 ? audevSetPlayVolume(35) : 0;
 				char playkey[4] = "9";
 				ttsPlayText(playkey, strlen(playkey), ML_UTF8);
 				keytoneattr.is_poc_play_key_tone = true;
@@ -741,8 +739,21 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 
 					if(is_poc_listen_tone_complete == true)
 					{
+						OSI_PRINTFI("[poc][keytone](%s)(%d)start listen", __func__, __LINE__);
 						is_poc_listen_tone_complete = false;
 						lv_poc_set_play_tone_status(true);
+						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
+						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND, NULL);
+					}
+
+					if(is_poc_speak_tone_complete == true)
+					{
+						OSI_PRINTFI("[poc][keytone](%s)(%d)start speak", __func__, __LINE__);
+						is_poc_speak_tone_complete = false;
+						lv_poc_set_play_tone_status(true);
+						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
+						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
+						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
 					}
 
 					if(poc_voice_player_attr.voice_queue_reader == poc_voice_player_attr.voice_queue_writer)
@@ -761,6 +772,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			{
 				continue;
 			}
+
+			if(lv_poc_get_audevplay_status())
+			{
+				continue;
+			}
+
 			poc_voice_player_attr.voice_type = poc_voice_player_attr.voice_queue[poc_voice_player_attr.voice_queue_reader];
 			poc_voice_player_attr.voice_queue_reader = (poc_voice_player_attr.voice_queue_reader + 1) % 10;
 		}
@@ -777,6 +794,11 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 		{
 			OSI_PRINTFI("[poc][voice][%s](%d)cit status", __func__, __LINE__);
 			continue;
+		}
+
+		while(ttsIsPlaying())
+		{
+			osiDelayUS(20000);
 		}
 
 		switch(poc_voice_player_attr.voice_type)
@@ -806,7 +828,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
 				/*audio volum*/
-				audevSetPlayVolume(70);
+				audevGetPlayVolume() != 70 ? audevSetPlayVolume(70) : 0;
 			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
@@ -821,9 +843,18 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Start_Listen:
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
-				audevSetPlayVolume(40);
+				audevGetPlayVolume() != 40 ? audevSetPlayVolume(40) : 0;
 			    keytoneattr.is_poc_play_voice = true;
 				is_poc_listen_tone_complete = true;
+				break;
+			}
+
+			case LVPOCAUDIO_Type_Tone_Start_Speak:
+			{
+				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
+				audevGetPlayVolume() != 60 ? audevSetPlayVolume(60) : 0;
+				keytoneattr.is_poc_play_voice = true;
+				is_poc_speak_tone_complete = true;
 				break;
 			}
 
@@ -832,10 +863,9 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Note:
 			case LVPOCAUDIO_Type_Tone_Stop_Listen:
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
-			case LVPOCAUDIO_Type_Tone_Start_Speak:
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
-				audevSetPlayVolume(60);
+				audevGetPlayVolume() != 60 ? audevSetPlayVolume(60) : 0;
 			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
@@ -845,13 +875,10 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				break;
 		}
 
-		while(ttsIsPlaying())
+		if(lvPocGuiIdtCom_get_listen_status()
+			|| lvPocGuiIdtCom_get_speak_status())
 		{
-			osiDelayUS(20000);
-		}
-
-		if(lv_poc_get_audevplay_status())
-		{
+			OSI_PRINTFI("[poc][voice][keytone](%s)(%d)is listen_sta or speak_sta", __func__, __LINE__);
 			continue;
 		}
 
@@ -873,12 +900,13 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 void
 poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 {
-	if(!quiet && !pocGetPttKeyState())
+	if(!quiet && !pocGetPttKeyState()
+		&& (lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) != LVPOCCIT_TYPE_ENTER))
 	{
 		if(prv_play_btn_voice_one_time_task == NULL)//monitor key voice
 		{
 			keytoneattr.is_poc_play_key_tone = false;
-			prv_play_btn_voice_one_time_task = lv_task_create(prv_monitor_key_tone_task_callback, 200, LV_TASK_PRIO_HIGHEST, NULL);
+			prv_play_btn_voice_one_time_task = lv_task_create(prv_monitor_key_tone_task_callback, 200, LV_TASK_PRIO_MID, NULL);
 		}
 
 		if(prv_play_btn_voice_one_time_thread != NULL || keytoneattr.is_poc_play_voice == true)
@@ -1476,12 +1504,13 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->language = 0;
 	poc_setting->is_exist_selfgroup = 1;
 	strcpy(poc_setting->selfbuild_group_num, "");
+	poc_setting->logintype = 0;
 #ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
 	strcpy(poc_setting->account_name, "00000");
 	strcpy(poc_setting->account_passwd, "00000");
 	strcpy(poc_setting->old_account_name, "");
 	strcpy(poc_setting->old_account_current_group, "");
-	strcpy(poc_setting->ip_address, "124.160.11.21");
+	strcpy(poc_setting->ip_address, "106.74.78.251:10200;106.74.78.208:10200");
 	poc_setting->ip_port = 10000;
 #endif
 }
@@ -1980,10 +2009,6 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 			   poc_earkey_state = false;
 			   OSI_LOGI(0, "[headset]key is release,stop speak\n");
 			   lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
-		   }
-		   else
-		   {
-			   osiTimerStop(ear_key_attr.ear_press_timer);
 		   }
 		   checkcbnum = 0;
 	   }
@@ -3773,5 +3798,16 @@ uint32_t lv_poc_mutex_init(void)
 	}
 
 	return (uint32_t)mutex;
+}
+
+/*
+     name : lv_poc_group_list_act_status
+     param :
+     date : 2021-01-28
+*/
+bool
+lv_poc_group_list_act_status(void)
+{
+	return lv_poc_get_group_list_activity();
 }
 

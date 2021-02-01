@@ -132,6 +132,12 @@
 #cmakedefine CONFIG_POC_CIT_KEY_SUPPORT
 
 /**
+ * Wheth the POC flash is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_FLASH_SUPPORT
+
+/**
  * Wheth the POC LCD 2.3V is enabled.
  *
  */

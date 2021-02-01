@@ -117,7 +117,7 @@ typedef void (*lv_poc_member_list_clear_cb)(lv_poc_member_list_t *member_list_ob
 
 typedef int (*lv_poc_member_list_get_information_cb)(lv_poc_member_list_t *member_list_obj, const char * name, void *** information);
 
-typedef void (*lv_poc_member_list_refresh_cb)(lv_task_t *task);
+typedef void (*lv_poc_member_list_refresh_cb)(lv_poc_member_list_t *member_list_obj);
 
 typedef void (*lv_poc_member_list_refresh_with_data_cb)(lv_poc_member_list_t *member_list_obj);
 
@@ -143,7 +143,7 @@ typedef void (*lv_poc_group_list_remove_cb)(lv_poc_group_list_t *group_list_obj,
 
 typedef int (*lv_poc_group_list_get_information_cb)(lv_poc_group_list_t *group_list_obj, const char * name, void *** information);
 
-typedef void (*lv_poc_group_list_refresh_cb)(lv_task_t *task);
+typedef void (*lv_poc_group_list_refresh_cb)(lv_poc_group_list_t *grouplist);
 
 typedef void (*lv_poc_group_list_refresh_with_data_cb)(lv_poc_group_list_t *group_list_obj);
 
@@ -1252,6 +1252,14 @@ lv_poc_get_keytone_status(void);
      date : 2021-01-25
 */
 uint32_t lv_poc_mutex_init(void);
+
+/*
+	 name : lv_poc_group_list_act_status
+	 param :
+	 date : 2021-01-28
+*/
+bool
+lv_poc_group_list_act_status(void);
 
 #ifdef __cplusplus
 }

@@ -208,9 +208,11 @@ lv_res_t prv_lv_poc_warnning_signal_func(struct _lv_obj_t * obj, lv_signal_t sig
 				{
 					if(warnning->prv_opt_left_obj != NULL && warnning->opt_left_cb != NULL)
 					{
+						OSI_PRINTFI("[poc][group][warnning](%s)[%d]set cb", __func__, __LINE__);
 						warnning->opt_left_cb(warnning->activity->display, LV_EVENT_APPLY);
 					}
 					lv_poc_del_activity(warnning->activity);
+
 					break;
 				}
 

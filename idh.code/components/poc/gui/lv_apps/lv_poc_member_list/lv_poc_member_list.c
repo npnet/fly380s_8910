@@ -10,7 +10,22 @@ extern "C" {
 #include "guiIdtCom_api.h"
 #include "lv_objx/lv_poc_obj/lv_poc_obj.h"
 
+enum
+{
+	POC_REFRESH_TYPE_MEMBER_START,
 
+	POC_REFRESH_TYPE_MEMBER_LIST,
+	POC_REFRESH_TYPE_MEMBER_LIST_CHANGE_TO_ONLINE,
+	POC_REFRESH_TYPE_MEMBER_LIST_CHANGE_TO_OFFLINE,
+};
+
+typedef struct
+{
+	osiMutex_t *mutex;
+	lv_task_t *task;
+	uint8_t refresh_type;
+	void *user_data;
+}lv_poc_member_refresh_t;
 static lv_poc_member_list_t * lv_poc_member_list_obj = NULL;
 
 static lv_obj_t * lv_poc_member_list_activity_create(lv_poc_display_t *display);
@@ -32,6 +47,12 @@ static void lv_poc_member_list_get_list_cb(int msg_type);
 static lv_obj_t * activity_list = NULL;
 
 static lv_poc_win_t * activity_win = NULL;
+
+static lv_poc_member_refresh_t *member_refresh_attr = NULL;
+
+static int refresh_task_init = true;
+
+static int is_member_acitivity_open = false;
 
 static lv_area_t member_list_display_area = {0};
 
@@ -55,7 +76,7 @@ static int lv_poc_member_list_get_member_type = -1;
 static lv_obj_t * lv_poc_member_list_activity_create(lv_poc_display_t *display)
 {
     activity_win = lv_poc_win_create(display, (const char *)lv_poc_member_list_title, lv_poc_member_list_list_create);
-	lv_poc_notation_refresh();/*把弹框显示在最顶层*/
+	lv_poc_notation_refresh();//把弹框显示在最顶层
 	return (lv_obj_t *)activity_win;
 }
 
@@ -124,9 +145,8 @@ static void lv_poc_member_list_list_config(lv_obj_t * list, lv_area_t list_area)
 #endif
 }
 
-void prv_lv_poc_member_list_change_to_online(lv_task_t *task)
+void prv_lv_poc_member_list_change_to_online(lv_obj_t *btn)
 {
-	lv_obj_t *btn = (lv_obj_t *)task->user_data;
 	if(btn == NULL)
 	{
 		return;
@@ -141,9 +161,8 @@ void prv_lv_poc_member_list_change_to_online(lv_task_t *task)
 	lv_img_set_src(btn_img, &ic_member_online);
 }
 
-void prv_lv_poc_member_list_change_to_offline(lv_task_t *task)
+void prv_lv_poc_member_list_change_to_offline(lv_obj_t *btn)
 {
-	lv_obj_t *btn = (lv_obj_t *)task->user_data;
 	if(btn == NULL)
 	{
 		return;
@@ -165,8 +184,11 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 		if(status == 1)
 		{
 			lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, true);
-			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_online, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
-			lv_task_once(once_task);
+			osiMutexLock(member_refresh_attr->mutex);
+			member_refresh_attr->user_data = (void *)lv_poc_member_call_obj;
+			member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST_CHANGE_TO_ONLINE;
+			lv_task_ready(member_refresh_attr->task);
+			osiMutexUnlock(member_refresh_attr->mutex);
 			lv_poc_activity_func_cb_set.member_call_open(lv_poc_member_call_obj_information);
 			lv_poc_member_list_set_hightlight_index();
 		}
@@ -174,8 +196,11 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 		{
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Offline_Member, 50, false);
 			lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, false);
-			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_offline, 10, LV_TASK_PRIO_HIGH, lv_poc_member_call_obj);
-			lv_task_once(once_task);
+			osiMutexLock(member_refresh_attr->mutex);
+			member_refresh_attr->user_data = (void *)lv_poc_member_call_obj;
+			member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST_CHANGE_TO_OFFLINE;
+			lv_task_ready(member_refresh_attr->task);
+			osiMutexUnlock(member_refresh_attr->mutex);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
 		}
 	}
@@ -285,15 +310,20 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 
 		case LV_SIGNAL_FOCUS:
 		{
+			OSI_PRINTFI("[memberrefr](%s)(%d):memberlist focus", __func__, __LINE__);
 			if(lv_poc_member_list_obj != NULL && current_activity == poc_member_list_activity)
 			{
-				lv_poc_refr_task_once(lv_poc_member_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
+				osiMutexLock(member_refresh_attr->mutex);
+				member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST;
+				lv_task_ready(member_refresh_attr->task);
+				osiMutexUnlock(member_refresh_attr->mutex);
 			}
 			break;
 		}
 
 		case LV_SIGNAL_DEFOCUS:
 		{
+			OSI_PRINTFI("[memberrefr](%s)(%d):memberlist defocus", __func__, __LINE__);
 			break;
 		}
 
@@ -320,11 +350,14 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	//add your information
 	if(msg_type==1)//显示
 	{
-		lv_poc_refr_task_once(lv_poc_member_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
+		osiMutexLock(member_refresh_attr->mutex);
+		member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST;
+		lv_task_ready(member_refresh_attr->task);
+		osiMutexUnlock(member_refresh_attr->mutex);
 	}
 	else
 	{
-		OSI_PRINTFI("[group][%s][%d]login status is (%d), apply note is (%d)", __func__, __LINE__, lvPocGetLoginStatus(), lv_poc_get_apply_note());
+		OSI_PRINTFI("[grouprefr][%s][%d]get failed memberlist get list", __func__, __LINE__);
 		lv_poc_set_refr_error_info(true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
@@ -336,6 +369,8 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
 {
     if(lv_poc_member_list_obj != NULL)
     {
+		OSI_PRINTFI("[memberopen](%s)(%d):null", __func__, __LINE__);
+		lv_poc_set_refr_error_info(true);
     	return;
     }
 
@@ -370,24 +405,60 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     }
     else
     {
-	    lv_poc_member_list_obj = (lv_poc_member_list_t *)members;
-	    lv_poc_member_list_need_free_member_list = false;
+		strcpy((char *)lv_poc_member_list_title, (const char *)title);
+		if(is_member_acitivity_open == false)
+		{
+			is_member_acitivity_open = true;
+			lv_poc_memberlist_activity_open(NULL);
+		}
+		else
+		{
+			is_member_acitivity_open = false;
+		}
+		lv_poc_member_list_obj = (lv_poc_member_list_t *)members;
+		lv_poc_member_list_need_free_member_list = false;
 	    lv_poc_member_list_get_member_type = 2;
+		OSI_PRINTFI("[memberopen](%s)(%d):open", __func__, __LINE__);
     }
 
     if(lv_poc_member_list_obj == NULL)
     {
 		lv_poc_set_refr_error_info(true);
+		OSI_PRINTFI("[memberopen](%s)(%d):null", __func__, __LINE__);
 	    return;
     }
 
     lv_poc_member_list_obj->hide_offline = hide_offline;
+
+	if(refresh_task_init == true)
+	{
+		if(member_refresh_attr == NULL)
+		{
+			member_refresh_attr = (lv_poc_member_refresh_t *)lv_mem_alloc(sizeof(lv_poc_member_refresh_t));
+		}
+		refresh_task_init = false;
+		member_refresh_attr->refresh_type = 0;
+		member_refresh_attr->task = NULL;
+		member_refresh_attr->mutex = NULL;
+		member_refresh_attr->user_data = NULL;
+	}
+
+	if(member_refresh_attr->task == NULL)
+	{
+		member_refresh_attr->task = lv_task_create(lv_poc_member_list_refresh_task, 500, LV_TASK_PRIO_MID, (void *)member_refresh_attr);
+	}
+
+	if(member_refresh_attr->mutex == NULL)
+	{
+		member_refresh_attr->mutex = osiMutexCreate();
+	}
+
     if(members == NULL)
     {
-		OSI_LOGI(0, "[song]member null to get\n");
+		OSI_PRINTFI("[poc][memberlist](%s)[%d]member null to get", __func__, __LINE__);
 		if(!lv_poc_get_member_list(NULL, lv_poc_member_list_obj,1,lv_poc_member_list_get_list_cb))
 		{
-			OSI_PRINTFI("[group][%s][%d]login status is (%d), apply note is (%d)", __func__, __LINE__, lvPocGetLoginStatus(), lv_poc_get_apply_note());
+			OSI_PRINTFI("[grouprefr][%s][%d]get failed memberlist", __func__, __LINE__);
 			lv_poc_set_refr_error_info(true);
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
@@ -395,8 +466,11 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_member_list_t *members, 
     }
     else
     {
-		OSI_LOGI(0, "[song]have member to refr\n");
-		lv_poc_refr_task_once(lv_poc_member_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+		OSI_PRINTFI("[poc][memberlist](%s)[%d]have member to refr\n", __func__, __LINE__);
+		osiMutexLock(member_refresh_attr->mutex);
+		member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST;
+		lv_task_ready(member_refresh_attr->task);
+		osiMutexUnlock(member_refresh_attr->mutex);
 	}
 }
 
@@ -626,20 +700,24 @@ int lv_poc_member_list_get_information(lv_poc_member_list_t *member_list_obj, co
 
 }
 
-void lv_poc_member_list_refresh(lv_task_t * task)
+void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
 {
-	lv_poc_member_list_t *member_list_obj = NULL;
-
-	member_list_obj = (lv_poc_member_list_t *)task->user_data;
-
 	if(member_list_obj == NULL)
 	{
+		OSI_PRINTFI("[member][refresh](%s)(%d):open", __func__, __LINE__);
 		member_list_obj = lv_poc_member_list_obj;
 	}
 
-	if(current_activity != poc_member_list_activity
-		|| member_list_obj == NULL)
+	if(member_list_obj == NULL)
 	{
+		OSI_PRINTFI("[member][refresh](%s)(%d):null", __func__, __LINE__);
+		lv_poc_set_refr_error_info(true);
+		return;
+	}
+
+	if(current_activity != poc_member_list_activity)
+	{
+		OSI_PRINTFI("[member][refresh](%s)(%d):cur act error", __func__, __LINE__);
 		lv_poc_set_refr_error_info(true);
 		return;
 	}
@@ -651,10 +729,17 @@ void lv_poc_member_list_refresh(lv_task_t * task)
 	int list_item_count = 0;
 	char is_set_btn_selected = 0;
 
+	if(activity_list == NULL)
+	{
+		lv_poc_set_refr_error_info(true);
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"空窗口列表", NULL);
+		return;
+	}
     lv_list_clean(activity_list);
 
     if(!(member_list_obj->online_list != NULL || member_list_obj->offline_list != NULL))
     {
+		OSI_PRINTFI("[member][refresh](%s)(%d):null", __func__, __LINE__);
 		lv_poc_set_refr_error_info(true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无成员列表", NULL);
 	    return;
@@ -730,8 +815,8 @@ void lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj)
 
 	if(current_activity != poc_member_list_activity)
 	{
-		OSI_LOGI(0, "[grouprefr](%d):The current memberlist has not been refreshed", __LINE__);
-		lv_poc_set_group_refr(true);//记录有信息待刷新
+		OSI_PRINTFI("[grouprefr](%s)(%d):no cur memberlist", __func__, __LINE__);
+		lv_poc_set_group_refr(true);
 		return;
 	}
 
@@ -744,7 +829,7 @@ void lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj)
 	lv_poc_member_list_set_hightlight_index();
 	extern lv_poc_group_info_t *lv_poc_group_list_get_member_list_info;
 
-	if(lv_poc_member_list_get_member_type == 1)/*成员列表为空*/
+	if(lv_poc_member_list_get_member_type == 1)//成员列表为空
 	{
 		lv_poc_member_list_clear(member_list_obj);
 		lv_poc_get_member_list(NULL, member_list_obj, 1,lv_poc_member_list_get_list_cb);
@@ -1284,19 +1369,98 @@ void lv_poc_member_list_set_hightlight_index(void)
 
 void lv_poc_memberlist_activity_open(lv_task_t * task)
 {
+	OSI_PRINTFI("[memberopen](%s)(%d):open ", __func__, __LINE__);
+
 	lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_LIST,
 		lv_poc_member_list_activity_create,
 		lv_poc_member_list_activity_destory};
 
-	strcpy((char *)lv_poc_member_list_title, (const char *)task->user_data);
+	if(current_activity == poc_member_list_activity)
+    {
+        OSI_PRINTFI("[memberlist](%s)(%d):error", __func__, __LINE__);
+        is_member_acitivity_open = false;
+        return;
+    }
+    else if(is_member_acitivity_open == false)
+    {
+        if(task == NULL
+			|| task->user_data == NULL)
+        {
+            OSI_PRINTFI("[memberlist](%s)(%d):error", __func__, __LINE__);
+            return;
+        }
+        strcpy((char *)lv_poc_member_list_title, (const char *)task->user_data);
+    }
 
+	is_member_acitivity_open = true;
 	lv_poc_set_memberlist_refr_is_complete(false);
 	poc_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
 	lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);
 	lv_poc_activity_set_design_cb(poc_member_list_activity, lv_poc_member_list_design_func);
 	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, true);
 
+	if(refresh_task_init == true)
+	{
+		if(member_refresh_attr == NULL)
+		{
+			member_refresh_attr = (lv_poc_member_refresh_t *)lv_mem_alloc(sizeof(lv_poc_member_refresh_t));
+		}
+		refresh_task_init = false;
+		member_refresh_attr->refresh_type = 0;
+		member_refresh_attr->task = NULL;
+		member_refresh_attr->mutex = NULL;
+		member_refresh_attr->user_data = NULL;
+	}
+
+	if(member_refresh_attr->task == NULL)
+	{
+		member_refresh_attr->task = lv_task_create(lv_poc_member_list_refresh_task, 500, LV_TASK_PRIO_MID, (void *)member_refresh_attr);
+	}
+
+	if(member_refresh_attr->mutex == NULL)
+	{
+		member_refresh_attr->mutex = osiMutexCreate();
+	}
+
+	OSI_PRINTFI("[memberopen](%s)(%d):open ", __func__, __LINE__);
 }
+
+void lv_poc_member_list_refresh_task(lv_task_t *task)
+{
+	if(member_refresh_attr->refresh_type == POC_REFRESH_TYPE_MEMBER_START)
+	{
+		return;
+	}
+
+	switch(member_refresh_attr->refresh_type)
+	{
+		case POC_REFRESH_TYPE_MEMBER_LIST:
+		{
+			lv_poc_member_list_refresh(NULL);
+			break;
+		}
+
+		case POC_REFRESH_TYPE_MEMBER_LIST_CHANGE_TO_ONLINE:
+		{
+			lv_obj_t *btn = (lv_obj_t *)member_refresh_attr->user_data;
+			prv_lv_poc_member_list_change_to_online(btn);
+			break;
+		}
+		case POC_REFRESH_TYPE_MEMBER_LIST_CHANGE_TO_OFFLINE:
+		{
+			lv_obj_t *btn = (lv_obj_t *)member_refresh_attr->user_data;
+			prv_lv_poc_member_list_change_to_offline(btn);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+	member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_START;
+}
+
 #ifdef __cplusplus
 }
 #endif

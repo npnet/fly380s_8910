@@ -183,13 +183,13 @@ void lvPocCitAutoTestCom_Msg(lv_poc_cit_auto_test_type result)
 	OSI_PRINTFI("[cit][autotest](%s)(%d):send msg(%d)", __func__, __LINE__, poc_auto_test_attr.testindex - 1);
 	if(poc_auto_test_attr.testindex > LV_POC_CIT_OPRATOR_TYPE_END)//auto test finish
 	{
-		lv_poc_refr_task_once(lv_poc_cit_result_open, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
+		lv_poc_refr_task_once(lv_poc_cit_result_open, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_MID);
 	}
 	else
 	{
 		if(poc_auto_test_attr.task == NULL)
 		{
-			poc_auto_test_attr.task = lv_task_create(prvlvPocCitAutoTestComRefresh, 30, LV_TASK_PRIO_HIGH, (void *)&poc_auto_test_attr.testindex);
+			poc_auto_test_attr.task = lv_task_create(prvlvPocCitAutoTestComRefresh, 30, LV_TASK_PRIO_MID, (void *)&poc_auto_test_attr.testindex);
 		}
 		poc_auto_test_attr.is_msg = true;
 	}

@@ -4,6 +4,26 @@ extern "C" {
 #endif
 #include "lv_include/lv_poc.h"
 
+enum
+{
+	POC_REFRESH_TYPE_START,
+
+	POC_REFRESH_TYPE_BUILD_GRP,
+	POC_REFRESH_TYPE_BUILD_NEW_GRP,
+	POC_REFRESH_TYPE_BUILD_GRP_EXIST,
+	POC_REFRESH_TYPE_BUILD_GRP_SUCC,
+};
+
+typedef struct
+{
+	osiMutex_t *mutex;
+	lv_task_t *task;
+	uint8_t refresh_type;
+	void *user_data;
+	uint8_t lock_type;
+}lv_poc_build_grp_refresh_t;
+
+
 static lv_obj_t * lv_poc_build_group_activity_create(lv_poc_display_t *display);
 
 static void lv_poc_build_group_activity_destory(lv_obj_t *obj);
@@ -18,11 +38,11 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 
 static bool lv_poc_build_group_design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static void lv_poc_build_group_success_refresh(lv_task_t *task);
+static void lv_poc_build_group_success_refresh(void);
 
-static void lv_poc_build_group_is_exist(lv_task_t *task);
+static void lv_poc_build_group_is_exist(void);
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
 static lv_poc_build_group_item_info_t * lv_poc_build_group_info = NULL;
 
@@ -30,13 +50,17 @@ static int32_t lv_poc_build_group_selected_num = 0;
 
 static lv_poc_member_info_t *lv_poc_build_group_selected_members = NULL;
 
-static lv_poc_win_t * activity_win;
+static lv_poc_win_t * activity_win = NULL;
 
-static lv_area_t build_group_display_area;
+static lv_area_t build_group_display_area = {0};
 
-static lv_poc_member_list_t *lv_poc_build_group_member_list;
+static lv_poc_member_list_t *lv_poc_build_group_member_list = NULL;
 
-lv_poc_activity_t * poc_build_group_activity;
+lv_poc_activity_t * poc_build_group_activity = NULL;
+
+static lv_poc_build_grp_refresh_t *build_grp_refresh_attr = NULL;
+
+static int refresh_task_init = true;
 
 static char * lv_poc_build_group_success_text = "创建群组成功";
 
@@ -63,7 +87,7 @@ static void lv_poc_build_group_activity_destory(lv_obj_t *obj)
     if(lv_poc_build_group_member_list != NULL)
     {
 		list_element_t * cur_p = lv_poc_build_group_member_list->online_list;
-		list_element_t * temp_p;
+		list_element_t * temp_p = NULL;
 		while(cur_p != NULL)
 		{
 			temp_p = cur_p;
@@ -113,16 +137,8 @@ static void lv_poc_build_group_list_config(lv_obj_t * list, lv_area_t list_area)
 {
 }
 
-static
-void lv_poc_build_group_exit(lv_task_t *task)
+static void lv_poc_build_group_new_group_cb_refresh(int result_type)
 {
-	lv_poc_del_activity(poc_build_group_activity);
-}
-
-static void lv_poc_build_group_new_group_cb_refresh(lv_task_t *task)
-{
-	int result_type = (int)task->user_data;
-
 	if(result_type == 1)
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Success_Build_Group, 50, true);
@@ -133,13 +149,16 @@ static void lv_poc_build_group_new_group_cb_refresh(lv_task_t *task)
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_To_Build_Group, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)lv_poc_build_group_failed_text, NULL);
 	}
-	//delay
-	lv_poc_refr_task_once(lv_poc_build_group_exit, LVPOCLISTIDTCOM_LIST_PERIOD_500, LV_TASK_PRIO_HIGH);
+	lv_poc_del_activity(poc_build_group_activity);
 }
 
 static void lv_poc_build_group_new_group_cb(int result_type)
 {
-	lv_poc_refr_func_ui(lv_poc_build_group_new_group_cb_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)result_type);
+	osiMutexLock(build_grp_refresh_attr->mutex);
+	build_grp_refresh_attr->user_data = (void *)result_type;
+	build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_BUILD_NEW_GRP;
+//	lv_task_ready(build_grp_refresh_attr->task);
+	osiMutexUnlock(build_grp_refresh_attr->mutex);
 }
 
 static bool lv_poc_build_group_operator(lv_poc_build_group_item_info_t * info, int32_t info_num, int32_t selected_num)
@@ -279,16 +298,28 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 					if(lv_poc_is_buildgroup_refr_complete()
 						|| lv_poc_get_refr_error_info())
 					{
+						if(lvPocGuiIdtCom_get_listen_status()
+							|| lvPocGuiIdtCom_get_speak_status())
+						{
+							OSI_PRINTFI("[poc][group](%s)(%d)is listen status or speak status", __func__, __LINE__);
+							break;
+						}
+
 						if(lvPocGuiIdtCom_get_current_exist_selfgroup() == 2)
 						{
-							lv_task_t *task = lv_task_create(lv_poc_build_group_is_exist, 200, LV_TASK_PRIO_HIGH, NULL);
-							lv_task_once(task);
+							osiMutexLock(build_grp_refresh_attr->mutex);
+							build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_BUILD_GRP_EXIST;
+//							lv_task_ready(build_grp_refresh_attr->task);
+							osiMutexUnlock(build_grp_refresh_attr->mutex);
 
 							lv_poc_del_activity(poc_build_group_activity);
 						}
 						else
 						{
-							lv_poc_refr_task_once(lv_poc_build_group_success_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+							osiMutexLock(build_grp_refresh_attr->mutex);
+							build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_BUILD_GRP_SUCC;
+//							lv_task_ready(build_grp_refresh_attr->task);
+							osiMutexUnlock(build_grp_refresh_attr->mutex);
 						}
 					}
 					break;
@@ -329,7 +360,10 @@ static void lv_poc_build_group_get_list_cb(int msg_type)
 
 	if(msg_type==1)//显示
 	{
-		lv_poc_refr_task_once(lv_poc_build_group_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+		osiMutexLock(build_grp_refresh_attr->mutex);
+		build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_BUILD_GRP;
+//		lv_task_ready(build_grp_refresh_attr->task);
+		osiMutexUnlock(build_grp_refresh_attr->mutex);
 	}
 	else
 	{
@@ -350,6 +384,13 @@ void lv_poc_build_group_open(void)
     	return;
     }
 
+	if(lvPocGuiIdtCom_get_listen_status()
+		|| lvPocGuiIdtCom_get_speak_status())
+	{
+		OSI_PRINTFI("[poc][group](%s)(%d)is listen status or speak status", __func__, __LINE__);
+		return;
+	}
+
 	if(lv_poc_build_group_member_list == NULL)
 	{
 	    lv_poc_build_group_member_list = (lv_poc_member_list_t *)lv_mem_alloc(sizeof(lv_poc_member_list_t));
@@ -369,6 +410,30 @@ void lv_poc_build_group_open(void)
     lv_poc_member_list_cb_set_active(ACT_ID_POC_MAKE_GROUP, true);
     lv_poc_activity_set_signal_cb(poc_build_group_activity, lv_poc_build_group_signal_func);
     lv_poc_activity_set_design_cb(poc_build_group_activity, lv_poc_build_group_design_func);
+
+
+	if(refresh_task_init == true)
+	{
+		if(build_grp_refresh_attr == NULL)
+		{
+		   build_grp_refresh_attr = (lv_poc_build_grp_refresh_t *)lv_mem_alloc(sizeof(lv_poc_build_grp_refresh_t));
+		}
+		refresh_task_init = false;
+		build_grp_refresh_attr->refresh_type = 0;
+		build_grp_refresh_attr->task = NULL;
+		build_grp_refresh_attr->mutex = NULL;
+		build_grp_refresh_attr->user_data = NULL;
+	}
+
+	if(build_grp_refresh_attr->task == NULL)
+	{
+		build_grp_refresh_attr->task = lv_task_create(lv_poc_build_group_refresh_task, 30, LV_TASK_PRIO_MID, (void *)build_grp_refresh_attr);
+	}
+
+	if(build_grp_refresh_attr->mutex == NULL)
+	{
+		build_grp_refresh_attr->mutex = osiMutexCreate();
+	}
 
 	if(!lv_poc_get_member_list(NULL, lv_poc_build_group_member_list, 1, lv_poc_build_group_get_list_cb))
 	{
@@ -438,11 +503,11 @@ int lv_poc_build_group_get_information(lv_poc_member_list_t *member_list_obj, co
 	return lv_poc_member_list_get_information(member_list_obj, name, information);
 }
 
-void lv_poc_build_group_refresh(lv_task_t * task)
+void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list)
 {
 	lv_poc_member_list_t *member_list_obj = NULL;
 
-	member_list_obj = (lv_poc_member_list_t *)task->user_data;
+	member_list_obj = member_list;
 
 	if(member_list_obj == NULL)
 	{
@@ -457,7 +522,7 @@ void lv_poc_build_group_refresh(lv_task_t * task)
 	}
 
     list_element_t * p_cur = NULL;
-    lv_obj_t * btn;
+    lv_obj_t * btn = NULL;
     lv_obj_t * btn_checkbox = NULL;
     lv_obj_t * btn_label = NULL;
     lv_poc_build_group_item_info_t * p_info = NULL;
@@ -778,7 +843,7 @@ lv_poc_status_t lv_poc_build_group_get_state(lv_poc_member_list_t *member_list_o
 }
 
 static
-void lv_poc_build_group_success_refresh(lv_task_t *task)
+void lv_poc_build_group_success_refresh(void)
 {
 	lv_poc_build_group_operator(lv_poc_build_group_info,
 							lv_poc_build_group_member_list->offline_number + lv_poc_build_group_member_list->online_number,
@@ -786,10 +851,52 @@ void lv_poc_build_group_success_refresh(lv_task_t *task)
 }
 
 static
-void lv_poc_build_group_is_exist(lv_task_t *task)
+void lv_poc_build_group_is_exist(void)
 {
 	poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Due_To_Already_Exist_Selfgroup, 50, false);
 	lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,(const uint8_t *)"已有自建群组", (const uint8_t *)"");
+}
+
+void lv_poc_build_group_refresh_task(lv_task_t *task)
+{
+	if(build_grp_refresh_attr->refresh_type == POC_REFRESH_TYPE_START)
+	{
+		return;
+	}
+
+	switch(build_grp_refresh_attr->refresh_type)
+	{
+		case POC_REFRESH_TYPE_BUILD_GRP:
+		{
+			lv_poc_build_group_refresh(NULL);
+			break;
+		}
+
+		case POC_REFRESH_TYPE_BUILD_NEW_GRP:
+		{
+			int type = (int)build_grp_refresh_attr->user_data;
+			lv_poc_build_group_new_group_cb_refresh(type);
+			break;
+		}
+
+		case POC_REFRESH_TYPE_BUILD_GRP_EXIST:
+		{
+			lv_poc_build_group_is_exist();
+			break;
+		}
+
+		case POC_REFRESH_TYPE_BUILD_GRP_SUCC:
+		{
+			lv_poc_build_group_success_refresh();
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+	build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_START;
 }
 
 #ifdef __cplusplus

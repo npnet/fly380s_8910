@@ -20,7 +20,7 @@ void lv_poc_member_list_clear(lv_poc_member_list_t *member_list_obj);
 
 int lv_poc_member_list_get_information(lv_poc_member_list_t *member_list_obj, const char * name, void *** information);
 
-void lv_poc_member_list_refresh(lv_task_t * task);
+void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj);
 
 void lv_poc_member_list_refresh_with_data(lv_poc_member_list_t *member_list_obj);
 
@@ -39,6 +39,8 @@ lv_poc_status_t lv_poc_member_list_is_exists(lv_poc_member_list_t *member_list_o
 lv_poc_status_t lv_poc_member_list_get_state(lv_poc_member_list_t *member_list_obj, const char * name, void * information);
 
 void lv_poc_member_list_set_hightlight_index(void);
+
+void lv_poc_member_list_refresh_task(lv_task_t *task);
 
 #ifdef __cplusplus
 }

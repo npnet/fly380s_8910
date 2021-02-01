@@ -355,7 +355,7 @@ static void gps_list_config(lv_obj_t * list, lv_area_t list_area)
 	if(monitor_gps_info == NULL)
 	{
 		gps_once_timer = osiTimerCreate(NULL, LvGuiIdtCom_once_refresh_gpsinfo_timer_cb, NULL);
-		monitor_gps_info = lv_task_create(lv_poc_gps_check_monitor_cb, 1000, LV_TASK_PRIO_HIGH, (void **)btn_array);
+		monitor_gps_info = lv_task_create(lv_poc_gps_check_monitor_cb, 1000, LV_TASK_PRIO_MID, (void **)btn_array);
 		lv_task_ready(monitor_gps_info);
 		osiTimerStart(gps_once_timer, 2000);
 	}

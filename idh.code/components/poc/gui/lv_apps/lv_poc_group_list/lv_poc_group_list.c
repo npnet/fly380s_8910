@@ -8,6 +8,28 @@ extern "C" {
 #define CURRENR_GROUP_NAME_EXTERN 20
 #define GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG 1
 
+enum
+{
+	POC_REFRESH_TYPE_START,
+
+	POC_REFRESH_TYPE_GRP_TITLE,
+	POC_REFRESH_TYPE_SET_CUR_INFO,
+	POC_REFRESH_TYPE_LOCK_GRP,
+	POC_REFRESH_TYPE_GROUP_LIST,
+};
+
+typedef struct
+{
+	osiMutex_t *mutex;
+ 	lv_task_t *task;
+ 	uint8_t grp_refresh_type;
+ 	void *user_data;
+	uint8_t lock_type;
+	uint8_t grp_refresh_queue[10];
+	uint8_t write_index;
+	uint8_t read_index;
+}lv_poc_grp_refresh_t;
+
 static lv_poc_group_list_t * group_list = NULL;
 
 static lv_poc_member_list_t * member_list = NULL;
@@ -26,7 +48,6 @@ static bool lv_poc_group_list_design_func(struct _lv_obj_t * obj, const lv_area_
 
 static void lv_poc_get_group_list_cb(int result_type);
 
-static void lv_poc_group_list_title_refr(lv_task_t * task);
 static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt);
 
 static void lv_poc_group_delete_oprator_cb(int result_type);
@@ -57,7 +78,11 @@ static lv_poc_group_list_item_info_t * lv_poc_group_current_info = NULL;
 
 lv_poc_group_info_t *lv_poc_group_list_get_member_list_info = NULL;
 
+static lv_poc_grp_refresh_t *grp_refresh_attr = NULL;
+
 static lv_area_t display_area = {0};
+
+static int refresh_task_init = true;
 
 lv_poc_activity_t * poc_group_list_activity = NULL;
 
@@ -158,14 +183,16 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 
     if(msg_type == 1)
     {
-		OSI_LOGI(0, "[grouprefr](%d):success get member list, to refr", __LINE__);
-		lv_poc_refr_task_once(lv_poc_group_list_title_refr,
-			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
+		OSI_PRINTFI("[group][getmemberlist](%s)(%d):success get member list, to refr", __func__, __LINE__);
+		osiMutexLock(grp_refresh_attr->mutex);
+		grp_refresh_attr->grp_refresh_type = POC_REFRESH_TYPE_GRP_TITLE;
+		grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->write_index] = grp_refresh_attr->grp_refresh_type;
+		grp_refresh_attr->write_index < 9 ? (grp_refresh_attr->write_index++) : (grp_refresh_attr->write_index = 0);
+		osiMutexUnlock(grp_refresh_attr->mutex);
     }
     else
     {
-		OSI_PRINTFI("[group][%s][%d]login status is (%d), apply note is (%d)", __func__, __LINE__, lvPocGetLoginStatus(), lv_poc_get_apply_note());
-		OSI_LOGI(0, "[grouprefr](%d):get failed memberlist", __LINE__);
+		OSI_PRINTFI("[grouprefr][%s][%d]get failed memberlist", __func__, __LINE__);
 		lv_poc_set_refr_error_info(true);
 	    poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Member, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"成员列表", (const uint8_t *)"获取失败");
@@ -173,10 +200,8 @@ static void lv_poc_group_list_get_membet_list_cb(int msg_type)
 }
 
 static
-void lv_poc_set_current_group_informartion_task(lv_task_t * task)
+void lv_poc_set_current_group_informartion(int result_type)
 {
-	int result_type = (int)task->user_data;
-
 	if(result_type == 1)
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Join_Group, 50, false);
@@ -210,12 +235,7 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 
 			if(lv_poc_get_lock_group() != NULL)
 			{
-				#if GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG
-				char cOutstr[128] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtlockgroup]%s(%d):switch group, start to opt lock group", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
+				OSI_PRINTFI("[grouproptack](%s)(%d):set current group", __func__, __LINE__);
 
 				lv_poc_set_lock_group(LV_POC_GROUP_OPRATOR_TYPE_LOCK, (lv_poc_group_info_t)group_item->information, lv_poc_group_lock_oprator_cb);
 			}
@@ -236,11 +256,23 @@ void lv_poc_set_current_group_informartion_task(lv_task_t * task)
 
 static void lv_poc_group_list_set_current_group_cb(int result_type)
 {
-	lv_poc_refr_func_ui(lv_poc_set_current_group_informartion_task, LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH, (void *)result_type);
+	osiMutexLock(grp_refresh_attr->mutex);
+	grp_refresh_attr->grp_refresh_type = POC_REFRESH_TYPE_SET_CUR_INFO;
+ 	grp_refresh_attr->user_data = (void *)result_type;
+	grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->write_index] = grp_refresh_attr->grp_refresh_type;
+	grp_refresh_attr->write_index < 9 ? (grp_refresh_attr->write_index++) : (grp_refresh_attr->write_index = 0);
+	osiMutexUnlock(grp_refresh_attr->mutex);
 }
 
 static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 {
+	if(lvPocGuiIdtCom_get_listen_status()
+		|| lvPocGuiIdtCom_get_speak_status())
+	{
+		OSI_PRINTFI("[poc][group](%s)(%d)is listen status or speak status", __func__, __LINE__);
+		return;
+	}
+
 	lv_poc_group_list_item_info_t * p_info = (lv_poc_group_list_item_info_t *)obj->user_data;
 	Ap_OSI_ASSERT((p_info != NULL), "[song]group_list_item NULL");
 
@@ -307,6 +339,7 @@ static void lv_poc_group_list_press_btn_cb(lv_obj_t * obj, lv_event_t event)
 		else if(prv_group_list_cur_opt == 2)
 		{
 			lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_DELETE_GROUP_STATUS);
+			OSI_PRINTFI("[groupcb](%s)(%d):ready open warnning", __func__, __LINE__);
 
 			lv_poc_group_delete_info = p_info;
 			lv_poc_warnning_open(lv_poc_lockgroupwindow_label_delete_group_text,
@@ -371,6 +404,7 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 				case LV_KEY_ESC:
 				{
+					OSI_PRINTFI("[grouprefr](%s)[%d]is_refr_complete (%d), refr_err_info (%d)", __func__, __LINE__, lv_poc_is_grouplist_refr_complete(), lv_poc_get_refr_error_info());
 					if(lv_poc_is_grouplist_refr_complete()
 						|| lv_poc_get_refr_error_info())
 					{
@@ -385,10 +419,10 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 		case LV_SIGNAL_FOCUS:
 		{
-			OSI_LOGI(0, "[grouprefr]grouplist focus\n");
+			OSI_PRINTFI("[grouprefr](%s)(%d):grouplist focus", __func__, __LINE__);
 			if(lv_poc_is_group_list_refr())
 			{
-				OSI_LOGI(0, "[grouprefr]grouplist focus have refr\n");
+				OSI_PRINTFI("[grouprefr](%s)(%d):grouplist focus have refr", __func__, __LINE__);
 				lv_poc_activity_func_cb_set.group_list.refresh_with_data(NULL);
 				lv_poc_set_group_refr(false);
 			}
@@ -397,12 +431,21 @@ static lv_res_t lv_poc_group_list_signal_func(struct _lv_obj_t * obj, lv_signal_
 
 		case LV_SIGNAL_DEFOCUS:
 		{
+			OSI_PRINTFI("[grouprefr](%s)(%d):grouplist defocus", __func__, __LINE__);
 			break;
 		}
 		case LV_SIGNAL_LONG_PRESS_REP:
 		{
 			if(param == NULL) return LV_RES_OK;
 			unsigned int c = *(unsigned int *)param;
+
+			if(!lv_poc_is_grouplist_refr_complete())
+			{
+				OSI_PRINTFI("[grouprefr](%s)(%d):error", __func__, __LINE__);
+				break;
+			}
+			OSI_PRINTFI("[grouprefr](%s)(%d):longpress id (%d)", __func__, __LINE__, c);
+
 			switch(c)
 			{
 				case LV_GROUP_KEY_MB:
@@ -450,29 +493,40 @@ static bool lv_poc_group_list_design_func(struct _lv_obj_t * obj, const lv_area_
 
 static void lv_poc_get_group_list_cb(int result_type)
 {
-	if(poc_group_list_activity == NULL)
+	if(poc_group_list_activity == NULL
+		|| current_activity != poc_group_list_activity)
 	{
+		OSI_LOGI(0, "[grouprefr](%d):error", __LINE__);
+		lv_poc_set_refr_error_info(true);
 		return;
 	}
 
 	if(result_type == 1)
 	{
-		OSI_LOGI(0, "[grouprefr](%d):goto refr list", __LINE__);
-		lv_poc_refr_task_once(lv_poc_group_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+		OSI_PRINTFI("[group][refresh](%s)(%d):goto refresh", __func__, __LINE__);
+		if(grp_refresh_attr->mutex == NULL)
+		{
+			OSI_PRINTFI("[poc][group](%s)[%d]mutex is null", __func__, __LINE__);
+		}
+
+		osiMutexLock(grp_refresh_attr->mutex);
+		grp_refresh_attr->grp_refresh_type = POC_REFRESH_TYPE_GROUP_LIST;
+		grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->write_index] = grp_refresh_attr->grp_refresh_type;
+		grp_refresh_attr->write_index < 9 ? (grp_refresh_attr->write_index++) : (grp_refresh_attr->write_index = 0);
+		osiMutexUnlock(grp_refresh_attr->mutex);
 	}
 	else
 	{
-		OSI_PRINTFI("[group][%s][%d]login status is (%d), apply note is (%d)", __func__, __LINE__, lvPocGetLoginStatus(), lv_poc_get_apply_note());
+		OSI_PRINTFI("[grouprefr][%s][%d]get failed grouplist", __func__, __LINE__);
 		lv_poc_set_refr_error_info(true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
 	}
 }
 
-void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
+void lv_poc_group_lock_oprator_refresh_task(lv_poc_group_oprator_type opt)
 {
-	lv_poc_group_oprator_type opt = (lv_poc_group_oprator_type)task->user_data;
-
+	OSI_PRINTFI("[idtlockgroup]%s(%d):lock group refr opt is (%d)", __func__, __LINE__, opt);
 	if(opt == LV_POC_GROUP_OPRATOR_TYPE_LOCK)
 	{
 		if(lv_poc_group_current_info != NULL)
@@ -505,12 +559,7 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 			lv_img_set_src(group_info->lock_img, &locked);
 			group_info->is_lock = true;
 
-			#if GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG
-			char cOutstr[128] = {0};
-			cOutstr[0] = '\0';
-			sprintf(cOutstr, "[idtlockgroup]%s(%d):lock group start refresh", __func__, __LINE__);
-			OSI_LOGI(0, cOutstr);
-			#endif
+			OSI_PRINTFI("[idtlockgroup]%s(%d):lock group start refresh", __func__, __LINE__);
 		}
 	}
 	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
@@ -524,12 +573,7 @@ void lv_poc_group_lock_oprator_refresh_task(lv_task_t * task)
 		lv_img_set_src(group_info->lock_img, &unlock);
 		group_info->is_lock = false;
 
-		#if GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG
-		char cOutstr[128] = {0};
-		cOutstr[0] = '\0';
-		sprintf(cOutstr, "[idtlockgroup]%s(%d):unlock group start refresh", __func__, __LINE__);
-		OSI_LOGI(0, cOutstr);
-		#endif
+		OSI_PRINTFI("[idtlockgroup]%s(%d):unlock group start refresh", __func__, __LINE__);
 	}
 }
 
@@ -539,12 +583,7 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 	{
 		case LV_POC_GROUP_OPRATOR_TYPE_LOCK_FAILED:
 		{
-			#if GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG
-			char cOutstr[128] = {0};
-			cOutstr[0] = '\0';
-			sprintf(cOutstr, "[idtlockgroup]%s(%d):lock failed cb", __func__, __LINE__);
-			OSI_LOGI(0, cOutstr);
-			#endif
+			OSI_PRINTFI("[idtlockgroup]%s(%d):lock failed cb", __func__, __LINE__);
 
 			lv_poc_group_lock_info = NULL;
 			break;
@@ -554,36 +593,25 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 		{
 			if(lv_poc_group_lock_info == NULL || lv_poc_group_current_info == NULL)
 			{
-				#if GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG
-				char cOutstr[128] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtlockgroup]%s(%d):lock an empty group", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
+				OSI_PRINTFI("[idtlockgroup]%s(%d):lock an empty group", __func__, __LINE__);
 
 				break;
 			}
-			lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_LOCK);
-			lv_task_once(fresh_task);
+			osiMutexLock(grp_refresh_attr->mutex);
+			grp_refresh_attr->grp_refresh_type = POC_REFRESH_TYPE_LOCK_GRP;
+			grp_refresh_attr->lock_type = LV_POC_GROUP_OPRATOR_TYPE_LOCK;
+			grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->write_index] = grp_refresh_attr->grp_refresh_type;
+			grp_refresh_attr->write_index < 9 ? (grp_refresh_attr->write_index++) : (grp_refresh_attr->write_index = 0);
+			osiMutexUnlock(grp_refresh_attr->mutex);
 
-			#if GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG
-			char cOutstr[128] = {0};
-			cOutstr[0] = '\0';
-			sprintf(cOutstr, "[idtlockgroup]%s(%d):lock success cb", __func__, __LINE__);
-			OSI_LOGI(0, cOutstr);
-			#endif
+			OSI_PRINTFI("[idtlockgroup]%s(%d):lock success cb", __func__, __LINE__);
 
 			break;
 		}
 
 		case LV_POC_GROUP_OPRATOR_TYPE_UNLOCK_FAILED:
 		{
-			#if GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG
-			char cOutstr[128] = {0};
-			cOutstr[0] = '\0';
-			sprintf(cOutstr, "[idtlockgroup]%s(%d):unlock group fail cb", __func__, __LINE__);
-			OSI_LOGI(0, cOutstr);
-			#endif
+			OSI_PRINTFI("[idtlockgroup]%s(%d):unlock group fail cb", __func__, __LINE__);
 
 			break;
 		}
@@ -592,24 +620,19 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 		{
 			if(lv_poc_group_current_lock_info == NULL)
 			{
-				#if GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG
-				char cOutstr[128] = {0};
-				cOutstr[0] = '\0';
-				sprintf(cOutstr, "[idtlockgroup]%s(%d):unlock an empty group", __func__, __LINE__);
-				OSI_LOGI(0, cOutstr);
-				#endif
+				OSI_PRINTFI("[idtlockgroup]%s(%d):unlock an empty group", __func__, __LINE__);
 
 				break;
 			}
-			lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)LV_POC_GROUP_OPRATOR_TYPE_UNLOCK);
-			lv_task_once(fresh_task);
 
-			#if GUIIDTCOM_IDTGROUPLOCKINFO_DEBUG_LOG
-			char cOutstr[128] = {0};
-			cOutstr[0] = '\0';
-			sprintf(cOutstr, "[idtlockgroup]%s(%d):unlock group success cb", __func__, __LINE__);
-			OSI_LOGI(0, cOutstr);
-			#endif
+			osiMutexLock(grp_refresh_attr->mutex);
+			grp_refresh_attr->grp_refresh_type = POC_REFRESH_TYPE_LOCK_GRP;
+			grp_refresh_attr->lock_type = LV_POC_GROUP_OPRATOR_TYPE_UNLOCK;
+			grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->write_index] = grp_refresh_attr->grp_refresh_type;
+			grp_refresh_attr->write_index < 9 ? (grp_refresh_attr->write_index++) : (grp_refresh_attr->write_index = 0);
+			osiMutexUnlock(grp_refresh_attr->mutex);
+
+			OSI_PRINTFI("[idtlockgroup]%s(%d):unlock group success cb", __func__, __LINE__);
 
 			break;
 		}
@@ -621,30 +644,23 @@ static void lv_poc_group_lock_oprator_cb(lv_poc_group_oprator_type opt)
 
 static void lv_poc_group_delete_oprator_cb(int result_type)
 {
-	if(poc_group_list_activity == NULL)
+	if(poc_group_list_activity == NULL
+		|| current_activity != poc_group_list_activity)
 	{
+		OSI_PRINTFI("[del]%s(%d):error", __func__, __LINE__);
 		return;
 	}
 
 	if(result_type == 0)//refr delete group
 	{
-		#ifndef AP_ASSERT_ENABLE
 		if(lv_poc_group_delete_info == NULL)
 		{
 			return;
 		}
-		#else
-		Ap_OSI_ASSERT((lv_poc_group_delete_info != NULL), "[song]delete group info NULL");
-		#endif
 
 		if(group_list != NULL)
 		{
-			Ap_OSI_ASSERT((activity_list != NULL), "[song]delete group activity_list NULL");
-
 			lv_list_clean(activity_list);
-
-			Ap_OSI_ASSERT((group_list != NULL), "[song]delete group list NULL");
-
 			lv_poc_group_list_clear(group_list);
 
 			if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
@@ -741,13 +757,17 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 
     if(poc_group_list_activity != NULL || group_list != NULL || activity_list != NULL)
     {
+    	OSI_PRINTFI("[poc][group](%s)[%d]error", __func__, __LINE__);
+		lv_poc_set_refr_error_info(true);
     	return;
     }
+	OSI_PRINTFI("[poc][group](%s)[%d]open grp list", __func__, __LINE__);
 
 	group_list = (lv_poc_group_list_t *)lv_mem_alloc(sizeof(lv_poc_group_list_t));
 
 	if(group_list == NULL)
 	{
+		lv_poc_set_refr_error_info(true);
 		return;
 	}
 
@@ -796,10 +816,35 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     lv_poc_activity_set_signal_cb(poc_group_list_activity, lv_poc_group_list_signal_func);
     lv_poc_activity_set_design_cb(poc_group_list_activity, lv_poc_group_list_design_func);
 
+	if(refresh_task_init == true)
+	{
+		if(grp_refresh_attr == NULL)
+		{
+		   grp_refresh_attr = (lv_poc_grp_refresh_t *)lv_mem_alloc(sizeof(lv_poc_grp_refresh_t));
+		}
+	 	refresh_task_init = false;
+		memset(grp_refresh_attr, 0, sizeof(lv_poc_grp_refresh_t));
+		grp_refresh_attr->task = NULL;
+		grp_refresh_attr->mutex = NULL;
+		grp_refresh_attr->user_data = NULL;
+	}
+
+	if(grp_refresh_attr->task == NULL)
+	{
+		grp_refresh_attr->task = lv_task_create(lv_poc_group_list_refresh_task, 30, LV_TASK_PRIO_MID, (void *)grp_refresh_attr);
+	}
+
+	if(grp_refresh_attr->mutex == NULL)
+	{
+		grp_refresh_attr->mutex = osiMutexCreate();
+		OSI_PRINTFI("[poc][group](%s)[%d]create mutex", __func__, __LINE__);
+	}
+
     if(group_list_obj == NULL)
     {
 		if(!lv_poc_get_group_list(group_list, lv_poc_get_group_list_cb))
 		{
+			OSI_LOGI(0, "[poc][group](%d)error", __LINE__);
 			lv_poc_set_refr_error_info(true);
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Fail_Update_Group, 50, true);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"获取失败", NULL);
@@ -807,7 +852,11 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     }
     else
     {
-		lv_poc_refr_task_once(lv_poc_group_list_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_HIGH);
+		osiMutexLock(grp_refresh_attr->mutex);
+		grp_refresh_attr->grp_refresh_type = POC_REFRESH_TYPE_GROUP_LIST;
+		grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->write_index] = grp_refresh_attr->grp_refresh_type;
+		grp_refresh_attr->write_index < 9 ? (grp_refresh_attr->write_index++) : (grp_refresh_attr->write_index = 0);
+		osiMutexUnlock(grp_refresh_attr->mutex);
     }
 }
 
@@ -967,11 +1016,11 @@ int lv_poc_group_list_get_information(lv_poc_group_list_t *group_list_obj, const
 
 }
 
-void lv_poc_group_list_refresh(lv_task_t * task)
+void lv_poc_group_list_refresh(lv_poc_group_list_t *grouplist)
 {
 	lv_poc_group_list_t *group_list_obj = NULL;
 
-	group_list_obj = (lv_poc_group_list_t *)task->user_data;
+	group_list_obj = grouplist;
 
 	if(group_list_obj == NULL)
 	{
@@ -1041,7 +1090,6 @@ void lv_poc_group_list_refresh(lv_task_t * task)
     memset(lv_poc_group_list_info, 0, sizeof(lv_poc_group_list_item_info_t) * group_list_obj->group_number);
     lv_poc_group_list_item_info_t * p_group_info = lv_poc_group_list_info;
 
-	OSI_LOGI(0, "[grouprefr](%d):refr list start", __LINE__);
     p_cur = group_list_obj->group_list;
     while(p_cur)
     {
@@ -1109,7 +1157,6 @@ void lv_poc_group_list_refresh(lv_task_t * task)
 	}
 	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_grouplist_refr_is_complete(true);
-	OSI_LOGI(0, "[grouprefr](%d):refr list end", __LINE__);
 }
 
 void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj)
@@ -1417,15 +1464,19 @@ lv_poc_status_t lv_poc_group_list_is_exists(lv_poc_group_list_t *group_list_obj,
 
 lv_poc_status_t lv_poc_group_list_lock_group(lv_poc_group_list_t *group_list_obj, lv_poc_group_oprator_type opt)
 {
-	lv_task_t *fresh_task = lv_task_create(lv_poc_group_lock_oprator_refresh_task, 10, LV_TASK_PRIO_HIGH, (void *)opt);
-	lv_task_once(fresh_task);
-
+	osiMutexLock(grp_refresh_attr->mutex);
+	grp_refresh_attr->grp_refresh_type = POC_REFRESH_TYPE_LOCK_GRP;
+	grp_refresh_attr->lock_type = opt;
+	grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->write_index] = grp_refresh_attr->grp_refresh_type;
+	grp_refresh_attr->write_index < 9 ? (grp_refresh_attr->write_index++) : (grp_refresh_attr->write_index = 0);
+	osiMutexUnlock(grp_refresh_attr->mutex);
     return POC_GROUP_NONENTITY;
 }
 
 static
-void lv_poc_group_list_title_refr(lv_task_t * task)
+void lv_poc_group_list_title_refr(void)
 {
+	OSI_PRINTFI("[member][refresh](%s)(%d):ready open", __func__, __LINE__);
 	lv_poc_member_list_open(lv_poc_group_member_list_title,
 		member_list,
 		member_list->hide_offline);
@@ -1439,6 +1490,55 @@ void lv_poc_group_list_set_hightlight_index(void)
 	{
 		strcpy(prv_group_list_last_index_groupname, lv_list_get_btn_text(current_btn));
 	}
+}
+
+void lv_poc_group_list_refresh_task(lv_task_t *task)
+{
+	if(grp_refresh_attr->write_index == grp_refresh_attr->read_index)
+	{
+		return;
+	}
+
+	switch(grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->read_index])
+	{
+		case POC_REFRESH_TYPE_GRP_TITLE:
+		{
+			OSI_PRINTFI("[grpref][cb]%s(%d):set grp title lv task refresh", __func__, __LINE__);
+			lv_poc_group_list_title_refr();
+			break;
+		}
+
+		case POC_REFRESH_TYPE_SET_CUR_INFO:
+		{
+			OSI_PRINTFI("[grpref][cb]%s(%d):set cur grp lv task refresh", __func__, __LINE__);
+			int type = (int)grp_refresh_attr->user_data;
+			lv_poc_set_current_group_informartion(type);
+			break;
+		}
+
+		case POC_REFRESH_TYPE_LOCK_GRP:
+		{
+			OSI_PRINTFI("[grpref][cb]%s(%d):lock grp lv task refresh", __func__, __LINE__);
+			lv_poc_group_lock_oprator_refresh_task(grp_refresh_attr->lock_type);
+			grp_refresh_attr->lock_type = 0;
+			break;
+		}
+
+		case POC_REFRESH_TYPE_GROUP_LIST:
+		{
+			OSI_PRINTFI("[grpref][cb]%s(%d) grp list refr lv task refresh", __func__, __LINE__);
+			lv_poc_group_list_refresh(NULL);
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+	grp_refresh_attr->grp_refresh_type = POC_REFRESH_TYPE_START;
+	grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->read_index] = grp_refresh_attr->grp_refresh_type;
+	grp_refresh_attr->read_index < 9 ? (grp_refresh_attr->read_index++) : (grp_refresh_attr->read_index = 0);
 }
 
 #ifdef __cplusplus

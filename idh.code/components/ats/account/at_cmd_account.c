@@ -40,6 +40,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 	char *userPasswd = NULL;
 	char *ip_address = NULL;
 	int ip_port = -1;
+	int logintype = 0;
 	int userOpt = 0;
 
 	if(cmd->type == AT_CMD_TEST)
@@ -149,21 +150,18 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 			            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 			            break;
 		            }
-					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]userName is %s", userName);
-					OSI_LOGXI(OSI_LOGPAR_SI, 0, "[song]userPasswd is %s", userPasswd);
 			    }while(0);
 		    }
 
 		    if(cmd->param_count >= 3)
 		    {
 			    ip_address = (char *)atParamStr(cmd->params[2], &paramok);
-		        if (!paramok || strlen((char *)ip_address) > 20)
+		        if (!paramok || strlen((char *)ip_address) > 64)
 		        {
 		            RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 		            break;
 	            }
-				OSI_LOGXI(OSI_LOGPAR_S, 0, "[song]ip_address is %s", ip_address);
-		    }
+			}
 
 		    if(cmd->param_count >= 4)
 		    {
@@ -173,8 +171,17 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 					RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
 					break;
 				}
-				OSI_LOGI(0, "[song]ip_port is %d", ip_port);
 		    }
+
+			if(cmd->param_count >= 5)
+			{
+				logintype = atParamInt(cmd->params[4], &paramok);
+				if (!paramok)
+				{
+					RETURN_CME_ERR(cmd->engine, ERR_AT_CME_PARAM_INVALID);
+					break;
+				}
+			}
 
 		    if(userName != NULL)
 			    strcpy(poc_config->account_name, userName);
@@ -183,10 +190,15 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 			    strcpy(poc_config->account_passwd, userPasswd);
 
 		    if(ip_address != NULL)
+		    {
+		    	memset(poc_config->ip_address, 0, sizeof(poc_config->ip_address));
 			    strcpy(poc_config->ip_address, ip_address);
+		    }
 
 		    if(ip_port > -1)
 			    poc_config->ip_port = ip_port;
+
+			poc_config->logintype = logintype;
 
 		    if(lv_poc_setting_conf_write() < 1)
 		    {

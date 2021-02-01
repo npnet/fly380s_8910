@@ -22,7 +22,7 @@ void lv_poc_group_list_clear(lv_poc_group_list_t *group_list_obj);
 
 int lv_poc_group_list_get_information(lv_poc_group_list_t *group_list_obj, const char * name, void *** information);
 
-void lv_poc_group_list_refresh(lv_task_t * task);
+void lv_poc_group_list_refresh(lv_poc_group_list_t *grouplist);
 
 void lv_poc_group_list_refresh_with_data(lv_poc_group_list_t *group_list_obj);
 
@@ -43,6 +43,8 @@ lv_poc_status_t lv_poc_group_list_lock_group(lv_poc_group_list_t *group_list_obj
 //lv_poc_status lv_poc_group_list_get_state(const char * name);
 
 void lv_poc_group_list_set_hightlight_index(void);
+
+void lv_poc_group_list_refresh_task(lv_task_t *task);
 
 #ifdef __cplusplus
 }

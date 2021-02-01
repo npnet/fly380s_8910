@@ -145,11 +145,12 @@ typedef struct
 #ifdef CONFIG_AT_MY_ACCOUNT_SUPPORT
 	char account_name[32];
 	char account_passwd[32];
-	char ip_address[20];
+	char ip_address[64];
 	int  ip_port;
 	char old_account_name[32];
 	char old_account_current_group[32];
 #endif
+	uint8_t logintype;              //[0]iccid [1]account
 } nv_poc_setting_msg_t;
 
 typedef enum
