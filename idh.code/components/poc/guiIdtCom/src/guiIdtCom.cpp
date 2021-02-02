@@ -1894,7 +1894,7 @@ void IDT_Entry(void*)
 
 	if(poc_config->logintype == 0)
 	{
-		char iccidstr[20];
+		char iccidstr[20]  = {0};
 		poc_get_device_iccid_rep((int8_t *)iccidstr);
 		IDT_Start(NULL, 1, (char*)poc_config->ip_address, 10000, NULL, 0, (char*)iccidstr, NULL, 1, &CallBack, 0, 20000, 0);
 	}

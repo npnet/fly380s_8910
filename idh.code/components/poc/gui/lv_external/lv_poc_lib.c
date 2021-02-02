@@ -1612,7 +1612,8 @@ poc_get_device_iccid_rep(int8_t * iccid)
     {
 		memset(ICCID, 0, 21);
     }
-    strcpy((char *)iccid, (const char *)ICCID);
+    strncpy((char *)iccid, (const char *)ICCID, 19);//只获取前19位
+    iccid[19] = '\0';
 }
 
 /*
@@ -1989,7 +1990,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		checkcbpress = 0;
 		ear_key_attr.ear_key_press = true;
 		poc_earkey_state = true;
-		OSI_LOGI(0, "[headset]key is press,start speak\n");
+		OSI_PRINTFI("[headset](%s)[%d]key is press,start speak\n", __func__, __LINE__);
 		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
 	}
 	else
@@ -2007,8 +2008,8 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
  		   {
  			   ear_key_attr.ear_key_press = false;
 			   poc_earkey_state = false;
-			   OSI_LOGI(0, "[headset]key is release,stop speak\n");
-			   lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+			   OSI_PRINTFI("[headset](%s)[%d]key is release,stop speak\n", __func__, __LINE__);
+			   lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : 0 ): lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		   }
 		   checkcbnum = 0;
 	   }
@@ -2065,8 +2066,8 @@ void poc_ear_ppt_irq(void *ctx)
 	{
 		ear_key_attr.ear_key_press = false;
 		poc_earkey_state = false;
-		OSI_LOGI(0, "[headset]key is release,stop speak\n");
-		lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		OSI_PRINTFI("[headset](%s)[%d]key is release,stop speak\n", __func__, __LINE__);
+		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 	}
 	else//press
 	{
