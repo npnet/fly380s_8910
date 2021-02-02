@@ -31,6 +31,8 @@ static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_des
 
 static lv_obj_t *activity_list = NULL;
 
+static osiMutex_t *mutex = NULL;
+
 lv_poc_activity_t *poc_logswitch_activity = NULL;
 
 struct lv_poc_cit_logswitch_t
@@ -300,9 +302,17 @@ void lv_poc_logswitch_open(void)
 	{
 		return;
 	}
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     poc_logswitch_activity = lv_poc_create_activity(&activity_main_menu_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_logswitch_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_logswitch_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 #ifdef __cplusplus

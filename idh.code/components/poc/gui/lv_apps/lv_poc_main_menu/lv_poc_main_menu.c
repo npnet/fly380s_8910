@@ -22,10 +22,15 @@ static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t s
 static bool lv_poc_main_menu_design_cb(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
 static lv_obj_t * main_menu_list = NULL;
+
 static lv_poc_win_t * main_menu_win = NULL;
+
+static osiMutex_t * mutex = NULL;
+
 static char is_poc_main_menu_update_UI_task_running = 0;
 
 lv_poc_oem_member_list * poc_member_list = NULL;
+
 lv_poc_oem_group_list  * poc_group_list = NULL;
 
 lv_poc_activity_t * main_menu_activity = NULL;
@@ -41,7 +46,6 @@ static const int8_t lv_poc_main_menu_item_text_new_tempgrp[] = "新建临时组"
 static const int8_t lv_poc_main_menu_item_text_setting[] = "设置";
 
 static const int8_t lv_poc_main_menu_item_text_about[] = "关于本机";
-
 
 static lv_obj_t * lv_poc_main_menu_activity_ext_create_cb(lv_poc_display_t *display)
 {
@@ -256,9 +260,17 @@ void lv_poc_main_menu_open(void)
 	{
 		return;
 	}
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     main_menu_activity = lv_poc_create_activity(&activity_main_menu_ext, true, false, NULL);
    	lv_poc_activity_set_signal_cb(main_menu_activity, lv_poc_main_menu_signal_cb);
    	lv_poc_activity_set_design_cb(main_menu_activity, lv_poc_main_menu_design_cb);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 #ifdef __cplusplus

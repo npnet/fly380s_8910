@@ -28,7 +28,7 @@ lv_poc_activity_t * poc_net_switch_activity = NULL;
 
 static lv_poc_rb_t * net_switch_rb = NULL;
 
-
+static osiMutex_t * mutex = NULL;
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
@@ -216,10 +216,18 @@ void lv_poc_net_switch_open(void)
     {
     	return;
     }
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     poc_setting_conf = lv_poc_setting_conf_read();
     poc_net_switch_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
 	lv_poc_activity_set_signal_cb(poc_net_switch_activity, signal_func);
 	lv_poc_activity_set_design_cb(poc_net_switch_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 

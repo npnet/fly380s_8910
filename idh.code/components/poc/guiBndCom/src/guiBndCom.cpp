@@ -757,6 +757,9 @@ int lib_oem_play_tone(int type)
 		case 2://error
 		{
 			OSI_PRINTFI("[bnd][tone](%s)(%d):bnd error tone", __func__, __LINE__);
+			//reset
+			pocBndAttr.speak_status = false;
+			pocBndAttr.listen_status = false;
 			break;
 		}
 

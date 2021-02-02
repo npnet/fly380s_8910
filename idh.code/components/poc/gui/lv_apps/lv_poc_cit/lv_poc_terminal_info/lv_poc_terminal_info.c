@@ -18,6 +18,8 @@ static lv_area_t display_area = {0};
 
 static lv_obj_t * activity_list = NULL;
 
+static osiMutex_t * mutex = NULL;
+
 static lv_style_t lv_poc_terminal_style = {0};
 
 static lv_style_t lv_poc_terminal_header_style = {0};
@@ -204,9 +206,16 @@ void lv_poc_terminfo_open(void)
 		return;
 	}
 
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     poc_cit_term_info_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_cit_term_info_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_cit_term_info_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 #ifdef __cplusplus

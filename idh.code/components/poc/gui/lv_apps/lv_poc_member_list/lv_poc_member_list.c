@@ -294,10 +294,10 @@ static lv_res_t lv_poc_member_list_signal_func(struct _lv_obj_t * obj, lv_signal
 			OSI_PRINTFI("[memberrefr](%s)(%d):memberlist focus", __func__, __LINE__);
 			if(lv_poc_member_list_obj != NULL && current_activity == poc_member_list_activity)
 			{
-				osiMutexLock(member_refresh_attr->mutex);
+				member_refresh_attr->mutex ? osiMutexLock(member_refresh_attr->mutex) : 0;
 				member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST;
 				lv_task_ready(member_refresh_attr->task);
-				osiMutexUnlock(member_refresh_attr->mutex);
+				member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
 			}
 			break;
 		}
@@ -331,10 +331,10 @@ static void lv_poc_member_list_get_list_cb(int msg_type)
 	//add your information
 	if(msg_type==1)//显示
 	{
-		osiMutexLock(member_refresh_attr->mutex);
+		member_refresh_attr->mutex ? osiMutexLock(member_refresh_attr->mutex) : 0;
 		member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST;
 		lv_task_ready(member_refresh_attr->task);
-		osiMutexUnlock(member_refresh_attr->mutex);
+		member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
 	}
 	else if(msg_type == 2)
 	{
@@ -360,11 +360,37 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
     	return;
     }
 
+	//mutex
+	if(refresh_task_init == true)
+	{
+		if(member_refresh_attr == NULL)
+		{
+			member_refresh_attr = (lv_poc_member_refresh_t *)lv_mem_alloc(sizeof(lv_poc_member_refresh_t));
+		}
+		refresh_task_init = false;
+		member_refresh_attr->refresh_type = 0;
+		member_refresh_attr->task = NULL;
+		member_refresh_attr->mutex = NULL;
+		member_refresh_attr->user_data = NULL;
+	}
+
+	if(member_refresh_attr->task == NULL)
+	{
+		member_refresh_attr->task = lv_task_create(lv_poc_member_list_refresh_task, 500, LV_TASK_PRIO_MID, (void *)member_refresh_attr);
+	}
+
+	if(member_refresh_attr->mutex == NULL)
+	{
+		member_refresh_attr->mutex = osiMutexCreate();
+	}
+
+	member_refresh_attr->mutex ? osiMutexLock(member_refresh_attr->mutex) : 0;
     if(members == NULL)
     {
 		if(poc_member_list_activity != NULL)
         {
 		   lv_poc_set_refr_error_info(true);
+		   member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
            return;
         }
         lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_LIST,
@@ -406,34 +432,12 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
     if(lv_poc_member_list_obj == NULL)
     {
 		lv_poc_set_refr_error_info(true);
+		member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
 		OSI_PRINTFI("[memberopen](%s)(%d):null", __func__, __LINE__);
 	    return;
     }
-
     lv_poc_member_list_obj->hide_offline = hide_offline;
-
-	if(refresh_task_init == true)
-	{
-		if(member_refresh_attr == NULL)
-		{
-			member_refresh_attr = (lv_poc_member_refresh_t *)lv_mem_alloc(sizeof(lv_poc_member_refresh_t));
-		}
-		refresh_task_init = false;
-		member_refresh_attr->refresh_type = 0;
-		member_refresh_attr->task = NULL;
-		member_refresh_attr->mutex = NULL;
-		member_refresh_attr->user_data = NULL;
-	}
-
-	if(member_refresh_attr->task == NULL)
-	{
-		member_refresh_attr->task = lv_task_create(lv_poc_member_list_refresh_task, 500, LV_TASK_PRIO_MID, (void *)member_refresh_attr);
-	}
-
-	if(member_refresh_attr->mutex == NULL)
-	{
-		member_refresh_attr->mutex = osiMutexCreate();
-	}
+	member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
 
     if(members == NULL)
     {
@@ -447,10 +451,10 @@ void lv_poc_member_list_open(IN char * title, IN lv_poc_oem_member_list *members
     }
     else
     {
-		osiMutexLock(member_refresh_attr->mutex);
+		member_refresh_attr->mutex ? osiMutexLock(member_refresh_attr->mutex) : 0;
 		member_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_LIST;
 		lv_task_ready(member_refresh_attr->task);
-		osiMutexUnlock(member_refresh_attr->mutex);
+		member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
 	}
 }
 
@@ -924,33 +928,6 @@ void lv_poc_member_list_set_hightlight_index(void)
 
 void lv_poc_memberlist_activity_open(lv_task_t * task)
 {
-	lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_LIST,
-		lv_poc_member_list_activity_create,
-		lv_poc_member_list_activity_destory};
-
-	if(current_activity == poc_member_list_activity)
-	{
-		OSI_PRINTFI("[memberlist](%s)(%d):error", __func__, __LINE__);
-		is_member_acitivity_open = false;
-		return;
-	}
-	else
-	{
-		if(task->user_data == NULL)
-		{
-			OSI_PRINTFI("[memberlist](%s)(%d):error", __func__, __LINE__);
-			return;
-		}
-		strcpy((char *)lv_poc_member_list_title, (const char *)task->user_data);
-		is_member_acitivity_open = true;
-	}
-
-	lv_poc_set_memberlist_refr_is_complete(false);
-	poc_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
-	lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);
-	lv_poc_activity_set_design_cb(poc_member_list_activity, lv_poc_member_list_design_func);
-	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, true);
-
 	if(refresh_task_init == true)
 	{
 		if(member_refresh_attr == NULL)
@@ -973,6 +950,39 @@ void lv_poc_memberlist_activity_open(lv_task_t * task)
 	{
 		member_refresh_attr->mutex = osiMutexCreate();
 	}
+
+	member_refresh_attr->mutex ? osiMutexLock(member_refresh_attr->mutex) : 0;
+
+	lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_LIST,
+		lv_poc_member_list_activity_create,
+		lv_poc_member_list_activity_destory};
+
+	if(current_activity == poc_member_list_activity)
+	{
+		OSI_PRINTFI("[memberlist](%s)(%d):error", __func__, __LINE__);
+		is_member_acitivity_open = false;
+		member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
+		return;
+	}
+	else if(is_member_acitivity_open == false)
+	{
+		if(task->user_data == NULL)
+		{
+			OSI_PRINTFI("[memberlist](%s)(%d):error", __func__, __LINE__);
+			member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
+			return;
+		}
+		strcpy((char *)lv_poc_member_list_title, (const char *)task->user_data);
+	}
+
+	is_member_acitivity_open = true;
+	lv_poc_set_memberlist_refr_is_complete(false);
+	poc_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
+	lv_poc_activity_set_signal_cb(poc_member_list_activity, lv_poc_member_list_signal_func);
+	lv_poc_activity_set_design_cb(poc_member_list_activity, lv_poc_member_list_design_func);
+	lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_LIST, true);
+	member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
+
 }
 
 void lv_poc_member_list_refresh_task(lv_task_t *task)
@@ -986,7 +996,9 @@ void lv_poc_member_list_refresh_task(lv_task_t *task)
 	{
 		case POC_REFRESH_TYPE_MEMBER_LIST:
 		{
+			member_refresh_attr->mutex ? osiMutexLock(member_refresh_attr->mutex) : 0;
 			lv_poc_member_list_refresh(NULL);
+			member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
 			break;
 		}
 

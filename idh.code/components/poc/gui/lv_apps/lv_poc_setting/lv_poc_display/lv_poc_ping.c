@@ -4,7 +4,6 @@ extern "C" {
 #endif
 #include "lv_include/lv_poc.h"
 
-
 static lv_obj_t * activity_create(lv_poc_display_t *display);
 
 static void activity_destory(lv_obj_t *obj);
@@ -19,21 +18,20 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
+static lv_poc_win_t * poc_ping_time_win = NULL;
 
+static lv_obj_t * activity_list = NULL;
 
-static lv_poc_win_t * poc_ping_time_win;
+static lv_poc_rb_t * ping_time_rb = NULL;
 
-static lv_obj_t * activity_list;
+static osiMutex_t * mutex = NULL;
 
-static lv_poc_rb_t * ping_time_rb;
-
-lv_poc_activity_t * ping_time_activity;
+lv_poc_activity_t * ping_time_activity = NULL;
 
 static char *ping_time_notation[4]={"心跳时间:15秒",
 									"心跳时间:30秒",
 									"心跳时间:45秒",
 									"心跳时间:60秒"};
-
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
@@ -239,11 +237,18 @@ void lv_poc_ping_time_open(void)
     static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_PING_TIME,
 															activity_create,
 															activity_destory};
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
 	poc_setting_conf = lv_poc_setting_conf_read();
     ping_time_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
 
 	lv_poc_activity_set_signal_cb(ping_time_activity, signal_func);
 	lv_poc_activity_set_design_cb(ping_time_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 

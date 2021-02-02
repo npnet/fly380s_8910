@@ -24,6 +24,8 @@ static lv_poc_win_t * poc_sound_quality_win = NULL;
 
 static lv_obj_t * activity_list = NULL;
 
+static osiMutex_t * mutex = NULL;
+
 static lv_poc_rb_t * sound_quality_rb = NULL;
 
 lv_poc_activity_t * sound_quality_activity = NULL;
@@ -221,11 +223,18 @@ void lv_poc_sound_quality_open(void)
     static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_SOUND_QUALITY,
 															activity_create,
 															activity_destory};
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
 	poc_setting_conf = lv_poc_setting_conf_read();
     sound_quality_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
 
 	lv_poc_activity_set_signal_cb(sound_quality_activity, signal_func);
 	lv_poc_activity_set_design_cb(sound_quality_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 #endif

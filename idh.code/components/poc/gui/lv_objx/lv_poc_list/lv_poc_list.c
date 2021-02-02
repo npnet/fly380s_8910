@@ -8,6 +8,8 @@ extern "C" {
  *  STATIC VARIABLES
  **********************/
 
+static osiMutex_t * mutex = NULL;
+
 /*******************
 *     NAME:   lv_poc_list_create
 *   AUTHOR:   lugj
@@ -16,6 +18,12 @@ extern "C" {
 ********************/
 lv_obj_t * lv_poc_list_create(lv_obj_t * parent, lv_obj_t * copy,lv_area_t list_area, lv_poc_list_config_func_t func)
 {
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     poc_setting_conf = lv_poc_setting_conf_read();
     lv_style_t * style_list_scroll = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_list_scroll;
     lv_style_t * style_list_page = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_list_page;
@@ -45,6 +53,7 @@ lv_obj_t * lv_poc_list_create(lv_obj_t * parent, lv_obj_t * copy,lv_area_t list_
     {
         func(new_list, list_area);
     }
+	mutex ? osiMutexUnlock(mutex) : 0;
 
     return new_list;
 }

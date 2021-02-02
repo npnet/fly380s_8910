@@ -38,6 +38,8 @@ static lv_task_t * lv_poc_notation_delay_close_task = NULL;
 
 static lv_task_t * lv_poc_notation_task = NULL;
 
+static osiMutex_t * mutex = NULL;
+
 static lv_poc_notation_task_msg_t lv_poc_notation_task_queue[LV_POC_NOTATION_TASK_QUEUE_SIZE] = {0};
 
 static int32_t lv_poc_notation_task_queue_reader = 0;
@@ -444,6 +446,8 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 	{
 		return;
 	}
+
+	mutex ? osiMutexLock(mutex) : 0;
 	notation_msg->msg_type = LV_POC_NOTATION_NONE;
 	lv_poc_notation_task_queue_reader = (lv_poc_notation_task_queue_reader + 1) % LV_POC_NOTATION_TASK_QUEUE_SIZE;
 
@@ -452,6 +456,7 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 		case LV_POC_NOTATION_REFRESH:
 		{
 			lv_poc_notation_refresh();
+			mutex ? osiMutexUnlock(mutex) : 0;
 			return;
 		}
 
@@ -493,6 +498,7 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 			{
 				lv_task_once(lv_poc_notation_delay_close_task);
 			}
+			mutex ? osiMutexUnlock(mutex) : 0;
 			return;
 		}
 
@@ -517,6 +523,7 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 			{
 				lv_task_once(lv_poc_notation_delay_close_task);
 			}
+			mutex ? osiMutexUnlock(mutex) : 0;
 			return;
 		}
 
@@ -541,12 +548,14 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 			{
 				lv_task_once(lv_poc_notation_delay_close_task);
 			}
+			mutex ? osiMutexUnlock(mutex) : 0;
 			return;
 		}
 
 		case LV_POC_NOTATION_DESTORY:
 		{
 			lv_poc_notation_destory();
+			mutex ? osiMutexUnlock(mutex) : 0;
 			return;
 		}
 
@@ -560,11 +569,15 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 			{
 				lv_poc_notation_hide(true);
 			}
+			mutex ? osiMutexUnlock(mutex) : 0;
 			return;
 		}
 
 		default:
+		{
+			mutex ? osiMutexUnlock(mutex) : 0;
 			return;
+		}
 	}
 
 	if(lv_poc_notation_delay_close_task != NULL)
@@ -572,6 +585,7 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 		lv_task_del(lv_poc_notation_delay_close_task);
 		lv_poc_notation_delay_close_task = NULL;
 	}
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 bool lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *text_1, const uint8_t *text_2)
@@ -586,6 +600,12 @@ bool lv_poc_notation_msg(lv_poc_notation_msg_type_t msg_type, const uint8_t *tex
 
 		memset(lv_poc_notation_task_queue, 0, sizeof(lv_poc_notation_task_msg_t) * LV_POC_NOTATION_TASK_QUEUE_SIZE);
 	}
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
 	lv_poc_notation_task_msg_t * dest = &lv_poc_notation_task_queue[lv_poc_notation_task_queue_writer];
 	lv_poc_notation_task_queue_writer = (lv_poc_notation_task_queue_writer + 1) % LV_POC_NOTATION_TASK_QUEUE_SIZE;
 	dest->msg_type = msg_type;

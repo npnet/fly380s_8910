@@ -22,6 +22,8 @@ static lv_poc_win_t * gps_win = NULL;
 
 static lv_obj_t * activity_list = NULL;
 
+static osiMutex_t * mutex = NULL;
+
 lv_poc_activity_t * poc_gps_monitor_activity = NULL;
 
 typedef struct
@@ -477,9 +479,16 @@ void lv_poc_gps_monitor_open(void)
 		return;
 	}
 
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     poc_gps_monitor_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_gps_monitor_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_gps_monitor_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 #ifdef __cplusplus

@@ -535,7 +535,11 @@ bool lv_poc_setting_init(void)
 		poc_set_lcd_blacklight(poc_setting_conf->screen_brightness);
 	}
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
+#if IDT_POC_MODE
+	lv_poc_set_volum(POC_MMI_VOICE_VOICE, poc_setting_conf->voicevolume, false, false);
+#else
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
+#endif
 #ifdef CONFIG_POC_GUI_KEYPAD_LIGHT_SUPPORT
 	poc_keypad_led_init();
 #endif
@@ -2220,46 +2224,46 @@ void lv_poc_stabar_task(lv_task_t * task)
 
     switch(lv_poc_status_bar_fptr->time_formate)
     {
-    case lv_poc_time_format_hhmm:
-    {
-        sprintf(lv_poc_time,"%02d:%02d",time.tm_hour,time.tm_min);
-        break;
-    }
+	    case lv_poc_time_format_hhmm:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d",time.tm_hour,time.tm_min);
+	        break;
+	    }
 
-    case lv_poc_time_format_mmhh:
-    {
-        sprintf(lv_poc_time,"%02d:%02d",time.tm_min,time.tm_hour);
-        break;
-    }
+	    case lv_poc_time_format_mmhh:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d",time.tm_min,time.tm_hour);
+	        break;
+	    }
 
-    case lv_poc_time_format_hhmmss:
-    {
-        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_hour,time.tm_min,time.tm_sec);
-        break;
-    }
+	    case lv_poc_time_format_hhmmss:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_hour,time.tm_min,time.tm_sec);
+	        break;
+	    }
 
-    case lv_poc_time_format_sshhmm:
-    {
-        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_sec,time.tm_hour,time.tm_min);
-        break;
-    }
+	    case lv_poc_time_format_sshhmm:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_sec,time.tm_hour,time.tm_min);
+	        break;
+	    }
 
-    case lv_poc_time_format_ssmmhh:
-    {
-        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_sec,time.tm_min,time.tm_hour);
-        break;
-    }
+	    case lv_poc_time_format_ssmmhh:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_sec,time.tm_min,time.tm_hour);
+	        break;
+	    }
 
-    case lv_poc_time_format_mmhhss:
-    {
-        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_min,time.tm_hour,time.tm_sec);
-        break;
-    }
+	    case lv_poc_time_format_mmhhss:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d:%02d",time.tm_min,time.tm_hour,time.tm_sec);
+	        break;
+	    }
 
-    default:
-    {
-        sprintf(lv_poc_time,"%02d:%02d",time.tm_hour,time.tm_min);
-    }
+	    default:
+	    {
+	        sprintf(lv_poc_time,"%02d:%02d",time.tm_hour,time.tm_min);
+	    }
     }
     lv_label_set_text(lv_poc_status_bar_fptr->time_label,lv_poc_time);
 

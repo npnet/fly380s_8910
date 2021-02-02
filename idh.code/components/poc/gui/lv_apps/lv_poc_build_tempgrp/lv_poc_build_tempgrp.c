@@ -400,41 +400,6 @@ void lv_poc_build_tempgrp_get_list_cb(int msg_type)
 
 void lv_poc_build_tempgrp_open(void)
 {
-    static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MAKE_TEMPGRP,
-															lv_poc_build_tempgrp_activity_create,
-															lv_poc_build_tempgrp_activity_destory};
-
-    if(poc_build_tempgrp_activity != NULL)
-    {
-    	return;
-    }
-
-	if(lvPocGuiBndCom_get_listen_status())//listen status cannot build tmpgrp
-	{
-		OSI_LOGI(0, "[membercall] listen isn't signal");
-		return;
-	}
-
-	if(lv_poc_build_tempgrp_member_list == NULL)
-	{
-	    lv_poc_build_tempgrp_member_list = (lv_poc_oem_member_list *)lv_mem_alloc(sizeof(lv_poc_oem_member_list));
-	    if(lv_poc_build_tempgrp_member_list == NULL)
-	    {
-		    return;
-	    }
-	}
-
-	if(lv_poc_build_tempgrp_member_list != NULL)
-	{
-		memset(lv_poc_build_tempgrp_member_list, 0, sizeof(lv_poc_oem_member_list));
-	}
-
-	lv_poc_set_buildgroup_refr_is_complete(false);
-    poc_build_tempgrp_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
-    lv_poc_member_list_cb_set_active(ACT_ID_POC_MAKE_TEMPGRP, true);
-    lv_poc_activity_set_signal_cb(poc_build_tempgrp_activity, lv_poc_build_tempgrp_signal_func);
-    lv_poc_activity_set_design_cb(poc_build_tempgrp_activity, lv_poc_build_tempgrp_design_func);
-
 	if(refresh_task_init == true)
 	{
 		if(tmpgrp_refresh_attr == NULL)
@@ -457,6 +422,47 @@ void lv_poc_build_tempgrp_open(void)
 	{
 		tmpgrp_refresh_attr->mutex = osiMutexCreate();
 	}
+
+	//mutex
+	tmpgrp_refresh_attr->mutex ? osiMutexLock(tmpgrp_refresh_attr->mutex) : 0;
+    static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MAKE_TEMPGRP,
+															lv_poc_build_tempgrp_activity_create,
+															lv_poc_build_tempgrp_activity_destory};
+
+    if(poc_build_tempgrp_activity != NULL)
+    {
+		tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
+    	return;
+    }
+
+	if(lvPocGuiBndCom_get_listen_status())//listen status cannot build tmpgrp
+	{
+		OSI_LOGI(0, "[membercall] listen isn't signal");
+		tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
+		return;
+	}
+
+	if(lv_poc_build_tempgrp_member_list == NULL)
+	{
+	    lv_poc_build_tempgrp_member_list = (lv_poc_oem_member_list *)lv_mem_alloc(sizeof(lv_poc_oem_member_list));
+	    if(lv_poc_build_tempgrp_member_list == NULL)
+	    {
+			tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
+		    return;
+	    }
+	}
+
+	if(lv_poc_build_tempgrp_member_list != NULL)
+	{
+		memset(lv_poc_build_tempgrp_member_list, 0, sizeof(lv_poc_oem_member_list));
+	}
+
+	lv_poc_set_buildgroup_refr_is_complete(false);
+    poc_build_tempgrp_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
+    lv_poc_member_list_cb_set_active(ACT_ID_POC_MAKE_TEMPGRP, true);
+    lv_poc_activity_set_signal_cb(poc_build_tempgrp_activity, lv_poc_build_tempgrp_signal_func);
+    lv_poc_activity_set_design_cb(poc_build_tempgrp_activity, lv_poc_build_tempgrp_design_func);
+	tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
 
 	if(!lv_poc_get_member_list(NULL, lv_poc_build_tempgrp_member_list, 1, lv_poc_build_tempgrp_get_list_cb))
 	{
@@ -879,19 +885,6 @@ static void lv_poc_build_tempgrp_member_list_activity_destory(lv_obj_t *obj)
 
 void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t *task)
 {
-	lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_TMPGRP_MEMBER_LIST,
-		lv_poc_build_tempgrp_member_list_activity_create,
-		lv_poc_build_tempgrp_member_list_activity_destory};
-
-	strcpy((char *)lv_poc_build_tempgrp_member_list_title, (const char *)task->user_data);
-
-	lv_poc_set_buildgroup_refr_is_complete(false);
-	poc_build_tempgrp_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
-	lv_poc_activity_set_signal_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_signal_func);
-	lv_poc_activity_set_design_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_design_func);
-	lv_poc_member_list_cb_set_active(ACT_ID_POC_TMPGRP_MEMBER_LIST, true);
-	OSI_PRINTFI("[tmpgrp](%s)(%d):activity open", __func__, __LINE__);
-
 	if(refresh_task_init == true)
 	{
 		if(tmpgrp_refresh_attr == NULL)
@@ -915,10 +908,24 @@ void lv_poc_build_tempgrp_member_list_activity_open(lv_task_t *task)
 		tmpgrp_refresh_attr->mutex = osiMutexCreate();
 	}
 
-	osiMutexLock(tmpgrp_refresh_attr->mutex);
+	//mutex
+	tmpgrp_refresh_attr->mutex ? osiMutexLock(tmpgrp_refresh_attr->mutex) : 0;
+
+	lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_TMPGRP_MEMBER_LIST,
+		lv_poc_build_tempgrp_member_list_activity_create,
+		lv_poc_build_tempgrp_member_list_activity_destory};
+
+	strcpy((char *)lv_poc_build_tempgrp_member_list_title, (const char *)task->user_data);
+
+	lv_poc_set_buildgroup_refr_is_complete(false);
+	poc_build_tempgrp_member_list_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
+	lv_poc_activity_set_signal_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_signal_func);
+	lv_poc_activity_set_design_cb(poc_build_tempgrp_member_list_activity, lv_poc_build_tempgrp_design_func);
+	lv_poc_member_list_cb_set_active(ACT_ID_POC_TMPGRP_MEMBER_LIST, true);
+
 	tmpgrp_refresh_attr->refresh_type = POC_REFRESH_TYPE_TMPGRP_MEMBER_LIST;
 	lv_task_ready(tmpgrp_refresh_attr->task);
-	osiMutexUnlock(tmpgrp_refresh_attr->mutex);
+	tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
 	OSI_PRINTFI("[tmpgrp](%s)(%d):launch refresh", __func__, __LINE__);
 }
 
@@ -1081,19 +1088,25 @@ void lv_poc_bulid_tempgroup_refresh_task(lv_task_t *task)
 	{
 		case POC_REFRESH_TYPE_TMPGRP_MEMBER_SELECT:
 		{
+			tmpgrp_refresh_attr->mutex ? osiMutexLock(tmpgrp_refresh_attr->mutex) : 0;
 			lv_poc_build_tempgrp_refresh(NULL);
+			tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
 			break;
 		}
 
 		case POC_REFRESH_TYPE_TMPGRP_SUCCESS:
 		{
+			tmpgrp_refresh_attr->mutex ? osiMutexLock(tmpgrp_refresh_attr->mutex) : 0;
 			lv_poc_build_tempgrp_success();
+			tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
 			break;
 		}
 
 		case POC_REFRESH_TYPE_TMPGRP_MEMBER_LIST:
 		{
+			tmpgrp_refresh_attr->mutex ? osiMutexLock(tmpgrp_refresh_attr->mutex) : 0;
 			lv_poc_build_tempgrp_member_list_refresh(NULL);
+			tmpgrp_refresh_attr->mutex ? osiMutexUnlock(tmpgrp_refresh_attr->mutex) : 0;
 			break;
 		}
 

@@ -8,6 +8,8 @@ extern "C" {
  *  STATIC VARIABLES
  **********************/
 
+static osiMutex_t *mutex = NULL;
+
 static void * empty_win(lv_obj_t * parent, lv_area_t display_area)
 {
     lv_obj_t * display = lv_obj_create(parent, NULL);
@@ -30,6 +32,12 @@ static void * empty_win(lv_obj_t * parent, lv_area_t display_area)
 ********************/
 lv_poc_win_t * lv_poc_win_create(lv_obj_t * parent, const char * title, lv_poc_win_create_func_t func)
 {
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     lv_style_t * style_header = NULL;
     lv_poc_win_t * new_win = (lv_poc_win_t *)lv_mem_alloc(sizeof(lv_poc_win_t));
     poc_setting_conf = lv_poc_setting_conf_read();
@@ -91,6 +99,7 @@ lv_poc_win_t * lv_poc_win_create(lv_obj_t * parent, const char * title, lv_poc_w
         lv_mem_free(new_win);
         return NULL;
     }
+	mutex ? osiMutexUnlock(mutex) : 0;
     return new_win;
 }
 
