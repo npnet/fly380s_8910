@@ -142,7 +142,7 @@ static lv_poc_status_t prv_lv_poc_group_list_lock_group(lv_poc_oem_group_list *g
 
 static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_type, int num, ...);
 
-static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, bool steals);
+static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, bool valid);
 
 static void prv_lv_poc_member_call_open(void * information);
 
@@ -2148,9 +2148,9 @@ static void prv_lv_poc_idle_set_page2_note_func(lv_poc_idle_page2_display_t msg_
 	lv_poc_idle_set_page2(msg_type, content, index);
 }
 
-static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, bool steals)
+static bool prv_lvPocLedIdtCom_Msg_func(LVPOCIDTCOM_Led_SignalType_t signal, bool valid)
 {
-	return lvPocLedCom_Msg(signal, steals);
+	return lvPocLedCom_Msg(signal, valid);
 }
 
 static void prv_lv_poc_member_call_open_cb(lv_task_t *task)
@@ -2423,8 +2423,8 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			charge_status = false;
 			charge_complete_status = false;
 			lv_poc_set_charge_status(charge_status);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, true);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, false);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false);
 		}
 
         if(battery_t.battery_value >= 100)
@@ -2469,7 +2469,7 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 		if(charge_status == false)
 		{
 			charge_status = true;
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, true);
 		}
 
         if(battery_t.battery_value >= 100)
@@ -2477,7 +2477,8 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 			if(charge_complete_status == false)
 			{
 				charge_complete_status = true;
-				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, false);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, true);
 			}
 			battery_img_cur = 6;
             battery_img = battery_img_dispaly[battery_img_cur];
@@ -2694,7 +2695,7 @@ void lv_poc_update_stabar_sim_img(void)
 					if(is_net_type != 1)
 					{
 						is_net_type = 1;
-						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false);
 					}
                     break;
                 }
@@ -2706,7 +2707,7 @@ void lv_poc_update_stabar_sim_img(void)
 					if(is_net_type != 1)
 					{
 						is_net_type = 1;
-						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false);
 					}
                     break;
                 }
@@ -2719,7 +2720,7 @@ void lv_poc_update_stabar_sim_img(void)
 					if(is_net_type != 1)
 					{
 						is_net_type = 1;
-						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false);
 					}
 					break;
                 }

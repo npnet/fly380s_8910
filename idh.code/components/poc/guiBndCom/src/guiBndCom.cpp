@@ -1757,6 +1757,7 @@ static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 				}
 				OSI_PRINTFI("[login](%s)(%d):exit", __func__, __LINE__);
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, true);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, false);
 				m_BndUser.m_status = USER_OFFLINE;
 				pocBndAttr.loginstatus_t = LVPOCBNDCOM_SIGNAL_LOGIN_EXIT;
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "登录失败");
@@ -1772,7 +1773,7 @@ static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 			if(USER_ONLINE == UserState
 				&& m_BndUser.m_status != USER_ONLINE)//登录成功
 			{
-				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS, true);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, false);
 				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
 				pocBndAttr.loginstatus_t = LVPOCBNDCOM_SIGNAL_LOGIN_SUCCESS;
 
@@ -1867,7 +1868,7 @@ static void prvPocGuiBndTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_audio, 2, "开始对讲", NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始对讲", NULL);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, false);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, true);
 			if(m_BndUser.m_status == USER_OPRATOR_START_SPEAK)
 			{
 				char speak_name[100] = "";
@@ -1909,7 +1910,7 @@ static void prvPocGuiBndTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			if(m_BndUser.m_status >= USER_OPRATOR_START_SPEAK
 				&& pocBndAttr.is_makeout_call == true)
 			{
-				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, false);
 
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, "停止对讲", NULL);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"停止对讲", NULL);
@@ -3037,7 +3038,7 @@ static void prvPocGuiBndTaskHandleListen(uint32_t id, uint32_t ctx)
 		case LVPOCGUIBNDCOM_SIGNAL_LISTEN_STOP_REP:
 		{
 			osiMutexLock(pocBndAttr.lock);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, false);
 
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, "停止聆听", "");
 
@@ -3061,7 +3062,7 @@ static void prvPocGuiBndTaskHandleListen(uint32_t id, uint32_t ctx)
 			strcat(speaker_name, (const char *)"正在讲话");
 
 			m_BndUser.m_status = USER_OPRATOR_START_LISTEN;
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, false);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, true);
 
 			//member call
 			if(pocBndAttr.is_member_call)
@@ -3184,6 +3185,7 @@ void prvPocGuiBndTaskHandleErrorInfo(uint32_t id, uint32_t ctx)
 			{
 				poc_play_voice_one_time(LVPOCAUDIO_Type_This_Account_Already_Logined, 50, true);
 				m_BndUser.m_status = USER_OFFLINE;
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, true);
 			}
 			else if(strstr((const char *)pErrorInfo, (const char *)"单呼失败"))
 			{

@@ -313,7 +313,7 @@ static void poc_setting_destory(lv_obj_t *obj)
 
 	poc_setting_activity = NULL;
 	setting_selected_item = 0;
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS, false);
 }
 
 static void * poc_setting_list_create(lv_obj_t * parent, lv_area_t display_area)

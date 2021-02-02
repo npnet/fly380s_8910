@@ -37,7 +37,7 @@
 *************************************************/
 extern int pub_lv_poc_get_watchdog_status(void);
 extern int lv_poc_cit_get_run_status(void);
-extern bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool steals);
+extern bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool valid);
 extern bool pubPocIdtGpsTaskStatus(void);
 extern lv_poc_activity_t * poc_group_list_activity;
 extern lv_poc_activity_t * poc_member_list_activity;
@@ -1474,7 +1474,6 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		|| CFW_NwGetStatus(&nStatusInfo, sim) != 0)
 		&& (!pub_lv_poc_get_watchdog_status()))
 	{
-		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
 		lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NONETWORK);
 		return false;
@@ -1485,12 +1484,13 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		|| nStatusInfo.nStatus == 4)
 		&& (!pub_lv_poc_get_watchdog_status()))
 	{
-		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
 		lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NONETWORK);
 		return false;
 	}
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, false);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, true);
 	return true;
 }
 

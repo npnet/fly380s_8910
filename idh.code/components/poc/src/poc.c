@@ -109,7 +109,7 @@ static void pocIdtStartHandleTask(void * ctx)
 		osiThreadSleepRelaxed(5000*6, OSI_WAIT_FOREVER);//30s
 	}
 	lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "正在登录...");
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
+    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
 	if(!pub_lv_poc_get_watchdog_status())
 	{
 		poc_play_voice_one_time(LVPOCAUDIO_Type_Now_Loginning, 50, true);

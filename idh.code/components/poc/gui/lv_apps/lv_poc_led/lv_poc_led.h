@@ -17,7 +17,7 @@ struct PocLedOnOff_t
 
 void poc_status_led_task(void);
 
-bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool steals);
+bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool valid);
 
 #ifdef __cplusplus
 }

@@ -45,6 +45,7 @@ typedef struct _LedAttr_t
 	int  closems;//100的倍数
 	int  count;
 	poc_led_cb cb;
+	char 		*str;
 }LedAttr_t;
 
 typedef struct _PocLedComAttr_t
@@ -58,25 +59,53 @@ typedef struct _PocLedComAttr_t
 	uint8_t 	count;
 	uint8_t 	openindex;
 	uint8_t 	closeindex;
-	uint8_t 	lastmsgpri;
 } PocLedComAttr_t;
+
+static char *ledstr[LVPOCLEDIDTCOM_SIGNAL_STATUS_END] =
+{
+	"REGISTER_STATUS",
+	"POWEROFF_STATUS",
+	"SCAN_NETWORK_STATUS",
+	"IDLE_STATUS",
+	"SETTING_STATUS",
+	"CHARGING_STATUS",
+	"CHARGING_COMPLETE_STATUS",
+	"LOW_BATTERY_STATUS",
+	"START_TALK_STATUS",
+	"START_LISTEN_STATUS",
+	"NO_SIM_STATUS",
+	"NO_LOGIN_STATUS",
+	"MAX",
+
+	"GPS_SUSPEND_IND",
+	"GPS_RESUME_IND",
+	"TURN_OFF_SCREEN_IND",
+	"TURN_ON_SCREEN_IND",
+	"PING_SUCCESS_IND",
+	"PING_FAILED_IND",
+    "HEADSET_INSERT",
+	"HEADSET_PULL_OUT",
+
+	"LOOPBACK_RECORDER_IND",
+    "LOOPBACK_PLAYER_IND",
+    "TEST_VLOUM_PLAY_IND",
+};
 
 //led registry
 static LedAttr_t ledattr[LVPOCGUIIDTCOM_SIGNAL_MAX] = {
 
-	{1, LVPOCLEDIDTCOM_SIGNAL_REGISTER_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_led_register},//register
-	{2, LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, false, 500, 500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_green_close_red_jump},//no sim
-	{3, LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false, 500, 500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_red_close_green_jump},//scan network
-	{4, LVPOCLEDIDTCOM_SIGNAL_DISCHARGING_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_led_status_all_close},//no charge
-	{5, LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_close_green_open},//login success
-	{6, LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, false, 500, 3000, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_red_close_green_jump},//idle
-	{7, LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, false, 1500, 1500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_green_close_red_jump},//no login
-	{8, LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, false, 500, 500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_green_close_red_jump},//low battery
-	{9, LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_open_green_close},//charging
-	{10, LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_close_green_open},//charge complete
-	{11, LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_close_green_open},//setting
-	{12, LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS,  false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_close_green_open},//listen
-	{13, LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS,    false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_open_green_close},//speak
+	{0, LVPOCLEDIDTCOM_SIGNAL_REGISTER_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_led_register, "register"},
+	//deal pri
+	{1, LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, false, 500, 500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_green_close_red_jump, "no sim"},
+	{2, LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false, 500, 500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_red_close_green_jump, "scan network"},
+	{3, LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, false, 1500, 1500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_green_close_red_jump, "no login"},
+	{4, LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_close_green_open, "setting"},
+	{5, LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_close_green_open, "listen"},
+	{6, LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_open_green_close, "speak"},
+	{7, LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_close_green_open, "charge complete"},
+	{8, LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false, 0, 0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1, lv_poc_red_open_green_close, "charging"},
+	{9, LVPOCLEDIDTCOM_SIGNAL_LOW_BATTERY_STATUS, false, 500, 500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_green_close_red_jump, "low battery"},
+	{10, LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, false, 500, 3000, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER, callback_lv_poc_red_close_green_jump, "idle"},
 };
 
 static PocLedComAttr_t pocLedAttr = {0};
@@ -106,7 +135,7 @@ static void lv_poc_led_entry(void *param)
     {
         if(osiEventWait(pocLedAttr.thread, &event))
         {
-			OSI_PRINTFI("[LED](%s)(%d):rec msg, status(%d)", __func__, __LINE__, event.param1);
+			OSI_PRINTFI("[LED](%s)(%d):rec msg, status(%s)", __func__, __LINE__, event.param1 > 0 ? ledstr[event.param1 - 1] : "error");
             if(event.id != 200)
             {
                 continue;
@@ -127,29 +156,39 @@ static void lv_poc_led_entry(void *param)
 			if(event.param1 < LVPOCGUIIDTCOM_SIGNAL_MAX)
 			{
 				int i;
-				for(i = 0; i < LVPOCGUIIDTCOM_SIGNAL_MAX; i++)
+				for(i = 1; i < LVPOCGUIIDTCOM_SIGNAL_MAX; i++)//scan register or cannel register
 				{
 					if(ledattr[i].id == event.param1)
 					{
-						if(ledattr[i].priority <= pocLedAttr.lastmsgpri
-							&& (!event.param2))//Preemption is not allowed at high priority or not allow steal
+						OSI_PRINTFI("[LED](%s)(%d):reset task, status(%s), name(%s)", __func__, __LINE__, event.param2 ? "register" : "cannel register", ledattr[i].str);
+						if(event.param2)
 						{
-							break;
+							pocLedAttr.task ? lv_task_reset(pocLedAttr.task) : 0;
+							lv_poc_led_status_all_close();
+							pocLedAttr.count = ledattr[i].count;//valid
+							pocLedAttr.ishavemsg = true;
+							pocLedAttr.ledstatus = false;
 						}
-
-						OSI_PRINTFI("[LED](%s)(%d):reset task, rec new msg", __func__, __LINE__);
-						pocLedAttr.task ? lv_task_reset(pocLedAttr.task) : 0;
-						lv_poc_led_status_all_close();
-						pocLedAttr.count = ledattr[i].count;
-						ledattr[i].valid = true;
-						pocLedAttr.ishavemsg = true;
-						pocLedAttr.ledstatus = false;
-						pocLedAttr.lastmsgpri = ledattr[i].priority;
+						ledattr[i].valid = event.param2;//register or cannel register
 						break;
 					}
-					else
+				}
+
+				if(event.param2)//register
+				{
+					continue;
+				}
+				//cannel register, scan valid count
+				for(i = 1; i < LVPOCGUIIDTCOM_SIGNAL_MAX; i++)
+				{
+					if(ledattr[i].valid)
 					{
-						ledattr[i].valid = false;
+						pocLedAttr.task ? lv_task_reset(pocLedAttr.task) : 0;
+						lv_poc_led_status_all_close();
+						pocLedAttr.count = ledattr[i].count;//valid
+						pocLedAttr.ishavemsg = true;
+						pocLedAttr.ledstatus = false;
+						break;
 					}
 				}
 				continue;
@@ -345,6 +384,7 @@ lv_poc_led_status_callback_check(lv_task_t *task)
 		{
 			if(pocLedAttr.ishavemsg)
 			{
+				OSI_PRINTFI("[LED][cb](%s)(%d):current run state(%s)", __func__, __LINE__, ledattr[i].str);
 				pocLedAttr.ishavemsg = false;
 				pocLedAttr.openindex = 0;
 				pocLedAttr.closeindex = 0;
@@ -356,7 +396,6 @@ lv_poc_led_status_callback_check(lv_task_t *task)
 			{
 				pocLedAttr.count--;
 				ledattr[i].cb ? ledattr[i].cb() : 0;
-				ledattr[i].valid = false;
 				return;
 			}
 
@@ -476,7 +515,7 @@ lv_poc_led_status_task_handle_other(uint32_t id)
 	  date : 2021-01-04
 */
 bool
-lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool steals)
+lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool valid)
 {
 	if (pocLedAttr.thread == NULL || pocLedAttr.isReady == false)
 	{
@@ -500,7 +539,7 @@ lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool steals)
 	memset(&event, 0, sizeof(osiEvent_t));
 	event.id = 200;
 	event.param1 = signal;
-	event.param2 = steals;
+	event.param2 = valid;
 
 	return osiEventSend(pocLedAttr.thread, &event);
 }

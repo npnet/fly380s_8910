@@ -191,7 +191,7 @@ typedef bool (*lv_poc_notation_msg_cb)(lv_poc_notation_msg_type_t msg_type, cons
 
 typedef void (*lv_poc_idle_set_page2_cb)(lv_poc_idle_page2_display_t msg_type, int num, ...);
 
-typedef bool (*lvPocLedIdtCom_Msg_cb)(LVPOCIDTCOM_Led_SignalType_t signal, bool steals);
+typedef bool (*lvPocLedIdtCom_Msg_cb)(LVPOCIDTCOM_Led_SignalType_t signal, bool valid);
 
 typedef struct _lv_poc_activity_attribute_cb_set
 {

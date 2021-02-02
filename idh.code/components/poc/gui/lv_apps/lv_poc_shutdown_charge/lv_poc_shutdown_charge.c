@@ -166,7 +166,8 @@ lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 	{
 		if(battery_t.battery_value >= 100)
 		{
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, false);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, true);
 
 			battery_img = charge_battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
