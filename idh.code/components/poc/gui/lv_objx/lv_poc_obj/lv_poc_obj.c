@@ -2463,18 +2463,18 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 	static bool charge_complete_status = false;
 	static uint8_t battery_pri_cnt = 0;
 
+#if 0
 	if(battery_pri_cnt >= 5)//bat pri
 	{
-#if 0
 		OSI_PRINTFI("[charge][mv](%s)(%d):volt(%d mv), cur(%d ma), val(%d), temp(%d)", __func__, __LINE__, battery_t.battery_val_mV, \
 			battery_t.charge_cur_mA, battery_t.battery_value, battery_t.battery_temp);
-#endif
 		battery_pri_cnt = 0;
 	}
 	else
 	{
 		battery_pri_cnt++;
 	}
+#endif
 
 	if(battery_img_cur == 100)//获取一次当前电量图标基础值
 	{

@@ -1987,9 +1987,16 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 					pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED;
 
 					//开启自动登陆功能
-					osiTimerStart(pocIdtAttr.auto_login_timer, 20000);
 				}
 				lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
+				if(m_IdtUser.m_status != UT_STATUS_OFFLINE)
+				{
+					osiTimerStart(pocIdtAttr.auto_login_timer, 50);
+				}
+				else
+				{
+					osiTimerStart(pocIdtAttr.auto_login_timer, 20000);
+				}
 				m_IdtUser.m_status = UT_STATUS_OFFLINE;
 				m_IdtUser.m_Group.m_Group_Num = 0;
 				pocIdtAttr.pPocMemberList->dwNum = 0;
