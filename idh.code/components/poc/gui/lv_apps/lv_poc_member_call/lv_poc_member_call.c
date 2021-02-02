@@ -302,23 +302,51 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 
 void lv_poc_member_call_open(void * information)
 {
+	if(refresh_task_init == true)
+    {
+        if(member_call_refresh_attr == NULL)
+        {
+            member_call_refresh_attr = (lv_poc_member_call_refresh_t *)lv_mem_alloc(sizeof(lv_poc_member_call_refresh_t));
+        }
+        refresh_task_init = false;
+        member_call_refresh_attr->refresh_type = 0;
+        member_call_refresh_attr->task = NULL;
+        member_call_refresh_attr->mutex = NULL;
+        member_call_refresh_attr->user_data = NULL;
+    }
+
+    if(member_call_refresh_attr->task == NULL)
+    {
+        member_call_refresh_attr->task = lv_task_create(lv_poc_member_call_refresh_task, 500, LV_TASK_PRIO_MID, (void *)member_call_refresh_attr);
+    }
+
+    if(member_call_refresh_attr->mutex == NULL)
+    {
+        member_call_refresh_attr->mutex = osiMutexCreate();
+    }
+    //mutex
+    member_call_refresh_attr->mutex ? osiMutexLock(member_call_refresh_attr->mutex) : 0;
+
     static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MEMBER_CALL,
 															lv_poc_member_call_activity_create,
 															lv_poc_member_call_activity_destory};
 
     if(poc_member_call_activity != NULL || information == NULL)
     {
+		member_call_refresh_attr->mutex ? osiMutexUnlock(member_call_refresh_attr->mutex) : 0;
 		OSI_LOGI(0, "[membercall] infomation of call obj is empty");
     	return;
     }
 
 	if(lvPocGuiIdtCom_get_listen_status())/*listen status cannot member call*/
 	{
+		member_call_refresh_attr->mutex ? osiMutexUnlock(member_call_refresh_attr->mutex) : 0;
 		return;
 	}
 
 	if(information == NULL)
 	{
+		member_call_refresh_attr->mutex ? osiMutexUnlock(member_call_refresh_attr->mutex) : 0;
 		OSI_LOGI(0, "[member_call] infomation of call obj is empty\n");
 		return;
 	}
@@ -326,6 +354,7 @@ void lv_poc_member_call_open(void * information)
     lv_poc_member_call_member_list_obj = (lv_poc_member_list_t *)lv_mem_alloc(sizeof(lv_poc_member_list_t));
 	if(lv_poc_member_call_member_list_obj == NULL)
 	{
+		member_call_refresh_attr->mutex ? osiMutexUnlock(member_call_refresh_attr->mutex) : 0;
 		OSI_LOGI(0, "[member_call] apply memory of member list failed!\n");
 		return;
 	}
@@ -339,6 +368,7 @@ void lv_poc_member_call_open(void * information)
     {
 	    lv_mem_free(lv_poc_member_call_member_list_obj);
 	    lv_poc_member_call_member_list_obj = NULL;
+		member_call_refresh_attr->mutex ? osiMutexUnlock(member_call_refresh_attr->mutex) : 0;
 		return ;/*failed open, return*/
     }
     lv_poc_member_list_cb_set_active(ACT_ID_POC_MEMBER_CALL, true);
@@ -347,33 +377,9 @@ void lv_poc_member_call_open(void * information)
 
 	lv_poc_member_call_add(lv_poc_member_call_member_list_obj, lv_poc_get_member_name((lv_poc_member_info_t)information), true, information);
 
-	if(refresh_task_init == true)
-	{
-		if(member_call_refresh_attr == NULL)
-		{
-			member_call_refresh_attr = (lv_poc_member_call_refresh_t *)lv_mem_alloc(sizeof(lv_poc_member_call_refresh_t));
-		}
-		refresh_task_init = false;
-		member_call_refresh_attr->refresh_type = 0;
-		member_call_refresh_attr->task = NULL;
-		member_call_refresh_attr->mutex = NULL;
-		member_call_refresh_attr->user_data = NULL;
-	}
-
-	if(member_call_refresh_attr->task == NULL)
-	{
-		member_call_refresh_attr->task = lv_task_create(lv_poc_member_call_refresh_task, 500, LV_TASK_PRIO_MID, (void *)member_call_refresh_attr);
-	}
-
-	if(member_call_refresh_attr->mutex == NULL)
-	{
-		member_call_refresh_attr->mutex = osiMutexCreate();
-	}
-
-	osiMutexLock(member_call_refresh_attr->mutex);
 	member_call_refresh_attr->refresh_type = POC_REFRESH_TYPE_MEMBER_CALL_LIST;
 	lv_task_ready(member_call_refresh_attr->task);
-	osiMutexUnlock(member_call_refresh_attr->mutex);
+    member_call_refresh_attr->mutex ? osiMutexUnlock(member_call_refresh_attr->mutex) : 0;
 
 	lv_poc_set_member_call_status(information, true, lv_poc_member_call_set_member_call_status_cb);
 }

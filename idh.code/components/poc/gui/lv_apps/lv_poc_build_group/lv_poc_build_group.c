@@ -157,7 +157,6 @@ static void lv_poc_build_group_new_group_cb(int result_type)
 	osiMutexLock(build_grp_refresh_attr->mutex);
 	build_grp_refresh_attr->user_data = (void *)result_type;
 	build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_BUILD_NEW_GRP;
-//	lv_task_ready(build_grp_refresh_attr->task);
 	osiMutexUnlock(build_grp_refresh_attr->mutex);
 }
 

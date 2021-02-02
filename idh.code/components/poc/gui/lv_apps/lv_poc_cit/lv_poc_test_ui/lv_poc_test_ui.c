@@ -23,7 +23,9 @@ static lv_obj_t * activity_list = NULL;
 
 static lv_poc_win_t * cit_win = NULL;
 
-static lv_poc_cit_test_type_t *cit_test_info = NULL;
+static osiMutex_t * mutex = NULL;
+
+static lv_poc_cit_test_type_t * cit_test_info = NULL;
 
 lv_poc_activity_t * poc_cit_test_ui_activity = NULL;
 
@@ -1460,17 +1462,25 @@ void lv_poc_test_ui_open(void *info)
 		.middle_text = "",
 		.right_text  = "失败",
 		};
+
 	if(poc_cit_test_ui_activity != NULL)
 	{
 		return;
 	}
 
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
 	memset(&pocCitAttr, 0, sizeof(lv_poc_cit_test_t));
 	pocCitAttr.charge_first = 100;
 	cit_test_info = info;
     poc_cit_test_ui_activity = lv_poc_create_activity(&activity_ext, true, true, &control_text);
     lv_poc_activity_set_signal_cb(poc_cit_test_ui_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_cit_test_ui_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 #ifdef __cplusplus

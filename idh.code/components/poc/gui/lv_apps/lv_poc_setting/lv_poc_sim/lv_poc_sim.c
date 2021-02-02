@@ -24,6 +24,8 @@ static lv_poc_win_t * activity_win = NULL;
 
 static lv_obj_t * activity_list = NULL;
 
+static osiMutex_t *mutex = NULL;
+
 lv_poc_activity_t * poc_main_sim_choice_activity = NULL;
 
 static lv_poc_rb_t * main_sim_choice_rb = NULL;
@@ -205,15 +207,20 @@ static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_des
 
 void lv_poc_main_sim_choice_open(void)
 {
-#if 1
     static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_MAIN_SIM_CHOICE,
 															activity_create,
 															activity_destory};
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
 	poc_setting_conf = lv_poc_setting_conf_read();
     poc_main_sim_choice_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
-#endif
 	lv_poc_activity_set_signal_cb(poc_main_sim_choice_activity, signal_func);
 	lv_poc_activity_set_design_cb(poc_main_sim_choice_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 #ifdef __cplusplus

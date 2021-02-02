@@ -87,8 +87,9 @@ static void lv_poc_idle_page_task_cb(lv_task_t * task);
 *                  Local variable
 *
 *************************************************/
-lv_poc_activity_t *activity_idle = NULL;
+lv_poc_activity_t * activity_idle = NULL;
 static lv_task_t * idle_page_task = NULL;
+static osiMutex_t * mutex = NULL;
 static lv_poc_idle_page2_msg_t *idle_page_task_msg = NULL;
 static lv_poc_idle_page2_display_t page2_display_state = lv_poc_idle_page2_normal_info;
 static lv_obj_t * idle_date_label = NULL;
@@ -1219,6 +1220,13 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	{
 		return NULL;
 	}
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
 	poc_setting_conf = lv_poc_setting_conf_read();
 	activity_idle = lv_poc_create_activity(&activity_idle_ext,true,true,&control);
 	lv_poc_activity_set_signal_cb(activity_idle, lv_poc_idle_signal_func);
@@ -1229,6 +1237,7 @@ lv_poc_activity_t * lv_poc_create_idle(void)
 	lv_obj_set_event_cb(activity_idle->control->right_button, lv_poc_idle_control_right_label_event_cb);
 
 	lv_poc_refr_task_once(lv_poc_idle_start_task_cb, 300, LV_TASK_PRIO_LOWEST);
+	mutex ? osiMutexUnlock(mutex) : 0;
 
 	return activity_idle;
 }

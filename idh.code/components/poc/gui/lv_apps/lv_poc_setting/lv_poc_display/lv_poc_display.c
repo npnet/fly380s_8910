@@ -32,6 +32,8 @@ static lv_poc_win_t * display_win = NULL;
 
 static lv_obj_t * activity_list = NULL;
 
+static osiMutex_t * mutex = NULL;
+
 static poc_display_edeg_item_t display_selected_item = poc_display_edeg_big_font;
 
 static char is_poc_display_update_UI_task_running = 0;
@@ -389,9 +391,17 @@ void lv_poc_display_open(void)
 	{
 		return;
 	}
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     poc_display_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_display_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_display_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 

@@ -27,6 +27,8 @@ static lv_obj_t * activity_list = NULL;
 
 static lv_poc_rb_t * bright_time_rb = NULL;
 
+static osiMutex_t * mutex = NULL;
+
 lv_poc_activity_t * bright_time_activity = NULL;
 
 static char *bright_time_notation[8]={"亮屏时间:5秒",
@@ -329,11 +331,18 @@ void lv_poc_bright_time_open(void)
     static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_BRIGHT_TIME,
 															activity_create,
 															activity_destory};
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
 	poc_setting_conf = lv_poc_setting_conf_read();
     bright_time_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
 #endif
 	lv_poc_activity_set_signal_cb(bright_time_activity, signal_func);
 	lv_poc_activity_set_design_cb(bright_time_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 

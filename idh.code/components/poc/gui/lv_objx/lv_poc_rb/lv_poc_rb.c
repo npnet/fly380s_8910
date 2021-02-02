@@ -8,8 +8,7 @@ extern "C" {
  *  STATIC VARIABLES
  **********************/
 
-
-
+static osiMutex_t *mutex = NULL;
 
 /*******************
 *     NAME:   lv_poc_rb_create
@@ -19,6 +18,11 @@ extern "C" {
 ********************/
 lv_poc_rb_t * lv_poc_rb_create(void)
 {
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
     lv_poc_rb_t * rb = (lv_poc_rb_t *)lv_mem_alloc(sizeof(lv_poc_rb_t));
     if(rb == NULL)
     {
@@ -38,11 +42,13 @@ lv_poc_rb_t * lv_poc_rb_create(void)
 ********************/
 void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
 {
+	mutex ? osiMutexLock(mutex) : 0;
     lv_btn_state_t cb_state = 0;
     lv_poc_rb_node_t * new_rb_node = NULL;
 
     if(rb == NULL || cb == NULL)
     {
+    	mutex ? osiMutexUnlock(mutex) : 0;
         return;
     }
 
@@ -50,6 +56,7 @@ void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
     new_rb_node = (lv_poc_rb_node_t *)lv_mem_alloc(sizeof(lv_poc_rb_node_t));
     if(new_rb_node == NULL)
     {
+		mutex ? osiMutexUnlock(mutex) : 0;
         return;
     }
     new_rb_node->next = NULL;
@@ -109,6 +116,7 @@ void lv_poc_rb_add(lv_poc_rb_t * rb, lv_obj_t * cb)
         return rb->last_cb;
     }
 #endif
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 /*******************
@@ -126,6 +134,8 @@ void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
     {
         return;
     }
+
+	mutex ? osiMutexLock(mutex) : 0;
     p_rb_node = rb->cbs;
     while(p_rb_node)
     {
@@ -189,6 +199,7 @@ void lv_poc_rb_press(lv_poc_rb_t * rb, lv_obj_t * cb)
     }
     return rb->last_cb;
 #endif
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 /*******************
@@ -204,9 +215,10 @@ lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb)
 
     if(rb == NULL || rb->cbs == NULL)
     {
-return NULL;
+		return NULL;
     }
 
+	mutex ? osiMutexLock(mutex) : 0;
     p_rb_node = rb->cbs;
     while(p_rb_node)
     {
@@ -217,6 +229,7 @@ lv_obj_t * lv_poc_rb_get_pressed(lv_poc_rb_t * rb)
         }
         p_rb_node = p_rb_node->next;
     }
+	mutex ? osiMutexUnlock(mutex) : 0;
     return p_rb_node->cb;
 }
 

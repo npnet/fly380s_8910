@@ -751,6 +751,32 @@ static void lv_poc_delete_group_question_CANCEL_cb(lv_obj_t * obj, lv_event_t ev
 
 void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 {
+	if(refresh_task_init == true)
+	{
+		if(grp_refresh_attr == NULL)
+		{
+		   grp_refresh_attr = (lv_poc_grp_refresh_t *)lv_mem_alloc(sizeof(lv_poc_grp_refresh_t));
+		}
+		refresh_task_init = false;
+		memset(grp_refresh_attr, 0, sizeof(lv_poc_grp_refresh_t));
+		grp_refresh_attr->task = NULL;
+		grp_refresh_attr->mutex = NULL;
+		grp_refresh_attr->user_data = NULL;
+	}
+
+	if(grp_refresh_attr->task == NULL)
+	{
+		grp_refresh_attr->task = lv_task_create(lv_poc_group_list_refresh_task, 30, LV_TASK_PRIO_MID, (void *)grp_refresh_attr);
+	}
+
+	if(grp_refresh_attr->mutex == NULL)
+	{
+		grp_refresh_attr->mutex = osiMutexCreate();
+		OSI_PRINTFI("[poc][group](%s)[%d]create mutex", __func__, __LINE__);
+	}
+	//mutex
+    grp_refresh_attr->mutex ? osiMutexLock(grp_refresh_attr->mutex) : 0;
+
     static lv_poc_activity_ext_t  activity_ext = {ACT_ID_POC_GROUP_LIST,
 															lv_poc_group_list_activity_create,
 															lv_poc_group_list_activity_destory};
@@ -759,6 +785,7 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     {
     	OSI_PRINTFI("[poc][group](%s)[%d]error", __func__, __LINE__);
 		lv_poc_set_refr_error_info(true);
+		grp_refresh_attr->mutex ? osiMutexUnlock(grp_refresh_attr->mutex) : 0;
     	return;
     }
 	OSI_PRINTFI("[poc][group](%s)[%d]open grp list", __func__, __LINE__);
@@ -768,6 +795,7 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
 	if(group_list == NULL)
 	{
 		lv_poc_set_refr_error_info(true);
+		grp_refresh_attr->mutex ? osiMutexUnlock(grp_refresh_attr->mutex) : 0;
 		return;
 	}
 
@@ -815,30 +843,7 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     lv_poc_group_list_cb_set_active(ACT_ID_POC_GROUP_LIST, true);
     lv_poc_activity_set_signal_cb(poc_group_list_activity, lv_poc_group_list_signal_func);
     lv_poc_activity_set_design_cb(poc_group_list_activity, lv_poc_group_list_design_func);
-
-	if(refresh_task_init == true)
-	{
-		if(grp_refresh_attr == NULL)
-		{
-		   grp_refresh_attr = (lv_poc_grp_refresh_t *)lv_mem_alloc(sizeof(lv_poc_grp_refresh_t));
-		}
-	 	refresh_task_init = false;
-		memset(grp_refresh_attr, 0, sizeof(lv_poc_grp_refresh_t));
-		grp_refresh_attr->task = NULL;
-		grp_refresh_attr->mutex = NULL;
-		grp_refresh_attr->user_data = NULL;
-	}
-
-	if(grp_refresh_attr->task == NULL)
-	{
-		grp_refresh_attr->task = lv_task_create(lv_poc_group_list_refresh_task, 30, LV_TASK_PRIO_MID, (void *)grp_refresh_attr);
-	}
-
-	if(grp_refresh_attr->mutex == NULL)
-	{
-		grp_refresh_attr->mutex = osiMutexCreate();
-		OSI_PRINTFI("[poc][group](%s)[%d]create mutex", __func__, __LINE__);
-	}
+    grp_refresh_attr->mutex ? osiMutexUnlock(grp_refresh_attr->mutex) : 0;
 
     if(group_list_obj == NULL)
     {
@@ -852,11 +857,11 @@ void lv_poc_group_list_open(lv_poc_group_list_t *group_list_obj)
     }
     else
     {
-		osiMutexLock(grp_refresh_attr->mutex);
+		grp_refresh_attr->mutex ? osiMutexLock(grp_refresh_attr->mutex) : 0;
 		grp_refresh_attr->grp_refresh_type = POC_REFRESH_TYPE_GROUP_LIST;
 		grp_refresh_attr->grp_refresh_queue[grp_refresh_attr->write_index] = grp_refresh_attr->grp_refresh_type;
 		grp_refresh_attr->write_index < 9 ? (grp_refresh_attr->write_index++) : (grp_refresh_attr->write_index = 0);
-		osiMutexUnlock(grp_refresh_attr->mutex);
+		grp_refresh_attr->mutex ? osiMutexUnlock(grp_refresh_attr->mutex) : 0;
     }
 }
 

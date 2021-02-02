@@ -35,6 +35,8 @@ static lv_poc_win_t * cit_win = NULL;
 
 static lv_obj_t * activity_list = NULL;
 
+static osiMutex_t * mutex = NULL;
+
 lv_poc_activity_t * poc_cit_activity = NULL;
 
 struct lv_poc_cit_main_t
@@ -309,9 +311,16 @@ void lv_poc_cit_open(void)
 		return;
 	}
 
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     poc_cit_activity = lv_poc_create_activity(&activity_ext, true, true, &control);
     lv_poc_activity_set_signal_cb(poc_cit_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_cit_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 
 	lvPocGuiComCitStatus(LVPOCCIT_TYPE_ENTER);
 }

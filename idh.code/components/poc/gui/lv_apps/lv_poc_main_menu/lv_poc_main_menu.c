@@ -22,10 +22,15 @@ static lv_res_t lv_poc_main_menu_signal_cb(struct _lv_obj_t * obj, lv_signal_t s
 static bool lv_poc_main_menu_design_cb(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
 static lv_obj_t * main_menu_list = NULL;
+
 static lv_poc_win_t * main_menu_win = NULL;
+
+static osiMutex_t * mutex = NULL;
+
 static char is_poc_main_menu_update_UI_task_running = 0;
 
 lv_poc_member_list_t * poc_member_list = NULL;
+
 lv_poc_group_list_t  * poc_group_list = NULL;
 
 lv_poc_activity_t * main_menu_activity = NULL;
@@ -252,9 +257,17 @@ void lv_poc_main_menu_open(void)
 	{
 		return;
 	}
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     main_menu_activity = lv_poc_create_activity(&activity_main_menu_ext, true, false, NULL);
    	lv_poc_activity_set_signal_cb(main_menu_activity, lv_poc_main_menu_signal_cb);
    	lv_poc_activity_set_design_cb(main_menu_activity, lv_poc_main_menu_design_cb);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 void lv_poc_main_menu_refresh(void)

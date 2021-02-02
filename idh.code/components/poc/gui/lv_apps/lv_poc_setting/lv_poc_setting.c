@@ -61,8 +61,12 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_obj_t *                 activity_list = NULL;
+static lv_obj_t * activity_list = NULL;
+
+static osiMutex_t *mutex = NULL;
+
 lv_poc_activity_t * poc_setting_activity = NULL;
+
 static int setting_selected_item = 0;
 
 static void poc_setting_update_UI_task(lv_task_t * task)
@@ -711,12 +715,20 @@ void lv_poc_setting_open(void)
 	{
 		return;
 	}
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
 	poc_setting_conf = lv_poc_setting_conf_read();
 	setting_selected_item = 0;
     poc_setting_activity = lv_poc_create_activity(&activity_main_menu_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_setting_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_setting_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 #ifdef __cplusplus

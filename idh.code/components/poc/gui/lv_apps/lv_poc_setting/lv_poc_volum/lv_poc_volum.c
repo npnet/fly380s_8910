@@ -18,15 +18,15 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 static bool design_func(struct _lv_obj_t * obj, const lv_area_t * mask_p, lv_design_mode_t mode);
 
-static lv_poc_win_t * volume_win;
+static lv_poc_win_t * volume_win = NULL;
 
-static lv_obj_t * activity_list;
+static lv_obj_t * activity_list = NULL;
 
-lv_poc_activity_t * poc_volum_activity;
+static osiMutex_t * mutex = NULL;
+
+lv_poc_activity_t * poc_volum_activity = NULL;
 
 static const char * volum_str[] = {"0","1","2","3","4","5","6","7","8","9","10","11"};
-
-
 
 static lv_obj_t * activity_create(lv_poc_display_t *display)
 {
@@ -229,9 +229,17 @@ void lv_poc_volum_open(void)
 	{
 		return;
 	}
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
+
+	mutex ? osiMutexLock(mutex) : 0;
     poc_volum_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_volum_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_volum_activity, design_func);
+	mutex ? osiMutexUnlock(mutex) : 0;
 }
 
 typedef struct

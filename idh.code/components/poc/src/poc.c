@@ -47,6 +47,11 @@ void prv_lv_poc_network_config_task(lv_task_t * task)
 static
 void prv_lv_poc_power_on_picture(lv_task_t * task)
 {
+	if(poc_power_on_backgroup_image != NULL)
+	{
+		lv_obj_del(poc_power_on_backgroup_image);
+	}
+
 	lv_poc_create_idle();
 #ifdef CONFIG_POC_PING_NETWORK_SUPPORT
 	lv_poc_net_ping_task_create();
@@ -68,6 +73,11 @@ void prv_lv_poc_power_on_sprd_image(lv_task_t * task)
 static
 void prv_lv_poc_power_on_backgroup_image(lv_task_t * task)
 {
+	if(poc_power_on_backgroup_sprd_image != NULL)
+	{
+		lv_obj_del(poc_power_on_backgroup_sprd_image);
+	}
+
 	poc_power_on_backgroup_image = lv_img_create(lv_scr_act(), NULL);
 	if(poc_power_on_backgroup_image)
 	{
@@ -135,22 +145,12 @@ static void pocStartAnimation(void *ctx)
 		poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
 		osiThreadSleepRelaxed(3000, OSI_WAIT_FOREVER);
 
-		if(poc_power_on_backgroup_sprd_image != NULL)
-		{
-			lv_obj_del(poc_power_on_backgroup_sprd_image);
-		}
 		lv_poc_refr_task_once(prv_lv_poc_power_on_backgroup_image, 50, LV_TASK_PRIO_MID);
 		lv_poc_setting_init();
 		osiThreadSleepRelaxed(4000, OSI_WAIT_FOREVER);
 		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
 		osiThreadSleepRelaxed(2800, OSI_WAIT_FOREVER);
  		lv_poc_refr_task_once(prv_lv_poc_power_on_picture, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_MID);
-		osiThreadSleepRelaxed(200, OSI_WAIT_FOREVER);
-
-		if(poc_power_on_backgroup_image != NULL)
-		{
-			lv_obj_del(poc_power_on_backgroup_image);
-		}
 	}
 	else//watchdog
 	{
@@ -246,7 +246,6 @@ void pocStart(void *ctx)
 		pub_lv_poc_set_watchdog_status(false);
 		lvGuiInit(pocLvglStart);
 	}
-
 	osiThreadExit();
 }
 
