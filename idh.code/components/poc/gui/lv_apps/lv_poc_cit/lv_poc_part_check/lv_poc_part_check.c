@@ -154,12 +154,14 @@ lv_poc_cit_part_test_label_struct_t lv_poc_cit_part_test_label_array[] = {
         lv_poc_calibration_test_cb,
     },
 
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 	{
 		NULL,
 		"项3"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"RTC测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_rtc_test_cb,
 	},
+#endif
 
 	{
 		NULL,
@@ -210,12 +212,14 @@ lv_poc_cit_part_test_label_struct_t lv_poc_cit_part_test_label_array[] = {
 		lv_poc_charge_test_cb,
 	},
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 	{
 		NULL,
 		"项11"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"GPS测试"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_gps_test_cb,
 	},
+#endif
 
 	{
 		NULL,
@@ -247,12 +251,14 @@ lv_poc_cit_part_test_label_struct_t lv_poc_cit_part_test_label_array[] = {
 		lv_poc_headset_test_cb,
 	},
 
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 	{
 		NULL,
 		"项16"				   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
 		"Flash测试"			   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
 		lv_poc_flash_test_cb,
 	},
+#endif
 };
 
 static void lv_poc_cit_config_init(void)
@@ -277,6 +283,7 @@ static void lv_poc_calibration_test_cb(lv_obj_t * obj)
 	lv_poc_test_ui_open((void *)&cit_info);
 }
 
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 static void lv_poc_rtc_test_cb(lv_obj_t * obj)
 {
 	lv_poc_cit_config_init();
@@ -285,6 +292,7 @@ static void lv_poc_rtc_test_cb(lv_obj_t * obj)
 	strcpy(cit_info.name, "RTC测试");
 	lv_poc_test_ui_open((void *)&cit_info);
 }
+#endif
 
 static void lv_poc_backlight_test_cb(lv_obj_t * obj)
 {
@@ -354,6 +362,7 @@ static void lv_poc_charge_test_cb(lv_obj_t * obj)
 	lv_poc_test_ui_open((void *)&cit_info);
 }
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 static void lv_poc_gps_test_cb(lv_obj_t * obj)
 {
 	lv_poc_cit_config_init();
@@ -362,6 +371,7 @@ static void lv_poc_gps_test_cb(lv_obj_t * obj)
 	strcpy(cit_info.name, "GPS测试");
 	lv_poc_test_ui_open((void *)&cit_info);
 }
+#endif
 
 static void lv_poc_sim_test_cb(lv_obj_t * obj)
 {
@@ -400,6 +410,7 @@ static void lv_poc_headset_test_cb(lv_obj_t * obj)
 	lv_poc_test_ui_open((void *)&cit_info);
 }
 
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 static void lv_poc_flash_test_cb(lv_obj_t * obj)
 {
 	lv_poc_cit_config_init();
@@ -408,6 +419,7 @@ static void lv_poc_flash_test_cb(lv_obj_t * obj)
 	strcpy(cit_info.name, "Flash测试");
 	lv_poc_test_ui_open((void *)&cit_info);
 }
+#endif
 
 static void lv_poc_cit_part_test_pressed_cb(lv_obj_t * obj, lv_event_t event)
 {

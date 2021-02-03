@@ -750,10 +750,13 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					{
 						OSI_PRINTFI("[poc][keytone](%s)(%d)start speak", __func__, __LINE__);
 						is_poc_speak_tone_complete = false;
-						lv_poc_set_play_tone_status(true);
-						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
-						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
-						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+						if(pocGetPttKeyState())
+						{
+							lv_poc_set_play_tone_status(true);
+							lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
+							lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
+							lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+						}
 					}
 
 					if(poc_voice_player_attr.voice_queue_reader == poc_voice_player_attr.voice_queue_writer)
@@ -784,15 +787,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 
 		if(poc_voice_player_attr.voice_type <= LVPOCAUDIO_Type_Start_Index || poc_voice_player_attr.voice_type >= LVPOCAUDIO_Type_End_Index)
 		{
-			continue;
-		}
-
-
-		if((lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) == LVPOCCIT_TYPE_ENTER)
-			&& (poc_voice_player_attr.voice_type != LVPOCAUDIO_Type_Test_Volum)
-			&& !lv_poc_get_cit_mic_activity())
-		{
-			OSI_PRINTFI("[poc][voice][%s](%d)cit status", __func__, __LINE__);
 			continue;
 		}
 
@@ -900,8 +894,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 void
 poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 {
-	if(!quiet && !pocGetPttKeyState()
-		&& (lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) != LVPOCCIT_TYPE_ENTER))
+	if(!quiet && !pocGetPttKeyState())
 	{
 		if(prv_play_btn_voice_one_time_task == NULL)//monitor key voice
 		{
@@ -915,7 +908,7 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 			lv_poc_stop_player_voice() == 2 ? (keytoneattr.is_poc_play_voice = false) : 0;
 			return;
 		}
-		prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+		prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024 * 3, 64);
 		if(prv_play_btn_voice_one_time_thread != NULL)
 		{
 			keytoneattr.is_task_run = true;
@@ -932,6 +925,15 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 void
 poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN bool isBreak)
 {
+	if(lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) == LVPOCCIT_TYPE_ENTER)
+	{
+		if(lv_poc_cit_get_run_status() != LV_POC_CIT_OPRATOR_TYPE_VOLUM)
+		{
+			OSI_PRINTFI("[poc][voice][%s](%d)cit status", __func__, __LINE__);
+			return;
+		}
+	}
+
 	if(NULL != prv_play_btn_voice_one_time_player)
 	{
 		auPlayerStop(prv_play_btn_voice_one_time_player);

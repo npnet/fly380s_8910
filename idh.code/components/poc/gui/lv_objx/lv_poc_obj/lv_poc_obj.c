@@ -1464,6 +1464,7 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
     {
 
     }
+
     uint8_t vol_cur = 0;
 
 #if IDT_POC_MODE
@@ -1545,6 +1546,11 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
             }
 			else if((cur_key != LV_GROUP_KEY_POC) && (sign != LV_SIGNAL_LONG_PRESS_REP))//按键音
             {
+            	if(lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY)
+            	{
+					return false;
+				}
+
                 if(lv_poc_get_screenon_status())
                 {
                     OSI_LOGI(0, "[poc][signal](%d)screen on first, cannel key tone", __LINE__);
@@ -2461,9 +2467,9 @@ lv_img_dsc_t * lv_poc_get_battery_img(void)
 
 	static bool charge_status = false;
 	static bool charge_complete_status = false;
+#if 0
 	static uint8_t battery_pri_cnt = 0;
 
-#if 0
 	if(battery_pri_cnt >= 5)//bat pri
 	{
 		OSI_PRINTFI("[charge][mv](%s)(%d):volt(%d mv), cur(%d ma), val(%d), temp(%d)", __func__, __LINE__, battery_t.battery_val_mV, \

@@ -723,11 +723,11 @@ public:
 	bool   is_release_call;
 	bool   is_justnow_listen;
 	bool   is_check_listen;
+	bool   is_stop_listen;
 	int    call_error_case;
 	int    current_group_member_dwnum;
 	int    call_briscr_dir;
 	int    call_curscr_state;
-	lv_poc_cit_status_type    isCitStatus;
 } PocGuiIIdtComAttr_t;
 
 typedef struct
@@ -748,6 +748,7 @@ typedef struct
 
 CIdtUser m_IdtUser;
 static PocGuiIIdtComAttr_t pocIdtAttr = {0};
+static lv_poc_cit_status_type isCitStatus = LVPOCCIT_TYPE_READ_STATUS;
 
 int Func_GQueryU(DWORD dwSn, UCHAR *pucGNum)
 {
@@ -1246,6 +1247,7 @@ int callback_IDT_CallTalkingIDInd(void *pUsrCtx, char *pcNum, char *pcName)
 		if(!(pocIdtAttr.is_member_call
 			&& pocIdtAttr.membercall_count == 0))
 		{
+			OSI_PRINTFI("[poc][listen][voice](%s)[%d]start play start listen tone", __func__, __LINE__);
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Start_Listen, 30, true);
 		}
 		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LISTEN_SPEAKER_REP, NULL);
@@ -1987,16 +1989,17 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 					pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED;
 
 					//开启自动登陆功能
+					if(m_IdtUser.m_status != UT_STATUS_OFFLINE)
+					{
+						osiTimerStart(pocIdtAttr.auto_login_timer, 50);
+					}
+					else
+					{
+						osiTimerStart(pocIdtAttr.auto_login_timer, 20000);
+					}
 				}
 				lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
-				if(m_IdtUser.m_status != UT_STATUS_OFFLINE)
-				{
-					osiTimerStart(pocIdtAttr.auto_login_timer, 50);
-				}
-				else
-				{
-					osiTimerStart(pocIdtAttr.auto_login_timer, 20000);
-				}
+				pocIdtAttr.is_first_get_grplist_info = false;
 				m_IdtUser.m_status = UT_STATUS_OFFLINE;
 				m_IdtUser.m_Group.m_Group_Num = 0;
 				pocIdtAttr.pPocMemberList->dwNum = 0;
@@ -2400,6 +2403,7 @@ static void prvPocGuiIdtTaskHandleGroupList(uint32_t id, uint32_t ctx)
 			osiMutexLock(pocIdtAttr.mutex);
 			if (strlen((const char *)pocIdtAttr.self_info.ucNum) < 1)
 			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"号码为空", NULL);
 				OSI_LOGI(0, "[group](%d):error", __LINE__);
 				pocIdtAttr.pocGetGroupListCb(0, 0, NULL);
 				osiMutexUnlock(pocIdtAttr.mutex);
@@ -2416,6 +2420,7 @@ static void prvPocGuiIdtTaskHandleGroupList(uint32_t id, uint32_t ctx)
 				if(m_IdtUser.m_Group.m_Group_Num < 1
 					|| pocIdtAttr.loginstatus_t == LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED)
 				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"当前已掉线", NULL);
 					OSI_LOGI(0, "[group](%d):error", __LINE__);
 					pocIdtAttr.pocGetGroupListCb(0, 0, NULL);
 					break;
@@ -3136,7 +3141,8 @@ static void prvPocGuiIdtTaskHandlePlay(uint32_t id, uint32_t ctx)
 		case LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND:
 		{
 			osiMutexLock(pocIdtAttr.mutex);
-			if(m_IdtUser.m_status < UT_STATUS_ONLINE)
+			if(m_IdtUser.m_status < UT_STATUS_ONLINE
+				|| pocIdtAttr.is_stop_listen == false)
 			{
 			    m_IdtUser.m_iRxCount = 0;
 			    m_IdtUser.m_iTxCount = 0;
@@ -3376,6 +3382,7 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			osiMutexLock(pocIdtAttr.mutex);
 			pocIdtAttr.listen_status = false;
 			pocIdtAttr.is_check_listen = false;
+			pocIdtAttr.is_stop_listen = false;
 
 			/*恢复run闪烁*/
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
@@ -3431,7 +3438,7 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)speaker_group_name);
 			}
-
+			pocIdtAttr.is_stop_listen = true;
 			OSI_PRINTFI("[poc][idtlisten]%s(%d):start listen_speaker rep and display idle,windows", __func__, __LINE__);
 
 			osiMutexUnlock(pocIdtAttr.mutex);
@@ -5126,10 +5133,10 @@ extern "C" lv_poc_cit_status_type lvPocGuiComCitStatus(lv_poc_cit_status_type st
 {
 	if(status > LVPOCCIT_TYPE_READ_STATUS)
 	{
-		pocIdtAttr.isCitStatus = status;
+		isCitStatus = status;
 	}
 
-	return pocIdtAttr.isCitStatus;
+	return isCitStatus;
 }
 
 extern "C" uint16_t lvPocGetLoginStatus(void)

@@ -160,6 +160,7 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 
 	switch(cit_test_info->id)
 	{
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_RTC:
 		{
 			char rtcinfo[64];
@@ -188,6 +189,7 @@ static void lv_poc_cit_refresh_cb(lv_task_t *task)
 			task->user_data != NULL ? lv_label_set_text(task->user_data, rtcinfo) : 0;
 			break;
 		}
+#endif
 
 		case LV_POC_CIT_OPRATOR_TYPE_BACKLIGHT:
 		{
@@ -737,6 +739,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			break;
 		}
 
+#ifdef CONFIG_POC_GUI_RTC_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_RTC:
 		{
 			lv_obj_t *label = lv_label_create(list, NULL);
@@ -767,6 +770,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			}
 			break;
 		}
+#endif
 
 		case LV_POC_CIT_OPRATOR_TYPE_BACKLIGHT:
 		{
@@ -1005,6 +1009,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			break;
 		}
 
+#ifdef CONFIG_POC_GUI_GPS_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_GPS:
 		{
 			if(cit_test_info->cit_gps_attr.cb == NULL)
@@ -1062,6 +1067,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			}
 			break;
 		}
+#endif
 
 		case LV_POC_CIT_OPRATOR_TYPE_SIM:
 		{
@@ -1306,6 +1312,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			break;
 		}
 
+#ifdef CONFIG_POC_GUI_FLASH_SUPPORT
 		case LV_POC_CIT_OPRATOR_TYPE_FLASH:
 		{
 			lv_style_t * style_label = NULL;
@@ -1348,6 +1355,7 @@ static void lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
 			}
 			break;
 		}
+#endif
 
 		default:
 		{

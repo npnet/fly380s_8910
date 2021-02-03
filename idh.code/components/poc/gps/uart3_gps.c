@@ -621,6 +621,12 @@ void prvGpsThreadEntry(void *ctx)
 
 			case LVPOCGPSIDTCOM_SIGNAL_STOP_GPS_LOCATION:
 			{
+				if(lvPocGuiComCitStatus(LVPOCCIT_TYPE_READ_STATUS) == LVPOCCIT_TYPE_ENTER)
+				{
+					OSI_LOGI(0, "[GPS][EVENT]cit status, GPS not stop, just break");
+					break;
+				}
+
 				if(osiTimerIsRunning(pocGpsIdtAttr.GpsInfoTimer))
 				{
 					osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);

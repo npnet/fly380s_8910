@@ -138,6 +138,12 @@
 #cmakedefine CONFIG_POC_GUI_FLASH_SUPPORT
 
 /**
+ * Wheth the POC rtc is enabled.
+ *
+ */
+#cmakedefine CONFIG_POC_GUI_RTC_SUPPORT
+
+/**
  * Wheth the POC LCD 2.3V is enabled.
  *
  */
