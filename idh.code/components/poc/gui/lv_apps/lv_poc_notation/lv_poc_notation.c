@@ -296,6 +296,7 @@ lv_obj_t * lv_poc_notation_listenning(const int8_t * text_1, const int8_t * text
 	{
 		lv_poc_notation_create();
 	}
+
 	if(lv_poc_notationwindow_label_3 == NULL)
 	{
 		/*添加 (群组:) 固定框*/
@@ -304,6 +305,7 @@ lv_obj_t * lv_poc_notation_listenning(const int8_t * text_1, const int8_t * text
 		lv_label_set_text(lv_poc_notationwindow_label_3, "                    ");
 		lv_label_set_align(lv_poc_notationwindow_label_3, LV_LABEL_ALIGN_CENTER);
 	}
+
 	if(text_1 != NULL && text_1[0] != 0)
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_1, false);
@@ -342,6 +344,7 @@ lv_obj_t * lv_poc_notation_speaking(const int8_t * text_1, const int8_t * text_2
 	{
 		lv_poc_notation_create();
 	}
+
 	if(lv_poc_notationwindow_label_3 == NULL)
 	{
 		/*添加 (群组:) 固定框*/
@@ -350,6 +353,7 @@ lv_obj_t * lv_poc_notation_speaking(const int8_t * text_1, const int8_t * text_2
 		lv_label_set_text(lv_poc_notationwindow_label_3, "                    ");
 		lv_label_set_align(lv_poc_notationwindow_label_3, LV_LABEL_ALIGN_CENTER);
 	}
+
 	if(text_1 != NULL && text_1[0] != 0)
 	{
 		lv_obj_set_hidden(lv_poc_notationwindow_label_1, false);

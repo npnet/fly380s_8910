@@ -1040,6 +1040,7 @@ void lv_poc_build_tempgrp_member_list_refresh(lv_poc_oem_member_list *member_lis
 		&& lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) <= POC_TMPGRP_OPENMEMLIST)
 	{
 		lv_poc_build_tempgrp_progress(POC_TMPGRP_FINISH);
+		OSI_PRINTFI("[tmpgrp](%s)(%d):refresh finish, save tmpflag", __func__, __LINE__);
 	}
 }
 
@@ -1054,8 +1055,15 @@ void lv_poc_build_tempgrp_memberlist_activity_close(lv_task_t *task)
 	}
 
 	lv_poc_set_group_status(false);
-	OSI_PRINTFI("[tmpgrp](%s)(%d):exit memberlist", __func__, __LINE__);
-	poc_build_tempgrp_member_list_activity ? lv_poc_del_activity(poc_build_tempgrp_member_list_activity) : 0;
+	if(poc_build_tempgrp_member_list_activity != NULL)
+	{
+		OSI_PRINTFI("[tmpgrp](%s)(%d):exit list, del", __func__, __LINE__);
+		lv_poc_del_activity(poc_build_tempgrp_member_list_activity);
+	}
+	else
+	{
+		OSI_PRINTFI("[tmpgrp](%s)(%d):error", __func__, __LINE__);
+	}
 
 	if(lv_poc_build_tempgrp_progress(POC_TMPGRP_READ) == POC_TMPGRP_FINISH)
 	{

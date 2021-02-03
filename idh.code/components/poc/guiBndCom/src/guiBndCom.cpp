@@ -260,7 +260,6 @@ public:
 	int call_type;
 	int signalcall_gid;
 	uint16_t loginstatus_t;
-	lv_poc_tmpgrp_t cit_status;
 	int single_multi_call_type;
 	int info_error_type;
 	int  call_briscr_dir;
@@ -283,6 +282,7 @@ public:
 
 CBndUser m_BndUser;
 static PocGuiBndComAttr_t pocBndAttr = {0};
+static lv_poc_tmpgrp_t cit_status = POC_TMPGRP_START;
 
 #ifdef POC_SUPPORT_BND_FUNCTION
 bool AIR_Log_Debug(const char *format, ...)//日志打印
@@ -2091,6 +2091,9 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 				{
 					if(pocBndAttr.is_enter_signal_multi_call == true)//multi-call
 					{
+						nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+						poc_config->tmpgroupid = pocBndAttr.BndTmpGrpInf.gid;
+					    lv_poc_setting_conf_write();
 						pocBndAttr.BndMsgGMemberBuf.dwNum = lvPocGuiBndCom_try_get_memberinfo(pocBndAttr.BndTmpGrpInf.gid, BndGData_s);
 					}
 					else
@@ -2378,8 +2381,21 @@ static void prvPocGuiBndTaskHandleCurrentGroup(uint32_t id, uint32_t ctx)
 				break;
 			}
 
-			osiMutexLock(pocBndAttr.lock);
 			if(ctx == 0)
+			{
+				pocBndAttr.pocSetCurrentGroupCb(0);
+				pocBndAttr.pocSetCurrentGroupCb = NULL;
+				break;
+			}
+
+			osiMutexLock(pocBndAttr.lock);
+			CGroup * group_info = (CGroup *)ctx;
+
+			//get click group type
+			bnd_group_t bnd_group_attr = {0};
+			bnd_gid_t gid = atoi((char *)group_info->m_ucGNum);
+			int status = broad_group_getbyid(gid, &bnd_group_attr);
+			if(status != 0)//error
 			{
 				pocBndAttr.pocSetCurrentGroupCb(0);
 				pocBndAttr.pocSetCurrentGroupCb = NULL;
@@ -2387,41 +2403,51 @@ static void prvPocGuiBndTaskHandleCurrentGroup(uint32_t id, uint32_t ctx)
 				break;
 			}
 
-			CGroup * group_info = (CGroup *)ctx;
-			lv_poc_activity_func_cb_set.group_member_activity_open((char *)group_info->m_ucGName);
+			if(bnd_group_attr.type == GRP_COMMON)//set cur group
+			{
+				lv_poc_activity_func_cb_set.group_member_activity_open((char *)group_info->m_ucGName);
 
-			unsigned int index = 0;
-			for(index = 0; index < m_BndUser.m_Group.m_Group_Num; index++)
-			{
-				if(0 == strcmp((const char *)group_info->m_ucGNum, (const char *)m_BndUser.m_Group.m_Group[index].m_ucGNum)) break;
-			}
-
-			if(m_BndUser.m_Group.m_Group_Num < 1
-				|| index >=  m_BndUser.m_Group.m_Group_Num)
-			{
-				OSI_PRINTFI("[setcurgrp](%s)(%d):error, index(%d)", __func__, __LINE__, index);
-				pocBndAttr.pocSetCurrentGroupCb(0);
-			}
-			else if(index == pocBndAttr.current_group)//已在群组
-			{
-				pocBndAttr.haveingroup = true;
-				pocBndAttr.pocSetCurrentGroupCb(2);
-				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocBndAttr.self_info.ucName, m_BndUser.m_Group.m_Group[pocBndAttr.current_group].m_ucGName);
-				OSI_PRINTFI("[setcurgrp](%s)(%d):current group in", __func__, __LINE__, index);
-			}
-			else//切组成功
-			{
+				unsigned int index = 0;
+				for(index = 0; index < m_BndUser.m_Group.m_Group_Num; index++)
 				{
-					nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
-					strcpy(poc_config->curren_group_name, (char *)m_BndUser.m_Group.m_Group[index].m_ucGName);
-					lv_poc_setting_conf_write();
-				}//wait for some time
+					if(0 == strcmp((const char *)group_info->m_ucGNum, (const char *)m_BndUser.m_Group.m_Group[index].m_ucGNum)) break;
+				}
+
+				if(m_BndUser.m_Group.m_Group_Num < 1
+					|| index >=  m_BndUser.m_Group.m_Group_Num)
+				{
+					OSI_PRINTFI("[setcurgrp](%s)(%d):error, index(%d)", __func__, __LINE__, index);
+					pocBndAttr.pocSetCurrentGroupCb(0);
+				}
+				else if(index == pocBndAttr.current_group)//已在群组
+				{
+					pocBndAttr.haveingroup = true;
+					pocBndAttr.pocSetCurrentGroupCb(2);
+					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocBndAttr.self_info.ucName, m_BndUser.m_Group.m_Group[pocBndAttr.current_group].m_ucGName);
+					OSI_PRINTFI("[setcurgrp](%s)(%d):current group in", __func__, __LINE__, index);
+				}
+				else//切组成功
+				{
+					{
+						nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+						strcpy(poc_config->curren_group_name, (char *)m_BndUser.m_Group.m_Group[index].m_ucGName);
+						lv_poc_setting_conf_write();
+					}//wait for some time
+					pocBndAttr.haveingroup = false;
+					pocBndAttr.current_group = index;
+					pocBndAttr.pocSetCurrentGroupCb(1);
+					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocBndAttr.self_info.ucName, m_BndUser.m_Group.m_Group[pocBndAttr.current_group].m_ucGName);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组成员...", NULL);
+					OSI_PRINTFI("[setcurgrp](%s)(%d):current group out", __func__, __LINE__, index);
+				}
+			}
+			else//multi call
+			{
 				pocBndAttr.haveingroup = false;
-				pocBndAttr.current_group = index;
 				pocBndAttr.pocSetCurrentGroupCb(1);
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocBndAttr.self_info.ucName, m_BndUser.m_Group.m_Group[pocBndAttr.current_group].m_ucGName);
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组成员...", NULL);
-				OSI_PRINTFI("[setcurgrp](%s)(%d):current group out", __func__, __LINE__, index);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取临时组成员...", NULL);
+				OSI_PRINTFI("[setcurgrp](%s)(%d):current group out, join tmpgrp", __func__, __LINE__);
 			}
 			pocBndAttr.pocSetCurrentGroupCb = NULL;
 			osiMutexUnlock(pocBndAttr.lock);
@@ -3827,6 +3853,13 @@ extern "C" bool lvPocGuiBndCom_Msg(LvPocGuiIdtCom_SignalType_t signal, void * ct
 	    return false;
     }
 
+	if(signal < LVPOCGUIBNDCOM_SIGNAL_CIT_ENTER_IND
+        && (lvPocGuiBndCom_cit_status(POC_TMPGRP_READ) == POC_CIT_ENTER))
+    {
+        OSI_PRINTFI("[msg](%s)(%d):error(%d)", __func__, __LINE__, lvPocGuiBndCom_cit_status(POC_TMPGRP_READ));
+        return false;
+    }
+
 	static osiEvent_t event = {0};
 
 	uint32_t critical = osiEnterCritical();
@@ -3928,9 +3961,9 @@ lv_poc_tmpgrp_t lvPocGuiBndCom_cit_status(lv_poc_tmpgrp_t status)
 {
     if(status == POC_TMPGRP_READ)
     {
-        return pocBndAttr.cit_status;
+        return cit_status;
     }
-    pocBndAttr.cit_status = status;
+    cit_status = status;
     return POC_TMPGRP_START;
 }
 

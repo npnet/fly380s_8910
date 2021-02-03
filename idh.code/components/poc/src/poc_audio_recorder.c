@@ -608,124 +608,125 @@ bool pocAudioRecorderStopPocMode(void)
 
 //自测录音 play mode
 #define RECORDER_FILE_NAME "/example_playmode.pcm"
-static auWriter_t *pocwriter = NULL;
-static auRecorder_t *pocrecorder = NULL;
-extern ssize_t vfs_file_size(const char *path);
 
-void lv_poc_start_recordwriter(void)
+struct lv_poc_recordplayer_t
 {
-    pocwriter = (auWriter_t *)auFileWriterCreate(RECORDER_FILE_NAME);
-    pocrecorder = auRecorderCreate();
-    auRecorderStartWriter(pocrecorder, AUDEV_RECORD_TYPE_MIC, AUSTREAM_FORMAT_PCM, NULL, pocwriter);
-}
+    osiThread_t *thread;
+	auWriter_t *writer;
+	auRecorder_t *recorder;
+	auPlayer_t *player;
+	osiMutex_t *mutex;
+	bool launch;
+};
+
+struct lv_poc_recordplayer_t recordplayer = {0};
+
+extern ssize_t vfs_file_size(const char *path);
+extern int vfs_unlink(const char *path);
 
 static
 void lv_poc_stop_recordwriter(void)
 {
-	if(pocrecorder == NULL || pocwriter == NULL)
+	if(recordplayer.recorder == NULL
+		|| recordplayer.writer == NULL)
 	{
 		return;
 	}
+	else
+	{
+		auRecorderStop(recordplayer.recorder);
+	    auRecorderDelete(recordplayer.recorder);
+	    auWriterDelete(recordplayer.writer);
+		recordplayer.recorder = NULL;
+		recordplayer.writer = NULL;
+	    vfs_file_size(RECORDER_FILE_NAME);
+	}
+}
 
-    auRecorderStop(pocrecorder);
-    auRecorderDelete(pocrecorder);
-    auWriterDelete(pocwriter);
-    vfs_file_size(RECORDER_FILE_NAME);
+static
+void lv_poc_recordplayer_thread(void * ctx)
+{
+	if(recordplayer.player != NULL)
+	{
+		osiThreadExit();
+	}
+
+	recordplayer.player = auPlayerCreate();
+	if(recordplayer.player == NULL)
+	{
+		osiThreadExit();
+	}
+
+	auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
+	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
+
+	while(1)
+	{
+		if(recordplayer.launch == true)
+		{
+			recordplayer.launch = false;
+			bool status = auPlayerStartFile(recordplayer.player, AUSTREAM_FORMAT_PCM, params, RECORDER_FILE_NAME);
+			OSI_LOGXI(OSI_LOGPAR_S, 0, "[poc]play:(%s)", status ? "success" : "failed");
+		}
+
+		if(auPlayerWaitFinish(recordplayer.player, OSI_WAIT_FOREVER))
+		{
+			OSI_LOGI(0, "[poc]play:finish");
+			auPlayerDelete(recordplayer.player);
+			recordplayer.player = NULL;
+			vfs_unlink(RECORDER_FILE_NAME);
+			recordplayer.thread = NULL;
+			osiThreadExit();
+		}
+		osiThreadSleep(500);
+	}
+}
+
+void lv_poc_start_recordwriter(void)
+{
+	if(recordplayer.mutex == NULL)
+	{
+		recordplayer.mutex = osiMutexCreate();
+	}
+
+	recordplayer.mutex ? osiMutexLock(recordplayer.mutex) : 0;
+	if(recordplayer.writer == NULL)
+	{
+    	recordplayer.writer = (auWriter_t *)auFileWriterCreate(RECORDER_FILE_NAME);
+	}
+
+	if(recordplayer.writer == NULL)
+	{
+		OSI_PRINTFI("[poc][recorder](%s)(%d):writer error", __func__, __LINE__);
+		recordplayer.mutex ? osiMutexUnlock(recordplayer.mutex) : 0;
+		return;
+	}
+
+	if(recordplayer.recorder == NULL)
+	{
+    	recordplayer.recorder = auRecorderCreate();
+	}
+
+	if(recordplayer.recorder != NULL)
+	{
+    	auRecorderStartWriter(recordplayer.recorder, AUDEV_RECORD_TYPE_MIC, AUSTREAM_FORMAT_PCM, NULL, recordplayer.writer);
+	}
+	else
+	{
+		OSI_PRINTFI("[poc][recorder](%s)(%d):recorder error", __func__, __LINE__);
+	}
+	recordplayer.mutex ? osiMutexUnlock(recordplayer.mutex) : 0;
 }
 
 void lv_poc_start_playfile(void)
 {
-	lv_poc_stop_recordwriter();/*stop record*/
-
-	auPlayer_t *player = auPlayerCreate();
-	auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
-	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
-	auPlayerStartFile(player, AUSTREAM_FORMAT_PCM, params, RECORDER_FILE_NAME);
-
-	auPlayerWaitFinish(player, OSI_WAIT_FOREVER);
-	auPlayerDelete(player);
-}
-
-//自测录音 poc mode
-#define POCMODE_RECORDER_FILE_NAME "/example_pocmode.pcm"
-static auWriter_t *pocmodewriter = NULL;
-static auRecorder_t *pocmoderecorder = NULL;
-static auPlayer_t *pocmodeplayer = NULL;
-
-void lv_poc_start_recordwriter_pocmode(void)
-{
-	if(pocmodewriter == NULL && pocmoderecorder == NULL)
-	{
-	    pocmodewriter = (auWriter_t *)auFileWriterCreate(POCMODE_RECORDER_FILE_NAME);
-	    pocmoderecorder = auRecorderCreate();
-	}
-
-	if(pocmodewriter == NULL || pocmoderecorder == NULL)
+	if(recordplayer.thread != NULL)
 	{
 		return;
 	}
-    auRecorderStartWriter(pocmoderecorder, AUDEV_RECORD_TYPE_POC, AUSTREAM_FORMAT_PCM, NULL, pocmodewriter);
-
-	//poc mode
-	if(!audevStartPocMode(AUPOC_STATUS_HALF_DUPLEX))
-	{
-		OSI_LOGI(0, "[testpoc]recorder start poc mode failed");
-		auRecorderStop(pocmoderecorder);
-		return;
-	}
-
-	if(!audevPocModeSwitch(LV_POC_MODE_RECORDER))
-	{
-		if(!audevPocModeSwitch(LV_POC_MODE_RECORDER))
-		{
-			OSI_LOGI(0, "[testpoc]switch recorder failed");
-			return;
-		}
-		OSI_LOGI(0, "[testpoc]switch recorder success");
-	}
-	OSI_LOGI(0, "[testpoc]recorder poc mode start");
-}
-
-static
-void lv_poc_stop_recordwriter_pocmode(void)
-{
-	if(pocmoderecorder == NULL || pocmodewriter == NULL)
-	{
-		return;
-	}
-
-    auRecorderStop(pocmoderecorder);
-    auRecorderDelete(pocmoderecorder);
-    auWriterDelete(pocmodewriter);
-
-	pocmoderecorder = NULL;
-	pocmodewriter = NULL;
-    vfs_file_size(POCMODE_RECORDER_FILE_NAME);
-
-	if(!audevStopPocMode())
-	{
-		OSI_LOGI(0, "[testpoc]stop poc mode failed");
-		return;
-	}
-	OSI_LOGI(0, "[testpoc]recorder poc mode stop");
-}
-
-void lv_poc_start_playfile_pocmode(void)
-{
-	lv_poc_stop_recordwriter_pocmode();/*stop record*/
-
-	if(pocmodeplayer == NULL)
-	{
-		pocmodeplayer = auPlayerCreate();
-	}
-	auFrame_t frame = {.sample_format = AUSAMPLE_FORMAT_S16, .sample_rate = 8000, .channel_count = 1};
-	auDecoderParamSet_t params[2] = {{AU_DEC_PARAM_FORMAT, &frame}, {0}};
-	auPlayerStartFile(pocmodeplayer, AUSTREAM_FORMAT_PCM, params, POCMODE_RECORDER_FILE_NAME);
-	OSI_LOGI(0, "[testpoc]poc mode start playing");
-	auPlayerWaitFinish(pocmodeplayer, OSI_WAIT_FOREVER);
-	auPlayerDelete(pocmodeplayer);
-	pocmodeplayer = NULL;
-	OSI_LOGI(0, "[testpoc]poc mode stop playing");
+	lv_poc_stop_recordwriter();
+	recordplayer.launch = true;
+    recordplayer.thread = osiThreadCreate("recordplayer", lv_poc_recordplayer_thread, NULL, OSI_PRIORITY_NORMAL, 1024*5, 64);
 }
 
 #endif

@@ -21,6 +21,8 @@
 
 #define POC_PIPE_RECV_IND (6025)
 
+#define POC_LAUNCH_RECORDBACK_FILE (0)
+
 struct osiPipe
 {
     volatile bool running;
@@ -141,7 +143,9 @@ bool pocAudioPipeStart(void)
 		return false;
 	}
 
+#if POC_LAUNCH_RECORDBACK_FILE
 	lv_poc_pcm_open_file();
+#endif
 	OSI_PRINTFI("[pocPipe](%s)(%d):pipe launching", __func__, __LINE__);
 
 	if(PipeAttr.recv_thread_id == NULL)
@@ -176,7 +180,9 @@ bool pocAudioPipeStop(void)
 		return false;
 	}
 
+#if POC_LAUNCH_RECORDBACK_FILE
 	lv_poc_pcm_close_file();
+#endif
 
 	if(!audevStopPocMode())
 	{
@@ -229,7 +235,9 @@ void pocAudioPipeWriteData(const uint8_t *data, uint32_t length)
 	poc_event.param2 = length;
 	osiEventSend(d->recv_thread_id, &poc_event);
 
+#if POC_LAUNCH_RECORDBACK_FILE
 	lv_poc_pcm_write_to_file(data, length);//pcm to file
+#endif
 }
 
 bool pocAudioPipeGetStatus(void)

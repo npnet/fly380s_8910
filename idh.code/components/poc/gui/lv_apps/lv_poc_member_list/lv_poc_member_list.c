@@ -985,6 +985,13 @@ void lv_poc_memberlist_activity_open(lv_task_t * task)
 
 }
 
+void lv_poc_memberlist_activity_close(void)
+{
+	member_refresh_attr->mutex ? osiMutexLock(member_refresh_attr->mutex) : 0;
+	poc_member_list_activity ? lv_poc_del_activity(poc_member_list_activity) : 0;
+	member_refresh_attr->mutex ? osiMutexUnlock(member_refresh_attr->mutex) : 0;
+}
+
 void lv_poc_member_list_refresh_task(lv_task_t *task)
 {
 	if(member_refresh_attr->refresh_type == POC_REFRESH_TYPE_MEMBER_START)

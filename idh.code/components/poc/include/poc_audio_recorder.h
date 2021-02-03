@@ -116,10 +116,6 @@ void lv_poc_start_recordwriter(void);
 
 void lv_poc_start_playfile(void);
 
-void lv_poc_start_recordwriter_pocmode(void);
-
-void lv_poc_start_playfile_pocmode(void);
-
 OSI_EXTERN_C_END
 
 #endif

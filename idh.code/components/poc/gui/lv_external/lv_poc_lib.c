@@ -898,6 +898,11 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			continue;
 		}
 
+		while(ttsIsPlaying())
+		{
+			osiDelayUS(20000);
+		}
+
 		switch(poc_voice_player_attr.voice_type)
 		{
 			case LVPOCAUDIO_Type_Start_Machine:
@@ -987,11 +992,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				break;
 		}
 
-		while(ttsIsPlaying())
-		{
-			osiDelayUS(20000);
-		}
-
 		if(lvPocGuiBndCom_get_listen_status()
 			|| lvPocGuiBndCom_get_speak_status())
 		{
@@ -1030,7 +1030,7 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 			OSI_PRINTFI("[keytone](%s)(%d)error, isplay(%d)", __func__, __LINE__, keytoneattr.is_poc_play_voice);
 			return;
 		}
-		prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+		prv_play_btn_voice_one_time_thread = osiThreadCreate("play_btn_voice", prv_play_btn_voice_one_time_thread_callback, NULL, OSI_PRIORITY_NORMAL, 1024*3, 64);
 		if(prv_play_btn_voice_one_time_thread != NULL)
 		{
 			keytoneattr.is_task_run = true;
@@ -1047,6 +1047,14 @@ poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 void
 poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN bool isBreak)
 {
+	if(lvPocGuiBndCom_cit_status(POC_TMPGRP_READ) == POC_CIT_ENTER)//cit
+	{
+		if(lv_poc_cit_get_run_status() != LV_POC_CIT_OPRATOR_TYPE_VOLUM)
+		{
+			return;
+		}
+	}
+
 	lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SET_START_PLAYER_TTS_VOICE, NULL);
 	if(NULL != prv_play_btn_voice_one_time_player)
 	{
@@ -1631,6 +1639,7 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	strcpy(poc_setting->old_account_current_group, "");
 	strcpy(poc_setting->ip_address, "124.160.11.21");
 	poc_setting->ip_port = 10000;
+	poc_setting->tmpgroupid = 0;
 #endif
 	poc_setting->nv_monitor_group_number = 0;
 #ifdef CONFIG_POC_TONE_SWITCH_SUPPORT
