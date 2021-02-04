@@ -2000,6 +2000,10 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 						osiTimerStart(pocIdtAttr.auto_login_timer, 20000);
 					}
 				}
+
+				OSI_PRINTFI("[login](%s)(%d):exit", __func__, __LINE__);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, true);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, false);
 				lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
 				pocIdtAttr.is_first_get_grplist_info = false;
 				m_IdtUser.m_status = UT_STATUS_OFFLINE;
@@ -2022,7 +2026,8 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 	        IDT_StatusSubs((char*)"###", GU_STATUSSUBS_BASIC);
 	        if(m_IdtUser.m_status < UT_STATUS_ONLINE)//登录成功
 	        {
-				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, false);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, true);
 				pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_SUCCESS;
 
 				if(pocIdtAttr.onepoweron == false
@@ -2205,7 +2210,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			if(m_IdtUser.m_status == USER_OPRATOR_SPEAKING)
 			{
 				/*开始闪烁*/
-				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, true);
 
 				char speak_name[100] = "";
 				strcpy((char *)speak_name, (const char *)"主讲:");
@@ -2258,8 +2263,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
       				&& pocIdtAttr.is_makeout_call == true))
 			{
 				/*恢复run闪烁*/
-			    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_TALK_STATUS, false);
 
 				poc_play_voice_one_time(LVPOCAUDIO_Type_Tone_Stop_Speak, 30, true);
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_speak, 2, "停止对讲", NULL);
@@ -3194,6 +3198,7 @@ static void prvPocGuiIdtTaskHandleRecord(uint32_t id, uint32_t ctx)
 			pocAudioRecorderStart(pocIdtAttr.recorder);
 			m_IdtUser.m_status = USER_OPRATOR_SPEAKING;
 			pocIdtAttr.speak_status = true;
+			poc_set_ext_pa_status(false);
 			osiMutexUnlock(pocIdtAttr.mutex);
 			break;
 		}
@@ -3387,8 +3392,7 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			pocIdtAttr.is_stop_listen = false;
 
 			/*恢复run闪烁*/
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NORMAL_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, false);
 
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, "停止聆听", "");
 
@@ -3421,7 +3425,7 @@ static void prvPocGuiIdtTaskHandleListen(uint32_t id, uint32_t ctx)
 			strcat(speaker_name, (const char *)"正在讲话");
 
 			//开始闪烁
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, true);
 
 			//member call
 			if(pocIdtAttr.is_member_call)
@@ -4289,8 +4293,10 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIIDTCOM_SIGNAL_SCREEN_ON_IND:
 		{
+			osiMutexLock(pocIdtAttr.mutex);
 			lv_poc_set_cur_grp_list_status(true);
 			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_LOCK_GROUP_STATUS_IND, NULL);
+			osiMutexUnlock(pocIdtAttr.mutex);
 			break;
 		}
 
@@ -4299,59 +4305,29 @@ static void prvPocGuiIdtTaskHandleOther(uint32_t id, uint32_t ctx)
 			break;
 		}
 
-		case LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND:
-		{
-			osiMutexLock(pocIdtAttr.mutex);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始录音", (const uint8_t *)"");
-			lv_poc_start_recordwriter();
-			osiMutexUnlock(pocIdtAttr.mutex);
-			break;
-		}
-
-		case LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND:
-		{
-			osiMutexLock(pocIdtAttr.mutex);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"开始播放", (const uint8_t *)"");
-			lv_poc_start_playfile();
-			osiMutexUnlock(pocIdtAttr.mutex);
-			break;
-		}
-
-		case LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND:
-		{
-			poc_play_voice_one_time(LVPOCAUDIO_Type_Test_Volum, 50, false);
-			break;
-		}
-
-		case LVPOCGUIIDTCOM_SIGNAL_SET_SCREEN_STATUS_IND:
-		{
-			if(!poc_get_lcd_status())
-			{
-				lvGuiScreenOn();
-				lvGuiUpdateLastActivityTime();
-			}
-			break;
-		}
-
 		case LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND:
 		{
+			osiMutexLock(pocIdtAttr.mutex);
 			lvPocGuiIdtCom_stop_check_ack();
+			osiMutexUnlock(pocIdtAttr.mutex);
 			break;
 		}
 
 		case LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_START_IND:
 		{
+			osiMutexLock(pocIdtAttr.mutex);
 			OSI_PRINTFI("[poc][audev][voice](%s)(%d):start", __func__, __LINE__);
 			lv_poc_set_audevplay_status(true);
+			osiMutexUnlock(pocIdtAttr.mutex);
 			break;
 		}
 
 		case LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_STOP_IND:
 		{
+			osiMutexLock(pocIdtAttr.mutex);
 			OSI_PRINTFI("[poc][audev][voice](%s)(%d):stop", __func__, __LINE__);
 			lv_poc_set_audevplay_status(false);
+			osiMutexUnlock(pocIdtAttr.mutex);
 			break;
 		}
 
@@ -4642,29 +4618,6 @@ static void prvPocGuiIdtTaskHandleDelayOpenPA(uint32_t id, uint32_t ctx)
 	}
 }
 
-static void prvPocGuiIdtTaskHandlePingNet(uint32_t id, uint32_t ctx)
-{
-	switch(id)
-	{
-	   case LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_REP:
-	   {
-		  lv_poc_activity_func_cb_set.status_led(LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_IND, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_200 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
-		  break;
-	   }
-
-	   case LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP:
-	   {
-		  lv_poc_activity_func_cb_set.status_led(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_IND, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_200 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_4);
-		  break;
-	   }
-
-	   default:
-	   {
-		  break;
-	   }
-	}
-}
-
 static void pocGuiIdtComTaskEntry(void *argument)
 {
 
@@ -4854,7 +4807,6 @@ static void pocGuiIdtComTaskEntry(void *argument)
 			case LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND:
 			case LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND:
 			case LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND:
-			case LVPOCGUIIDTCOM_SIGNAL_SET_SCREEN_STATUS_IND:
 			case LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND:
 			case LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_START_IND:
 			case LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_STOP_IND:
@@ -4907,13 +4859,6 @@ static void pocGuiIdtComTaskEntry(void *argument)
                 prvPocGuiIdtTaskHandleDelayOpenPA(event.param1, event.param2);
                 break;
          	}
-
-			case LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_REP:
-			case LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP:
-			{
-				prvPocGuiIdtTaskHandlePingNet(event.param1, event.param2);
-				break;
-			}
 
 			default:
 				OSI_LOGW(0, "[gic] receive a invalid event\n");

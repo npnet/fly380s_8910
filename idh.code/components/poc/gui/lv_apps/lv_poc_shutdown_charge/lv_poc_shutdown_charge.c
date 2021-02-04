@@ -58,13 +58,14 @@ void pocLvgl_ShutdownCharge_Start(void)
 static
 void lv_poc_shutdown_charge_Animation_Task(void *ctx)
 {
+    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_REGISTER_STATUS, true);
 	lv_poc_shutdown_charge_power_on_logo();
 	poc_charge_poweron_status = true;//为充电开机
 	lv_poc_set_power_on_status(true);//设备准备就绪
 	//lv刷新图标
 	lv_task_create(lv_poc_charge_poweron_battery_refresh, LVPOCLISTIDTCOM_LIST_PERIOD_800
 	, LV_TASK_PRIO_MID, NULL);
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, true);
 	while(1)
 	{
 		osiThreadSleepRelaxed(1000, OSI_WAIT_FOREVER);
@@ -130,7 +131,8 @@ lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 {
 	const lv_img_dsc_t * battery_img = NULL;
 	static uint8_t battery_img_cur = 100;
-	battery_values_t battery_t;
+	battery_values_t battery_t = {0};
+	static bool charge_complete_status = false;
 	poc_battery_get_status(&battery_t);
 
 	if(battery_img_cur == 100)
@@ -138,7 +140,7 @@ lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 		battery_img_cur = lv_poc_get_battery_cnt(&battery_t);
 		if(battery_img_cur < 7)
 		{
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, true);
 		}
 	}
 
@@ -157,7 +159,12 @@ lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 	{
 		if(battery_t.battery_value >= 100)
 		{
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+			if(charge_complete_status == false)
+			{
+				charge_complete_status = true;
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, true);
+			}
 
 			battery_img = charge_battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;

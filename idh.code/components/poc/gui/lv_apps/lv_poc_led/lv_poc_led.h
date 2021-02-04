@@ -9,8 +9,8 @@
 extern "C" {
 #endif
 
-void poc_Status_Led_Task(void);
-bool lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count);
+void poc_status_led_task(void);
+bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool valid);
 
 #ifdef __cplusplus
 }

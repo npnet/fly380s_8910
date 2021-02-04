@@ -438,7 +438,7 @@ void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t even
 		if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
 		{
 		}
-		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS, true);
 		lv_poc_set_power_on_status(false);//设备挂起
 		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
 			LV_TASK_PRIO_MID, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
@@ -495,7 +495,7 @@ void lv_poc_reboot_warning_apply_event_handler(lv_obj_t *obj, lv_event_t event)
 {
 	//回调事件
 	if(event == LV_EVENT_APPLY){//确认重新启动
-		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS, true);
 		lv_poc_set_power_on_status(false);//设备挂起
 		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
 			LV_TASK_PRIO_MID, (void *)LVPOCSHUTDOWN_TYPE_REBOOT);

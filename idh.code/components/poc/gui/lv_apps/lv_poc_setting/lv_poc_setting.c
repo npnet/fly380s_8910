@@ -191,14 +191,14 @@ static void lv_poc_setting_GPS_btn_cb(lv_obj_t * obj)
 		lv_sw_off(ext_obj, LV_ANIM_OFF);
 		poc_setting_conf->GPS_switch = 0;
 		lv_poc_stabar_show_gps_img(false);
-		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, 0, 0);
+		lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, false);
 	}
 	else
 	{
 		lv_sw_on(ext_obj, LV_ANIM_OFF);
 		poc_setting_conf->GPS_switch = 1;
 		lv_poc_stabar_show_gps_img(true);
-		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, 0, 0);
+		lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, false);
 	}
 	lv_poc_setting_conf_write();
 }
@@ -272,7 +272,7 @@ static void poc_setting_destory(lv_obj_t *obj)
 {
 	poc_setting_activity = NULL;
 	setting_selected_item = 0;
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_IDLE_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_3000 ,LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS, false);
 }
 
 static void * poc_setting_list_create(lv_obj_t * parent, lv_area_t display_area)
@@ -722,7 +722,7 @@ void lv_poc_setting_open(void)
 	}
 
 	mutex ? osiMutexLock(mutex) : 0;
-    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_0, LVPOCLEDIDTCOM_SIGNAL_JUMP_1);
+    lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SETTING_STATUS, true);
 	poc_setting_conf = lv_poc_setting_conf_read();
 	setting_selected_item = 0;
     poc_setting_activity = lv_poc_create_activity(&activity_main_menu_ext, true, false, NULL);

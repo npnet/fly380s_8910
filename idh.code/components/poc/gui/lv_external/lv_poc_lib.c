@@ -38,7 +38,7 @@
 *************************************************/
 extern bool pub_lv_poc_get_watchdog_status(void);
 extern int lv_poc_cit_get_run_status(void);
-extern bool lvPocLedIdtCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, LVPOCIDTCOM_Led_Period_t ctx, LVPOCIDTCOM_Led_Jump_Count_t count);
+extern bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool valid);
 extern bool pubPocIdtGpsTaskStatus(void);
 
 /*************************************************
@@ -1338,11 +1338,11 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	CFW_NW_STATUS_INFO nStatusInfo;
 	uint8_t status;
 
-	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, true);
 
 	if(!poc_check_sim_prsent(sim))
 	{
-		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_500, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, true);
 		if(number >= 10 || number == 0)//5min
 		{
 			number = 1;
@@ -1357,7 +1357,7 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		|| CFW_NwGetStatus(&nStatusInfo, sim) != 0)
 		&& (!pub_lv_poc_get_watchdog_status()))
 	{
-		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
 		lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NONETWORK);
 		return false;
@@ -1368,11 +1368,14 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 		|| nStatusInfo.nStatus == 4)
 		&& (!pub_lv_poc_get_watchdog_status()))
 	{
-		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, LVPOCLEDIDTCOM_BREATH_LAMP_PERIOD_800, LVPOCLEDIDTCOM_SIGNAL_JUMP_FOREVER);
+		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, true);
 		poc_play_voice_one_time(LVPOCAUDIO_Type_No_Connected, 50, false);
 		lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NONETWORK);
 		return false;
 	}
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, false);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, true);
 	return true;
 }
 
@@ -1993,7 +1996,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		ear_key_attr.ear_key_press = true;
 		poc_earkey_state = true;
 		OSI_PRINTFI("[headset](%s)[%d]key is press,start speak\n", __func__, __LINE__);
-		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_RECORDER_IND, NULL) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_RECORDER_IND, false) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
 	}
 	else
 	{
@@ -2011,7 +2014,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
  			   ear_key_attr.ear_key_press = false;
 			   poc_earkey_state = false;
 			   OSI_PRINTFI("[headset](%s)[%d]key is release,stop speak\n", __func__, __LINE__);
-			   lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : 0 ): lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+			   lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : 0 ): lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		   }
 		   checkcbnum = 0;
 	   }
@@ -2069,11 +2072,10 @@ void poc_ear_ppt_irq(void *ctx)
 		ear_key_attr.ear_key_press = false;
 		poc_earkey_state = false;
 		OSI_PRINTFI("[headset](%s)[%d]key is release,stop speak\n", __func__, __LINE__);
-		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOOPBACK_PLAYER_IND, NULL) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 	}
 	else//press
 	{
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SET_SCREEN_STATUS_IND, NULL);
 		osiTimerStart(ear_key_attr.ear_press_timer, 80);
 		OSI_LOGI(0, "[headset]ear time start\n");
 	}
@@ -3563,7 +3565,7 @@ void lv_poc_type_gps_cb(int status)
 	if(status == 0)
 	{
 		poc_config->GPS_switch = false;
-		lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, 0, 0);
+		lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_SUSPEND_IND, false);
 		lv_poc_stabar_show_gps_img(false);
 	}
 	else
@@ -3572,7 +3574,8 @@ void lv_poc_type_gps_cb(int status)
 		{
 			poc_config->GPS_switch = true;
 			lv_poc_stabar_show_gps_img(true);
-		    lvPocLedIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, 0, 0);
+		    lvPocLedCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_RESUME_IND, false);
+
 		}
 	}
 	lv_poc_setting_conf_write();
@@ -3596,7 +3599,7 @@ bool lv_poc_type_volum_cb(int status)
 	}
 	else
 	{
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_TEST_VLOUM_PLAY_IND, NULL);
+		lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_TEST_VLOUM_PLAY_IND, false);
 	}
 	return false;
 }
