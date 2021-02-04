@@ -750,7 +750,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					{
 						OSI_PRINTFI("[poc][keytone](%s)(%d)start speak", __func__, __LINE__);
 						is_poc_speak_tone_complete = false;
-						if(pocGetPttKeyState())
+						if(pocGetPttKeyState() || lv_poc_get_earppt_state())
 						{
 							lv_poc_set_play_tone_status(true);
 							lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);

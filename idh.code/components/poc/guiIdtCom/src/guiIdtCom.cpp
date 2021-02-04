@@ -728,6 +728,7 @@ public:
 	int    current_group_member_dwnum;
 	int    call_briscr_dir;
 	int    call_curscr_state;
+	int	   login_count;
 } PocGuiIIdtComAttr_t;
 
 typedef struct
@@ -1989,9 +1990,10 @@ static void prvPocGuiIdtTaskHandleLogin(uint32_t id, uint32_t ctx)
 					pocIdtAttr.loginstatus_t = LVPOCLEDIDTCOM_SIGNAL_LOGIN_FAILED;
 
 					//开启自动登陆功能
-					if(m_IdtUser.m_status != UT_STATUS_OFFLINE)
+					if(pocIdtAttr.login_count < 5)
 					{
 						osiTimerStart(pocIdtAttr.auto_login_timer, 50);
+						pocIdtAttr.login_count++;
 					}
 					else
 					{
