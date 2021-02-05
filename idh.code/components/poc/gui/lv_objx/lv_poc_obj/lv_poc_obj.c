@@ -2848,11 +2848,18 @@ lv_poc_activity_t *lv_poc_create_activity(lv_poc_activity_ext_t *activity_ext,
     poc_setting_conf = lv_poc_setting_conf_read();
     poc_display_style = (lv_style_t *)(poc_setting_conf->theme.current_theme->style_base);
     lv_poc_activity_t *activity = (lv_poc_activity_t *)lv_mem_alloc(sizeof(lv_poc_activity_t));
+
+	if(activity == NULL)
+	{
+        OSI_LOGI(0, "(%d):[activity]error", __LINE__);
+		return NULL;
+	}
     memset(activity,0,sizeof(lv_poc_activity_t));
     if(_idle_activity == NULL)
     {
         _idle_activity = activity;
     }
+
     lv_poc_stack_push(activity);
     lv_poc_activity_list_insert(activity);
 

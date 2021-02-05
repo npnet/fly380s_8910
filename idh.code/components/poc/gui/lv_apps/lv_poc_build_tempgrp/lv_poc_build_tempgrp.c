@@ -181,18 +181,28 @@ bool lv_poc_build_tempgrp_operator(lv_poc_build_tempgrp_item_info_t * info, int3
 {
 	if(info == NULL || info_num < selected_num)
 	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,
-			(const uint8_t *)lv_poc_build_tempgrp_error_text,
-			NULL);
+		//not allow
+		if(!lvPocGuiBndCom_get_listen_status()
+			&& !lvPocGuiBndCom_get_speak_status())
+		{
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,
+				(const uint8_t *)lv_poc_build_tempgrp_error_text,
+				NULL);
+		}
 		lv_poc_del_activity(poc_build_tempgrp_activity);
 		return false;
 	}
 
 	if(selected_num < 2)//临时组至少3人
 	{
-		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,
-			(const uint8_t *)lv_poc_build_tempgrp_few_member_text1,
-			(const uint8_t *)lv_poc_build_tempgrp_few_member_text2);
+		//not allow
+		if(!lvPocGuiBndCom_get_listen_status()
+			&& !lvPocGuiBndCom_get_speak_status())
+		{
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG,
+				(const uint8_t *)lv_poc_build_tempgrp_few_member_text1,
+				(const uint8_t *)lv_poc_build_tempgrp_few_member_text2);
+		}
 		lv_poc_del_activity(poc_build_tempgrp_activity);
 		return false;
 	}
@@ -222,7 +232,8 @@ bool lv_poc_build_tempgrp_operator(lv_poc_build_tempgrp_item_info_t * info, int3
 		return false;
 	}
 
-	if(lvPocGuiBndCom_get_listen_status())//listen status cannot launch tmpgrp func
+	if(lvPocGuiBndCom_get_listen_status()
+		|| lvPocGuiBndCom_get_speak_status())//listen or speak status cannot launch tmpgrp func
 	{
 		OSI_LOGI(0, "[build][tmpgrp] listen isn't signal");
 		return false;

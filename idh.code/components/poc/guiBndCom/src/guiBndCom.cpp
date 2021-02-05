@@ -212,6 +212,8 @@ public:
 	osiTimer_t * delay_close_listen_timer;
 	osiTimer_t * get_member_list_timer;
 	osiTimer_t * get_group_list_timer;
+	osiTimer_t * checkrecoverylisten_timer;
+
 	bool delay_close_listen_timer_running;
 	bool   listen_status;
 	bool   speak_status;
@@ -254,6 +256,7 @@ public:
 	bool is_enter_signal_multi_call;
 	bool is_list_update;
 	bool is_login_memberlist_first_update;
+	bool is_ptt_state;
 
 	//num
 	int delay_play_voice;
@@ -759,10 +762,26 @@ int lib_oem_play_tone(int type)
 
 		case 2://error
 		{
-			OSI_PRINTFI("[bnd][tone](%s)(%d):bnd error tone", __func__, __LINE__);
 			//reset
-			pocBndAttr.speak_status = false;
-			pocBndAttr.listen_status = false;
+			if(lvPocGuiBndCom_get_listen_status()//抢话权，权限不够
+				&& pocBndAttr.is_ptt_state)
+			{
+				pocBndAttr.is_ptt_state = false;
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"无话语权", NULL);
+				if(osiTimerIsRunning(pocBndAttr.checkrecoverylisten_timer))
+				{
+					osiTimerStop(pocBndAttr.checkrecoverylisten_timer);
+				}
+				osiTimerStart(pocBndAttr.checkrecoverylisten_timer, 1500);
+				OSI_PRINTFI("[bnd][tone](%s)(%d):bnd error tone, rob words failed", __func__, __LINE__);
+			}
+			else
+			{
+				pocBndAttr.speak_status = false;
+				pocBndAttr.listen_status = false;
+				OSI_PRINTFI("[bnd][tone](%s)(%d):bnd error tone, timeout", __func__, __LINE__);
+			}
 			break;
 		}
 
@@ -1264,6 +1283,7 @@ void callback_BND_Join_Group(const char* groupname, bnd_gid_t gid)
 				pocBndAttr.call_type = GRP_COMMON;
 				pocBndAttr.is_have_join_group = true;
 				pocBndAttr.BndCurrentGroupInfo.gid = gid;
+				memset(pocBndAttr.BndCurrentGroupInfo.name, 0, sizeof(char)*BRD_NAME_LEN);
 				strncpy(pocBndAttr.BndCurrentGroupInfo.name, groupname, strlen(groupname));
 				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_MEMBER_LIST_QUERY_REP, (void *)gid);
 				break;
@@ -1542,6 +1562,7 @@ void LvGuiBndCom_Group_update_timer_cb(void *ctx)
 					{
 						pocBndAttr.current_group = BndCGroup[i].index;
 						pocBndAttr.BndCurrentGroupInfo.gid =BndCGroup[i].gid;
+						memset(pocBndAttr.BndCurrentGroupInfo.name, 0, sizeof(char)*BRD_NAME_LEN);
 						strcpy(pocBndAttr.BndCurrentGroupInfo.name, Bnd_CurGInfo.name);
 						strcpy(poc_config->curren_group_name, Bnd_CurGInfo.name);
 						OSI_PRINTFI("[groupindex](%s)(%d):cur group index(%d)", __func__, __LINE__, pocBndAttr.current_group);
@@ -1703,6 +1724,16 @@ static void LvGuiBndCom_Call_Bright_Screen_timer_cb(void *ctx)
 	}
 }
 
+static void LvGuiBndCom_Check_Recovery_Listen_timer_cb(void *ctx)
+{
+	OSI_PRINTFI("[check][listen][timer](%s)(%d):cb", __func__, __LINE__);
+	if(lvPocGuiBndCom_get_listen_status())
+	{
+		lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+		lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_LISTEN_SPEAKER_REP, NULL);
+	}
+}
+
 static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 {
 	switch(id)
@@ -1857,8 +1888,13 @@ static void prvPocGuiBndTaskHandleSpeak(uint32_t id, uint32_t ctx)
 
 			if(lv_poc_stop_player_voice() != 2)
 			{
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"呼叫错误", NULL);
+				//not allow
+				if(!lvPocGuiBndCom_get_listen_status()
+					&& !lvPocGuiBndCom_get_speak_status())
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"呼叫错误", NULL);
+				}
 				break;
 			}
 
@@ -1874,6 +1910,7 @@ static void prvPocGuiBndTaskHandleSpeak(uint32_t id, uint32_t ctx)
 			}
 
 			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_ENTER, NULL);
+			pocBndAttr.is_ptt_state = true;
 			osiMutexUnlock(pocBndAttr.lock);
 			broad_speak(1);
 
@@ -1919,6 +1956,7 @@ static void prvPocGuiBndTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				break;
 			}
 			OSI_PRINTFI("[speak](%s)(%d):apply stop speak", __func__, __LINE__);
+			pocBndAttr.is_ptt_state = false;
 			broad_speak(0);
 			break;
 		}
@@ -2167,7 +2205,13 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 						poc_play_voice_one_time(LVPOCAUDIO_Type_Enter_Temp_Group, 50, false);
 					}
 
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取成员列表...", NULL);
+					//not allow
+					if(!lvPocGuiBndCom_get_listen_status()
+						&& !lvPocGuiBndCom_get_speak_status())
+					{
+						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取成员列表...", NULL);
+					}
+
 					for(unsigned long  i = 0; i < pocBndAttr.BndMsgGMemberBuf.dwNum; i++)
 					{
 						memset(BndMemberId, 0, 20);
@@ -2187,7 +2231,13 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 						OSI_PRINTFI("[memberlist](%s)(%d):Uname(%s), Uid(%s), Status(%d)", __func__, __LINE__, pocBndAttr.BndMsgGMemberBuf.member[i].ucName, pocBndAttr.BndMsgGMemberBuf.member[i].ucNum, pocBndAttr.BndMsgGMemberBuf.member[i].ucStatus);
 					}
 					pocBndAttr.pocGetMemberListCb(1, pocBndAttr.BndMsgGMemberBuf.dwNum, &pocBndAttr.BndMsgGMemberBuf);
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+
+					//not allow
+					if(!lvPocGuiBndCom_get_listen_status()
+						&& !lvPocGuiBndCom_get_speak_status())
+					{
+						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+					}
 				}while(0);
 
 				pocBndAttr.pocGetMemberListCb = NULL;
@@ -2321,7 +2371,12 @@ static void prvPocGuiBndTaskHandleMemberList(uint32_t id, uint32_t ctx)
 			}
 
 			pocBndAttr.pocGetMemberListCb = NULL;
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+			//not allow
+			if(!lvPocGuiBndCom_get_listen_status()
+				&& !lvPocGuiBndCom_get_speak_status())
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
+			}
 			osiMutexUnlock(pocBndAttr.lock);
 
 			break;
@@ -2513,7 +2568,12 @@ static void prvPocGuiBndTaskHandleCurrentGroup(uint32_t id, uint32_t ctx)
 					pocBndAttr.current_group = index;
 					pocBndAttr.pocSetCurrentGroupCb(1);
 					lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_normal_info, 2, (char *)pocBndAttr.self_info.ucName, m_BndUser.m_Group.m_Group[pocBndAttr.current_group].m_ucGName);
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组成员...", NULL);
+					//not allow
+					if(!lvPocGuiBndCom_get_listen_status()
+						&& !lvPocGuiBndCom_get_speak_status())
+					{
+						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_SPEAKING, (const uint8_t *)"获取群组成员...", NULL);
+					}
 					OSI_PRINTFI("[setcurgrp](%s)(%d):current group out", __func__, __LINE__, index);
 				}
 			}
@@ -2661,6 +2721,7 @@ static void prvPocGuiBndTaskHandleBuildTempGrp(uint32_t id, uint32_t ctx)
 		case LVPOCGUIBNDCOM_SIGNAL_BIUILD_TEMPGRP_EXIT_REP:
 		{
 			osiMutexLock(pocBndAttr.lock);
+			pocBndAttr.single_multi_call_type = USER_OPRATOR_START;
 			lv_poc_activity_func_cb_set.build_tmp_close(POC_EXITGRP_PASSIVE);
 			osiMutexUnlock(pocBndAttr.lock);
 			break;
@@ -3017,6 +3078,7 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 				pocBndAttr.is_member_call = false;
 				pocBndAttr.member_call_dir = 0;
 				pocBndAttr.signalcall_gid = 0;
+				pocBndAttr.single_multi_call_type = USER_OPRATOR_START;
 
 				poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Member_Call, 30, true);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
@@ -3139,7 +3201,12 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			if(broad_joingroup(gid) != 0)
 			{
 				OSI_LOGXI(OSI_LOGPAR_II, 0, "[exitsinglecall](%d)join group error, gid(%d)", __LINE__, gid);
-				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"加入群组失败", NULL);
+				//not allow
+				if(!lvPocGuiBndCom_get_listen_status()
+					&& !lvPocGuiBndCom_get_speak_status())
+				{
+					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"加入群组失败", NULL);
+				}
 			}
 			osiMutexUnlock(pocBndAttr.lock);
 			break;
@@ -3179,14 +3246,23 @@ static void prvPocGuiBndTaskHandleListen(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIBNDCOM_SIGNAL_LISTEN_SPEAKER_REP:
 		{
-			osiMutexLock(pocBndAttr.lock);
-			char *BndSpeakername = (char *)ctx;
-
+			static char speaker_name_buf[100] = {0};
 			char speaker_name[100];
-			memset(speaker_name, 0, sizeof(char) * 100);
-			strcpy(speaker_name, (const char *)BndSpeakername);
-			strcat(speaker_name, (const char *)"正在讲话");
 
+			osiMutexLock(pocBndAttr.lock);
+			if(ctx == 0)
+			{
+				strcpy(speaker_name, (const char *)speaker_name_buf);
+			}
+			else
+			{
+				memset(speaker_name_buf, 0, sizeof(char) * 100);
+				memset(speaker_name, 0, sizeof(char) * 100);
+				strcpy(speaker_name_buf, (const char *)ctx);
+				strcpy(speaker_name, (const char *)speaker_name_buf);
+			}
+
+			strcat(speaker_name, (const char *)"正在讲话");
 			m_BndUser.m_status = USER_OPRATOR_START_LISTEN;
 			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_START_LISTEN_STATUS, true);
 
@@ -3318,7 +3394,14 @@ void prvPocGuiBndTaskHandleErrorInfo(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"用户忙线中", NULL);
 				break;
 			}
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)pErrorInfo, NULL);
+
+			//not allow
+			if(!lvPocGuiBndCom_get_listen_status()
+				&& !lvPocGuiBndCom_get_speak_status())
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)pErrorInfo, NULL);
+			}
+
 			osiMutexUnlock(pocBndAttr.lock);
 			break;
 		}
@@ -3903,6 +3986,7 @@ extern "C" void pocGuiBndComStart(void)
 	pocBndAttr.ping_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_ping_timer_cb, NULL);
 	pocBndAttr.Bnd_workpa_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_pa_timer_cb, NULL);
 	pocBndAttr.BrightScreen_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_Call_Bright_Screen_timer_cb, NULL);
+	pocBndAttr.checkrecoverylisten_timer = osiTimerCreate(pocBndAttr.thread, LvGuiBndCom_Check_Recovery_Listen_timer_cb, NULL);
 
 	pocBndAttr.lock = osiMutexCreate();
 }

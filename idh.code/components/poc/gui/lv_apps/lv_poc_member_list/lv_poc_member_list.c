@@ -199,7 +199,13 @@ static void lv_poc_member_list_get_member_status_cb(int status)
 			lv_poc_member_list_set_state(lv_poc_member_list_obj, lv_poc_get_member_name(lv_poc_member_call_obj_information), lv_poc_member_call_obj_information, false);
 			lv_task_t *once_task = lv_task_create(prv_lv_poc_member_list_change_to_offline, 50, LV_TASK_PRIO_MID, lv_poc_member_call_obj);
 			lv_task_once(once_task);
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
+
+			//not allow
+			if(!lvPocGuiBndCom_get_listen_status()
+				&& !lvPocGuiBndCom_get_speak_status())
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"对方不在线", NULL);
+			}
 		}
 	}
 	lv_poc_member_call_obj_information = NULL;
@@ -221,7 +227,13 @@ static void lv_poc_member_list_prssed_btn_cb(lv_obj_t * obj, lv_event_t event)
 		if(!lv_poc_get_member_status(lv_poc_member_call_obj_information, lv_poc_member_list_get_member_status_cb))
 		{
 			lv_poc_member_call_obj = NULL;
-			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"错误", NULL);
+
+			//not allow
+			if(!lvPocGuiBndCom_get_listen_status()
+				&& !lvPocGuiBndCom_get_speak_status())
+			{
+				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"错误", NULL);
+			}
 			lv_poc_member_call_obj_information = NULL;
 		}
 	}

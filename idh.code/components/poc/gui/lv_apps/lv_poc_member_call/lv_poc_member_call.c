@@ -258,6 +258,7 @@ static void lv_poc_member_call_set_member_call_status_cb(int current_status, int
 		{
 			OSI_PRINTFI("[singlecall](%s)(%d):play stop single call", __func__, __LINE__);
 			poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Member_Call, 50, false);
+			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
 			lv_poc_activity_func_cb_set.member_call_close();
 		}

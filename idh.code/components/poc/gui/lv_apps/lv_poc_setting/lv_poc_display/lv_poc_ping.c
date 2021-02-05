@@ -201,7 +201,12 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 
 				case LV_GROUP_KEY_ESC:
 				{
-					lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)ping_time_notation[poc_setting_conf->ping], NULL);
+					//not allow
+					if(!lvPocGuiBndCom_get_listen_status()
+						&& !lvPocGuiBndCom_get_speak_status())
+					{
+						lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)ping_time_notation[poc_setting_conf->ping], NULL);
+					}
 					lv_poc_del_activity(ping_time_activity);
 					break;
 				}
