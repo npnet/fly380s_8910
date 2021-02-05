@@ -1624,7 +1624,8 @@ static lv_res_t lv_poc_signal_cb(lv_obj_t * obj, lv_signal_t sign, void * param)
 		{
 			case LV_GROUP_KEY_UP:
 			{
-				if(activity_idle == current_activity)
+				if(activity_idle == current_activity
+					&& !lv_poc_get_is_in_memberlist())
 				{
 					OSI_LOGI(0, "[poc][longpress](%d):member list open", __LINE__);
 					longpress_keyup_memberlist = true;
@@ -1898,6 +1899,7 @@ static lv_poc_status_t prv_lv_poc_member_list_add(lv_poc_oem_member_list *member
             if(cb_set_obj->member_list[i].add != NULL)
             {
                 status = cb_set_obj->member_list[i].add(member_list_obj, name, is_online, information);
+				break;
             }
          }
      }
@@ -1916,6 +1918,7 @@ static void prv_lv_poc_member_list_clear(lv_poc_oem_member_list *member_list_obj
             if(cb_set_obj->member_list[i].clear != NULL)
             {
                 cb_set_obj->member_list[i].clear(member_list_obj);
+				break;
             }
          }
      }
@@ -1933,6 +1936,7 @@ static int prv_lv_poc_member_list_get_information(lv_poc_oem_member_list *member
             if(cb_set_obj->member_list[i].get_info != NULL)
             {
                 ret = cb_set_obj->member_list[i].get_info(member_list_obj, name, information);
+				break;
             }
          }
      }
@@ -1951,6 +1955,7 @@ static void prv_lv_poc_member_list_refresh(lv_poc_oem_member_list *member_list_o
             if(cb_set_obj->member_list[i].refresh != NULL)
             {
                 cb_set_obj->member_list[i].refresh(member_list_obj);
+				break;
             }
          }
      }
@@ -1967,6 +1972,7 @@ static void prv_lv_poc_member_list_refresh_with_data(lv_poc_oem_member_list *mem
             if(cb_set_obj->member_list[i].refresh_with_data != NULL)
             {
                 cb_set_obj->member_list[i].refresh_with_data(member_list_obj);
+				break;
             }
          }
      }
@@ -1984,7 +1990,8 @@ static lv_poc_status_t prv_lv_poc_member_list_set_state(lv_poc_oem_member_list *
             if(cb_set_obj->member_list[i].set_state != NULL)
             {
                 status = cb_set_obj->member_list[i].set_state(member_list_obj, name, information, is_online);
-            }
+				break;
+			}
          }
      }
 
@@ -2003,6 +2010,7 @@ static lv_poc_status_t prv_lv_poc_member_list_is_exists(lv_poc_oem_member_list *
             if(cb_set_obj->member_list[i].exists != NULL)
             {
                 status = cb_set_obj->member_list[i].exists(member_list_obj, name, information);
+				break;
             }
          }
      }
@@ -2022,6 +2030,7 @@ static lv_poc_status_t prv_lv_poc_member_list_get_state(lv_poc_oem_member_list *
             if(cb_set_obj->member_list[i].get_state != NULL)
             {
                 status = cb_set_obj->member_list[i].get_state(member_list_obj, name, information);
+				break;
             }
          }
      }
@@ -2039,6 +2048,7 @@ static void prv_lv_poc_group_member_list_activity(char *grpname)
       {
          lv_task_t *onece_task = lv_task_create(cb_set_obj->member_list[i].group_member_act, 30, LV_TASK_PRIO_MID, (void *)grpname);
          lv_task_once(onece_task);
+		 break;
       }
    }
 }
@@ -2055,6 +2065,7 @@ static int prv_lv_poc_group_list_get_information(lv_poc_oem_group_list *group_li
             if(cb_set_obj->group_list[i].get_info != NULL)
             {
                 ret = cb_set_obj->group_list[i].get_info(group_list_obj, name, information);
+				break;
             }
          }
      }
@@ -2073,6 +2084,7 @@ static void prv_lv_poc_group_list_refresh(lv_poc_oem_group_list *group_list_obj)
             if(cb_set_obj->group_list[i].refresh != NULL)
             {
                 cb_set_obj->group_list[i].refresh(group_list_obj);
+				break;
             }
          }
      }
@@ -2089,6 +2101,7 @@ static void prv_lv_poc_group_list_refresh_with_data(lv_poc_oem_group_list *group
             if(cb_set_obj->group_list[i].refresh_with_data != NULL)
             {
                 cb_set_obj->group_list[i].refresh_with_data(group_list_obj);
+				break;
             }
          }
      }
@@ -2106,6 +2119,7 @@ static lv_poc_status_t prv_lv_poc_group_list_is_exists(lv_poc_oem_group_list *gr
             if(cb_set_obj->group_list[i].exists != NULL)
             {
                 status = cb_set_obj->group_list[i].exists(group_list_obj, name, information);
+				break;
             }
          }
      }
@@ -2125,6 +2139,7 @@ static lv_poc_status_t prv_lv_poc_group_list_lock_group(lv_poc_oem_group_list *g
             if(cb_set_obj->group_list[i].lock_group != NULL)
             {
                 status = cb_set_obj->group_list[i].lock_group(group_list_obj, opt);
+				break;
             }
          }
      }

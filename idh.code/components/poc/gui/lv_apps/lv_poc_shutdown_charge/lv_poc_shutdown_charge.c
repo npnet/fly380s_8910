@@ -43,7 +43,7 @@ const lv_img_dsc_t *charge_battery_img_dispaly[8] = { &indeterminate0
 */
 void pocLvgl_ShutdownCharge_Start(void)
 {
-	osiThreadCreate("osiShutdownChargeAnimation", lv_poc_shutdown_charge_Animation_Task, NULL, OSI_PRIORITY_NORMAL, 1024, 32);
+	osiThreadCreate("osiShutdownChargeAnimation", lv_poc_shutdown_charge_Animation_Task, NULL, OSI_PRIORITY_NORMAL, 1024*3, 32);
 }
 
 /*
@@ -139,6 +139,7 @@ void lv_poc_shutdown_charge_power_on_logo(void)
 static
 lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 {
+	static bool charge_complete = true;
 	const lv_img_dsc_t * battery_img = NULL;
 	static uint8_t battery_img_cur = 100;
 	battery_values_t battery_t;
@@ -161,14 +162,18 @@ lv_img_dsc_t *lv_poc_power_on_charge_get_battery_img(void)
 	if(battery_t.charging == POC_CHG_DISCONNECTED)//设备未充电
 	{
 		lv_poc_charge_power_outages_shutdown_task(NULL);
+		!charge_complete ? (charge_complete = true) : 0;
 	}
 	else//设备在充电
 	{
 		if(battery_t.battery_value >= 100)
 		{
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false);
-			lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, true);
-
+			if(charge_complete == true)
+			{
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_STATUS, false);
+				lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_CHARGING_COMPLETE_STATUS, true);
+				charge_complete = false;
+			}
 			battery_img = charge_battery_img_dispaly[battery_img_cur];
 			battery_img_cur++;
 			if(battery_img_cur>6)

@@ -118,7 +118,7 @@ static PocLedComAttr_t pocLedAttr = {0};
 void poc_status_led_task(void)
 {
     memset(&pocLedAttr, 0, sizeof(PocLedComAttr_t));
-    pocLedAttr.thread = osiThreadCreate("status led", lv_poc_led_entry, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+    pocLedAttr.thread = osiThreadCreate("status led", lv_poc_led_entry, NULL, OSI_PRIORITY_NORMAL, 1024*5, 64);
 }
 
 /*
