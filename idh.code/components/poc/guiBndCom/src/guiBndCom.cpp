@@ -1285,6 +1285,11 @@ void callback_BND_Join_Group(const char* groupname, bnd_gid_t gid)
 				pocBndAttr.BndCurrentGroupInfo.gid = gid;
 				memset(pocBndAttr.BndCurrentGroupInfo.name, 0, sizeof(char)*BRD_NAME_LEN);
 				strncpy(pocBndAttr.BndCurrentGroupInfo.name, groupname, strlen(groupname));
+				//save curgrp id
+				nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
+				char curren_gid[32] = "";
+				__utoa(gid,curren_gid,10);
+				strcpy(poc_config->curren_group_id, (char *)curren_gid);
 				lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_MEMBER_LIST_QUERY_REP, (void *)gid);
 				break;
 			}
@@ -1545,12 +1550,14 @@ void LvGuiBndCom_Group_update_timer_cb(void *ctx)
 		if(broad_group_getbyid(0, &Bnd_CurGInfo) == 0)
 		{
 			unsigned int m_GNum = broad_get_grouplist(BndCGroup, GUIBNDCOM_GROUPMAX, 0, -1);
+			char curren_gid[32] = "";
+			__utoa(Bnd_CurGInfo.gid,curren_gid,10);
 
 			if(m_GNum < 0
 				|| m_GNum > GUIBNDCOM_GROUPMAX)
 			{
 				pocBndAttr.current_group = 0;
-				strcpy(poc_config->curren_group_name, Bnd_CurGInfo.name);
+				strcpy(poc_config->curren_group_id, (char *)curren_gid);
 				OSI_PRINTFI("[groupindex](%s)(%d):error", __func__, __LINE__);
 			}
 			else
@@ -1564,7 +1571,7 @@ void LvGuiBndCom_Group_update_timer_cb(void *ctx)
 						pocBndAttr.BndCurrentGroupInfo.gid =BndCGroup[i].gid;
 						memset(pocBndAttr.BndCurrentGroupInfo.name, 0, sizeof(char)*BRD_NAME_LEN);
 						strcpy(pocBndAttr.BndCurrentGroupInfo.name, Bnd_CurGInfo.name);
-						strcpy(poc_config->curren_group_name, Bnd_CurGInfo.name);
+						strcpy(poc_config->curren_group_id, curren_gid);
 						OSI_PRINTFI("[groupindex](%s)(%d):cur group index(%d)", __func__, __LINE__, pocBndAttr.current_group);
 						break;
 					}
@@ -1572,7 +1579,7 @@ void LvGuiBndCom_Group_update_timer_cb(void *ctx)
 				if(i == m_GNum)
 				{
 					pocBndAttr.current_group = 0;
-					strcpy(poc_config->curren_group_name, Bnd_CurGInfo.name);
+					strcpy(poc_config->curren_group_id, curren_gid);
 					OSI_PRINTFI("[groupindex](%s)(%d):no cur group", __func__, __LINE__);
 				}
 				pocBndAttr.haveingroup = true;
@@ -2561,7 +2568,7 @@ static void prvPocGuiBndTaskHandleCurrentGroup(uint32_t id, uint32_t ctx)
 				{
 					{
 						nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
-						strcpy(poc_config->curren_group_name, (char *)m_BndUser.m_Group.m_Group[index].m_ucGName);
+						strcpy(poc_config->curren_group_id, (char *)m_BndUser.m_Group.m_Group[index].m_ucGNum);
 						lv_poc_setting_conf_write();
 					}//wait for some time
 					pocBndAttr.haveingroup = false;
@@ -4152,10 +4159,10 @@ extern "C" void *lvPocGuiBndCom_get_current_group_info(void)
 
     for(i = 0; i < m_BndUser.m_Group.m_Group_Num; i++)
     {
-        if(NULL != strstr((char *)m_BndUser.m_Group.m_Group[i].m_ucGName, poc_config->curren_group_name))
+        if(NULL != strstr((char *)m_BndUser.m_Group.m_Group[i].m_ucGNum, poc_config->curren_group_id))
         {
             pocBndAttr.current_group = i;
-            strcpy(poc_config->curren_group_name, (char *)m_BndUser.m_Group.m_Group[i].m_ucGName);
+            strcpy(poc_config->curren_group_id, (char *)m_BndUser.m_Group.m_Group[i].m_ucGNum);
             break;
         }
     }
