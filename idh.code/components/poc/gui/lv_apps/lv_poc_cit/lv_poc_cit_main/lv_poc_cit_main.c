@@ -271,6 +271,7 @@ static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * par
 				case LV_KEY_ESC:
 				{
 					lvPocGuiBndCom_cit_status(POC_CIT_EXIT);
+					lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, false);
 					lv_poc_del_activity(poc_cit_activity);
 					break;
 				}

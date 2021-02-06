@@ -1629,6 +1629,7 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	poc_setting->font.fota_label_current_font = poc_setting->font.fota_label_small_font;
 	poc_setting->font.cit_label_current_font = poc_setting->font.cit_label_small_font;
 	poc_setting->volume = 5;
+	poc_setting->voicevolume = 5;
 	poc_setting->language = 0;
 	poc_setting->is_exist_selfgroup = 1;
 	strcpy(poc_setting->selfbuild_group_num, "");
@@ -4165,10 +4166,11 @@ lv_poc_stop_player_voice(void)
 {
 	if(auPlayerGetStatus(prv_play_voice_one_time_player))
 	{
-//		if(auPlayerStop(prv_play_voice_one_time_player))
-//		{
-//			return 1;
-//		}
+		poc_voice_player_attr.voice_queue_reader = poc_voice_player_attr.voice_queue_writer = 0;
+		if(auPlayerStop(prv_play_voice_one_time_player))
+		{
+			return 1;
+		}
 		return 0;
 	}
 	return 2;

@@ -666,6 +666,12 @@ int lib_oem_stop_record(void)
 
 int lib_oem_start_play(void)
 {
+	if(lv_poc_stop_player_voice() == 0)
+	{
+		OSI_PRINTFI("[bnd][play](%s)(%d):error", __func__, __LINE__);
+		return 0;
+	}
+
 	nv_poc_setting_msg_t *poc_config = lv_poc_setting_conf_read();
 	if(poc_config->current_tone_switch == 0)
 	{
@@ -713,7 +719,7 @@ int lib_oem_play(const char* data, int length)
 	int len = 320;
 	if(pocBndAttr.player == 0)
 	{
-		return 0;
+		return -1;
 	}
 
 #if POC_AUDIO_MODE_PIPE
@@ -787,6 +793,11 @@ int lib_oem_play_tone(int type)
 
 		case 3://start play
 		{
+			if(lv_poc_stop_player_voice() == 0)
+			{
+				OSI_PRINTFI("[tone][play](%s)(%d):error", __func__, __LINE__);
+				break;
+			}
 			OSI_PRINTFI("[bnd][tone](%s)(%d):bnd start listen tone", __func__, __LINE__);
 			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_PLAY_TONE_START_LISTEN, NULL);
 			break;
@@ -1755,8 +1766,15 @@ static void prvPocGuiBndTaskHandleLogin(uint32_t id, uint32_t ctx)
 		{
 			osiMutexLock(pocBndAttr.lock);
 #if POC_AUDIO_MODE_PIPE
-			pocBndAttr.pipe = pocAudioPipeCreate(8192);//8kb
-			pocBndAttr.player = pocAudioPlayerCreate(1024);//1kb
+			if(pocBndAttr.pipe == 0)
+			{
+				pocBndAttr.pipe = pocAudioPipeCreate(8192);//8kb
+			}
+
+			if(pocBndAttr.player == 0)
+			{
+				pocBndAttr.player = pocAudioPlayerCreate(1024);//1kb
+			}
 #else
 			if(pocBndAttr.player == 0)
 			{
@@ -2989,19 +3007,17 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 				{
 					pocBndAttr.pocMemberCallCb = member_call_config->func;
 					pocBndAttr.is_member_call = true;
+					OSI_PRINTFI("[singlecall](%s)(%d):start request single call", __func__, __LINE__);
 
 					//request member signal call
 					unsigned int callnumber = 0;
 					callnumber = atoi((char *)member_call_obj->ucNum);
 					broad_calluser(callnumber, callback_BND_SingalCallmember);
-
-					OSI_LOGI(0, "[singlecall](%d)start request single call", __LINE__);
 				}else
 				{
+					OSI_PRINTFI("[singlecall](%s)(%d):recive single call", __func__, __LINE__);
 					member_call_config->func(0, 0);
 					pocBndAttr.is_member_call = true;
-
-					OSI_LOGI(0, "[singlecall](%d)recive single call", __LINE__);
 				}
 			}
 			else//exit single
@@ -3041,7 +3057,7 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			    pocBndAttr.pocMemberCallCb(0, 0);
 			    pocBndAttr.pocMemberCallCb = NULL;
 		    }
-			OSI_LOGI(0, "[singlecall](%d)local single call success, enter's gid(%d)", __LINE__, pocBndAttr.signalcall_gid);
+			OSI_PRINTFI("[singlecall](%s)(%d):local single call success, enter's gid(%d)", __func__, __LINE__, pocBndAttr.signalcall_gid);
 			osiMutexUnlock(pocBndAttr.lock);
 			break;
 		}
@@ -3054,7 +3070,7 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			pocBndAttr.signalcall_gid = 0;
 
 			lv_poc_activity_func_cb_set.member_call_close();
-			OSI_LOGI(0, "[singlecall](%d)call error", __LINE__);
+			OSI_PRINTFI("[singlecall](%s)(%d):call error", __func__, __LINE__);
 			osiMutexUnlock(pocBndAttr.lock);
 			break;
 		}
@@ -3090,11 +3106,11 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 				poc_play_voice_one_time(LVPOCAUDIO_Type_Exit_Member_Call, 30, true);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"退出单呼", NULL);
 				lv_poc_activity_func_cb_set.member_call_close();
-				OSI_LOGI(0, "[singlecall](%d)other exit single call", __LINE__);
+				OSI_PRINTFI("[singlecall](%s)(%d):other exit single call", __func__, __LINE__);
 			}
 			else
 			{
-				OSI_LOGI(0, "[singlecall](%d)error, leave's gid(%d)", __LINE__, SigalCallgid);
+				OSI_PRINTFI("[singlecall](%s)(%d):error, leave's gid(%d)", __func__, __LINE__, SigalCallgid);
 			}
 			osiMutexUnlock(pocBndAttr.lock);
 			break;
@@ -3116,6 +3132,7 @@ static void prvPocGuiBndTaskHandleMemberCall(uint32_t id, uint32_t ctx)
 			member_call_obj.ucStatus = USER_ONLINE;
 			pocBndAttr.signalcall_gid = pocBndAttr.SignalCallInf->gid;
 			pocBndAttr.member_call_dir = 1;
+			OSI_PRINTFI("[singlecall](%s)(%d):single_call'view open", __func__, __LINE__);
 			lv_poc_activity_func_cb_set.member_call_open((void *)&member_call_obj);
 			osiMutexUnlock(pocBndAttr.lock);
 			break;

@@ -425,7 +425,7 @@ void osiAppStart(void)
 #ifdef CONFIG_POC_SUPPORT
 	if (osiGetBootMode() != OSI_BOOTMODE_CALIB)
 	{
-		osiThreadCreate("pocStart", pocStart, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+		osiThreadCreate("pocStart", pocStart, NULL, OSI_PRIORITY_NORMAL, 1024 * 10, 64);
 	}
 #endif
 }

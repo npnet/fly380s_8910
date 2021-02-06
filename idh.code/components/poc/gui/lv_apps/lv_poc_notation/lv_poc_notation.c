@@ -100,10 +100,6 @@ void lv_poc_notation_destory(void)
 	}
 
 	lv_obj_del(lv_poc_notationwindow_obj);
-	//不可以加上，会死机
-	//lv_obj_del(lv_poc_notationwindow_label_1);
-	//lv_obj_del(lv_poc_notationwindow_label_2);
-
 	lv_poc_notationwindow_obj = NULL;
 	lv_poc_notationwindow_label_1 = NULL;
 	lv_poc_notationwindow_label_2 = NULL;
@@ -466,6 +462,12 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 		case LV_POC_NOTATION_LISTENING:
 		{
+			if(lv_poc_notation_delay_close_task != NULL)//delete delay view, dead or address error
+			{
+				lv_task_del(lv_poc_notation_delay_close_task);
+				lv_poc_notation_delay_close_task = NULL;
+			}
+
 			lv_poc_notation_listen_speak_status = true;
 			lv_poc_notation_listenning((const int8_t *)notation_msg->label_1_text,
 				(const int8_t *)notation_msg->label_2_text);
@@ -474,6 +476,12 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 		case LV_POC_NOTATION_SPEAKING:
 		{
+			if(lv_poc_notation_delay_close_task != NULL)//delete delay view, dead or address error
+			{
+				lv_task_del(lv_poc_notation_delay_close_task);
+				lv_poc_notation_delay_close_task = NULL;
+			}
+
 			lv_poc_notation_listen_speak_status = true;
 			lv_poc_notation_speaking((const int8_t *)notation_msg->label_1_text,
 				(const int8_t *)notation_msg->label_2_text);
@@ -483,15 +491,15 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 		case LV_POC_NOTATION_NORMAL_MSG:
 		{
-			lv_poc_notation_listen_speak_status = false;
-			lv_poc_notation_normal_msg((const int8_t *)notation_msg->label_1_text,
-				(const int8_t *)notation_msg->label_2_text);
-
-			if(lv_poc_notation_delay_close_task != NULL)
+			if(lv_poc_notation_delay_close_task != NULL)//delete delay view, dead or address error
 			{
 				lv_task_del(lv_poc_notation_delay_close_task);
 				lv_poc_notation_delay_close_task = NULL;
 			}
+
+			lv_poc_notation_listen_speak_status = false;
+			lv_poc_notation_normal_msg((const int8_t *)notation_msg->label_1_text,
+				(const int8_t *)notation_msg->label_2_text);
 
 			lv_poc_notation_delay_close_task = lv_task_create(lv_poc_notation_normal_msg_delay_close_task,
 				2000,
@@ -508,6 +516,12 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 		case LV_POC_NOTATION_LAUNCH_NOTE_MSG:
 		{
+			if(lv_poc_notation_delay_close_task != NULL)//delete delay view, dead or address error
+			{
+				lv_task_del(lv_poc_notation_delay_close_task);
+				lv_poc_notation_delay_close_task = NULL;
+			}
+
 			lv_poc_notation_listen_speak_status = false;
 			lv_poc_notation_normal_msg((const int8_t *)notation_msg->label_1_text,
 				(const int8_t *)notation_msg->label_2_text);
@@ -533,6 +547,12 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 		case LV_POC_NOTATION_ERROR_MSG:
 		{
+			if(lv_poc_notation_delay_close_task != NULL)//delete delay view, dead or address error
+			{
+				lv_task_del(lv_poc_notation_delay_close_task);
+				lv_poc_notation_delay_close_task = NULL;
+			}
+
 			lv_poc_notation_listen_speak_status = false;
 			lv_poc_notation_normal_msg((const int8_t *)notation_msg->label_1_text,
 				(const int8_t *)notation_msg->label_2_text);

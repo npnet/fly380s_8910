@@ -115,6 +115,7 @@ static lv_design_cb_t ancient_design_func = NULL;
 static lv_event_cb_t  ancient_event_func  = NULL;
 static status_bar_task_t status_bar_task_ext[LV_POC_STABAR_TASK_EXT_LENGTH];
 static lv_poc_activity_t * _idle_activity = NULL;
+static osiMutex_t * mutex = NULL;
 static char lv_poc_refresh_ui_state = 0;
 static POC_LONGPRESS_MSG_TYPE_T long_press_msg = 0;
 #define LV_POC_STACK_SIZE   100
@@ -537,6 +538,7 @@ bool lv_poc_setting_init(void)
 	poc_set_lcd_bright_time(poc_setting_conf->screen_bright_time);
 #if IDT_POC_MODE
 	lv_poc_set_volum(POC_MMI_VOICE_VOICE, poc_setting_conf->voicevolume, false, false);
+	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
 #else
 	lv_poc_set_volum(POC_MMI_VOICE_PLAY, poc_setting_conf->volume, false, false);
 #endif
@@ -550,6 +552,11 @@ bool lv_poc_setting_init(void)
 	lv_poc_boot_timeing_task_create();
 	lv_poc_set_loopback_recordplay(false);
 	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
+
+	if(mutex == NULL)
+	{
+		mutex = osiMutexCreate();
+	}
 
     return true;
 }
@@ -3080,6 +3087,8 @@ bool lv_poc_del_activity(lv_poc_activity_t *activity)
     lv_poc_activity_t * pre_activity;
     lv_poc_control_t *ctl = NULL;
     lv_poc_activity_ext_t * ext = &(activity->activity_ext);
+	//lock
+	mutex ? osiMutexLock(mutex) : 0;
     lv_poc_stack_pop();
     pre_activity = lv_poc_stack_top();
     lv_obj_set_parent(lv_poc_status_bar, pre_activity->base);
@@ -3115,6 +3124,8 @@ bool lv_poc_del_activity(lv_poc_activity_t *activity)
 
     lv_mem_free(activity);
     lv_group_focus_obj(pre_activity->display);
+	mutex ? osiMutexUnlock(mutex) : 0;
+
     return ret_val;
 }
 
