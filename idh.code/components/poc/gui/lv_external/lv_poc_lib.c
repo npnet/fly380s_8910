@@ -39,6 +39,7 @@ extern int pub_lv_poc_get_watchdog_status(void);
 extern int lv_poc_cit_get_run_status(void);
 extern bool lvPocLedCom_Msg(LVPOCIDTCOM_Led_SignalType_t signal, bool valid);
 extern bool pubPocIdtGpsTaskStatus(void);
+extern bool pocGetPttKeyState(void);
 extern lv_poc_activity_t * poc_group_list_activity;
 extern lv_poc_activity_t * poc_member_list_activity;
 
@@ -863,7 +864,11 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 					else if(poc_voice_player_attr.is_play_speak_tone_start == true)
 					{
 						poc_voice_player_attr.is_play_speak_tone_start = false;
-						lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SPEAK_TONE_STOP_IND, NULL);
+						if(pocGetPttKeyState()
+		                   || lv_poc_get_earppt_state())
+		                {
+		                   lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_SPEAK_TONE_STOP_IND, NULL);
+		                }
 					}
 
 					if(poc_voice_player_attr.voice_queue_reader == poc_voice_player_attr.voice_queue_writer)
@@ -4215,6 +4220,15 @@ poc_set_power_save_mode_state(bool open)
 static
 void lv_poc_boot_timeing_task(lv_task_t *task)
 {
+	static int64_t last_sec = 0;
+    int64_t sec = drvRtcGetSecondTime();
+
+    if(last_sec == sec)
+    {
+       return;
+    }
+    last_sec = sec;
+
 	boottimeattr.is_boot_time_s_cnt++;
 	if(boottimeattr.is_boot_time_s_cnt > 59)
 	{
@@ -4237,7 +4251,7 @@ void lv_poc_boot_timeing_task(lv_task_t *task)
 void lv_poc_boot_timeing_task_create(void)
 {
 	lv_poc_get_time(&boottimeattr.boottime);
-	boottimeattr.task = lv_task_create(lv_poc_boot_timeing_task, 1000, LV_TASK_PRIO_MID, NULL);
+	boottimeattr.task = lv_task_create(lv_poc_boot_timeing_task, 50, LV_TASK_PRIO_MID, NULL);
 }
 
 /*

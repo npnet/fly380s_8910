@@ -175,7 +175,7 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 	lv_poc_about_text_iccid[0] = 0;
 	poc_get_device_iccid_rep((int8_t *)lv_poc_about_text_iccid);
     strcpy(lv_poc_about_text_sysversion, "A500L");
-    strcpy(lv_poc_about_text_version_number, "V20.35.2-D02.06");
+    strcpy(lv_poc_about_text_version_number, "V20.35.2-D02.07");
     strcpy(lv_poc_about_text_update, "检查更新");
     for(int i = 0; i < label_array_size; i++)
     {
@@ -314,7 +314,7 @@ void lv_poc_about_open(void)
     poc_about_activity = lv_poc_create_activity(&activity_ext, true, false, NULL);
     lv_poc_activity_set_signal_cb(poc_about_activity, signal_func);
     lv_poc_activity_set_design_cb(poc_about_activity, design_func);
-	btattr.task = lv_task_create(lv_poc_boot_time_refresh, 500, LV_TASK_PRIO_MID, NULL);
+	btattr.task = lv_task_create(lv_poc_boot_time_refresh, 50, LV_TASK_PRIO_MID, NULL);
 	mutex ? osiMutexUnlock(mutex) : 0;
 }
 

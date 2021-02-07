@@ -257,6 +257,7 @@ public:
 	bool is_list_update;
 	bool is_login_memberlist_first_update;
 	bool is_ptt_state;
+	bool is_stop_listen;
 
 	//num
 	int delay_play_voice;
@@ -2888,7 +2889,9 @@ static void prvPocGuiBndTaskHandlePlay(uint32_t id, uint32_t ctx)
 
 		case LVPOCGUIBNDCOM_SIGNAL_START_PLAY_IND:
 		{
-			if(m_BndUser.m_status == USER_OFFLINE || pocBndAttr.player == 0)
+			if(m_BndUser.m_status == USER_OFFLINE
+				|| pocBndAttr.player == 0
+				|| pocBndAttr.is_stop_listen == false)
 			{
 				m_BndUser.m_iRxCount = 0;
 				m_BndUser.m_iTxCount = 0;
@@ -3263,6 +3266,7 @@ static void prvPocGuiBndTaskHandleListen(uint32_t id, uint32_t ctx)
 			lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_listen, 2, NULL, NULL);
 			lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[listen][cbbnd](%s)(%d):rec stop listen and destory windows", __FUNCTION__, __LINE__);
+			pocBndAttr.is_stop_listen = false;
 			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_EXIT, (void *)LVPOCBNDCOM_CALL_DIR_TYPE_LISTEN);
 			osiMutexUnlock(pocBndAttr.lock);
 			break;
@@ -3303,6 +3307,7 @@ static void prvPocGuiBndTaskHandleListen(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_LISTENING, (const uint8_t *)speaker_name, (const uint8_t *)pocBndAttr.BndCurrentGroupInfo.name);
 			}
 			OSI_LOGXI(OSI_LOGPAR_SI, 0, "[listen][cbbnd](%s)(%d):rec start listen and display windows", __FUNCTION__, __LINE__);
+			pocBndAttr.is_stop_listen = true;
 			lvPocGuiBndCom_Msg(LVPOCGUIBNDCOM_SIGNAL_CALL_BRIGHT_SCREEN_ENTER, NULL);
 			osiMutexUnlock(pocBndAttr.lock);
 			break;

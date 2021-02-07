@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
+﻿/* Copyright (C) 2018 RDA Technologies Limited and/or its affiliates("RDA").
  * All rights reserved.
  *
  * This software is supplied "AS IS" without any warranties.
@@ -783,3 +783,10 @@ int64_t drvRtcGetWakeupTime(void)
     osiExitCritical(critical);
     return wakeup;
 }
+
+int64_t drvRtcGetSecondTime(void)
+{
+   drvRtcContext_t *d = &gDrvRtcCtx;
+    return drvRtcHalReadSecond(&d->hal);
+}
+
