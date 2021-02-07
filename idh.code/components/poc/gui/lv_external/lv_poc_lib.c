@@ -1375,6 +1375,7 @@ poc_get_network_register_status(IN POC_SIM_ID sim)
 	}
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_SIM_STATUS, false);
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false);
+	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, false);
 	lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_NO_LOGIN_STATUS, true);
 	return true;
 }
@@ -3761,10 +3762,11 @@ lv_poc_stop_player_voice(void)
 {
 	if(auPlayerGetStatus(prv_play_voice_one_time_player))
 	{
-//		if(auPlayerStop(prv_play_voice_one_time_player))
-//		{
-//			return 1;
-//		}
+		poc_voice_player_attr.voice_queue_reader = poc_voice_player_attr.voice_queue_writer = 0;
+		if(auPlayerStop(prv_play_voice_one_time_player))
+		{
+			return 1;
+		}
 		return 0;
 	}
 	return 2;

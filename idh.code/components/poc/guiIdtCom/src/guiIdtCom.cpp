@@ -724,6 +724,7 @@ public:
 	bool   is_justnow_listen;
 	bool   is_check_listen;
 	bool   is_stop_listen;
+	bool   is_get_memberlist_failed;
 	int    call_error_case;
 	int    current_group_member_dwnum;
 	int    call_briscr_dir;
@@ -2091,6 +2092,7 @@ static void prvPocGuiIdtTaskHandleSpeak(uint32_t id, uint32_t ctx)
 				lv_poc_activity_func_cb_set.idle_note(lv_poc_idle_page2_warnning_info, 1, "尝试登录中...");
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 				lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"未登录", (const uint8_t *)"尝试登录...");
+				pocIdtAttr.is_first_get_grplist_info = false;
 				osiTimerIsRunning(pocIdtAttr.try_login_timer) ? 0 : osiTimerStart(pocIdtAttr.try_login_timer, 2000);
 				osiMutexUnlock(pocIdtAttr.mutex);
 				break;
@@ -3765,7 +3767,6 @@ static void prvPocGuiIdtTaskHandleGroupOperator(uint32_t id, uint32_t ctx)
 			    if(!pocIdtAttr.isPocMemberListBuf)
 			    {
 		    		OSI_PRINTFI("[grouprefr]%s(%d):get memberlist cur_group", __func__, __LINE__);
-
 					lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GET_MEMBER_LIST_CUR_GROUP, NULL);
 				}
 				else

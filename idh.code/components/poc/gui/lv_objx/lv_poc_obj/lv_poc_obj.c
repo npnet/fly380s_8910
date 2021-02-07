@@ -115,7 +115,7 @@ static status_bar_task_t status_bar_task_ext[LV_POC_STABAR_TASK_EXT_LENGTH];
 static lv_poc_activity_t * _idle_activity;
 static char lv_poc_refresh_ui_state = 0;
 static uint8_t last_battery_percent = 0;
-
+static osiMutex_t * act_mutex = NULL;
 #define LV_POC_STACK_SIZE   100
 static struct _lv_poc_stack_t
 {
@@ -587,6 +587,7 @@ bool lv_poc_setting_init(void)
 	lv_poc_set_loopback_recordplay(false);
 	lv_poc_opt_refr_status(LVPOCUNREFOPTIDTCOM_SIGNAL_NUMBLE_STATUS);
 
+	act_mutex = osiMutexCreate();
     return true;
 }
 
@@ -2790,7 +2791,7 @@ void lv_poc_update_stabar_sim_img(void)
 					if(is_net_type != 1)
 					{
 						is_net_type = 1;
-						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false);
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, false);
 					}
                     break;
                 }
@@ -2802,7 +2803,7 @@ void lv_poc_update_stabar_sim_img(void)
 					if(is_net_type != 1)
 					{
 						is_net_type = 1;
-						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false);
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, false);
 					}
                     break;
                 }
@@ -2815,7 +2816,7 @@ void lv_poc_update_stabar_sim_img(void)
 					if(is_net_type != 1)
 					{
 						is_net_type = 1;
-						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_SCAN_NETWORK_STATUS, false);
+						lvPocLedCom_Msg(LVPOCLEDIDTCOM_SIGNAL_NO_NETWORK_STATUS, false);
 					}
                     break;
                 }
@@ -3161,6 +3162,7 @@ bool lv_poc_del_activity(lv_poc_activity_t *activity)
 		return false;
 	}
 
+	osiMutexLock(act_mutex);
     lv_poc_activity_t * pre_activity;
     lv_poc_control_t *ctl = NULL;
     lv_poc_activity_ext_t * ext = &(activity->activity_ext);
@@ -3200,6 +3202,7 @@ bool lv_poc_del_activity(lv_poc_activity_t *activity)
 
     lv_mem_free(activity);
     lv_group_focus_obj(pre_activity->display);
+	osiMutexUnlock(act_mutex);
     return ret_val;
 }
 

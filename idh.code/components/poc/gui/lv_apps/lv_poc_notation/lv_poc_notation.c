@@ -250,7 +250,7 @@ void lv_poc_notation_refresh(void)
 	}
 	else if(notationwindows_size == 2)//2行消息
 	{
-		if(label_1_length == 4 && label_2_length == 2)
+		if((label_1_length == 4 && label_2_length == 2) || (label_1_length == 4 && label_2_length == 4))
 		{//切换群主选项
 			//重新设置消息框原点
 			lv_obj_set_pos(lv_poc_notationwindow_obj, LV_HOR_RES * 13/ 80, LV_VER_RES / 3);
@@ -465,6 +465,13 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 		case LV_POC_NOTATION_LISTENING:
 		{
+			if(lv_poc_notation_delay_close_task != NULL)
+			{
+				lv_task_del(lv_poc_notation_delay_close_task);
+				lv_poc_notation_delay_close_task = NULL;
+				lv_poc_notation_delay_close_task_running = false;
+			}
+
 			lv_poc_notation_listen_speak_status = true;
 			lv_poc_notation_listenning((const int8_t *)notation_msg->label_1_text,
 				(const int8_t *)notation_msg->label_2_text);
@@ -473,6 +480,13 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 		case LV_POC_NOTATION_SPEAKING:
 		{
+			if(lv_poc_notation_delay_close_task != NULL)
+			{
+				lv_task_del(lv_poc_notation_delay_close_task);
+				lv_poc_notation_delay_close_task = NULL;
+				lv_poc_notation_delay_close_task_running = false;
+			}
+
 			lv_poc_notation_listen_speak_status = true;
 			lv_poc_notation_speaking((const int8_t *)notation_msg->label_1_text,
 				(const int8_t *)notation_msg->label_2_text);
@@ -482,15 +496,16 @@ static void lv_poc_notation_task_cb(lv_task_t * task)
 
 		case LV_POC_NOTATION_NORMAL_MSG:
 		{
-			lv_poc_notation_listen_speak_status = false;
-			lv_poc_notation_normal_msg((const int8_t *)notation_msg->label_1_text,
-				(const int8_t *)notation_msg->label_2_text);
-
 			if(lv_poc_notation_delay_close_task != NULL)
 			{
 				lv_task_del(lv_poc_notation_delay_close_task);
 				lv_poc_notation_delay_close_task = NULL;
+				lv_poc_notation_delay_close_task_running = false;
 			}
+
+			lv_poc_notation_listen_speak_status = false;
+			lv_poc_notation_normal_msg((const int8_t *)notation_msg->label_1_text,
+				(const int8_t *)notation_msg->label_2_text);
 
 			lv_poc_notation_delay_close_task = lv_task_create(lv_poc_notation_normal_msg_delay_close_task,
 				2000,

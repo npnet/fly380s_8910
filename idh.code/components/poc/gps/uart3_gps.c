@@ -606,6 +606,8 @@ void prvGpsThreadEntry(void *ctx)
 				pubPocIdtGpsLocationStatus() ? (pocGpsIdtAttr.gps_error_data_status = false) : 0;
 				osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);
 				osiTimerStartPeriodic(pocGpsIdtAttr.GpsInfoTimer, GPS_LOCATION_CHECK_REPORT_FREQ);
+
+//				OSI_PRINTFI("[poc][gps](%s)[%d]remain(%lld), expir(%lld)", __func__, __LINE__, osiTimerRemaining(pocGpsIdtAttr.GpsInfoTimer), osiTimerExpiration(pocGpsIdtAttr.GpsInfoTimer));
 				break;
 			}
 
@@ -627,6 +629,7 @@ void prvGpsThreadEntry(void *ctx)
 					break;
 				}
 
+//				OSI_PRINTFI("[poc][gps](%s)[%d]remain(%lld), expir(%lld)", __func__, __LINE__, osiTimerRemaining(pocGpsIdtAttr.GpsInfoTimer), osiTimerExpiration(pocGpsIdtAttr.GpsInfoTimer));
 				if(osiTimerIsRunning(pocGpsIdtAttr.GpsInfoTimer))
 				{
 					osiTimerStop(pocGpsIdtAttr.GpsInfoTimer);

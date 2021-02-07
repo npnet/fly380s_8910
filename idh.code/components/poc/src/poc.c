@@ -134,30 +134,31 @@ static void pocIdtStartHandleTask(void * ctx)
 #ifdef CONFIG_POC_GUI_START_ANIMATION_SUPPORT
 static void pocStartAnimation(void *ctx)
 {
+	osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
 	lvGuiRequestSceenOn(3);
 	lv_poc_refr_task_once(prv_lv_poc_network_config_task, 50, LV_TASK_PRIO_MID);
 	if(!pub_lv_poc_get_watchdog_status())
 	{
 		lv_poc_refr_task_once(prv_lv_poc_power_on_sprd_image, 50, LV_TASK_PRIO_MID);
-		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
+		osiThreadSleepRelaxed(500, OSI_WAIT_FOREVER);
 
 		drvLcd_t *lcd = drvLcdGetByname(DRV_NAME_LCD1);
 		drvLcdSetBackLightEnable(lcd, true);
 		poc_set_lcd_blacklight(RG_RGB_BACKLIGHT_LEVEL_3);
-		osiThreadSleepRelaxed(3000, OSI_WAIT_FOREVER);
+		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
 
 		lv_poc_refr_task_once(prv_lv_poc_power_on_backgroup_image, 50, LV_TASK_PRIO_MID);
 		lv_poc_setting_init();
 		osiThreadSleepRelaxed(4000, OSI_WAIT_FOREVER);
-		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
-		osiThreadSleepRelaxed(2800, OSI_WAIT_FOREVER);
+		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024 * 5, 64);
+		osiThreadSleepRelaxed(800, OSI_WAIT_FOREVER);
  		lv_poc_refr_task_once(prv_lv_poc_power_on_picture, LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_MID);
 	}
 	else//watchdog
 	{
 		lv_poc_setting_init();
 		osiThreadSleepRelaxed(3000, OSI_WAIT_FOREVER);
-		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024, 64);
+		osiThreadCreate("pocIdtStart", pocIdtStartHandleTask, NULL, OSI_PRIORITY_NORMAL, 1024 * 5, 64);
 		osiThreadSleepRelaxed(2000, OSI_WAIT_FOREVER);
 		lv_poc_refr_task_once(prv_lv_poc_power_on_picture,
 			LVPOCLISTIDTCOM_LIST_PERIOD_50, LV_TASK_PRIO_MID);
@@ -174,7 +175,7 @@ static void pocStartAnimation(void *ctx)
 static void pocLvglStart(void)
 {
 #ifdef CONFIG_POC_GUI_START_ANIMATION_SUPPORT
-	osiThreadCreate("oicStartWithAnimation", pocStartAnimation, NULL, OSI_PRIORITY_NORMAL, 1024 * 15, 64);
+	osiThreadCreate("oicStartWithAnimation", pocStartAnimation, NULL, OSI_PRIORITY_NORMAL, 1024 * 10, 64);
 #else
 	lv_poc_create_idle();
 
