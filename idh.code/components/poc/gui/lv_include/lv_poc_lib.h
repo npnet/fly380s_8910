@@ -10,7 +10,7 @@
 #include "drv_gpio.h"
 #include "hal_iomux.h"
 #include "lv_apps/lv_poc_member_list/lv_poc_member_list.h"
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 #include "../../cfw/include/cfw.h"
 #include "../../newlib/include/stdlib.h"
 
@@ -57,7 +57,7 @@ typedef struct Msg_GROUP_MEMBER_s
 typedef struct Msg_GData_s
 {
     unsigned long dwNum;                      //用户个数
-    Msg_GROUP_MEMBER_s  member[1024];   //组成员
+    Msg_GROUP_MEMBER_s  member[64];   //组成员
 }Msg_GData_s;
 
 //组信息
@@ -66,6 +66,7 @@ typedef struct _CGroup
     uint8_t   m_ucGNum[32];     //组号码
     uint8_t   m_ucGName[64];    //组名字
     uint8_t   m_ucPriority;     //组优先级
+    uint8_t   m_index;
 }CGroup;
 
 /*
@@ -1260,6 +1261,20 @@ uint32_t lv_poc_mutex_init(void);
 */
 bool
 lv_poc_group_list_act_status(void);
+
+/*
+	  name : lv_poc_GetSimInfo
+	  param :
+	  date : 2021-02-03
+*/
+void lv_poc_GetSimInfo(char *imsi, unsigned int *lenimsi, char *iccid, unsigned int *leniccid, char *imei, unsigned int *lenimei);
+
+/*
+	  name : lv_poc_GetGprsAttState
+	  param :
+	  date : 2021-02-03
+*/
+int lv_poc_GetGprsAttState(void);
 
 #ifdef __cplusplus
 }

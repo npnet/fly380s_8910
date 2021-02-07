@@ -486,8 +486,8 @@ lv_poc_led_status_task_handle_other(uint32_t id)
 
 		case LVPOCGUIOEMCOM_SIGNAL_HEADSET_INSERT:
 	    {
-		   if(!lvPocGuiIdtCom_get_listen_status()
-			  && !lvPocGuiIdtCom_get_speak_status())
+		   if(!lvPocGuiCtelCom_get_listen_status()
+			  && !lvPocGuiCtelCom_get_speak_status())
 		   {
 			  lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			  lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机插入", (const uint8_t *)"");
@@ -497,8 +497,8 @@ lv_poc_led_status_task_handle_other(uint32_t id)
 
 	    case LVPOCGUIOEMCOM_SIGNAL_HEADSET_PULL_OUT:
 	    {
-		   if(!lvPocGuiIdtCom_get_listen_status()
-			  && !lvPocGuiIdtCom_get_speak_status())
+		   if(!lvPocGuiCtelCom_get_listen_status()
+			  && !lvPocGuiCtelCom_get_speak_status())
 		   {
 			  lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_DESTORY, NULL, NULL);
 			  lv_poc_activity_func_cb_set.window_note(LV_POC_NOTATION_NORMAL_MSG, (const uint8_t *)"耳机拔出", (const uint8_t *)"");

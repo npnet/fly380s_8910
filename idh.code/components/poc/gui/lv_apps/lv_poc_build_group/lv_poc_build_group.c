@@ -297,29 +297,27 @@ static lv_res_t lv_poc_build_group_signal_func(struct _lv_obj_t * obj, lv_signal
 					if(lv_poc_is_buildgroup_refr_complete()
 						|| lv_poc_get_refr_error_info())
 					{
-						if(lvPocGuiIdtCom_get_listen_status()
-							|| lvPocGuiIdtCom_get_speak_status())
+						if(lvPocGuiCtelCom_get_listen_status()
+							|| lvPocGuiCtelCom_get_speak_status())
 						{
 							OSI_PRINTFI("[poc][group](%s)(%d)is listen status or speak status", __func__, __LINE__);
 							break;
 						}
 
-						if(lvPocGuiIdtCom_get_current_exist_selfgroup() == 2)
-						{
-							osiMutexLock(build_grp_refresh_attr->mutex);
-							build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_BUILD_GRP_EXIST;
-//							lv_task_ready(build_grp_refresh_attr->task);
-							osiMutexUnlock(build_grp_refresh_attr->mutex);
-
-							lv_poc_del_activity(poc_build_group_activity);
-						}
-						else
-						{
-							osiMutexLock(build_grp_refresh_attr->mutex);
-							build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_BUILD_GRP_SUCC;
-//							lv_task_ready(build_grp_refresh_attr->task);
-							osiMutexUnlock(build_grp_refresh_attr->mutex);
-						}
+//						if(lvPocGuiIdtCom_get_current_exist_selfgroup() == 2)
+//						{
+//							osiMutexLock(build_grp_refresh_attr->mutex);
+//							build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_BUILD_GRP_EXIST;
+//							osiMutexUnlock(build_grp_refresh_attr->mutex);
+//
+//							lv_poc_del_activity(poc_build_group_activity);
+//						}
+//						else
+//						{
+//							osiMutexLock(build_grp_refresh_attr->mutex);
+//							build_grp_refresh_attr->refresh_type = POC_REFRESH_TYPE_BUILD_GRP_SUCC;
+//							osiMutexUnlock(build_grp_refresh_attr->mutex);
+//						}
 					}
 					break;
 				}
@@ -383,8 +381,8 @@ void lv_poc_build_group_open(void)
     	return;
     }
 
-	if(lvPocGuiIdtCom_get_listen_status()
-		|| lvPocGuiIdtCom_get_speak_status())
+	if(lvPocGuiCtelCom_get_listen_status()
+		|| lvPocGuiCtelCom_get_speak_status())
 	{
 		OSI_PRINTFI("[poc][group](%s)(%d)is listen status or speak status", __func__, __LINE__);
 		return;
@@ -635,7 +633,7 @@ void lv_poc_build_group_refresh(lv_poc_member_list_t *member_list)
         	lv_list_set_btn_selected(activity_list, btn);
         }
     }
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+	lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_buildgroup_refr_is_complete(true);
 }
 

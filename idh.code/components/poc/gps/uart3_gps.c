@@ -11,7 +11,7 @@
 #include "drv_uart.h"
 #include "drv_i2c.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 #include "uart3_gps.h"
 #include "lv_apps/lv_poc_led/lv_poc_led.h"
 #include "lv_apps/lv_poc_refr/lv_poc_refr.h"
@@ -338,7 +338,7 @@ void prvlvPocGpsIdtComAnalyzeData(lv_task_t *task)
 			goto gpsdataerror;
 		}
 
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
+		lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_GPS_UPLOADING_IND, &gps_t);
 		if(!pubPocIdtGpsLocationStatus()
 			|| pocGpsIdtAttr.gps_error_data_status)
 		{

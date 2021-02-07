@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "poc_keypad.h"
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 #include "lv_include/lv_poc.h"
 #include "uart3_gps.h"
 
@@ -267,7 +267,7 @@ static bool prvLvKeypadRead(lv_indev_drv_t *kp, lv_indev_data_t *data)
         }
 
 		{//break scrbri
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CALL_BRIGHT_SCREEN_BREAK, NULL);
+			lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_CALL_BRIGHT_SCREEN_BREAK, NULL);
 		}
 
 		lv_poc_cbn_key_obj(data) == true ? (cnt_key_state = true) : (cnt_key_state = false);

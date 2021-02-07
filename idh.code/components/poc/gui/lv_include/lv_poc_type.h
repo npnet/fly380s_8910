@@ -146,9 +146,11 @@ typedef struct
 	char account_name[32];
 	char account_passwd[32];
 	char ip_address[64];
-	int  ip_port;
+	unsigned int ip_port;
 	char old_account_name[32];
 	char old_account_current_group[32];
+	char vice_ip_address[64];
+	unsigned int vice_ip_port;
 #endif
 	uint8_t logintype;              //[0]iccid [1]account
 } nv_poc_setting_msg_t;

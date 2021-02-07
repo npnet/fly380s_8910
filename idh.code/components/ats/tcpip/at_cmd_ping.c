@@ -13,7 +13,7 @@
 #include "netmain.h"
 //poc
 #include "lv_include/lv_poc_type.h"
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 
 //following global variables just used in AT+PING command
 #define ERR_SUCCESS 0
@@ -468,7 +468,7 @@ void AT_TCPIP_CmdFunc_PING(atCommand_t *pParam)
         {
             OSI_LOGI(0x1000401b, "AT_TCPIP_CmdFunc_PING: CFW_Gethostbyname ERROR(%x)", nReturnValue);
 #ifdef CONFIG_POC_PING_NETWORK_SUPPORT
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
+			lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
 #endif
 			RETURN_CME_ERR(engine, ERR_AT_CME_PARAM_INVALID);
         }
@@ -511,13 +511,13 @@ void AT_TCPIP_CmdFunc_PING(atCommand_t *pParam)
             }
             OSI_LOGI(0x10003fee, "AT_TCPIP_CmdFunc_PING: Cannot find IP address of this modem!", nDNS);
 #ifdef CONFIG_POC_PING_NETWORK_SUPPORT
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
+			lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
 #endif
 			RETURN_CME_ERR(engine, ERR_AT_CME_EXE_FAIL);
         }
 
 #ifdef CONFIG_POC_PING_NETWORK_SUPPORT
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_SUCCESS_REP, NULL);//ping ok
+		lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_PING_SUCCESS_REP, NULL);//ping ok
 #endif
         OSI_LOGI(0x10004020, "AT_TCPIP_CmdFunc_PING: OK");
         gPingstatus = true;
@@ -755,7 +755,7 @@ void ping_continue(atCmdEngine_t *engine, char *response)
         if (nRetValue != ERR_SUCCESS)
         {
 #ifdef CONFIG_POC_PING_NETWORK_SUPPORT
-			lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
+			lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
 #endif
 			OSI_LOGI(0, "ping_continue: AT_SendIP_ICMP_Ping return:%d", nRetValue);
             if (false == osiTimerStart(gPingtimer, AT_PING_TIMEOUT * 1000))
@@ -781,7 +781,7 @@ void ping_timeout(void *param)
     atCmdRespInfoText(engine, response);
     ping_continue(engine, response);
 #ifdef CONFIG_POC_PING_NETWORK_SUPPORT
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
+	lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_PING_FAILED_REP, NULL);//time out
 #endif
 }
 

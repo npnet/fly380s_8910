@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 #include "lv_include/lv_poc.h"
 #include "lv_gui_main.h"
 #include "poc_audio_recorder.h"
@@ -61,7 +61,6 @@ static void prvPowerKeyCb(void *ctx)
 			return;
 		}
 
-//		lv_poc_set_power_on_status(false);
 		lv_poc_refr_task_once(lv_poc_shutdown_note_activity_open,
 			LVPOCLISTIDTCOM_LIST_PERIOD_10, LV_TASK_PRIO_HIGH);
 	}
@@ -87,7 +86,7 @@ static void prvPttKeyStateCb(void *ctx)
 			osiTimerStop(prvPttKeyStateTimer);
 			prvPttKeyStateTimerRunning = false;
 		}
-		lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		poc_set_ptt_key_status(false);
 		prvPttKeyState = false;
 	}
@@ -102,7 +101,7 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 	if(id == LV_GROUP_KEY_POC) //poc
 	{
 		if((prvPttKeyState != state)
-			&& (!lvPocGuiIdtCom_get_listen_status()))
+			&& (!lvPocGuiCtelCom_get_listen_status()))
 		{
 			if(state == LV_INDEV_STATE_PR)
 			{
@@ -131,14 +130,14 @@ bool pocKeypadHandle(uint32_t id, lv_indev_state_t state, void *p)
 					case POC_APPLY_NOTE_TYPE_NOLOGIN:
 					case POC_APPLY_NOTE_TYPE_LOGINSUCCESS:
 					{
-						lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY ? lv_poc_type_key_poc_cb(true) : (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_RECORDER_IND, false) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL));
+						lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_KEY ? lv_poc_type_key_poc_cb(true) : (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_RECORDER_IND, false) : lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_SPEAK_START_IND, NULL));
 						break;
 					}
 				}
             }
             else
             {
-				lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+				lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 
 				if(prvPttKeyStateTimerRunning)
 				{

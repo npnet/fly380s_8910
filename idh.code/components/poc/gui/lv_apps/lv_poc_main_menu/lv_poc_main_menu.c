@@ -93,7 +93,7 @@ static void lv_poc_main_menu_press_cb(lv_obj_t * obj, lv_event_t event)
 		}
 		else if(0 == strcmp(text, (const char *)lv_poc_main_menu_item_text_new_group))
 		{
-			lv_poc_build_group_open();
+			//lv_poc_build_group_open();
 		}
 		else if(0 == strcmp(text, (const char *)lv_poc_main_menu_item_text_about))
 		{
@@ -131,24 +131,24 @@ static void  lv_poc_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
 
-    btn = lv_list_add_btn(list, &ic_group, (const char *)lv_poc_main_menu_item_text_new_group);
+//    btn = lv_list_add_btn(list, &ic_group, (const char *)lv_poc_main_menu_item_text_new_group);
+//    lv_obj_set_event_cb(btn, lv_poc_main_menu_press_cb);
+//    lv_obj_set_click(btn, true);
+//    btns[2] = btn;
+//    lv_btn_set_fit(btn, LV_FIT_NONE);
+//    lv_obj_set_height(btn, btn_height);
+
+    btn = lv_list_add_btn(list, &ic_setting, (const char *)lv_poc_main_menu_item_text_setting);
     lv_obj_set_event_cb(btn, lv_poc_main_menu_press_cb);
     lv_obj_set_click(btn, true);
     btns[2] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
 
-    btn = lv_list_add_btn(list, &ic_setting, (const char *)lv_poc_main_menu_item_text_setting);
-    lv_obj_set_event_cb(btn, lv_poc_main_menu_press_cb);
-    lv_obj_set_click(btn, true);
-    btns[3] = btn;
-    lv_btn_set_fit(btn, LV_FIT_NONE);
-    lv_obj_set_height(btn, btn_height);
-
     btn = lv_list_add_btn(list, &ic_menu_about, (const char *)lv_poc_main_menu_item_text_about);
     lv_obj_set_event_cb(btn, lv_poc_main_menu_press_cb);
     lv_obj_set_click(btn, true);
-    btns[4] = btn;
+    btns[3] = btn;
     lv_btn_set_fit(btn, LV_FIT_NONE);
     lv_obj_set_height(btn, btn_height);
 

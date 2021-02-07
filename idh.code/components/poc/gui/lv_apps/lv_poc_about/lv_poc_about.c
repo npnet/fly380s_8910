@@ -57,9 +57,10 @@ typedef struct
 } lv_poc_about_label_struct_t;
 
 
-static char lv_poc_about_text_stateinfo[64] = {0};
-static char lv_poc_about_text_model[64] = {0};
-static char lv_poc_about_text_processor[64] = {0};
+static char lv_poc_about_text_accout[64] = {0};
+static char lv_poc_about_text_imei[64] = {0};
+static char lv_poc_about_text_iccid[64] = {0};
+static char lv_poc_about_text_imsi[64] = {0};
 static char lv_poc_about_text_sysversion[64] = {0};
 static char lv_poc_about_text_version_number[64] = {0};
 static char lv_poc_about_text_update[64] = {0};
@@ -67,31 +68,37 @@ static char lv_poc_about_text_update[64] = {0};
 lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
     {
         NULL,
-        "状态信息"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-        lv_poc_about_text_stateinfo, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+        "账号"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_accout, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
     },
 
     {
         NULL,
-        "型号"                   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-        lv_poc_about_text_model, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+        "IMEI"                   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_imei, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
     },
 
     {
         NULL,
-        "处理器信息"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
-        lv_poc_about_text_processor, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+        "ICCID"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_iccid, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
     },
 
     {
         NULL,
-        "系统版本"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        "IMSI"                   , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        lv_poc_about_text_imsi, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
+    },
+
+    {
+        NULL,
+        "型号"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
         lv_poc_about_text_sysversion, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
     },
 
     {
         NULL,
-        "版本号"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
+        "版本"                     , LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_IN_LEFT_MID  ,
         lv_poc_about_text_version_number, LV_LABEL_LONG_SROLL_CIRC, LV_LABEL_ALIGN_LEFT, LV_ALIGN_OUT_RIGHT_MID, 0, 0,
     },
 
@@ -102,32 +109,23 @@ lv_poc_about_label_struct_t lv_poc_about_label_array[] = {
     },
 };
 
-static void lv_poc_about_pressed_fota_update_cb(lv_obj_t * obj, lv_event_t event)
+static void lv_poc_about_pressed_cb(lv_obj_t * obj, lv_event_t event)
 {
     if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
     {
         //open software update
-		lv_poc_fota_update_open();
-    }
-}
-
-static void lv_poc_about_pressed_state_info_cb(lv_obj_t * obj, lv_event_t event)
-{
-    if(LV_EVENT_CLICKED == event || LV_EVENT_PRESSED == event)
-    {
-        //open software update
-        lv_poc_state_info_open();
+		//lv_poc_fota_update_open();
     }
 }
 
 static void about_list_config(lv_obj_t * list, lv_area_t list_area)
 {
-    lv_obj_t *btn = NULL;
-    lv_obj_t *label = NULL;
-    lv_obj_t *btn_label = NULL;
+    lv_obj_t *btn;
+    lv_obj_t *label;
+    lv_obj_t *btn_label;
     lv_coord_t btn_height = (list_area.y2 - list_area.y1)/LV_POC_LIST_COLUM_COUNT;
     lv_coord_t btn_width = (list_area.x2 - list_area.x1);
-    lv_style_t * style_label = NULL;
+    lv_style_t * style_label;
     poc_setting_conf = lv_poc_setting_conf_read();
     style_label = ( lv_style_t * )poc_setting_conf->theme.current_theme->style_about_label;
     style_label->text.font = (lv_font_t *)poc_setting_conf->font.about_label_current_font;
@@ -135,11 +133,26 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     int label_array_size = sizeof(lv_poc_about_label_array)/sizeof(lv_poc_about_label_struct_t);
     lv_obj_t ** btn_array = (lv_obj_t **)lv_mem_alloc(sizeof(lv_obj_t *) * label_array_size);
 
-    strcpy(lv_poc_about_text_stateinfo, "电池状态/网络信号等");
-    strcpy(lv_poc_about_text_model, "FT02-380SG");
-    strcpy(lv_poc_about_text_processor, "UIS8910DM_IE_AIOT_AIM");
-    strcpy(lv_poc_about_text_sysversion, "8910_MODULE_V1_3_W20.35.2");
-    strcpy(lv_poc_about_text_version_number, "V20.35.2-D02.04");
+	char *temp_str = NULL;
+	temp_str = poc_get_device_account_rep(poc_setting_conf->main_SIM);
+	if(temp_str != NULL)
+	{
+		strcpy(lv_poc_about_text_accout, temp_str);
+	}
+	else
+	{
+		lv_poc_about_text_accout[0] = 0;
+	}
+
+	lv_poc_about_text_imei[0] = 0;
+	poc_get_device_imei_rep((int8_t *)lv_poc_about_text_imei);
+	lv_poc_about_text_iccid[0] = 0;
+	poc_get_device_iccid_rep((int8_t *)lv_poc_about_text_iccid);
+	lv_poc_about_text_imsi[0] = 0;
+	poc_get_device_imsi_rep((int8_t *)lv_poc_about_text_imsi);
+
+	strcpy(lv_poc_about_text_sysversion, "8910_MODULE_V1_3_W20.35.2");
+    strcpy(lv_poc_about_text_version_number, "V20.35.2-D02.07");
     strcpy(lv_poc_about_text_update, "检查更新");
 
     for(int i = 0; i < label_array_size; i++)
@@ -169,16 +182,9 @@ static void about_list_config(lv_obj_t * list, lv_area_t list_area)
     lv_list_set_btn_selected(list, btn_array[0]);
 
 #ifdef CONFIG_POC_FOTA_SUPPORT
-    lv_obj_set_click(btn_array[5], true);
-    lv_obj_set_event_cb(btn_array[5], lv_poc_about_pressed_fota_update_cb);
+    lv_obj_set_click(btn_array[label_array_size - 1], true);
+    lv_obj_set_event_cb(btn_array[label_array_size - 1], lv_poc_about_pressed_cb);
 #endif
-    lv_obj_set_event_cb(btn_array[0], lv_poc_about_pressed_state_info_cb);
-	//free
-	if(btn_array != NULL)
-	{
-		lv_mem_free(btn_array);
-		btn_array = NULL;
-	}
 }
 
 static lv_res_t signal_func(struct _lv_obj_t * obj, lv_signal_t sign, void * param)

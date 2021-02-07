@@ -152,7 +152,7 @@ config POC_GUI_RTC_SUPPORT
 
 config POC_GUI_LCD_VOL_2_3_SUPPORT
     bool "POC lcd 2.3V supported"
-    default n
+    default y
     help
         poc gui should not be supported.
 endif

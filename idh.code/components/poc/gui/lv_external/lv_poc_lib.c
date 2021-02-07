@@ -29,6 +29,7 @@
 #include "at_engine.h"
 #include "osi_pipe.h"
 #include "poc_keypad.h"
+#include "netutils.h"
 
 #define SUPPORT_CIT_KEY_TEST
 /*************************************************
@@ -106,6 +107,7 @@ struct poc_voice_player
 	int voice_queue_writer;
 	LVPOCAUDIO_Type_e voice_type;
 	auStreamFormat_t voice_formate;
+	bool is_finish;
 };
 static struct poc_voice_player poc_voice_player_attr = {0};
 
@@ -654,9 +656,9 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 {
 	do
 	{
-		OSI_PRINTFI("[poc][voice][keytone][%d]listen status (%d), speak status (%d), audev status (%d)", __LINE__, lvPocGuiIdtCom_get_listen_status(), lvPocGuiIdtCom_get_speak_status(), lv_poc_get_audevplay_status());
-		if(!lvPocGuiIdtCom_get_listen_status()
-			&& !lvPocGuiIdtCom_get_speak_status())
+		OSI_PRINTFI("[poc][voice][keytone][%d]listen status (%d), speak status (%d), audev status (%d)", __LINE__, lvPocGuiCtelCom_get_listen_status(), lvPocGuiCtelCom_get_speak_status(), lv_poc_get_audevplay_status());
+		if(!lvPocGuiCtelCom_get_listen_status()
+			&& !lvPocGuiCtelCom_get_speak_status())
 		{
 			if(ttsIsPlaying())
 			{
@@ -667,9 +669,6 @@ static void prv_play_btn_voice_one_time_thread_callback(void * ctx)
 			if(!lv_poc_get_audevplay_status())
 			{
 				OSI_PRINTFI("[poc][voice][keytone](%s)(%d)launch", __func__, __LINE__);
-//				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_OPEN_PA_IND, (void *)20);
-//				lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_CLOSE_PA_IND, (void *)160);
-
 				audevGetPlayVolume() != 35 ? audevSetPlayVolume(35) : 0;
 				char playkey[4] = "9";
 				ttsPlayText(playkey, strlen(playkey), ML_UTF8);
@@ -742,26 +741,27 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 						OSI_PRINTFI("[poc][keytone](%s)(%d)start listen", __func__, __LINE__);
 						is_poc_listen_tone_complete = false;
 						lv_poc_set_play_tone_status(true);
-						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
-						lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_PLAY_IND, NULL);
+						lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_STOP_PLAY_IND, NULL);
+						lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_START_PLAY_IND, NULL);
 					}
 
 					if(is_poc_speak_tone_complete == true)
 					{
 						OSI_PRINTFI("[poc][keytone](%s)(%d)start speak", __func__, __LINE__);
 						is_poc_speak_tone_complete = false;
-						if(pocGetPttKeyState() || lv_poc_get_earppt_state())
+						if(pocGetPttKeyState()
+							|| lv_poc_get_earppt_state())
 						{
 							lv_poc_set_play_tone_status(true);
-							lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_PLAY_IND, NULL);
-							lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_START_RECORD_IND, NULL);
-							lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_REP, NULL);
+							lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_STOP_PLAY_IND, NULL);
+							lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_START_RECORD_IND, NULL);
 						}
 					}
 
 					if(poc_voice_player_attr.voice_queue_reader == poc_voice_player_attr.voice_queue_writer)
 					{
 						prv_play_voice_one_time_thread = NULL;
+						poc_voice_player_attr.is_finish = true;
 						osiThreadExit();
 					}
 				}
@@ -790,11 +790,6 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			continue;
 		}
 
-		while(ttsIsPlaying())
-		{
-			osiDelayUS(20000);
-		}
-
 		switch(poc_voice_player_attr.voice_type)
 		{
 			case LVPOCAUDIO_Type_Start_Machine:
@@ -821,8 +816,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_This_Account_Already_Logined:
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
-				/*audio volum*/
-				audevGetPlayVolume() != 70 ? audevSetPlayVolume(70) : 0;
+				audevGetPlayVolume() != 50 ? audevSetPlayVolume(50) : 0;
 			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
@@ -846,7 +840,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Start_Speak:
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
-				audevGetPlayVolume() != 60 ? audevSetPlayVolume(60) : 0;
+				audevGetPlayVolume() != 40 ? audevSetPlayVolume(40) : 0;
 				keytoneattr.is_poc_play_voice = true;
 				is_poc_speak_tone_complete = true;
 				break;
@@ -859,7 +853,7 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 			case LVPOCAUDIO_Type_Tone_Stop_Speak:
 			{
 				poc_voice_player_attr.voice_formate = AUSTREAM_FORMAT_MP3;
-				audevGetPlayVolume() != 60 ? audevSetPlayVolume(60) : 0;
+				audevGetPlayVolume() != 40 ? audevSetPlayVolume(40) : 0;
 			    keytoneattr.is_poc_play_voice = true;
 				break;
 			}
@@ -869,8 +863,8 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 				break;
 		}
 
-		if(lvPocGuiIdtCom_get_listen_status()
-			|| lvPocGuiIdtCom_get_speak_status())
+		if(lvPocGuiCtelCom_get_listen_status()
+			|| lvPocGuiCtelCom_get_speak_status())
 		{
 			OSI_PRINTFI("[poc][voice][keytone](%s)(%d)is listen_sta or speak_sta", __func__, __LINE__);
 			continue;
@@ -894,6 +888,12 @@ static void prv_play_voice_one_time_thread_callback(void * ctx)
 void
 poc_play_btn_voice_one_time(IN int8_t volum, IN bool quiet)
 {
+	if(!poc_voice_player_attr.is_finish)
+	{
+		OSI_PRINTFI("[keytone](%s)(%d)error, voice is playing", __func__, __LINE__);
+		return;
+	}
+
 	if(!quiet && !pocGetPttKeyState())
 	{
 		if(prv_play_btn_voice_one_time_task == NULL)//monitor key voice
@@ -956,6 +956,12 @@ poc_play_voice_one_time(IN LVPOCAUDIO_Type_e voice_type, IN uint8_t volume, IN b
 			return;
 		}
 	}
+
+	if(ttsIsPlaying())//not allow keytone
+	{
+		ttsStop();
+	}
+	poc_voice_player_attr.is_finish = false;
 
 	osiEvent_t event = {0};
 	event.id = 101;
@@ -1516,8 +1522,10 @@ poc_mmi_poc_setting_config(OUT nv_poc_setting_msg_t * poc_setting)
 	strcpy(poc_setting->account_passwd, "00000");
 	strcpy(poc_setting->old_account_name, "");
 	strcpy(poc_setting->old_account_current_group, "");
-	strcpy(poc_setting->ip_address, "106.74.78.251:10200;106.74.78.208:10200");
-	poc_setting->ip_port = 10000;
+	strcpy(poc_setting->ip_address, "emp.189diaodu.cn");
+	poc_setting->ip_port = 2072;
+	strcpy(poc_setting->vice_ip_address, "poc.189diaodu.cn");
+	poc_setting->vice_ip_port = 2072;
 #endif
 }
 
@@ -1997,7 +2005,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
 		ear_key_attr.ear_key_press = true;
 		poc_earkey_state = true;
 		OSI_PRINTFI("[headset](%s)[%d]key is press,start speak\n", __func__, __LINE__);
-		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_RECORDER_IND, false) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_START_IND, NULL);
+		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_RECORDER_IND, false) : 0 ) : lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_SPEAK_START_IND, NULL);
 	}
 	else
 	{
@@ -2015,7 +2023,7 @@ static void Lv_ear_ppt_timer_cb(void *ctx)
  			   ear_key_attr.ear_key_press = false;
 			   poc_earkey_state = false;
 			   OSI_PRINTFI("[headset](%s)[%d]key is release,stop speak\n", __func__, __LINE__);
-			   lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : 0 ): lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+			   lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : 0 ): lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 		   }
 		   checkcbnum = 0;
 	   }
@@ -2073,7 +2081,7 @@ void poc_ear_ppt_irq(void *ctx)
 		ear_key_attr.ear_key_press = false;
 		poc_earkey_state = false;
 		OSI_PRINTFI("[headset](%s)[%d]key is release,stop speak\n", __func__, __LINE__);
-		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : 0 ) : lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SPEAK_STOP_IND, NULL);
+		lv_poc_cit_get_run_status() == LV_POC_CIT_OPRATOR_TYPE_HEADSET ? (lv_poc_get_loopback_recordplay_status() ? lvPocLedCom_Msg(LVPOCGUICOM_SIGNAL_LOOPBACK_PLAYER_IND, false) : 0 ) : lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_SPEAK_STOP_IND, NULL);
 	}
 	else//press
 	{
@@ -2198,7 +2206,7 @@ static get_group_list_cb   prv_group_list_cb = NULL;
 static void
 prv_lv_poc_get_group_list_cb(int msg_type, uint32_t num, CGroup *group)
 {
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL);
+	lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL);
 	if(msg_type == 0
 		|| num == 0
 		|| group == NULL
@@ -2272,16 +2280,16 @@ lv_poc_get_group_list(lv_poc_group_list_t * group_list, get_group_list_cb func)
 	prv_group_list = group_list;
 	prv_group_list_cb = func;
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_GROUP_LIST_CB_IND, prv_lv_poc_get_group_list_cb))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_REGISTER_GET_GROUP_LIST_CB_IND, prv_lv_poc_get_group_list_cb))
 	{
 		prv_group_list_cb = NULL;
 		prv_group_list = NULL;
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_GROUP_LIST_QUERY_IND, NULL))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_GROUP_LIST_QUERY_IND, NULL))
 	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL))
+		if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_CANCEL_REGISTER_GET_GROUP_LIST_CB_IND, NULL))
 		{
 			OSI_LOGE(0, "cancel register callback[get group list cb] failed!");
 		}
@@ -2456,7 +2464,7 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 	prv_member_list = member_list;
 	prv_member_list_type = type;
 	prv_member_list_cb = func;
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND, prv_lv_poc_get_member_list_cb))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_REGISTER_GET_MEMBER_LIST_CB_IND, prv_lv_poc_get_member_list_cb))
 	{
 		prv_member_list = NULL;
 		prv_member_list_type = 0;
@@ -2464,9 +2472,9 @@ lv_poc_get_member_list(lv_poc_group_info_t group_info, lv_poc_member_list_t * me
 
 		return false;
 	}
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_LIST_QUERY_IND, group_info))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_MEMBER_LIST_QUERY_IND, group_info))
 	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_GET_MEMBER_LIST_CB_IND, NULL))
+		if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_CANCEL_REGISTER_GET_MEMBER_LIST_CB_IND, NULL))
 		{
 		}
 		prv_member_list = NULL;
@@ -2516,7 +2524,7 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_BIUILD_GROUP_CB_IND, func))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_REGISTER_BIUILD_GROUP_CB_IND, func))
 	{
 		return false;
 	}
@@ -2525,9 +2533,9 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 	group_member.members = members;
 	group_member.num = num;
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_BIUILD_GROUP_IND, &group_member))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_BIUILD_GROUP_IND, &group_member))
 	{
-		lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_CANCEL_REGISTER_BIUILD_GROUP_CB_IND, func);
+		lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_CANCEL_REGISTER_BIUILD_GROUP_CB_IND, func);
 		return false;
 	}
 	return true;
@@ -2541,7 +2549,7 @@ lv_poc_build_new_group(lv_poc_member_info_t *members, int32_t num, poc_build_gro
 lv_poc_member_info_t
 lv_poc_get_self_info(void)
 {
-	return (lv_poc_member_info_t)lvPocGuiIdtCom_get_self_info();
+	return (lv_poc_member_info_t)lvPocGuiCtelCom_get_self_info();
 }
 
 /*
@@ -2552,7 +2560,7 @@ lv_poc_get_self_info(void)
 lv_poc_group_info_t
 lv_poc_get_current_group(void)
 {
-	return (lv_poc_group_info_t)lvPocGuiIdtCom_get_current_group_info();
+	return (lv_poc_group_info_t)lvPocGuiCtelCom_get_current_group_info();
 }
 
 /*
@@ -2568,12 +2576,12 @@ lv_poc_set_current_group(lv_poc_group_info_t group, poc_set_current_group_cb fun
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND, func))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_REGISTER_SET_CURRENT_GROUP_CB_IND, func))
 	{
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SET_CURRENT_GROUP_IND, group))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_SET_CURRENT_GROUP_IND, group))
 	{
 		return false;
 	}
@@ -2627,12 +2635,12 @@ lv_poc_get_member_status(lv_poc_member_info_t members, poc_get_member_status_cb 
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP, func))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_REGISTER_MEMBER_STATUS_CB_REP, func))
 	{
 		return false;
 	}
 
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_MEMBER_INFO_IND, members))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_MEMBER_INFO_IND, members))
 	{
 		return false;
 	}
@@ -2658,7 +2666,7 @@ lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_
 	member_call_config.members = member,
 	member_call_config.enable = enable;
 	member_call_config.func = func;
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SINGLE_CALL_STATUS_IND, &member_call_config))
+	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_SINGLE_CALL_STATUS_IND, &member_call_config))
 	{
 		return false;
 	}
@@ -2673,7 +2681,7 @@ lv_poc_set_member_call_status(lv_poc_member_info_t member, bool enable, poc_set_
 lv_poc_group_info_t
 lv_poc_get_lock_group(void)
 {
-	return (lv_poc_group_info_t)lvPocGuiIdtCom_get_current_lock_group();
+	return NULL;//(lv_poc_group_info_t)lvPocGuiIdtCom_get_current_lock_group();
 }
 
 /*
@@ -2684,30 +2692,30 @@ lv_poc_get_lock_group(void)
 bool
 lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, void (*func)(lv_poc_group_oprator_type opt))
 {
-	static LvPocGuiIdtCom_lock_group_t group_info = {0};
-	if(opt != LV_POC_GROUP_OPRATOR_TYPE_LOCK && opt != LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
-	{
-		return false;
-	}
-
-	group_info.opt = opt;
-	group_info.cb = func;
-	group_info.group_info = group;
-
-	if(opt == LV_POC_GROUP_OPRATOR_TYPE_LOCK)
-	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOCK_GROUP_IND, &group_info))
-		{
-			return false;
-		}
-	}
-	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
-	{
-		if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_UNLOCK_GROUP_IND, &group_info))
-		{
-			return false;
-		}
-	}
+//	static LvPocGuiIdtCom_lock_group_t group_info = {0};
+//	if(opt != LV_POC_GROUP_OPRATOR_TYPE_LOCK && opt != LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
+//	{
+//		return false;
+//	}
+//
+//	group_info.opt = opt;
+//	group_info.cb = func;
+//	group_info.group_info = group;
+//
+//	if(opt == LV_POC_GROUP_OPRATOR_TYPE_LOCK)
+//	{
+//		if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_LOCK_GROUP_IND, &group_info))
+//		{
+//			return false;
+//		}
+//	}
+//	else if(opt == LV_POC_GROUP_OPRATOR_TYPE_UNLOCK)
+//	{
+//		if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_UNLOCK_GROUP_IND, &group_info))
+//		{
+//			return false;
+//		}
+//	}
 	return true;
 }
 
@@ -2719,25 +2727,25 @@ lv_poc_set_lock_group(lv_poc_group_oprator_type opt, lv_poc_group_info_t group, 
 bool
 lv_poc_delete_group(lv_poc_group_info_t group, void (*func)(int result_type))
 {
-	if(group == NULL || func == NULL)
-	{
-		if(func != NULL)
-		{
-			func(1);
-		}
-		return false;
-	}
-
-	static LvPocGuiIdtCom_delete_group_t del_group = {0};
-	del_group.cb = func;
-	del_group.group_info = (void *)group;
-
-	if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELETE_GROUP_IND, (void *)&del_group))
-	{
-		memset(&del_group, 0, sizeof(LvPocGuiIdtCom_delete_group_t));
-		func(2);
-		return false;
-	}
+//	if(group == NULL || func == NULL)
+//	{
+//		if(func != NULL)
+//		{
+//			func(1);
+//		}
+//		return false;
+//	}
+//
+//	static LvPocGuiIdtCom_delete_group_t del_group = {0};
+//	del_group.cb = func;
+//	del_group.group_info = (void *)group;
+//
+//	if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_DELETE_GROUP_IND, (void *)&del_group))
+//	{
+//		memset(&del_group, 0, sizeof(LvPocGuiIdtCom_delete_group_t));
+//		func(2);
+//		return false;
+//	}
 	return true;
 }
 
@@ -3817,5 +3825,47 @@ bool
 lv_poc_group_list_act_status(void)
 {
 	return lv_poc_get_group_list_activity();
+}
+
+/*
+	  name : lv_poc_GetSimInfo
+	  param :
+	  date : 2021-02-03
+*/
+void lv_poc_GetSimInfo(char *imsi, unsigned int *lenimsi, char *iccid, unsigned int *leniccid, char *imei, unsigned int *lenimei)
+{
+	int ret = getSimImsi(CFW_SIM_0, (uint8_t*)imsi, (uint8_t*)lenimsi);
+	imsi[*lenimsi] = 0;
+	OSI_LOGI(0,"[ctel]getSimImsi ret:%d, IMSI len %d :%s", ret, *lenimsi, imsi);
+	ret = getSimImei(CFW_SIM_0, (uint8_t*)imei, (uint8_t*)lenimei);
+	imei[*lenimei] = 0;
+	OSI_LOGI(0,"[ctel]getSimImei ret:%d, IMEI len %d :%s", ret, *lenimei, imei);
+	ret = getSimIccid(CFW_SIM_0, (uint8_t*)iccid, (uint8_t*)leniccid);
+	iccid[*leniccid] = 0;
+	OSI_LOGI(0,"[ctel]getSimIccid ret:%d, CCID len %d :%s", ret, *leniccid, iccid);
+}
+
+/*
+	  name : lv_poc_GetGprsAttState
+	  param :
+	  date : 2021-02-03
+*/
+int lv_poc_GetGprsAttState(void)
+{
+	int nRet = 0;
+  	int nAttstate = 0;
+
+  	uint8_t status = 0;
+	CFW_NW_STATUS_INFO nStatusInfo;
+	if (CFW_CfgGetNwStatus(&status, CFW_SIM_0) != 0 ||CFW_NwGetStatus(&nStatusInfo, CFW_SIM_0) != 0)
+	{
+	 	OSI_LOGI(0,"[ctel]CFW_CfgGetNwStatus %d or CFW_NwGetStatus %d Pstype %d failed\n", status,nStatusInfo.nStatus,nStatusInfo.PsType);
+	}
+	else
+	{
+	    nAttstate = 1;
+	}
+	OSI_LOGI(0, "[ctel]ui_GetGprsAttState ret %d state %d\n",nRet ,nAttstate);
+	return nAttstate;
 }
 

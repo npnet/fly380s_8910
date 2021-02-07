@@ -31,7 +31,7 @@
 //poc
 #include "lv_include/lv_poc_type.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 
 #define INT8 int8_t
 #define UINT8 uint8_t
@@ -2765,7 +2765,7 @@ bool audevStartPlayV2(audevPlayType_t type, const audevPlayOps_t *play_ops, void
     }
 
 	//monitor audev
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_START_IND, NULL);
+	lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_VOICE_PLAY_START_IND, NULL);
 
 	/*open pa*/
 	if(d->cfg.outdev == AUDEV_OUTPUT_RECEIVER)
@@ -3054,7 +3054,7 @@ bool audevStopPlayV2(void)
     }
 
 	//monitor audev
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_VOICE_PLAY_STOP_IND, NULL);
+	lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_VOICE_PLAY_STOP_IND, NULL);
 
     if (d->play.type == AUDEV_PLAY_TYPE_LOCAL)
     {

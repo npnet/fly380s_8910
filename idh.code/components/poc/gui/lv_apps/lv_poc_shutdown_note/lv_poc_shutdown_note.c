@@ -435,11 +435,12 @@ void lv_poc_power_off_warning_apply_event_handler(lv_obj_t *obj, lv_event_t even
 	//回调事件
 	if(event == LV_EVENT_APPLY){//确认关机
 
-		if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
+		if(lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_EXIT_IND, NULL))
 		{
 		}
 		lv_poc_activity_func_cb_set.status_led(LVPOCLEDIDTCOM_SIGNAL_POWEROFF_STATUS, true);
 		lv_poc_set_power_on_status(false);//设备挂起
+		poc_set_ext_pa_status(false);
 		lv_task_t * task = lv_task_create(lv_poc_shutdown_animation, 50,
 			LV_TASK_PRIO_MID, (void *)LVPOCSHUTDOWN_TYPE_POWER_OFF);
 		lv_task_once(task);

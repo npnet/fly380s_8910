@@ -10,29 +10,13 @@
  * without further testing or modification.
  */
 
-#ifndef _APP_TEST_H_
-#define _APP_TEST_H_
+#ifndef _INCLUDE_GUIIDTCOM_H_
+#define _INCLUDE_GUIIDTCOM_H_
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "osi_api.h"
-#include "osi_event_hub.h"
-#include "osi_generic_list.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief opaque data structure of AT engine
- */
-void appTestStart(void);
-
-void lvPocGuiIdtComTest_Init();
-
-#ifdef __cplusplus
-}
-#endif
+#include "poc_audio_player.h"
+#include "poc_audio_recorder.h"
 
 #endif

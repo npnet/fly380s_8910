@@ -2786,7 +2786,7 @@ void lv_poc_update_stabar_sim_img(void)
                 case 1:
                 case 2://2G网络
                 {	//显示G
-                	lvPocGuiIdtCom_get_status() > 0 ? lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS) : lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
+                	lvPocGuiCtelCom_get_status() == 3 ? lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS) : lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
                     lv_img_set_src(obj3, &stat_sys_data_connected_2g_sprd);
 					if(is_net_type != 1)
 					{
@@ -2798,7 +2798,7 @@ void lv_poc_update_stabar_sim_img(void)
 
                 case 3://3G网络
                 {
-                	lvPocGuiIdtCom_get_status() > 0 ? lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS) : lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
+                	lvPocGuiCtelCom_get_status() == 3 ? lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS) : lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
                     lv_img_set_src(obj3, &stat_sys_data_fully_connected_3g_sprd_reliance);
 					if(is_net_type != 1)
 					{
@@ -2811,7 +2811,7 @@ void lv_poc_update_stabar_sim_img(void)
                 case 4:
                 case 5:
                 {
-                	lvPocGuiIdtCom_get_status() > 0 ? lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS) : lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
+                	lvPocGuiCtelCom_get_status() == 3 ? lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_LOGINSUCCESS) : lv_poc_set_apply_note(POC_APPLY_NOTE_TYPE_NOLOGIN);
                     lv_img_set_src(obj3, &stat_sys_data_connected_4g_sprd);
 					if(is_net_type != 1)
 					{

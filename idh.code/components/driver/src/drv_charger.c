@@ -25,7 +25,7 @@
 #include "drv_efuse_pmic.h"
 //poc
 #include "lv_include/lv_poc_type.h"
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 
 #include <string.h>
 
@@ -954,7 +954,7 @@ static void _drvChargerSendMsgToClient(CHR_SVR_MSG_SERVICE_E msg, uint32_t param
         p->notice_cb();
     }
 	//send chg msg
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_SET_SHUTDOWN_POC, (void *)msg);
+	lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_SET_SHUTDOWN_POC, (void *)msg);
 }
 
 /*****************************************************************************/

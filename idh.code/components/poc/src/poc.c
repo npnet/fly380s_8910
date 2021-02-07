@@ -27,8 +27,7 @@
 #include "drv_lcd_v2.h"
 #include "drv_names.h"
 #include "lv_include/lv_poc.h"
-#include "app_test.h"
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 #include "hal_chip.h"
 #include "tts_player.h"
 #include "uart3_gps.h"
@@ -125,7 +124,7 @@ static void pocIdtStartHandleTask(void * ctx)
 	abup_check_update_result();
 
 #ifdef CONFIG_POC_SUPPORT
-	lvPocGuiIdtCom_log();
+	lvPocGuiCtelCom_log();
 #endif
 
 	osiThreadExit();

@@ -7,7 +7,7 @@ extern "C" {
 #include "lv_include/lv_poc.h"
 #include <stdlib.h>
 #include <string.h>
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 #include "lv_objx/lv_poc_obj/lv_poc_obj.h"
 
 enum
@@ -800,7 +800,7 @@ void lv_poc_member_list_refresh(lv_poc_member_list_t *member_list_obj)
 	{
 		lv_list_set_btn_selected(activity_list, btn_index[0]);
 	}
-	lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
+	lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_STOP_TIMEOUT_CHECK_ACK_IND, NULL);
 	lv_poc_set_memberlist_refr_is_complete(true);
 }
 

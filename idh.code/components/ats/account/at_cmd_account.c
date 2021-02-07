@@ -28,7 +28,7 @@
 #include "at_cfg.h"
 #include "ppp_interface.h"
 #include "lv_include/lv_poc_lib.h"
-#include "guiIdtCom_api.h"
+#include "guiCtelCom_api.h"
 
 
 void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
@@ -67,14 +67,12 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 	    strcat(rspStr, poc_config->account_passwd);
 	    do
 	    {
-		    if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
+		    if(lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_EXIT_IND, NULL))
 		    {
 			    strcat(rspStr, "\nexit log:");
-			    //lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_DELAY_IND, (void *)2000);
-			    //strcat(rspStr, "\nwait a moment:");
 		    }
 
-		    if(!lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
+		    if(!lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_LOGIN_IND, NULL))
 		    {
 			    break;
 		    }
@@ -96,7 +94,7 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 	    sprintf(tempStr, "%d", poc_config->ip_port);
 	    strcat(rspStr, tempStr);
 	    strcat(rspStr, "\nstatus:");
-	    sprintf(tempStr, "%d", lvPocGuiIdtCom_get_status());
+	    sprintf(tempStr, "%d", lvPocGuiCtelCom_get_status());
 	    strcat(rspStr, tempStr);
         atCmdRespInfoText(cmd->engine, rspStr);
         atCmdRespOK(cmd->engine);
@@ -120,14 +118,14 @@ void atCmdHandleLOGACCOUNT(atCommand_t *cmd)
 					}
 					if(userOpt < 1)
 					{
-						if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_EXIT_IND, NULL))
+						if(lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_EXIT_IND, NULL))
 						{
 							atCmdRespInfoText(cmd->engine, "+LOGACCOUNT:exit log\n");
 						}
 					}
 					else
 					{
-						if(lvPocGuiIdtCom_Msg(LVPOCGUIIDTCOM_SIGNAL_LOGIN_IND, NULL))
+						if(lvPocGuiCtelCom_Msg(LVPOCGUICTELCOM_SIGNAL_LOGIN_IND, NULL))
 						{
 							atCmdRespInfoText(cmd->engine, "+LOGACCOUNT:restart log\n");
 						}
